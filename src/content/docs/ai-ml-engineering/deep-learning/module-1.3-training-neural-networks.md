@@ -1,1846 +1,1129 @@
 ---
-revision_pending: true
 title: "Training Neural Networks"
 slug: ai-ml-engineering/deep-learning/module-1.3-training-neural-networks
 sidebar:
   order: 1004
 ---
-> **AI/ML Engineering Track** | Complexity: `[COMPLEX]` | Time: 6-8
-# Or: The Framework That Made Deep Learning Accessible
 
-**Reading Time**: 6-7 hours
-**Prerequisites**: Module 26
+# Training Neural Networks
 
----
-
-PyTorch emerged from frustration with earlier deep learning tooling and quickly became one of the most influential frameworks in modern AI.
-
----
-
-## Did You Know? The Researcher's Rebellion
-
-**Menlo Park. September 2016. 11:47 PM.**
-
-Many researchers found early static-graph workflows frustrating because debugging and experimentation were much less direct than ordinary Python programming.
-
-"This is insane," he muttered to his colleague Adam Paszke. "We're supposed to be doing AI research, not fighting our tools."
-
-They decided to build something better. Not incrementally better—*fundamentally* different. A framework where Python code was just... Python code. Where you could debug neural networks like any other program. Where ideas could be tested in minutes, not days.
-
-They called it PyTorch. Within three years, it would conquer academic AI. Within five, it would power everything from gpt-5 to Stable Diffusion.
-
-> "The best framework is the one that gets out of your way. TensorFlow made you think about graphs. PyTorch just let you think about math."
-> Paraphrased from PyTorch's publicly stated design philosophy.
+> **AI/ML Engineering Track** | Complexity: `[COMPLEX]` | Time: 6-8 hours
+>
+> **Prerequisites**: Python fundamentals, NumPy arrays, matrix multiplication, gradient descent, and the previous neural-network-from-scratch module.
+>
+> **Primary tools**: PyTorch, TorchVision, NumPy, local virtual environments, optional CUDA-capable GPU.
 
 ---
 
-## What You'll Be Able to Do
+## Learning Outcomes
 
-By the end of this module, you will:
-- Understand PyTorch tensors and their relationship to NumPy arrays
-- Master automatic differentiation with autograd
-- Build neural networks using `nn.Module`
-- Implement training loops with optimizers and loss functions
-- Move computations between CPU and GPU
-- Appreciate the elegance of PyTorch compared to manual implementations
+By the end of this module, you will be able to:
 
----
-
-## Introduction: From Pain to Power
-
-In Module 26, you built neural networks from scratch. You computed gradients by hand using the chain rule. You tracked intermediate values in caches. You debugged NaN explosions at 2am.
-
-**It was educational. It was also painful.**
-
-That pain was the point. You now understand what happens under the hood. But here's the truth: nobody builds production neural networks from scratch. Think of it like learning to build a car engine from raw metal before being allowed to drive. Valuable knowledge, but not how you'd get to work every day.
-
-**PyTorch is the power tool that makes deep learning practical.**
-
-Think of it this way: In Module 26, you learned to chop down a tree with a hand axe. Now you get a chainsaw. The chainsaw doesn't make the hand axe knowledge useless—understanding how to fell a tree helps you use the chainsaw safely and effectively.
+1. **Implement** PyTorch tensor, autograd, and `nn.Module` workflows that replace manual NumPy backpropagation without hiding the training mechanics.
+2. **Debug** common training-loop failures, including stale gradients, wrong loss functions, unregistered layers, device mismatches, and evaluation-mode errors.
+3. **Compare** CPU, GPU, mixed-precision, and compiled execution paths, then choose the path that fits a workload's memory, latency, and operational constraints.
+4. **Evaluate** whether a model training script is production-ready by inspecting data loading, checkpointing, validation, logging, reproducibility, and failure detection.
+5. **Design** a complete supervised training pipeline that includes data preparation, model definition, loss selection, optimizer setup, validation, checkpointing, and troubleshooting evidence.
 
 ---
 
-## Did You Know? The Birth of PyTorch
+## Why This Module Matters
 
-### The Framework Wars
+At 03:12 on a Tuesday morning, a fraud-detection retraining job finishes successfully and ships a model whose predictions are almost random. The platform engineer on call sees no Kubernetes failures, no failed health checks, and no obvious Python exception. The training script printed reassuring loss values for hours, yet the model performs worse than yesterday's baseline because validation ran with dropout still enabled and gradients were silently accumulating across batches.
 
-In 2015, Google released TensorFlow. It was powerful, backed by Google's resources, and quickly became the dominant deep learning framework. But researchers had a problem: TensorFlow was *painful* to use.
+That engineer does not need a definition of a tensor in that moment; she needs a mental model sharp enough to ask the right questions under pressure. Did the optimizer see the parameters? Did the labels match the loss function? Did the model switch from training behavior to inference behavior before validation? Did logging keep full computational graphs alive until the GPU ran out of memory? Those questions separate a person who has merely run a tutorial from a practitioner who can operate machine-learning systems responsibly.
 
-TensorFlow 1.x used something called **static graphs**. You had to:
-1. Define your entire computation as a graph
-2. Compile the graph
-3. Create a "session" to run it
-4. Feed data through placeholders
+PyTorch makes deep learning accessible because it lets engineers write ordinary Python while it handles automatic differentiation, device movement, layer registration, and optimizer updates. The accessibility can be dangerous when the learner treats the framework as a black box. This module teaches PyTorch as a set of inspectable mechanisms, so each convenience maps back to a concrete training responsibility that can be verified, debugged, and improved.
 
-It was like writing a recipe, translating it to assembly language, compiling it, and only then cooking - for every single meal.
-
-```python
-# TensorFlow 1.x - The pain was real
-import tensorflow as tf
-
-# Step 1: Define placeholders (not real data yet!)
-x = tf.placeholder(tf.float32, shape=[None, 784])
-y = tf.placeholder(tf.float32, shape=[None, 10])
-
-# Step 2: Build the graph (nothing runs!)
-W = tf.Variable(tf.zeros([784, 10]))
-logits = tf.matmul(x, W)
-
-# Step 3: Create a session
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())  # Initialize
-    result = sess.run(logits, feed_dict={x: data})  # Finally run!
-```
-
-Debugging was a nightmare. You couldn't just print a variable - you had to evaluate it in a session. Error messages pointed to the graph construction, not where the actual problem was.
-
-### The Facebook Answer
-
-Enter **Soumith Chintala** at Facebook AI Research. He and his team created PyTorch in 2016 with a radical philosophy: **[define-by-run](https://arxiv.org/abs/1912.01703)**.
-
-Instead of building a graph and then running it, PyTorch builds the graph *as you run Python code*. You write normal Python. You can use print statements. You can use Python debuggers. If statements, for loops - they all just work.
-
-```python
-# PyTorch - The relief was immediate
-import torch
-
-x = torch.randn(32, 784)  # This creates actual data!
-W = torch.randn(784, 10, requires_grad=True)
-
-logits = x @ W  # This actually computes the result!
-print(logits.shape)  # You can just print it!
-```
-
-### The Research Takeover
-
-By 2019, PyTorch had conquered academia:
-- **NeurIPS 2019**: PyTorch had become widely used in deep learning research.
-- **ICLR 2020**: PyTorch was already deeply embedded in academic deep learning workflows.
-- **CVPR 2020**: PyTorch was also heavily used in computer vision research.
-
-Why? Researchers need to iterate fast. They try crazy ideas. Many don't work. Static graphs meant recompiling for every experiment. Dynamic graphs meant instant feedback.
-
-**TensorFlow noticed.** TensorFlow 2.0 (2019) adopted eager execution by default - essentially admitting PyTorch got it right.
-
-### The Name
-
-Why "PyTorch"? It's the Python version of **Torch**, a scientific computing framework written in Lua that was popular in academia during the early 2010s. The original Torch was named after the Olympic torch - a symbol of passing knowledge forward.
-
-The PyTorch logo uses a stylized flame motif.
+The path through the module follows the way training systems actually fail. First you will map data into tensors with explicit shapes, dtypes, and devices. Then you will watch autograd build and clear computation graphs. After that you will construct registered modules, run complete training and evaluation loops, and add the operational controls that keep experiments reproducible and production jobs recoverable.
 
 ---
 
-## Part 1: Tensors - The Universal Container
+## Core Content
 
-### What is a Tensor, Really?
+### 1. From Manual Backpropagation to PyTorch Training
 
-You've heard "tensor" thrown around. Let's demystify it.
+The previous module asked you to build neural networks from lower-level pieces so that the chain rule, cached activations, and parameter updates were visible. That work matters because PyTorch does not remove those mechanics; it automates them behind a more reliable interface. When you call `loss.backward()`, PyTorch traverses a computation graph whose nodes correspond to the same intermediate values you cached manually.
 
-A **tensor** is just a multi-dimensional array. That's it. No magic. But this simple concept is the foundation of *everything* in deep learning.
+A training framework earns trust only when you can connect its abstractions to the work being done. A tensor is not just an array; in PyTorch it can also carry device placement, dtype, gradient-tracking state, and a link to the operation that produced it. A model is not just a Python class; as an `nn.Module`, it registers parameters so optimizers can discover them, save them, move them, and update them.
 
-Think of tensors like containers of different dimensions:
-
-| Dimensions | Math Name | Real Example | Shape |
-|------------|-----------|--------------|-------|
-| 0 | Scalar | The temperature right now: 72.5°F | `[]` |
-| 1 | Vector | Today's hourly temperatures: [68, 70, 72, 75, 73] | `[5]` |
-| 2 | Matrix | A grayscale image with pixel values | `[28, 28]` |
-| 3 | 3D Tensor | A color image (RGB channels × height × width) | `[3, 224, 224]` |
-| 4 | 4D Tensor | A batch of color images | `[32, 3, 224, 224]` |
-| 5 | 5D Tensor | A batch of video clips (batch × frames × channels × H × W) | `[8, 16, 3, 224, 224]` |
-
-The hierarchy of tensor dimensionality can be mapped out logically:
-
-```mermaid
-graph TD
-    A[0D: Scalar<br>Temperature 72.5°F<br>Shape: `[]`] --> B[1D: Vector<br>Hourly Temps<br>Shape: `[5]`]
-    B --> C[2D: Matrix<br>Grayscale Image<br>Shape: `[28, 28]`]
-    C --> D[3D: Tensor<br>Color Image<br>Shape: `[3, 224, 224]`]
-    D --> E[4D: Tensor<br>Batch of Images<br>Shape: `[32, 3, 224, 224]`]
-    E --> F[5D: Tensor<br>Batch of Video Clips<br>Shape: `[8, 16, 3, 224, 224]`]
-```
-
-**The key insight**: Neural networks don't care about what data means. They just see tensors of numbers. An image, a sentence, a stock price history - all become tensors.
-
-### Why This Module Matters
-
-You might wonder: we already have NumPy. Why learn another array type?
-
-Three killer features:
-
-**1. Automatic Differentiation**
-
-NumPy can do math on arrays. PyTorch can do math on arrays *and track how to compute gradients*. This is the magic that makes deep learning practical.
-
-```python
-# NumPy: Just computation
-import numpy as np
-x = np.array([2.0, 3.0])
-y = x ** 2  # [4, 9]
-# Now compute dy/dx manually? Good luck!
-
-# PyTorch: Computation + gradient tracking
-import torch
-x = torch.tensor([2.0, 3.0], requires_grad=True)
-y = (x ** 2).sum()  # 13
-y.backward()        # Compute gradients automatically
-print(x.grad)       # tensor([4., 6.]) - that's dy/dx = 2x!
-```
-
-**2. GPU Acceleration**
-
-Moving computation to a GPU in NumPy requires different libraries and painful code changes. In PyTorch, it's one line:
-
-```python
-# CPU tensor
-x = torch.randn(1000, 1000)
-
-# GPU tensor - one line!
-x_gpu = x.cuda()  # or x.to('cuda')
-```
-
-**3. Deep Learning Ecosystem**
-
-PyTorch tensors integrate seamlessly with neural network layers, optimizers, data loaders, and the entire deep learning workflow.
-
-### Creating Tensors
-
-Let's get hands-on. There are many ways to create tensors:
-
-**From Python Data**
-
-The most direct way - convert Python lists:
-
-```python
-import torch
-
-# From a simple list
-x = torch.tensor([1, 2, 3, 4, 5])
-print(x)  # tensor([1, 2, 3, 4, 5])
-
-# From nested lists (creates a matrix)
-matrix = torch.tensor([[1, 2, 3],
-                       [4, 5, 6]])
-print(matrix.shape)  # torch.Size([2, 3])
-```
-
-**Common Initializations**
-
-In practice, you rarely type out values. You create tensors filled with specific patterns:
-
-```python
-# Zeros and ones - common for initialization
-zeros = torch.zeros(3, 4)       # 3×4 matrix of zeros
-ones = torch.ones(2, 3, 4)      # 2×3×4 tensor of ones
-
-# Random values - essential for weight initialization
-uniform = torch.rand(5, 5)      # Uniform between [0, 1)
-normal = torch.randn(5, 5)      # Normal distribution (mean=0, std=1)
-
-# Sequences - useful for indices and positions
-sequence = torch.arange(0, 10, 2)    # [0, 2, 4, 6, 8]
-linspace = torch.linspace(0, 1, 5)   # [0.0, 0.25, 0.5, 0.75, 1.0]
-
-# Identity matrix - useful in linear algebra
-identity = torch.eye(4)  # 4×4 identity matrix
-```
-
-**Copying Shape from Another Tensor**
-
-Often you need a tensor the same shape as another:
-
-```python
-x = torch.randn(3, 4, 5)
-
-# Create zeros/ones with the same shape, dtype, and device
-zeros_like_x = torch.zeros_like(x)
-ones_like_x = torch.ones_like(x)
-random_like_x = torch.randn_like(x)
-```
-
-This is especially useful when you need to create tensors on the same device (CPU or GPU) as your model.
-
-### Tensor Properties
-
-Every tensor has properties you'll check constantly:
-
-```python
-t = torch.randn(3, 4, 5)
-
-# Shape: The dimensions of the tensor
-print(t.shape)      # torch.Size([3, 4, 5])
-print(t.size())     # Same thing, method form
-
-# Data type: What kind of numbers
-print(t.dtype)      # torch.float32 (default for randn)
-
-# Device: Where the tensor lives
-print(t.device)     # cpu (or cuda:0, cuda:1, etc.)
-
-# Number of dimensions
-print(t.ndim)       # 3
-
-# Total number of elements
-print(t.numel())    # 60 (3 × 4 × 5)
-```
-
-> **Stop and think**: If a tensor has the shape `[32, 3, 224, 224]`, what does each specific dimension represent in a standard image classification task? Why are there exactly four dimensions instead of three?
-
-### Did You Know? Data Types Matter More Than You Think
-
-PyTorch supports many data types, and choosing the right one affects both **correctness** and **performance**.
-
-**For Neural Networks (most common)**:
-- `torch.float32` (or `torch.float`) - The default. Good balance of precision and speed.
-- `torch.float16` (or `torch.half`) - Half precision. Often faster and more memory-efficient on compatible GPUs, but less precise.
-- `torch.bfloat16` - "Brain float". Better for training than float16 because it has more exponent bits.
-
-**For Indices and Counts**:
-- `torch.int64` (or `torch.long`) - Required for indices in PyTorch. Most common integer type.
-- `torch.int32` - When you know values fit and want to save memory.
-
-**For Images**:
-- `torch.uint8` - Unsigned 8-bit integers (0-255). Raw image format.
-
-```python
-# Creating tensors with specific types
-weights = torch.randn(100, 100, dtype=torch.float32)
-indices = torch.tensor([0, 5, 3, 7], dtype=torch.long)
-image = torch.randint(0, 256, (3, 224, 224), dtype=torch.uint8)
-
-# Converting between types
-weights_half = weights.half()      # to float16
-weights_back = weights_half.float()  # back to float32
-```
-
-**The fp16 Training Revolution**
-
-By the late 2010s, mixed-precision training had shown that half-precision formats could substantially reduce memory use and often improve throughput when used carefully.
-
-```python
-# Modern training uses automatic mixed precision
-with torch.cuda.amp.autocast():
-    output = model(input)  # Automatically uses fp16 where safe
-```
-
-### The NumPy Bridge
-
-PyTorch and NumPy are best friends. They can share memory, making conversion instant:
-
-```python
-import numpy as np
-
-# NumPy → PyTorch (shared memory!)
-numpy_array = np.array([1, 2, 3, 4, 5])
-tensor = torch.from_numpy(numpy_array)
-
-# They share memory - changes propagate!
-numpy_array[0] = 100
-print(tensor)  # tensor([100, 2, 3, 4, 5]) - changed too!
-
-# If you want a copy instead:
-tensor_copy = torch.tensor(numpy_array)  # Independent copy
-
-# PyTorch → NumPy
-tensor = torch.randn(3, 4)
-numpy_array = tensor.numpy()  # Shared memory (if on CPU)
-
-# Safe conversion (handles GPU tensors too)
-numpy_array = tensor.detach().cpu().numpy()
-```
-
-**Warning**: The shared memory behavior is a feature, not a bug. It's fast and memory-efficient. But it can surprise you if you modify one and expect the other unchanged!
-
----
-
-## Part 2: Autograd - The Magic Behind Deep Learning
-
-This is where PyTorch becomes truly magical. Remember computing gradients by hand in Module 26? All those partial derivatives, the chain rule applied recursively, the careful tracking of intermediate values?
-
-**PyTorch does all of that automatically.**
-
-### The Computational Graph
-
-When you create a tensor with `requires_grad=True`, PyTorch starts recording every operation. It builds an invisible "computational graph" that tracks how to compute gradients.
-
-Let's see it in action:
-
-```python
-# Create a tensor that tracks gradients
-x = torch.tensor([2.0, 3.0], requires_grad=True)
-
-# Perform operations - PyTorch records them!
-y = x ** 2        # y = [4, 9]
-z = y.sum()       # z = 13
-
-# Compute gradients
-z.backward()
-
-# Gradients are stored in .grad
-print(x.grad)     # tensor([4., 6.])
-```
-
-What happened? Let's trace through:
-- `z = x[0]² + x[1]²`
-- `∂z/∂x[0] = 2·x[0] = 2·2 = 4`
-- `∂z/∂x[1] = 2·x[1] = 2·3 = 6`
-
-PyTorch computed exactly the gradients we'd compute by hand - but automatically!
-
-### Why This Matters
-
-In Module 26, you implemented backpropagation manually. For a simple network, it was manageable. But modern networks have:
-- Millions of parameters
-- Hundreds of layers
-- Complex architectures (skip connections, attention, normalization)
-
-Computing gradients by hand for a modern large neural network would be prohibitively complex. With PyTorch:
-
-```python
-loss.backward()  # That's it. Gradients for every parameter.
-```
-
-### The Chain Rule in Action
-
-The real power shows with complex computations:
-
-```python
-x = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
-
-# Complex computation with multiple steps
-y = x * 2          # y = [2, 4, 6]
-z = y ** 2         # z = [4, 16, 36]
-loss = z.mean()    # loss = 56/3 ≈ 18.67
-
-# One backward call - all gradients computed!
-loss.backward()
-
-print(x.grad)  # tensor([2.6667, 5.3333, 8.0000])
-```
-
-Let's verify: The chain rule says:
-- `∂loss/∂x = ∂loss/∂z · ∂z/∂y · ∂y/∂x`
-- `∂loss/∂z = 1/3` (derivative of mean)
-- `∂z/∂y = 2y = [4, 8, 12]`
-- `∂y/∂x = 2`
-- Result: `[4·2/3, 8·2/3, 12·2/3] = [8/3, 16/3, 24/3]` 
-
-### Did You Know? The Secret History of Automatic Differentiation
-
-Automatic differentiation isn't a deep learning invention. It was developed in the 1960s and 1970s for computational physics and engineering!
-
-**Reverse-mode automatic differentiation** (what PyTorch uses) was published by [Seppo Linnainmaa in 1970](https://en.wikipedia.org/wiki/Seppo_Linnainmaa) for his master's thesis. Backpropagation in neural networks was rediscovered independently in the 1980s - it's the same algorithm applied to neural network computation graphs.
-
-The key insight: forward-mode AD is efficient when you have few inputs and many outputs. [Reverse-mode is efficient when you have many inputs and few outputs.](https://en.wikipedia.org/wiki/Automatic_differentiation) Neural networks have millions of inputs (weights) and one output (loss) - reverse mode wins!
-
-### Critical Gotcha: Gradients Accumulate!
-
-This trips up every PyTorch beginner:
-
-```python
-x = torch.tensor([1.0], requires_grad=True)
-
-y = x * 2
-y.backward()
-print(x.grad)  # tensor([2.])
-
-y = x * 3
-y.backward()
-print(x.grad)  # tensor([5.]) - Not 3! It's 2 + 3!
-```
-
-> **Pause and predict**: Look at the gradient accumulation snippet above. If we ran `y.backward()` a third time with `y = x * 5`, what would the exact numerical value of `x.grad` be? 
-
-By default, calling `.backward()` **adds** to existing gradients. This is actually useful for some advanced techniques (like gradient accumulation), but usually you want fresh gradients each time.
-
-**The fix**: Zero gradients before each backward pass:
-
-```python
-x.grad.zero_()  # Zero out accumulated gradients
-y = x * 4
-y.backward()
-print(x.grad)  # tensor([4.]) - Fresh gradient
-```
-
-In training loops, you'll see `optimizer.zero_grad()` - this zeros all parameter gradients.
-
-### When to Detach from the Graph
-
-Sometimes you want to use a computed value without tracking gradients:
-
-```python
-x = torch.tensor([2.0], requires_grad=True)
-y = x ** 2
-
-# Detach: Creates a new tensor, no gradient tracking
-z = y.detach()
-print(z.requires_grad)  # False
-
-# Or use no_grad context
-with torch.no_grad():
-    z = y * 2
-    print(z.requires_grad)  # False
-```
-
-**When to use this**:
-- Computing metrics (accuracy, etc.) during training
-- Using a frozen pretrained model
-- Preventing gradients from flowing to certain parts of the network
-
----
-
-## Part 3: Building Neural Networks with nn.Module
-
-Now we get to build actual neural networks! PyTorch provides `torch.nn`, a module specifically designed for deep learning.
-
-### The nn.Module Class
-
-Every neural network in PyTorch inherits from `nn.Module`. This base class provides:
-- Automatic parameter registration
-- Easy device movement (CPU ↔ GPU)
-- Training/evaluation mode switching
-- Model saving and loading
-
-Here's the pattern you'll use hundreds of times:
-
-```python
-import torch.nn as nn
-
-class SimpleNetwork(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super().__init__()  # Always call this first!
-
-        # Define layers (registered automatically!)
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, output_size)
-        self.relu = nn.ReLU()
-
-    def forward(self, x):
-        # Define how data flows through the network
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        return x
-
-# Create the network
-model = SimpleNetwork(784, 128, 10)
-
-# Forward pass - just call the model!
-x = torch.randn(32, 784)  # Batch of 32 images
-output = model(x)         # Calls forward() automatically
-print(output.shape)       # torch.Size([32, 10])
-```
-
-Compare this to Module 26 where you manually created weight matrices, implemented forward propagation, and tracked everything yourself. The PyTorch version is almost self-documenting!
-
-### Did You Know? Why super().__init__()?
-
-That `super().__init__()` call isn't just Python formality. It initializes PyTorch's internal machinery that:
-- Creates a registry for parameters
-- Enables recursive calls like `.to(device)` on all submodules
-- Sets up hooks for saving/loading
-
-Forget it, and your model silently breaks in confusing ways. Every PyTorch tutorial includes it, and now you know why!
-
-### Common Layers Explained
-
-PyTorch provides layers for every architecture. Here are the ones you'll use most:
-
-**Linear (Fully Connected) Layers**
-
-These are the basic building blocks - matrix multiplication plus bias:
-
-```python
-# Linear: y = xW^T + b
-layer = nn.Linear(in_features=784, out_features=128)
-
-# What it creates internally:
-# - weight: [128, 784] matrix
-# - bias: [128] vector (optional, bias=True by default)
-```
-
-**Activation Functions**
-
-Activations introduce non-linearity (without them, a deep network is just one linear transformation):
-
-```python
-# As modules (use in __init__)
-nn.ReLU()           # max(0, x) - most common
-nn.LeakyReLU(0.01)  # Allows small negative values
-nn.GELU()           # Used in transformers (smoother than ReLU)
-nn.Sigmoid()        # Squashes to [0, 1]
-nn.Tanh()           # Squashes to [-1, 1]
-
-# As functions (use in forward)
-import torch.nn.functional as F
-output = F.relu(x)
-output = F.gelu(x)
-```
-
-**Normalization Layers**
-
-These stabilize training by normalizing intermediate values:
-
-```python
-nn.BatchNorm1d(num_features)  # Normalize across batch
-nn.LayerNorm(normalized_shape)  # Normalize across features (transformers)
-```
-
-**Dropout**
-
-Randomly zeroes elements during training to prevent overfitting:
-
-```python
-nn.Dropout(p=0.5)  # 50% of elements set to zero during training
-```
-
-### Sequential: The Quick Way
-
-For simple architectures, you don't need a custom class:
-
-```python
-model = nn.Sequential(
-    nn.Linear(784, 256),
-    nn.ReLU(),
-    nn.Dropout(0.2),
-    nn.Linear(256, 128),
-    nn.ReLU(),
-    nn.Dropout(0.2),
-    nn.Linear(128, 10)
-)
-
-# Works exactly like a custom nn.Module
-output = model(input)
-```
-
-Use Sequential for prototypes and simple models. Use custom classes when you need complex control flow (if statements, loops, skip connections).
-
-### Inspecting Your Model
-
-PyTorch makes it easy to see what's inside:
-
-```python
-model = SimpleNetwork(784, 128, 10)
-
-# Print model structure
-print(model)
-# SimpleNetwork(
-#   (fc1): Linear(in_features=784, out_features=128, bias=True)
-#   (fc2): Linear(in_features=128, out_features=10, bias=True)
-#   (relu): ReLU()
-# )
-
-# List all parameters with names
-for name, param in model.named_parameters():
-    print(f"{name}: {param.shape}")
-# fc1.weight: torch.Size([128, 784])
-# fc1.bias: torch.Size([128])
-# fc2.weight: torch.Size([10, 128])
-# fc2.bias: torch.Size([10])
-
-# Count total parameters
-total = sum(p.numel() for p in model.parameters())
-print(f"Total parameters: {total:,}")  # 101,770
-```
-
----
-
-## Part 4: Training Neural Networks
-
-Now for the payoff - actually training a network!
-
-### Loss Functions: Measuring Wrongness
-
-A loss function measures how wrong your predictions are. Lower is better.
-
-**For Classification** (choosing between categories):
-
-```python
-# Cross-entropy loss - the workhorse of classification
-criterion = nn.CrossEntropyLoss()
-
-# It expects:
-# - Input: Raw logits (NOT softmaxed!)  Shape: [batch, num_classes]
-# - Target: Class indices (NOT one-hot!)  Shape: [batch]
-
-logits = torch.randn(32, 10)          # Raw network output
-labels = torch.randint(0, 10, (32,))  # Class labels 0-9
-loss = criterion(logits, labels)
-```
-
-**Critical**: `CrossEntropyLoss` applies softmax internally. Don't softmax your outputs first - you'll get wrong gradients and worse training!
-
-**For Regression** (predicting numbers):
-
-```python
-criterion = nn.MSELoss()   # Mean squared error
-criterion = nn.L1Loss()    # Mean absolute error
-```
-
-### Optimizers: Updating Weights
-
-Optimizers implement gradient descent algorithms. They take gradients and update parameters:
-
-```python
-import torch.optim as optim
-
-# SGD: Simple, but needs tuning
-optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
-
-# Adam: Usually works well out of the box
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-# AdamW: Adam with proper weight decay (recommended for transformers)
-optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
-```
-
-### Did You Know? The Adam Story
-
-Adam (2014) combined ideas from two earlier optimizers:
-- **Momentum**: Use exponentially weighted average of past gradients
-- **RMSprop**: Adapt learning rate per-parameter based on gradient history
-
-The name "Adam" comes from "adaptive moment estimation". Adam quickly became a very common default optimizer in deep learning practice because it often works with relatively little tuning.
-
-Researchers later showed that common L2-style "weight decay" in Adam was not equivalent to true weight decay for adaptive optimizers. **AdamW** (2017) decoupled weight decay from the optimization step.
-
-### The Training Loop
-
-Here's the standard PyTorch training pattern you'll use forever:
-
-```python
-model = SimpleNetwork(784, 128, 10)
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-for epoch in range(num_epochs):
-    model.train()  # Enable training mode (dropout, batchnorm behave differently)
-
-    for batch_idx, (data, labels) in enumerate(train_loader):
-        # 1. Zero gradients from previous batch
-        optimizer.zero_grad()
-
-        # 2. Forward pass
-        outputs = model(data)
-
-        # 3. Compute loss
-        loss = criterion(outputs, labels)
-
-        # 4. Backward pass (compute gradients)
-        loss.backward()
-
-        # 5. Update weights
-        optimizer.step()
-
-        if batch_idx % 100 == 0:
-            print(f"Epoch {epoch}, Batch {batch_idx}, Loss: {loss.item():.4f}")
-```
-
-**The five steps are usually the same**:
-1. Zero gradients
-2. Forward pass
-3. Compute loss
-4. Backward pass
-5. Update weights
-
-This pattern works whether you're training a 2-layer network on MNIST or a billion-parameter language model.
-
-### Evaluation Mode
-
-When evaluating (not training), you need to:
-1. Switch to evaluation mode (changes dropout/batchnorm behavior)
-2. Disable gradient computation (faster, uses less memory)
-
-```python
-model.eval()  # Evaluation mode
-
-correct = 0
-total = 0
-
-with torch.no_grad():  # Don't compute gradients
-    for data, labels in test_loader:
-        outputs = model(data)
-        _, predicted = outputs.max(1)  # Get predicted class
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
-
-accuracy = 100 * correct / total
-print(f"Accuracy: {accuracy:.2f}%")
-```
-
----
-
-## Part 5: GPU Computing
-
-GPUs can make neural network training much faster, though the exact speedup depends heavily on the workload and hardware. PyTorch makes GPU computing almost trivially easy.
-
-### Moving to GPU
-
-```python
-# Check if CUDA (GPU) is available
-if torch.cuda.is_available():
-    print(f"GPU: {torch.cuda.get_device_name(0)}")
-    print(f"GPU Count: {torch.cuda.device_count()}")
-else:
-    print("No GPU available, using CPU")
-
-# The standard pattern: create a device variable
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Move tensors
-x = torch.randn(1000, 1000)
-x_gpu = x.to(device)
-
-# Move models (moves all parameters)
-model = SimpleNetwork(784, 128, 10).to(device)
-
-# Create tensors directly on GPU
-y = torch.randn(1000, 1000, device=device)
-```
-
-### GPU Training Loop
-
-The main change from CPU training: move data to the GPU each batch.
-
-```python
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-model = SimpleNetwork(784, 128, 10).to(device)
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-for epoch in range(num_epochs):
-    for data, labels in train_loader:
-        # Move data to GPU
-        data = data.to(device)
-        labels = labels.to(device)
-
-        optimizer.zero_grad()
-        outputs = model(data)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-```
-
-### Did You Know? GPU Memory Gotchas
-
-GPU memory is precious and limited. Common mistakes:
-
-**Memory Leak #1: Storing Tensors in Python Lists**
-
-```python
-# BAD - keeps entire computation graph!
-losses = []
-for batch in loader:
-    loss = criterion(model(batch), labels)
-    losses.append(loss)  # Full tensor with gradient graph!
-
-# GOOD - just keep the number
-losses = []
-for batch in loader:
-    loss = criterion(model(batch), labels)
-    losses.append(loss.item())  # Just the Python float
-```
-
-**Memory Leak #2: Not Using no_grad() During Evaluation**
-
-```python
-# BAD - builds computation graph unnecessarily
-accuracy = (model(data).argmax(1) == labels).float().mean()
-
-# GOOD - no gradient tracking needed
-with torch.no_grad():
-    accuracy = (model(data).argmax(1) == labels).float().mean()
-```
-
-**Checking Memory**:
-
-```python
-print(f"Allocated: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
-print(f"Reserved: {torch.cuda.memory_reserved() / 1e9:.2f} GB")
-```
-
----
-
-## Part 6: Data Loading
-
-PyTorch's `DataLoader` handles batching, shuffling, and parallel loading.
-
-### Basic Usage
-
-```python
-from torch.utils.data import DataLoader, TensorDataset
-
-# Create a dataset from tensors
-X = torch.randn(1000, 784)
-y = torch.randint(0, 10, (1000,))
-dataset = TensorDataset(X, y)
-
-# Create a data loader
-loader = DataLoader(
-    dataset,
-    batch_size=32,       # Samples per batch
-    shuffle=True,        # Shuffle each epoch (for training)
-    num_workers=4,       # Parallel data loading processes
-    pin_memory=True      # Faster GPU transfer
-)
-
-# Iterate
-for batch_x, batch_y in loader:
-    print(batch_x.shape, batch_y.shape)  # [32, 784], [32]
-```
-
-### Built-in Datasets
-
-PyTorch provides standard datasets through `torchvision`:
-
-```python
-from torchvision import datasets, transforms
-
-# Define preprocessing
-transform = transforms.Compose([
-    transforms.ToTensor(),              # PIL Image → Tensor
-    transforms.Normalize((0.1307,), (0.3081,))  # MNIST mean/std
-])
-
-# Load MNIST
-train_data = datasets.MNIST('./data', train=True, download=True, transform=transform)
-test_data = datasets.MNIST('./data', train=False, download=True, transform=transform)
-
-# Create loaders
-train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
-test_loader = DataLoader(test_data, batch_size=1000)
-```
-
----
-
-## Part 7: Saving and Loading Models
-
-Always save your trained models!
-
-### Recommended: Save State Dict
-
-```python
-# Save just the weights (recommended)
-torch.save(model.state_dict(), 'model_weights.pth')
-
-# Load
-model = SimpleNetwork(784, 128, 10)  # Create architecture first
-model.load_state_dict(torch.load('model_weights.pth'))
-model.eval()  # Set to evaluation mode
-```
-
-### Checkpointing for Training
-
-For long training runs, save checkpoints to resume later:
-
-```python
-# Save checkpoint
-checkpoint = {
-    'epoch': epoch,
-    'model_state_dict': model.state_dict(),
-    'optimizer_state_dict': optimizer.state_dict(),
-    'loss': loss,
-}
-torch.save(checkpoint, 'checkpoint.pth')
-
-# Load checkpoint
-checkpoint = torch.load('checkpoint.pth')
-model.load_state_dict(checkpoint['model_state_dict'])
-optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-start_epoch = checkpoint['epoch']
-```
-
-### Did You Know? The .pth Security Risk
-
-PyTorch model files use Python's pickle format. **Pickle can execute arbitrary code when loading!**
-
-```python
-# This could run malicious code!
-model = torch.load('untrusted_model.pth')  # Dangerous!
-```
-
-Only load models from sources you trust. For sharing models publicly, consider the new `safetensors` format that can't execute code.
-
----
-
-## Part 8: PyTorch vs From-Scratch Comparison
-
-Let's appreciate how far we've come. Here's Module 26 versus PyTorch:
-
-### Module 26: Manual Backpropagation
-
-```python
-# Forward pass - tracking everything manually
-def forward(self, X):
-    self.cache = {'A0': X}
-    A = X
-    for l in range(1, len(self.layer_dims)):
-        Z = self.params[f'W{l}'] @ A + self.params[f'b{l}']
-        A = self.activation_fn(Z)
-        self.cache[f'A{l}'] = A
-    return A
-
-# Backward pass - chain rule by hand
-def backward(self, Y):
-    m = Y.shape[1]
-    dA = -(Y / self.cache[f'A{L}'])
-
-    for l in reversed(range(1, L + 1)):
-        dZ = dA * self.activation_derivative(self.cache[f'A{l}'])
-        self.grads[f'dW{l}'] = (1/m) * dZ @ self.cache[f'A{l-1}'].T
-        self.grads[f'db{l}'] = (1/m) * np.sum(dZ, axis=1, keepdims=True)
-        dA = self.params[f'W{l}'].T @ dZ
-```
-
-### PyTorch: Elegance
-
-```python
-class Network(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super().__init__()
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x):
-        x = F.relu(self.fc1(x))
-        return self.fc2(x)
-
-# Training - all the complexity hidden
-outputs = model(inputs)
-loss = criterion(outputs, labels)
-loss.backward()  # All gradients computed!
-optimizer.step()  # All weights updated!
-```
-
-**What PyTorch automates**:
-- Gradient computation for any architecture
-- Cache management
-- Numerical stability
-- GPU support
-- Optimizers
-- Data loading
-- Model serialization
-
----
-
-## Did You Know? The Future: torch.compile()
-
-PyTorch 2.x introduced something remarkable: `torch.compile()`.
-
-```python
-model = MyModel()
-model = torch.compile(model)  # That's it!
-```
-
-One line turns your dynamic, debuggable PyTorch model into an optimized, compiled version that runs 30-200% faster. The dynamic graph philosophy remains - you can still use Python control flow, print statements, debuggers - but get static-graph performance.
-
-This represents PyTorch's philosophy: make the right thing easy. Build your model the simple way, debug it, make sure it works. Then compile for production.
-
----
-
-##  Economics of PyTorch
-
-### Total Cost of Development
-
-PyTorch doesn't cost money to use, but the ecosystem has significant economic implications:
-
-**Development Time Comparison**:
-
-| Task | Manual NumPy | PyTorch | Savings |
-|------|-------------|---------|---------|
-| Simple MLP | several hours to a day | around an hour or two | Large time savings |
-| CNN for images | days of custom implementation work | hours with a mature framework | Large time savings |
-| LSTM/Transformer | substantially more engineering time from scratch | far less time with a mature framework | Large time savings |
-| Training loop | notably longer from scratch | much shorter with framework primitives | Large time savings |
-| GPU support | much more manual engineering work | often only minor code changes | Very large time savings |
-
-```mermaid
-graph LR
-    A[Task] --> B(Manual NumPy)
-    A --> C(PyTorch)
-    B --> D[Simple MLP: 1 day]
-    C --> E[Simple MLP: 1 hour]
-    D -.->|87% Savings| E
-    
-    B --> F[CNN for images: 3 days]
-    C --> G[CNN for images: 4 hours]
-    F -.->|83% Savings| G
-    
-    B --> H[Training loop: 2 hours]
-    C --> I[Training loop: 15 min]
-    H -.->|88% Savings| I
-    
-    B --> J[GPU support: 2 days]
-    C --> K[GPU support: 5 min]
-    J -.->|99% Savings| K
-```
-
-**At $150/hour senior engineer rate**:
-- Manual implementation: $2,400 for CNN
-- PyTorch implementation: $600 for CNN
-- **Savings: $1,800 per model**
-
-### The GPU Cost Reality
-
-Training neural networks requires GPUs. The economics are stark:
-
-| GPU | Purchase Cost | Cloud Cost (AWS) | Memory | Speed |
-|-----|--------------|------------------|--------|-------|
-| RTX 3090 | Consumer-GPU pricing varies on the secondary market | - | 24GB | Baseline reference |
-| A100 40GB | High datacenter-GPU purchase cost | Several dollars per hour in the cloud | 40GB | Significantly faster than consumer cards on many workloads |
-| A100 80GB | Very high datacenter-GPU purchase cost | Several dollars per hour in the cloud | 80GB | Higher throughput and memory headroom than smaller cards |
-| H100 | Very high datacenter-GPU purchase cost | Often several dollars per hour in the cloud | 80GB | Top-tier accelerator performance for many workloads |
-
-```mermaid
-graph TD
-    GPU[GPU Options] --> RTX[RTX 3090<br>Cost: $1,500<br>Mem: 24GB<br>Speed: 1x]
-    GPU --> A40[A100 40GB<br>Cost: $15,000 / $3.06 per hr<br>Mem: 40GB<br>Speed: 3x]
-    GPU --> A80[A100 80GB<br>Cost: $25,000 / $4.10 per hr<br>Mem: 80GB<br>Speed: 3.5x]
-    GPU --> H100[H100<br>Cost: $30,000+ / $5.50 per hr<br>Mem: 80GB<br>Speed: 5x]
-```
-
-**The crossover point**: Whether buying hardware beats renting depends heavily on the exact GPU, workload, utilization, and cloud price you compare against.
-
-### Industry Adoption Metrics (2024)
-
-| Framework | GitHub Stars | PyPI Downloads/Month | Job Postings |
-|-----------|-------------|---------------------|--------------|
-| PyTorch | ~100k GitHub stars | Large package ecosystem | Strong hiring demand |
-| TensorFlow | ~195k GitHub stars | Large package ecosystem | Still common in hiring and legacy deployments |
-| JAX | ~34k GitHub stars | Smaller but meaningful ecosystem | More specialized hiring footprint |
+The central training contract is compact: feed tensors into a registered model, compute a scalar loss, ask autograd for gradients, let an optimizer update registered parameters, and evaluate with behavior appropriate for inference. Most training bugs violate one part of that contract. The module therefore teaches PyTorch by repeatedly checking the contract rather than by listing API calls.
 
 ```mermaid
 flowchart LR
-    PyTorch[PyTorch<br>Stars: 85k+<br>PyPI: 25M+/mo<br>Jobs: 65%]
-    TF[TensorFlow<br>Stars: 180k+<br>PyPI: 15M+/mo<br>Jobs: 30%]
-    JAX[JAX<br>Stars: 30k+<br>PyPI: 3M+/mo<br>Jobs: 5%]
+    Data[Input tensors<br>shape dtype device] --> Model[nn.Module<br>registered parameters]
+    Model --> Logits[Raw predictions<br>logits or values]
+    Logits --> Loss[Scalar loss<br>task-specific objective]
+    Loss --> Backward[loss.backward<br>autograd gradients]
+    Backward --> Optimizer[optimizer.step<br>parameter update]
+    Optimizer --> Model
+    Model --> Eval[model.eval plus no_grad<br>validation behavior]
 ```
 
-**The trend**: PyTorch has become a dominant framework in modern AI research, while TensorFlow remains important in many production and legacy environments.
+| Training responsibility | Manual NumPy version | PyTorch version | Practitioner check |
+|---|---|---|---|
+| Store data in arrays | `np.ndarray` with manually managed shapes | `torch.Tensor` with shape, dtype, device, and gradient flags | Print `shape`, `dtype`, `device`, and `requires_grad` before blaming the model |
+| Track intermediate values | Custom caches inside forward functions | Dynamic computation graph built during tensor operations | Inspect whether tensors still have `grad_fn` when memory grows unexpectedly |
+| Compute gradients | Hand-written derivatives and chain-rule loops | `loss.backward()` over the recorded graph | Verify gradients are finite and reset at the intended time |
+| Update parameters | Manual subtraction using learning rate | `optimizer.step()` over registered parameters | Confirm `len(list(model.parameters()))` is not zero |
+| Move to accelerator | Separate GPU library or custom kernels | `.to(device)` on tensors and modules | Keep model, input tensors, and labels on the same device |
+| Save training state | Custom serialization of arrays and counters | `state_dict()` for model and optimizer | Save both model and optimizer when resuming training |
 
-### ROI of Learning PyTorch
+A PyTorch tensor can represent a scalar loss, a vector of class labels, a matrix of tabular features, a batch of images, or a sequence of token embeddings. The framework does not know the business meaning of those values. It only knows dimensions, numeric types, storage location, and the graph of operations that transform one tensor into another.
 
-**Career impact data** (from industry surveys):
-- PyTorch experience is often valued in machine-learning roles.
-- Time to become productive varies by prior Python, math, and ML experience.
-- Any career ROI estimate depends on your prior background, local market, and the role you target.
-
----
-
-##  Interview Preparation: PyTorch
-
-### Common Interview Questions
-
-**Q1: "What is automatic differentiation and how does PyTorch implement it?"**
-
-**Strong Answer**: "Automatic differentiation computes gradients by recording operations on tensors and building a computational graph. PyTorch uses reverse-mode autodiff—when you call .backward() on a loss, it traverses the graph backwards applying the chain rule at each node. This is more efficient than numerical differentiation (which requires many forward passes) and less error-prone than symbolic differentiation. In PyTorch, tensors with requires_grad=True track their operations. Each operation creates a grad_fn that knows how to compute its gradient. The graph is dynamic—rebuilt each forward pass—which enables Python control flow like if statements and loops."
-
-**Q2: "Explain the difference between .detach(), .data, and torch.no_grad()."**
-
-**Strong Answer**: ".detach() creates a new tensor that shares storage but doesn't track gradients—it's a safe way to stop gradient flow. torch.no_grad() is a context manager that temporarily disables gradient computation for all operations—used during inference for speed and memory savings. .data is legacy and dangerous—it accesses the underlying tensor but can cause silent gradient errors. Modern code should use .detach() for new tensors and torch.no_grad() for inference blocks. In evaluation, always use model.eval() with torch.no_grad()."
-
-**Q3: "Why do we call optimizer.zero_grad() before backward()?"**
-
-**Strong Answer**: "PyTorch accumulates gradients by default—calling backward() adds to existing .grad values rather than replacing them. This is useful for gradient accumulation when you want to simulate larger batches than fit in memory. But usually, you want fresh gradients each step, so you zero them first. The typical training loop is: zero_grad → forward → loss → backward → step. Forgetting zero_grad leads to exploding gradients and incorrect updates. Some teams use model.zero_grad() instead, but optimizer.zero_grad() is preferred when using multiple optimizers or gradient accumulation."
-
-**Q4: "How would you debug a neural network that's not converging?"**
-
-**Strong Answer**: "Systematic debugging approach: First, check the data—visualize inputs, verify labels are correct, ensure proper normalization. Second, check the loss—is it NaN or constant? NaN means gradient explosion (reduce learning rate, add gradient clipping). Constant means gradients aren't flowing (check activation functions, initialization). Third, overfit on one batch—if you can't memorize a single batch, the model architecture or training code is broken. Fourth, check gradient flow—print gradient norms per layer. Vanishing gradients suggest ReLU dying or bad initialization. Fifth, try a known-good hyperparameter set before experimenting. The debugging motto: start simple, verify each component, add complexity gradually."
-
-**Q5: "What's the difference between nn.Module attributes and regular Python attributes?"**
-
-**Strong Answer**: "PyTorch's nn.Module performs automatic registration. If you assign an nn.Module as an attribute (self.layer = nn.Linear()), it's registered as a submodule—it appears in .parameters(), moves with .to(device), and saves with state_dict(). Regular Python attributes don't get this treatment. There's also nn.Parameter for custom trainable tensors and nn.Buffer for non-trainable state (like batch norm running averages). A common bug: storing layers in a Python list instead of nn.ModuleList—the layers won't be registered and won't train. Always use nn.ModuleList or nn.ModuleDict for dynamic layer collections."
-
-### System Design Question
-
-**Q: "Design a PyTorch training pipeline for a large dataset that doesn't fit in memory."**
-
-**Strong Answer Structure**:
-
-1. **DataLoader with num_workers**: "Use multiple worker processes to load and preprocess data in parallel. Set num_workers=4-8 typically. Enable pin_memory=True for faster GPU transfer."
-
-2. **Memory-mapped datasets**: "For huge files, use memory-mapped arrays (np.memmap) or streaming formats (WebDataset, TFDS). Load samples lazily on access."
-
-3. **Gradient accumulation**: "For effective batch sizes larger than GPU memory allows, accumulate gradients over N steps before calling optimizer.step()."
-
-4. **Mixed precision training**: "Use torch.cuda.amp.autocast() for automatic fp16 where safe. Halves memory usage, doubles throughput on modern GPUs."
-
-5. **Checkpointing**: "Save regularly. For very long runs, use torch.utils.checkpoint to trade compute for memory—recompute activations during backward."
-
-6. **Distributed training**: "For multiple GPUs, use DistributedDataParallel (DDP), not DataParallel. DDP is faster and scales better."
-
----
-
-## Did You Know? PyTorch in Production
-
-### The Production Journey
-
-PyTorch started as a research framework but has matured for production:
-
-**Timeline of Production Features**:
-- **2019**: TorchScript for model export
-- **2020**: TorchServe for serving models
-- **2021**: Mobile support (iOS, Android)
-- **2022**: torch.compile() for performance
-- **2023**: ExecuTorch for edge devices
-
-**Who Uses PyTorch in Production?**:
-- **Tesla**: Self-driving neural networks
-- **Meta**: Instagram recommendations, content moderation
-- **Microsoft**: Bing search ranking, Azure AI services
-- **OpenAI**: GPT models (pre-training and fine-tuning)
-- **Stability AI**: Stable Diffusion
-
-### The ONNX Escape Hatch
-
-Models trained in PyTorch can run anywhere via ONNX (Open Neural Network Exchange):
-
-```python
-# Export to ONNX
-dummy_input = torch.randn(1, 3, 224, 224)
-torch.onnx.export(model, dummy_input, "model.onnx")
-
-# Run in ONNX Runtime (optimized for production)
-import onnxruntime as ort
-session = ort.InferenceSession("model.onnx")
-output = session.run(None, {"input": numpy_input})
+```mermaid
+graph TD
+    A[0D scalar<br>single loss value<br>shape: empty] --> B[1D vector<br>class labels or features<br>shape: batch]
+    B --> C[2D matrix<br>tabular batch<br>shape: batch x features]
+    C --> D[3D tensor<br>single image with channels<br>shape: channels x height x width]
+    D --> E[4D tensor<br>image batch<br>shape: batch x channels x height x width]
+    E --> F[5D tensor<br>video batch<br>shape: batch x frames x channels x height x width]
 ```
 
-ONNX models can run on:
-- C++ applications (no Python dependency)
-- Mobile devices (iOS, Android)
-- Web browsers (ONNX.js)
-- Hardware accelerators (custom chips)
+| Tensor rank | Common name | Example training object | Typical shape | Failure to watch for |
+|---|---|---|---|---|
+| 0 | Scalar | Loss value after reduction | `[]` | Calling `backward()` on a non-scalar without supplying a gradient |
+| 1 | Vector | Class labels for a batch | `[batch]` | Passing one-hot labels to `CrossEntropyLoss` when it expects class indices |
+| 2 | Matrix | Tabular features or flattened images | `[batch, features]` | Accidentally transposing batch and feature dimensions |
+| 3 | Tensor | One color image | `[channels, height, width]` | Mixing channel-first PyTorch format with channel-last image libraries |
+| 4 | Batch tensor | Batch of color images | `[batch, channels, height, width]` | Forgetting to flatten before a fully connected network |
+| 5 | Sequence batch | Batch of short video clips | `[batch, frames, channels, height, width]` | Applying image-only layers without deciding how time should be handled |
 
----
-
-## Real-World Failures: Zillow and the Gradient Explosion
-
-Similarly, consider the "Million-Dollar Gradient Explosion" incident.
-
-**San Francisco. November 2021. 3:47 AM.**
-
-In production systems, training or retraining bugs can surface as sudden prediction failures that disrupt downstream business workflows.
-
-The senior engineer's first thought was a data pipeline bug. But the data looked fine. The model architecture hadn't changed. The weights... wait. The weights were all NaN.
-
-After four frantic hours, they found it: someone had "optimized" the training script by removing `optimizer.zero_grad()`. In production, they were running periodic retraining, and without zeroing gradients, they accumulated over 10,000 backward passes. The gradients exploded to infinity, then became NaN, and those NaNs propagated to the entire model.
-
-**The fix can be small, but the operational impact of a training bug can still be severe.**
-
-> "The most expensive bugs are the ones in code that seems too simple to be wrong."
-> General operational lesson.
-
-**The lesson**: PyTorch's gradient accumulation is a feature, not a bug. But forgetting that feature in production can be catastrophic. Usually include `optimizer.zero_grad()` in your training loops unless you're intentionally accumulating gradients, and add assertions that catch NaN values before they propagate.
-
----
-
-##  Common Mistakes and How to Avoid Them
-
-| Mistake | Why It Destroys Performance | Fix |
-|---------|-----------------------------|-----|
-| Forgetting `model.eval()` | Leaves Dropout active and applies batch-specific BatchNorm statistics during inference, creating massive prediction degradation. | Call `model.eval()` before validation loops and `model.train()` when returning to training. |
-| In-Place Tensor Operations | Modifying tensors with trailing underscore functions destroys intermediate mathematical values Autograd needs for backpropagation calculation. | Utilize out-of-place operations exclusively when dealing with graph-tracked tensors. |
-| The Wrong Loss Objective | Using `MSELoss` for categorical classification tasks is mathematically unstable as it assumes continuous targets. | Enforce `CrossEntropyLoss` for discrete class categorizations. |
-| Hardware Device Mismatch | Computations cannot traverse the PCIe bus automatically. Weight tensors on GPU and input tensors on CPU will critically crash the environment. | Explicitly apply `.to(device)` checks against all inputs prior to triggering model inferences. |
-| Raw Python Layer Lists | Utilizing standard lists causes `nn.Module` to ignore internal layer parameters, removing them entirely from optimization scope. | Register sequentially indexed dynamic layers exclusively via PyTorch's `nn.ModuleList`. |
-| Ignoring Gradient Resets | Gradients accumulate endlessly. Failing to zero them results in an explosive combination of all historical graph operations, usually generating immediate NaNs. | Declare `optimizer.zero_grad()` before each training step unless you're intentionally accumulating gradients. |
-| Caching Entire Graphs | Appending full tensor logs inside reporting arrays leaks massive VRAM footprint trees over epochs. | Append `loss.item()` to retrieve standard disconnected scalars instead of active tensor elements. |
-| Double Softmaxing Outputs | PyTorch's `CrossEntropyLoss` function automatically applies the softmax distribution. Calling it explicitly creates log-space instability. | Return raw, unnormalized logits straight out of the network's terminal layer. |
-
-### Mistake #1: Forgetting to Call model.eval()
-
-```python
-#  WRONG - dropout and batchnorm are still in training mode!
-model.load_state_dict(torch.load('model.pth'))
-predictions = model(test_data)  # Results will be wrong!
-
-#  CORRECT - always switch to eval mode for inference
-model.load_state_dict(torch.load('model.pth'))
-model.eval()  # Critical!
-with torch.no_grad():
-    predictions = model(test_data)
-```
-
-**Why it matters**: Dropout randomly zeroes 50% of neurons during training. If you forget `.eval()`, you're making predictions with half your model disabled. BatchNorm uses running statistics differently between modes.
-
-### Mistake #2: In-Place Operations Breaking Autograd
-
-```python
-#  WRONG - in-place operations can break gradient computation
-x = torch.tensor([1.0, 2.0], requires_grad=True)
-y = x.relu_()  # In-place operation (notice the underscore)
-z = y.sum()
-z.backward()  # RuntimeError: gradient computation requires non-inplace operations
-
-#  CORRECT - use out-of-place operations
-x = torch.tensor([1.0, 2.0], requires_grad=True)
-y = x.relu()  # Out-of-place (returns new tensor)
-z = y.sum()
-z.backward()  # Works!
-print(x.grad)  # tensor([1., 1.])
-```
-
-**The rule**: Operations ending with `_` modify tensors in-place and can break gradient tracking. Avoid them on tensors that need gradients.
-
-### Mistake #3: Wrong Loss Function for Task
-
-```python
-#  WRONG - MSELoss for classification
-criterion = nn.MSELoss()
-loss = criterion(outputs, labels.float())  # Numerically unstable!
-
-#  CORRECT - CrossEntropyLoss for classification
-criterion = nn.CrossEntropyLoss()
-loss = criterion(outputs, labels)  # Proper log-softmax handling
-```
-
-### Mistake #4: Sending Model and Data to Different Devices
-
-```python
-#  WRONG - model on GPU, data on CPU
-model = Model().cuda()
-data = torch.randn(32, 784)  # On CPU by default!
-output = model(data)  # RuntimeError: Input and parameter tensors are not on the same device
-
-#  CORRECT - ensure everything is on the same device
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = Model().to(device)
-data = torch.randn(32, 784).to(device)
-output = model(data)  # Works!
-```
-
-### Mistake #5: Using Python Lists Instead of ModuleList
-
-```python
-#  WRONG - layers won't be registered as parameters!
-class BadModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layers = [nn.Linear(10, 10) for _ in range(5)]  # Python list
-
-# Check registered parameters:
-model = BadModel()
-print(list(model.parameters()))  # Empty! Layers aren't registered!
-
-#  CORRECT - use nn.ModuleList
-class GoodModel(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layers = nn.ModuleList([nn.Linear(10, 10) for _ in range(5)])
-
-model = GoodModel()
-print(len(list(model.parameters())))  # 10 (5 weights + 5 biases)
-```
-
----
-
-## The Orchestra Conductor Analogy
-
-Think of PyTorch like an **orchestra conductor**:
-
-**Without PyTorch (Manual Backprop)**: You're not just conducting—you're simultaneously playing every instrument. You have to track every note (forward pass), compute how each instrument should adjust (gradients), and remember the exact moment each note was played (caches). Exhausting and error-prone.
-
-**With PyTorch**: You're a conductor with a magical sheet music. You just wave your baton (call `loss.backward()`), and every musician instantly knows exactly how to adjust. The sheet music (computational graph) records everything automatically. You focus on the music (model architecture), not the mechanics.
-
-**With torch.compile()**: Now you have an AI assistant analyzing your conducting patterns and pre-positioning the musicians for optimal performance. Same music, 30-200% faster.
-
-This is why PyTorch transformed deep learning research: researchers could finally focus on the science instead of the plumbing.
-
----
-
-## Hands-On Exercise: Procedural Mastery
-
-In this lab, you will progressively build, debug, and accelerate functional PyTorch workflows from start to finish.
-
-### Step 1: Environment Preparation
-Create your workspace and install PyTorch natively:
-1. `mkdir pytorch-lab && cd pytorch-lab`
-2. `python3 -m venv venv`
-3. `source venv/bin/activate`
-4. `pip install torch torchvision numpy`
-
-**Checkpoint Verification**:
-Run `python3 -c "import torch; print(torch.__version__)"` to confirm PyTorch installed successfully.
-
-### Step 2: Gradient Exploration
-Create a file named `explore_gradients.py` and paste the following baseline code exactly:
-
-```python
-# Create tensors and compute gradients
-import torch
-x = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
-
-# Try different operations and predict gradients before running:
-# 1. y = x.sum() - what's x.grad?
-# 2. y = (x ** 2).sum() - what's x.grad?
-# 3. y = x.mean() - what's x.grad?
-# 4. y = x.max() - what's x.grad? (hint: sparse!)
-
-# Verify your predictions with backward() and print x.grad
-```
-
-**Action**: Add the backward calls independently, ensure you zero out the gradients (`x.grad.zero_()`) between tests, and print the gradients.
-
-**Checkpoint Verification**:
-Run `python explore_gradients.py` and ensure it executes without errors and prints the correct gradients. 
-
-<details>
-<summary><strong>View Solution</strong></summary>
+The first debugging habit is to print tensor metadata before reading stack traces too deeply. Shape errors often look mysterious because the failing operation reports only the immediate mismatch, not the upstream decision that created it. When the network expects `[batch, 784]` and receives `[batch, 1, 28, 28]`, the fix is not inside the optimizer; it belongs at the boundary between the data loader and the model.
 
 ```python
 import torch
-x = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
 
-# 1. Sum
-y1 = x.sum()
-y1.backward()
-print("Sum grad:", x.grad) # tensor([1., 1., 1.])
-x.grad.zero_()
+images = torch.randn(64, 1, 28, 28)
+labels = torch.randint(0, 10, (64,))
 
-# 2. Squared Sum
-y2 = (x ** 2).sum()
-y2.backward()
-print("Squared grad:", x.grad) # tensor([2., 4., 6.])
-x.grad.zero_()
+print("images:", images.shape, images.dtype, images.device, images.requires_grad)
+print("labels:", labels.shape, labels.dtype, labels.device, labels.requires_grad)
 
-# 3. Mean
-y3 = x.mean()
-y3.backward()
-print("Mean grad:", x.grad) # tensor([0.3333, 0.3333, 0.3333])
-x.grad.zero_()
-
-# 4. Max
-y4 = x.max()
-y4.backward()
-print("Max grad:", x.grad) # tensor([0., 0., 1.])
+flattened = images.view(images.size(0), -1)
+print("flattened:", flattened.shape)
 ```
-</details>
 
-### Step 3: Build the MNIST Classifier
-Create a file named `train_mnist.py`. Paste the following exact configuration payload:
+Active learning prompt: before running the snippet above, predict the shape of `flattened` and identify which dimension represents the batch. If your answer does not preserve the batch dimension, the model may still run for a single example but fail when real batches arrive.
+
+PyTorch and NumPy can share memory when tensors are created with `torch.from_numpy`. That sharing is efficient, but it can surprise you when preprocessing code mutates the original array after creating the tensor. In training code, accidental mutation is especially costly because a model may appear nondeterministic even though the randomness comes from shared storage.
 
 ```python
-# Requirements:
-# - 2-3 hidden layers
-# - Dropout for regularization
-# - Adam optimizer
-# - CrossEntropyLoss
-# - Training and validation loop
-# - Achieve >98% accuracy
+import numpy as np
+import torch
 
-# Starter code:
+array = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+tensor = torch.from_numpy(array)
+
+array[0] = 99.0
+print(tensor)
+
+safe_copy = torch.tensor(array)
+array[1] = -5.0
+print("shared:", tensor)
+print("copied:", safe_copy)
+```
+
+Dtype choices also shape the training result. Floating-point tensors are used for model inputs, activations, weights, and losses because gradients require continuous values. Integer tensors are used for indices and class labels because classification losses such as `CrossEntropyLoss` expect each target to name a class, not a floating-point score.
+
+| Dtype | Typical use | Why it matters | Common mistake |
+|---|---|---|---|
+| `torch.float32` | Default model weights, activations, and losses | Good balance of precision and hardware support | Converting labels to float for a classification loss that expects integer indices |
+| `torch.float16` | Mixed-precision training on compatible GPUs | Lower memory use and faster tensor cores when used carefully | Running unstable operations in half precision without automatic scaling |
+| `torch.bfloat16` | Mixed precision on supported accelerators | Wider exponent range than float16 can reduce overflow risk | Assuming every GPU supports it equally well |
+| `torch.long` | Class labels and embedding indices | Many PyTorch indexing operations require 64-bit integer labels | One-hot encoding labels before passing them to `CrossEntropyLoss` |
+| `torch.uint8` | Raw image bytes before conversion | Efficient storage for images in the range 0 to 255 | Training directly on byte images without converting and normalizing |
+
+The second debugging habit is to treat device placement as part of the tensor's type. A CPU tensor and a CUDA tensor are not interchangeable, even if their shapes match. PyTorch will not secretly copy data across the PCIe bus inside a model call because that would hide expensive operations and create unpredictable performance.
+
+```python
+import torch
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+features = torch.randn(32, 128, device=device)
+weights = torch.randn(128, 10, device=device)
+logits = features @ weights
+
+print(logits.shape, logits.device)
+```
+
+When you create new tensors inside `forward`, use the incoming tensor's device or a registered buffer instead of assuming CPU. This matters in production because a script that works on a laptop can crash immediately when the same model moves to GPU. The pattern `torch.zeros_like(x)` is often safer than `torch.zeros(...)` because it inherits shape, dtype, and device from the tensor already flowing through the model.
+
+```python
+import torch
+
+x = torch.randn(8, 16)
+mask = torch.zeros_like(x)
+print(mask.shape, mask.dtype, mask.device)
+```
+
+### 2. Autograd: Turning Computation into Gradients
+
+Autograd is PyTorch's automatic differentiation system, and its core idea is simple enough to test with small tensors. When a tensor has `requires_grad=True`, PyTorch records operations that produce new tensors from it. When you call `backward()` on a scalar result, PyTorch walks that graph backward and accumulates partial derivatives into each leaf tensor's `.grad` field.
+
+```ascii
++-------------------+       +-------------------+       +-------------------+
+| x requires_grad   | ----> | y = x * x         | ----> | loss = y.sum()    |
+| leaf tensor       |       | recorded op       |       | scalar output     |
++-------------------+       +-------------------+       +-------------------+
+          ^                                                       |
+          |                                                       |
+          +---------------- gradients via backward ---------------+
+```
+
+The word "accumulates" is the detail that turns into real incidents. PyTorch adds new gradients to existing `.grad` values because some advanced training strategies intentionally combine gradients across multiple micro-batches. In ordinary training loops, you must clear old gradients before computing new ones, or each update is based on the current batch plus leftover information from previous batches.
+
+```python
+import torch
+
+x = torch.tensor([2.0], requires_grad=True)
+
+y = x * 3
+y.backward()
+print("after first backward:", x.grad.item())
+
+y = x * 5
+y.backward()
+print("after second backward:", x.grad.item())
+
+x.grad.zero_()
+y = x * 7
+y.backward()
+print("after reset:", x.grad.item())
+```
+
+Worked example: suppose a model starts with stable loss and then produces `NaN` after several hundred batches. A rushed engineer might blame the dataset or the learning rate. A more reliable investigation first checks whether the training loop calls `optimizer.zero_grad()` before `loss.backward()`, because missing that line causes gradient values to combine across all previous batches.
+
+```python
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
 
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.1307,), (0.3081,))
-])
+model = nn.Linear(4, 2)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(model.parameters(), lr=0.1)
 
-train_data = datasets.MNIST('./data', train=True, download=True, transform=transform)
-# ... complete the implementation
+x = torch.randn(16, 4)
+y = torch.randint(0, 2, (16,))
+
+for step in range(3):
+    optimizer.zero_grad()
+    logits = model(x)
+    loss = criterion(logits, y)
+    loss.backward()
+
+    total_grad_norm = 0.0
+    for parameter in model.parameters():
+        total_grad_norm += parameter.grad.detach().norm().item()
+
+    optimizer.step()
+    print(f"step={step} loss={loss.item():.4f} grad_norm={total_grad_norm:.4f}")
 ```
 
-**Action**: Replace the comment with a full `nn.Module` class definition containing two dense layers. Instantiate your loss criterion and optimizer. Write a full `num_epochs` iteration loop implementing the core 5-step sequence (Zero, Forward, Loss, Backward, Step).
+This worked example demonstrates the healthy sequence: zero stale gradients, run the forward pass, compute a scalar loss, backpropagate, inspect gradients if needed, and only then update parameters. If the gradient norm is infinite, `NaN`, or wildly larger than expected, you have evidence before the optimizer changes the weights. That evidence is more useful than a final failed accuracy number because it points to the exact phase where training broke.
 
-**Checkpoint Verification**:
-Run `python train_mnist.py`. It will download the MNIST dataset and begin training. Verify that the loss decreases with each batch.
+Active learning prompt: remove `optimizer.zero_grad()` in a temporary copy of the script and predict what will happen to the printed gradient norm over repeated steps. Do not focus only on whether the script crashes; focus on whether the update represents one batch or a hidden mixture of many batches.
 
-<details>
-<summary><strong>View Solution</strong></summary>
+Autograd records graphs dynamically, which means Python control flow works naturally. An `if` branch, a loop, or a conditional model path can produce a different graph on each forward pass. That flexibility made PyTorch popular for research, but it also means the graph lives only as long as the tensors that reference it.
 
 ```python
-# Complete implementation
-class Net(nn.Module):
-    def __init__(self):
+import torch
+
+def piecewise_loss(x):
+    if x.mean().item() > 0:
+        return (x ** 2).mean()
+    return (x.abs()).mean()
+
+x = torch.randn(10, requires_grad=True)
+loss = piecewise_loss(x)
+loss.backward()
+
+print("loss:", loss.item())
+print("gradient available:", x.grad is not None)
+```
+
+Detaching is how you intentionally stop a value from participating in gradient computation. Metrics, logs, visualizations, and cached predictions usually should not preserve the graph. If you append a loss tensor to a Python list every batch, you keep the graph alive and memory grows with training history; if you append `loss.item()`, you keep only a plain Python number.
+
+```python
+import torch
+
+loss_history = []
+
+x = torch.randn(4, requires_grad=True)
+loss = (x ** 2).mean()
+
+loss_history.append(loss.item())
+metric_tensor = loss.detach()
+
+print(type(loss_history[0]))
+print(metric_tensor.requires_grad)
+```
+
+`torch.no_grad()` is the larger boundary you use around inference or validation. It tells PyTorch not to build graphs for the operations inside the block, saving memory and compute. It does not change dropout or batch normalization behavior; that is the job of `model.eval()`, which you will use with `no_grad()` during validation.
+
+```python
+import torch
+import torch.nn as nn
+
+model = nn.Sequential(nn.Linear(4, 8), nn.ReLU(), nn.Linear(8, 2))
+x = torch.randn(5, 4)
+
+model.eval()
+with torch.no_grad():
+    logits = model(x)
+    predictions = logits.argmax(dim=1)
+
+print(predictions)
+```
+
+| Situation | Use gradient tracking? | Use `model.train()`? | Use `model.eval()`? | Reason |
+|---|---|---|---|---|
+| Training a batch | Yes | Yes | No | Need gradients and training behavior for dropout or batch normalization |
+| Validating accuracy | No | No | Yes | Need deterministic inference behavior without graph allocation |
+| Logging scalar loss | No after extraction | Usually still training | No | Store `loss.item()` rather than the graph-backed tensor |
+| Freezing a pretrained encoder | Usually no for frozen part | Depends on full model | Depends on phase | Prevent unnecessary gradients through frozen parameters |
+| Computing adversarial examples | Yes for inputs | Often eval | Often yes | Need input gradients while keeping inference behavior stable |
+| Exporting predictions | No | No | Yes | Production inference should be deterministic and memory efficient |
+
+### 3. Building Models with `nn.Module`
+
+`nn.Module` is the foundation for trainable PyTorch models because it provides registration. Registration means PyTorch knows which tensors are parameters, which nested modules belong to the model, which buffers should move with the model, and which values belong in a checkpoint. A model that computes correct numbers but fails to register parameters will not train because the optimizer has nothing to update.
+
+```python
+import torch
+import torch.nn as nn
+
+class DigitClassifier(nn.Module):
+    def __init__(self, input_features=784, hidden_features=128, classes=10):
         super().__init__()
-        self.fc1 = nn.Linear(784, 128)
-        self.dropout = nn.Dropout(0.2)
-        self.fc2 = nn.Linear(128, 10)
-        self.relu = nn.ReLU()
-        
+        self.fc1 = nn.Linear(input_features, hidden_features)
+        self.activation = nn.ReLU()
+        self.dropout = nn.Dropout(p=0.2)
+        self.fc2 = nn.Linear(hidden_features, classes)
+
     def forward(self, x):
-        x = x.view(-1, 784) # Flatten image
+        x = x.view(x.size(0), -1)
         x = self.fc1(x)
-        x = self.relu(x)
+        x = self.activation(x)
         x = self.dropout(x)
         x = self.fc2(x)
         return x
 
-model = Net()
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
-
-model.train()
-for epoch in range(1): # Reduced for quick testing
-    for batch_idx, (data, labels) in enumerate(train_loader):
-        optimizer.zero_grad()
-        outputs = model(data)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-        if batch_idx % 100 == 0:
-            print(f'Batch {batch_idx}, Loss: {loss.item():.4f}')
+model = DigitClassifier()
+print(model)
+print("parameter tensors:", len(list(model.parameters())))
 ```
-</details>
 
-### Step 4: GPU Benchmarking
-Create a file named `benchmark_gpu.py` containing the following framework code:
+The `super().__init__()` line initializes the machinery that makes registration work. Assigning `self.fc1 = nn.Linear(...)` after that call registers `fc1` as a submodule. If you omit the parent initializer or hide layers inside a plain Python list, the model may still run a forward pass, but optimizer construction can fail or silently exclude layers.
+
+```python
+import torch.nn as nn
+
+class RegisteredStack(nn.Module):
+    def __init__(self, width=32, depth=3):
+        super().__init__()
+        self.layers = nn.ModuleList(
+            [nn.Linear(width, width) for _ in range(depth)]
+        )
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x).relu()
+        return x
+```
+
+A `ModuleList` is not a stylistic preference; it is the difference between trainable layers and ordinary Python objects. PyTorch recursively searches registered modules when you call `model.parameters()`, `model.to(device)`, `model.state_dict()`, and `model.eval()`. Layers in a regular list are invisible to those recursive operations.
+
+| Container pattern | Registered as trainable? | Moves with `.to(device)`? | Saved in `state_dict()`? | Appropriate use |
+|---|---|---|---|---|
+| `self.layer = nn.Linear(...)` | Yes | Yes | Yes | Fixed layer known during initialization |
+| `self.layers = nn.ModuleList([...])` | Yes | Yes | Yes | Dynamic number of layers iterated in `forward` |
+| `self.blocks = nn.ModuleDict({...})` | Yes | Yes | Yes | Named dynamic branches or configurable stacks |
+| `self.layers = [nn.Linear(...)]` | No | No | No | Avoid for trainable modules |
+| `self.scale = nn.Parameter(...)` | Yes | Yes | Yes | Custom trainable tensor not wrapped by a layer |
+| `self.register_buffer("mean", tensor)` | No optimizer update | Yes | Yes | Non-trainable state such as normalization statistics |
+
+Model output should match the loss function's expectations. For multi-class classification, `nn.CrossEntropyLoss` expects raw logits with shape `[batch, classes]` and labels with shape `[batch]` containing integer class indices. It applies log-softmax internally, so adding a final softmax layer before the loss weakens numerical stability and changes the gradient path.
+
+```python
+import torch
+import torch.nn as nn
+
+logits = torch.randn(32, 10)
+labels = torch.randint(0, 10, (32,))
+
+criterion = nn.CrossEntropyLoss()
+loss = criterion(logits, labels)
+
+print(loss.item())
+```
+
+For regression, the model usually outputs continuous values and the target tensor has a compatible floating-point shape. The loss function encodes what "wrong" means: squared error heavily penalizes large deviations, while absolute error is more robust to outliers. The right choice depends on the business cost of different errors, not on which loss appears first in a tutorial.
+
+| Task type | Model output | Target format | Common loss | Decision cue |
+|---|---|---|---|---|
+| Multi-class classification | Raw logits `[batch, classes]` | Integer labels `[batch]` | `nn.CrossEntropyLoss` | Exactly one class is correct for each example |
+| Binary classification with one output | Logit `[batch, 1]` or `[batch]` | Float labels with zeros and ones | `nn.BCEWithLogitsLoss` | Each example has a yes-or-no target |
+| Multi-label classification | Logits `[batch, labels]` | Float matrix of zeros and ones | `nn.BCEWithLogitsLoss` | Several labels may be true at once |
+| Regression | Continuous values | Continuous target values | `nn.MSELoss` or `nn.L1Loss` | Distance between numeric values matters |
+| Ranking or metric learning | Embeddings or scores | Pairwise or triplet structure | Margin or contrastive loss | Relative ordering matters more than absolute class |
+
+Active learning prompt: a teammate builds a two-class classifier with `nn.MSELoss` because there are only two classes. Predict two symptoms you might observe during training, then identify which target format and loss function would better match the task.
+
+Model inspection is not optional in professional work. Before running a long job, print the architecture, count parameters, and confirm that every expected layer appears in the parameter list. This catches missing `super().__init__()`, plain-list layers, and mismatched dimensions before expensive GPU time is wasted.
+
+```python
+import torch
+import torch.nn as nn
+
+model = DigitClassifier()
+total_parameters = sum(parameter.numel() for parameter in model.parameters())
+
+for name, parameter in model.named_parameters():
+    print(f"{name}: shape={tuple(parameter.shape)} trainable={parameter.requires_grad}")
+
+print(f"total parameters: {total_parameters}")
+```
+
+```mermaid
+flowchart TD
+    Input[Batch of images<br>64 x 1 x 28 x 28] --> Flatten[Flatten inside forward<br>64 x 784]
+    Flatten --> FC1[Linear 784 to 128<br>registered weights and bias]
+    FC1 --> Relu[ReLU activation<br>nonlinear transform]
+    Relu --> Dropout[Dropout during train<br>disabled during eval]
+    Dropout --> FC2[Linear 128 to 10<br>class logits]
+    FC2 --> Loss[CrossEntropyLoss<br>compares logits to labels]
+```
+
+`nn.Sequential` is useful when a model is a straight pipeline with no branching, reused outputs, or conditional logic. A custom class is better when you need named intermediate values, skip connections, multiple inputs, multiple outputs, or richer validation in `forward`. Senior engineers tend to choose the simplest structure that still makes debugging clear.
+
+```python
+import torch.nn as nn
+
+prototype = nn.Sequential(
+    nn.Flatten(),
+    nn.Linear(784, 128),
+    nn.ReLU(),
+    nn.Dropout(0.2),
+    nn.Linear(128, 10),
+)
+```
+
+### 4. Training, Validation, and Checkpointing Loops
+
+A training loop is a control system that repeatedly measures error and changes parameters. The five core steps are stable across many architectures: clear gradients, run the model, compute loss, backpropagate, and update. The surrounding details decide whether the loop is trustworthy: data shuffling, device movement, validation mode, checkpointing, metric logging, and failure checks.
+
+```mermaid
+flowchart TD
+    Start[Start epoch] --> TrainMode[model.train]
+    TrainMode --> Batch[Load batch]
+    Batch --> Device[Move data and labels to device]
+    Device --> Zero[optimizer.zero_grad]
+    Zero --> Forward[Forward pass]
+    Forward --> Loss[Compute loss]
+    Loss --> Backward[loss.backward]
+    Backward --> Step[optimizer.step]
+    Step --> More{More batches?}
+    More -- yes --> Batch
+    More -- no --> EvalMode[model.eval]
+    EvalMode --> NoGrad[Validation inside no_grad]
+    NoGrad --> Checkpoint[Save checkpoint if metric improves]
+```
+
+The following script is intentionally small but complete enough to run when PyTorch and TorchVision are installed. It uses MNIST because the dataset is familiar, downloads automatically, and trains quickly on CPU. The goal is not to chase leaderboard accuracy; the goal is to practice a loop whose mechanics can be transferred to larger projects.
+
+```python
+import random
+from pathlib import Path
+
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+
+
+class DigitClassifier(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.network = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(784, 128),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(128, 10),
+        )
+
+    def forward(self, x):
+        return self.network(x)
+
+
+def set_seed(seed=13):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def accuracy_from_logits(logits, labels):
+    predictions = logits.argmax(dim=1)
+    return (predictions == labels).float().mean().item()
+
+
+def main():
+    set_seed()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    data_dir = Path("data")
+
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize((0.1307,), (0.3081,)),
+        ]
+    )
+
+    train_data = datasets.MNIST(data_dir, train=True, download=True, transform=transform)
+    test_data = datasets.MNIST(data_dir, train=False, download=True, transform=transform)
+
+    train_loader = DataLoader(train_data, batch_size=128, shuffle=True)
+    test_loader = DataLoader(test_data, batch_size=512)
+
+    model = DigitClassifier().to(device)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+    best_accuracy = 0.0
+    checkpoint_path = Path("mnist-checkpoint.pt")
+
+    for epoch in range(3):
+        model.train()
+        running_loss = 0.0
+
+        for batch_index, (features, labels) in enumerate(train_loader):
+            features = features.to(device)
+            labels = labels.to(device)
+
+            optimizer.zero_grad()
+            logits = model(features)
+            loss = criterion(logits, labels)
+
+            if not torch.isfinite(loss):
+                raise RuntimeError(f"non-finite loss at epoch {epoch}, batch {batch_index}")
+
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+
+        model.eval()
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for features, labels in test_loader:
+                features = features.to(device)
+                labels = labels.to(device)
+
+                logits = model(features)
+                predictions = logits.argmax(dim=1)
+                correct += (predictions == labels).sum().item()
+                total += labels.numel()
+
+        validation_accuracy = correct / total
+        average_loss = running_loss / len(train_loader)
+
+        print(
+            f"epoch={epoch} "
+            f"train_loss={average_loss:.4f} "
+            f"validation_accuracy={validation_accuracy:.4f}"
+        )
+
+        if validation_accuracy > best_accuracy:
+            best_accuracy = validation_accuracy
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "validation_accuracy": validation_accuracy,
+                },
+                checkpoint_path,
+            )
+
+    print(f"best validation accuracy: {best_accuracy:.4f}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Each line in the loop has a reason. `model.train()` enables training-time behavior for dropout and batch normalization. `optimizer.zero_grad()` clears stale gradient buffers. `loss.backward()` fills those buffers with derivatives for the current batch. `optimizer.step()` changes the parameters, and validation happens under `model.eval()` plus `torch.no_grad()` so the reported metric reflects inference behavior.
+
+The order is not ceremonial. If you call `optimizer.step()` before `loss.backward()`, the optimizer updates using stale or missing gradients. If you forget `model.eval()`, dropout may randomly disable activations during validation. If you forget `torch.no_grad()`, validation may allocate graphs that are never needed, increasing memory use and slowing the job.
+
+```mermaid
+sequenceDiagram
+    participant Loader as DataLoader
+    participant Model as nn.Module
+    participant Loss as Loss function
+    participant Auto as Autograd
+    participant Opt as Optimizer
+    Loader->>Model: batch tensors on selected device
+    Model->>Loss: logits or predictions
+    Loss->>Auto: scalar loss with graph
+    Auto->>Model: gradients stored on parameters
+    Opt->>Model: update registered parameters
+    Model->>Loader: next batch repeats the control loop
+```
+
+Data loading is part of training quality because slow or inconsistent input pipelines create misleading experiments. Shuffling training data reduces order effects, batching trades statistical noise against hardware efficiency, and parallel workers can hide preprocessing latency. Validation data is usually not shuffled because reproducible metric computation matters more than stochastic order.
+
+| DataLoader setting | Training effect | Risk when misused | Practical starting point |
+|---|---|---|---|
+| `batch_size` | Controls examples per optimization step | Too large may exceed memory, too small may produce noisy updates | Start with a size that fits comfortably, then measure throughput |
+| `shuffle=True` | Randomizes training order each epoch | Forgetting it can overfit sequence artifacts in ordered datasets | Use for training unless order is meaningful |
+| `shuffle=False` | Keeps validation order stable | Using it for training may hide data-order bias | Use for validation and test loaders |
+| `num_workers` | Loads samples in parallel subprocesses | Too many workers can add overhead or file contention | Start with zero for debugging, then increase while measuring |
+| `pin_memory=True` | Speeds CPU-to-GPU transfer on CUDA systems | Adds little value on CPU-only runs | Enable for CUDA training after correctness is proven |
+| Custom dataset | Loads samples lazily from files or services | Bugs in `__getitem__` can corrupt labels silently | Add small sample visualizations or assertions |
+
+Optimizers encode assumptions about the loss landscape. Stochastic gradient descent is simple and can generalize well when tuned, but it usually requires more learning-rate care. Adam adapts per-parameter update sizes and often works well early in experimentation. AdamW decouples weight decay from Adam's adaptive update and is a common choice for transformer-style architectures.
+
+| Optimizer | Strength | Trade-off | Good use case |
+|---|---|---|---|
+| `SGD` | Simple, inspectable, strong baseline when tuned | Sensitive to learning rate and schedule | Vision models, controlled experiments, teaching gradient behavior |
+| `SGD` with momentum | Smooths noisy gradients | Momentum can overshoot when learning rate is high | Larger batches or losses with noisy local directions |
+| `Adam` | Adapts update size per parameter | Can hide poor scaling or overfit without regularization | Fast prototypes and many tabular or smaller neural networks |
+| `AdamW` | Handles decoupled weight decay cleanly | Still needs learning-rate and decay tuning | Transformers and models where weight decay matters |
+| Learning-rate scheduler | Changes step size over time | Misconfigured schedules can stop learning too early | Longer runs where early exploration and late refinement differ |
+| Gradient clipping | Limits extreme gradient norms | Can mask upstream instability if used blindly | Recurrent models, transformers, or jobs with occasional spikes |
+
+Checkpointing should save enough state to resume training, not just enough state to run inference. Model weights are sufficient for deployment, but optimizer state contains momentum and adaptive statistics that affect future updates. If a long training job crashes and resumes with a fresh optimizer, the loss curve may jump even though the model weights loaded correctly.
+
+```python
+import torch
+
+def save_checkpoint(path, epoch, model, optimizer, validation_accuracy):
+    torch.save(
+        {
+            "epoch": epoch,
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "validation_accuracy": validation_accuracy,
+        },
+        path,
+    )
+
+
+def load_checkpoint(path, model, optimizer, device):
+    checkpoint = torch.load(path, map_location=device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+    return checkpoint["epoch"], checkpoint["validation_accuracy"]
+```
+
+For inference-only loading, create the architecture, load the model state dict, switch to evaluation mode, and run under `torch.no_grad()`. Avoid loading untrusted pickle-based model files because generic `torch.load` can deserialize Python objects. When publishing models across trust boundaries, prefer safer formats and documented model cards where the serving team can reproduce preprocessing and expected inputs.
+
+```python
+import torch
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = DigitClassifier().to(device)
+
+checkpoint = torch.load("mnist-checkpoint.pt", map_location=device)
+model.load_state_dict(checkpoint["model_state_dict"])
+model.eval()
+
+with torch.no_grad():
+    sample = torch.randn(1, 1, 28, 28, device=device)
+    logits = model(sample)
+    prediction = logits.argmax(dim=1).item()
+
+print(prediction)
+```
+
+### 5. Acceleration, Operations, and Senior-Level Debugging
+
+GPU acceleration changes the economics of training, but it does not change the training contract. The model, input tensors, labels, and any new tensors created during the forward pass must live on compatible devices. A script that moves only the model to CUDA is broken; a script that moves data every batch but creates CPU masks inside `forward` is also broken.
 
 ```python
 import time
 import torch
 
-def benchmark(device, size=4096, iterations=100):
+
+def benchmark_matrix_multiply(device, size=2048, iterations=20):
     x = torch.randn(size, size, device=device)
     y = torch.randn(size, size, device=device)
 
-    # Warmup
-    for _ in range(10):
-        z = x @ y
+    for _ in range(3):
+        _ = x @ y
 
-    if device.type == 'cuda':
+    if device.type == "cuda":
         torch.cuda.synchronize()
 
-    start = time.time()
+    start = time.perf_counter()
+
     for _ in range(iterations):
-        z = x @ y
+        _ = x @ y
 
-    if device.type == 'cuda':
+    if device.type == "cuda":
         torch.cuda.synchronize()
 
-    elapsed = time.time() - start
-    return elapsed / iterations
+    return (time.perf_counter() - start) / iterations
 
-# Compare and create a plot of speedup vs matrix size
+
+cpu_time = benchmark_matrix_multiply(torch.device("cpu"), size=1024, iterations=5)
+print(f"cpu_seconds_per_iteration={cpu_time:.6f}")
+
+if torch.cuda.is_available():
+    gpu_time = benchmark_matrix_multiply(torch.device("cuda"), size=1024, iterations=5)
+    print(f"gpu_seconds_per_iteration={gpu_time:.6f}")
+    print(f"speedup={cpu_time / gpu_time:.2f}")
+else:
+    print("cuda_available=false")
 ```
 
-**Action**: Add driver code at the bottom of the script that loops through matrix sizes `[1024, 2048, 4096]`. Invoke `benchmark()` for both 'cpu' and 'cuda' string references. Print out the ratio of the CPU time versus the CUDA time.
-
-**Checkpoint Verification**:
-Run `python benchmark_gpu.py`. Verify that the script outputs timing information for CPU (and GPU if available) and calculates the speedup ratio.
-
-<details>
-<summary><strong>View Solution</strong></summary>
-
-```python
-if __name__ == '__main__':
-    sizes = [1024, 2048, 4096]
-    for size in sizes:
-        print(f"\nBenchmarking size: {size}x{size}")
-        cpu_time = benchmark(torch.device('cpu'), size)
-        print(f"CPU Time: {cpu_time:.5f}s")
-        
-        if torch.cuda.is_available():
-            gpu_time = benchmark(torch.device('cuda'), size)
-            speedup = cpu_time / gpu_time
-            print(f"GPU Time: {gpu_time:.5f}s")
-            print(f"GPU Speedup: {speedup:.2f}x")
-        else:
-            print("CUDA not available for comparison.")
-```
-</details>
-
-### Step 5: Debugging Challenge
-Create `debug_model.py`. Paste the deliberately broken training file:
-
-```python
-# This code has 5 bugs. Find and fix them all!
-import torch
-import torch.nn as nn
-import torch.optim as optim
-
-class BuggyModel(nn.Module):
-    def __init__(self):
-        # Bug 1: Missing something here
-        self.layers = [nn.Linear(784, 128), nn.Linear(128, 10)]
-
-    def forward(self, x):
-        for layer in self.layers:
-            x = layer(x)
-        return x
-
-model = BuggyModel()
-criterion = nn.MSELoss()  # Bug 2: Wrong loss for classification
-optimizer = optim.SGD(model.parameters(), lr=0.1)
-
-for epoch in range(10):
-    for data, labels in train_loader:
-        # Bug 3: Missing something before forward pass
-        outputs = model(data)
-        loss = criterion(outputs, labels)  # Bug 4: labels need processing
-        loss.backward()
-        optimizer.step()
-
-    # Bug 5: Evaluation without proper mode switching
-    accuracy = (model(test_data).argmax(1) == test_labels).float().mean()
-```
-
-**Action**: Correct the five bugs. 
-1. Missing `super().__init__()` and usage of standard Python lists.
-2. Wrong objective criterion.
-3. Gradient accumulation error.
-4. Input flattening failures / label types.
-5. Missing `eval()` and `no_grad()`.
-
-**Checkpoint Verification**:
-Run `python debug_model.py`. Ensure the script no longer crashes and completes its execution successfully.
-
-<details>
-<summary><strong>View Solution</strong></summary>
-
-```python
-import torch
-import torch.nn as nn
-import torch.optim as optim
-
-class BuggyModel(nn.Module):
-    def __init__(self):
-        super().__init__() # Fix 1a: Added init
-        self.layers = nn.ModuleList([nn.Linear(784, 128), nn.Linear(128, 10)]) # Fix 1b: Use ModuleList
-
-    def forward(self, x):
-        x = x.view(-1, 784) # Hidden fix to flatten data
-        for layer in self.layers:
-            x = layer(x)
-        return x
-
-model = BuggyModel()
-criterion = nn.CrossEntropyLoss()  # Fix 2: Switched to classification loss
-optimizer = optim.SGD(model.parameters(), lr=0.1)
-
-for epoch in range(1):
-    model.train() # Switch to train mode
-    for data, labels in train_loader: # Assuming train_loader is defined from earlier
-        optimizer.zero_grad() # Fix 3: Zero gradients!
-        outputs = model(data)
-        loss = criterion(outputs, labels) # Fix 4: Handled internally by CrossEntropy
-        loss.backward()
-        optimizer.step()
-
-    # Fix 5: Switched to eval and no_grad
-    model.eval()
-    with torch.no_grad():
-        accuracy = (model(data).argmax(1) == labels).float().mean() # using dummy data here
-```
-</details>
-
----
-
-## Summary
-
-### Key Takeaways
-
-1. **PyTorch won the framework wars** by prioritizing developer experience. Dynamic graphs and Pythonic design made research iteration 10x faster than static-graph alternatives.
-
-2. **Tensors are the standard container** for most data in deep learning. Images, text, audio—everything becomes tensors of floats.
-
-3. **Autograd is magic that you understand**. Having built backprop manually, you know what happens when you call loss.backward().
-
-4. **nn.Module is the foundation** for all PyTorch models. Always call super().__init__(), and use ModuleList/ModuleDict for dynamic layers.
-
-5. **The training loop usually follows the same pattern**: zero_grad → forward → loss → backward → step. This works for any model, any scale.
-
-6. **GPU computing is trivially easy**: .to(device) moves anything. But watch for memory leaks—use .item() for scalars, no_grad() for inference.
-
-7. **DataLoader handles the plumbing**: Batching, shuffling, parallel loading. Set num_workers and pin_memory for maximum throughput.
-
-8. **Save checkpoints religiously**. Training failures happen. Don't lose hours of GPU time to a crash.
-
-9. **torch.compile() is the future**. One line for 30-200% speedup, with no code changes.
-
-10. **PyTorch doesn't replace understanding—it amplifies it**. You know what happens inside loss.backward(). That knowledge makes you dangerous.
-
-### The Key Insight
-
-Having built neural networks from scratch in Module 26, you now deeply appreciate what PyTorch gives you:
-
-```python
-# Module 26: Dozens of lines of careful gradient computation
-# PyTorch:
-loss.backward()
-```
-
-**PyTorch doesn't replace understanding - it amplifies it.** You know what happens inside that one line. You can debug it when things go wrong. You can extend it when needed.
-
----
-
-## Knowledge Check Quiz
-
-<details>
-<summary><strong>Question 1:</strong> You deploy an NLP module that handles text inference. After passing several hundred batches without issue, the service hard-crashes citing severe Out of Memory (OOM) alerts. What specifically was omitted from the script?</summary>
-
-**Answer**: 
-The inference pipeline is missing the `with torch.no_grad():` wrapping directive. During a default inference loop, PyTorch automatically constructs dense computational graphs in the background so that `.backward()` calculations can fire. Without explicitly blocking gradient operations, the graph structures persist, eventually draining the system's VRAM entirely.
-</details>
-
-<details>
-<summary><strong>Question 2:</strong> You instantiate a custom network architecture utilizing `self.my_layers = [nn.Linear(10, 10)]`. Upon initiating training, the model’s loss remains permanently stationary, and `model.parameters()` appears empty. Why did the network fail to train?</summary>
-
-**Answer**: 
-Standard Python lists intentionally bypass the framework's strict module introspection checks. PyTorch cannot discover, register, or forward tensor variables into optimization if layers are hidden inside a native list element. The layer must be encapsulated within a `nn.ModuleList` array to expose its internal weights to the `optim` engine.
-</details>
-
-<details>
-<summary><strong>Question 3:</strong> During a binary classification task, you swap out `CrossEntropyLoss` for `MSELoss` because you only have two distinct categories. Why does your model training abruptly stall into a pattern of severe numerical volatility?</summary>
-
-**Answer**: 
-`MSELoss` measures strictly continuous errors over boundless domains, heavily penalizing deviations via squares. Probabilistic classification outcomes are rigorously bounded between 0 and 1. Attempting to fit categorical bounds using a continuous curve results in exponentially diminishing gradients as the values shift away from zero, generating sluggish and unstable performance outcomes.
-</details>
-
-<details>
-<summary><strong>Question 4:</strong> You notice that your custom logging script, which appends `loss` records into a historical array per batch step, generates memory spikes that align exactly with your batch count progression. What specific mistake was made in your logging array?</summary>
-
-**Answer**: 
-You appended the active tensor output directly via `array.append(loss)` instead of invoking the extraction method `array.append(loss.item())`. Pushing an active tensor into a permanent Python array inherently anchors the exact massive computational tree responsible for formulating that tensor, completely severing garbage collection routines for thousands of parameters.
-</details>
-
-<details>
-<summary><strong>Question 5:</strong> Immediately following epoch one, your training script generates output losses containing `NaN` properties, cascading failure throughout the network and crashing validation accuracy. What explicit training step sequence was ignored?</summary>
-
-**Answer**: 
-You forgot to clear out previous momentum calculations via `optimizer.zero_grad()`. By skipping this line, Autograd blindly combines the new backward pass gradients straight into the existing ones mathematically. As batches multiply, the scalar values inflate exponentially into infinity boundaries and then degrade into intractable Not-a-Number calculations.
-</details>
-
-<details>
-<summary><strong>Question 6:</strong> You are evaluating test data accuracy inside a validation loop. The network's validation metrics fluctuate wildly every time you scan the identical set of input arrays. What method did you neglect to trigger on the model object?</summary>
-
-**Answer**: 
-The model was never switched into its internal state flag of `model.eval()`. Since the network still functionally operates as if it were training, its native `nn.Dropout` architectures are randomly severing variable neuron activations in the background. Enforcing the eval switch bypasses regularizing interference layers.
-</details>
-
----
-
-## Next Steps
-
-In Module 28, you'll learn **Training Deep Networks**:
-- Why deep networks are hard to train
-- Batch normalization
-- Dropout and regularization
-- Weight initialization strategies
-- Learning rate scheduling
-- Debugging training failures
-
-The foundation is set. Now let's learn the art of making networks actually converge!
-
----
-
-## Did You Know? The JAX Challenger
-
-While PyTorch dominates, there's a rising challenger: **JAX**, developed at Google.
-
-JAX started as "NumPy on steroids" but has become a serious deep learning framework. Its philosophy is different: instead of dynamic graphs (PyTorch) or static graphs (TensorFlow), JAX uses **functional transformations**.
-
-```python
-# JAX: Transform functions, not tensors
-import jax
-import jax.numpy as jnp
-
-def loss_fn(params, x, y):
-    predictions = predict(params, x)
-    return jnp.mean((predictions - y) ** 2)
-
-# Get gradient function by transforming loss_fn
-grad_fn = jax.grad(loss_fn)
-gradients = grad_fn(params, x, y)
-```
-
-**Who uses JAX?**:
-- **Google DeepMind**: AlphaFold, Gemini
-- **OpenAI**: Some internal experiments
-- **Research teams**: When they need maximum performance on TPUs
-
-**The PyTorch vs JAX trade-off**:
-| Aspect | PyTorch | JAX |
-|--------|---------|-----|
-| Debugging | Python debugger works | Harder (functional transforms) |
-| Ecosystem | Massive (HuggingFace, etc.) | Growing |
-| TPU support | Exists but limited | Excellent (Google's TPUs) |
-| GPU support | Excellent | Good |
-| Learning curve | Moderate | Steep |
-| Production tooling | TorchServe, ONNX | Less mature |
+Small workloads may not benefit from a GPU because transfer overhead, kernel launch overhead, and underutilization can dominate. Large matrix multiplications and convolution-heavy models often benefit substantially because the GPU keeps many parallel arithmetic units busy. The senior-level decision is therefore not "GPU is faster"; it is "this workload is large enough, batched enough, and memory-efficient enough to justify GPU scheduling."
 
 ```mermaid
 graph TD
-    Compare[Comparison] --> PT[PyTorch]
-    Compare --> JX[JAX]
-    
-    PT --> D1[Debugging: Python debugger]
-    PT --> E1[Ecosystem: Massive]
-    PT --> T1[TPU Support: Limited]
-    PT --> G1[GPU Support: Excellent]
-    
-    JX --> D2[Debugging: Harder]
-    JX --> E2[Ecosystem: Growing]
-    JX --> T2[TPU Support: Excellent]
-    JX --> G2[GPU Support: Good]
+    Workload[Training workload] --> Size{Enough arithmetic per batch?}
+    Size -- no --> CPU[CPU may be simpler and cheaper]
+    Size -- yes --> Memory{Fits accelerator memory?}
+    Memory -- no --> Reduce[Reduce batch size<br>accumulate gradients<br>checkpoint activations]
+    Memory -- yes --> Transfer{Data pipeline keeps GPU busy?}
+    Transfer -- no --> Loader[Tune DataLoader<br>preprocess efficiently<br>use pinned memory]
+    Transfer -- yes --> GPU[Use CUDA path<br>measure throughput and cost]
 ```
 
-**Bottom line**: PyTorch is the safer starting point for many practitioners because of its ecosystem maturity and broad tooling support, while JAX is especially attractive when functional transformations or TPU-oriented workflows matter.
+| Execution path | Best fit | Watch for | Senior decision question |
+|---|---|---|---|
+| CPU training | Small models, debugging, CI smoke tests | Slow epochs on large tensor workloads | Is correctness still being established? |
+| Single GPU | Most local deep-learning experiments | Device mismatches and memory pressure | Is the batch large enough to use the device efficiently? |
+| Mixed precision | Large models on compatible accelerators | Overflow, underflow, and unsupported operations | Does automatic scaling preserve metrics while improving throughput? |
+| `torch.compile` | Stable models with repeated execution paths | Compile overhead and graph breaks | Is the model mature enough to optimize after debugging? |
+| Gradient accumulation | Effective large batch without fitting it at once | Forgetting when to call `optimizer.step()` | Does the accumulated gradient match the intended batch size? |
+| Distributed training | Large datasets or models across devices | Synchronization, reproducibility, and operational complexity | Has single-device training already been made correct and measurable? |
+
+Mixed precision can reduce memory use and improve throughput on modern accelerators by using lower precision where it is safe. The safe part matters. PyTorch's automatic mixed precision chooses appropriate operations and gradient scaling helps avoid underflow, but the engineer still must compare validation metrics and inspect instability rather than assuming faster means equivalent.
+
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = nn.Sequential(nn.Linear(128, 256), nn.ReLU(), nn.Linear(256, 10)).to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.AdamW(model.parameters(), lr=0.001)
+
+features = torch.randn(64, 128, device=device)
+labels = torch.randint(0, 10, (64,), device=device)
+
+if device.type == "cuda":
+    scaler = torch.cuda.amp.GradScaler()
+    optimizer.zero_grad()
+
+    with torch.cuda.amp.autocast():
+        logits = model(features)
+        loss = criterion(logits, labels)
+
+    scaler.scale(loss).backward()
+    scaler.step(optimizer)
+    scaler.update()
+else:
+    optimizer.zero_grad()
+    logits = model(features)
+    loss = criterion(logits, labels)
+    loss.backward()
+    optimizer.step()
+
+print(loss.item())
+```
+
+`torch.compile` is an optimization step, not a substitute for a correct model. Compile after the eager-mode model trains, validates, checkpoints, and debugs correctly. This order preserves PyTorch's developer-experience advantage: ordinary Python while you are learning and diagnosing, compilation only when the execution path is stable enough to optimize.
+
+```python
+import torch
+import torch.nn as nn
+
+model = nn.Sequential(nn.Linear(32, 64), nn.ReLU(), nn.Linear(64, 2))
+
+if hasattr(torch, "compile"):
+    model = torch.compile(model)
+
+x = torch.randn(8, 32)
+print(model(x).shape)
+```
+
+Production training also needs failure detection. A training script should fail fast when loss becomes non-finite, labels fall outside the expected class range, the optimizer has no parameters, a checkpoint cannot be written, or validation accuracy collapses relative to a baseline. These checks turn silent corruption into actionable errors.
+
+```python
+import math
+import torch
+
+def assert_training_batch(features, labels, num_classes):
+    if not torch.isfinite(features).all():
+        raise ValueError("features contain non-finite values")
+
+    if labels.dtype != torch.long:
+        raise TypeError(f"labels must be torch.long, received {labels.dtype}")
+
+    if labels.min().item() < 0 or labels.max().item() >= num_classes:
+        raise ValueError("labels contain a class index outside the expected range")
+
+
+def assert_loss_is_healthy(loss):
+    value = loss.item()
+    if not math.isfinite(value):
+        raise RuntimeError(f"loss is non-finite: {value}")
+```
+
+A senior debugging workflow narrows the problem by proving simpler claims before investigating complex ones. Can the model overfit one batch? Do gradients exist for every trainable layer? Does validation produce identical predictions twice in a row under `model.eval()` and `torch.no_grad()`? Does a checkpoint restore identical output for the same input? Each question isolates a layer of the training system.
+
+| Debugging probe | What it tests | Healthy signal | Likely issue when it fails |
+|---|---|---|---|
+| Overfit one small batch | Model capacity and training loop mechanics | Loss falls close to zero on the same batch | Wrong loss, missing gradients, bad labels, or no optimizer updates |
+| Print gradient norms | Gradient flow through layers | Non-zero finite gradients where expected | Dead activations, detached tensors, or unregistered parameters |
+| Count optimizer parameters | Registration and optimizer setup | Expected number of tensors in parameter groups | Plain Python lists, missing `super().__init__()`, or frozen parameters |
+| Run validation twice | Deterministic inference behavior | Same predictions for same inputs | Missing `model.eval()` or hidden randomness |
+| Save and reload checkpoint | Serialization and architecture match | Same output after reload for same input | Missing state, wrong architecture, or device loading error |
+| Compare CPU and GPU tiny run | Device-independent correctness | Similar losses within expected numerical tolerance | Device-specific tensor creation or precision assumptions |
+
+The "overfit one batch" test deserves special attention because it is the fastest way to separate data-scale problems from loop correctness problems. If a model cannot memorize a tiny fixed batch, adding more data will not fix it. The bug is usually in architecture wiring, loss-target mismatch, optimizer configuration, gradient flow, or preprocessing.
+
+```python
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+model = nn.Sequential(nn.Linear(4, 16), nn.ReLU(), nn.Linear(16, 3))
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.05)
+
+features = torch.randn(12, 4)
+labels = torch.randint(0, 3, (12,))
+
+for step in range(200):
+    optimizer.zero_grad()
+    logits = model(features)
+    loss = criterion(logits, labels)
+    loss.backward()
+    optimizer.step()
+
+print(f"final_loss={loss.item():.6f}")
+```
+
+The economics of PyTorch are not only about faster syntax. Framework primitives reduce engineering time, but acceleration can increase infrastructure spend if jobs are poorly batched, frequently restarted, or run without checkpointing. A cheaper GPU hour can be more expensive than a CPU run if half the time is spent waiting for the data loader or repeating failed epochs.
+
+```mermaid
+graph LR
+    Task[Training task] --> Manual[Manual implementation]
+    Task --> Framework[PyTorch implementation]
+    Manual --> Risk1[Higher derivative-code risk]
+    Manual --> Risk2[Longer GPU integration path]
+    Framework --> Benefit1[Autograd and optimizers]
+    Framework --> Benefit2[DataLoader and checkpointing]
+    Framework --> Benefit3[Acceleration path after correctness]
+```
+
+| Cost driver | How PyTorch helps | Remaining engineering responsibility | Operational metric |
+|---|---|---|---|
+| Development time | Provides layers, autograd, losses, optimizers, and loaders | Choose correct abstractions and verify assumptions | Time from baseline idea to validated run |
+| Compute time | Enables GPU, mixed precision, and compilation | Measure utilization and avoid unnecessary graph allocation | Examples per second and cost per epoch |
+| Failure recovery | Supports checkpointing with state dicts | Save complete state and test restore paths | Lost work after interruption |
+| Debugging time | Exposes tensor metadata and gradients | Add assertions, probes, and reproducible seeds | Time to isolate a broken training phase |
+| Deployment risk | Provides eval mode, export paths, and ecosystem tools | Match preprocessing, trust model files, and validate outputs | Difference between validation and serving behavior |
+| Team learning | Uses readable Python and rich ecosystem examples | Teach mechanisms rather than copy patterns blindly | Review quality of training-code changes |
+
+Framework comparisons are useful when they focus on trade-offs rather than identity. PyTorch is a practical default for many teams because it combines readable eager execution with a broad ecosystem. TensorFlow remains important in many production and legacy environments. JAX is attractive for functional transformations, accelerator-oriented research, and workflows where compilation and transformation discipline are central.
+
+| Framework | Strength | Trade-off | Practical selection cue |
+|---|---|---|---|
+| PyTorch | Pythonic eager execution, broad research and application ecosystem | Production path still requires discipline around export, serving, and reproducibility | Choose when team productivity and debuggability are primary |
+| TensorFlow | Mature serving ecosystem and legacy production footprint | Older static-graph patterns can be harder for beginners to debug | Choose when existing platform investment already centers on it |
+| JAX | Powerful functional transformations and strong accelerator workflows | Steeper learning curve and different programming model | Choose when function transforms, compilation, or TPU-oriented work dominate |
+| Manual NumPy | Maximum educational transparency | Impractical for complex models and accelerators | Use for learning internals, not routine production training |
+| Higher-level wrappers | Less boilerplate for common training patterns | Can hide mechanics when learners are still building mental models | Add after the team can debug plain PyTorch loops |
+
+The final mental model is a layered one. Tensors describe numeric data and execution placement. Autograd records differentiable computation. Modules register parameters and organize forward logic. Losses turn predictions into scalar training signals. Optimizers mutate parameters using gradients. Operational controls make the loop repeatable, measurable, recoverable, and safe.
 
 ---
 
-##  Community and Resources
+## Did You Know?
 
-### Essential Learning Resources
+1. **Reverse-mode automatic differentiation predates modern deep learning**: PyTorch's autograd uses ideas that were developed decades before today's large neural networks, and the reason it fits neural networks so well is that training usually has many parameters but one scalar loss.
 
-**Books**:
-- *Deep Learning with PyTorch* (Eli Stevens, Luca Antiga) - Official PyTorch book, free online
-- *Programming PyTorch for Deep Learning* (Ian Pointer) - O'Reilly practical guide
-- *PyTorch Pocket Reference* (Joe Papa) - Quick reference for common patterns
+2. **Gradient accumulation is intentional behavior**: PyTorch adds gradients into `.grad` buffers instead of replacing them because accumulation supports larger effective batches, multi-loss training, and advanced optimization patterns.
 
-**Video Courses**:
-- **Andrej Karpathy's "Neural Networks: Zero to Hero"** - Free YouTube series, builds intuition
-- **fast.ai** - Practical deep learning, uses PyTorch, emphasizes getting things working
-- **NYU Deep Learning (Yann LeCun)** - Graduate-level theory, available on YouTube
+3. **`CrossEntropyLoss` expects raw logits**: The loss combines log-softmax with negative log likelihood internally, so adding softmax before it can reduce numerical stability and distort the gradient signal.
 
-**Interactive**:
-- **PyTorch Lightning** - Framework that reduces boilerplate
-- **Weights & Biases** - Experiment tracking, integrates seamlessly
-- **Hugging Face Transformers** - Pre-trained models, all PyTorch-native
-
-### Getting Help
-
-**Forums and Communities**:
-- **PyTorch Forums** (discuss.pytorch.org) - Official, active, helpful
-- **r/pytorch** - Reddit community
-- **Stack Overflow [pytorch]** - 50,000+ questions answered
-- **PyTorch Discord** - Real-time help
-
-**When Debugging**:
-1. Check PyTorch version compatibility
-2. Search the error message verbatim
-3. Minimal reproducible example helps others help you
-4. The forums are friendlier than Stack Overflow for beginners
-
-### Contributing to PyTorch
-
-PyTorch is open source with over 3,000 contributors. If you find a bug or want to add a feature:
-1. File an issue on GitHub first
-2. Small PRs are more likely to be merged
-3. Documentation improvements are always welcome
-4. The contributing guide is thorough
+4. **Pickle-based model loading is a trust boundary**: Generic PyTorch checkpoint loading can deserialize Python objects, so production teams should treat untrusted model files as executable input and prefer safer distribution formats when appropriate.
 
 ---
 
-## Further Reading
+## Common Mistakes
 
-1. **Official PyTorch Tutorials**: https://pytorch.org/tutorials/
-2. **Deep Learning with PyTorch** (free book): https://pytorch.org/deep-learning-with-pytorch
-3. **Andrej Karpathy's micrograd**: https://github.com/karpathy/micrograd - A tiny autograd engine for educational purposes
-4. **PyTorch Internals**: http://blog.ezyang.com/2019/05/pytorch-internals/ - How the magic works
-5. **The Annotated Transformers**: http://nlp.seas.harvard.edu/annotated-transformer - Transformer implementation in PyTorch with explanations
+| Mistake | Scenario symptom | Root cause | Corrective action |
+|---|---|---|---|
+| Forgetting `optimizer.zero_grad()` | Loss starts plausible, then gradients grow until updates become unstable or non-finite | PyTorch accumulates gradients across backward calls by default | Clear gradients before each normal training step unless intentional accumulation is documented |
+| Calling softmax before `CrossEntropyLoss` | Classification training improves slowly or becomes numerically fragile | The loss already applies the stable log-softmax calculation internally | Return raw logits from the model and pass integer class labels directly |
+| Using a plain Python list for layers | `model.parameters()` is empty or missing expected tensors | `nn.Module` cannot register modules hidden in ordinary lists | Use `nn.ModuleList`, `nn.ModuleDict`, or direct module attributes |
+| Leaving validation in training mode | Validation metrics fluctuate on identical data, especially with dropout | Dropout and batch normalization keep training-time behavior active | Call `model.eval()` before validation and return to `model.train()` before training |
+| Building validation graphs | GPU memory grows during evaluation even though no learning happens | Inference loop runs without `torch.no_grad()` | Wrap validation and inference operations inside `with torch.no_grad():` |
+| Mixing CPU and GPU tensors | Runtime error reports tensors on different devices | Model, labels, inputs, or newly created tensors live on incompatible devices | Create a `device` variable and move every batch plus the model consistently |
+| Logging full tensors | Memory grows with the number of batches or logged metrics | Stored tensors keep references to computation graphs | Log `loss.item()` or `tensor.detach().cpu()` depending on the metric need |
+| Saving only model weights for resumable jobs | Training resumes but loss curve jumps or behaves differently | Optimizer momentum and adaptive state were discarded | Save model state, optimizer state, epoch, metric history, and configuration together |
 
 ---
 
-_Last updated: 2025-12-11_
-_Status:  Complete_
+## Quiz
+
+1. Your team trains a small image classifier and the training loss decreases, but validation accuracy changes every time you run validation on the same saved checkpoint and same validation set. The model contains dropout. What should you inspect first, and why?
+
+   <details>
+   <summary>Answer</summary>
+
+   Inspect whether the validation loop calls `model.eval()` before inference and uses `torch.no_grad()` around the loop. Dropout remains active in training mode, so repeated validation passes can produce different predictions for the same inputs. `torch.no_grad()` is also appropriate because validation does not need computation graphs, although the nondeterministic metric symptom points most directly to the missing evaluation mode.
+   </details>
+
+2. A teammate writes `self.layers = [nn.Linear(128, 128), nn.Linear(128, 10)]` inside an `nn.Module`. The forward pass runs, but the optimizer reports an empty parameter list or the loss never changes. How do you fix the model and prove the fix worked?
+
+   <details>
+   <summary>Answer</summary>
+
+   Replace the plain Python list with `nn.ModuleList` or assign the layers as direct module attributes, and make sure `super().__init__()` is called first. Then print `list(model.named_parameters())` or count `sum(p.numel() for p in model.parameters())` before training. A non-empty parameter list with the expected layer names proves PyTorch registered the trainable tensors.
+   </details>
+
+3. A fraud model uses `nn.CrossEntropyLoss`, but the labels arrive as one-hot floating-point vectors because a preprocessing job was copied from a different framework. The script crashes or trains poorly after a quick workaround. What target format should the team provide, and why?
+
+   <details>
+   <summary>Answer</summary>
+
+   The team should provide integer class indices with dtype `torch.long` and shape `[batch]`, while the model returns raw logits with shape `[batch, classes]`. `CrossEntropyLoss` expects each target to name the correct class, not to provide a one-hot probability vector. Keeping logits raw also lets the loss use its numerically stable internal log-softmax path.
+   </details>
+
+4. During validation, GPU memory usage increases batch after batch until the process fails, even though the script never calls `backward()` in validation. What code pattern is most likely missing, and what secondary logging mistake would you check?
+
+   <details>
+   <summary>Answer</summary>
+
+   The validation loop is likely missing `with torch.no_grad():`, so PyTorch still builds computation graphs for each forward pass. As a secondary check, inspect whether the script appends graph-backed tensors such as `loss` or `logits` to a list for later reporting. Validation metrics should usually be stored as Python numbers via `.item()` or as detached CPU tensors when detailed analysis is required.
+   </details>
+
+5. A model trains successfully on CPU, but the first CUDA run fails with a device mismatch inside `forward`. The model and input batch were moved to CUDA. What hidden source of CPU tensors should you look for?
+
+   <details>
+   <summary>Answer</summary>
+
+   Look for tensors created inside `forward` with constructors such as `torch.zeros(...)`, `torch.arange(...)`, or `torch.tensor(...)` that do not specify the incoming tensor's device. Those tensors default to CPU and then collide with CUDA tensors during operations. Prefer `torch.zeros_like(x)`, pass `device=x.device`, or register persistent non-trainable tensors as buffers so they move with the model.
+   </details>
+
+6. A long training job is interrupted after several hours. The engineer saved only `model.state_dict()` and restarts with a fresh Adam optimizer. The job resumes, but the loss curve shifts and convergence differs from the original run. What was missing from the checkpoint?
+
+   <details>
+   <summary>Answer</summary>
+
+   The checkpoint omitted optimizer state, and for Adam that state includes adaptive moment estimates that affect future updates. A resumable checkpoint should include the model state dict, optimizer state dict, epoch or step counters, validation metrics, and enough configuration to reconstruct the run. Model weights alone are appropriate for inference, not for an exact training resume.
+   </details>
+
+7. Your team wants to enable mixed precision because GPU memory is tight. After enabling it, throughput improves but validation quality drops. How should you evaluate whether mixed precision is acceptable rather than assuming the faster run is better?
+
+   <details>
+   <summary>Answer</summary>
+
+   Compare validation metrics, loss curves, and non-finite loss checks against a known float32 baseline using the same data split and seed where possible. Use automatic mixed precision and gradient scaling rather than manually converting every tensor to half precision. If quality drops, inspect numerically sensitive operations, learning rate, loss scaling behavior, and whether the target hardware supports the chosen lower-precision format well.
+   </details>
+
+8. A new model cannot overfit a single tiny batch after hundreds of updates. The full dataset is large and noisy, but the one-batch experiment should be easy. What training components should you debug before changing the architecture?
+
+   <details>
+   <summary>Answer</summary>
+
+   Debug the basic training contract first: labels match the loss, model outputs have the expected shape, parameters are registered, gradients are finite and non-zero, `optimizer.zero_grad()` and `optimizer.step()` occur in the correct order, and preprocessing produces sensible inputs. If a model cannot memorize one fixed batch, adding more data or making the architecture more complex usually hides the underlying loop or data bug rather than solving it.
+   </details>
+
+---
+
+## Hands-On Exercise
+
+In this lab you will build a local PyTorch training workflow, introduce controlled failures, and document the evidence you used to diagnose them. The exercise intentionally withholds completed solution files because the goal is active problem-solving. Use the module content as your reference, and write down predictions before running each script.
+
+### Step 1: Prepare a Local Workspace
+
+Create an isolated workspace and install the packages needed for the exercise. Use the explicit virtual-environment Python path when running scripts so the commands behave the same way in shells that have different global Python installations.
+
+```bash
+mkdir pytorch-training-lab
+cd pytorch-training-lab
+.venv/bin/python -m venv .venv
+.venv/bin/python -m pip install --upgrade pip
+.venv/bin/python -m pip install torch torchvision numpy
+.venv/bin/python -c "import torch; print(torch.__version__)"
+```
+
+- [ ] You created a `pytorch-training-lab` directory.
+- [ ] You created a local `.venv` inside that directory.
+- [ ] You installed `torch`, `torchvision`, and `numpy`.
+- [ ] You verified that importing `torch` prints a version instead of raising an exception.
+
+### Step 2: Explore Gradients and Accumulation
+
+Create `explore_gradients.py`. Your script should create `x = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)` and test four expressions independently: `x.sum()`, `(x ** 2).sum()`, `x.mean()`, and `x.max()`. Before each run, write a comment predicting the gradient, then verify the result with `backward()`.
+
+```python
+import torch
+
+x = torch.tensor([1.0, 2.0, 3.0], requires_grad=True)
+
+tests = [
+    ("sum", x.sum()),
+    ("squared_sum", (x ** 2).sum()),
+    ("mean", x.mean()),
+    ("max", x.max()),
+]
+
+for name, expression in tests:
+    if x.grad is not None:
+        x.grad.zero_()
+
+    expression.backward(retain_graph=True)
+    print(name, x.grad)
+```
+
+Run it with:
+
+```bash
+.venv/bin/python explore_gradients.py
+```
+
+- [ ] You predicted each gradient before executing the script.
+- [ ] You reset gradients between tests or otherwise prevented accidental accumulation.
+- [ ] You explained why `x.max()` produces a sparse gradient for this input.
+- [ ] You modified the script once to demonstrate accumulation deliberately, then restored the correct reset behavior.
+
+### Step 3: Build a Complete MNIST Training Script
+
+Create `train_mnist.py` using the complete training-loop pattern from the module, but write the file yourself rather than pasting blindly. Include a registered `nn.Module`, `CrossEntropyLoss`, Adam or AdamW, train and validation loaders, `model.train()`, `model.eval()`, `torch.no_grad()`, finite-loss checks, and checkpoint saving when validation accuracy improves.
+
+```python
+# Fill this file from the module pattern rather than copying a hidden answer.
+# Required components:
+# - DigitClassifier class inheriting from nn.Module
+# - DataLoader objects for train and validation data
+# - CrossEntropyLoss with raw logits and integer labels
+# - optimizer.zero_grad() before loss.backward()
+# - model.eval() and torch.no_grad() during validation
+# - checkpoint dictionary with model and optimizer state
+```
+
+Run it with:
+
+```bash
+.venv/bin/python train_mnist.py
+```
+
+- [ ] The script downloads or reuses MNIST data successfully.
+- [ ] Training loss is printed at least once per epoch.
+- [ ] Validation accuracy is computed under evaluation mode.
+- [ ] A checkpoint file is written when validation accuracy improves.
+- [ ] Your model uses registered layers that appear in `named_parameters()`.
+
+### Step 4: Create and Fix a Broken Model
+
+Create `debug_model.py` with a deliberately broken model containing these issues: missing `super().__init__()`, layers stored in a plain Python list, `MSELoss` used for multi-class labels, missing `optimizer.zero_grad()`, and validation without evaluation mode or `no_grad()`. Then fix the file one bug at a time and record the symptom that led you to each fix.
+
+```python
+# Intentionally create the broken version first.
+# Then fix one issue at a time and keep a short debugging note for each fix.
+```
+
+Run it with:
+
+```bash
+.venv/bin/python debug_model.py
+```
+
+- [ ] You observed at least one failure before applying fixes.
+- [ ] You replaced the plain Python list with a PyTorch registration mechanism.
+- [ ] You changed the loss-target pair to a valid classification setup.
+- [ ] You added gradient reset in the correct part of the loop.
+- [ ] You used `model.eval()` and `torch.no_grad()` for validation.
+- [ ] You confirmed that the fixed script runs without crashing.
+
+### Step 5: Benchmark CPU and Optional GPU Execution
+
+Create `benchmark_devices.py` and compare matrix multiplication time on CPU and CUDA if CUDA is available. Use synchronization around CUDA timing so your measurements reflect completed work rather than queued kernels.
+
+```python
+import time
+import torch
+
+
+def benchmark(device, size, iterations):
+    x = torch.randn(size, size, device=device)
+    y = torch.randn(size, size, device=device)
+
+    for _ in range(3):
+        _ = x @ y
+
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+
+    start = time.perf_counter()
+
+    for _ in range(iterations):
+        _ = x @ y
+
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+
+    return (time.perf_counter() - start) / iterations
+
+
+for size in [512, 1024, 2048]:
+    cpu_time = benchmark(torch.device("cpu"), size=size, iterations=5)
+    print(f"size={size} cpu_seconds={cpu_time:.6f}")
+
+    if torch.cuda.is_available():
+        gpu_time = benchmark(torch.device("cuda"), size=size, iterations=5)
+        print(f"size={size} gpu_seconds={gpu_time:.6f} speedup={cpu_time / gpu_time:.2f}")
+    else:
+        print(f"size={size} cuda_available=false")
+```
+
+Run it with:
+
+```bash
+.venv/bin/python benchmark_devices.py
+```
+
+- [ ] The script prints timing information for all configured matrix sizes.
+- [ ] CUDA timing uses synchronization when a CUDA device is available.
+- [ ] You explain why small matrix sizes may show less impressive speedup than large sizes.
+- [ ] You connect the benchmark result to a training decision, such as batch size or device choice.
+
+### Step 6: Write a Training Readiness Note
+
+Create `training-readiness.md` summarizing whether your MNIST training script is ready for a longer experiment. Treat this as an engineering review, not a tutorial summary. Include evidence from your runs, the bugs you fixed, and any remaining risks you would address before productionizing the workflow.
+
+- [ ] The note identifies the selected model, loss, optimizer, and device path.
+- [ ] The note includes at least three concrete debugging checks you performed.
+- [ ] The note explains how validation differs from training in your script.
+- [ ] The note states what your checkpoint contains and whether it supports training resume.
+- [ ] The note names at least two risks that would matter for a larger dataset.
+- [ ] The note avoids copying module prose and uses your observed results.
+
+---
+
+## Next Module
+
+Next: [Training Deep Networks](/ai-ml-engineering/deep-learning/module-1.4-training-deep-networks/) covers initialization, normalization, regularization, learning-rate schedules, and deeper debugging strategies for models that are harder to optimize.
+
+---
 
 ## Sources
 
