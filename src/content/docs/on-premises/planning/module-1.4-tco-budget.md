@@ -1,4 +1,5 @@
 ---
+qa_pending: true
 title: "Module 1.4: TCO & Budget Planning"
 slug: on-premises/planning/module-1.4-tco-budget
 sidebar:
