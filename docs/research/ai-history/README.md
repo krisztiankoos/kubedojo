@@ -6,6 +6,7 @@ This directory contains the operational research files for the definitive 68-cha
 
 - **Golden Research (Parts 1-2, Chapters 1-10):** Currently under revision based on cross-family review (downgraded to `reviewing` while we convert to claim-level anchoring and resolve factual disputes).
 - **Part 5 (The Mathematical Resurrection, 1980s-1990s):** Claimed by **Codex** for primary research.
+- **Part 6 (The Rise of Data & Distributed Compute, 1990s-2000s):** Claimed by **Gemini**. Research contracts populated to Golden Standard; status is `reviewing`.
 
 All drafting is paused until chapter contracts are locked. 
 
@@ -23,7 +24,7 @@ Coordination happens across 9 Part Tracking issues linked to Epic #394:
 - #401 : Part 3: The Birth of Symbolic AI & Early Optimism (Ch 11-16)
 - #402 : Part 4: The First Winter & The Shift to Knowledge (Ch 17-23)
 - #403 : Part 5: The Mathematical Resurrection (Ch 24-31) (Codex)
-- #404 : Part 6: The Rise of Data & Distributed Compute (Ch 32-40)
+- #404 : Part 6: The Rise of Data & Distributed Compute (Ch 32-40) (Gemini)
 - #405 : Part 7: The Deep Learning Revolution & GPU Coup (Ch 41-49)
 - #406 : Part 8: The Transformer, Scale & Open Source (Ch 50-58)
 - #407 : Part 9: The Product Shock & Physical Limits (Ch 59-68)
