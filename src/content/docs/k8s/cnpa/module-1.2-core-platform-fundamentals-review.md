@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "CNPA Core Platform Fundamentals Review"
 slug: k8s/cnpa/module-1.2-core-platform-fundamentals-review
 sidebar:

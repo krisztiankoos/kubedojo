@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 10.4: Building Custom AIOps"
 slug: platform/toolkits/observability-intelligence/aiops-tools/module-10.4-building-custom-aiops
 sidebar:
