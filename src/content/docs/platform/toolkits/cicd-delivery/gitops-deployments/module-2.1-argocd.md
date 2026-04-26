@@ -1,563 +1,754 @@
 ---
-revision_pending: true
 title: "Module 2.1: ArgoCD"
 slug: platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd
 sidebar:
   order: 2
 ---
-> **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 45-50 min
 
----
-
-*A common GitOps failure mode happens when someone makes an unreviewed manual change in the cluster, the change drifts away from Git, and the team only discovers it during an outage. GitOps tools such as ArgoCD are designed to surface and reconcile that drift through a version-controlled source of truth.*
+> **Toolkit Track** | Complexity: `[COMPLEX]` | Time: 60-75 min
 
 ---
 
 ## Prerequisites
 
-Before starting this module:
-- [GitOps Discipline](/platform/disciplines/delivery-automation/gitops/) — GitOps principles and practices
-- Kubernetes basics (Deployments, Services, Namespaces)
-- Git fundamentals
-- kubectl experience
+Before starting this module, you should be comfortable reading Kubernetes manifests, creating namespaces, and reasoning about
+Deployments, Services, ConfigMaps, Secrets, and RBAC. You do not need to be an ArgoCD expert yet, but you should already
+understand the GitOps principle from [GitOps Discipline](/platform/disciplines/delivery-automation/gitops/): Git is treated
+as the reviewed source of truth, and the cluster is continuously reconciled toward that truth.
 
-## What You'll Be Able to Do
+You also need Git fundamentals because ArgoCD turns Git operations into deployment operations. A merge, revert, tag, or
+branch promotion is not just repository housekeeping once ArgoCD watches that repository. It becomes a production control
+plane action, so this module teaches both the mechanics and the operational judgment required to use the tool safely.
+
+For the hands-on section, install a local Kubernetes environment such as kind, plus `kubectl`, `helm`, and the `argocd`
+CLI. The commands define `alias k=kubectl` once, then use `k` for the rest of the module.
+
+```bash
+kubectl version --client
+helm version
+argocd version --client
+kind version
+alias k=kubectl
+```
+
+---
+
+## Learning Outcomes
 
 After completing this module, you will be able to:
 
-- **Deploy ArgoCD and configure Applications that sync Kubernetes manifests from Git repositories**
-- **Implement multi-cluster GitOps with ArgoCD ApplicationSets and cluster generators**
-- **Configure sync policies, health checks, and automated rollback strategies for production deployments**
-- **Secure ArgoCD with RBAC, SSO integration, and project-scoped access controls**
+- **Design** an ArgoCD Application model that separates source, destination, project boundaries, and sync behavior for
+  production-grade Kubernetes delivery.
+- **Debug** common OutOfSync, Degraded, and permission-denied states by comparing Git intent, rendered manifests, and live
+  cluster resources.
+- **Evaluate** when to enable automated sync, pruning, self-healing, sync waves, hooks, and ignore rules based on blast
+  radius rather than convenience.
+- **Implement** multi-application and multi-cluster GitOps patterns using App of Apps, ApplicationSets, and AppProjects
+  without giving teams more access than they need.
+- **Justify** rollback and recovery choices during incidents by choosing between Git revert, ArgoCD sync controls, and
+  temporary operational freezes.
 
+---
 
 ## Why This Module Matters
 
-ArgoCD is a widely used GitOps tool in the Kubernetes ecosystem. [It watches Git repositories and automatically syncs your cluster state to match what's defined in version control.](https://argo-cd.readthedocs.io/en/stable/operator-manual/architecture/) No more `kubectl apply` from laptops—every change is auditable, reviewable, and reversible.
+A platform engineer at a payments company watches a deployment dashboard turn red at the start of a busy business day.
+No one ran `kubectl delete`, no one changed a Helm release manually, and the cluster itself is healthy. The actual cause
+is quieter: a cleanup pull request removed a manifest directory that ArgoCD still treated as production intent, and the
+controller faithfully reconciled the cluster by deleting resources that disappeared from Git.
 
-Understanding ArgoCD isn't just about knowing the tool—it's about adopting a deployment philosophy that eliminates configuration drift and makes rollbacks trivial.
+That incident is painful because ArgoCD did not malfunction. It honored the contract the team gave it. Git said the
+resources should not exist, pruning was enabled, and the controller executed the desired state. GitOps reduces drift and
+improves auditability, but it also gives repository changes operational force. A weak review process, broad project
+permissions, or careless prune policy can convert a normal merge into a fleet-wide outage.
 
-## Did You Know?
+ArgoCD is therefore not just another deployment UI. It is a reconciliation engine, an authorization boundary, a diff
+calculator, and an operations workflow. Senior platform teams use it to make deployments boring, but they also build
+guardrails around it because a system that can repair drift quickly can amplify mistakes just as quickly. This module
+teaches the tool through that lens: not "which YAML fields exist," but "what does this controller do next, why, and who
+is allowed to make it happen?"
 
-- **ArgoCD is used in production at substantial scale**—it has a broad open-source community and documented enterprise adopters
-- **The name "Argo" comes from Greek mythology**—the ship that carried Jason and the Argonauts, fitting for a tool that "navigates" deployments
-- **ArgoCD was built to help manage Kubernetes deployments at scale**—especially in large multi-cluster environments
-- **ArgoCD supports multiple config-management approaches**—including Helm, Kustomize, Jsonnet, plain YAML, and custom plugins
+---
 
-## ArgoCD Architecture
+## Core Concept: Reconciliation Is the Product
 
+ArgoCD exists to answer one recurring question: does the live cluster match the desired state stored in Git? The answer
+is not a one-time deployment result. It is continuously recalculated by controllers that fetch source material, render
+manifests, compare them against Kubernetes, and optionally apply changes. This loop is why GitOps feels different from
+traditional CI/CD. A CI job pushes a deployment and exits; ArgoCD keeps asking whether reality still matches intent.
+
+The first mental model is simple: Git describes desired state, Kubernetes exposes live state, and ArgoCD sits between
+them as a reconciler. The details become more subtle when Helm templates are rendered, Kustomize overlays mutate names,
+admission controllers default fields, or humans make manual changes during an incident. ArgoCD must compare rendered
+intent with live resources, not just compare files with files.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│                         ARGOCD RECONCILIATION LOOP                         │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  Git repository                  ArgoCD control plane       Kubernetes API  │
+│  ┌─────────────────────┐        ┌──────────────────────┐   ┌────────────┐ │
+│  │ apps/payments/      │        │ repo-server          │   │ live state │ │
+│  │ ├── base/           │ fetch  │ - clones Git         │   │ resources  │ │
+│  │ └── overlays/prod/  ├───────▶│ - renders manifests  │   │ health     │ │
+│  └─────────────────────┘        └──────────┬───────────┘   └─────┬──────┘ │
+│                                            │                     │        │
+│                                            ▼                     │        │
+│                                  ┌──────────────────────┐        │        │
+│                                  │ application          │ query  │        │
+│                                  │ controller           ├────────┘        │
+│                                  │ - compares desired   │                 │
+│                                  │ - detects drift      │                 │
+│                                  │ - applies sync plan  │ apply           │
+│                                  └──────────┬───────────┘                 │
+│                                             └────────────────────────────▶ │
+│                                                                            │
+│  Result: Synced when desired and live match; OutOfSync when they differ.    │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    ARGOCD ARCHITECTURE                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  GIT REPOSITORY                                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │  apps/                                                    │   │
-│  │  ├── deployment.yaml                                      │   │
-│  │  ├── service.yaml                                         │   │
-│  │  └── configmap.yaml                                       │   │
-│  └────────────────────────────┬─────────────────────────────┘   │
-│                               │                                  │
-│                               │ Watch + Fetch                    │
-│                               ▼                                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    ARGOCD SERVER                          │   │
-│  │                                                           │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │   │
-│  │  │ API Server  │  │ Repo Server │  │ Application │       │   │
-│  │  │             │  │             │  │ Controller  │       │   │
-│  │  │ • UI/CLI    │  │ • Clone     │  │             │       │   │
-│  │  │ • Auth      │  │ • Render    │  │ • Watch     │       │   │
-│  │  │ • RBAC      │  │ • Cache     │  │ • Sync      │       │   │
-│  │  └─────────────┘  └─────────────┘  └──────┬──────┘       │   │
-│  │                                           │               │   │
-│  └───────────────────────────────────────────┼──────────────┘   │
-│                                              │                   │
-│                                              │ Apply             │
-│                                              ▼                   │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                   KUBERNETES CLUSTER                      │   │
-│  │                                                           │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐     │   │
-│  │  │ Deploy  │  │ Service │  │ Config  │  │ Secret  │     │   │
-│  │  │         │  │         │  │  Map    │  │         │     │   │
-│  │  └─────────┘  └─────────┘  └─────────┘  └─────────┘     │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
 
-### Core Components
+This model explains why "ArgoCD deployed my app" is an incomplete statement. The controller may have rendered the desired
+manifests successfully, applied them successfully, and still marked the application Degraded because Kubernetes health
+checks failed. It may also mark an app OutOfSync because a mutating webhook added fields that are harmless but not present
+in Git. Useful ArgoCD operation starts with separating render problems, apply problems, health problems, and drift problems.
 
-| Component | Purpose |
-|-----------|---------|
-| **API Server** | Serves UI, CLI, RBAC, webhook endpoints |
-| **Repo Server** | Clones repos, renders manifests (Helm/Kustomize) |
-| **Application Controller** | Watches apps, detects drift, triggers sync |
-| **Dex** | OIDC provider for SSO integration |
-| **Redis** | Caching for repo server performance |
+| State | What ArgoCD Is Saying | Typical Practitioner Question |
+|-------|------------------------|-------------------------------|
+| `Synced` | Rendered desired state matches tracked live resources | Are the resources also healthy and serving traffic? |
+| `OutOfSync` | Desired and live resources differ | Is this expected drift, a manual hotfix, or a Git change waiting to apply? |
+| `Progressing` | Kubernetes accepted changes but health is not final | Which controller condition is still moving toward readiness? |
+| `Degraded` | A resource reports unhealthy or failed status | Is the manifest wrong, or is the workload failing after deployment? |
+| `Missing` | A resource expected from Git is absent in the cluster | Was it deleted manually, pruned by another app, or blocked by permissions? |
+| `Unknown` | ArgoCD cannot determine state confidently | Is the API server unreachable, the CRD missing, or health logic incomplete? |
 
-## Installing ArgoCD
+Stop and think: if a production Deployment is `OutOfSync` because the live cluster has five replicas while Git says three,
+what extra fact do you need before deciding whether to sync? The important question is not "how do I force it back?" The
+important question is "who changed it and why?" If an HPA owns replica count, you probably need an ignore rule. If an
+operator manually scaled during an incident, syncing immediately may remove emergency capacity before the incident is over.
 
-### Quick Install
+ArgoCD's main components divide this work so failures are easier to isolate. The API server serves the UI, CLI, API, SSO,
+and RBAC checks. The repo server clones repositories and renders manifests through Helm, Kustomize, Jsonnet, or plain YAML.
+The application controller watches Application resources, compares desired and live state, and performs sync operations.
+Redis caches expensive state so the system does not repeatedly render and fetch the same material under load.
+
+| Component | Primary Job | Failure Symptoms | First Debug Step |
+|-----------|-------------|------------------|------------------|
+| API server | UI, CLI, webhooks, sessions, RBAC enforcement | Login failures, UI errors, CLI timeouts | Check `argocd-server` logs and Service reachability |
+| Repo server | Clone repositories and render manifests | Manifest generation errors, missing chart values | Run `argocd app manifests` and inspect repo-server logs |
+| Application controller | Compare, sync, prune, and assess health | Apps stuck OutOfSync, sync waves blocked | Check app events and controller logs |
+| Dex | Optional OIDC identity brokering | SSO redirects fail or groups are missing | Inspect OIDC claims and Dex connector config |
+| Redis | Cache manifests and application state | Slow UI, repeated rendering, cache errors | Check Redis health and repo-server latency |
+
+A useful senior habit is to name which component owns the symptom before touching configuration. If the UI denies a sync
+button, that is probably RBAC. If the manifest preview fails before Kubernetes sees anything, that is probably repo-server
+or source configuration. If Kubernetes accepts the manifest but health never turns green, that is probably workload or
+health-assessment behavior. This component-first diagnosis prevents random changes to sync policy when the problem is
+actually authentication, rendering, or application readiness.
+
+---
+
+## Installing ArgoCD Without Confusing Bootstrap and Delivery
+
+Installing ArgoCD is a bootstrap problem, not yet an application-delivery problem. At the start, something outside ArgoCD
+must create the `argocd` namespace and install the ArgoCD controllers. Many teams use a one-time `kubectl apply`, Helm,
+Terraform, or a cluster lifecycle tool for this bootstrap. After ArgoCD is running, it can manage many other resources,
+and mature teams often make ArgoCD manage its own configuration as well.
+
+For a lab, the upstream install manifest is acceptable because it creates a complete working control plane quickly. For
+production, teams usually prefer Helm or Kustomize so they can pin versions, configure replicas, set resource requests,
+enable SSO, define ingress, and manage values through review. The important distinction is that the bootstrap path should
+be repeatable and versioned even if ArgoCD is not yet available to reconcile it.
 
 ```bash
-# Create namespace
-kubectl create namespace argocd
+kind create cluster --name argocd-lab
 
-# Install ArgoCD
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+alias k=kubectl
 
-# Wait for pods
-kubectl -n argocd wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server --timeout=120s
+k create namespace argocd
 
-# Get initial admin password
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-echo
+k apply -n argocd \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
-# Port forward to access UI
-kubectl -n argocd port-forward svc/argocd-server 8080:443 &
+k -n argocd wait \
+  --for=condition=ready pod \
+  -l app.kubernetes.io/name=argocd-server \
+  --timeout=180s
+
+k -n argocd get pods
 ```
 
-### Production Install with Helm
+The initial admin password is stored in a Kubernetes Secret. In production, you should rotate or disable this default admin
+path after SSO and RBAC are configured. In a lab, retrieving the password lets you access the UI and CLI quickly.
+
+```bash
+ARGOCD_PASSWORD="$(
+  k -n argocd get secret argocd-initial-admin-secret \
+    -o jsonpath="{.data.password}" | base64 -d
+)"
+
+printf '%s\n' "$ARGOCD_PASSWORD"
+```
+
+Port-forwarding is enough for a local exercise. The service listens on HTTPS, so the browser and CLI must connect with
+TLS expectations. The `--insecure` flag below means the local CLI will not reject the self-signed certificate used in the
+lab. That is not a recommendation for production ingress; production should use trusted certificates and a deliberate
+network exposure model.
+
+```bash
+k -n argocd port-forward svc/argocd-server 8080:443 > /tmp/argocd-port-forward.log 2>&1 &
+
+argocd login 127.0.0.1:8080 \
+  --username admin \
+  --password "$ARGOCD_PASSWORD" \
+  --insecure
+
+argocd app list
+```
+
+A production Helm install expresses the same control-plane intent with configurable values. The exact chart version and
+ArgoCD version should be pinned by your platform team because controller upgrades can change behavior around health checks,
+ApplicationSet features, or Kubernetes API compatibility. The following command is runnable, but it is still only a
+starting point; production values should live in a reviewed repository rather than being typed at a terminal.
 
 ```bash
 helm repo add argo https://argoproj.github.io/argo-helm
 helm repo update
 
-helm install argocd argo/argo-cd \
+helm upgrade --install argocd argo/argo-cd \
   --namespace argocd \
   --create-namespace \
   --set server.replicas=2 \
-  --set controller.replicas=2 \
   --set repoServer.replicas=2 \
   --set redis.enabled=true \
-  --set server.ingress.enabled=true \
-  --set server.ingress.hosts[0]=argocd.example.com
+  --set controller.replicas=1
 ```
 
-### ArgoCD CLI
+The application controller is commonly kept as a single active reconciler because it coordinates sync state and uses
+leader election when multiple replicas are configured. Scaling ArgoCD is therefore not just "increase every Deployment."
+Repo-server replicas help when rendering is expensive, API-server replicas help with UI and CLI concurrency, and controller
+tuning helps when many applications reconcile at once. Treat those as different bottlenecks, not one generic capacity knob.
 
-```bash
-# Install CLI
-brew install argocd  # macOS
-# or
-curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
-chmod +x argocd && sudo mv argocd /usr/local/bin/
+---
 
-# Login
-argocd login localhost:8080 --username admin --password <password> --insecure
+## Modeling an Application: Source, Destination, Project, Sync
 
-# Add cluster (if managing external clusters)
-argocd cluster add my-cluster-context
-```
+An ArgoCD `Application` is a contract that binds four ideas together. The source tells ArgoCD where desired state lives
+and how to render it. The destination tells ArgoCD which cluster and namespace should receive those resources. The project
+defines what the application is allowed to do. The sync policy defines how aggressively ArgoCD should reconcile differences.
 
-## Applications
-
-### Basic Application
+That separation matters because most production mistakes are boundary mistakes. A valid Git path can still target the
+wrong namespace. A harmless staging application can become dangerous if it belongs to a project that allows cluster-wide
+resources. A correct production manifest can become risky if pruning is enabled without deletion review. Reading an
+Application as a boundary document is more useful than reading it as a deployment recipe.
 
 ```yaml
-# app.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: my-app
+  name: guestbook-staging
   namespace: argocd
 spec:
   project: default
-
   source:
-    repoURL: https://github.com/org/app-manifests.git
+    repoURL: https://github.com/argoproj/argocd-example-apps.git
     targetRevision: HEAD
-    path: apps/my-app
-
+    path: guestbook
   destination:
     server: https://kubernetes.default.svc
-    namespace: my-app
-
+    namespace: guestbook-staging
   syncPolicy:
     automated:
-      prune: true       # Delete resources removed from Git
-      selfHeal: true    # Revert manual changes
+      prune: false
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
 ```
 
-### Application with Helm
+This example uses the in-cluster Kubernetes API server as its destination. That is the simplest mode because ArgoCD is
+installed in the same cluster it manages. Multi-cluster operation adds registered cluster credentials, but the Application
+shape remains the same: source, destination, project, and sync behavior still define the boundary.
+
+```bash
+cat > /tmp/guestbook-staging.yaml <<'EOF'
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guestbook-staging
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/argoproj/argocd-example-apps.git
+    targetRevision: HEAD
+    path: guestbook
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: guestbook-staging
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+EOF
+
+k apply -f /tmp/guestbook-staging.yaml
+
+argocd app get guestbook-staging
+argocd app sync guestbook-staging
+argocd app wait guestbook-staging --health --timeout 180
+```
+
+When you use Helm, the Application source points at a chart repository or Git repository and provides values. This is
+powerful because teams can expose a small set of environment differences without duplicating whole manifest trees. It is
+also a source of confusion because the rendered manifest, not the values file alone, is what ArgoCD compares against the
+cluster. Debugging Helm-based apps often starts by asking ArgoCD to show the rendered manifests it is actually applying.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: nginx
+  name: nginx-demo
   namespace: argocd
 spec:
   project: default
-
   source:
     repoURL: https://charts.bitnami.com/bitnami
     chart: nginx
     targetRevision: 15.4.0
     helm:
-      releaseName: nginx
+      releaseName: nginx-demo
       values: |
-        replicaCount: 3
+        replicaCount: 2
         service:
           type: ClusterIP
-
-      # Or reference values file from Git
-      # valueFiles:
-      #   - values-production.yaml
-
-      # Or set individual parameters
-      # parameters:
-      #   - name: replicaCount
-      #     value: "3"
-
   destination:
     server: https://kubernetes.default.svc
-    namespace: nginx
+    namespace: nginx-demo
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
 ```
 
-### Application with Kustomize
+Kustomize expresses variation differently. A base contains shared resources, and overlays patch or compose those resources
+for each environment. In GitOps repositories this is often easier to review than large copied manifests because reviewers
+can see exactly what production changes relative to staging. The trade-off is that name prefixes, namespace fields, and
+patch targets must be understood carefully or resources will appear with unexpected names.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│                         KUSTOMIZE REPOSITORY SHAPE                         │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  app-config/                                                               │
+│  ├── base/                                                                 │
+│  │   ├── deployment.yaml          shared container, ports, labels           │
+│  │   ├── service.yaml             shared service selector and port          │
+│  │   └── kustomization.yaml       base resource list                        │
+│  └── overlays/                                                             │
+│      ├── staging/                                                          │
+│      │   └── kustomization.yaml   one replica, staging namespace            │
+│      └── production/                                                       │
+│          └── kustomization.yaml   more replicas, production namespace       │
+│                                                                            │
+│  ArgoCD Application source.path points at one overlay, not the whole repo.   │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+Stop and think: if staging and production point at the same Git repository but different overlay paths, where should you
+change the container image tag? If every environment should receive the image after promotion, the base may be right. If
+production should promote only after staging bakes, the production overlay or a promotion commit may be safer. The right
+answer depends on your release process, but the question must be asked before the repository structure is frozen.
+
+A senior review of an Application looks for a handful of risks before approving it. Is `targetRevision` pinned to a branch,
+tag, or commit, and does that match the promotion model? Does the destination namespace belong to the team? Does the project
+allow only the needed repositories and resource kinds? Is pruning safe for this app? Are namespace creation and resource
+ownership clear? Those review questions catch more production issues than memorizing every CRD field.
+
+| Application Field | Design Question | Safer Default for New Teams | When to Relax It |
+|-------------------|-----------------|-----------------------------|------------------|
+| `source.repoURL` | Which repository is trusted as deployment intent? | Team-owned repo allowlisted by AppProject | Shared platform repos with CODEOWNERS |
+| `source.targetRevision` | Which Git ref is deployed? | Environment branch or immutable tag | `HEAD` for fast-moving nonproduction apps |
+| `source.path` | Which subtree is the app boundary? | One app or one environment overlay | Monorepo generators with strict review rules |
+| `destination.namespace` | Where can resources be created? | Team namespace created by sync option | Cluster bootstrap apps with platform approval |
+| `project` | Which policy boundary applies? | One AppProject per team or domain | Shared project only for low-risk labs |
+| `syncPolicy.automated.prune` | Can Git deletions delete live resources? | `false` until deletion process is mature | `true` for disposable or tightly governed resources |
+| `syncPolicy.automated.selfHeal` | Can ArgoCD revert live drift automatically? | `true` for stateless app config | Temporarily disabled during emergency operations |
+
+---
+
+## Sync Policy: Automation With a Blast Radius
+
+Syncing is the act of applying desired state to the destination cluster. Manual sync means a human or automation command
+must approve the action after ArgoCD detects drift. Automated sync means ArgoCD can apply changes when it notices the
+desired state differs from live state. Neither is universally correct. The operational question is how much confidence
+you have in the source, the review process, and the reversibility of the resources being changed.
+
+The two flags that deserve the most scrutiny are `selfHeal` and `prune`. `selfHeal` tells ArgoCD to undo live changes that
+were not made in Git. That is excellent for preventing configuration drift, but it can also undo a carefully documented
+emergency scale-up. `prune` tells ArgoCD to delete live resources that are no longer in the desired state. That is useful
+for cleanup, but it turns file deletions into Kubernetes deletions.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: app-production
+  name: payments-api
   namespace: argocd
 spec:
-  project: default
-
+  project: payments
   source:
-    repoURL: https://github.com/org/app.git
-    targetRevision: HEAD
+    repoURL: https://github.com/example/payments-deploy.git
+    targetRevision: production
     path: overlays/production
-
-    # Kustomize-specific options
-    kustomize:
-      images:
-        - myapp=myregistry/myapp:v2.0.0
-      namePrefix: prod-
-      commonLabels:
-        env: production
-
   destination:
     server: https://kubernetes.default.svc
-    namespace: production
+    namespace: payments-production
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
 ```
 
-## Sync Strategies
+`PruneLast=true` is a small but important example of sequencing judgment. If a change replaces one resource with another,
+you often want new resources created and healthy before old resources are removed. This does not make pruning harmless,
+but it reduces avoidable downtime during replacement operations. The larger safety decision remains whether the application
+should prune automatically at all.
 
-### Sync Waves and Hooks
+Sync waves give you ordering inside a sync. ArgoCD already applies some Kubernetes resource kinds in a sensible order,
+but explicit waves become useful when an application contains namespaces, CRDs, controllers, migrations, workloads, and
+ingress resources that have real dependencies. Lower wave numbers run first, and ArgoCD waits for health before advancing
+when health checks are available.
 
 ```yaml
-# Sync waves: Control order of resource creation
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: my-app
+  name: payments-production
   annotations:
-    argocd.argoproj.io/sync-wave: "-1"  # Create first
+    argocd.argoproj.io/sync-wave: "-2"
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: config
+  name: payments-config
+  namespace: payments-production
   annotations:
-    argocd.argoproj.io/sync-wave: "0"   # Create second
+    argocd.argoproj.io/sync-wave: "-1"
+data:
+  FEATURE_FLAGS: "stable"
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-app
+  name: payments-api
+  namespace: payments-production
   annotations:
-    argocd.argoproj.io/sync-wave: "1"   # Create third
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: payments-api
+  template:
+    metadata:
+      labels:
+        app: payments-api
+    spec:
+      containers:
+        - name: api
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
 ```
 
-### Resource Hooks
+Hooks run jobs at specific points in the sync lifecycle. They are tempting because they let you bolt imperative work onto
+a declarative delivery system, but that temptation should be handled carefully. A database migration hook can be useful
+when it is idempotent, observable, and safe to retry. A hook that mutates external state without rollback semantics can
+make Git history look clean while the real system becomes harder to recover.
 
 ```yaml
-# Pre-sync hook: Run before sync
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: db-migrate
+  name: payments-schema-check
+  namespace: payments-production
   annotations:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   template:
     spec:
-      containers:
-        - name: migrate
-          image: myapp:latest
-          command: ["./migrate.sh"]
       restartPolicy: Never
+      containers:
+        - name: check
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - "echo checking schema compatibility && exit 0"
 ---
-# Post-sync hook: Run after sync
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: notify-slack
+  name: payments-post-sync-smoke
+  namespace: payments-production
   annotations:
     argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   template:
     spec:
-      containers:
-        - name: notify
-          image: curlimages/curl
-          command:
-            - curl
-            - -X
-            - POST
-            - $(SLACK_WEBHOOK)
-            - -d
-            - '{"text":"Deployment complete!"}'
       restartPolicy: Never
+      containers:
+        - name: smoke
+          image: curlimages/curl:8.7.1
+          command:
+            - sh
+            - -c
+            - "curl -fsS http://payments-api.payments-production.svc.cluster.local"
 ```
 
-### Hook Types
+| Hook | When It Runs | Good Use | Risk to Watch |
+|------|--------------|----------|---------------|
+| `PreSync` | Before normal resources sync | Compatibility checks, guarded migrations | Blocking all deploys with fragile external calls |
+| `Sync` | During the main sync phase | Resources that must participate in the apply plan | Confusing hook-owned and app-owned resources |
+| `PostSync` | After synced resources become healthy | Smoke tests, notifications, cache warmups | Declaring success when tests are too shallow |
+| `SyncFail` | After a sync operation fails | Cleanup, incident notification | Hiding the original failure behind cleanup noise |
+| `PostDelete` | After application deletion operations | Controlled cleanup for managed dependencies | Deleting data that should outlive the application |
+| `Skip` | Resource is not applied by ArgoCD | Externally managed resource included for context | Assuming ArgoCD protects a resource it skips |
 
-| Hook | When It Runs |
-|------|--------------|
-| `PreSync` | Before sync begins |
-| `Sync` | During sync (with manifests) |
-| `PostSync` | After all Sync hooks complete |
-| `SyncFail` | When sync fails |
-| `Skip` | Skip applying this resource |
+A healthy sync policy is usually conservative at first and becomes more automated as evidence accumulates. A team may
+start with manual sync and no prune in production, then enable self-heal for stateless workloads, then enable automated
+sync for low-risk services, then enable prune only where deletion review and ownership are mature. The goal is not maximum
+automation. The goal is automation that matches the team's ability to predict and recover from the controller's actions.
 
-## App of Apps Pattern
+---
 
-### Why App of Apps?
+## ApplicationSets and App of Apps: Scaling Without Copying Risk
 
+Managing one Application manually is straightforward. Managing many Applications across teams, clusters, and environments
+requires a generation pattern. ArgoCD has two common answers: App of Apps and ApplicationSets. App of Apps lets one root
+Application manage other Application manifests stored in Git. ApplicationSets generate Applications from templates and
+generators such as Git directories, cluster registrations, lists, pull requests, or matrix combinations.
+
+The App of Apps pattern is easy to understand because it uses the same Application resource recursively. A root app points
+at a directory of child Application manifests. The root app syncs those child Application CRs into the `argocd` namespace,
+and each child Application manages its own workload. This is useful for platform bootstrap because installing ingress,
+cert-manager, observability, and team apps can be represented as reviewed child Application files.
+
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│                              APP OF APPS PATTERN                           │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  Git repository                                                            │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │ argocd/                                                              │  │
+│  │ ├── root-app.yaml             one Application watched by operators    │  │
+│  │ └── apps/                                                              │  │
+│  │     ├── cert-manager.yaml     child Application for certificates       │  │
+│  │     ├── ingress-nginx.yaml    child Application for ingress            │  │
+│  │     ├── observability.yaml    child Application for monitoring         │  │
+│  │     └── payments-api.yaml     child Application for a service          │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                         │                                                  │
+│                         ▼                                                  │
+│  ArgoCD root Application creates child Application resources in argocd.      │
+│                         │                                                  │
+│                         ▼                                                  │
+│  Each child Application reconciles its own source path and destination.      │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
-MANAGING 50 APPLICATIONS:
-
-Without App of Apps:                 With App of Apps:
-─────────────────────────────────────────────────────────────────
-
-argocd/                             argocd/
-├── app1.yaml                       └── root-app.yaml  ◀── ONE FILE
-├── app2.yaml
-├── app3.yaml                       apps/
-├── ...                             ├── app1/
-└── app50.yaml                      │   └── application.yaml
-                                    ├── app2/
-50 Application CRs to manage        │   └── application.yaml
-                                    └── ...
-
-Problem: How do you deploy                ▲
-the Application CRs themselves?           │
-                                    Root app watches
-                                    this directory
-```
-
-### Implementing App of Apps
 
 ```yaml
-# root-app.yaml - The "app of apps"
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: root
+  name: platform-root
   namespace: argocd
 spec:
-  project: default
+  project: platform
   source:
-    repoURL: https://github.com/org/argocd-apps.git
-    targetRevision: HEAD
-    path: apps
+    repoURL: https://github.com/example/platform-gitops.git
+    targetRevision: main
+    path: argocd/apps
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
   syncPolicy:
     automated:
-      prune: true
+      prune: false
       selfHeal: true
 ```
 
-```
-# Repository structure
-argocd-apps/
-├── apps/
-│   ├── cert-manager/
-│   │   └── application.yaml
-│   ├── ingress-nginx/
-│   │   └── application.yaml
-│   ├── monitoring/
-│   │   └── application.yaml
-│   └── my-apps/
-│       ├── app1.yaml
-│       ├── app2.yaml
-│       └── app3.yaml
-└── root-app.yaml
-```
+ApplicationSets are better when the repetition has a clear template. If each cluster needs the same addon, or each directory
+under `apps/*` should become one Application, writing individual child Application files creates review noise. A generator
+can discover the intended set, while the template defines the consistent Application shape. The benefit is reduced copying;
+the risk is that a broad generator can create or delete many Applications after a small repository change.
 
 ```yaml
-# apps/cert-manager/application.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: cert-manager
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "-2"  # Install early
-spec:
-  project: default
-  source:
-    repoURL: https://charts.jetstack.io
-    chart: cert-manager
-    targetRevision: v1.13.0
-    helm:
-      values: |
-        installCRDs: true
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: cert-manager
-```
-
-## ApplicationSets
-
-### Template-Based Application Generation
-
-```yaml
-# Generate apps from Git directories
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: cluster-addons
+  name: addon-directory-apps
   namespace: argocd
 spec:
   generators:
     - git:
-        repoURL: https://github.com/org/cluster-addons.git
-        revision: HEAD
+        repoURL: https://github.com/example/platform-addons.git
+        revision: main
         directories:
           - path: addons/*
-
   template:
     metadata:
       name: '{{path.basename}}'
     spec:
-      project: default
+      project: platform
       source:
-        repoURL: https://github.com/org/cluster-addons.git
-        targetRevision: HEAD
+        repoURL: https://github.com/example/platform-addons.git
+        targetRevision: main
         path: '{{path}}'
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: false
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
 ```
 
-### Multi-Cluster Deployment
+For multi-cluster deployments, a list generator is the most explicit place to start because each cluster entry can carry
+different values. Once cluster onboarding is mature, the clusters generator can select registered clusters by label. The
+progression is deliberate: static lists are less elegant, but they are easier to review while a team is learning the blast
+radius of generated Applications.
 
 ```yaml
-# Deploy to multiple clusters
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: my-app
+  name: payments-api-environments
   namespace: argocd
 spec:
   generators:
     - list:
         elements:
-          - cluster: production
-            url: https://prod.k8s.example.com
-            values:
-              replicas: "5"
-          - cluster: staging
-            url: https://staging.k8s.example.com
-            values:
-              replicas: "2"
-
+          - env: staging
+            clusterUrl: https://kubernetes.default.svc
+            namespace: payments-staging
+            path: overlays/staging
+          - env: production
+            clusterUrl: https://kubernetes.default.svc
+            namespace: payments-production
+            path: overlays/production
   template:
     metadata:
-      name: 'my-app-{{cluster}}'
+      name: 'payments-api-{{env}}'
     spec:
-      project: default
+      project: payments
       source:
-        repoURL: https://github.com/org/my-app.git
-        targetRevision: HEAD
-        path: deploy
-        helm:
-          parameters:
-            - name: replicas
-              value: '{{values.replicas}}'
+        repoURL: https://github.com/example/payments-deploy.git
+        targetRevision: main
+        path: '{{path}}'
       destination:
-        server: '{{url}}'
-        namespace: my-app
+        server: '{{clusterUrl}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: false
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
 ```
 
-### Generator Types
+| Generator | Use Case | Review Concern |
+|-----------|----------|----------------|
+| `list` | Explicit environments, clusters, or apps with small counts | Manual entries can drift from reality |
+| `git` directories | One Application per repository directory | Directory renames can create and remove apps |
+| `git` files | Application values loaded from structured files | Template behavior may hide a risky value change |
+| `clusters` | Deploy to registered clusters selected by labels | Cluster labels become deployment policy |
+| `matrix` | Combine apps and clusters into a generated grid | Small template mistakes multiply quickly |
+| `merge` | Combine data from multiple generators by key | Missing keys can produce surprising omissions |
+| `pullRequest` | Temporary preview environments for changes | Cleanup and secret exposure need careful design |
 
-| Generator | Use Case |
-|-----------|----------|
-| `list` | Static list of elements |
-| `clusters` | All registered ArgoCD clusters |
-| `git` | Directories or files in a Git repo |
-| `matrix` | Combine two generators |
-| `merge` | Merge multiple generators |
-| `pullRequest` | GitHub/GitLab PRs for preview environments |
+ApplicationSet power should be matched with repository protections. A matrix generator that deploys every app to every
+labeled production cluster is efficient, but it means a label change or directory addition can trigger many deployments.
+For senior teams, the generator is not just YAML. It is a policy surface that deserves CODEOWNERS, tests that render the
+generated Applications, and review from people who understand the target clusters.
 
-## Projects and RBAC
+---
 
-### ArgoCD Projects
+## Projects and RBAC: The Real Multi-Tenancy Boundary
+
+ArgoCD AppProjects are where platform teams turn "please use the shared ArgoCD instance" into enforceable boundaries.
+A project can restrict source repositories, destination clusters and namespaces, allowed resource kinds, denied resource
+kinds, and project-scoped roles. Without projects, a shared ArgoCD instance becomes a shared deployment credential, which
+is the opposite of platform self-service.
+
+The most important design rule is that a team should not be able to deploy a resource merely because they can write YAML.
+They should need both Git approval and ArgoCD project permission. If Team A can point an Application at Team B's namespace,
+the platform has delegated too much. If Team A can create cluster-wide RBAC from an app repository, the project boundary
+is too loose for ordinary application delivery.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: team-a
+  name: payments
   namespace: argocd
 spec:
-  description: Team A's applications
-
-  # Allowed source repos
+  description: Payments team application boundary
   sourceRepos:
-    - https://github.com/org/team-a-*
-    - https://charts.bitnami.com/bitnami
-
-  # Allowed destination clusters/namespaces
+    - https://github.com/example/payments-*
   destinations:
-    - namespace: team-a-*
+    - namespace: payments-*
       server: https://kubernetes.default.svc
-    - namespace: '*'
-      server: https://staging.example.com
-
-  # Allowed resource kinds
-  clusterResourceWhitelist:
-    - group: ''
-      kind: Namespace
+  clusterResourceWhitelist: []
   namespaceResourceWhitelist:
-    - group: '*'
-      kind: '*'
-
-  # Deny specific resources
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Service
+    - group: apps
+      kind: Deployment
+    - group: networking.k8s.io
+      kind: Ingress
   namespaceResourceBlacklist:
-    - group: ''
-      kind: Secret  # Can't create secrets directly
-
-  # Roles for this project
+    - group: ""
+      kind: Secret
+  orphanedResources:
+    warn: true
   roles:
     - name: developer
-      description: Can sync applications
+      description: Payments developers can view and sync payments applications
       policies:
-        - p, proj:team-a:developer, applications, sync, team-a/*, allow
-        - p, proj:team-a:developer, applications, get, team-a/*, allow
+        - p, proj:payments:developer, applications, get, payments/*, allow
+        - p, proj:payments:developer, applications, sync, payments/*, allow
+        - p, proj:payments:developer, logs, get, payments/*, allow
       groups:
-        - team-a-developers  # OIDC group
+        - payments-developers
 ```
 
-### RBAC Policies
+This project intentionally denies direct Secret creation. That does not mean payments applications cannot use secrets.
+It means secrets should arrive through an approved mechanism such as External Secrets, Sealed Secrets, or a platform-owned
+secret delivery process. The policy separates application deployment from credential management, which is a common and
+valuable platform boundary.
+
+Instance-level RBAC maps users and groups to ArgoCD capabilities. Project roles then narrow what those users can do inside
+a project. Both layers matter. Instance RBAC can decide whether a group can create Applications at all; project roles can
+decide which project applications they may get, sync, or inspect. When SSO is configured, group claims from the identity
+provider become part of this enforcement chain.
 
 ```yaml
-# argocd-rbac-cm ConfigMap
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -565,757 +756,588 @@ metadata:
   namespace: argocd
 data:
   policy.default: role:readonly
-
   policy.csv: |
-    # Admin: Full access
-    g, admins, role:admin
+    p, role:platform-admin, applications, *, */*, allow
+    p, role:platform-admin, projects, *, *, allow
+    p, role:platform-admin, clusters, *, *, allow
+    g, platform-admins, role:platform-admin
 
-    # Developer: Sync and view
-    p, role:developer, applications, get, */*, allow
-    p, role:developer, applications, sync, */*, allow
-    p, role:developer, logs, get, */*, allow
-
-    # Viewer: Read-only
-    p, role:viewer, applications, get, */*, allow
-    p, role:viewer, projects, get, *, allow
-
-    # Map groups to roles
-    g, developers, role:developer
-    g, viewers, role:viewer
-
+    p, role:application-developer, applications, get, */*, allow
+    p, role:application-developer, applications, sync, */*, allow
+    p, role:application-developer, logs, get, */*, allow
+    g, application-developers, role:application-developer
   scopes: '[groups]'
 ```
 
-## Multi-Tenancy
+```text
+┌────────────────────────────────────────────────────────────────────────────┐
+│                         SOFT MULTI-TENANT ARGOCD                           │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  Identity Provider                                                         │
+│  ┌────────────────────────┐                                                │
+│  │ groups claim            │                                                │
+│  │ - payments-developers   │                                                │
+│  │ - search-developers     │                                                │
+│  └────────────┬───────────┘                                                │
+│               │                                                            │
+│               ▼                                                            │
+│  ArgoCD RBAC maps groups to roles, then AppProjects limit destinations.     │
+│                                                                            │
+│  ┌────────────────────────┐             ┌────────────────────────┐         │
+│  │ Project: payments       │             │ Project: search         │         │
+│  │ Repos: payments-*       │             │ Repos: search-*         │         │
+│  │ Namespaces: payments-*  │             │ Namespaces: search-*    │         │
+│  │ Cluster resources: none │             │ Cluster resources: none │         │
+│  └────────────┬───────────┘             └────────────┬───────────┘         │
+│               │                                      │                     │
+│               ▼                                      ▼                     │
+│  payments-staging, payments-prod        search-staging, search-prod         │
+│                                                                            │
+│  Shared ArgoCD instance, separated by source, destination, kind, and role.   │
+└────────────────────────────────────────────────────────────────────────────┘
+```
 
-### Namespace Isolation
+Soft multi-tenancy is not hard isolation. All tenants still depend on the availability and correctness of the shared
+ArgoCD control plane. A platform team should monitor it as shared infrastructure, restrict who can modify global settings,
+and avoid letting ordinary app teams install arbitrary config-management plugins. For stronger tenant separation, some
+organizations run separate ArgoCD instances per environment, business unit, or security boundary.
+
+The practical question is not "one ArgoCD or many?" The practical question is which failure domains must be separated.
+A single instance for many dev teams may be fine if projects are strict and workloads are low risk. Regulated production
+systems may justify a dedicated instance with a smaller administrator group, separate SSO policy, stricter repository
+allowlists, and slower upgrade cadence.
+
+---
+
+## Troubleshooting: From Symptom to Owner
+
+ArgoCD troubleshooting is easiest when you start from the status and then identify the owner of the failing layer. A sync
+failure is not the same as a health failure. A manifest generation error is not the same as an RBAC denial. An OutOfSync
+diff is not always a bug. The fastest operators avoid "click sync again" as a reflex and instead collect enough evidence
+to decide whether the source, renderer, Kubernetes API, workload, or ArgoCD policy is responsible.
+
+The CLI gives you a compact path through that evidence. `argocd app get` shows status, conditions, sync policy, source,
+destination, and recent history. `argocd app diff` shows what ArgoCD thinks differs. `argocd app manifests` shows rendered
+desired manifests. Kubernetes commands then show live resource events, conditions, and controller-level failures.
+
+```bash
+argocd app get guestbook-staging
+
+argocd app diff guestbook-staging
+
+argocd app manifests guestbook-staging > /tmp/guestbook-rendered.yaml
+
+k -n guestbook-staging get all
+
+k -n guestbook-staging describe deployment guestbook-ui
+
+k -n argocd logs deploy/argocd-application-controller --tail=100
+```
+
+A common OutOfSync pattern appears when another controller owns a field that Git also declares. Replica counts managed by
+an HPA are the classic example. If Git says three replicas and the HPA scales to six, ArgoCD can report drift forever or
+fight the autoscaler if self-heal is enabled. The fix is not to disable GitOps for the whole app. The fix is to stop
+declaring ownership of that field in the wrong place or configure an ignore rule for the controller-owned field.
 
 ```yaml
-# Restrict team to their namespaces
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: team-payments
-  namespace: argocd
-spec:
-  destinations:
-    # Only these namespaces
-    - namespace: payments-*
-      server: https://kubernetes.default.svc
-
-  # Must use these labels
-  clusterResourceWhitelist: []  # No cluster resources
-
-  sourceRepos:
-    - https://github.com/company/payments-*
-
-  # Enforce resource quotas via sync waves
-  orphanedResources:
-    warn: true
-```
-
-### Soft Multi-Tenancy Pattern
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    MULTI-TENANT ARGOCD                           │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  TEAM A                        TEAM B                            │
-│  ┌────────────────────┐       ┌────────────────────┐            │
-│  │ Project: team-a    │       │ Project: team-b    │            │
-│  │                    │       │                    │            │
-│  │ Repos: org/team-a-*│       │ Repos: org/team-b-*│            │
-│  │ NS: team-a-*       │       │ NS: team-b-*       │            │
-│  └─────────┬──────────┘       └─────────┬──────────┘            │
-│            │                            │                        │
-│            ▼                            ▼                        │
-│  ┌────────────────────┐       ┌────────────────────┐            │
-│  │ team-a-production  │       │ team-b-production  │            │
-│  │ team-a-staging     │       │ team-b-staging     │            │
-│  └────────────────────┘       └────────────────────┘            │
-│                                                                  │
-│  SHARED ARGOCD INSTANCE                                          │
-│  • SSO via OIDC (groups → project roles)                        │
-│  • Audit logging enabled                                         │
-│  • Resource quotas per project                                   │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## Common Mistakes
-
-| Mistake | Why It's Bad | Better Approach |
-|---------|--------------|-----------------|
-| Secrets in Git | Exposed credentials | Use External Secrets, Sealed Secrets, or Vault |
-| No sync waves | Resources created in wrong order | Use sync-wave annotations for dependencies |
-| Ignoring prune | Orphaned resources accumulate | Enable `prune: true` or manage orphaned resources |
-| Manual kubectl changes | Drift from Git source | Enable `selfHeal: true` to revert changes |
-| No projects | No isolation between teams | Create projects per team with RBAC |
-| Hardcoded image tags | Can't track what's deployed | Use image updater or Git automation |
-
-## War Story: The $1.7 Million Git Merge
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  THE $1.7 MILLION GIT MERGE                                     │
-│  ───────────────────────────────────────────────────────────────│
-│  Company: B2B SaaS platform (500+ enterprise customers)         │
-│  Stack: 127 microservices, 3 clusters, ArgoCD managed           │
-│  The disaster: One merge, 47 services deleted, 6 hours down     │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**Day 0 - The Merge**
-
-A developer was cleaning up the repository. "Let's remove these old deployment files that are no longer needed." He identified 47 services in the `deprecated/` folder and deleted them. The PR passed code review—reviewers saw only file deletions, nothing alarming.
-
-But there was a problem: the root ArgoCD Application had `prune: true` enabled. And the "deprecated" folder? It wasn't deprecated at all. A naming refactor months earlier had moved services there, but they were still in production.
-
-```
-THE MERGE TIMELINE
-─────────────────────────────────────────────────────────────────
-09:14 AM  PR merged to main
-09:14 AM  ArgoCD detected change (30-second sync)
-09:15 AM  ArgoCD synced: 47 services deleted from cluster
-09:17 AM  First customer reports: "API returning 503"
-09:22 AM  PagerDuty: 2,847 alerts in 5 minutes
-09:25 AM  Engineering all-hands: "What happened?!"
-09:45 AM  Root cause identified: services deleted by GitOps
-10:00 AM  Git revert pushed to main
-10:02 AM  ArgoCD synced: services recreating
-10:15 AM  Database connection pools exhausted (cold start storm)
-11:00 AM  Services recovering, still degraded
-15:00 PM  Full recovery confirmed
-```
-
-**The Fallout**
-
-```
-INCIDENT IMPACT ASSESSMENT
-─────────────────────────────────────────────────────────────────
-Downtime duration:        5 hours 45 minutes
-Services affected:        47 of 127 (37%)
-Customers impacted:       312 enterprise accounts
-SLA violations:           89 customers (99.9% SLA)
-
-Financial Impact:
-- SLA credit payouts:     $847,000
-- Lost transactions:      $523,000
-- Emergency response:     $67,000 (overtime, contractors)
-- Customer churn (30d):   $312,000 (7 accounts)
-
-Total quantifiable cost:  $1,749,000
-```
-
-**Why ArgoCD "Worked Correctly"**
-
-ArgoCD did exactly what it was configured to do:
-1. Git is the source of truth
-2. Files were deleted from Git
-3. `prune: true` was enabled
-4. ArgoCD deleted resources not in Git
-
-The tool wasn't broken—the process was.
-
-**The Fix: Defense in Depth**
-
-```yaml
-# 1. Protect critical namespaces with finalizers
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: payment-service
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    # Require manual deletion, never auto-prune
-    argocd.argoproj.io/sync-options: Prune=false
-
-# 2. Warn before pruning
-spec:
-  syncPolicy:
-    automated:
-      prune: false  # Changed from true!
-      selfHeal: true
-  # Enable orphan warnings instead of auto-delete
-  orphanedResources:
-    warn: true
-```
-
-```yaml
-# 3. CODEOWNERS protection for critical paths
-# .github/CODEOWNERS
-/apps/production/**  @platform-team @security-team
-/infrastructure/**   @platform-team
-```
-
-**The Cultural Change**
-
-Teams that want safer GitOps workflows often add guardrails such as:
-
-1. **Prune disabled by default**: Services opt-in to pruning with explicit annotation
-2. **Two-person review for deletions**: Any PR that removes files requires platform team approval
-3. **Staging sync first**: Production syncs only after a staging bake time has passed
-4. **Sync windows**: Critical services can only sync during business hours
-
-**Key Lessons**
-
-1. **`prune: true` is a loaded gun**: Only enable for namespaces you're willing to lose
-2. **Git history is your backup**: But recovery requires understanding what ArgoCD will do
-3. **Review deletions carefully**: "Removing old files" PRs need scrutiny
-4. **Staging isn't optional**: If ArgoCD would destroy staging, it'll destroy production
-5. **GitOps amplifies mistakes**: The same property that makes recovery fast makes destruction fast
-
-## Quiz
-
-### Question 1
-What's the difference between `selfHeal` and `prune` in ArgoCD sync policy?
-
-<details>
-<summary>Show Answer</summary>
-
-**selfHeal**: Reverts manual changes made to the cluster that differ from Git. If someone runs `kubectl edit deployment` and changes replicas, ArgoCD will change it back.
-
-**prune**: Deletes resources from the cluster that no longer exist in Git. If you remove a ConfigMap from your manifests, ArgoCD will delete it from the cluster.
-
-Both can be dangerous if misconfigured:
-- `selfHeal` can undo emergency fixes (disable before hotfixes)
-- `prune` can delete stateful data (protect PVCs with annotations)
-</details>
-
-### Question 2
-You have 5 services that must be deployed in order: Namespace → ConfigMap → Secret → Deployment → Ingress. How do you ensure this order?
-
-<details>
-<summary>Show Answer</summary>
-
-Use sync waves with annotations:
-
-```yaml
-# namespace.yaml
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-wave: "-2"
-
-# configmap.yaml
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-wave: "-1"
-
-# secret.yaml
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-wave: "0"
-
-# deployment.yaml
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-
-# ingress.yaml
-metadata:
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
-```
-
-Lower numbers sync first. ArgoCD waits for each wave's resources to be healthy before proceeding.
-</details>
-
-### Question 3
-How would you deploy the same application to 10 clusters with different configurations per cluster?
-
-<details>
-<summary>Show Answer</summary>
-
-Use an ApplicationSet with a list generator:
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: my-app
-spec:
-  generators:
-    - list:
-        elements:
-          - cluster: prod-us
-            url: https://prod-us.example.com
-            replicas: "10"
-            region: us-east-1
-          - cluster: prod-eu
-            url: https://prod-eu.example.com
-            replicas: "5"
-            region: eu-west-1
-          # ... 8 more clusters
-
-  template:
-    metadata:
-      name: 'my-app-{{cluster}}'
-    spec:
-      source:
-        repoURL: https://github.com/org/my-app.git
-        path: deploy
-        helm:
-          parameters:
-            - name: replicas
-              value: '{{replicas}}'
-            - name: region
-              value: '{{region}}'
-      destination:
-        server: '{{url}}'
-        namespace: my-app
-```
-
-For dynamic cluster lists, use the `clusters` generator with labels.
-</details>
-
-### Question 4
-Your team accidentally pushed a broken config to Git and ArgoCD deployed it. How do you roll back?
-
-<details>
-<summary>Show Answer</summary>
-
-Several options:
-
-1. **Git revert** (recommended):
-   ```bash
-   git revert HEAD
-   git push
-   ```
-   ArgoCD syncs the reverted state automatically.
-
-2. **ArgoCD rollback**:
-   ```bash
-   argocd app rollback my-app --revision 5
-   ```
-   This syncs to a previous Git commit. Note: If auto-sync is enabled, it will re-sync to HEAD.
-
-3. **Disable auto-sync, fix, re-enable**:
-   ```bash
-   argocd app set my-app --sync-policy none
-   # Fix the issue in Git
-   argocd app sync my-app
-   argocd app set my-app --sync-policy automated
-   ```
-
-Git revert is preferred because it maintains the audit trail and works with any sync policy.
-</details>
-
-### Question 5
-You're managing 150 applications across 5 clusters. Using individual Application CRs is becoming unwieldy. What ArgoCD pattern would you use?
-
-<details>
-<summary>Show Answer</summary>
-
-Use **ApplicationSets** with multiple generators:
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: ApplicationSet
-metadata:
-  name: cluster-apps
-spec:
-  generators:
-    # Matrix: Combine clusters × apps
-    - matrix:
-        generators:
-          - clusters: {}  # All registered clusters
-          - git:
-              repoURL: https://github.com/org/apps.git
-              revision: HEAD
-              directories:
-                - path: apps/*
-
-  template:
-    metadata:
-      name: '{{name}}-{{path.basename}}'
-    spec:
-      project: default
-      source:
-        repoURL: https://github.com/org/apps.git
-        path: '{{path}}'
-      destination:
-        server: '{{server}}'
-        namespace: '{{path.basename}}'
-```
-
-This generates:
-- 5 clusters × 30 apps = 150 Applications from ONE ApplicationSet
-- Adding a cluster automatically deploys all apps
-- Adding an app automatically deploys to all clusters
-</details>
-
-### Question 6
-An application is showing "OutOfSync" status even though the Git source hasn't changed. What are the common causes and how do you debug?
-
-<details>
-<summary>Show Answer</summary>
-
-**Common causes:**
-
-1. **Defaulted fields**: Kubernetes API adds defaults that weren't in your manifest
-2. **Mutations by controllers**: Admission webhooks or operators modify resources
-3. **Immutable fields**: Some fields can't be changed after creation
-4. **Annotation drift**: Timestamps or hash annotations added by other tools
-
-**Debug steps:**
-
-```bash
-# 1. View the diff
-argocd app diff my-app
-
-# 2. Check what ArgoCD sees
-argocd app get my-app --show-params
-
-# 3. View raw manifests
-argocd app manifests my-app --source live
-argocd app manifests my-app --source git
-
-# 4. Compare in UI
-# ArgoCD UI shows side-by-side diff
-
-# 5. If acceptable drift, ignore specific fields
-```
-
-**Fix with ignore differences:**
-
-```yaml
-spec:
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      jsonPointers:
-        - /spec/replicas  # Ignore HPA-managed replicas
-    - group: ""
-      kind: Service
-      jqPathExpressions:
-        - .metadata.annotations["kubectl.kubernetes.io/last-applied-configuration"]
-```
-</details>
-
-### Question 7
-You need to prevent Team A from deploying to Team B's namespaces while sharing a single ArgoCD instance. How do you configure this?
-
-<details>
-<summary>Show Answer</summary>
-
-Use **AppProjects** for namespace isolation:
-
-```yaml
-# Team A project
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: team-a
-  namespace: argocd
-spec:
-  description: Team A applications
-
-  # Can only deploy to team-a namespaces
-  destinations:
-    - namespace: team-a-*
-      server: https://kubernetes.default.svc
-
-  # Can only use team-a repos
-  sourceRepos:
-    - https://github.com/org/team-a-*
-
-  # No cluster-wide resources
-  clusterResourceWhitelist: []
-
-  # Map OIDC group to project
-  roles:
-    - name: developer
-      policies:
-        - p, proj:team-a:developer, applications, *, team-a/*, allow
-      groups:
-        - team-a-developers  # OIDC group
-```
-
-**RBAC enforcement:**
-
-```yaml
-# argocd-rbac-cm ConfigMap
-data:
-  policy.csv: |
-    # Team A can only access team-a project
-    p, role:team-a-dev, applications, *, team-a/*, allow
-    p, role:team-a-dev, logs, get, team-a/*, allow
-    g, team-a-developers, role:team-a-dev
-
-    # Default: deny
-    p, role:default, *, *, *, deny
-  policy.default: role:readonly
-```
-</details>
-
-### Question 8
-Calculate the resource requirements for ArgoCD managing 500 applications with 20 Git repositories, syncing every 3 minutes.
-
-<details>
-<summary>Show Answer</summary>
-
-**Calculation approach:**
-
-```
-ARGOCD RESOURCE SIZING
-─────────────────────────────────────────────────────────────────
-Applications: 500
-Git repos: 20
-Sync interval: 3 minutes
-Average manifests per app: 10
-
-API Server:
-- Handles UI, CLI, API calls
-- Memory: ~200MB base + 1MB per 100 apps = 200 + 5 = 205MB
-- Replicas: 2 (HA) = 410MB total
-- CPU: 500m per replica
-
-Repo Server:
-- Clones repos, renders manifests
-- Memory: ~100MB base + 50MB per repo = 100 + 1000 = 1.1GB
-- Clones cached, but 20 repos with activity = significant
-- Replicas: 2 (HA) = 2.2GB total
-- CPU: 1 core per replica (manifest rendering is CPU-intensive)
-
-Application Controller:
-- Watches 500 apps, calculates diffs
-- Memory: ~500MB base + 2MB per app = 500 + 1000 = 1.5GB
-- Single instance (uses leader election)
-- CPU: 2 cores (continuous reconciliation)
-
-Redis:
-- Caches repo contents, application state
-- Memory: 512MB-1GB depending on manifest sizes
-- Single instance (or Redis HA)
-
-TOTAL ESTIMATE:
-─────────────────────────────────────────────────────────────────
-api-server:     2 × (500m CPU, 256MB)  = 1 core, 512MB
-repo-server:    2 × (1 core, 1.5GB)    = 2 cores, 3GB
-controller:     1 × (2 cores, 2GB)     = 2 cores, 2GB
-redis:          1 × (200m CPU, 1GB)    = 200m, 1GB
-─────────────────────────────────────────────────────────────────
-Total:          ~5 cores, ~6.5GB memory
-
-Plus buffer for spikes: 8 cores, 10GB memory recommended
-```
-
-**Scaling tips:**
-- Increase repo-server replicas if manifest rendering is slow
-- Use `--parallelism-limit` on controller to prevent thundering herd
-- Consider sharding controller across clusters for >1000 apps
-</details>
-
-## Hands-On Exercise
-
-### Scenario: GitOps for a Multi-Environment Application
-
-Deploy an application to staging and production with ArgoCD, using different configurations per environment.
-
-### Setup
-
-```bash
-# Create kind cluster
-kind create cluster --name argocd-lab
-
-# Install ArgoCD
-kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-
-# Wait for pods
-kubectl -n argocd wait --for=condition=ready pod -l app.kubernetes.io/name=argocd-server --timeout=120s
-
-# Get password
-ARGO_PWD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-echo "ArgoCD password: $ARGO_PWD"
-
-# Port forward
-kubectl -n argocd port-forward svc/argocd-server 8080:443 &
-```
-
-### Create Git Repository Structure
-
-```bash
-# Create local directory structure
-mkdir -p argocd-lab/{base,overlays/{staging,production},apps}
-
-# Base kustomization
-cat > argocd-lab/base/deployment.yaml << 'EOF'
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: demo-app
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: demo
-  template:
-    metadata:
-      labels:
-        app: demo
-    spec:
-      containers:
-        - name: app
-          image: nginx:1.25
-          ports:
-            - containerPort: 80
-          resources:
-            requests:
-              cpu: 10m
-              memory: 32Mi
-EOF
-
-cat > argocd-lab/base/service.yaml << 'EOF'
-apiVersion: v1
-kind: Service
-metadata:
-  name: demo-app
-spec:
-  selector:
-    app: demo
-  ports:
-    - port: 80
-EOF
-
-cat > argocd-lab/base/kustomization.yaml << 'EOF'
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-resources:
-  - deployment.yaml
-  - service.yaml
-EOF
-
-# Staging overlay
-cat > argocd-lab/overlays/staging/kustomization.yaml << 'EOF'
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-namespace: staging
-namePrefix: staging-
-resources:
-  - ../../base
-patches:
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
-    target:
-      kind: Deployment
-      name: demo-app
-EOF
-
-# Production overlay
-cat > argocd-lab/overlays/production/kustomization.yaml << 'EOF'
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-namespace: production
-namePrefix: prod-
-resources:
-  - ../../base
-patches:
-  - patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 3
-    target:
-      kind: Deployment
-      name: demo-app
-EOF
-```
-
-### Create ArgoCD Applications
-
-Since we're using local files, we'll apply manifests directly:
-
-```bash
-# Create namespaces
-kubectl create namespace staging
-kubectl create namespace production
-
-# Apply manifests
-kubectl apply -k argocd-lab/overlays/staging/
-kubectl apply -k argocd-lab/overlays/production/
-```
-
-For a real GitOps setup, create Application resources pointing to your Git repo:
-
-```yaml
-# apps/staging.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: demo-staging
+  name: web-with-hpa
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://github.com/YOUR_ORG/argocd-lab.git
-    targetRevision: HEAD
-    path: overlays/staging
+    repoURL: https://github.com/example/web-deploy.git
+    targetRevision: main
+    path: overlays/production
   destination:
     server: https://kubernetes.default.svc
-    namespace: staging
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+    namespace: web-production
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: web
+      namespace: web-production
+      jsonPointers:
+        - /spec/replicas
 ```
 
-### Verify Deployment
+Another common pattern is a rendered manifest that Kubernetes rejects. This often happens when a CRD is missing, an API
+version is no longer served, or a policy controller denies a resource. ArgoCD cannot make an invalid desired state valid;
+it can only report the failure. In that case, look at app conditions and Kubernetes admission messages before changing
+sync options. A sync option cannot fix a resource kind that the cluster does not understand.
 
 ```bash
-# Check staging (1 replica)
-kubectl -n staging get pods
+argocd app get guestbook-staging --show-operation
 
-# Check production (3 replicas)
-kubectl -n production get pods
+argocd app history guestbook-staging
 
-# Access ArgoCD UI
-open https://localhost:8080
-# Login: admin / $ARGO_PWD
+k -n argocd get events --sort-by=.lastTimestamp | tail -n 20
 ```
 
-### Success Criteria
-
-- [ ] ArgoCD is running and accessible
-- [ ] Can view applications in the UI
-- [ ] Staging has 1 replica
-- [ ] Production has 3 replicas
-- [ ] Understand Application and Kustomize structure
-
-### Cleanup
+Rollbacks should usually start in Git. Reverting the commit that introduced the bad desired state preserves the audit trail
+and lets ArgoCD reconcile normally. The ArgoCD rollback command can be useful when you need to return quickly to a previous
+application revision, but automated sync may move the app back to the current Git head unless you pause or change policy.
+That is why incident runbooks should say exactly when to suspend auto-sync and who may do it.
 
 ```bash
-kind delete cluster --name argocd-lab
-rm -rf argocd-lab
+git revert HEAD
+git push
+
+argocd app sync guestbook-staging
+argocd app wait guestbook-staging --health --timeout 180
 ```
 
-## Key Takeaways
+If you must pause automation during an incident, make it explicit and temporary. Record why it was done, make the Git fix,
+sync deliberately, and then restore the policy. Long-lived manual drift is exactly what GitOps was adopted to prevent.
+A controlled exception is operations; an undocumented exception becomes technical debt that ArgoCD will eventually surface.
 
-Before moving on, ensure you can:
+```bash
+argocd app set guestbook-staging --sync-policy none
 
-- [ ] Explain ArgoCD's architecture: API Server, Repo Server, Application Controller
-- [ ] Install ArgoCD and access the UI via port-forward or ingress
-- [ ] Create Application CRs pointing to Git repos with Helm, Kustomize, or plain YAML
-- [ ] Configure sync policies: `automated`, `prune`, and `selfHeal` with appropriate safeguards
-- [ ] Use sync waves and hooks to control deployment order and run pre/post-sync jobs
-- [ ] Implement App of Apps pattern for managing multiple applications
-- [ ] Use ApplicationSets to generate applications from templates and generators
-- [ ] Configure AppProjects and RBAC for multi-tenant isolation
-- [ ] Troubleshoot sync failures: read diffs, check logs, use `ignoreDifferences`
-- [ ] Roll back deployments using Git revert or ArgoCD CLI
+argocd app diff guestbook-staging
 
-## Next Module
+argocd app sync guestbook-staging
 
-Continue to [Module 2.2: Argo Rollouts](../module-2.2-argo-rollouts/) where we'll implement progressive delivery with canary and blue-green deployments.
+argocd app set guestbook-staging --sync-policy automated --self-heal
+```
+
+| Symptom | Likely Layer | What to Inspect | Common Fix |
+|---------|--------------|-----------------|------------|
+| Manifest generation error | Source or renderer | Repo-server logs and rendered manifests | Fix Helm values, Kustomize path, or repo credentials |
+| Permission denied during sync | ArgoCD project or Kubernetes RBAC | AppProject, destination, service account permissions | Narrowly grant the missing action or change destination |
+| OutOfSync after every sync | Ownership conflict or mutation | `argocd app diff` and live resource YAML | Remove field from Git or add targeted ignore rule |
+| Degraded Deployment | Workload runtime | Pods, ReplicaSet events, readiness probes | Fix image, config, resources, or probes |
+| App stuck deleting | Finalizer or prune issue | Application finalizers and child resources | Remove blockers only after confirming ownership |
+| UI login works but sync denied | ArgoCD RBAC | `argocd-rbac-cm`, SSO group claims, project roles | Map group to the correct role with least privilege |
 
 ---
 
-*"The best deployment is the one you don't have to think about. GitOps with ArgoCD makes that possible."*
+## Worked Example: A Safe Fix for Drift and Risky Pruning
+
+Challenge: the `payments-api` Application is OutOfSync in production. The diff shows the live Deployment has five replicas,
+while Git says three. The same Application also has automated pruning enabled. The on-call engineer wants to press Sync
+because the UI is red, but the service is currently handling elevated traffic from a partner launch. Walk through the
+decision and produce a safer fix.
+
+First, separate the two issues. Replica drift is the visible symptom, but automated pruning is a latent risk. Syncing now
+would likely reduce replicas from five to three if ArgoCD owns `/spec/replicas`. That might be correct after the launch,
+but during elevated traffic it could reduce capacity. Pruning is not involved in this replica diff, but it means any
+concurrent Git deletion in the same app could remove resources automatically. The safest response starts with evidence,
+not with a sync button.
+
+```bash
+argocd app get payments-api
+
+argocd app diff payments-api
+
+k -n payments-production get deploy payments-api -o yaml > /tmp/payments-live.yaml
+
+argocd app manifests payments-api > /tmp/payments-desired.yaml
+```
+
+Assume the investigation shows an HPA exists and scaled the Deployment during real traffic. That means the live replica
+count is not a rogue manual change; it is controller-owned operational state. The desired manifest should not fight it.
+A senior fix is to let the HPA own replicas and make ArgoCD ignore only that field for this Deployment. Do not ignore the
+whole Deployment, and do not disable self-heal for unrelated fields such as image, environment, or probes.
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: payments-api
+  namespace: argocd
+spec:
+  project: payments
+  source:
+    repoURL: https://github.com/example/payments-deploy.git
+    targetRevision: production
+    path: overlays/production
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: payments-production
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      name: payments-api
+      namespace: payments-production
+      jsonPointers:
+        - /spec/replicas
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PruneLast=true
+```
+
+The same change disables automated pruning because this production app has not yet passed a deletion-safety review. That
+does not mean resources can never be removed. It means deletion becomes a deliberate sync decision until the team adds
+CODEOWNERS, deletion review, orphan warnings, and confidence through staging. This is the difference between slowing down
+dangerous operations and abandoning GitOps.
+
+Next, test the rendered result before relying on the controller. A reviewer should be able to see the Application policy
+change, understand why replica drift is expected, and confirm no unrelated resources are being ignored. The desired result
+is not merely "green UI." The desired result is a reconciler that still enforces application intent while respecting the
+autoscaler's ownership of one field.
+
+```bash
+argocd app diff payments-api
+
+argocd app sync payments-api
+
+argocd app wait payments-api --health --timeout 180
+```
+
+Finally, write the operational note that would belong in the pull request. The note should say that `/spec/replicas` is
+ignored because HPA owns that field, pruning is disabled until production deletion review is implemented, and self-heal
+remains enabled for all other declared fields. That explanation aligns code, review, and incident response. It also gives
+the next on-call engineer a reason not to "fix" the ignore rule by removing it during a future red dashboard moment.
+
+This worked example models the process you should use in the hands-on exercise: identify the source of drift, decide
+whether ArgoCD should own the differing field, change the smallest relevant policy, and verify with both ArgoCD and
+Kubernetes commands. The point is not to memorize one ignore rule. The point is to practice ownership-aware reconciliation.
+
+---
+
+## Did You Know?
+
+- **ArgoCD can render several source styles before applying anything**: plain YAML, Helm charts, Kustomize overlays,
+  Jsonnet, and configured plugins all become Kubernetes manifests before comparison.
+- **Application health is not the same as sync status**: an app can be Synced because manifests match and still be Degraded
+  because a Deployment, Job, or custom resource reports unhealthy state.
+- **ApplicationSets create Application resources, not workload resources directly**: the generated Applications then
+  perform their own reconciliation against clusters and namespaces.
+- **Project restrictions protect both clusters and teams**: source allowlists, destination allowlists, and resource kind
+  limits prevent one team's repository from becoming another team's deployment control plane.
+
+---
+
+## Common Mistakes
+
+| Mistake | Why It Hurts | Better Approach |
+|---------|--------------|-----------------|
+| Enabling `prune: true` on production before deletion review exists | A Git deletion can become a live Kubernetes deletion without enough human scrutiny | Start with prune disabled, use orphan warnings, then enable prune only after review and rollback paths are proven |
+| Treating OutOfSync as automatically bad | Expected controller-owned fields can look like drift and cause unnecessary syncs | Inspect the diff, identify the field owner, and use narrow ignore rules when another controller owns the field |
+| Putting many teams in the `default` project | Repositories, namespaces, and cluster resources become too broadly accessible | Create AppProjects per team, product, or trust boundary with explicit source and destination limits |
+| Using hooks for non-idempotent external changes | A retry or partial failure can leave systems outside Kubernetes in an unknown state | Keep hooks idempotent, observable, and small; move complex workflows into dedicated release automation |
+| Copying Application YAML for every environment | Small differences become hard to review and easy to miss | Use Kustomize overlays, Helm values, App of Apps, or ApplicationSets where repetition has a clear template |
+| Ignoring repo-server errors and changing sync policy | Render failures happen before Kubernetes apply, so sync options cannot fix them | Render manifests with ArgoCD, inspect repo-server logs, and fix source paths, chart values, or credentials |
+| Giving app teams cluster-wide resource permissions by default | A normal application repository can create RBAC, CRDs, or namespaces beyond its scope | Deny cluster resources unless the app is a reviewed platform component |
+| Rolling back only through the UI during GitOps incidents | Auto-sync may reapply the bad Git head and the audit trail becomes confusing | Prefer Git revert, pause automation only when needed, then sync and restore policy deliberately |
+
+---
+
+## Quiz
+
+### Question 1
+
+Your team uses ArgoCD for a production API. The UI shows `OutOfSync` because live replicas are eight while Git declares
+three. You also find an HPA for the same Deployment. What should you check and change before pressing Sync?
+
+<details>
+<summary>Show Answer</summary>
+
+Check whether the HPA is intentionally managing `/spec/replicas` and whether current traffic requires the higher replica
+count. If the HPA owns that field, syncing back to the Git value can reduce capacity and fight autoscaling. The better
+fix is to remove replica ownership from Git or add a narrow `ignoreDifferences` rule for `/spec/replicas` on that specific
+Deployment. Keep self-heal enabled for other fields so ArgoCD still enforces image, config, labels, and probes.
+</details>
+
+### Question 2
+
+A developer proposes enabling automated sync with `prune: true` for a production Application that manages Deployments,
+Services, ConfigMaps, and PVC-backed StatefulSets. The team has no deletion review process yet. How do you evaluate the
+proposal?
+
+<details>
+<summary>Show Answer</summary>
+
+Reject or defer automatic pruning for that production app until deletion controls exist. Automated sync with self-heal may
+be reasonable for stateless configuration, but pruning can delete resources that disappeared from Git. For PVC-backed or
+stateful workloads, the blast radius is higher. A safer path is `prune: false`, `selfHeal: true`, orphan warnings, CODEOWNERS
+on production paths, staging validation, and a documented manual prune process before any production opt-in.
+</details>
+
+### Question 3
+
+Your ArgoCD Application fails before any Kubernetes resource is created. The error mentions Kustomize cannot find a patch
+target. Another engineer suggests adding `CreateNamespace=true`. What should you do instead?
+
+<details>
+<summary>Show Answer</summary>
+
+Treat it as a render problem, not a namespace problem. `CreateNamespace=true` helps only when manifests render successfully
+and the destination namespace does not exist. A Kustomize patch target error means repo-server cannot produce valid desired
+manifests. Run `argocd app manifests <app>`, inspect repo-server logs, verify the Application `source.path`, and fix the
+Kustomize base, overlay, patch target name, or namePrefix behavior.
+</details>
+
+### Question 4
+
+A platform team wants every registered staging cluster to receive the same logging addon, but production clusters must
+opt in one at a time. Which ApplicationSet generator strategy would you recommend?
+
+<details>
+<summary>Show Answer</summary>
+
+Use the `clusters` generator with labels for staging clusters, because staging deployment is intentionally tied to cluster
+registration metadata. For production, use an explicit `list` generator or a more restrictive label that is applied only
+after review. This keeps staging automated while making production opt-in visible. The key is recognizing that cluster
+labels become deployment policy when the clusters generator is used.
+</details>
+
+### Question 5
+
+A shared ArgoCD instance lets Team A create an Application that points to Team B's namespace, even though Git review is
+working correctly. Which ArgoCD boundary is missing or too broad?
+
+<details>
+<summary>Show Answer</summary>
+
+The AppProject boundary is missing or too broad. Git review controls repository changes, but AppProjects control which
+sources, destinations, and resource kinds an Application may use. Create separate projects for Team A and Team B, restrict
+Team A to Team A repositories and namespaces, and map SSO groups to project-scoped roles. Instance RBAC alone is not enough
+if the project allows broad destinations.
+</details>
+
+### Question 6
+
+During an incident, someone disables auto-sync and manually patches a Deployment to restore service. The incident ends,
+but the Application remains manually changed for several days. What recovery sequence should the team follow?
+
+<details>
+<summary>Show Answer</summary>
+
+First capture the live fix and decide whether it belongs in Git. If it does, commit the equivalent manifest change or
+revert the bad Git change. Then run `argocd app diff` to confirm the intended reconciliation, sync the app, wait for health,
+and re-enable the appropriate automated policy. Leaving auto-sync disabled and drift undocumented defeats the GitOps model
+and makes the next reconciliation surprising.
+</details>
+
+### Question 7
+
+A matrix ApplicationSet combines all app directories with all clusters. A pull request renames a directory under `apps/`
+and the preview shows generated Application names changing. What risk should reviewers focus on?
+
+<details>
+<summary>Show Answer</summary>
+
+Reviewers should focus on whether the rename deletes old generated Applications and creates new ones, especially if pruning
+or finalizers are involved. With matrix generators, a small Git structure change can multiply across clusters. The review
+should render or preview generated Applications, verify whether resource ownership changes, and require an explicit migration
+plan if old app names must be preserved or retired safely.
+</details>
+
+### Question 8
+
+An Application is Synced but Degraded after a rollout. The Git diff is clean, and ArgoCD successfully applied all manifests.
+Where should you investigate next, and why?
+
+<details>
+<summary>Show Answer</summary>
+
+Investigate Kubernetes workload health rather than Git drift. Synced means desired and live manifests match; Degraded means
+a resource reports unhealthy state. Check Deployment conditions, Pod events, logs, readiness probes, image pull status, and
+dependent services. The fix is likely in workload behavior or configuration, not in ArgoCD sync policy.
+</details>
+
+---
+
+## Hands-On Exercise
+
+### Scenario: Build and Diagnose a Safe ArgoCD Delivery Flow
+
+You are onboarding a small application into ArgoCD. The team wants automated self-healing for manual drift, but production
+deletions are not mature enough for automatic pruning. Your job is to install ArgoCD in a local cluster, create a staging
+Application from a public Git repository, inspect sync and health state, simulate safe drift, and document the policy
+decision you would use before production.
+
+### Step 1: Create the Lab Cluster and Install ArgoCD
+
+Create a fresh kind cluster, install ArgoCD, and log in through a local port-forward. These commands assume the CLI tools
+listed in the prerequisites are installed.
+
+```bash
+kind create cluster --name argocd-module-21
+
+alias k=kubectl
+
+k create namespace argocd
+
+k apply -n argocd \
+  -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+k -n argocd wait \
+  --for=condition=ready pod \
+  -l app.kubernetes.io/name=argocd-server \
+  --timeout=180s
+
+ARGOCD_PASSWORD="$(
+  k -n argocd get secret argocd-initial-admin-secret \
+    -o jsonpath="{.data.password}" | base64 -d
+)"
+
+k -n argocd port-forward svc/argocd-server 8080:443 > /tmp/argocd-module-21-port-forward.log 2>&1 &
+
+argocd login 127.0.0.1:8080 \
+  --username admin \
+  --password "$ARGOCD_PASSWORD" \
+  --insecure
+```
+
+Success criteria:
+
+- [ ] `kind get clusters` includes `argocd-module-21`.
+- [ ] `k -n argocd get pods` shows ArgoCD pods running or completed.
+- [ ] `argocd app list` connects successfully without authentication errors.
+
+### Step 2: Create an Application With Conservative Automation
+
+Create an Application from the public ArgoCD example repository. Keep `selfHeal: true` so manual drift is corrected, but
+keep `prune: false` because this exercise models a team that has not yet completed deletion-safety review.
+
+```bash
+cat > /tmp/guestbook-staging.yaml <<'EOF'
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guestbook-staging
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/argoproj/argocd-example-apps.git
+    targetRevision: HEAD
+    path: guestbook
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: guestbook-staging
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+EOF
+
+k apply -f /tmp/guestbook-staging.yaml
+
+argocd app get guestbook-staging
+
+argocd app sync guestbook-staging
+
+argocd app wait guestbook-staging --health --timeout 180
+```
+
+Success criteria:
+
+- [ ] `argocd app get guestbook-staging` shows the expected repository and path.
+- [ ] The Application reaches `Synced` after sync.
+- [ ] The Application reaches `Healthy` or provides a clear Kubernetes reason if your local environment is still pulling images.
+- [ ] `k -n guestbook-staging get all` shows resources created in the destination namespace.
+
+### Step 3: Inspect Rendered Desired State and Live State
+
+Before simulating drift, collect what ArgoCD thinks it should apply and what Kubernetes is actually running. The goal is
+to practice evidence gathering rather than relying only on the UI status badge.
+
+```bash
+argocd app manifests guestbook-staging > /tmp/guestbook-desired.yaml
+
+k -n guestbook-staging get all
+
+k -n guestbook-staging get deployment -o yaml > /tmp/guestbook-live-deployments.yaml
+
+argocd app diff guestbook-staging || true
+```
+
+Success criteria:
+
+- [ ] `/tmp/guestbook-desired.yaml` contains rendered Kubernetes manifests.
+- [ ] You can identify at least one Deployment or Service that came from the Git source.
+- [ ] You can explain whether any diff shown is expected or actionable.
+
+### Step 4: Simulate Manual Drift and Watch Self-Heal
+
+Patch a live resource manually, then observe how ArgoCD responds. This demonstrates the value and risk of self-healing:
+the cluster returns to Git intent, but any emergency manual change would also be reverted unless automation is paused.
+
+```bash
+DEPLOYMENT_NAME="$(
+  k -n guestbook-staging get deployment \
+    -o jsonpath='{.items[0].metadata.name}'
+)"
+
+k -n guestbook-staging scale deployment "$DEPLOYMENT_NAME" --replicas=2
+
+argocd app diff guestbook-staging || true
+
+sleep 45
+
+k -n guestbook-staging get deployment "$DEPLOYMENT_NAME"
+
+argocd app get guestbook-staging
+```
+
+Success criteria:
+
+- [ ] You can see the manual replica change before reconciliation or explain why reconciliation happened quickly.
+- [ ] ArgoCD returns the live state toward Git because `selfHeal` is enabled.
+- [ ] You can state when this behavior is desirable and when it should be paused during an incident.
+
+### Step 5: Evaluate Prune Policy Before Production
+
+Now inspect the Application policy and write the production decision you would put in a pull request. You do not need to
+enable pruning in this lab. The point is to practice a senior review habit: deletion automation should be justified, not
+enabled by default.
+
+```bash
+k -n argocd get application guestbook-staging -o yaml > /tmp/guestbook-application.yaml
+
+grep -n "prune" /tmp/guestbook-application.yaml
+
+cat > /tmp/guestbook-production-review-note.txt <<'EOF'
+Production policy decision:
+- Keep selfHeal enabled for stateless drift correction.
+- Keep prune disabled until deletion review, CODEOWNERS, and staging validation exist.
+- Use orphaned resource warnings to detect cleanup needs before allowing automatic deletion.
+- Revisit prune after the team demonstrates safe recovery from a deleted manifest in staging.
+EOF
+
+cat /tmp/guestbook-production-review-note.txt
+```
+
+Success criteria:
+
+- [ ] The Application manifest shows `prune: false`.
+- [ ] Your review note explains the difference between self-heal and prune.
+- [ ] Your review note includes at least one guardrail required before production pruning.
+- [ ] Your decision is based on blast radius, not on whether automation feels convenient.
+
+### Step 6: Clean Up
+
+Remove the lab cluster when you are finished.
+
+```bash
+kind delete cluster --name argocd-module-21
+```
+
+Success criteria:
+
+- [ ] `kind get clusters` no longer lists `argocd-module-21`.
+- [ ] You preserved any notes you need outside the deleted cluster.
+- [ ] You can describe the complete flow from Git source to rendered manifests to live cluster state.
+
+---
+
+## Next Module
+
+Continue to [Module 2.2: Argo Rollouts](../module-2.2-argo-rollouts/) where you will extend GitOps delivery with canary,
+blue-green, analysis, and progressive promotion strategies.
 
 ## Sources
 
