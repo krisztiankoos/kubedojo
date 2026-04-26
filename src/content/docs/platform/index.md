@@ -4,219 +4,101 @@ sidebar:
   order: 1
   label: "Platform Engineering"
 ---
-**Principles, practices, and disciplines for running production systems on Kubernetes.**
+Platform Engineering at KubeDojo is the track for people moving from "I can use Kubernetes" to "I can design, operate, secure, and evolve production platforms." It connects SRE, developer experience, delivery automation, security, data platforms, AI infrastructure, and leadership into one systems-oriented curriculum for operators, platform builders, senior developers, and architects.
 
-Kubernetes certifications teach you *how* to use Kubernetes. This track teaches you *how to run production systems* — the theory, disciplines, and leadership that separate operators from practitioners.
+## Do Not Start Here Yet
 
-This is for people who:
-- Have Kubernetes fundamentals (or certifications)
-- Want to understand theory, not just tools
-- Need to make technology decisions at work
-- Want to implement best practices, not just pass exams
+Start with [Fundamentals](/prerequisites/) if you are still learning the terminal, Git, containers, Kubernetes objects, YAML, or basic networking.
 
-> Looking for tool-specific guides? See **[Cloud Native Tools](toolkits/)**.
+Before this track, you should already be comfortable with:
 
-## Do Not Start Here First If
+- `kubectl`, Pods, Deployments, Services, ConfigMaps, Secrets, namespaces, and labels
+- basic Linux process, file, package, service, and network troubleshooting
+- Git as a collaboration workflow, not only a file backup tool
+- cloud-native vocabulary: containers, clusters, declarative configuration, CI/CD, and observability
+- at least one Kubernetes route such as [Kubernetes Basics](/prerequisites/kubernetes-basics/), [KCNA](/k8s/kcna/), [CKA](/k8s/cka/), or equivalent production experience
 
-- you are still learning basic Kubernetes objects and workflows
-- you mostly need terminal, Linux, and first-cluster fundamentals
-- you want an exam-first path rather than a theory-and-practice systems path
-
-In those cases, start with [Prerequisites](../prerequisites/) or [Kubernetes Certifications](../k8s/) first.
-
-## Safest Route Into Platform
+If you are brand new, take this route first:
 
 ```text
-Prerequisites
+Fundamentals
    |
-Kubernetes fundamentals
+Kubernetes Basics
    |
-Cloud and/or Linux depth
+Linux or Cloud depth
    |
-Platform Foundations
-   |
-Platform Disciplines
+Platform Engineering
 ```
 
-For most learners, `Platform` should come after basic cluster competence, not before it.
+If you are exam-driven, use [Kubernetes Certifications](/k8s/) before this track. If you are provider-driven, use [Cloud](/cloud/) before or alongside this track. Platform Engineering assumes the basic cluster and infrastructure layer no longer feels mysterious.
 
 ## Choose Your Entry Route
 
-| Your background | Best first move inside Platform | Why |
+### The SRE
+
+You operate production systems, own incidents, care about reliability, and want stronger theory behind day-two decisions.
+
+Quick-Start:
+
+| Step | Module |
+|---|---|
+| 1 | [What is Systems Thinking?](/platform/foundations/systems-thinking/module-1.1-what-is-systems-thinking/) |
+| 2 | [SLIs, SLOs, and Error Budgets](/platform/foundations/reliability-engineering/module-2.5-slos-slis-error-budgets/) |
+| 3 | [Instrumentation Principles](/platform/foundations/observability-theory/module-3.3-instrumentation-principles/) |
+| 4 | [What is SRE?](/platform/disciplines/core-platform/sre/module-1.1-what-is-sre/) |
+
+When to come back: after you have lived through incidents or on-call handoffs, return for [Chaos Engineering](/platform/disciplines/reliability-security/chaos-engineering/) and [Engineering Leadership](/platform/foundations/engineering-leadership/).
+
+### The DevEx Builder
+
+You build internal workflows, golden paths, templates, portals, and self-service infrastructure for developers.
+
+Quick-Start:
+
+| Step | Module |
+|---|---|
+| 1 | [Mental Models for Operations](/platform/foundations/systems-thinking/module-1.3-mental-models-for-operations/) |
+| 2 | [What is Platform Engineering?](/platform/disciplines/core-platform/platform-engineering/module-2.1-what-is-platform-engineering/) |
+| 3 | [Developer Experience](/platform/disciplines/core-platform/platform-engineering/module-2.2-developer-experience/) |
+| 4 | [Golden Paths](/platform/disciplines/core-platform/platform-engineering/module-2.4-golden-paths/) |
+
+When to come back: after your first self-service workflow is in use, return for [Platform as Product](/platform/disciplines/core-platform/leadership/module-1.3-platform-as-product/), [Adoption and Migration](/platform/disciplines/core-platform/leadership/module-1.4-adoption-migration/), and [DevEx Toolkits](/platform/toolkits/developer-experience/devex-tools/).
+
+### The Platform Architect
+
+You make cross-team platform decisions about reliability, networking, security, delivery, cost, and long-term operating models.
+
+Quick-Start:
+
+| Step | Module |
+|---|---|
+| 1 | [What Makes Systems Distributed](/platform/foundations/distributed-systems/module-5.1-what-makes-systems-distributed/) |
+| 2 | [Defense in Depth](/platform/foundations/security-principles/module-4.2-defense-in-depth/) |
+| 3 | [Load Balancing](/platform/foundations/advanced-networking/module-1.5-load-balancing/) |
+| 4 | [Platform Maturity](/platform/disciplines/core-platform/platform-engineering/module-2.6-platform-maturity/) |
+
+When to come back: after you have a real platform roadmap, return for [Infrastructure as Code](/platform/disciplines/delivery-automation/iac/), [FinOps](/platform/disciplines/business-value/finops/), and [Platform Leadership](/platform/disciplines/core-platform/leadership/).
+
+## Track Structure
+
+| Area | Use it for | Start here |
 |---|---|---|
-| `CKA` / operations-minded | [Reliability Engineering](foundations/reliability-engineering/) -> [Observability Theory](foundations/observability-theory/) -> [SRE](disciplines/core-platform/sre/) | strongest route from cluster admin work into production operations |
-| cloud engineer | [Systems Thinking](foundations/systems-thinking/) -> [Release Engineering](disciplines/delivery-automation/release-engineering/) -> [GitOps](disciplines/delivery-automation/gitops/) | turns provider-specific experience into reusable platform practice |
-| developer moving toward platform work | [Systems Thinking](foundations/systems-thinking/) -> [Platform Engineering](disciplines/core-platform/platform-engineering/) | focuses on self-service, workflows, and developer experience first |
-| AI/ML engineer | [Distributed Systems](foundations/distributed-systems/) -> Data & AI disciplines | useful once the problem becomes operating pipelines, serving, and teams rather than building one app |
+| [Foundations](/platform/foundations/) | timeless theory: systems, reliability, observability, security, distributed systems, networking, leadership | when you need stronger mental models |
+| [Disciplines](/platform/disciplines/) | applied platform practices: SRE, GitOps, DevSecOps, MLOps, FinOps, delivery, platform teams | when you know the job you need to do |
+| [Toolkits](/platform/toolkits/) | current tools and implementation references | when you are choosing or operating a concrete tool |
 
-## Common Failure Modes Entering Platform
+Read Foundations to understand why the practices work. Read Disciplines to learn the work. Use Toolkits when implementation details matter.
 
-- treating this as a direct beginner next step after first-cluster learning
-- chasing tools before understanding reliability, delivery, and security tradeoffs
-- jumping into platform leadership or architecture topics without enough production pain behind you
+## Exit Ramps
 
----
+| If your route is... | Go next |
+|---|---|
+| If you came from [Kubernetes Certifications](/k8s/) | continue into [SRE](/platform/disciplines/core-platform/sre/) or [GitOps](/platform/disciplines/delivery-automation/gitops/) when exams stop answering production design questions |
+| If you need provider-specific production depth | go to [Cloud](/cloud/) for AWS, Google Cloud, Azure, managed Kubernetes, networking, identity, and enterprise patterns |
+| If you are going to cloud next | use [Cloud Architecture Patterns](/cloud/architecture-patterns/) after Foundations so provider details attach to sound platform decisions |
+| If you want AI/ML next | use [MLOps](/platform/disciplines/data-ai/mlops/) and [AI Infrastructure](/platform/disciplines/data-ai/ai-infrastructure/) before [AI/ML Engineering](/ai-ml-engineering/) infrastructure depth |
+| If private infrastructure is your target | go to [On-Premises Kubernetes](/on-premises/) after Linux, Cloud, and Platform foundations are no longer shaky |
 
-## Structure
+## What's Not Here Yet
 
-```
-platform/
-├── foundations/                         # Theory that doesn't change (32 modules)
-│   ├── systems-thinking/               # Mental models for complex systems
-│   ├── reliability-engineering/        # Failure theory, redundancy, risk
-│   ├── observability-theory/           # What to measure and why
-│   ├── security-principles/           # Zero trust, threat modeling
-│   ├── distributed-systems/           # CAP, consensus, consistency
-│   ├── advanced-networking/           # Network theory, protocols, design
-│   └── engineering-leadership/        # Technical leadership, org design
-│
-└── disciplines/                        # Applied practices (81 modules)
-    ├── core-platform/
-    │   ├── sre/                        # Operations, reliability, on-call
-    │   ├── platform-engineering/       # Developer experience, self-service
-    │   └── platform-leadership/        # Strategy, adoption, evangelism
-    │
-    ├── delivery-automation/
-    │   ├── release-engineering/        # Build, release, deploy lifecycle
-    │   ├── gitops/                     # Deployment, reconciliation
-    │   └── iac/                        # IaC patterns, testing, drift
-    │
-    ├── reliability-security/
-    │   ├── networking/                 # Network architecture, policy
-    │   ├── chaos-engineering/          # Failure injection, resilience
-    │   └── devsecops/                  # Security integration, compliance
-    │
-    ├── data-ai/
-    │   ├── data-engineering/           # Pipelines, streaming, storage
-    │   ├── mlops/                      # ML lifecycle, model serving
-    │   ├── aiops/                      # AI-driven operations
-    │   └── ai-infrastructure/          # GPU scheduling, model hosting
-    │
-    └── business-value/
-        └── finops/                     # Cloud cost optimization
-```
-
----
-
-## Reading Order
-
-### Start with Foundations
-
-Theory that applies everywhere. Read these first — they don't change.
-
-| Track | Why Start Here |
-|-------|---------------|
-| [Systems Thinking](foundations/systems-thinking/) | Mental models for complex systems |
-| [Reliability Engineering](foundations/reliability-engineering/) | Failure theory, redundancy, risk |
-| [Distributed Systems](foundations/distributed-systems/) | CAP, consensus, consistency |
-| [Observability Theory](foundations/observability-theory/) | What to measure and why |
-| [Security Principles](foundations/security-principles/) | Zero trust, threat modeling |
-| [Advanced Networking](foundations/advanced-networking/) | Network theory, protocols, design |
-| [Engineering Leadership](foundations/engineering-leadership/) | Technical leadership, org design |
-
-### Then Pick a Discipline
-
-Applied practices — how to do the work.
-
-#### Core Platform
-
-| Discipline | Modules | Best For |
-|------------|---------|----------|
-| [SRE](disciplines/core-platform/sre/) | 7 | Operations, reliability, on-call |
-| [Platform Engineering](disciplines/core-platform/platform-engineering/) | 6 | Developer experience, self-service |
-| [Platform Leadership](disciplines/core-platform/leadership/) | 5 | Strategy, adoption, evangelism |
-
-#### Delivery & Automation
-
-| Discipline | Modules | Best For |
-|------------|---------|----------|
-| [Release Engineering](disciplines/delivery-automation/release-engineering/) | 5 | Build, release, deploy lifecycle |
-| [GitOps](disciplines/delivery-automation/gitops/) | 6 | Deployment, reconciliation |
-| [Infrastructure as Code](disciplines/delivery-automation/iac/) | 6 | IaC patterns, testing, drift management |
-
-#### Reliability & Security
-
-| Discipline | Modules | Best For |
-|------------|---------|----------|
-| [Networking](disciplines/reliability-security/networking/) | 5 | Network architecture, policy, design |
-| [Chaos Engineering](disciplines/reliability-security/chaos-engineering/) | 5 | Failure injection, resilience |
-| [DevSecOps](disciplines/reliability-security/devsecops/) | 7 | Security integration, compliance |
-
-#### Data & AI
-
-| Discipline | Modules | Best For |
-|------------|---------|----------|
-| [Data Engineering](disciplines/data-ai/data-engineering/) | 6 | Pipelines, streaming, storage |
-| [MLOps](disciplines/data-ai/mlops/) | 6 | ML lifecycle, model serving |
-| [AIOps](disciplines/data-ai/aiops/) | 6 | AI-driven operations, automation |
-| [AI Infrastructure](disciplines/data-ai/ai-infrastructure/) | 6 | GPU scheduling, model hosting |
-
-#### Business Value
-
-| Discipline | Modules | Best For |
-|------------|---------|----------|
-| [FinOps](disciplines/business-value/finops/) | 6 | Cloud cost optimization |
-
-## Common Routes Through This Track
-
-- `SRE / reliability`: Foundations -> Reliability Engineering -> Observability Theory -> SRE
-- `Platform builder`: Foundations -> Systems Thinking -> Platform Engineering -> Platform Leadership
-- `Delivery automation`: Foundations -> Distributed Systems -> Release Engineering -> GitOps -> IaC
-- `Security-minded platform`: Foundations -> Security Principles -> DevSecOps -> Networking
-- `AI platform`: Foundations -> Distributed Systems -> Data Engineering / MLOps / AI Infrastructure
-
-## Cross-Track Handoffs
-
-Use `Platform` when your problem changes from learning Kubernetes commands to designing systems and operating teams.
-
-| If you are coming from... | Come here when... | If not, stay in... |
-|---|---|---|
-| [Kubernetes Certifications](../k8s/) | you want SRE, GitOps, delivery, and platform design beyond exam prep | [Kubernetes Certifications](../k8s/) |
-| [Cloud](../cloud/) | you want reusable operating models rather than provider-specific services alone | [Cloud](../cloud/) |
-| [AI/ML Engineering](../ai-ml-engineering/) | your bottleneck is reproducibility, serving, orchestration, or team operations | [AI/ML Engineering](../ai-ml-engineering/) |
-| [On-Premises](../on-premises/) | you need stronger theory for reliability, security, and platform patterns around private infrastructure | [On-Premises](../on-premises/) |
-
----
-
-## Module Format
-
-Every module includes:
-
-- **Why This Matters** — Real-world motivation
-- **Theory** — Principles and mental models
-- **Current Landscape** — Tools that implement this
-- **Hands-On** — Practical implementation
-- **Best Practices** — What good looks like
-- **Common Mistakes** — Anti-patterns to avoid
-- **Further Reading** — Books, talks, papers
-
----
-
-## Status
-
-| Section | Modules | Description |
-|---------|---------|-------------|
-| Foundations | 32 | 7 sections: Systems Thinking, Reliability Engineering, Observability Theory, Security Principles, Distributed Systems, Advanced Networking, Engineering Leadership |
-| Disciplines | 81 | 14 disciplines across Core Platform, Delivery & Automation, Reliability & Security, Data & AI, and Business Value |
-| **Total** | **113** | |
-
-> Tool-specific implementation guides (96 modules) are in **[Cloud Native Tools](toolkits/)**.
-
----
-
-## Prerequisites
-
-Before starting this track, you should have:
-- Kubernetes basics (or completed [Prerequisites](../prerequisites/))
-- Some production experience (helpful but not required)
-- Curiosity about "why" not just "how"
-
-## Where This Track Leads
-
-- into deeper [Cloud](../cloud/) architecture work
-- into serious [On-Premises](../on-premises/) operations and private-platform design
-- into [AI/ML Engineering](../ai-ml-engineering/) operations paths through the Data & AI disciplines
-
----
-
-*"Tools change. Principles don't."*
+Our current focus is on refining route design and tightening entry guidance. The roadmap includes improving cross-track bridges and learner handoffs to ensure the Platform track feels less like a catalog and more like a set of deliberate career routes.
