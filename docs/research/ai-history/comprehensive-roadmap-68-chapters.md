@@ -1,6 +1,6 @@
-# Definitive Expansion Plan: 68 Chapters (Infrastructure & Mathematics)
+# Expansion Plan: 68 Chapters (Infrastructure & Mathematics)
 
-This document outlines the definitive roadmap for the AI History book. Following a critical gap analysis, this roadmap explicitly weaves the fundamental mathematical and algorithmic breakthroughs of Machine Learning together with the infrastructural, hardware, and data constraints that shaped every era of Artificial Intelligence. 
+This document outlines the roadmap for the AI History book. Following a critical gap analysis, this roadmap explicitly weaves the fundamental mathematical and algorithmic breakthroughs of Machine Learning together with the infrastructural, hardware, and data constraints that shaped every era of Artificial Intelligence. 
 
 The 68 chapters are structured into 9 parts to maintain a cohesive narrative arc, demonstrating that AI is not a sudden bubble, but the result of a century of intertwined scientific, mathematical, and engineering milestones.
 
