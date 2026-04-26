@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 1.2: OpenTelemetry"
 slug: platform/toolkits/observability-intelligence/observability/module-1.2-opentelemetry
 sidebar:
