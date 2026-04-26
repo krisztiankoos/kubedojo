@@ -40,7 +40,7 @@ Markov had successfully proved his point against Nekrasov: probability mathemati
 
 For most of the 20th century, early Artificial Intelligence researchers would attempt to generate and understand language by painstakingly hand-coding rigid grammatical rules into software. They treated language as a structure of absolute logic. This approach, known as symbolic AI, would eventually fail when confronted with the chaotic, irregular reality of actual human speech.
 
-Markov’s 1913 study offered an entirely different paradigm. It suggested that language generation did not require a machine to "understand" grammar, syntax, or meaning. It only required the machine to calculate the statistical likelihood of the next token based on the current one. 
+Markov’s 1913 study offered the mathematical foundation for an entirely different paradigm. Decades later, statistical language models would build on this same local-transition idea, demonstrating that language generation did not necessarily require a machine to "understand" grammar, syntax, or meaning. It only required the ability to calculate the statistical likelihood of the next token based on the current one. 
 
 Markov's manual counting of 20,000 characters was the absolute physical limit of his era. The math of predictive sequences was proven, but without massive digital memory and processing infrastructure to scale it, it could not be applied to entire words, sentences, or billions of documents. The concept would lay waiting for the computational power and the massive datasets of the digital age to finally catch up to the mathematics.
 

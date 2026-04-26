@@ -32,7 +32,7 @@ They focused on a single, binary physiological mechanism: the "all-or-nothing" f
 They mathematically modeled this artificial neuron as a "threshold logic unit." The idealized neuron would receive multiple inputs from other connected neurons. It would sum up these inputs. If the total sum crossed a specific, predefined mathematical threshold, the neuron would fire (output a 1). If the sum was below the threshold, the neuron would remain dormant (output a 0).
 
 > [!note] Pedagogical Insight: The Neural Logic Gate
-> By reducing the neuron to a simple mathematical threshold, McCulloch and Pitts proved that artificial neurons could act as logical gates (like the AND and OR gates described by George Boole and Claude Shannon). For example, to create an AND gate, you set the neuron's threshold to 2. It requires both Input A (1) AND Input B (1) to fire. To create an OR gate, you set the threshold to 1. It will fire if *either* Input A (1) OR Input B (1) is active. The biological brain was suddenly indistinguishable from an electrical circuit. 
+> By reducing the neuron to a simple mathematical threshold, McCulloch and Pitts proved that artificial neurons could act as logical gates (like the AND and OR gates described by George Boole and Claude Shannon). For example, to create an AND gate, you set the neuron's threshold to 2. It requires both Input A (1) AND Input B (1) to fire. To create an OR gate, you set the threshold to 1. It will fire if *either* Input A (1) OR Input B (1) is active. Within their abstraction, the biological brain could be analyzed as if it were an electrical circuit.
 
 ## The Unified Theory
 

@@ -12,5 +12,5 @@
 - **Markov, Andrey. "An Example of Statistical Investigation of the Text Eugene Onegin Concerning the Connection of Samples in Chains." (1913).** [English Translation: Science in Context, 2006]
 
 ### Secondary
-- **Hayes, Brian. "First Links in the Markov Chain." *American Scientist*, 2013.** [URL: https://www.americanscientist.org/article/when-scientists-choose-motherhood (Note: Update URL if incorrect)]
+- **Hayes, Brian. "First Links in the Markov Chain." *American Scientist*, 2013.** [URL: https://www.americanscientist.org/article/first-links-in-the-markov-chain]
 - **[Gleick 2011]** (See source-catalog.md)
