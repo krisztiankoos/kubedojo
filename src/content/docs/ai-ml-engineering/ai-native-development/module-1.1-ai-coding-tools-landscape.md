@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "AI Coding Tools Landscape"
 slug: ai-ml-engineering/ai-native-development/module-1.1-ai-coding-tools-landscape
 sidebar:

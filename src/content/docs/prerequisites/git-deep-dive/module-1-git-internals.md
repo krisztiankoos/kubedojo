@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1: The Ghost in the Machine — Git Internals"
 slug: prerequisites/git-deep-dive/module-1-git-internals
 sidebar:

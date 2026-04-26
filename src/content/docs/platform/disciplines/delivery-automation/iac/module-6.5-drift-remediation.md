@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.5: Drift Detection and Remediation"
 slug: platform/disciplines/delivery-automation/iac/module-6.5-drift-remediation
 sidebar:

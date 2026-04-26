@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.2: Repository Strategies"
 slug: platform/disciplines/delivery-automation/gitops/module-3.2-repository-strategies
 sidebar:

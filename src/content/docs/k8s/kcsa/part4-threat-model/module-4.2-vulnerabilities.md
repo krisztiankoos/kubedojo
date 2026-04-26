@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.2: Common Vulnerabilities"
 slug: k8s/kcsa/part4-threat-model/module-4.2-vulnerabilities
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Hugging Face for Learners"
 slug: ai/open-models-local-inference/module-1.2-hugging-face-for-learners
 sidebar:

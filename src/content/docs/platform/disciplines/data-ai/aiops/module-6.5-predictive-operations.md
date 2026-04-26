@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.5: Predictive Operations"
 slug: platform/disciplines/data-ai/aiops/module-6.5-predictive-operations
 sidebar:

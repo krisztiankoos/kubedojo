@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.4: Volume Snapshots & Cloning"
 slug: k8s/cka/part4-storage/module-4.4-snapshots
 sidebar:

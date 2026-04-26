@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.1: Attack Surfaces"
 slug: k8s/kcsa/part4-threat-model/module-4.1-attack-surfaces
 sidebar:

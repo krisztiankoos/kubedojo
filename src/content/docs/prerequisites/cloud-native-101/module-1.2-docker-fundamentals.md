@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.2: Docker Fundamentals"
 slug: prerequisites/cloud-native-101/module-1.2-docker-fundamentals
 sidebar:

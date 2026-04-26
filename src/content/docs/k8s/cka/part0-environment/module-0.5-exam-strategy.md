@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.5: Exam Strategy - Three-Pass Method"
 slug: k8s/cka/part0-environment/module-0.5-exam-strategy
 sidebar:

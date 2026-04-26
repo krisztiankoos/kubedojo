@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.2: Security Lab Setup"
 slug: k8s/cks/part0-environment/module-0.2-security-lab
 sidebar:

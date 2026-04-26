@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.2: CNCF Ecosystem"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.2-cncf-ecosystem
 sidebar:

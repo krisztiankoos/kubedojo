@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Notebooks, Scripts, and Project Layouts"
 slug: ai-ml-engineering/prerequisites/module-1.4-notebooks-scripts-project-layouts
 sidebar:

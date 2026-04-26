@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "LFCS Exam Strategy and Workflow"
 slug: k8s/lfcs/module-1.1-exam-strategy-and-workflow
 sidebar:

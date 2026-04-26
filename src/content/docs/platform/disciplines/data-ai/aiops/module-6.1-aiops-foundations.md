@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.1: AIOps Foundations"
 slug: platform/disciplines/data-ai/aiops/module-6.1-aiops-foundations
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Text Generation & Sampling Strategies"
 slug: ai-ml-engineering/generative-ai/module-1.3-text-generation-sampling-strategies
 sidebar:

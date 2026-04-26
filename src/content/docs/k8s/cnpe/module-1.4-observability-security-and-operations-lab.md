@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "CNPE Observability, Security, and Operations Lab"
 slug: k8s/cnpe/module-1.4-observability-security-and-operations-lab
 sidebar:

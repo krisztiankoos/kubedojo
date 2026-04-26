@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.1: Image Security"
 slug: k8s/kcsa/part5-platform-security/module-5.1-image-security
 sidebar:

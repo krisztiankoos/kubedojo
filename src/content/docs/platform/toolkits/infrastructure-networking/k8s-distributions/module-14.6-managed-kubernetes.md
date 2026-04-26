@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 14.6: Managed Kubernetes - EKS vs GKE vs AKS"
 slug: platform/toolkits/infrastructure-networking/k8s-distributions/module-14.6-managed-kubernetes
 sidebar:

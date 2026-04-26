@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.1: PromQL Deep Dive"
 slug: k8s/pca/module-1.1-promql-deep-dive
 sidebar:

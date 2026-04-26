@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Home AI Operations and Cost Model"
 slug: ai-ml-engineering/ai-infrastructure/module-1.5-home-ai-operations-cost-model
 sidebar:

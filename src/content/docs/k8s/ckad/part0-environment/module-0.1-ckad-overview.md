@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.1: CKAD Overview & Strategy"
 slug: k8s/ckad/part0-environment/module-0.1-ckad-overview
 sidebar:

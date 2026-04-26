@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.8: SST - The Modern Serverless Framework"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.8-sst
 sidebar:

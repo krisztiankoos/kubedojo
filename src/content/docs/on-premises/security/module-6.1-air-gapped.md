@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.1: Physical Security & Air-Gapped Environments"
 slug: on-premises/security/module-6.1-air-gapped
 sidebar:

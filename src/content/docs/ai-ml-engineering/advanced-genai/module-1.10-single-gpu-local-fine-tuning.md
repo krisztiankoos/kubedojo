@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Single-GPU Local Fine-Tuning"
 slug: ai-ml-engineering/advanced-genai/module-1.10-single-gpu-local-fine-tuning
 sidebar:

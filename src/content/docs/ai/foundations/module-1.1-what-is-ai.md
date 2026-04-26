@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "What Is AI?"
 slug: ai/foundations/module-1.1-what-is-ai
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Reproducible Python, CUDA, and ROCm Environments"
 slug: ai-ml-engineering/prerequisites/module-1.3-reproducible-python-cuda-rocm-environments
 sidebar:

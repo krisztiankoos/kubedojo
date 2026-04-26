@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.3: Local Storage & Alternatives"
 slug: on-premises/storage/module-4.3-local-storage
 sidebar:

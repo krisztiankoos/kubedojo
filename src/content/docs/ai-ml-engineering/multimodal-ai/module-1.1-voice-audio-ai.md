@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Voice & Audio AI"
 slug: ai-ml-engineering/multimodal-ai/module-1.1-voice-audio-ai
 sidebar:

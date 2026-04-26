@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.1: Services"
 slug: k8s/ckad/part5-networking/module-5.1-services
 sidebar:

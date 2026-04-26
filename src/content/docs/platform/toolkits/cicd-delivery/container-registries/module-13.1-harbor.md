@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 13.1: Harbor - Enterprise Container Registry"
 slug: platform/toolkits/cicd-delivery/container-registries/module-13.1-harbor
 sidebar:

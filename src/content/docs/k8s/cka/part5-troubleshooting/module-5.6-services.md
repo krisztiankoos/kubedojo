@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.6: Service Troubleshooting"
 slug: k8s/cka/part5-troubleshooting/module-5.6-services
 sidebar:

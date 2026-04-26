@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "CNPE Full Mock Exam"
 slug: k8s/cnpe/module-1.5-full-mock-exam
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.4: Infrastructure as Code at Scale"
 slug: platform/disciplines/delivery-automation/iac/module-6.4-iac-at-scale
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Local Models for AI Coding"
 slug: ai-ml-engineering/ai-native-development/module-1.2-local-models-for-ai-coding
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.4: Compliance for Regulated Industries"
 slug: on-premises/security/module-6.4-compliance
 sidebar:

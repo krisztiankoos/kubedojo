@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 9.4: Object Storage Patterns (S3 / GCS / Blob)"
 slug: cloud/managed-services/module-9.4-object-storage
 sidebar:

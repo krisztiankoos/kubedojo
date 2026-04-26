@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.1: The 4 Cs of Cloud Native Security"
 slug: k8s/kcsa/part1-cloud-native-security/module-1.1-four-cs
 sidebar:

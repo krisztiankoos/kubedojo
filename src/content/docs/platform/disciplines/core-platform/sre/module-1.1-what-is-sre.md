@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.1: What is SRE?"
 slug: platform/disciplines/core-platform/sre/module-1.1-what-is-sre
 sidebar:

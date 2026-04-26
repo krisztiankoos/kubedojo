@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.3: Resource Requirements and Limits"
 slug: k8s/ckad/part4-environment/module-4.3-resources
 sidebar:

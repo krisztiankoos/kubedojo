@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.2: Crossplane"
 slug: platform/toolkits/infrastructure-networking/platforms/module-7.2-crossplane
 sidebar:

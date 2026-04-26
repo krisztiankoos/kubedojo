@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.6: Azure Bicep"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.6-bicep
 sidebar:

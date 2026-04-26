@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.3: Capabilities & Linux Security Modules"
 slug: linux/foundations/container-primitives/module-2.3-capabilities-lsms
 sidebar:

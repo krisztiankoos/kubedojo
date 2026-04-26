@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.8: GCP Cloud Functions & Event-Driven Architecture"
 slug: cloud/gcp-essentials/module-2.8-cloud-functions
 sidebar:

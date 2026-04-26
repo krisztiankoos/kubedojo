@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.6: Multi-Cluster GitOps"
 slug: platform/disciplines/delivery-automation/gitops/module-3.6-multi-cluster
 sidebar:

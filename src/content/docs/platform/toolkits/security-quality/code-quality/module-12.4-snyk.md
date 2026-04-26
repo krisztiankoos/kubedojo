@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 12.4: Snyk - Developer-First Security"
 slug: platform/toolkits/security-quality/code-quality/module-12.4-snyk
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 9.5: Ray Serve - Distributed Model Serving"
 slug: platform/toolkits/data-ai-platforms/ml-platforms/module-9.5-ray-serve
 sidebar:

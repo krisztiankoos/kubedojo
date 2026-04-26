@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.7: Kyverno"
 slug: platform/toolkits/security-quality/security-tools/module-4.7-kyverno
 sidebar:

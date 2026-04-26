@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 11.1: GitLab - The Complete DevOps Platform"
 slug: platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab
 sidebar:

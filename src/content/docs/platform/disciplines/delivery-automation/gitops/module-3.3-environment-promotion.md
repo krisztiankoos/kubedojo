@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.3: Environment Promotion"
 slug: platform/disciplines/delivery-automation/gitops/module-3.3-environment-promotion
 sidebar:

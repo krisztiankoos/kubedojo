@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Choosing Between Ollama, MLX, Transformers, and vLLM"
 slug: ai/open-models-local-inference/module-1.6-choosing-between-ollama-mlx-transformers-vllm
 sidebar:

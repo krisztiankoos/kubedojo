@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.1: Security Contexts"
 slug: k8s/cks/part4-microservice-vulnerabilities/module-4.1-security-contexts
 sidebar:

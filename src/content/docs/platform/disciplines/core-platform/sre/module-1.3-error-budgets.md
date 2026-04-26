@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.3: Error Budgets"
 slug: platform/disciplines/core-platform/sre/module-1.3-error-budgets
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.4: Toil and Automation"
 slug: platform/disciplines/core-platform/sre/module-1.4-toil-automation
 sidebar:

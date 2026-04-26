@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "ML DevOps Foundations"
 slug: ai-ml-engineering/mlops/module-1.1-ml-devops-foundations
 sidebar:

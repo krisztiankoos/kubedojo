@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.3: Grafana"
 slug: platform/toolkits/observability-intelligence/observability/module-1.3-grafana
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.2: Shift-Left Security"
 slug: platform/disciplines/reliability-security/devsecops/module-4.2-shift-left-security
 sidebar:

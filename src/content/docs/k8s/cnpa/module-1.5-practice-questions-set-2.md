@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "CNPA Practice Questions Set 2"
 slug: k8s/cnpa/module-1.5-practice-questions-set-2
 sidebar:

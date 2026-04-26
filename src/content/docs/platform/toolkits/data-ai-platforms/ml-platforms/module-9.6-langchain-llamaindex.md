@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 9.6: LangChain & LlamaIndex - LLM Application Frameworks"
 slug: platform/toolkits/data-ai-platforms/ml-platforms/module-9.6-langchain-llamaindex
 sidebar:

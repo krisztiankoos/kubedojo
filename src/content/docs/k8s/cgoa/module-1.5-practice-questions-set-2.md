@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "CGOA Practice Questions Set 2"
 slug: k8s/cgoa/module-1.5-practice-questions-set-2
 sidebar:

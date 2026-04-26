@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Running Open Models on Linux Boxes"
 slug: ai/open-models-local-inference/module-1.5-running-open-models-on-linux-boxes
 sidebar:

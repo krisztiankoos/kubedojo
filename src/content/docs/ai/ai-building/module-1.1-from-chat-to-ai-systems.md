@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "From Chat To AI Systems"
 slug: ai/ai-building/module-1.1-from-chat-to-ai-systems
 sidebar:

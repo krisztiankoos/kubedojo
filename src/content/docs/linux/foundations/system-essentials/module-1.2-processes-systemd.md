@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.2: Processes & systemd"
 slug: linux/foundations/system-essentials/module-1.2-processes-systemd
 sidebar:

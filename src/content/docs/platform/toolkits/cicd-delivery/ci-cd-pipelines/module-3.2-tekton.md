@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.2: Tekton"
 slug: platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.2-tekton
 sidebar:

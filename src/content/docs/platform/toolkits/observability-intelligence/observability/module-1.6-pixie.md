@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.6: Pixie - Zero-Instrumentation Observability"
 slug: platform/toolkits/observability-intelligence/observability/module-1.6-pixie
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.1: Control Plane Deep-Dive"
 slug: k8s/cka/part1-cluster-architecture/module-1.1-control-plane
 sidebar:

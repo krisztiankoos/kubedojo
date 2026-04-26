@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.1: Linux Namespaces"
 slug: linux/foundations/container-primitives/module-2.1-namespaces
 sidebar:

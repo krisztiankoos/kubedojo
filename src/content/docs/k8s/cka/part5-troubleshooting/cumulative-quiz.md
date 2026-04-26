@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Part 5: Troubleshooting - Cumulative Quiz"
 sidebar:
   order: 9

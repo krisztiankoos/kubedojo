@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Quantization and Model Formats"
 slug: ai/open-models-local-inference/module-1.3-quantization-and-model-formats
 sidebar:

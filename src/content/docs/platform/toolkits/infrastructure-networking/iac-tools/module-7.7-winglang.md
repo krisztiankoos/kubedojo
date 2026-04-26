@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.7: Wing - The Cloud-Oriented Programming Language"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.7-winglang
 sidebar:

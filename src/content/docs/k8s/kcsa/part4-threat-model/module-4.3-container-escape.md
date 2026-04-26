@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.3: Container Escape"
 slug: k8s/kcsa/part4-threat-model/module-4.3-container-escape
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Home-Scale RAG Systems"
 slug: ai-ml-engineering/vector-rag/module-1.6-home-scale-rag-systems
 sidebar:

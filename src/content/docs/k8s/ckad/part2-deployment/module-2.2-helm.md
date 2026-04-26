@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.2: Helm Package Manager"
 slug: k8s/ckad/part2-deployment/module-2.2-helm
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.2: OPA & Gatekeeper"
 slug: platform/toolkits/security-quality/security-tools/module-4.2-opa-gatekeeper
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.2: Anomaly Detection"
 slug: platform/disciplines/data-ai/aiops/module-6.2-anomaly-detection
 sidebar:

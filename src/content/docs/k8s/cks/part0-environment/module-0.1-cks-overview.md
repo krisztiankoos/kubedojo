@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.1: CKS Exam Overview"
 slug: k8s/cks/part0-environment/module-0.1-cks-overview
 sidebar:

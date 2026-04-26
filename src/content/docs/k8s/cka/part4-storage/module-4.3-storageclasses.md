@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.3: StorageClasses & Dynamic Provisioning"
 slug: k8s/cka/part4-storage/module-4.3-storageclasses
 sidebar:

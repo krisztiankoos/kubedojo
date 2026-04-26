@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.5: Network Troubleshooting"
 slug: k8s/cka/part5-troubleshooting/module-5.5-networking
 sidebar:

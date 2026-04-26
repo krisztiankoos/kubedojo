@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.7: Hubble - Network Observability with Cilium"
 slug: platform/toolkits/observability-intelligence/observability/module-1.7-hubble
 sidebar:

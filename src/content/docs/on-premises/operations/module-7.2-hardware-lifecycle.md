@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.2: Hardware Lifecycle & Firmware"
 slug: on-premises/operations/module-7.2-hardware-lifecycle
 sidebar:

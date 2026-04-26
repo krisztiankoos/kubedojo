@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.3: Pulumi - Infrastructure as Real Code"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.3-pulumi
 sidebar:

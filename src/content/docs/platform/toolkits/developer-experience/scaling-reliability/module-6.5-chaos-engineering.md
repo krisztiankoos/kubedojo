@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.5: Chaos Engineering"
 slug: platform/toolkits/developer-experience/scaling-reliability/module-6.5-chaos-engineering
 sidebar:

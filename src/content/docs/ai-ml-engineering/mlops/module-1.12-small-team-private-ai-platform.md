@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Small-Team Private AI Platform"
 slug: ai-ml-engineering/mlops/module-1.12-small-team-private-ai-platform
 sidebar:

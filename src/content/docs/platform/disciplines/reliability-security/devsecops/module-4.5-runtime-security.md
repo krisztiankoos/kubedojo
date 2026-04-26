@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.5: Runtime Security"
 slug: platform/disciplines/reliability-security/devsecops/module-4.5-runtime-security
 sidebar:

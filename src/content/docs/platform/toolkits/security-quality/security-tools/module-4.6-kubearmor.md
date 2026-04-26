@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.6: KubeArmor - Runtime Security with Least Privilege"
 slug: platform/toolkits/security-quality/security-tools/module-4.6-kubearmor
 sidebar:

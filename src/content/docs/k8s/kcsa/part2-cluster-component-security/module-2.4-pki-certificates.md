@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.4: PKI and Certificates"
 slug: k8s/kcsa/part2-cluster-component-security/module-2.4-pki-certificates
 sidebar:

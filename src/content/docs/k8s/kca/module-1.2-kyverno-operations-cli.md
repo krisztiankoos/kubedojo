@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.2: Kyverno Operations & CLI"
 slug: k8s/kca/module-1.2-kyverno-operations-cli
 sidebar:

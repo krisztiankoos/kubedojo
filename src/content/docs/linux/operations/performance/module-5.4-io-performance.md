@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.4: I/O Performance"
 slug: linux/operations/performance/module-5.4-io-performance
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.2: Node Security"
 slug: k8s/kcsa/part2-cluster-component-security/module-2.2-node-security
 sidebar:

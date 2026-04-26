@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 9.7: GPU Scheduling & NVIDIA GPU Operator on Kubernetes"
 slug: platform/toolkits/data-ai-platforms/ml-platforms/module-9.7-gpu-scheduling
 sidebar:

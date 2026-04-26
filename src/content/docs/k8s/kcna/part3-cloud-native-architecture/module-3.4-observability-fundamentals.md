@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.4: Observability Fundamentals"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.4-observability-fundamentals
 sidebar:

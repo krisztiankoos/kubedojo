@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.6: vCluster"
 slug: platform/toolkits/infrastructure-networking/platforms/module-3.6-vcluster
 sidebar:

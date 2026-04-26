@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 12.5: Trivy - The Swiss Army Knife of Security Scanning"
 slug: platform/toolkits/security-quality/code-quality/module-12.5-trivy
 sidebar:

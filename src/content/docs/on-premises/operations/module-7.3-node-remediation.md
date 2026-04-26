@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.3: Node Failure & Auto-Remediation"
 slug: on-premises/operations/module-7.3-node-remediation
 sidebar:

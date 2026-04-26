@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Prompt Engineering Fundamentals"
 slug: ai-ml-engineering/ai-native-development/module-1.6-prompt-engineering-fundamentals
 sidebar:

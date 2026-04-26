@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.3: DNS Deep Dive"
 slug: platform/toolkits/infrastructure-networking/networking/module-5.3-dns-deep-dive
 sidebar:

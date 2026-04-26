@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.2: Multi-Cluster Control Planes"
 slug: on-premises/multi-cluster/module-5.2-multi-cluster-control-planes
 sidebar:

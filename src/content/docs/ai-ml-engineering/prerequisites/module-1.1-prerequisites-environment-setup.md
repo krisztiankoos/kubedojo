@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Prerequisites & Environment Setup"
 slug: ai-ml-engineering/prerequisites/module-1.1-prerequisites-environment-setup
 sidebar:

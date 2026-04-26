@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.2: RBAC Fundamentals"
 slug: k8s/kcsa/part3-security-fundamentals/module-3.2-rbac
 sidebar:

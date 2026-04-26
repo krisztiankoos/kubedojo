@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.1: CI/CD Fundamentals"
 slug: k8s/kcna/part4-application-delivery/module-4.1-ci-cd
 sidebar:

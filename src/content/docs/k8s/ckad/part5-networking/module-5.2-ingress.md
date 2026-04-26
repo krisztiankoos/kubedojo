@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.2: Ingress"
 slug: k8s/ckad/part5-networking/module-5.2-ingress
 sidebar:

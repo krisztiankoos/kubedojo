@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.4: Kubernetes Security Upgrades"
 slug: k8s/cks/part2-cluster-hardening/module-2.4-kubernetes-upgrades
 sidebar:

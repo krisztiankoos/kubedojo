@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.1: Prometheus"
 slug: platform/toolkits/observability-intelligence/observability/module-1.1-prometheus
 sidebar:

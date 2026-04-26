@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.4: Ansible for Infrastructure"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.4-ansible
 sidebar:

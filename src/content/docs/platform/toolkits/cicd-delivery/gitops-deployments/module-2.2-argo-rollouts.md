@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.2: Argo Rollouts"
 slug: platform/toolkits/cicd-delivery/gitops-deployments/module-2.2-argo-rollouts
 sidebar:

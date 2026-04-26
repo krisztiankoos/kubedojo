@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.3: What Is Kubernetes?"
 slug: prerequisites/cloud-native-101/module-1.3-what-is-kubernetes
 sidebar:

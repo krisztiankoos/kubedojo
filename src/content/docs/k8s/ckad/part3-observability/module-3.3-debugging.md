@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.3: Debugging in Kubernetes"
 slug: k8s/ckad/part3-observability/module-3.3-debugging
 sidebar:

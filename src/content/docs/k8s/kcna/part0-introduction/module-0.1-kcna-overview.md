@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.1: KCNA Exam Overview"
 slug: k8s/kcna/part0-introduction/module-0.1-kcna-overview
 sidebar:

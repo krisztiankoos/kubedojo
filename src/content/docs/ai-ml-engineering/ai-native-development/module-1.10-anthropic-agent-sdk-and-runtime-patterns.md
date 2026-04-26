@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Anthropic Agent SDK and Runtime Patterns"
 slug: ai-ml-engineering/ai-native-development/module-1.10-anthropic-agent-sdk-and-runtime-patterns
 sidebar:

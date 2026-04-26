@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.7: Capacity Planning"
 slug: platform/disciplines/core-platform/sre/module-1.7-capacity-planning
 sidebar:

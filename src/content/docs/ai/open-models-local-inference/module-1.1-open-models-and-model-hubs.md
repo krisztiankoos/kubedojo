@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Open Models and Model Hubs"
 slug: ai/open-models-local-inference/module-1.1-open-models-and-model-hubs
 sidebar:

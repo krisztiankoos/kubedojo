@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.3: Velero"
 slug: platform/toolkits/developer-experience/scaling-reliability/module-6.3-velero
 sidebar:

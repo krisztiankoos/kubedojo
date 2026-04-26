@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "What Are LLMs?"
 slug: ai/foundations/module-1.2-what-are-llms
 sidebar:

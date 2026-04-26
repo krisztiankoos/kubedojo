@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 16.2: MinIO - High-Performance Object Storage for Kubernetes"
 slug: platform/toolkits/infrastructure-networking/storage/module-16.2-minio
 sidebar:

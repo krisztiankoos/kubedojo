@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.4: Loki"
 slug: platform/toolkits/observability-intelligence/observability/module-1.4-loki
 sidebar:

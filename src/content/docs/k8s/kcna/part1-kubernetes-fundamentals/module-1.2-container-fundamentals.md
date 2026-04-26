@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.2: Container Fundamentals"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.2-container-fundamentals
 sidebar:

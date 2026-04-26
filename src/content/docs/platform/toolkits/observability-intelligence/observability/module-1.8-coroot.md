@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.8: Coroot - Zero-Instrumentation Observability"
 slug: platform/toolkits/observability-intelligence/observability/module-1.8-coroot
 sidebar:

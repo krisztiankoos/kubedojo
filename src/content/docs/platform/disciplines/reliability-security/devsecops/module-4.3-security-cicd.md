@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.3: Security in CI/CD Pipelines"
 slug: platform/disciplines/reliability-security/devsecops/module-4.3-security-cicd
 sidebar:

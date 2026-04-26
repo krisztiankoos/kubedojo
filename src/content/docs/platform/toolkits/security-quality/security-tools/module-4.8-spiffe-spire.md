@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.8: SPIFFE/SPIRE - Cryptographic Workload Identity"
 slug: platform/toolkits/security-quality/security-tools/module-4.8-spiffe-spire
 sidebar:

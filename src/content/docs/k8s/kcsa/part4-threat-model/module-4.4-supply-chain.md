@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.4: Supply Chain Threats"
 slug: k8s/kcsa/part4-threat-model/module-4.4-supply-chain
 sidebar:

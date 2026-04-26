@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.6: Workload Resources"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.6-workload-resources
 sidebar:

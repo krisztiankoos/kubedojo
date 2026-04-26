@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.4: Kubebuilder - Building Kubernetes Operators"
 slug: platform/toolkits/infrastructure-networking/platforms/module-3.4-kubebuilder
 sidebar:

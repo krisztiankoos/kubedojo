@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 14.3: MicroK8s - Snap-Based Kubernetes from Canonical"
 slug: platform/toolkits/infrastructure-networking/k8s-distributions/module-14.3-microk8s
 sidebar:

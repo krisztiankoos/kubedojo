@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.2: OpenTofu - The Open Source Fork"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.2-opentofu
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 13.3: Dragonfly - P2P Image Distribution at Scale"
 slug: platform/toolkits/cicd-delivery/container-registries/module-13.3-dragonfly
 sidebar:

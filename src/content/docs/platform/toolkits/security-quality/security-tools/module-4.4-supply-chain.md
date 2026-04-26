@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.4: Supply Chain Security"
 slug: platform/toolkits/security-quality/security-tools/module-4.4-supply-chain
 sidebar:

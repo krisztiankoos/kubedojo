@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.3: cert-manager"
 slug: platform/toolkits/infrastructure-networking/platforms/module-7.3-cert-manager
 sidebar:

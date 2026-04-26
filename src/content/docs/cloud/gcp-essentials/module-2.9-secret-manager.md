@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.9: GCP Secret Manager"
 slug: cloud/gcp-essentials/module-2.9-secret-manager
 sidebar:

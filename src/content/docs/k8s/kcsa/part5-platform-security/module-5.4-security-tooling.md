@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.4: Security Tooling"
 slug: k8s/kcsa/part5-platform-security/module-5.4-security-tooling
 sidebar:

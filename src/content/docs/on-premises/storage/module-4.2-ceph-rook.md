@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.2: Software-Defined Storage with Ceph & Rook"
 slug: on-premises/storage/module-4.2-ceph-rook
 sidebar:

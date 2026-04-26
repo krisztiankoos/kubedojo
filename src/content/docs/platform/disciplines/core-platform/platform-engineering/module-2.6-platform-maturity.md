@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.6: Platform Maturity"
 slug: platform/disciplines/core-platform/platform-engineering/module-2.6-platform-maturity
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 14.5: OpenShift - Enterprise Kubernetes with Batteries Included"
 slug: platform/toolkits/infrastructure-networking/k8s-distributions/module-14.5-openshift
 sidebar:

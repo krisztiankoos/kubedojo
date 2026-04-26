@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.3: Kubernetes Architecture - Control Plane"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.3-control-plane
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.4: Ingress"
 slug: k8s/cka/part3-services-networking/module-3.4-ingress
 sidebar:

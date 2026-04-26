@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.9: System Initiative - DevOps Automation Reimagined"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.9-system-initiative
 sidebar:

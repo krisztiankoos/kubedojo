@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "LFCS Full Mock Exam"
 slug: k8s/lfcs/module-1.5-full-mock-exam
 sidebar:

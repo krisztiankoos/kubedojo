@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 9.5: Advanced Caching Services (ElastiCache / Memorystore)"
 slug: cloud/managed-services/module-9.5-caching
 sidebar:

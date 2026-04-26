@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 15.2: CloudNativePG - PostgreSQL Done Right on Kubernetes"
 slug: platform/toolkits/data-ai-platforms/cloud-native-databases/module-15.2-cloudnativepg
 sidebar:

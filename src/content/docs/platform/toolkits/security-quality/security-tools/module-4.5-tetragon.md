@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.5: Tetragon - eBPF Runtime Security"
 slug: platform/toolkits/security-quality/security-tools/module-4.5-tetragon
 sidebar:

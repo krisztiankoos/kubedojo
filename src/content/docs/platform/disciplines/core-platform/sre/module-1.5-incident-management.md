@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.5: Incident Management"
 slug: platform/disciplines/core-platform/sre/module-1.5-incident-management
 sidebar:

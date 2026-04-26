@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.2: KCNA Study Strategy"
 slug: k8s/kcna/part0-introduction/module-0.2-study-strategy
 sidebar:

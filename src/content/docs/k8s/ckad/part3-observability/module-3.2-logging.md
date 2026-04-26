@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.2: Container Logging"
 slug: k8s/ckad/part3-observability/module-3.2-logging
 sidebar:

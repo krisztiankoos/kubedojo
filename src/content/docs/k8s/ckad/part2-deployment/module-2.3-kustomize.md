@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.3: Kustomize"
 slug: k8s/ckad/part2-deployment/module-2.3-kustomize
 sidebar:

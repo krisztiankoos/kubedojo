@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.4: Deployments - Managing Applications"
 slug: prerequisites/kubernetes-basics/module-1.4-deployments
 sidebar:

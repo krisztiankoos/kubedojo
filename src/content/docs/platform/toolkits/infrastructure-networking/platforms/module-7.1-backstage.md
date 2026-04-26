@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.1: Backstage"
 slug: platform/toolkits/infrastructure-networking/platforms/module-7.1-backstage
 sidebar:

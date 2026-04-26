@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.10: Nitric - Cloud-Native Application Framework"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.10-nitric
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.1: Datacenter Fundamentals"
 slug: on-premises/provisioning/module-2.1-datacenter-fundamentals
 sidebar:

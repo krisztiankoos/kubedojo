@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.1: Infrastructure as Code"
 slug: prerequisites/modern-devops/module-1.1-infrastructure-as-code
 sidebar:

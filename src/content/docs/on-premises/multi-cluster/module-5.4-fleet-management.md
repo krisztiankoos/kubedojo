@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Fleet Management"
 description: "Architecting, deploying, and operating multi-cluster management planes on bare metal using OCM, Fleet, and Argo CD."
 slug: on-premises/multi-cluster/module-5.4-fleet-management

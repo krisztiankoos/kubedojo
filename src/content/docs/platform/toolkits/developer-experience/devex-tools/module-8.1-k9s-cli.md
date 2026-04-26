@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 8.1: k9s & CLI Tools"
 slug: platform/toolkits/developer-experience/devex-tools/module-8.1-k9s-cli
 sidebar:

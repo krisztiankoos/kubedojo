@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "CNPE Platform APIs and Self-Service Lab"
 slug: k8s/cnpe/module-1.3-platform-apis-and-self-service-lab
 sidebar:

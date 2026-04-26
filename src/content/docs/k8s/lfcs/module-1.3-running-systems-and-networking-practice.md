@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "LFCS Running Systems and Networking Practice"
 slug: k8s/lfcs/module-1.3-running-systems-and-networking-practice
 sidebar:

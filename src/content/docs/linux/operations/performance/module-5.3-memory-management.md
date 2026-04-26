@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.3: Memory Management"
 slug: linux/operations/performance/module-5.3-memory-management
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.4: Root Cause Analysis"
 slug: platform/disciplines/data-ai/aiops/module-6.4-root-cause-analysis
 sidebar:

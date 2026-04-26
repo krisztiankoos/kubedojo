@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Vector Databases Deep Dive"
 slug: ai-ml-engineering/vector-rag/module-1.1-vector-databases-deep-dive
 sidebar:

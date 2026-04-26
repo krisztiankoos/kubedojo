@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.1: USE Method"
 slug: linux/operations/performance/module-5.1-use-method
 sidebar:

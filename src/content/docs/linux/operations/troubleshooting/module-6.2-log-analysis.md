@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.2: Log Analysis"
 slug: linux/operations/troubleshooting/module-6.2-log-analysis
 sidebar:

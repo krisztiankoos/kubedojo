@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.3: Immutable OS for Kubernetes"
 slug: on-premises/provisioning/module-2.3-immutable-os
 sidebar:

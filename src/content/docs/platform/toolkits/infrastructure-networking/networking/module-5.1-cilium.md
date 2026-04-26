@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.1: Cilium - The Kernel-Powered Network Revolution"
 slug: platform/toolkits/infrastructure-networking/networking/module-5.1-cilium
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.1: TCP/IP Essentials"
 slug: linux/foundations/networking/module-3.1-tcp-ip-essentials
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.2: Hardware Security (HSM/TPM)"
 slug: on-premises/security/module-6.2-hardware-security
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.2: Security Mindset"
 slug: k8s/kcsa/part0-introduction/module-0.2-security-mindset
 sidebar:

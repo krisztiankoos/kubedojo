@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "AI-Assisted Debugging & Optimization"
 slug: ai-ml-engineering/ai-native-development/module-1.8-ai-assisted-debugging-optimization
 sidebar:

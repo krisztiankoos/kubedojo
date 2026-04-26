@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Training Neural Networks"
 slug: ai-ml-engineering/deep-learning/module-1.3-training-neural-networks
 sidebar:

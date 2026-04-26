@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.4: Users & Permissions"
 slug: linux/foundations/system-essentials/module-1.4-users-permissions
 sidebar:

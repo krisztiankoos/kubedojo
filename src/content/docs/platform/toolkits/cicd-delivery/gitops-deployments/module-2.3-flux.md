@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.3: Flux"
 slug: platform/toolkits/cicd-delivery/gitops-deployments/module-2.3-flux
 sidebar:

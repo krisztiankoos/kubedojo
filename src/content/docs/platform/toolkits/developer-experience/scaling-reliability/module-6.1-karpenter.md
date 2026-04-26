@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.1: Karpenter"
 slug: platform/toolkits/developer-experience/scaling-reliability/module-6.1-karpenter
 sidebar:

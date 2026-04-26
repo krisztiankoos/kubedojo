@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "CNPE Exam Strategy and Environment"
 slug: k8s/cnpe/module-1.1-exam-strategy-and-environment
 sidebar:

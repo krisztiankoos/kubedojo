@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.1: Bash Fundamentals"
 slug: linux/operations/shell-scripting/module-7.1-bash-fundamentals
 sidebar:

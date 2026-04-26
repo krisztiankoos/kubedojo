@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Tokenization & Text Processing"
 slug: ai-ml-engineering/generative-ai/module-1.2-tokenization-text-processing
 sidebar:

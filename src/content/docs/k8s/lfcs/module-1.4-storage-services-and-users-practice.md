@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "LFCS Storage, Services, and Users Practice"
 slug: k8s/lfcs/module-1.4-storage-services-and-users-practice
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 8.5: Gitpod & GitHub Codespaces - Cloud Development Environments"
 slug: platform/toolkits/developer-experience/devex-tools/module-8.5-gitpod-codespaces
 sidebar:

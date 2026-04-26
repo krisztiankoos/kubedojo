@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.3: Security Principles"
 slug: k8s/kcsa/part1-cloud-native-security/module-1.3-security-principles
 sidebar:

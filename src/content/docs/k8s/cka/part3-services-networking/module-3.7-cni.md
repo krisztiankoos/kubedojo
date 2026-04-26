@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.7: CNI & Cluster Networking"
 slug: k8s/cka/part3-services-networking/module-3.7-cni
 sidebar:

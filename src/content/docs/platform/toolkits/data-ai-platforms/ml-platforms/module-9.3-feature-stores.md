@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 9.3: Feature Stores"
 slug: platform/toolkits/data-ai-platforms/ml-platforms/module-9.3-feature-stores
 sidebar:

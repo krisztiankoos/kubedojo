@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.4: Jobs & CronJobs"
 slug: k8s/cka/part2-workloads-scheduling/module-2.4-jobs-cronjobs
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Transformers from Scratch"
 slug: ai-ml-engineering/deep-learning/module-1.7-transformers-from-scratch
 sidebar:

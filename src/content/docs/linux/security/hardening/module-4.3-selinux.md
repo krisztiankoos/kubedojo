@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.3: SELinux Contexts"
 slug: linux/security/hardening/module-4.3-selinux
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 7.5: AWS CloudFormation"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.5-cloudformation
 sidebar:

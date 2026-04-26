@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.4: Cluster Scaling & Compute Optimization"
 slug: platform/disciplines/business-value/finops/module-1.4-compute-optimization
 sidebar:

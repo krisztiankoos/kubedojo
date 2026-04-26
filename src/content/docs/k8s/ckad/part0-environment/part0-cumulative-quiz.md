@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Part 0 Cumulative Quiz: Environment & Strategy"
 sidebar:
   order: 3

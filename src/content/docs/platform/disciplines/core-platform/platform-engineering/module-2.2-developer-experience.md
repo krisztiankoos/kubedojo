@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.2: Developer Experience (DevEx)"
 slug: platform/disciplines/core-platform/platform-engineering/module-2.2-developer-experience
 sidebar:

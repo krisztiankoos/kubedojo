@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 13.2: Zot - The Minimal OCI-Native Registry"
 slug: platform/toolkits/cicd-delivery/container-registries/module-13.2-zot
 sidebar:

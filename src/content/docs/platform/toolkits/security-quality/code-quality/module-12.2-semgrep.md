@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 12.2: Semgrep - Security Rules in Minutes"
 slug: platform/toolkits/security-quality/code-quality/module-12.2-semgrep
 sidebar:

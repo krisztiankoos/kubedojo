@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.4: Admission Controllers"
 slug: k8s/cks/part5-supply-chain-security/module-5.4-admission-controllers
 sidebar:

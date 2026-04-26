@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.3: Network Security"
 slug: k8s/kcsa/part2-cluster-component-security/module-2.3-network-security
 sidebar:

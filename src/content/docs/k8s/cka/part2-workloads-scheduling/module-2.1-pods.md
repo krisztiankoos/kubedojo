@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.1: Pods Deep-Dive"
 slug: k8s/cka/part2-workloads-scheduling/module-2.1-pods
 sidebar:

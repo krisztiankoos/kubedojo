@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.1: ConfigMaps"
 slug: k8s/ckad/part4-environment/module-4.1-configmaps
 sidebar:

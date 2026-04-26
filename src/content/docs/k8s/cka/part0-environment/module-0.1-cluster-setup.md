@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.1: Cluster Setup"
 slug: k8s/cka/part0-environment/module-0.1-cluster-setup
 sidebar:

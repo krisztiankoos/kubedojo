@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.3: Helm - Kubernetes Package Manager"
 slug: k8s/cka/part1-cluster-architecture/module-1.3-helm
 sidebar:

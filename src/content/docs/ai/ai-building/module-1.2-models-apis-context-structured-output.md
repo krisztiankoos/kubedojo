@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Models, APIs, Context, and Structured Output"
 slug: ai/ai-building/module-1.2-models-apis-context-structured-output
 sidebar:

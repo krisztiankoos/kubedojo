@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.2: Infrastructure as Code Testing"
 slug: platform/disciplines/delivery-automation/iac/module-6.2-iac-testing
 sidebar:

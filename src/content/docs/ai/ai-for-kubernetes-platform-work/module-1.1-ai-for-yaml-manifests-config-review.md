@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "AI for YAML, Manifests, and Config Review"
 slug: ai/ai-for-kubernetes-platform-work/module-1.1-ai-for-yaml-manifests-config-review
 sidebar:

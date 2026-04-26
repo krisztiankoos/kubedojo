@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.4: ServiceAccount Security"
 slug: k8s/kcsa/part3-security-fundamentals/module-3.4-serviceaccounts
 sidebar:

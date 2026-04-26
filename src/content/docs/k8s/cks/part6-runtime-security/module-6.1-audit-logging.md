@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.1: Kubernetes Audit Logging"
 slug: k8s/cks/part6-runtime-security/module-6.1-audit-logging
 sidebar:

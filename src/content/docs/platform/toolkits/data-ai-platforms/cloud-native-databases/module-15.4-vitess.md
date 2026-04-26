@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 15.4: Vitess - Scaling MySQL to YouTube Numbers"
 slug: platform/toolkits/data-ai-platforms/cloud-native-databases/module-15.4-vitess
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.5: Observability Tools"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.5-observability-tools
 sidebar:

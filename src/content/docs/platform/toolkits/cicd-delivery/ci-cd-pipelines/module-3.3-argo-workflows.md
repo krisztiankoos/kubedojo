@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.3: Argo Workflows"
 slug: platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.3-argo-workflows
 sidebar:

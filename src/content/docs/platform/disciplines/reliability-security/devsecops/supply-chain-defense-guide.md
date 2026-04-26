@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Supply Chain Defense Guide"
 sidebar:
   order: 6

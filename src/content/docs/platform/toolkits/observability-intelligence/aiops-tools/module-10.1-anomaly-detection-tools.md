@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 10.1: Anomaly Detection Tools"
 slug: platform/toolkits/observability-intelligence/aiops-tools/module-10.1-anomaly-detection-tools
 sidebar:

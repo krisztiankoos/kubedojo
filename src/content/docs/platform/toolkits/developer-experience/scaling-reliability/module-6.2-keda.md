@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.2: KEDA"
 slug: platform/toolkits/developer-experience/scaling-reliability/module-6.2-keda
 sidebar:

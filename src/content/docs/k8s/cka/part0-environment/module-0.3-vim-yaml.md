@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.3: Vim for YAML"
 slug: k8s/cka/part0-environment/module-0.3-vim-yaml
 sidebar:

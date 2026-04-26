@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.4: Helm & Kustomize"
 slug: platform/toolkits/cicd-delivery/gitops-deployments/module-2.4-helm-kustomize
 sidebar:

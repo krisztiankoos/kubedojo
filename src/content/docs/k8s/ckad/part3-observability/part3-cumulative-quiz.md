@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Part 3 Cumulative Quiz: Application Observability and Maintenance"
 sidebar:
   order: 6

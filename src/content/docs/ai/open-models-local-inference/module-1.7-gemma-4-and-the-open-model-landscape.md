@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Gemma 4 and the Open-Model Landscape"
 slug: ai/open-models-local-inference/module-1.7-gemma-4-and-the-open-model-landscape
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.4: CKS Exam Strategy"
 slug: k8s/cks/part0-environment/module-0.4-exam-strategy
 sidebar:

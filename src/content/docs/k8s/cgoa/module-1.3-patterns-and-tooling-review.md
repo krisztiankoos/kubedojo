@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "CGOA Patterns and Tooling Review"
 slug: k8s/cgoa/module-1.3-patterns-and-tooling-review
 sidebar:

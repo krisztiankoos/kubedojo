@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Local Inference Stack for Learners"
 slug: ai-ml-engineering/ai-infrastructure/module-1.4-local-inference-stack-for-learners
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.1: DevSecOps Fundamentals"
 slug: platform/disciplines/reliability-security/devsecops/module-4.1-devsecops-fundamentals
 sidebar:

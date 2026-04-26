@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Part 1 Cumulative Quiz: Cluster Architecture"
 sidebar:
   order: 9

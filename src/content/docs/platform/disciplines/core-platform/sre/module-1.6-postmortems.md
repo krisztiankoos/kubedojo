@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.6: Postmortems and Learning"
 slug: platform/disciplines/core-platform/sre/module-1.6-postmortems
 sidebar:

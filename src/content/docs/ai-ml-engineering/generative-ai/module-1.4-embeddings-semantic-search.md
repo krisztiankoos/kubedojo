@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Embeddings & Semantic Search"
 slug: ai-ml-engineering/generative-ai/module-1.4-embeddings-semantic-search
 sidebar:

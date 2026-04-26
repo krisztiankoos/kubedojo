@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 9.1: Kubeflow"
 slug: platform/toolkits/data-ai-platforms/ml-platforms/module-9.1-kubeflow
 sidebar:

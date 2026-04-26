@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 16.1: Rook/Ceph - Enterprise Storage for Kubernetes"
 slug: platform/toolkits/infrastructure-networking/storage/module-16.1-rook-ceph
 sidebar:

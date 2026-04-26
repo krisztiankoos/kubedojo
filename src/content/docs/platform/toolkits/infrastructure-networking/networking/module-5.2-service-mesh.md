@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.2: Service Mesh"
 slug: platform/toolkits/infrastructure-networking/networking/module-5.2-service-mesh
 sidebar:

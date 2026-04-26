@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 8.2: Telepresence & Tilt"
 slug: platform/toolkits/developer-experience/devex-tools/module-8.2-telepresence-tilt
 sidebar:

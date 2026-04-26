@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.2: Security Observability"
 slug: k8s/kcsa/part5-platform-security/module-5.2-observability
 sidebar:

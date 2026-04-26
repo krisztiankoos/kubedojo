@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Building with AI Coding Assistants"
 slug: ai-ml-engineering/ai-native-development/module-1.9-building-with-ai-coding-assistants
 sidebar:

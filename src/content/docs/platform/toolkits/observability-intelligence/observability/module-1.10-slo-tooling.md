@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.10: SLO Tooling - Sloth, Pyrra, and the OpenSLO Ecosystem"
 slug: platform/toolkits/observability-intelligence/observability/module-1.10-slo-tooling
 sidebar:

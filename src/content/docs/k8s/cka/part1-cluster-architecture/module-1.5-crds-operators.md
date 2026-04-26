@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.5: CRDs & Operators - Extending Kubernetes"
 slug: k8s/cka/part1-cluster-architecture/module-1.5-crds-operators
 sidebar:

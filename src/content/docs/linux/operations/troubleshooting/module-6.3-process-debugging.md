@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.3: Process Debugging"
 slug: linux/operations/troubleshooting/module-6.3-process-debugging
 sidebar:

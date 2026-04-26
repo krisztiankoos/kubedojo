@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "MLX on Apple Silicon"
 slug: ai/open-models-local-inference/module-1.4-mlx-on-apple-silicon
 sidebar:

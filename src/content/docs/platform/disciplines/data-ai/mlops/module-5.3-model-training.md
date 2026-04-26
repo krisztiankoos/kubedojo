@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 5.3: Model Training & Experimentation"
 slug: platform/disciplines/data-ai/mlops/module-5.3-model-training
 sidebar:

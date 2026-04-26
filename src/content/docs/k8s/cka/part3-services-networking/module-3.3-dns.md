@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.3: DNS & CoreDNS"
 slug: k8s/cka/part3-services-networking/module-3.3-dns
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.3: Event Correlation"
 slug: platform/disciplines/data-ai/aiops/module-6.3-event-correlation
 sidebar:

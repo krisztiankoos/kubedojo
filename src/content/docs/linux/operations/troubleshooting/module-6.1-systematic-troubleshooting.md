@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.1: Systematic Troubleshooting"
 slug: linux/operations/troubleshooting/module-6.1-systematic-troubleshooting
 sidebar:

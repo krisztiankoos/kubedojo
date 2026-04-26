@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.1: ArgoCD"
 slug: platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd
 sidebar:

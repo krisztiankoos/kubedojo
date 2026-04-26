@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 15.5: etcd-operator - Managing Kubernetes' Backbone"
 slug: platform/toolkits/data-ai-platforms/cloud-native-databases/module-15.5-etcd-operator
 sidebar:

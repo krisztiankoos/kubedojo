@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.1: Storage Architecture Decisions"
 slug: on-premises/storage/module-4.1-storage-architecture
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "CNPA Delivery, APIs, and Observability Review"
 slug: k8s/cnpa/module-1.3-delivery-apis-and-observability-review
 sidebar:

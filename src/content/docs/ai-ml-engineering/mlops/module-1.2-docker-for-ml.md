@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Docker for ML"
 slug: ai-ml-engineering/mlops/module-1.2-docker-for-ml
 sidebar:

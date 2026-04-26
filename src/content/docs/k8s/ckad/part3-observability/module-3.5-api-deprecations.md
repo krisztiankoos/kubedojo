@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.5: API Deprecations"
 slug: k8s/ckad/part3-observability/module-3.5-api-deprecations
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.6: Auto-Remediation"
 slug: platform/disciplines/data-ai/aiops/module-6.6-auto-remediation
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 9.4: vLLM - High-Throughput LLM Serving"
 slug: platform/toolkits/data-ai-platforms/ml-platforms/module-9.4-vllm
 sidebar:

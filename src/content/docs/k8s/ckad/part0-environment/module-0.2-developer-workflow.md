@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 0.2: Developer Workflow"
 slug: k8s/ckad/part0-environment/module-0.2-developer-workflow
 sidebar:

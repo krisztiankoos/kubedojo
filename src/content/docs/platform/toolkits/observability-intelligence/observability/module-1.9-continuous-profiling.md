@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.9: Continuous Profiling - The 4th Pillar of Observability"
 slug: platform/toolkits/observability-intelligence/observability/module-1.9-continuous-profiling
 sidebar:

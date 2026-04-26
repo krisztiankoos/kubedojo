@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.1: Deployments Deep Dive"
 slug: k8s/ckad/part2-deployment/module-2.1-deployments
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 10.3: Observability AI Features"
 slug: platform/toolkits/observability-intelligence/aiops-tools/module-10.3-observability-ai-features
 sidebar:

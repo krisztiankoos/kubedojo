@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 14.4: Talos Linux - The OS That IS Kubernetes"
 slug: platform/toolkits/infrastructure-networking/k8s-distributions/module-14.4-talos
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 4.1: The Security Mindset"
 slug: platform/foundations/security-principles/module-4.1-security-mindset
 sidebar:

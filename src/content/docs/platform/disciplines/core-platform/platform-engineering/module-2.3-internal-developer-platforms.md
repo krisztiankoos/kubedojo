@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.3: Internal Developer Platforms (IDPs)"
 slug: platform/disciplines/core-platform/platform-engineering/module-2.3-internal-developer-platforms
 sidebar:

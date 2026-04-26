@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 8.3: Local Kubernetes"
 slug: platform/toolkits/developer-experience/devex-tools/module-8.3-local-kubernetes
 sidebar:

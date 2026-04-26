@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.1: Dagger"
 slug: platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.1-dagger
 sidebar:

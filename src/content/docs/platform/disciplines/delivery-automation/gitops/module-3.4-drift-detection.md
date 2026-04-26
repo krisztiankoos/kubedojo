@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 3.4: Drift Detection and Remediation"
 slug: platform/disciplines/delivery-automation/gitops/module-3.4-drift-detection
 sidebar:

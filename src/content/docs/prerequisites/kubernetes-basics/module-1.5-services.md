@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.5: Services - Stable Networking"
 slug: prerequisites/kubernetes-basics/module-1.5-services
 sidebar:

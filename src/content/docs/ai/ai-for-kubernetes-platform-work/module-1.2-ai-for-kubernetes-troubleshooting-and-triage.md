@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "AI for Kubernetes Troubleshooting and Triage"
 slug: ai/ai-for-kubernetes-platform-work/module-1.2-ai-for-kubernetes-troubleshooting-and-triage
 sidebar:

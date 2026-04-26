@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 2.7: GCP Cloud Run (Serverless Containers)"
 slug: cloud/gcp-essentials/module-2.7-cloud-run
 sidebar:

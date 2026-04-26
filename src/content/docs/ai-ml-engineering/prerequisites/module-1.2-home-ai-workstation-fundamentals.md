@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Home AI Workstation Fundamentals"
 slug: ai-ml-engineering/prerequisites/module-1.2-home-ai-workstation-fundamentals
 sidebar:

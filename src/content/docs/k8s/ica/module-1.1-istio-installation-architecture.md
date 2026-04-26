@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.1: Istio Installation & Architecture"
 slug: k8s/ica/module-1.1-istio-installation-architecture
 sidebar:

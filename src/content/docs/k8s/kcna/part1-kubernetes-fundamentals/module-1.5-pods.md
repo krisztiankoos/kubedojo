@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.5: Pods"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.5-pods
 sidebar:

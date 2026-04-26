@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Evaluation, Iteration, and Shipping v1"
 slug: ai/ai-building/module-1.4-evaluation-iteration-and-shipping-v1
 sidebar:

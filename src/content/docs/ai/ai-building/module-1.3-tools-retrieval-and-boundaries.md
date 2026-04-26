@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Tools, Retrieval, and Boundaries"
 slug: ai/ai-building/module-1.3-tools-retrieval-and-boundaries
 sidebar:

@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 1.2: Cloud Provider Security"
 slug: k8s/kcsa/part1-cloud-native-security/module-1.2-cloud-provider-security
 sidebar:

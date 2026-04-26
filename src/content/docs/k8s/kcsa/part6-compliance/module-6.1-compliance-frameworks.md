@@ -1,4 +1,5 @@
 ---
+revision_pending: true
 title: "Module 6.1: Compliance Frameworks"
 slug: k8s/kcsa/part6-compliance/module-6.1-compliance-frameworks
 sidebar:
