@@ -1,1 +1,9 @@
 status: researching
+owner: Codex
+part: 5
+chapter: 24
+review_state: example_contract_in_progress
+last_updated: 2026-04-27
+notes:
+  - "Example research contract for Part 5."
+  - "Not ready for prose lock: Werbos/Linnainmaa page anchors and experiment hardware details still open."
