@@ -244,7 +244,7 @@ _SWAP_BREAKAGE_PATTERNS = (
     "  ",          # accidental double space (only flagged in prose context)
 )
 _SENT_COUNT_RE = __import__("re").compile(r"[.!?](?=\s|$)")
-_KEYWORD_TOKEN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9.+/-]*")
+_KEYWORD_TOKEN_RE = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9.+/-]*[A-Za-z0-9])?")
 _KEYWORD_STOPWORDS = {
     "about",
     "after",
@@ -322,10 +322,11 @@ def _gate_a_semantic_keywords(sentence: str) -> list[str]:
     specific_tokens: set[str] = set()
     for raw in raw_tokens:
         token = raw.lower()
-        if len(token) < 3 or token in _KEYWORD_STOPWORDS:
+        has_digit = any(ch.isdigit() for ch in token)
+        if (len(token) < 3 and not has_digit) or token in _KEYWORD_STOPWORDS:
             continue
         content_tokens.append(token)
-        if "-" in token or "/" in token or "." in token or any(ch.isdigit() for ch in token):
+        if "-" in token or "/" in token or "." in token or has_digit:
             specific_tokens.add(token)
 
     keywords: list[str] = []
