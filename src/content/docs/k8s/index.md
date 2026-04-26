@@ -71,13 +71,13 @@ The developer wants to build, deploy, configure, observe, and debug applications
 
 ### The Security Specialist
 
-The security specialist wants to harden clusters, workloads, supply chains, runtime behavior, and policy controls. Start with `CKA` because `CKS` requires it and assumes you can administer clusters before securing them.
+The security specialist wants to harden clusters, workloads, supply chains, runtime behavior, and policy controls. `CKS` is the centerpiece, but it requires `CKA` first — `CKS` is not security-flavored Kubernetes; it assumes you can already administer clusters under time pressure. `KCSA` is optional conceptual prep that fits *before* `CKA`, not after `CKS`.
 
-**Default route:** `CKA → CKS → KCSA`
+**Default route:** `KCSA (optional) → CKA → CKS`
 
 **Concrete routes:**
-- `Kubernetes -> security`: `CKA -> CKS -> KCSA`
-- `Security concepts first`: `KCSA -> CKA -> CKS`
+- `Hands-on first`: `CKA -> CKS`
+- `Concepts first`: `KCSA -> CKA -> CKS`
 
 **When to come back:** after `CKS`, add `CCA`, `KCA`, `CGOA`, `ICA`, `OTCA`, `PCA`, `CNPA`, `CNPE`, or `FinOps` when your security work touches networking, policy, GitOps, service mesh, observability, platforms, or cost governance.
 
@@ -96,61 +96,19 @@ Specialist certifications are not a better first move than learning the core Kub
 
 | Cert | Name | Type | Modules | Curriculum |
 |------|------|------|---------|------------|
-| [KCNA](kcna/) | Kubernetes & Cloud Native Associate | Multiple choice | 28 | [Details](kcna/) |
-| [KCSA](kcsa/) | Kubernetes & Cloud Native Security Associate | Multiple choice | 26 | [Details](kcsa/) |
-| [CKAD](ckad/) | Certified Kubernetes Application Developer | Hands-on lab | 30 | [Details](ckad/) |
-| [CKA](cka/) | Certified Kubernetes Administrator | Hands-on lab | 47 | [Details](cka/) |
-| [CKS](cks/) | Certified Kubernetes Security Specialist | Hands-on lab | 30 | [Details](cks/) |
+| [KCNA](/k8s/kcna/) | Kubernetes & Cloud Native Associate | Multiple choice | 28 | [Details](/k8s/kcna/) |
+| [KCSA](/k8s/kcsa/) | Kubernetes & Cloud Native Security Associate | Multiple choice | 26 | [Details](/k8s/kcsa/) |
+| [CKAD](/k8s/ckad/) | Certified Kubernetes Application Developer | Hands-on lab | 30 | [Details](/k8s/ckad/) |
+| [CKA](/k8s/cka/) | Certified Kubernetes Administrator | Hands-on lab | 47 | [Details](/k8s/cka/) |
+| [CKS](/k8s/cks/) | Certified Kubernetes Security Specialist | Hands-on lab | 30 | [Details](/k8s/cks/) |
 | | **Total** | | **161** | |
 
 ---
 
-## Alternative Sequences
-
-One hard rule applies regardless of the path below: **CKS requires prior CKA completion.** It is not just "security-flavored Kubernetes." It assumes you already know how to administer clusters under time pressure.
-
-**Option 1: Breadth First** (understand the landscape)
-```
-KCNA → KCSA → CKAD → CKA → CKS
-```
-
-**Option 2: Depth First** (production admin focus)
-```
-CKA → CKAD → CKS → KCNA → KCSA
-```
-
-**Option 3: Developer Path**
-```
-KCNA → CKAD → (stop here or continue to CKA)
-```
-
-**Option 4: Security Path**
-```
-CKA → CKS → KCSA
-```
-
-## Which Certification Should You Start With?
-
-Use this quick rule instead of staring at the full table:
-
-| If your goal is... | Start here | Why |
-|---|---|---|
-| understand Kubernetes and the CNCF landscape | [KCNA](kcna/) | lowest-pressure conceptual entry point |
-| become employable as a cluster administrator | [CKA](cka/) | the strongest admin-first hands-on route |
-| ship applications on Kubernetes | [CKAD](ckad/) | best developer-first route |
-| go deeper into cluster security | [CKA](cka/) then [CKS](cks/) | `CKS` assumes admin fluency and requires `CKA` |
-| understand security concepts before hardening clusters | [KCSA](kcsa/) | good conceptual security companion, not a replacement for `CKS` |
-| move toward platform engineering | [KCNA](kcna/) or [CKA](cka/) first, then [CNPA](cnpa/) and later [CNPE](cnpe/) | platform certs are specialization tracks after core Kubernetes literacy, not substitutes for it |
-
-If you are unsure, the safest defaults are:
-- `KCNA` for conceptual learners
-- `CKA` for operations-minded learners
-- `CKAD` for application developers
-
 ## Start Here If
 
 - you want external certification goals and exam-shaped structure
-- you already finished [Prerequisites](../prerequisites/) or equivalent hands-on fundamentals
+- you already finished [Prerequisites](/prerequisites/) or equivalent hands-on fundamentals
 - you want the shortest route into employable Kubernetes administration or application delivery skills
 
 ## Do Not Start Here First If
@@ -159,21 +117,7 @@ If you are unsure, the safest defaults are:
 - you have never deployed basic workloads to a cluster
 - you are looking for theory-first platform engineering rather than certification prep
 
-If that is your situation, start with [Prerequisites](../prerequisites/) first.
-
-## Safest Route Into This Track
-
-```text
-Prerequisites
-   |
-KCNA or CKA
-   |
-CKAD / CKS / specialist certs
-```
-
-Use `KCNA` if you want a conceptual entry point. Use `CKA` if you already want hands-on cluster administration pressure from day one.
-
-If your long-term goal is `CNPA` or `CNPE`, treat them as **post-foundation** credentials. `CNPA` can follow `KCNA` for conceptual platform learners, but `CNPE` makes the most sense after you already have at least one real hands-on Kubernetes route such as `CKA` or `CKAD`.
+If that is your situation, start with [Prerequisites](/prerequisites/) first.
 
 ## Tool & Specialist Certifications
 
@@ -181,17 +125,17 @@ Beyond Kubestronaut, CNCF offers tool-specific certifications. KubeDojo maps exi
 
 | Cert | Name | Learning Path |
 |------|------|---------------|
-| [PCA](pca/) | Prometheus Certified Associate | Prometheus, PromQL, alerting |
-| [ICA](ica/) | Istio Certified Associate | Service mesh, traffic management |
-| [CCA](cca/) | Cilium Certified Associate | eBPF networking, policies |
-| [CGOA](cgoa/) | Certified GitOps Associate | ArgoCD, Flux, GitOps principles |
-| [CBA](cba/) | Certified Backstage Associate | IDPs, developer portals |
-| [OTCA](otca/) | OpenTelemetry Certified Associate | Observability, tracing |
-| [KCA](kca/) | Kyverno Certified Associate | Policy as code |
-| [CAPA](capa/) | Certified Argo Project Associate | Argo Workflows, Rollouts |
-| [CNPE](cnpe/) | Cloud Native Platform Engineer | Cross-track learning path |
-| [CNPA](cnpa/) | Cloud Native Platform Associate | Platform fundamentals |
-| [FinOps](finops/) | FinOps Practitioner | Cloud cost optimization |
+| [PCA](/k8s/pca/) | Prometheus Certified Associate | Prometheus, PromQL, alerting |
+| [ICA](/k8s/ica/) | Istio Certified Associate | Service mesh, traffic management |
+| [CCA](/k8s/cca/) | Cilium Certified Associate | eBPF networking, policies |
+| [CGOA](/k8s/cgoa/) | Certified GitOps Associate | ArgoCD, Flux, GitOps principles |
+| [CBA](/k8s/cba/) | Certified Backstage Associate | IDPs, developer portals |
+| [OTCA](/k8s/otca/) | OpenTelemetry Certified Associate | Observability, tracing |
+| [KCA](/k8s/kca/) | Kyverno Certified Associate | Policy as code |
+| [CAPA](/k8s/capa/) | Certified Argo Project Associate | Argo Workflows, Rollouts |
+| [CNPE](/k8s/cnpe/) | Cloud Native Platform Engineer | Cross-track learning path |
+| [CNPA](/k8s/cnpa/) | Cloud Native Platform Associate | Platform fundamentals |
+| [FinOps](/k8s/finops/) | FinOps Practitioner | Cloud cost optimization |
 
 These are best treated as specialization tracks, not replacements for a first Kubernetes foundation. For most learners:
 - `KCNA`, `CKA`, or `CKAD` should come first
@@ -201,7 +145,7 @@ These are best treated as specialization tracks, not replacements for a first Ku
 
 | Section | Modules | Description |
 |---------|---------|-------------|
-| [Extending K8s](extending/) | 8 | Controllers, operators, webhooks, API aggregation, CRDs |
+| [Extending K8s](/k8s/extending/) | 8 | Controllers, operators, webhooks, API aggregation, CRDs |
 
 ---
 
@@ -226,18 +170,18 @@ For hands-on exams (CKAD, CKA, CKS):
 
 ## After This Track
 
-- go to [Cloud](../cloud/) if you want provider-specific production Kubernetes
-- go to [Platform Engineering](../platform/) if you want systems thinking, SRE, GitOps, and platform design beyond the exams
-- go to [On-Premises](../on-premises/) if your goal is private infrastructure and you already have Linux depth
+- go to [Cloud](/cloud/) if you want provider-specific production Kubernetes
+- go to [Platform Engineering](/platform/) if you want systems thinking, SRE, GitOps, and platform design beyond the exams
+- go to [On-Premises](/on-premises/) if your goal is private infrastructure and you already have Linux depth
 
 ## Choose Your Next Track After Core Kubernetes
 
 | If Kubernetes leads you toward... | Next track | Why |
 |---|---|---|
-| managed production clusters on AWS, GCP, or Azure | [Cloud](../cloud/) | provider-specific networking, identity, and managed-control-plane patterns live there |
-| SRE, GitOps, delivery automation, and internal platforms | [Platform Engineering](../platform/) | that is the systems-and-organization layer above the exams |
-| private clusters, bare metal, and datacenter operations | [On-Premises](../on-premises/) | those assumptions diverge sharply from managed-cloud Kubernetes |
-| ML workloads, serving, and AI infrastructure | [AI/ML Engineering](../ai-ml-engineering/) | the Kubernetes track is a prerequisite there, not the full workflow |
+| managed production clusters on AWS, GCP, or Azure | [Cloud](/cloud/) | provider-specific networking, identity, and managed-control-plane patterns live there |
+| SRE, GitOps, delivery automation, and internal platforms | [Platform Engineering](/platform/) | that is the systems-and-organization layer above the exams |
+| private clusters, bare metal, and datacenter operations | [On-Premises](/on-premises/) | those assumptions diverge sharply from managed-cloud Kubernetes |
+| ML workloads, serving, and AI infrastructure | [AI/ML Engineering](/ai-ml-engineering/) | the Kubernetes track is a prerequisite there, not the full workflow |
 
 ## Common Failure Modes After This Track
 
