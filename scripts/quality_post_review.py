@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import random
+import signal
 import sys
 from pathlib import Path
 from typing import cast
@@ -142,6 +143,10 @@ def review_slug(slug: str, *, reviewer_override: str | None, timeout: int, dry_r
 
 
 def main() -> int:
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
+    signal.signal(signal.SIGHUP, signal.SIG_IGN)
+
     ap = argparse.ArgumentParser(description=(__doc__ or "").splitlines()[0])
     ap.add_argument("--limit", type=int, default=0, help="process at most N slugs (0 = all)")
     ap.add_argument("--shuffle", action="store_true", help="randomize order before applying --limit (for spot-sampling)")
@@ -169,23 +174,27 @@ def main() -> int:
     stopped = False
 
     for i, slug in enumerate(work, 1):
-        outcome, detail = review_slug(
-            slug,
-            reviewer_override=args.reviewer,
-            timeout=args.timeout,
-            dry_run=args.dry_run,
-        )
-        counts[outcome] += 1
-        print(f"[{i}/{len(work)}] {outcome:8s} {slug}  -- {detail}")
-        if outcome in ("approve", "changes", "skip"):
-            # Drop "skip" too: stale queue entries (already reset/never made it
-            # to COMMITTED+auto_approved) shouldn't linger forever. If they
-            # ever reach the auto-approved state again, they get re-queued.
-            drop_from_queue.add(slug)
-        if outcome == "stop":
-            stopped = True
-            print(f"reviewer unavailable — halting run, leaving {len(queue) - len(drop_from_queue)} slugs queued.")
-            break
+        try:
+            outcome, detail = review_slug(
+                slug,
+                reviewer_override=args.reviewer,
+                timeout=args.timeout,
+                dry_run=args.dry_run,
+            )
+            counts[outcome] += 1
+            print(f"[{i}/{len(work)}] {outcome:8s} {slug}  -- {detail}")
+            if outcome in ("approve", "changes", "skip"):
+                # Drop "skip" too: stale queue entries (already reset/never made it
+                # to COMMITTED+auto_approved) shouldn't linger forever. If they
+                # ever reach the auto-approved state again, they get re-queued.
+                drop_from_queue.add(slug)
+            if outcome == "stop":
+                stopped = True
+                print(f"reviewer unavailable — halting run, leaving {len(queue) - len(drop_from_queue)} slugs queued.")
+                break
+        except BaseException as e:
+            print(f"[{i}/{len(work)}] exception {slug}: {type(e).__name__}: {e}", file=sys.stderr)
+            raise
 
     if not args.dry_run:
         remaining = [s for s in queue if s not in drop_from_queue]
