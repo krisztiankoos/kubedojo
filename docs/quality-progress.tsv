@@ -49,3 +49,4 @@ ts_utc	slug	heuristic_before	heuristic_after	real_llm_sampled	real_llm_teaching_
 2026-04-26T04:59:29Z	k8s-cka-part5-troubleshooting-cumulative-quiz	1.80		0			codex	claude	approve	
 2026-04-26T05:06:14Z	k8s-cka-part0-environment-part0-cumulative-quiz	1.50		1	5.00	strong	codex	claude	approve	
 2026-04-26T05:12:13Z	k8s-cka-part4-storage-part4-cumulative-quiz	1.80		0			codex	claude	approve	
+2026-04-26T05:20:34Z	platform-toolkits-cicd-delivery-container-registries-module-13.2-zot	3.30		1	5.00	strong	codex	claude	approve	
