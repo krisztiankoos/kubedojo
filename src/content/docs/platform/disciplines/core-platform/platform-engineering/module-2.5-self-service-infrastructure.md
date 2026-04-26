@@ -1,4 +1,5 @@
 ---
+qa_pending: true
 title: "Module 2.5: Self-Service Infrastructure"
 slug: platform/disciplines/core-platform/platform-engineering/module-2.5-self-service-infrastructure
 sidebar:
