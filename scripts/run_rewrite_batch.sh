@@ -51,6 +51,22 @@ primary_dirty_tracked() {
   [[ -n "$(git diff --name-only && git diff --cached --name-only)" ]]
 }
 
+recover_orphan_ledger() {
+  # Concurrent halves race on docs/quality-progress.tsv ledger-commit;
+  # if a row is staged-only with no other tracked changes, commit it
+  # rather than aborting.
+  local staged unstaged
+  staged="$(git diff --cached --name-only)"
+  unstaged="$(git diff --name-only)"
+  if [[ "$staged" == "docs/quality-progress.tsv" && -z "$unstaged" ]]; then
+    local row
+    row="$(git diff --cached docs/quality-progress.tsv | grep '^+[^+]' | head -1 | cut -f2- | tr -d '\t' | head -c 120)"
+    git commit -m "quality(ledger): orphan recovery row from concurrent-halves race" >/dev/null 2>&1 \
+      && echo "recovered: orphan ledger row committed ($row...)" | tee -a "$LOG" \
+      || true
+  fi
+}
+
 while IFS=$'\t' read -r idx tier wpp words slug; do
   [[ -z "$slug" ]] && continue
   start=$(date '+%F %T')
@@ -65,6 +81,9 @@ while IFS=$'\t' read -r idx tier wpp words slug; do
     continue
   fi
 
+  if primary_dirty_tracked; then
+    recover_orphan_ledger
+  fi
   if primary_dirty_tracked; then
     echo "" | tee -a "$LOG"
     echo "ABORT at [$idx/$total] $slug — primary dirty (tracked changes)" | tee -a "$LOG"
