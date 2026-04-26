@@ -1,4 +1,5 @@
 ---
+qa_pending: true
 title: "Module 15.1: CockroachDB - Distributed SQL That Survives Anything"
 slug: platform/toolkits/data-ai-platforms/cloud-native-databases/module-15.1-cockroachdb
 sidebar:
