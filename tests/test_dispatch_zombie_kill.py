@@ -45,19 +45,22 @@ def _cleanup_pid(pid: int | None) -> None:
 
 
 def test_kill_process_tree_reaps_child_in_different_process_group():
-    python_bin = Path(".venv/bin/python")
-    assert python_bin.exists()
+    python_bin = sys.executable
 
     parent_code = """
 import subprocess
+import sys
 import time
 
-child = subprocess.Popen(["sleep", "300"], start_new_session=True)
+child = subprocess.Popen(
+    [sys.executable, "-c", "import time; time.sleep(300)"],
+    start_new_session=True,
+)
 print(child.pid, flush=True)
 time.sleep(300)
 """
     parent = subprocess.Popen(
-        [str(python_bin), "-c", parent_code],
+        [python_bin, "-c", parent_code],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,

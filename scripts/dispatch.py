@@ -713,7 +713,7 @@ def _kill_process_tree(proc) -> None:
                     try:
                         child.kill()
                         killed_processes.append(child)
-                    except psutil.NoSuchProcess:
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
                         pass
 
                 try:
