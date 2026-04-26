@@ -1,1 +1,10 @@
 status: researching
+owner: Codex
+part: 5
+chapter: 25
+review_state: research_contract_in_progress
+last_updated: 2026-04-27
+notes:
+  - "Initial research contract populated from verified bibliographic sources."
+  - "Not ready for prose lock: theorem statements need page anchors and the 1989 cluster needs careful priority mapping."
+  - "Core guardrail: universal approximation is representation capacity, not trainability, generalization, or deployment."
