@@ -1,1 +1,10 @@
 status: researching
+owner: Codex
+part: 5
+chapter: 26
+review_state: research_contract_in_progress
+last_updated: 2026-04-27
+notes:
+  - "Initial research contract populated from Pearl, graphical-model, tutorial, and complexity anchors."
+  - "Not ready for prose lock: Pearl 1986/1988, Cooper 1990, and expert-system uncertainty contrasts need page anchors."
+  - "Core guardrail: Bayesian networks structure uncertain reasoning; they do not make inference or knowledge elicitation free."
