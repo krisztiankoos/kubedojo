@@ -1,5 +1,4 @@
 ---
-revision_pending: true
 title: "Module 0.3: Vim for YAML"
 slug: k8s/cka/part0-environment/module-0.3-vim-yaml
 sidebar:
@@ -11,335 +10,751 @@ lab:
   difficulty: intermediate
   environment: ubuntu
 ---
-> **Complexity**: `[QUICK]` - Learn 10 commands, use them forever
+
+# Module 0.3: Vim for YAML
+
+> **Complexity**: `[QUICK]` - Small command set, high exam leverage
 >
-> **Time to Complete**: 20-30 minutes
+> **Time to Complete**: 25-35 minutes
 >
-> **Prerequisites**: None (Vim is pre-installed on exam systems)
+> **Prerequisites**: Basic terminal navigation, Module 0.1 environment setup recommended
 
 ---
 
-## What You'll Be Able to Do
+## Learning Outcomes
 
 After this module, you will be able to:
-- **Edit** YAML files in vim with proper indentation (2 spaces, no tabs)
-- **Fix** common YAML errors (wrong indentation, missing fields) in under 30 seconds
-- **Configure** vim settings (.vimrc) that make YAML editing painless in the exam
-- **Use** the 10 essential vim commands that cover 95% of CKA editing tasks
+
+- **Configure** vim so Kubernetes YAML uses two-space indentation, spaces instead of tabs, and line numbers that make parser errors easier to locate.
+- **Diagnose** common YAML editing failures by comparing vim state, hidden whitespace, indentation levels, and `kubectl` validation output.
+- **Refactor** Kubernetes manifests in vim by copying, deleting, indenting, and replacing blocks without retyping large sections under exam pressure.
+- **Evaluate** when vim, nano, `kubectl --dry-run`, or shell redirection is the fastest safe editing path for a given CKA task.
+- **Repair** broken Pod and Deployment manifests using a repeatable edit-validate-fix loop that works in a terminal-only environment.
 
 ---
 
 ## Why This Module Matters
 
-The CKA exam requires editing YAML files. A lot. You'll create manifests, fix broken configs, and modify existing resources—all in a terminal.
+A candidate is twenty minutes into a performance exam when a Deployment manifest fails validation. The application idea is simple, the YAML looks almost right, and the cluster is healthy, yet the terminal shows a parser error pointing near a line that appears visually harmless. The candidate opens the file again, presses a few keys in the wrong mode, accidentally deletes part of the manifest, and loses more time recovering the editor than solving Kubernetes.
 
-The exam environment defaults to **nano** (as of 2025), but you can switch to vim. Whether you use vim or nano, you need to be fast. This module covers vim because it's more powerful once you know the basics.
+That situation is not really a vim problem. It is a workflow problem. Kubernetes work often happens in a terminal, YAML is whitespace-sensitive, and the editor becomes part of the diagnostic path. A learner who can move quickly through a file, see line numbers, preserve indentation, and validate small changes can spend attention on Kubernetes behavior instead of fighting invisible characters.
 
-If you prefer nano, that's fine—it's simpler. But vim skills transfer to production troubleshooting where nano might not be available.
+This module teaches vim as a practical Kubernetes editing tool, not as a lifestyle choice. You do not need plugin mastery, macros, custom themes, or years of muscle memory. You need a dependable mental model, a tiny set of commands, a safe `.vimrc`, and enough YAML-specific troubleshooting practice to recover when the file on screen disagrees with what the parser sees.
+
+The exam environment may make nano available and may even default to it, depending on the current image. That does not make vim irrelevant. Vim remains widely available on Linux systems, appears in many production troubleshooting sessions, and is often the editor people reach for inside minimal terminal environments. The right standard is not loyalty to an editor; the right standard is whether you can edit a manifest safely under pressure.
+
+> **The Flight Deck Analogy**
+>
+> Vim modes are like controls on a flight deck. One set of controls moves the aircraft, another changes radio settings, and another manages navigation. Confusing those controls is dangerous, but once the separation is clear, each action becomes faster because the controls are specialized. In vim, Normal mode moves and edits structure, Insert mode types text, and Command mode saves, quits, searches, or changes editor behavior.
 
 ---
 
-## Part 1: Vim Survival Kit
+## Part 1: Build the Vim Mental Model Before Typing YAML
 
-> **The honest truth**: Most CKA candidates spend 2 hours learning vim and then use `i` (insert), `Esc`, `:wq` (save and quit), and `u` (undo) for 90% of their editing. That's fine. The 10 commands below cover the remaining 10% that saves you minutes per question — indentation fixes, block deletion, and search-replace.
+Vim feels strange at first because it does not treat every keypress as text entry. That design is the source of both the frustration and the speed. In a normal text box, pressing `d` inserts the letter `d`; in vim Normal mode, pressing `dd` deletes a line. The same keyboard becomes a command surface, so the first skill is knowing which mode owns the next keypress.
 
-You don't need to be a vim expert. You need 10 commands.
+The safest recovery habit is simple: when the editor surprises you, press `Esc` once or twice before doing anything else. Pressing `Esc` returns you to Normal mode, where commands like save, quit, undo, search, and line deletion behave predictably. This habit matters because many exam mistakes come from trying to run `:wq` while still in Insert mode or trying to type YAML while still in Normal mode.
 
-### 1.1 Modes
-
-Vim has modes. This confuses everyone at first.
-
-> **The Gearshift Analogy**
->
-> Vim modes are like a car's gearshift. In **Normal mode** (drive), you're navigating—moving around, not typing. In **Insert mode** (park), you're stationary and typing. In **Command mode** (reverse), you're doing special operations like saving. You wouldn't try to park while driving. Vim forces you to "shift gears" deliberately. It feels weird at first, but it's what makes vim so fast once you internalize it.
-
-> **Pause and predict**: If you are typing text and suddenly your backspace stops working or you start deleting lines by accident, what mode are you likely in, and how do you fix it?
-
-| Mode | How to Enter | What It Does |
-|------|-------------|--------------|
-| Normal | `Esc` | Navigate, delete, copy, paste |
-| Insert | `i`, `a`, `o` | Type text |
-| Command | `:` | Save, quit, search |
-
-**Rule**: When confused, press `Esc` to return to Normal mode.
-
-### 1.2 Essential Commands
-
+```text
++------------------+        i, a, o         +------------------+
+|  NORMAL MODE     | ---------------------> |  INSERT MODE     |
+|  move/edit lines |                        |  type YAML text  |
+|  dd, yy, p, u    | <--------------------- |  letters appear  |
++------------------+          Esc           +------------------+
+          |
+          | :
+          v
++------------------+
+|  COMMAND MODE    |
+|  :w, :q, :wq     |
+|  :set paste      |
+|  :%s/old/new/g   |
++------------------+
 ```
+
+The diagram shows why `Esc` is the reset key. You can enter Insert mode through several commands, but you leave it the same way every time. Command mode is reached from Normal mode with `:`, so a reliable save sequence is always `Esc`, then `:w`, then `Enter`. A reliable save-and-exit sequence is always `Esc`, then `:wq`, then `Enter`.
+
+| Mode | How to Enter | What It Does | Kubernetes Editing Example |
+|------|--------------|--------------|----------------------------|
+| Normal | `Esc` | Navigate, delete, copy, paste, undo | Delete a bad `env:` block with `4dd` |
+| Insert | `i`, `a`, `o`, `O` | Type text into the file | Add `image: nginx:1.25` under a container |
+| Command | `:` from Normal mode | Save, quit, search, replace, configure vim | Run `:%s/nginx:old/nginx:1.25/g` |
+
+> **Pause and predict**: You press `j` expecting the cursor to move down, but the letter `j` appears inside `metadata.name`. Which mode are you in, what should you press, and what should you check before continuing?
+
+The answer is that you are in Insert mode. Press `Esc` to return to Normal mode, then use `j` only for navigation. Before continuing, check whether the accidental `j` changed a meaningful field. This tiny recovery loop matters because accidental characters inside YAML values can create valid YAML that produces the wrong Kubernetes object, which is worse than an obvious parser error.
+
+### 1.1 The Commands Worth Memorizing
+
+You can complete most CKA editing tasks with a compact command set. The goal is not to become fast at every vim feature. The goal is to become reliable at the actions that map directly to Kubernetes manifest work: insert a field, delete a block, copy a block, adjust indentation, search for a value, save, and validate.
+
+```text
 ENTERING INSERT MODE
-i     Insert before cursor
-a     Insert after cursor
-o     Open new line below and insert
-O     Open new line above and insert
+i        Insert before the cursor
+a        Insert after the cursor
+o        Open a new line below and enter Insert mode
+O        Open a new line above and enter Insert mode
 
-NAVIGATION (Normal mode)
-h     Left
-j     Down
-k     Up
-l     Right
-gg    Go to first line
-G     Go to last line
-0     Go to beginning of line
-$     Go to end of line
-w     Jump forward one word
-b     Jump backward one word
+NAVIGATION IN NORMAL MODE
+h        Move left
+j        Move down
+k        Move up
+l        Move right
+gg       Go to the first line
+G        Go to the last line
+0        Go to the beginning of the current line
+$        Go to the end of the current line
+w        Jump forward one word
+b        Jump backward one word
 
-EDITING (Normal mode)
-x     Delete character under cursor
-dd    Delete entire line
-yy    Copy (yank) entire line
-p     Paste below
-P     Paste above
-u     Undo
-Ctrl+r  Redo
+EDITING IN NORMAL MODE
+x        Delete the character under the cursor
+dd       Delete the current line
+5dd      Delete five lines starting at the current line
+yy       Copy the current line
+p        Paste below the current line
+P        Paste above the current line
+u        Undo the last change
+Ctrl+r   Redo the undone change
 
-SEARCH
-/pattern    Search forward
-n           Next match
-N           Previous match
+YAML BLOCK EDITING
+>>       Indent the current line one level to the right
+<<       Indent the current line one level to the left
+V        Start visual line selection
+>        Indent the selected lines right
+<        Indent the selected lines left
+=        Reindent the selected lines using vim's indentation rules
+
+SEARCH AND REPLACE
+/pattern            Search forward for pattern
+n                   Move to the next match
+N                   Move to the previous match
+:%s/old/new/g       Replace old with new throughout the file
 
 SAVE AND QUIT
-:w          Save (write)
-:q          Quit
-:wq         Save and quit
-:q!         Quit without saving (discard changes)
+:w       Save the file
+:q       Quit if there are no unsaved changes
+:wq      Save and quit
+:q!      Quit and discard unsaved changes
 ```
 
-### 1.3 The Minimum You Need
+The most important command in that list is not the cleverest one. It is `u`, because fast editing without fast undo creates hesitation. If you delete too much with `5dd`, press `u`. If a paste goes wrong, press `u`. If an indentation experiment makes the file worse, press `u` and choose a smaller selection.
 
-Honestly? For the exam, you can survive with:
+The second most important habit is prefacing destructive commands with a count only when you have counted the target lines. `3dd` is excellent when the broken block is exactly three lines. It is risky when you are guessing. Under pressure, count visible lines with line numbers, delete a smaller block, and validate rather than trying to perform one dramatic edit.
 
-```
-i       → Start typing
-Esc     → Stop typing
-:wq     → Save and quit
-dd      → Delete line
-u       → Undo mistake
-```
+### 1.2 How Vim Commands Map to YAML Structure
 
-That's 5 things. Master these, and you won't fail because of vim.
-
----
-
-## Part 2: Vim Configuration for YAML
-
-### 2.1 Create ~/.vimrc
-
-YAML is whitespace-sensitive. A misconfigured vim will ruin your indentation.
-
-```bash
-cat << 'EOF' > ~/.vimrc
-" Basic settings
-set number              " Show line numbers
-set tabstop=2           " Tab = 2 spaces
-set shiftwidth=2        " Indent = 2 spaces
-set expandtab           " Use spaces, not tabs
-set autoindent          " Maintain indentation
-set smartindent         " Smart indentation for code
-set paste               " Prevent auto-indent on paste (toggle with :set nopaste)
-
-" YAML specific
-autocmd FileType yaml setlocal ts=2 sts=2 sw=2 expandtab
-
-" Visual helpers
-set cursorline          " Highlight current line
-syntax on               " Syntax highlighting
-set hlsearch            " Highlight search results
-EOF
-```
-
-### 2.2 Why These Settings Matter
-
-| Setting | Why |
-|---------|-----|
-| `tabstop=2` | Kubernetes YAML uses 2-space indentation |
-| `expandtab` | Converts tabs to spaces (tabs break YAML) |
-| `autoindent` | New lines maintain indentation |
-| `number` | Line numbers help with error messages |
-| `set paste` | Prevents auto-indent issues when pasting |
-
-> **Stop and think**: Why might setting `tabstop=2` not be enough on its own to prevent YAML parsing errors when you press the Tab key?
-
-> **Gotcha: Tabs vs Spaces**
->
-> YAML requires consistent indentation. A single tab character mixed with spaces will break your manifest. Always use spaces. The `expandtab` setting converts tabs to spaces automatically.
-
-> **War Story: The Invisible Character**
->
-> A senior engineer spent 45 minutes debugging why `kubectl apply` kept failing with a cryptic YAML parsing error. The manifest looked perfect. They eventually ran `cat -A` on the file and discovered invisible tab characters mixed with spaces—introduced when they copied code from a Confluence page. The lesson: never trust copy-paste. Always verify indentation, and configure your editor to show invisible characters or convert tabs automatically.
-
----
-
-## Part 3: YAML Editing Workflows
-
-### 3.1 Creating a New File
-
-```bash
-vim pod.yaml
-```
-
-Press `i` to enter Insert mode, then type:
+Kubernetes YAML is hierarchical. A line's meaning depends on where it is indented relative to the lines around it. Vim's line-based commands fit that structure well because you often need to move or remove entire YAML records, not individual characters. A container item, an environment variable item, a port item, and a label line each occupy predictable line blocks.
 
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nginx
+  name: web
+  labels:
+    app: frontend
 spec:
   containers:
-  - name: nginx
-    image: nginx
+  - name: app
+    image: nginx:1.25
+    ports:
+    - containerPort: 80
 ```
 
-Press `Esc`, then `:wq` to save and quit.
+In this manifest, deleting only `image: nginx:1.25` leaves a container with a name but no image, which Kubernetes rejects. Deleting the whole container item would require deleting the `- name`, `image`, `ports`, and `containerPort` lines together. That is why line selection and counted deletes are not editor trivia; they are how you preserve or remove complete Kubernetes structure.
 
-### 3.2 Copying Lines (Faster Than Retyping)
-
-You need to add another container. Instead of typing from scratch:
-
-1. Navigate to the container block
-2. Position cursor on `- name: nginx`
-3. Press `V` (visual line mode)
-4. Press `j` twice to select 3 lines
-5. Press `y` to yank (copy)
-6. Navigate to where you want the new container
-7. Press `p` to paste
-
-### 3.3 Indenting Blocks
-
-Selected the wrong indentation? Fix it:
-
-1. `V` to enter visual line mode
-2. Select lines with `j`/`k`
-3. `>` to indent right
-4. `<` to indent left
-
-Or in Normal mode:
-- `>>` indent current line right
-- `<<` indent current line left
-
-### 3.4 Deleting Multiple Lines
-
-Need to remove a whole section?
-
-1. Navigate to start of section
-2. Type `5dd` to delete 5 lines
-3. Or `d}` to delete until next blank line
-
-### 3.5 Search and Replace
-
-Wrong image name throughout file?
-
-```
-:%s/nginx:1.19/nginx:1.25/g
+```text
+metadata:
+  name: web              <- child of metadata
+  labels:                <- child of metadata
+    app: frontend        <- child of labels
+spec:
+  containers:            <- child of spec
+  - name: app            <- list item under containers
+    image: nginx:1.25    <- field in the same container item
 ```
 
-- `%s` = substitute in whole file
-- `/old/new/` = pattern
-- `g` = all occurrences (not just first)
+A useful mental check is to ask, "What parent owns this line?" If the answer changes unexpectedly after an edit, the YAML structure changed. Moving `image` left or right by two spaces can move it out of the container item or into a different parent. Vim makes that movement easy with `>>` and `<<`, but the learner must still understand what the indentation means.
+
+> **Stop and decide**: In the manifest above, what happens if `image: nginx:1.25` is moved left so it aligns with `- name: app`? Would that still describe an image field for the container, or would it become a different structure?
+
+It would no longer be a normal field inside the same container item. YAML parsers may still parse the file, but Kubernetes schema validation will reject the object because the container item no longer has the expected `image` field in the expected place. This is why `kubectl` validation is part of editing, not a separate step done only at the end.
 
 ---
 
-## Part 4: Paste Without Mangling
+## Part 2: Configure Vim for Kubernetes YAML
 
-When you copy YAML from documentation and paste into vim, auto-indent can mangle it.
+A default vim installation is usable, but it is not always friendly to YAML. YAML treats tabs differently from spaces, Kubernetes examples commonly use two-space indentation, and validation errors often include line references. A small `.vimrc` turns those concerns into defaults so each edit starts from a safer baseline.
 
-### Method 1: Set Paste Mode
-
-Before pasting:
-```
-:set paste
-```
-
-Paste your content (usually `Cmd+V` or right-click).
-
-After pasting:
-```
-:set nopaste
-```
-
-### Method 2: Use the Terminal Paste
-
-In the exam environment, you might paste directly into the terminal. The `:set paste` in your `.vimrc` helps, but be aware of it.
-
-### Method 3: Alternative—Use `cat`
-
-If vim paste is problematic:
+Run this command in your shell to create a focused vim configuration. The command is runnable as written and uses a quoted heredoc so the shell does not expand anything inside the file.
 
 ```bash
-cat << 'EOF' > pod.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: nginx
-spec:
-  containers:
-  - name: nginx
-    image: nginx
+cat << 'EOF' > ~/.vimrc
+" Kubernetes YAML editing defaults
+set number
+set tabstop=2
+set softtabstop=2
+set shiftwidth=2
+set expandtab
+set autoindent
+set smartindent
+set cursorline
+set hlsearch
+syntax on
+
+" Make hidden whitespace easier to inspect when needed.
+set listchars=tab:>-,trail:.,extends:>,precedes:<
+
+" YAML files should always use spaces and two-space indentation.
+autocmd FileType yaml setlocal tabstop=2 softtabstop=2 shiftwidth=2 expandtab
+autocmd FileType yml setlocal tabstop=2 softtabstop=2 shiftwidth=2 expandtab
 EOF
 ```
 
-This avoids vim entirely for creating files.
+This configuration does not turn vim into an integrated development environment. It makes the invisible parts of YAML less risky. `set number` gives you a coordinate system for parser errors. `set expandtab` means pressing the Tab key inserts spaces instead of a literal tab character. `set shiftwidth=2` means indentation commands like `>>` and `<` move by the same width Kubernetes examples expect.
 
----
+| Setting | Why It Matters for YAML | Failure It Prevents |
+|---------|--------------------------|---------------------|
+| `set number` | Shows line numbers beside the file | Hunting blindly for parser error locations |
+| `set tabstop=2` | Displays tab width as two columns | Misreading visual alignment during inspection |
+| `set softtabstop=2` | Makes Tab and Backspace feel like two-space steps | Awkward partial indentation edits |
+| `set shiftwidth=2` | Makes `>>`, `<<`, and visual indentation move two spaces | Over-indenting blocks by large jumps |
+| `set expandtab` | Converts Tab key presses into spaces | Literal tab characters breaking YAML indentation |
+| `set autoindent` | Carries current indentation onto new lines | Rebuilding nested indentation from scratch |
+| `set cursorline` | Highlights the current line | Editing the wrong line in dense manifests |
+| `set hlsearch` | Highlights search matches | Missing repeated image or label values |
 
-## Part 5: Quick Reference Card
+> **Pause and explain**: Why is `tabstop=2` not enough by itself? Predict what happens if the file contains a real tab character and another machine displays tabs using a different width.
 
-Print this or memorize it:
+`tabstop=2` only changes how a tab is displayed. It does not stop vim from inserting a tab character unless `expandtab` is also enabled. YAML cares about actual characters, not your visual preference, so a manifest can look aligned in one terminal and fail or mislead you in another. `expandtab` changes what gets written to the file, which is the behavior Kubernetes validation sees.
 
-```
-╔════════════════════════════════════════════════════╗
-║              VIM YAML QUICK REFERENCE              ║
-╠════════════════════════════════════════════════════╣
-║ MODES                                              ║
-║   Esc       → Normal mode (navigation)             ║
-║   i         → Insert mode (typing)                 ║
-║   :         → Command mode (save/quit)             ║
-╠════════════════════════════════════════════════════╣
-║ MOVEMENT                                           ║
-║   gg        → Top of file                          ║
-║   G         → Bottom of file                       ║
-║   0         → Start of line                        ║
-║   $         → End of line                          ║
-║   /pattern  → Search                               ║
-╠════════════════════════════════════════════════════╣
-║ EDITING                                            ║
-║   dd        → Delete line                          ║
-║   yy        → Copy line                            ║
-║   p         → Paste below                          ║
-║   u         → Undo                                 ║
-║   >>        → Indent right                         ║
-║   <<        → Indent left                          ║
-╠════════════════════════════════════════════════════╣
-║ SAVE/QUIT                                          ║
-║   :w        → Save                                 ║
-║   :q        → Quit                                 ║
-║   :wq       → Save and quit                        ║
-║   :q!       → Quit without saving                  ║
-╠════════════════════════════════════════════════════╣
-║ YAML SPECIFIC                                      ║
-║   :set paste    → Before pasting                   ║
-║   :set nopaste  → After pasting                    ║
-╚════════════════════════════════════════════════════╝
-```
+### 2.1 Verify the Configuration Instead of Trusting It
 
----
-
-## Part 6: Nano Alternative
-
-If vim feels like too much, use nano. It's the exam default now.
+A senior workflow verifies assumptions. After writing `.vimrc`, open a scratch YAML file, press Tab at the start of a line, save, and inspect the file with tools that expose hidden characters. This short check proves that your editor is writing spaces, not just displaying something that looks like spaces.
 
 ```bash
-nano pod.yaml
+cat << 'EOF' > vimrc-check.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vimrc-check
+spec:
+  containers:
+  - name: app
+    image: nginx:1.25
+EOF
+
+vim vimrc-check.yaml
+cat -A vimrc-check.yaml
+rm -f vimrc-check.yaml
 ```
 
-Nano shows shortcuts at the bottom:
-- `Ctrl+O` = Save (Write Out)
-- `Ctrl+X` = Exit
-- `Ctrl+K` = Cut line
-- `Ctrl+U` = Paste
+In `cat -A` output, literal tab characters usually appear as `^I`. If you see `^I` inside indentation, replace the tabs or fix your editor settings before doing serious YAML work. If you see `$` at line endings, that is normal; `cat -A` uses it to show where each line ends.
 
-For YAML, create `~/.nanorc`:
+There is also a vim-side inspection method. Inside vim, run `:set list` to show tabs and trailing spaces using the `listchars` configuration. Run `:set nolist` when you are done inspecting. This is useful when a manifest looks fine in normal view but validation keeps pointing toward whitespace-sensitive areas.
+
+### 2.2 The Paste Mode Trade-Off
+
+Old terminal vim setups can mis-handle pasted blocks when autoindent is active. Paste mode temporarily disables some automatic formatting so vim accepts pasted text more literally. The trade-off is that paste mode also disables some helpful insert behavior, so it should be turned off after the paste.
+
+```text
+:set paste
+```
+
+Paste the YAML block.
+
+```text
+:set nopaste
+```
+
+You should treat paste mode as a tool, not a permanent configuration. If it stays enabled, normal typing may feel less helpful because automatic indentation behavior changes. A clean exam habit is to enter paste mode immediately before a paste, paste once, leave paste mode, save, and validate.
+
+Modern terminal bracketed paste support often reduces this problem, but the exam-safe principle remains the same: after any pasted YAML, validate the result. Pasted manifests may include tabs, non-breaking spaces, long wrapped lines, or fields from a different API version. Editor safety reduces risk; `kubectl` validation confirms the object.
+
+---
+
+## Part 3: Create, Edit, and Validate a Manifest in a Tight Loop
+
+The fastest Kubernetes editing workflow is not "write everything perfectly the first time." The fastest workflow is a tight loop: generate or open a manifest, make a small edit, save, validate, and fix the next concrete error. This loop turns vague anxiety into specific feedback from the Kubernetes client.
+
+In this module, the first full worked example creates a Pod manifest, intentionally changes it, validates it, and then repairs it. The example uses `kubectl` first. If your shell has the common alias `alias k=kubectl`, the rest of the module uses `k` for shorter commands. If the alias is not already present, create it with `alias k=kubectl` in your current shell.
+
+```bash
+alias k=kubectl
+```
+
+### 3.1 Worked Example: Add a Label and Validate the Pod
+
+Start with a known-good manifest. Creating a valid baseline before making edits is a professional habit because it separates "my starting point is bad" from "my latest edit broke something." The file below is intentionally small so the edit mechanics stay visible.
+
+```bash
+cat << 'EOF' > pod-edit.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-edit
+spec:
+  containers:
+  - name: app
+    image: nginx:1.25
+EOF
+
+k apply -f pod-edit.yaml --dry-run=client
+```
+
+Now open the file in vim.
+
+```bash
+vim pod-edit.yaml
+```
+
+Press `Esc` to ensure you are in Normal mode, then move to the `metadata:` line. Press `o` to open a new line below it and enter Insert mode. Type the label block below, preserving two-space indentation under `metadata` and four-space indentation under `labels`.
+
+```yaml
+  labels:
+    app: web
+```
+
+Press `Esc`, type `:wq`, and press `Enter`. Then validate the file again.
+
+```bash
+k apply -f pod-edit.yaml --dry-run=client
+```
+
+The important teaching point is not the label itself. The important point is the sequence. You started from valid YAML, made one structural edit, saved, and validated. When this loop fails, the search space is small. The error is probably in the block you just changed, not somewhere random in the manifest.
+
+### 3.2 Worked Example: Recover from a Bad Indentation Edit
+
+Now create a broken version deliberately. This kind of deliberate breakage is useful because it lets you practice the recovery path before the exam creates the pressure for you.
+
+```bash
+cat << 'EOF' > broken-pod-edit.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: broken-pod-edit
+labels:
+    app: web
+spec:
+  containers:
+  - name: app
+    image: nginx:1.25
+EOF
+
+k apply -f broken-pod-edit.yaml --dry-run=client
+```
+
+This file may parse as YAML, but it does not describe the intended Kubernetes object. The `labels` field is aligned at the top level instead of living under `metadata`. Kubernetes expects labels under `metadata.labels`, so the fix is structural: move `labels:` two spaces to the right and `app: web` so it remains a child of `labels`.
+
+Open the file and repair it.
+
+```bash
+vim broken-pod-edit.yaml
+```
+
+One efficient repair path is:
+
+1. Press `Esc` to enter Normal mode.
+2. Move to the `labels:` line.
+3. Press `V` to select the current line.
+4. Press `j` once to include `app: web`.
+5. Press `>` once to indent both selected lines by `shiftwidth`, which your `.vimrc` set to two spaces.
+6. Press `Esc`, type `:wq`, and press `Enter`.
+
+Validate the repair.
+
+```bash
+k apply -f broken-pod-edit.yaml --dry-run=client
+rm -f pod-edit.yaml broken-pod-edit.yaml
+```
+
+This is the difference between beginner and practitioner editing. A beginner stares at the parser output and nudges spaces manually. A practitioner identifies the parent-child relationship, selects the affected block, applies a controlled indentation operation, and validates the object immediately.
+
+### 3.3 Editing Decision Matrix
+
+Not every task deserves the same editing approach. In a timed exam, the correct tool is the one that safely produces the desired manifest with the least cognitive overhead. Vim is excellent for modifying existing files and repairing structure. Shell redirection is often faster for creating a tiny file from scratch. `kubectl create` or `kubectl run` with `--dry-run=client -o yaml` can generate a correct skeleton faster than memory can.
+
+| Situation | Best Starting Tool | Why This Is Usually Fastest |
+|-----------|--------------------|-----------------------------|
+| Create a simple Pod from scratch | `k run ... --dry-run=client -o yaml` | Kubernetes generates valid structure and API fields |
+| Edit an existing manifest | `vim file.yaml` | You can preserve most structure and change only the target fields |
+| Paste a long documentation snippet | `vim` with paste discipline or heredoc | You can inspect and validate after paste |
+| Replace repeated image tags | vim search and replace | One command changes every repeated value consistently |
+| Remove a broken YAML block | vim visual selection or counted delete | Line-oriented edits match YAML block structure |
+| Create a short scratch file | `cat << 'EOF' > file.yaml` | Avoids editor overhead for small known content |
+
+The decision matrix is not a rulebook. It is a way to reduce wasted motion. If `kubectl` can generate an object skeleton, let it. If the file already exists, edit it. If the edit is repeated across the file, use search and replace. If you are unsure whether the result is valid, validate before moving to the next task.
+
+---
+
+## Part 4: Refactor YAML Blocks Without Retyping
+
+Retyping YAML is slow and error-prone because indentation carries meaning. Kubernetes manifests often contain repeated structures: multiple containers, several environment variables, several ports, several volume mounts, and repeated labels. Vim's copy, paste, visual selection, indentation, and search commands let you transform those structures without rebuilding them character by character.
+
+The key is to copy a complete semantic block. Copying only part of a list item creates broken structure. Copying too much may duplicate fields that must remain unique. Before pressing `yy`, `V`, or `p`, identify the smallest complete block that represents the Kubernetes object part you want to duplicate.
+
+```yaml
+env:
+- name: LOG_LEVEL
+  value: info
+- name: FEATURE_FLAG
+  value: "true"
+```
+
+In the example above, each environment variable item is two lines. Copying only `- name: FEATURE_FLAG` creates a variable with no value. Copying only `value: "true"` creates a value with no name. Copying both lines preserves the list item, and then you can edit the duplicated name and value.
+
+### 4.1 Duplicate a Container Block
+
+Create a Pod with one container.
+
+```bash
+cat << 'EOF' > multi-container-edit.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-container-edit
+spec:
+  containers:
+  - name: app
+    image: nginx:1.25
+    ports:
+    - containerPort: 80
+EOF
+```
+
+Open the file.
+
+```bash
+vim multi-container-edit.yaml
+```
+
+Use this workflow to duplicate the container and convert the copy into a sidecar:
+
+1. Press `Esc`.
+2. Move to the `- name: app` line.
+3. Press `V` to start visual line selection.
+4. Press `j` three times to include `image`, `ports`, and `containerPort`.
+5. Press `y` to yank the selected block.
+6. Move to the `- containerPort: 80` line.
+7. Press `p` to paste the copied block below.
+8. Edit the pasted block so the second container is named `sidecar` and uses `busybox:1.36`.
+9. Delete the copied `ports` lines from the sidecar with `2dd`.
+10. Save with `:wq`.
+
+The expected result is:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-container-edit
+spec:
+  containers:
+  - name: app
+    image: nginx:1.25
+    ports:
+    - containerPort: 80
+  - name: sidecar
+    image: busybox:1.36
+```
+
+Validate and clean up.
+
+```bash
+k apply -f multi-container-edit.yaml --dry-run=client
+rm -f multi-container-edit.yaml
+```
+
+> **Active learning checkpoint**: Before validating, predict whether the sidecar needs its own `ports` field. Explain your reasoning in terms of the Pod schema rather than the editor command you used.
+
+The sidecar does not need a `ports` field unless you want to document or expose a container port. A container item can be valid with only a name and image. The editor step duplicated `ports` because it was part of the copied block, but Kubernetes design determines whether that field belongs in the final manifest.
+
+### 4.2 Search and Replace Without Creating Collateral Damage
+
+Search and replace is powerful because it compresses repeated edits into one command. It is also risky because an overly broad pattern changes text you did not intend to touch. The professional move is to search first, inspect matches, and then replace with the narrowest pattern that expresses the intended change.
+
+Create a Deployment with repeated image tags.
+
+```bash
+cat << 'EOF' > version-replace.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: version-replace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: version-replace
+  template:
+    metadata:
+      labels:
+        app: version-replace
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.25
+      - name: metrics
+        image: busybox:1.36
+        command: ["sh", "-c", "sleep 3600"]
+EOF
+```
+
+Open the file and search before replacing.
+
+```bash
+vim version-replace.yaml
+```
+
+Inside vim, run:
+
+```text
+/image:
+```
+
+Press `n` to move through image lines. If the task is to change only the nginx image tag, the broad pattern `:%s/1.25/1.26/g` may be acceptable in this file, but `:%s/nginx:1.25/nginx:1.26/g` is safer because it ties the replacement to the image name. In larger manifests, that extra specificity prevents accidental edits to unrelated version fields.
+
+```text
+:%s/nginx:1.25/nginx:1.26/g
+```
+
+Save, validate, and clean up.
+
+```bash
+k apply -f version-replace.yaml --dry-run=client
+grep "nginx:1.26" version-replace.yaml
+rm -f version-replace.yaml
+```
+
+Search and replace should be followed by inspection when the change touches production-like configuration. In the exam, validation often suffices for syntax and schema, but it cannot always prove intent. A Deployment can be valid while pointing to the wrong image. That is why the `grep` check is included after validation.
+
+### 4.3 Delete Blocks by Structure, Not by Panic
+
+Deleting a block is common when removing an incorrect `volumeMount`, `env`, `resources`, or `ports` section. The mistake is to mash Delete or Backspace in Insert mode until the file "looks better." That approach often leaves orphaned list items or fields under the wrong parent. Vim gives you cleaner options.
+
+Create a Pod with an intentionally unwanted environment variable.
+
+```bash
+cat << 'EOF' > delete-block.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: delete-block
+spec:
+  containers:
+  - name: app
+    image: nginx:1.25
+    env:
+    - name: KEEP_ME
+      value: stable
+    - name: REMOVE_ME
+      value: temporary
+EOF
+```
+
+Open the file.
+
+```bash
+vim delete-block.yaml
+```
+
+The block to delete is exactly two lines: `- name: REMOVE_ME` and `value: temporary`. Move to the `- name: REMOVE_ME` line, press `Esc`, and type:
+
+```text
+2dd
+```
+
+Save and validate.
+
+```bash
+k apply -f delete-block.yaml --dry-run=client
+rm -f delete-block.yaml
+```
+
+If you accidentally delete both environment variables, press `u` immediately. Do not attempt to reconstruct from memory before using undo. Undo is faster and more accurate than retyping, especially when the surrounding structure has similar-looking list items.
+
+---
+
+## Part 5: Diagnose YAML Failures Like an Operator
+
+A YAML failure can come from three different layers. The file can be invalid YAML, meaning the parser cannot read it. The file can be valid YAML but invalid Kubernetes, meaning the object does not match the API schema. The object can be valid Kubernetes but wrong for your intent, meaning it applies successfully but does not do what the task requires.
+
+Distinguishing those layers is a senior skill because it prevents random editing. Parser errors point toward syntax and indentation. Schema errors point toward field names, field types, API versions, or object structure. Intent errors require comparing the manifest against the task, the running object, or the behavior you expected.
+
+```text
++----------------------+     +------------------------+     +----------------------+
+| YAML PARSER          | --> | KUBERNETES SCHEMA      | --> | OPERATOR INTENT      |
+| Can the file be read?|     | Is this object valid?  |     | Is this the right    |
+| spaces, colons, tabs |     | fields, types, apiVersion |  | behavior for task?  |
++----------------------+     +------------------------+     +----------------------+
+```
+
+A useful troubleshooting loop is to start with the cheapest check. Save the file. Run client-side dry-run. Read the first error carefully. Open the file at the referenced line if one is provided. Fix one cause. Save and dry-run again. Repeating this loop beats making several speculative changes because each validation run gives you a smaller, clearer problem.
+
+```bash
+k apply -f some-file.yaml --dry-run=client
+```
+
+### 5.1 Parser Error: Hidden Tabs
+
+Create a file that contains tabs. The file may look reasonable when printed normally, which is precisely why hidden-character inspection matters.
+
+```bash
+printf 'apiVersion: v1\nkind: Pod\nmetadata:\n\tname: tab-pod\nspec:\n\tcontainers:\n\t- name: app\n\t  image: nginx:1.25\n' > tabs-pod.yaml
+
+cat tabs-pod.yaml
+cat -A tabs-pod.yaml
+k apply -f tabs-pod.yaml --dry-run=client
+```
+
+Open the file in vim.
+
+```bash
+vim tabs-pod.yaml
+```
+
+Inside vim, replace tabs with two spaces.
+
+```text
+:%s/\t/  /g
+```
+
+Save, validate, and remove the file.
+
+```bash
+k apply -f tabs-pod.yaml --dry-run=client
+rm -f tabs-pod.yaml
+```
+
+The search pattern `\t` means a literal tab character. The replacement contains two spaces. This works because the intended indentation level in the sample advances by two spaces. In a more complex file, replacing tabs mechanically may not be enough if the tabs represented different visual widths, so inspect the parent-child structure after replacing.
+
+### 5.2 Schema Error: Correct YAML, Wrong Field Shape
+
+A file can be perfectly valid YAML and still fail Kubernetes validation. That happens when the structure is readable but the object does not match the Kubernetes API. For CKA work, this is common when list items are placed under the wrong parent, strings are used where integers are expected, or a field belongs in `template.spec` but is placed under the Deployment's top-level `spec`.
+
+Create an example with a wrong `containerPort` type.
+
+```bash
+cat << 'EOF' > schema-error.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: schema-error
+spec:
+  containers:
+  - name: app
+    image: nginx:1.25
+    ports:
+    - containerPort: "80"
+EOF
+
+k apply -f schema-error.yaml --dry-run=client
+```
+
+Open the file and remove the quotes around the integer.
+
+```bash
+vim schema-error.yaml
+```
+
+The corrected block should be:
+
+```yaml
+    ports:
+    - containerPort: 80
+```
+
+Validate and clean up.
+
+```bash
+k apply -f schema-error.yaml --dry-run=client
+rm -f schema-error.yaml
+```
+
+The lesson is not that quotes are always bad. Many Kubernetes fields are strings and should be quoted when values look like booleans, numbers, or URLs. The lesson is that Kubernetes schema determines the expected type. `containerPort` is an integer; environment variable `value` is a string. Good editing means knowing when YAML syntax and Kubernetes schema are separate concerns.
+
+### 5.3 Intent Error: Valid Object, Wrong Location
+
+Intent errors are the most subtle because validation can pass. Suppose a task asks you to add a label to the Pod template of a Deployment, but you add it only to the Deployment object metadata. The YAML is valid, the Kubernetes object is valid, and the command may succeed, but the ReplicaSet selector or Pod labels may not behave as required.
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: label-location
+  labels:
+    app: web
+spec:
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+        tier: frontend
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.25
+```
+
+The `metadata.labels` near the top describes the Deployment object. The `spec.template.metadata.labels` block describes Pods created by the Deployment. Editing the wrong label block can leave the application behavior unchanged even though the manifest applies. When tasks mention Pods created by a Deployment, service selection, or rollout behavior, inspect the template block before editing.
+
+> **What would happen if** you changed only the top-level `metadata.labels.app` to `api` but left `spec.selector.matchLabels.app` and `spec.template.metadata.labels.app` as `web`? Would the Deployment still create Pods selected by its own selector?
+
+The Deployment could remain structurally valid because the top-level object label is independent from the Pod selector relationship. The Pods would still be selected based on the selector and template labels, both of which remain `web`. This is a classic valid-but-wrong edit: the field changed, but not the field that controlled the required behavior.
+
+---
+
+## Part 6: Exam-Speed Editing Patterns
+
+Exam-speed editing is about reducing decisions. When a task begins, choose a pattern quickly: generate then edit, open then patch, copy then modify, search then replace, or abandon a bad edit and regenerate. Each pattern has a small command sequence. Practicing those sequences makes the editor fade into the background.
+
+The most useful pattern for resource creation is generate then edit. For example, you can ask Kubernetes to produce a Pod skeleton and send it to a file, then use vim to add labels, ports, resources, or environment variables. This avoids memorizing every field placement from scratch.
+
+```bash
+k run generated-web --image=nginx:1.25 --dry-run=client -o yaml > generated-web.yaml
+vim generated-web.yaml
+k apply -f generated-web.yaml --dry-run=client
+rm -f generated-web.yaml
+```
+
+The most useful pattern for repair is open then patch. You already have a failing manifest, so the task is to inspect the error, open the file at the right area, fix one structural issue, save, and validate. Resist rewriting the whole file unless the object is tiny. Large rewrites create new errors and erase useful structure.
+
+```bash
+k apply -f broken.yaml --dry-run=client
+vim broken.yaml
+k apply -f broken.yaml --dry-run=client
+```
+
+The most useful pattern for repeated value changes is search then replace. Search first, replace narrowly, validate, and inspect the changed lines. When the value appears in labels, selectors, names, and images, do not blindly replace every occurrence unless the task truly asks for that global change.
+
+```text
+/nginx
+:%s/nginx:1.25/nginx:1.26/g
+```
+
+The most useful pattern for a bad paste is undo then paste safely. If a pasted block explodes into stair-step indentation, press `Esc`, press `u`, enable paste mode, paste again, disable paste mode, save, and validate. Do not manually repair twenty shifted lines if undo can return the file to a clean pre-paste state.
+
+```text
+Esc
+u
+:set paste
+```
+
+Paste the block.
+
+```text
+:set nopaste
+:w
+```
+
+### 6.1 Nano as a Valid Fallback
+
+Nano is a valid editor for the CKA if it is available and you are faster with it. The goal is not to prove vim superiority. The goal is to produce correct manifests under time pressure. Nano's visible shortcut bar can reduce mode confusion, but vim's Normal mode operations are faster for block edits once learned.
+
+Create a minimal nano configuration if nano is your chosen fallback.
 
 ```bash
 cat << 'EOF' > ~/.nanorc
@@ -350,19 +765,18 @@ set linenumbers
 EOF
 ```
 
-> **Exam Tip**
->
-> The exam environment (as of 2025) defaults to nano, but you can use vim if you prefer. Pick one and stick with it—don't waste exam time debating editors.
+Nano basics are straightforward: `Ctrl+O` writes the file, `Enter` confirms the file name, and `Ctrl+X` exits. `Ctrl+K` cuts a line, and `Ctrl+U` pastes it. If you choose nano for the exam, practice the same edit-validate loop. Editor choice changes keystrokes; it does not change YAML structure, Kubernetes schema, or the need to validate.
+
+The practical recommendation is to choose one primary editor before the exam and one fallback. If vim mode errors still consume attention after practice, use nano for simple tasks and reserve vim for environments where nano is missing. If block editing feels natural in vim, use vim consistently. Switching editors during a stressful task often costs more time than it saves.
 
 ---
 
 ## Did You Know?
 
-- **Vim is on every Linux server**. Learning vim pays off beyond the exam—you'll use it for production troubleshooting, container debugging, and anywhere a GUI isn't available.
-
-- **The creator of vim (Bram Moolenaar) passed away in 2023**. The project continues as an open-source community effort. Neovim is a popular modern fork.
-
-- **`vimtutor`** is built in. Run `vimtutor` in any terminal for an interactive vim tutorial. Takes about 30 minutes and teaches you more than this module.
+- **Vim is often present on minimal Linux systems** because it is small, terminal-native, and useful over SSH. That makes the skill portable beyond the CKA exam, especially during production troubleshooting sessions where graphical tools are unavailable.
+- **YAML indentation is semantic, not cosmetic**. Moving a line two spaces can change which parent owns that field, even when the file still parses successfully.
+- **`vimtutor` is an interactive practice tool** installed with many vim packages. Running `vimtutor` for half an hour teaches movement, editing, undo, search, and save habits in a guided environment.
+- **Client-side dry-run is an editing companion**. `k apply --dry-run=client -f file.yaml` can catch many syntax and schema errors before you spend time applying a broken object to the cluster.
 
 ---
 
@@ -370,375 +784,399 @@ EOF
 
 | Mistake | Problem | Solution |
 |---------|---------|----------|
-| Stuck in insert mode | Can't navigate | Press `Esc` |
-| Pasted YAML is mangled | Auto-indent | `:set paste` before pasting |
-| Tab characters in YAML | YAML syntax error | Use `expandtab` in .vimrc |
-| Lost changes | Quit without saving | Use `:wq` not `:q!` |
-| Wrong indentation | YAML parsing fails | `>>` and `<<` to fix |
+| Typing commands while still in Insert mode | `:wq`, `dd`, or search text appears inside the YAML file | Press `Esc` first, then run the command from Normal mode |
+| Trusting visual alignment when tabs are present | The file looks aligned but YAML or Kubernetes validation fails | Use `set expandtab`, inspect with `cat -A`, or run `:%s/\t/  /g` carefully |
+| Pasting long YAML without paste discipline | Autoindent or terminal behavior can create cascading indentation changes | Use `:set paste`, paste once, run `:set nopaste`, save, and validate |
+| Replacing a broad pattern globally | Labels, selectors, names, or unrelated versions change accidentally | Search first, use a narrow replacement pattern, then inspect changed lines |
+| Deleting partial YAML blocks | Orphaned fields remain under the wrong parent and create schema errors | Delete complete list items or field blocks with visual selection or counted deletes |
+| Adding fields to the wrong object level | The manifest validates but does not change the intended Pods or workload behavior | Identify the parent path, especially `metadata` versus `spec.template.metadata` |
+| Skipping validation after a small edit | A tiny indentation or type error is discovered only after more changes pile up | Save and run `k apply -f file.yaml --dry-run=client` after each meaningful edit |
+| Leaving paste mode enabled | Normal typing and indentation behavior feel wrong after a paste | Run `:set nopaste` immediately after the pasted block is in place |
 
 ---
 
 ## Quiz
 
-1. **Scenario: You are in the middle of the CKA exam and need to quickly remove a broken volume mount block that spans exactly three lines from your deployment manifest. How do you achieve this efficiently in vim without repeatedly pressing the delete key?**
+1. **Scenario: Your Deployment manifest fails after you add an environment variable. The error points near the `env:` block, and you notice the new variable has `value: true` without quotes. The task requires the application to receive the literal string `true`. What should you change, and how would you validate the fix?**
    <details>
    <summary>Answer</summary>
-   You should position your cursor on the first line of the volume mount block, ensure you are in Normal mode (press `Esc`), and type `3dd`. 
-   
-   **Why:** The `d` command in vim stands for delete, and typing it twice (`dd`) deletes the current line. By prefixing it with a number like `3`, you instruct vim to repeat the action that many times, instantly removing the block. This is significantly faster than manually deleting characters or lines, saving precious seconds during the time-constrained exam.
+   Change the value to `value: "true"` because environment variable values in Kubernetes are strings, and an unquoted YAML boolean can be interpreted as a boolean before schema validation. Save the file and run `k apply -f deployment.yaml --dry-run=client`. If validation passes, inspect the relevant block to confirm you changed the environment variable value, not a different field with similar text.
    </details>
 
-2. **Scenario: You just found a perfect snippet of YAML in the Kubernetes documentation. You copy it and paste it directly into your terminal running vim, but the indentation instantly becomes a cascading mess of misaligned blocks. What caused this formatting disaster, and how do you correctly paste the snippet next time?**
+2. **Scenario: You paste a Pod manifest into vim during the exam, and every nested line shifts farther right than the previous line. You have not saved yet. What recovery sequence minimizes risk, and why is it better than manually moving lines left?**
    <details>
    <summary>Answer</summary>
-   Vim's auto-indentation feature interpreted your pasted spaces as new indentation levels for each line, mangling the format. To prevent this, you must type `:set paste` before pasting your clipboard contents, and `:set nopaste` afterward. 
-   
-   **Why:** The paste mode temporarily disables auto-indentation and other formatting automation. This ensures that vim accepts the characters exactly as they exist in your clipboard without trying to "helpfully" adjust the spacing, keeping the YAML structure intact. If you forget this step, vim tries to apply its own indentation rules on top of the already-indented text.
+   Press `Esc`, then `u` to undo the bad paste. Run `:set paste`, paste the manifest again, then run `:set nopaste`, save, and validate with `k apply -f file.yaml --dry-run=client`. This is safer than manual repair because undo restores the last known clean state, while manually shifting many lines can introduce new parent-child mistakes.
    </details>
 
-3. **Scenario: You have just finished adding a missing environment variable to a critical manifest. You need to apply these changes immediately, but you are currently in Insert mode typing the last quote. What exact sequence of keystrokes do you use to save your changes and exit the file?**
+3. **Scenario: A Service is not selecting Pods after you edit a Deployment. The Deployment YAML validates successfully. You changed `metadata.labels.app` at the top of the Deployment but did not inspect `spec.template.metadata.labels` or the Service selector. What should you compare, and what editor workflow helps you avoid missing the right block?**
    <details>
    <summary>Answer</summary>
-   You must first press `Esc`, followed by typing `:wq` and pressing `Enter`. 
-   
-   **Why:** Vim requires you to exit Insert mode to execute file-level commands, which is why `Esc` is necessary to return to Normal mode. The colon `:` enters Command mode, `w` writes (saves) the file to disk, and `q` quits the editor. Combining them as `:wq` safely persists your critical changes and returns you to the terminal in one fluid motion, ready to run `kubectl apply`.
+   Compare the Service selector with the Pod template labels under `spec.template.metadata.labels`, not just the Deployment object's top-level labels. In vim, search for `labels:` and move through each match with `n`, checking the parent path around each label block. This avoids a valid-but-wrong edit where the object metadata changes but the Pods still carry the old label.
    </details>
 
-4. **Scenario: You create a quick Pod manifest and visually align all the fields perfectly. However, when you run `kubectl apply`, you get a cryptic error parsing your YAML. You realize you used the Tab key to align some fields. Why did this happen, and how should you configure vim to prevent it?**
+4. **Scenario: You need to remove one environment variable from a container. The variable is represented by two lines, `- name: DEBUG` and `value: "true"`. What vim command can remove it efficiently, and what should you verify afterward?**
    <details>
    <summary>Answer</summary>
-   The Kubernetes YAML parser strictly expects spaces for indentation and fundamentally rejects or misinterprets tab characters, breaking the document structure. You should add `set expandtab` to your `~/.vimrc` file. 
-   
-   **Why:** YAML relies on exact whitespace character counts to determine the hierarchy of objects, and a tab character does not equal a consistent number of spaces across different systems. The `expandtab` setting fixes this automatically by converting any Tab key press into the correct number of spaces (defined by `tabstop`), ensuring your manifests always parse correctly regardless of how you type. This completely eliminates a common source of invisible, time-wasting syntax errors.
+   Move to the `- name: DEBUG` line in Normal mode and type `2dd`. Then validate with `k apply -f file.yaml --dry-run=client` and inspect the surrounding `env:` list to confirm no orphaned `value` line remains. The command is efficient because it deletes the complete two-line list item rather than characters inside it.
+   </details>
+
+5. **Scenario: You run `cat -A pod.yaml` and see `^I` before several YAML fields. The file looked aligned in vim, but `kubectl` reports a parsing problem. What is the likely root cause, and how can vim repair it?**
+   <details>
+   <summary>Answer</summary>
+   `^I` indicates literal tab characters. YAML indentation should use spaces, and visual alignment can be misleading when tabs are displayed with a convenient width. In vim, run `:%s/\t/  /g` to replace tabs with two spaces, then inspect the structure and validate again. For prevention, use `set expandtab`, `set softtabstop=2`, and `set shiftwidth=2` in `~/.vimrc`.
+   </details>
+
+6. **Scenario: A task asks you to update only the nginx image from `nginx:1.25` to `nginx:1.26`. The same file also contains `busybox:1.25` in a sidecar. Why is `:%s/1.25/1.26/g` risky, and what command is safer?**
+   <details>
+   <summary>Answer</summary>
+   The broad command changes every `1.25` occurrence, including the busybox sidecar if it uses the same tag. A safer command is `:%s/nginx:1.25/nginx:1.26/g` because it ties the replacement to the exact image that the task mentions. After saving, search for `image:` or use `grep` to verify that only the intended image changed.
+   </details>
+
+7. **Scenario: You generated a Pod manifest with `k run --dry-run=client -o yaml`, opened it in vim, and added a `ports` block. Validation now says `containerPort` has the wrong type. The line reads `containerPort: "80"`. How do you reason about the fix?**
+   <details>
+   <summary>Answer</summary>
+   The file is readable YAML, but Kubernetes schema expects `containerPort` to be an integer, not a string. Remove the quotes so the line reads `containerPort: 80`, save, and run `k apply -f file.yaml --dry-run=client`. The reasoning separates YAML syntax from Kubernetes API schema: quoted strings can be valid YAML while still being wrong for a specific Kubernetes field.
    </details>
 
 ---
 
 ## Hands-On Exercise
 
-**Task**: Configure vim and practice YAML editing.
+**Task**: Configure vim, repair broken Kubernetes YAML, and practice the edit-validate loop until you can make structural changes without retyping whole files.
 
-**Setup**:
+This exercise uses client-side dry-run so you can practice without creating live resources. If your environment has no cluster context, most client-side schema checks still work for built-in resources, but exact behavior can vary by kubectl version and local configuration. The main skill is the loop: edit a small section, save, validate, interpret feedback, and repeat.
+
+### Step 1: Install the editing baseline
+
+Create a vim configuration for Kubernetes YAML.
+
 ```bash
-# Create .vimrc with YAML settings
 cat << 'EOF' > ~/.vimrc
 set number
 set tabstop=2
+set softtabstop=2
 set shiftwidth=2
 set expandtab
 set autoindent
+set smartindent
+set cursorline
+set hlsearch
 syntax on
+set listchars=tab:>-,trail:.,extends:>,precedes:<
+autocmd FileType yaml setlocal tabstop=2 softtabstop=2 shiftwidth=2 expandtab
+autocmd FileType yml setlocal tabstop=2 softtabstop=2 shiftwidth=2 expandtab
 EOF
 ```
 
-**Practice Tasks**:
+Success criteria for this step:
 
-1. Create a pod manifest from scratch:
-   ```bash
-   vim practice-pod.yaml
-   # Type a complete Pod manifest
-   # Save and exit
-   ```
+- [ ] `~/.vimrc` exists.
+- [ ] The file contains `set expandtab`.
+- [ ] The file contains `set shiftwidth=2`.
+- [ ] The file contains `set number`.
 
-2. Duplicate a container block:
-   - Open the file
-   - Copy the container section
-   - Paste and modify the name
+### Step 2: Create a valid baseline manifest
 
-3. Fix intentionally broken indentation:
-   ```bash
-   cat << 'EOF' > broken.yaml
-   apiVersion: v1
-   kind: Pod
-   metadata:
-     name: test
-   spec:
-       containers:
-         - name: nginx
-         image: nginx
-   EOF
-   # Open in vim and fix indentation
-   ```
-
-**Success Criteria**:
-- [ ] Can create a valid Pod manifest in vim
-- [ ] Can copy and paste blocks within vim
-- [ ] Can fix indentation issues
-- [ ] Know how to save and quit
-
-**Verification**:
-```bash
-# Validate your YAML
-kubectl apply -f practice-pod.yaml --dry-run=client
-```
-
----
-
-## Practice Drills
-
-### Drill 1: Vim Speed Test (Target: 2 minutes)
-
-Create this pod manifest from scratch in vim:
+Create a simple Pod manifest from the shell, then validate it before editing.
 
 ```bash
-vim speed-test.yaml
+cat << 'EOF' > exercise-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: exercise-pod
+spec:
+  containers:
+  - name: app
+    image: nginx:1.25
+EOF
+
+k apply -f exercise-pod.yaml --dry-run=client
 ```
 
-Type this (don't copy-paste):
+Success criteria for this step:
+
+- [ ] `exercise-pod.yaml` exists.
+- [ ] `k apply -f exercise-pod.yaml --dry-run=client` succeeds.
+- [ ] You can explain why validating before editing gives you a clean baseline.
+
+### Step 3: Add metadata labels in vim
+
+Open the file.
+
+```bash
+vim exercise-pod.yaml
+```
+
+Add this block under `metadata:`.
+
+```yaml
+  labels:
+    app: exercise
+    tier: web
+```
+
+Save and validate.
+
+```bash
+k apply -f exercise-pod.yaml --dry-run=client
+```
+
+Success criteria for this step:
+
+- [ ] `labels:` is indented under `metadata:`.
+- [ ] `app` and `tier` are indented under `labels:`.
+- [ ] Client-side dry-run succeeds after the edit.
+- [ ] You used `Esc` and `:w` or `:wq` rather than closing the terminal.
+
+### Step 4: Duplicate and modify a YAML block
+
+Open the file again.
+
+```bash
+vim exercise-pod.yaml
+```
+
+Duplicate the existing container block and modify the copy so the Pod has a second container:
+
+```yaml
+  - name: sidecar
+    image: busybox:1.36
+    command: ["sh", "-c", "sleep 3600"]
+```
+
+Save and validate.
+
+```bash
+k apply -f exercise-pod.yaml --dry-run=client
+```
+
+Success criteria for this step:
+
+- [ ] The second container is under the same `containers:` list as the first container.
+- [ ] The sidecar has its own `- name` line.
+- [ ] The command remains on one YAML line and validates.
+- [ ] You copied and modified structure instead of retyping the whole manifest.
+
+### Step 5: Repair a manifest with tabs and wrong types
+
+Create a broken file.
+
+```bash
+printf 'apiVersion: v1\nkind: Pod\nmetadata:\n\tname: broken-exercise\nspec:\n\tcontainers:\n\t- name: app\n\t  image: nginx:1.25\n\t  ports:\n\t  - containerPort: "80"\n' > broken-exercise.yaml
+
+cat -A broken-exercise.yaml
+k apply -f broken-exercise.yaml --dry-run=client
+```
+
+Open it in vim.
+
+```bash
+vim broken-exercise.yaml
+```
+
+Repair the file so it uses spaces for indentation and an integer for `containerPort`. You may use `:%s/\t/  /g` as part of the repair, but inspect the resulting structure before saving. The corrected file should look like this:
+
 ```yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nginx
-  labels:
-    app: web
+  name: broken-exercise
 spec:
   containers:
-  - name: nginx
+  - name: app
     image: nginx:1.25
     ports:
     - containerPort: 80
 ```
 
-Save and validate:
+Validate the repair.
+
 ```bash
-kubectl apply -f speed-test.yaml --dry-run=client
-rm -f speed-test.yaml
+k apply -f broken-exercise.yaml --dry-run=client
 ```
 
-### Drill 2: Fix Broken YAML - Indentation (Target: 3 minutes)
+Success criteria for this step:
+
+- [ ] `cat -A broken-exercise.yaml` no longer shows `^I` in indentation.
+- [ ] `containerPort` is an integer, not a quoted string.
+- [ ] Client-side dry-run succeeds after repair.
+- [ ] You can explain whether the original failure was parser-level, schema-level, or both.
+
+### Step 6: Practice a narrow search and replace
+
+Create a file with two images.
 
 ```bash
-# Create broken YAML
-cat << 'EOF' > broken-indent.yaml
+cat << 'EOF' > replace-exercise.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-name: broken-pod
-  labels:
-      app: test
-spec:
-    containers:
-  - name: nginx
-      image: nginx
-    ports:
-        - containerPort: 80
-EOF
-
-# Open in vim and fix ALL indentation errors
-vim broken-indent.yaml
-
-# Validate your fix
-kubectl apply -f broken-indent.yaml --dry-run=client
-rm -f broken-indent.yaml
-```
-
-<details>
-<summary>Fixed Version</summary>
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: broken-pod
-  labels:
-    app: test
+  name: replace-exercise
 spec:
   containers:
-  - name: nginx
-    image: nginx
-    ports:
-    - containerPort: 80
+  - name: web
+    image: nginx:1.25
+  - name: helper
+    image: busybox:1.36
+    command: ["sh", "-c", "sleep 3600"]
+EOF
 ```
 
-</details>
-
-### Drill 3: Fix Broken YAML - Mixed Tabs/Spaces (Target: 3 minutes)
+Open the file and replace only the nginx tag with `nginx:1.26`.
 
 ```bash
-# Create YAML with hidden tab characters
-printf 'apiVersion: v1\nkind: Pod\nmetadata:\n\tname: tab-pod\nspec:\n\tcontainers:\n\t- name: nginx\n\t  image: nginx\n' > broken-tabs.yaml
-
-# Look at it - seems fine visually
-cat broken-tabs.yaml
-
-# But kubectl fails!
-kubectl apply -f broken-tabs.yaml --dry-run=client
-
-# YOUR TASK: Open in vim and fix
-vim broken-tabs.yaml
-# Hint: In vim, use :%s/\t/  /g to replace tabs with spaces
-
-kubectl apply -f broken-tabs.yaml --dry-run=client
-rm -f broken-tabs.yaml
+vim replace-exercise.yaml
 ```
 
-### Drill 4: Copy and Modify Blocks (Target: 2 minutes)
+Use a narrow replacement pattern.
+
+```text
+:%s/nginx:1.25/nginx:1.26/g
+```
+
+Validate and inspect.
 
 ```bash
-# Create a deployment with one container
-cat << 'EOF' > multi-container.yaml
+k apply -f replace-exercise.yaml --dry-run=client
+grep "image:" replace-exercise.yaml
+```
+
+Success criteria for this step:
+
+- [ ] The nginx image changed to `nginx:1.26`.
+- [ ] The busybox image did not change.
+- [ ] The manifest validates after replacement.
+- [ ] You searched or inspected image lines before considering the task complete.
+
+### Step 7: Clean up practice files
+
+Remove the files created by the exercise.
+
+```bash
+rm -f exercise-pod.yaml broken-exercise.yaml replace-exercise.yaml
+```
+
+Final success criteria:
+
+- [ ] You can create a Kubernetes YAML file in vim without tabs.
+- [ ] You can add nested fields under the correct parent.
+- [ ] You can duplicate and modify a list item safely.
+- [ ] You can repair hidden tab characters.
+- [ ] You can distinguish YAML parser errors from Kubernetes schema errors.
+- [ ] You can use dry-run validation after each meaningful edit.
+- [ ] You have chosen vim or nano as your primary exam editor and practiced the save/exit sequence for that editor.
+
+---
+
+## Practice Drills
+
+### Drill 1: Two-Minute Pod Edit
+
+Generate a Pod skeleton, add labels, and validate.
+
+```bash
+k run drill-web --image=nginx:1.25 --dry-run=client -o yaml > drill-web.yaml
+vim drill-web.yaml
+k apply -f drill-web.yaml --dry-run=client
+rm -f drill-web.yaml
+```
+
+Your target edit is to add `app: drill-web` and `tier: frontend` under `metadata.labels`. The learning goal is not raw speed at first. The learning goal is to avoid putting labels at the wrong indentation level or confusing top-level object labels with Pod template labels in later Deployment work.
+
+### Drill 2: Delete a Broken Block
+
+Create a file with an unwanted environment variable.
+
+```bash
+cat << 'EOF' > drill-delete.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: multi
+  name: drill-delete
 spec:
   containers:
   - name: app
-    image: nginx
-    ports:
-    - containerPort: 80
-EOF
-
-# YOUR TASK in vim:
-# 1. Duplicate the container block
-# 2. Change second container to: name: sidecar, image: busybox, remove ports
-# Target: 2 minutes
-
-vim multi-container.yaml
-
-# Validate
-kubectl apply -f multi-container.yaml --dry-run=client
-rm -f multi-container.yaml
-```
-
-<details>
-<summary>Expected Result</summary>
-
-```yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: multi
-spec:
-  containers:
-  - name: app
-    image: nginx
-    ports:
-    - containerPort: 80
-  - name: sidecar
-    image: busybox
-```
-
-</details>
-
-### Drill 5: Search and Replace (Target: 1 minute)
-
-```bash
-# Create file with wrong image version
-cat << 'EOF' > version-fix.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: web
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: web
-  template:
-    metadata:
-      labels:
-        app: web
-    spec:
-      containers:
-      - name: web
-        image: nginx:1.19
-      - name: log
-        image: fluentd:1.19
-      - name: cache
-        image: redis:1.19
-EOF
-
-# YOUR TASK: Change ALL "1.19" to "1.25" using vim search/replace
-# Command: :%s/1.19/1.25/g
-
-vim version-fix.yaml
-
-# Verify all changed
-grep "1.25" version-fix.yaml  # Should show 3 lines
-rm -f version-fix.yaml
-```
-
-### Drill 6: Fix Broken YAML - Syntax Errors (Target: 5 minutes)
-
-This YAML has multiple errors. Find and fix all of them:
-
-```bash
-cat << 'EOF' > broken-syntax.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: syntax-errors
-  labels:
-    app: test
-    environment: production  # missing quotes on value with special chars
-spec:
-  containers:
-  - name: app
-    image: nginx
+    image: nginx:1.25
     env:
-    - name: DATABASE_URL
-      value: postgres://user:p@ssword@db:5432  # @ needs quoting
-    - name: DEBUG
-      value: true  # boolean should be string
-    ports:
-    - containerPort: "80"  # should be integer, not string
-    resources:
-      requests:
-        memory: 128Mi  # missing quotes won't break, but...
-        cpu: 100  # should be 100m
+    - name: KEEP
+      value: stable
+    - name: REMOVE
+      value: temporary
 EOF
 
-vim broken-syntax.yaml
-
-# Test
-kubectl apply -f broken-syntax.yaml --dry-run=client
-rm -f broken-syntax.yaml
+vim drill-delete.yaml
+k apply -f drill-delete.yaml --dry-run=client
+rm -f drill-delete.yaml
 ```
 
-<details>
-<summary>Fixed Version</summary>
+Remove only the `REMOVE` variable. Use a structural delete like `2dd` from the `- name: REMOVE` line. If you remove too much, use `u` before trying anything else.
 
-```yaml
+### Drill 3: Fix Parent-Child Indentation
+
+Create a manifest with misplaced labels.
+
+```bash
+cat << 'EOF' > drill-indent.yaml
 apiVersion: v1
 kind: Pod
 metadata:
-  name: syntax-errors
-  labels:
-    app: test
-    environment: production
+  name: drill-indent
+labels:
+    app: misplaced
 spec:
   containers:
   - name: app
-    image: nginx
-    env:
-    - name: DATABASE_URL
-      value: "postgres://user:p@ssword@db:5432"
-    - name: DEBUG
-      value: "true"
-    ports:
-    - containerPort: 80
-    resources:
-      requests:
-        memory: "128Mi"
-        cpu: "100m"
+    image: nginx:1.25
+EOF
+
+vim drill-indent.yaml
+k apply -f drill-indent.yaml --dry-run=client
+rm -f drill-indent.yaml
 ```
 
-</details>
+Move `labels:` under `metadata:` and move `app: misplaced` under `labels:`. Use visual selection and `>` or `<` if that is faster than manual spaces. Validate after saving.
 
-### Drill 7: Challenge - Nano Speed Test
+### Drill 4: Replace One Image Safely
 
-If you prefer nano, do Drill 1 using nano instead:
+Create a file with multiple containers and change only nginx.
 
 ```bash
-nano speed-test.yaml
-# Ctrl+O to save, Ctrl+X to exit
-kubectl apply -f speed-test.yaml --dry-run=client
-rm -f speed-test.yaml
+cat << 'EOF' > drill-replace.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: drill-replace
+spec:
+  containers:
+  - name: web
+    image: nginx:1.25
+  - name: helper
+    image: busybox:1.36
+    command: ["sh", "-c", "sleep 3600"]
+EOF
+
+vim drill-replace.yaml
+grep "image:" drill-replace.yaml
+k apply -f drill-replace.yaml --dry-run=client
+rm -f drill-replace.yaml
 ```
 
-Compare your time with vim. Use whichever is faster for you.
+Use a narrow search and replace so only `nginx:1.25` becomes `nginx:1.26`. The post-edit `grep` is part of the drill because schema validation cannot prove you changed only the intended image.
+
+### Drill 5: Nano Fallback
+
+If nano is your backup editor, repeat Drill 1 with nano.
+
+```bash
+k run nano-drill --image=nginx:1.25 --dry-run=client -o yaml > nano-drill.yaml
+nano nano-drill.yaml
+k apply -f nano-drill.yaml --dry-run=client
+rm -f nano-drill.yaml
+```
+
+Use `Ctrl+O`, `Enter`, and `Ctrl+X` to save and exit. Compare your error rate, not just your time. The editor that produces valid YAML consistently is the better exam editor for you.
 
 ---
 
