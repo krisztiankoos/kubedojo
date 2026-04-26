@@ -1,4 +1,5 @@
 ---
+qa_pending: true
 title: "Module 5.1: Troubleshooting Methodology"
 slug: k8s/cka/part5-troubleshooting/module-5.1-methodology
 sidebar:
