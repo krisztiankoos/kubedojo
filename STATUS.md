@@ -2,7 +2,28 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-26 ~10:55 local — #388 deferred-review batch under KUBEDOJO_SKIP_REVIEW)
+## Active Work (2026-04-26 ~17:38 local — #388 batch + #246 platform hubs shipped + AI history book consensus locked)
+
+**Full handoff**: [`docs/sessions/2026-04-26-388-handoff-v3.md`](docs/sessions/2026-04-26-388-handoff-v3.md)
+
+| | Value |
+|---|---|
+| #388 shipped | 115 (107 full-review + 8 auto-approved) |
+| Still `revision_pending` | 287 |
+| FAILED right now | 0 |
+| Cumulative deferred-review APPROVE rate | 30/32 (~94%) |
+| Origin sync | clean |
+| Batch alive | yes (PID `cat logs/quality/batch.pid`) |
+
+**Issues SHIPPED this session**: #390 (`SectionHealthSummary` component) + #246 (platform/index.md + platform/foundations/index.md rewrites).
+
+**AI history book agreement LOCKED** between codex + gemini + claude. 10 chapters, 3+3+4 ownership split (codex/gemini/claude), workflow with mandatory lock-step before drafting, research wiki at `docs/research/ai-history/`. Module-1.1 stays UNTOUCHED (greenfield book). See v3 handoff for the locked details.
+
+**Open for next session**: file the AI history book GitHub epic; create `docs/research/ai-history/` skeleton; continue #246 (k8s/index.md, platform/disciplines/index.md, 4 bridge pages); pick up next from triage list (#392 What's New, #391 public status page, #375 pipeline cleanup); batch continues autonomously.
+
+---
+
+## Prior — 2026-04-26 ~10:55 local — #388 deferred-review batch under KUBEDOJO_SKIP_REVIEW
 
 **Update**: Around 09:00 the Claude reviewer started returning rc=1 with empty stderr on every dispatch (~14 consecutive FAILEDs). Direct `claude -p` smoke works, so it's prompt-bundle / personal-plan-runtime specific, not auth. User wants to **save Opus quota for other things**, so the batch is now running with `KUBEDOJO_SKIP_REVIEW=1` — review stage synthesizes auto-approve without dispatch and appends slug to `.pipeline/quality-pipeline/post-review-queue.txt` for a future deferred-review pass.
 
