@@ -47,6 +47,7 @@ from citation_backfill import (  # type: ignore  # noqa: E402
 from check_coherence import check_coherence  # type: ignore  # noqa: E402
 from check_overstatement import audit_file as audit_overstatement  # type: ignore  # noqa: E402
 from check_unsourced import audit_file as audit_unsourced  # type: ignore  # noqa: E402
+from module_sections import find_section, parse_module  # type: ignore  # noqa: E402
 from verify_citations import run_verify  # type: ignore  # noqa: E402
 
 
@@ -243,6 +244,51 @@ _SWAP_BREAKAGE_PATTERNS = (
     "  ",          # accidental double space (only flagged in prose context)
 )
 _SENT_COUNT_RE = __import__("re").compile(r"[.!?](?=\s|$)")
+_KEYWORD_TOKEN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9.+/-]*")
+_KEYWORD_STOPWORDS = {
+    "about",
+    "after",
+    "again",
+    "all",
+    "also",
+    "always",
+    "and",
+    "any",
+    "are",
+    "because",
+    "been",
+    "before",
+    "being",
+    "best",
+    "but",
+    "can",
+    "could",
+    "default",
+    "does",
+    "for",
+    "from",
+    "has",
+    "have",
+    "into",
+    "its",
+    "may",
+    "most",
+    "never",
+    "not",
+    "often",
+    "only",
+    "provision",
+    "provisioned",
+    "provisions",
+    "than",
+    "that",
+    "the",
+    "this",
+    "uses",
+    "using",
+    "will",
+    "with",
+}
 
 
 def _swap_introduced_breakage(line: str) -> str | None:
@@ -264,6 +310,51 @@ def _sentence_count(text: str) -> int:
     Same boundary rule the overstatement gate uses, so `.git` and
     file extensions don't inflate the count."""
     return len(_SENT_COUNT_RE.findall(text)) or (1 if text.strip() else 0)
+
+
+def _normalize_keyword_text(text: str) -> str:
+    return " ".join(token.lower() for token in _KEYWORD_TOKEN_RE.findall(text))
+
+
+def _gate_a_semantic_keywords(sentence: str) -> list[str]:
+    raw_tokens = _KEYWORD_TOKEN_RE.findall(sentence)
+    content_tokens: list[str] = []
+    specific_tokens: set[str] = set()
+    for raw in raw_tokens:
+        token = raw.lower()
+        if len(token) < 3 or token in _KEYWORD_STOPWORDS:
+            continue
+        content_tokens.append(token)
+        if "-" in token or "/" in token or "." in token or any(ch.isdigit() for ch in token):
+            specific_tokens.add(token)
+
+    keywords: list[str] = []
+    seen: set[str] = set()
+    for size in (3, 2):
+        for idx in range(0, len(content_tokens) - size + 1):
+            phrase = " ".join(content_tokens[idx:idx + size])
+            if phrase not in seen:
+                seen.add(phrase)
+                keywords.append(phrase)
+    for token in sorted(specific_tokens):
+        if token not in seen:
+            seen.add(token)
+            keywords.append(token)
+    return keywords
+
+
+def _gate_a_quiz_residual(body: str, sentence: str) -> dict[str, Any] | None:
+    quiz = find_section(parse_module(body), "quiz")
+    if quiz is None:
+        return None
+    quiz_text = _normalize_keyword_text(quiz.body)
+    if not quiz_text:
+        return None
+    padded_quiz = f" {quiz_text} "
+    for keyword in _gate_a_semantic_keywords(sentence):
+        if f" {keyword} " in padded_quiz:
+            return {"queue_reason": "gate_a_quiz_residual", "matched_keyword": keyword}
+    return None
 
 
 def _apply_overstatement_swaps(body: str,
@@ -321,9 +412,12 @@ def _apply_overstatement_swaps(body: str,
         if breakage:
             queued.append({**c, "queue_reason": f"swap_breakage:{breakage}"})
             continue
+        quiz_residual = _gate_a_quiz_residual(candidate_body, sentence)
         new_body = candidate_body
         applied.append({"line": c.get("line"), "trigger": c.get("trigger"),
                         "old": sentence, "new": rewrite})
+        if quiz_residual is not None:
+            queued.append({**c, **quiz_residual})
     return new_body, applied, queued
 
 
@@ -582,7 +676,8 @@ def run_pipeline(module_key: str, *, skip_research: bool = False,
     residuals.setdefault("off_topic_delete_queued", []).extend(d_queued)
     run_record["queued_findings"] = residuals
 
-    return _finalize(run_record, _final_status(final_audit), flat_key)
+    status = "residuals_queued" if any(residuals.values()) else _final_status(final_audit)
+    return _finalize(run_record, status, flat_key)
 
 
 def _audit_summary(audit: dict[str, Any]) -> dict[str, Any]:
