@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 1.2: Service Level Objectives (SLOs)"
 slug: platform/disciplines/core-platform/sre/module-1.2-slos
 sidebar:
