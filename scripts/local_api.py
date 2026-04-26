@@ -6621,7 +6621,8 @@ def _v_quality_board(repo_root: Path) -> tuple:
     sig = hashlib.sha1()
 
     for base, pattern in (
-        (docs_root, "**/module-*.md"),
+        # Count reconciliation scans all docs Markdown, so the ETag must too.
+        (docs_root, "**/*.md"),
         (state_dir, "*.json"),
         (reviews_dir, "*.md"),
     ):
