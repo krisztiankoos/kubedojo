@@ -157,8 +157,7 @@ The next root was not a board game. It was a control problem.
 In 1983, Barto, Sutton, and Anderson published a paper on neuronlike adaptive
 elements that could solve a difficult learning control problem. The task was
 cart-pole balancing: apply forces to a cart so that a hinged pole stays upright.
-The paper's abstract is enough to establish the core historical claim. The
-learner was not given the equations of motion. The only feedback evaluating
+The learner was not given the equations of motion. The only feedback evaluating
 performance was a failure signal when the pole fell too far from vertical or
 the cart reached the end of the track.
 
@@ -176,17 +175,17 @@ evaluation function than reinforcement feedback alone could provide. That is
 the important actor-critic root. One part chooses behavior; another part learns
 to evaluate situations so the behavior can improve.
 
-The safe historical claim is deliberately bounded. The 1983 paper establishes
-the cart-pole task, sparse failure signal, unknown-equations assumption, and
-ASE/ACE structure. The broader implementation details are not needed for the
-argument here: the historical point is that the system converted sparse failure
-feedback into an internal evaluative signal for control.
+This historical claim is focused: the 1983 paper establishes the cart-pole
+task, sparse failure signal, unknown-equations assumption, and ASE/ACE
+structure. The central point is not the specific implementation, but how the
+system converted sparse failure feedback into an internal evaluative signal for
+control.
 
-Even with that cap, the historical point is strong. The pole-balancing system
-made delayed reinforcement tangible. It was not a theorem floating above
-practice. It was a machine-learning control problem where the learner had to
-act repeatedly before knowing whether its policy was good. The critic did not
-remove delayed reward. It made delayed reward usable.
+Even at that level of detail, the historical point is strong. The
+pole-balancing system made delayed reinforcement tangible. It was not a theorem
+floating above practice. It was a machine-learning control problem where the
+learner had to act repeatedly before knowing whether its policy was good. The
+critic did not remove delayed reward. It made delayed reward usable.
 
 That idea would echo through later reinforcement learning. If reward arrives
 too late, the learner can try to learn predictions of future reward. Those
@@ -285,7 +284,7 @@ noting that full dynamic-programming calculations were not plausible as animal
 computation. The alternative was to reorganize the calculation into incremental
 learning methods.
 
-One of the important thesis claims, visible in the OCRed summary, was that
+One of the important thesis claims, presented in the opening summary, was that
 action values could be learned directly without requiring the learner to model
 the environment. That is the historical bridge to model-free reinforcement
 learning. Instead of first learning the transition structure and then solving
@@ -293,10 +292,10 @@ the model, the agent can learn estimates of how good actions are in states.
 
 The thesis also made the exploration-exploitation dilemma explicit. The
 two-armed bandit problem is the simplest version: try the known good option, or
-sample the uncertain option that might be better. Watkins described this as a
-dilemma that arises in almost any instrumental learning problem. Too much
-exploration wastes time that could have been spent exploiting what is already
-known. Too little exploration can trap the learner in a mediocre strategy.
+sample the uncertain option that might be better. Watkins treated this as a
+central dilemma in instrumental learning. Too much exploration wastes time that
+could have been spent exploiting what is already known. Too little exploration
+can trap the learner in a mediocre strategy.
 
 That dilemma is not a side issue. It is one reason reinforcement learning is
 harder than ordinary prediction. The data are partly a consequence of the
@@ -374,10 +373,10 @@ trained with backpropagation on expert game data and used hand-crafted
 features. TD-Gammon explored a different route: learn from the results of play
 itself. Early raw-board experiments were knowledge-free in the sense that they
 did not use precomputed expert features. Later versions did add hand-crafted
-features, and those versions became stronger. That distinction keeps the story
-honest. TD-Gammon was not pure magic. It combined an algorithm, a game
-environment, a neural network, self-play, stochastic variation, and eventually
-feature engineering.
+features, and those versions became stronger. This distinction matters for an
+accurate historical account: TD-Gammon was not pure magic. It combined an
+algorithm, a game environment, a neural network, self-play, stochastic
+variation, and eventually feature engineering.
 
 The results were still striking. Tesauro reports comparisons with
 Neurogammon and expert players, and the article describes TD-Gammon as
@@ -441,7 +440,7 @@ That loop would become one of AI's most durable ideas.
   Adaptive Elements That Can Solve Difficult Learning Control
   Problems"](https://www.derongliu.org/adp/adp-cdrom/Barto1983.pdf), *IEEE
   Transactions on Systems, Man, and Cybernetics* SMC-13(5), 834-846 (1983):
-  visual p.834 anchor for the cart-pole task, sparse failure signal, unknown
+  p.834 anchor for the cart-pole task, sparse failure signal, unknown
   equations, and ASE/ACE actor-critic structure.
 - Richard S. Sutton, ["Learning to Predict by the Methods of Temporal
   Differences"](http://incompleteideas.net/papers/sutton-88-with-erratum.pdf),
@@ -450,7 +449,7 @@ That loop would become one of AI's most durable ideas.
   credit assignment.
 - Christopher J. C. H. Watkins, ["Learning from Delayed
   Rewards"](http://www.cs.rhul.ac.uk/~chrisw/new_thesis.pdf), PhD thesis,
-  King's College, Cambridge (1989): capped anchor for title, summary,
+  King's College, Cambridge (1989): thesis-level anchor for title, summary,
   Markov-decision-process framing, action-value learning from experience, and
   exploration-exploitation discussion.
 - Christopher J. C. H. Watkins and Peter Dayan,
@@ -476,6 +475,6 @@ That loop would become one of AI's most durable ideas.
 > This chapter treats reinforcement learning as a bounded mathematical and
 > engineering lineage, not as a single invention or a solved theory of
 > intelligence. Bellman is used only as ancestry, Barto/Sutton/Anderson only at
-> abstract-level visual-anchor claims, Watkins 1989 only within OCRed pages,
-> and Q-learning only under the convergence conditions stated by Watkins and
-> Dayan.
+> abstract-level p.834 claims, Watkins 1989 only within the thesis summary and
+> early framing, and Q-learning only under the convergence conditions stated by
+> Watkins and Dayan.
