@@ -1,1 +1,69 @@
-status: researching
+status: prose_ready
+prose_word_cap: 4500
+owner: Codex
+part: 3
+chapter: 12
+review_state: codex_initial_draft_2026-04-27;gemini_gap_audit_integrated_2026-04-27;dual_cross_family_verdict_2026-04-28
+last_updated: 2026-04-28
+green_claims: 14
+yellow_claims: 4
+red_claims: 4
+verdicts:
+  gemini:
+    model: gemini-3-flash-preview
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT_WITH_CAP
+    word_cap: 4500
+    bridge_msg: 2940
+  claude:
+    model: claude-opus-4-7
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT_WITH_CAP
+    word_cap: 4500
+    note: independent-prose-capacity verdict via fresh headless agent (Codex authored, integrating Claude conflict-of-interest)
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 4500
+  resolution_rule: dual_concurring_verdict
+notes: |
+  Full 8-file contract drafted for Chapter 12. Green anchors cover P-868 for LT specification, hand-simulation boundary, symbolic representation, Shaw's realization role, and digital-computer constraints; P-1584 and GPS61 for GPS-I, means-ends analysis, recursive goals/subgoals, planning, and generality limits; and CBI91 for Newell's RAND/Selfridge/Dartmouth retrospective.
+
+  Theorem-count folklore, typewriter-driven Theorem 2.01, exact JOHNNIAC/IPL run chronology, and "first running symbolic-AI program" priority nuance remain Yellow until NSS57, Programming-LT, IPL-I/II/III, Simon's autobiography, or archival correspondence are page-anchored.
+
+  Red claims now block four unsafe framings: LT as the first AI program full stop; GPS as working general intelligence; live LT execution at Dartmouth without evidence; and (newly demoted from Yellow per Gemini gap audit 2026-04-27) the Theorem 2.85 / Journal of Symbolic Logic rejection anecdote, whose "Luddite establishment" framing is contested and primary-source-blocked.
+
+  Gemini cross-family gap audit (gemini-3-flash-preview) 2026-04-27: 4 must-fixes, 4 should-adds, 3 framing observations, 2 Yellow→Red proposals. Per `feedback_gemini_hallucinates_anchors.md` Gemini provided NO page anchors or URLs (correct lane discipline). Integration applied:
+   - Must-fix #1 (P-671 chess prelude): added as Yellow primary source row in sources.md; Scene 1 Should-Extract added; Scene 1b deferred-merge sketch added.
+   - Must-fix #2 (1957 protocol-data turn): added Scene 4b in scene-sketches.md emphasizing the methodological pivot; brief.md Historiographic Axis section added.
+   - Must-fix #3 (IPL versioning anachronism): IPL-I/II/III added as separate Yellow source row distinct from IPL-V (1960); infrastructure-log.md updated; brief.md citation bar updated.
+   - Must-fix #4 (theorem-count dependency): drafting cap near 4500 words preserved; open-questions.md drafting warnings amplified.
+   - Should-adds (EPAM, SAD-SAM, General Inquirer, Project MAC GPS-derivative): added as Yellow secondary source rows.
+   - Framing #1 (Performance vs Simulation): brief.md Historiographic Axis section added; Scene 5 narrative use updated.
+   - Framing #2 (LTM/LT naming hinge): noted in open-questions.md framing observations.
+   - Framing #3 (RAND-Carnegie correspondence): added as load-bearing infrastructure section in infrastructure-log.md.
+   - Yellow→Red #1 (Theorem 2.85/JSL): demoted in scene-level claim table; drafting warning amplified.
+   - Yellow→Red #2 (Dartmouth live exec): already Red, no change.
+
+  Dual cross-family verdict pass 2026-04-28:
+   - Gemini (gemini-3-flash-preview): READY_TO_DRAFT_WITH_CAP at 4,500 words.
+     The conceptual and architectural beats are Green and structurally sound,
+     but the lack of primary page anchors for the 38/52 theorem count and
+     JOHNNIAC run details necessitates a word cap to prevent speculative
+     padding. Stayed in lane per feedback_gemini_hallucinates_anchors.md, no
+     URLs cited (msg #2940).
+   - Independent Claude (claude-opus-4-7, fresh headless agent): READY_TO_DRAFT_WITH_CAP
+     at 4,500 words. The 14 Greens carry the load (P-868, P-1584, GPS61,
+     CBI91 page-verified). The 4 Yellows are correctly supplementary, not
+     load-bearing. The 4-5 Reds are sharp. Performance-vs-Simulation
+     historiographic axis is crisp. IPL versioning correction is accurate.
+     The brief's own self-imposed 4,500-word ceiling is the right move; the
+     upper budget toward 6k+ depends on still-Yellow theorem-count and
+     IPL-I/II/III anchors that would force padding if drafted today.
+   - Codex (gpt-5.5) is the chapter's author so cross-family conflict-of-
+     interest applies; he is excluded from the verdict step.
+   - Resolution: dual_concurring_verdict -> READY_TO_DRAFT_WITH_CAP at 4,500
+     words.
+
+  Status advances from capacity_plan_anchored to prose_ready. Drafting may
+  begin on a codex/394-ch12-prose branch off main, capped at 4,500 words.
+  This contract has cleared dual cross-family review (Codex authored +
+  Gemini gap-audited + Claude integrated + dual verdict pass).
