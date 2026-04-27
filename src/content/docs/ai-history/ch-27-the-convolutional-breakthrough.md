@@ -199,11 +199,11 @@ deployed inside a concrete document-recognition setting.
 
 The task that made the work concrete was handwritten zip-code recognition.
 This was not an abstract benchmark invented only for academic comparison.
-Postal systems had a practical need: read digits from real mail. LeCun et al.
-used segmented handwritten numerals from U.S. mail passing through the Buffalo,
-New York post office. The 1989 paper records a training set of 7,291 examples
-and a test set of 2,007 examples, with contractor preprocessing and
-normalization to 16 by 16 images.
+Postal systems had a practical need: recognize handwritten digits inside
+mail-processing workflows. LeCun et al. used segmented handwritten numerals
+from U.S. mail passing through the Buffalo, New York post office. The 1989
+paper records a training set of 7,291 examples and a test set of 2,007
+examples, with contractor preprocessing and normalization to 16 by 16 images.
 
 Those details matter. They keep the chapter grounded in infrastructure rather
 than mythology. The images were not pristine symbols from a textbook. They
@@ -251,7 +251,7 @@ industrial task.
 
 The numbers also help calibrate the achievement. The 1989 account describes
 7,291 training examples and 2,007 test examples. The 1990 conference account
-corroborates the Buffalo USPS source and describes the broader set of 9,298
+corroborates the same Buffalo USPS source at the combined total of 9,298
 handwritten numerals, along with printed-font augmentation in the training
 setup. These were not the giant image datasets that later made deep learning
 feel inevitable. They were small enough that architectural assumptions really
@@ -260,10 +260,11 @@ mattered.
 The reported error and rejection figures belong in that operational frame. A
 recognizer can choose to classify every input, or it can reject uncertain
 cases and leave them for another part of the workflow. The LeCun papers report
-this tradeoff directly: lower error could be achieved by rejecting a fraction
-of examples. For a document system, that is not cheating. It is an engineering
-control. A mail or check pipeline can send hard cases to a slower path if the
-fast recognizer handles enough of the volume correctly.
+this tradeoff directly: the 1989 account reports 5.0 percent raw test error,
+and a 1 percent error point when 12.1 percent of cases were rejected. For a
+document system, that is not cheating. It is an engineering control. A mail or
+check pipeline can send hard cases to a slower path if the fast recognizer
+handles enough of the volume correctly.
 
 This also changes how to read "success." The historical success was not that a
 network solved every postal recognition problem end to end. The 1989 system
