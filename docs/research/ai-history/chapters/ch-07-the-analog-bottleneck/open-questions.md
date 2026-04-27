@@ -1,3 +1,3 @@
-# Open Questions: Chapter 7
+# Open Questions
 
-- Is there a direct quote from a cyberneticist of the era explicitly lamenting the physical scaling limits of their analog models?
+- None. Archival anchors extracted and verified.
