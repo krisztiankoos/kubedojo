@@ -1,8 +1,8 @@
-status: prose_review
+status: accepted
 owner: Codex
 part: 5
 chapter: 28
-review_state: gemini_and_claude_prose_review_requested
+review_state: gemini_and_claude_prose_approved
 last_updated: 2026-04-27
 prose_path: src/content/docs/ai-history/ch-28-the-second-ai-winter.md
 prose_words: 4089
@@ -14,3 +14,4 @@ notes:
   - "Gemini gap analysis approved the contract and requested a concrete Symbolics/Lisp-machine economics anchor before prose; LA Times 1988 layoffs/losses/workstation-competition anchor was added."
   - "Claude requested a non-ICOT anchor for FGCS as a Western trigger; Roland/Shiman pp.5, 37, and 56-57 were added."
   - "Codex drafted 4089-word golden-format prose and requested Gemini plus Claude prose review."
+  - "Claude and Gemini approved Ch28 prose with no must-fix findings; status moved to accepted."
