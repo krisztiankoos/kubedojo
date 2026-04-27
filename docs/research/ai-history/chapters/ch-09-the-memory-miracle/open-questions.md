@@ -1,3 +1,3 @@
 # Open Questions
 
-- None. Archival anchors extracted and verified.
+- Need specific IBM/SAGE primary archival documents confirming the commercial transition (Scene 4).

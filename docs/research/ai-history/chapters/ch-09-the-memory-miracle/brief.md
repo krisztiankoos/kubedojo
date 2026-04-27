@@ -18,7 +18,7 @@ This chapter can support a detailed narrative only if it is built from verified 
 - 600-900 words: The fragility of Williams tubes (Williams & Kilburn 1948).
 - 800-1200 words: Project Whirlwind and Forrester's first-person account (Redmond & Smith 1980, Forrester Oral History).
 - 800-1200 words: The development of core memory and Rajchman's parallel work (Rajchman 1953).
-- 600-1200 words: The path to commercialization via SAGE and the IBM 704 (Pugh 1984), setting up Chapter 11.
+- 200-400 words: A short bridging coda to the IBM 704 commercialization via SAGE (Pugh 1984).
 *(Note: Manual weaving scenes are constrained to a brief mention due to lack of strong primary archival photos).*
 
 Do not invent dialogue. The historical record genuinely supports ~3,000-4,500 words; cap the chapter here without padding to 7k.

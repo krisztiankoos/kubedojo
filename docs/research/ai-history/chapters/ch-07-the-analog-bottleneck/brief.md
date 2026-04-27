@@ -18,6 +18,6 @@ This chapter can support a detailed narrative only if it is built from verified 
 - 800-1100 words: Grey Walter and the initial 1950 "Imitation of Life" paper.
 - 800-1200 words: The tortoises' hardware, specifically relying on Holland (1997) for the two-tube circuit diagrams.
 - 800-1200 words: The thermodynamic and reliability wall, leveraging von Neumann's 1952 lectures on reliable organisms from unreliable components.
-- 600-1000 words: The transition toward architectures separating logic from wiring (the ENIAC agonies).
+- 200-400 words: A short bridging coda toward architectures separating logic from wiring (the ENIAC agonies).
 
 Do not invent dialogue. The historical record genuinely supports ~3,000-4,500 words; cap the chapter here without padding to 7k.

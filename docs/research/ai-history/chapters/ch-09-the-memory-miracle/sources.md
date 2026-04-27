@@ -8,7 +8,7 @@
 | Whirlwind required non-volatile real-time memory | 2 | Forrester Oral History (1992) | Redmond & Smith 1980 | Green | None |
 | Core memory replaced volatile electrostatic memory | 3 | Forrester 1951 | [Ceruzzi 2003] | Green | None |
 | Rajchman independently developed core memory | 3 | Rajchman 1953 | [Ceruzzi 2003] | Green | Patent litigation over priority. |
-| Core memory was commercialized into the IBM 704 via SAGE | 4 | N/A | Pugh 1984 | Green | None |
+| Core memory was commercialized into the IBM 704 via SAGE | 4 | N/A | Pugh 1984, pp. 140-145 | Yellow | Need specific IBM/SAGE primary archival documents. |
 
 ## Bibliography
 ### Primary

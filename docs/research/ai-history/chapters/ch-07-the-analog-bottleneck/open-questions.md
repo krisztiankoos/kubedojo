@@ -1,3 +1,3 @@
 # Open Questions
 
-- None. Archival anchors extracted and verified.
+- Need exact page/section anchors linking Walter's physical limitations directly to the adoption of digital architecture (Scene 4).
