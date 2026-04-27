@@ -1,1 +1,3 @@
-# Open Questions: Chapter 49
+# Open Questions
+
+- Need exact page/section/figure anchors for Jouppi et al. 2017.
