@@ -10,7 +10,7 @@ Ownership rebalance triggered by two signals: (1) Gemini was previously assigned
 |---|---|---|---|---|
 | 1 — Mathematical Foundations | Ch 1-5 | **Gemini** | already in flight | Cleanup of citation hallucinations from earlier draft (#421); 4/5 ready_to_draft_with_cap, Ch1 in gap_analysis_received |
 | 2 — Analog Dream & Digital Blank Slate | Ch 6-10 | **Gemini** | already accepted | Complete (5/5 accepted) |
-| 3 — Birth of Symbolic AI & Early Optimism | Ch 11-16 | **Claude** | narrative integration | Ch11 `capacity_plan_anchored` (dual cross-family review applied); Ch12 contract draft in flight (Codex assist); Ch13-16 researching |
+| 3 — Birth of Symbolic AI & Early Optimism | Ch 11-16 | **Claude** | narrative integration | Ch11-Ch14 `capacity_plan_anchored` (Codex anchor draft + Gemini gap audit + Claude integration); Ch15-Ch16 researching |
 | 4 — First Winter & Shift to Knowledge | Ch 17-23 | **Codex (new)** | anchor-heavy archival (Lighthill, Mansfield, expert systems) | 0/7 — moved from unclaimed |
 | 5 — Mathematical Resurrection | Ch 24-31 | **Codex** | anchor extraction from papers | 4/8 prose_ready; Ch28-31 researching |
 | 6 — Rise of Data & Distributed Compute | Ch 32-40 | **Gemini** | already in flight | 5/9 accepted, 4/9 prose_review |
@@ -51,9 +51,9 @@ When you advance a chapter, update the chapter's `status.yaml`. The README Statu
 |  9 | The Memory Miracle | Gemini | accepted |
 | 10 | The Imitation Game | Gemini | accepted |
 | 11 | The Summer AI Named Itself | Claude | capacity_plan_anchored |
-| 12 | Logic Theorist & GPS | Claude (Codex draft) | researching → in flight |
-| 13 | The List Processor | Claude | researching |
-| 14 | The Perceptron | Claude | researching |
+| 12 | Logic Theorist & GPS | Claude (Codex draft) | capacity_plan_anchored |
+| 13 | The List Processor | Claude (Codex draft) | capacity_plan_anchored |
+| 14 | The Perceptron | Claude (Codex draft) | capacity_plan_anchored |
 | 15 | The Gradient Descent Concept | Claude | researching |
 | 16 | The Cold War Blank Check | Claude | researching |
 | 17 | The Perceptron's Fall | Codex | researching |
@@ -110,6 +110,8 @@ When you advance a chapter, update the chapter's `status.yaml`. The README Statu
 | 68 | The Infinite Datacenter | Claude | researching |
 
 Snapshot taken 2026-04-27. The `/api/briefing/book` endpoint returns this same data live.
+
+The team workflow is maintained in `TEAM_WORKFLOW.md`. It defines the gates between research contracts, gap analysis, anchor extraction, prose readiness, drafting, and cross-family review.
 
 ## Structure
 
