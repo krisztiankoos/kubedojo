@@ -69,10 +69,10 @@ The Dartmouth consensus, early search algorithms, and military funding.
 
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
-| 11 | The Summer AI Named Itself | researching | no |
-| 12 | Logic Theorist & GPS | researching | no |
-| 13 | The List Processor | researching | no |
-| 14 | The Perceptron | researching | no |
+| 11 | The Summer AI Named Itself | prose_ready (cap 5,100) | no |
+| 12 | Logic Theorist & GPS | prose_ready (cap 4,500) | no |
+| 13 | The List Processor | prose_ready (cap 4,500) | no |
+| 14 | The Perceptron | prose_ready (cap 4,500) | no |
 | 15 | The Gradient Descent Concept | researching | no |
 | 16 | The Cold War Blank Check | researching | no |
 
@@ -86,7 +86,7 @@ The failure of early neural networks and the rise of hard-coded Expert Systems.
 |---:|---|---|---|
 | 17 | The Perceptron's Fall | capacity_plan_anchored | no |
 | 18 | The Lighthill Devastation | capacity_plan_anchored | no |
-| 19 | Rules, Experts, and the Knowledge Bottleneck | researching | no |
+| 19 | Rules, Experts, and the Knowledge Bottleneck | capacity_plan_anchored | no |
 | 20 | Project MAC | researching | no |
 | 21 | The Rule-Based Fortune | researching | no |
 | 22 | The LISP Machine Bubble | researching | no |
@@ -188,7 +188,8 @@ Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 |---|---:|
 | `accepted` (drafted, all reviews cleared) | 5 |
 | `prose_review` (drafted, in review) | 3 |
-| `capacity_plan_anchored` (contract anchored, awaiting verdict) | 2 |
+| `prose_ready` (contract dual-cleared, awaiting prose draft) | 4 |
+| `capacity_plan_anchored` (contract anchored, awaiting verdict) | 3 |
 | `researching` with prose merged on legacy contract | 22 |
-| `researching` (no prose yet) | 36 |
+| `researching` (no prose yet) | 31 |
 | **Total** | **68** |
