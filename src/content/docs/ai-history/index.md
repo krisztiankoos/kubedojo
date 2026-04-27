@@ -33,9 +33,18 @@ Honesty over output is the highest rule. When verified evidence cannot honestly 
 - Active per-chapter pull requests are not reflected here until merged. See the [open PRs](https://github.com/kube-dojo/kube-dojo.github.io/pulls) for in-flight work.
 - The book's tracking epic is [#394](https://github.com/kube-dojo/kube-dojo.github.io/issues/394).
 
+## Role split (effective 2026-04-28)
+
+After Gemini self-admitted to systemic URL/anchor hallucination across his prior research work, sourcing duties moved off Gemini:
+
+- **Claude** owns the research contract for Parts 1, 2, 3, 6, 7, 9 (anchor extraction directly via `curl` + `pdftotext`).
+- **Codex** owns the research contract for Parts 4, 5, 8 and helps with archive-blocked or scanned-PDF anchors when Claude is stuck. Continues as prose drafter for Part 3.
+- **Gemini** stops touching sources entirely. Becomes the gap auditor on every chapter and the first-draft prose writer for Parts 1, 2, 6, 7 (Claude expands the draft).
+- **Cross-family verdict** rule unchanged: every chapter needs a `READY_TO_DRAFT` or `READY_TO_DRAFT_WITH_CAP` from BOTH cross-family reviewers before drafting unlocks.
+
 ## Part 1 — The Mathematical Foundations (1840s–1940s)
 
-Owner: **Gemini** · Tracking: [#399](https://github.com/kube-dojo/kube-dojo.github.io/issues/399)
+Research: **Claude** · Prose: **Gemini → Claude expansion** · Tracking: [#399](https://github.com/kube-dojo/kube-dojo.github.io/issues/399)
 
 Proving that human logic, reasoning, and probability can be formalized into mechanical algebra.
 
@@ -49,7 +58,7 @@ Proving that human logic, reasoning, and probability can be formalized into mech
 
 ## Part 2 — The Analog Dream & Digital Blank Slate (1940s–1950s)
 
-Owner: **Gemini** · Tracking: [#400](https://github.com/kube-dojo/kube-dojo.github.io/issues/400)
+Research: **Claude** · Prose: **Gemini → Claude expansion** · Tracking: [#400](https://github.com/kube-dojo/kube-dojo.github.io/issues/400)
 
 The transition from biology-inspired analog hardware to von Neumann digital architectures.
 
@@ -63,7 +72,7 @@ The transition from biology-inspired analog hardware to von Neumann digital arch
 
 ## Part 3 — The Birth of Symbolic AI & Early Optimism (1950s–1960s)
 
-Owner: **Claude** · Tracking: [#401](https://github.com/kube-dojo/kube-dojo.github.io/issues/401)
+Research: **Claude** · Prose: **Codex → Claude expansion** · Tracking: [#401](https://github.com/kube-dojo/kube-dojo.github.io/issues/401)
 
 The Dartmouth consensus, early search algorithms, and military funding.
 
@@ -78,7 +87,7 @@ The Dartmouth consensus, early search algorithms, and military funding.
 
 ## Part 4 — The First Winter & The Shift to Knowledge (1970s–1980s)
 
-Owner: **Codex** · Tracking: [#402](https://github.com/kube-dojo/kube-dojo.github.io/issues/402)
+Research: **Codex** · Prose: **Codex** · Tracking: [#402](https://github.com/kube-dojo/kube-dojo.github.io/issues/402)
 
 The failure of early neural networks and the rise of hard-coded Expert Systems.
 
@@ -94,7 +103,7 @@ The failure of early neural networks and the rise of hard-coded Expert Systems.
 
 ## Part 5 — The Mathematical Resurrection (1980s–1990s)
 
-Owner: **Codex** · Tracking: [#403](https://github.com/kube-dojo/kube-dojo.github.io/issues/403)
+Research: **Codex** · Prose: **Codex** · Tracking: [#403](https://github.com/kube-dojo/kube-dojo.github.io/issues/403)
 
 The silent algorithmic breakthroughs that laid the foundation for modern Machine Learning.
 
@@ -111,7 +120,7 @@ The silent algorithmic breakthroughs that laid the foundation for modern Machine
 
 ## Part 6 — The Rise of Data & Distributed Compute (1990s–2000s)
 
-Owner: **Gemini** · Tracking: [#404](https://github.com/kube-dojo/kube-dojo.github.io/issues/404)
+Research: **Claude** · Prose: **Gemini → Claude expansion** · Tracking: [#404](https://github.com/kube-dojo/kube-dojo.github.io/issues/404)
 
 The shift to empiricism, enabled by the internet and cluster computing.
 
@@ -129,7 +138,7 @@ The shift to empiricism, enabled by the internet and cluster computing.
 
 ## Part 7 — The Deep Learning Revolution & GPU Coup (2010s)
 
-Owner: **Gemini** · Tracking: [#405](https://github.com/kube-dojo/kube-dojo.github.io/issues/405)
+Research: **Claude** · Prose: **Gemini → Claude expansion** · Tracking: [#405](https://github.com/kube-dojo/kube-dojo.github.io/issues/405)
 
 The repurposing of graphics cards for massive parallel matrix multiplication.
 
@@ -147,7 +156,7 @@ The repurposing of graphics cards for massive parallel matrix multiplication.
 
 ## Part 8 — The Transformer, Scale & Open Source (2017–2022)
 
-Owner: **Codex** · Tracking: [#406](https://github.com/kube-dojo/kube-dojo.github.io/issues/406)
+Research: **Codex** · Prose: **Codex** · Tracking: [#406](https://github.com/kube-dojo/kube-dojo.github.io/issues/406)
 
 Scaling laws, Attention, and the democratization of AI through open weights.
 
@@ -165,7 +174,7 @@ Scaling laws, Attention, and the democratization of AI through open weights.
 
 ## Part 9 — The Product Shock & Physical Limits (2022–Present)
 
-Owner: **Claude** · Tracking: [#407](https://github.com/kube-dojo/kube-dojo.github.io/issues/407)
+Research: **Claude** · Prose: **Claude** · Tracking: [#407](https://github.com/kube-dojo/kube-dojo.github.io/issues/407)
 
 Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 

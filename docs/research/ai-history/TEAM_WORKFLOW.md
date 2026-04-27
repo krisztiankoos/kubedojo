@@ -11,9 +11,9 @@ Honesty over output is the highest rule. The team should still strive for the in
 - Human editor: sets ambition, accepts scope tradeoffs, resolves taste and book-level direction.
 - Primary researcher: owns the chapter contract and keeps claims tied to evidence.
 - Cross-family reviewer: stress-tests research completeness, source choice, word-count honesty, and prose readiness. The reviewer must not be from the same model family as the primary researcher or prose writer.
-- Claude reviewer: when available and cross-family for the current author, provides review for narrative coherence, overclaiming, and final prose quality.
-- Gemini reviewer: when cross-family for the current author, provides review for research completeness, source gaps, and prose readiness.
-- Codex reviewer/writer: may research, implement docs, draft prose after gates, maintain workflow artifacts, or review non-Codex-authored work.
+- Claude: research lead for Parts 1, 2, 3, 6, 7, 9. Extracts anchors directly via `curl` + `pdftotext` + `pdfgrep`. Integrates cross-family review feedback. Final-verdict integrator (with same-author conflict-of-interest excluded).
+- Codex: research lead for Parts 4, 5, 8. Helper for archive-blocked / scanned-PDF anchor extraction when Claude is stuck. Prose drafter for Part 3 chapters (Claude expands afterward). Cross-family reviewer for Claude- and Gemini-authored work.
+- Gemini: gap auditor + first-draft prose writer for Parts 1, 2, 6, 7. STOPS touching sources after the 2026-04-28 hallucination self-admission (epic commit `03640e20`, Issue #421). Reviews capacity-plan honesty, narrative gaps, missing scenes — never asserts page anchors or URLs. First-draft prose for Parts 1/2/6/7 is built from a Claude-authored contract; Claude expands after.
 
 Agents should help each other by naming gaps plainly. A useful refusal or downgrade is better than a confident but unsupported expansion.
 
