@@ -286,7 +286,7 @@ structure and computation were joined.
 
 ## Expert Systems With Probability
 
-Lauritzen and Spiegelhalter show that Pearl was not the only route into
+Lauritzen and Spiegelhalter showed that Pearl was not the only route into
 graphical probabilistic reasoning. Their 1988 work on local computations with
 probabilities on graphical structures addressed expert systems directly. They
 argued against the idea that exact probabilistic methods were automatically
@@ -437,7 +437,10 @@ longer had to choose between crisp symbolic rules and unstructured numerical
 hunches. It could represent uncertain relationships explicitly and compute
 with them.
 
-Bayesian networks made uncertainty into infrastructure.
+Bayesian networks made uncertainty into infrastructure. The next chapter turns
+back toward neural networks, where the problem was not probabilistic belief but
+how to constrain a powerful model class into an architecture that could exploit
+the structure of images.
 
 ## Sources
 
