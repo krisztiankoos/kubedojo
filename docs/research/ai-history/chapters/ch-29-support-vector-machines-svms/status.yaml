@@ -1,1 +1,11 @@
-status: researching
+status: reviewing
+owner: Codex
+part: 5
+chapter: 29
+review_state: gemini_gap_analysis_requested
+last_updated: 2026-04-27
+notes:
+  - "Initial placeholder expanded into a claim-level research contract for SVMs."
+  - "Core frame: after the second AI winter, SVMs made machine learning look disciplined by combining statistical learning theory, maximum-margin geometry, kernels, convex optimization, and benchmark credibility."
+  - "Primary anchors include Boser/Guyon/Vapnik 1992, Cortes/Vapnik 1995, and Burges 1998; VC theory lineage is anchored through Cortes/Vapnik plus MathNet bibliographic record for Vapnik-Chervonenkis 1971."
+  - "Guardrail: do not portray SVMs as a deep-learning replacement or as purely theoretical; they were a 1990s infrastructure answer to small/medium data, controlled capacity, and convex training."
