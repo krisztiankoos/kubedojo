@@ -4,14 +4,19 @@
 
 | Claim | Scene | Primary Source | Secondary Confirmation | Verification | Conflict |
 |---|---|---|---|---|---|
-| Boole reduced logic to binary variables (1 and 0) | 2 | Boole 1854, *An Investigation of the Laws of Thought*, p. 47 | [Gleick 2011] | Green | None |
-| Boole formulated the mathematical equivalent of NOT using 1 - x | 2 | Boole 1854, Ch. III §§16-17 | N/A | Green | None |
-| Boole did not foresee physical computing | 3 | N/A | Specialist Source (e.g., Grattan-Guinness 2000) | Yellow | Need to anchor specific page for Boole's intent. |
+| Boole reduced logic to binary variables | 3 | Boole 1854, p. 47 | Gleick 2011 | Green | None |
+| Boole formulated the NOT operation as 1-x | 3 | Boole 1854, Ch. III §§16-17 | Hailperin 1986 | Green | None |
+| Boole's system was a class algebra, not modern propositional logic | 2 | Boole 1854 | Hailperin 1986 | Green | None |
+| Mary Everest Boole kept his work alive after 1864 | 4 | N/A | MacHale 1985 | Green | None |
+| Boole died of pneumonia in 1864 | 4 | N/A | Macfarlane 1916 | Green | None |
 
 ## Bibliography
 ### Primary
 - **Boole, George. *An Investigation of the Laws of Thought*. (1854).** [Project Gutenberg: https://www.gutenberg.org/ebooks/15114]
 
 ### Secondary
-- **[Gleick 2011]** (See source-catalog.md)
-- **Grattan-Guinness, Ivor. *The Search for Mathematical Roots* (2000).** (Addresses what Boole did and did not mean by 0/1).
+- **Gleick, James. *The Information: A History, a Theory, a Flood*. Pantheon, 2011.**
+- **Grattan-Guinness, Ivor. *The Search for Mathematical Roots* (2000).**
+- **Hailperin, Theodore. *Boole's Logic and Probability*. Reidel, 2nd ed. 1986.**
+- **MacHale, Desmond. *George Boole: His Life and Work*. Boole Press, 1985.**
+- **Macfarlane, Alexander. *Lectures on Ten British Mathematicians of the Nineteenth Century*. Wiley, 1916.**
