@@ -1,1 +1,113 @@
-# Sources: Chapter 14
+# Sources: Chapter 14 - The Perceptron
+
+## Verification Key
+
+- Green: claim has a primary source with verified page anchor, report page, or primary institutional record section, and wording stays within that source.
+- Yellow: claim has strong source metadata, a primary source without page extraction, a period press source that needs original scan verification, or depends on retrospective/secondary synthesis.
+- Red: claim should not be drafted.
+
+Note: local shell `curl`/cold-start access was not usable in this sandbox because the worktree lacks its local `.venv`, and external DNS remains unavailable from shell. Anchors below were verified through browser-accessible PDF/HTML text extraction, Internet Archive full text, and primary institutional records. Claims without checked page or section anchors remain Yellow or Red.
+
+## Primary Sources
+
+| ID | Source | Use | Verification |
+|---|---|---|---|
+| `PsychRev58` | Frank Rosenblatt, "The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain," *Psychological Review* 65(6), 1958, pp. 386-408. DOI: https://doi.org/10.1037/h0042519. Publisher preview via ResearchGate: https://www.researchgate.net/publication/221996769_The_perceptron_A_probabilistic_model_for_information_storage_and_organization_in_the_brain | Foundational publication; Cornell Aeronautical Laboratory affiliation; ONR contract; three framing questions; memory and recognition problem statement. | Green/Yellow. Green for bibliographic metadata and extracted first page p. 386: title, author, Cornell Aeronautical Laboratory, three questions about sensing/storage/recognition, ONR Contract Nonr-2381(00), and statement that the article adapts the first full program report. Yellow for later-page technical details until the full paginated PDF is extracted. |
+| `POND61` | Frank Rosenblatt, *Principles of Neurodynamics: Perceptrons and the Theory of Brain Mechanisms*, Cornell Aeronautical Laboratory report, 16 March 1961 / Spartan Books 1962. Internet Archive/DTIC: https://archive.org/details/DTIC_AD0256582; full text: https://archive.org/stream/DTIC_AD0256582/DTIC_AD0256582_djvu.txt | Consolidated theoretical statement; funding; program motivation; definitions; convergence theorem; discrimination/detection/generalization; collaborators and hardware roles. | Green. Verified anchors: title/report page and contract at report front matter; pp. vii-ix preface for "neurodynamics," press controversy, distinction from AI devices, brain-model motivation, ONR support, Rome Air Development Center assistance, NYU computing, Wightman/Martin engineering, John Hay Mark I experiments; table of contents pp. 79-92 for definitions and reinforcement systems; pp. 97-117 for elementary perceptrons, solution existence, and principal/additional convergence theorems; pp. 153-193 for discrimination, error correction, detection, generalization, and functionally equivalent systems; pp. 245-253 for linear perceptron discussion. |
+| `MarkI-Manual60` | John C. Hay and Albert E. Murray, *Mark I Perceptron Operators' Manual (Project PARA)*, 15 February 1960, Contract No. Nonr-2381(00). DTIC source identified via Wikimedia Commons file metadata: https://commons.wikimedia.org/wiki/File:Mark_I_Perceptron,_Figure_2_of_operator%27s_manual.png | Hardware diagram, operator procedures, component layout, likely source for 400 photocells, plugboard, potentiometers, and response units. | Yellow. Manual identity, date, authors, contract, and DTIC URL are verified from Commons metadata lines 122-134. Direct PDF page text was not extracted in this pass, so all detailed hardware counts remain Yellow until the DTIC/Wayback PDF is pulled through a text extractor. |
+| `Smithsonian-MarkI` | Smithsonian National Museum of American History, "Electronic Neural Network, Mark I Perceptron." https://americanhistory.si.edu/collections/object/nmah_334414 and https://www.si.edu/object/electronic-neural-network-mark-i-perceptron:nmah_334414 | Object record for Mark I Perceptron, date made, place, funding, S/A/R unit description, cabinet layout, transfer history. | Green. Verified object-record anchors: described as made in 1958; created at Cornell Aeronautical Laboratory in Buffalo with ONR and Rome Air Development Center funding; S, A, and R units are explained; physical layout from sensory unit through plugboard, potentiometers, response panel, and meters is described; transfer to Smithsonian in 1967 from Cornell as a transfer from ONR is recorded. |
+| `NavyPhoto60` | National Museum of the U.S. Navy / Wikimedia Commons, "Experimental Machine Able To Identify Letters of Alphabet Announced By Navy," released June 24, 1960. https://commons.wikimedia.org/wiki/File:330-PSA-80-60_(USN_710739)_(20897323365).jpg | Period public description of Mark I training, Charles Wightman photo context via related caption use, ONR/RADC sponsorship, military/non-numerical uses, recognition-performance rhetoric. | Green/Yellow. Green for Commons lines 121-125: Mark I as trainable electromechanical device at Cornell Aeronautical Laboratory, Buffalo; training by placing letters in photoelectric "eye" and forced correction; reported recognition after training; ONR and RADC sponsorship; released June 24, 1960. Yellow for using it as capability evidence, because it is public-relations text. |
+| `IRE60` | Frank Rosenblatt, "Perceptron Simulation Experiments," *Proceedings of the IRE* 48(3), March 1960, pp. 301-309. DOI: https://doi.org/10.1109/JRPROC.1960.287598. Metadata/abstract via CoLab: https://colab.ws/articles/10.1109%2FJRPROC.1960.287598 | IBM 704 simulation program, Cornell Aeronautical Laboratory affiliation, forced/spontaneous learning experiments. | Green/Yellow. Green for bibliographic metadata and abstract: the experimental simulation program had been in progress at Cornell Aeronautical Laboratory since 1957 and used the IBM 704 to simulate perceptual learning, recognition, and classification. Yellow for detailed result claims until a paginated full text is extracted. |
+| `NYT58` | "New Navy Device Learns by Doing; Psychologist Shows Embryo of Computer Designed to Read and Grow Wiser," *The New York Times*, July 8, 1958. Archive URL from bibliography metadata: https://www.nytimes.com/1958/07/08/archives/new-navy-device-learns-by-doing-psychologist-shows-embryo-of.html | Press-rhetoric source for the "walk, talk, see, write..." sentence and public hype. | Yellow. Title/date/archive URL are verified through multiple bibliographic records and secondary quotations. Original article scan/text was not extracted. Quote only as period press rhetoric, not as Green technical evidence. |
+| `ResearchTrends58` | Frank Rosenblatt, "The Design of an Intelligent Automaton," *Research Trends*, Cornell Aeronautical Laboratory, Summer 1958. Cornell Chronicle image reference: https://news.cornell.edu/stories/2019/09/professors-perceptron-paved-way-ai-60-years-too-soon | Possible bridge between technical report, public announcement, and Cornell house publication. | Yellow. Existence and a short quoted sentence are visible in Cornell Chronicle; full pages not extracted. |
+| `TwoTheorems59` | Frank Rosenblatt, "Two Theorems of Statistical Separability in the Perceptron," in *Mechanisation of Thought Processes*, HMSO, 1959, pp. 421-456. | Separability theorem source and bridge to NPL/McCarthy volume. | Yellow. Bibliographic source identified; full pages not extracted. |
+| `VG1196G1` | Frank Rosenblatt, "The Perceptron: A Theory of Statistical Separability in Cognitive Systems," Cornell Aeronautical Laboratory report VG-1196-G-1, 1958. | First full report behind `PsychRev58`; likely best source for early theory. | Yellow. `PsychRev58` p. 386 says the article is adapted from a first full program report; exact report pages not extracted. |
+| `Ch11-Dartmouth` | Local Chapter 11 contract: `docs/research/ai-history/chapters/ch-11-the-summer-ai-named-itself/brief.md` and `sources.md`. | Boundary source: Rosenblatt/perceptron is out of Ch11; Dartmouth symbolic naming event is separate. | Green for local boundary contract, Yellow for any attendee-list claim until Ch11 prose-source anchors are complete. |
+| `Ch05-Neural` | Local Chapter 5 contract: McCulloch-Pitts 1943 and Hebb 1949 anchors. | Blocks "Rosenblatt invented neural networks"; positions perceptron as inheriting neural/cybernetic prior art. | Green at local contract level. |
+| `Ch06-Cybernetics` | Local Chapter 6 contract: Wiener 1948 and Rosenblueth-Wiener-Bigelow 1943 anchors. | Cybernetic lineage and feedback-control context. | Green at local contract level. |
+
+## Secondary Sources
+
+| Source | Use | Verification |
+|---|---|---|
+| Mikel Olazaran, "A Sociological Study of the Official History of the Perceptrons Controversy," *Social Studies of Science* 26(3), 1996, pp. 611-659. DOI: https://doi.org/10.1177/030631296026003005 | Corrective historiography against simple "Minsky-Papert killed neural nets" story; press/rivalry context; quote-tracing for NYT/New Yorker. | Yellow. Bibliographic data and snippets verified; page text not extracted. Use before prose review. |
+| James A. Anderson and Edward Rosenfeld, eds., *Neurocomputing: Foundations of Research*, MIT Press, 1988. | Reprint/context for `PsychRev58`; later neural-net canonization. | Yellow. MIT Press metadata verified; full chapter gated. |
+| Nils J. Nilsson, *The Quest for Artificial Intelligence*, 2010. | Analytical secondary account of perceptron mathematics and separability limits. | Yellow. Page anchors pending. |
+| Pamela McCorduck, *Machines Who Think*, 1979 / 2004. | Narrative context for Rosenblatt, Minsky, and AI community reception. | Yellow. Physical/page access blocked. |
+| Daniel Crevier, *AI: The Tumultuous History of the Search for Artificial Intelligence*, 1993. | Secondary narrative on Rosenblatt and symbolic/connectionist rivalry. | Yellow. Physical/page access blocked. |
+| Jack O'Connor, "Undercover Algorithm: A Secret Chapter in the Early History of Artificial Intelligence and Satellite Imagery," *International Journal of Intelligence and CounterIntelligence*, 2022. | Later Cold War/intelligence context for perceptron use after this chapter's main period. | Yellow. Search snippets identify useful footnotes for NYT, New Yorker, Aviation Week, contract, and Mark I hardware; full pages not extracted. Use mainly for worklist and Ch16/Ch17 handoff. |
+| Cornell Chronicle, "Professor's perceptron paved the way for AI - 60 years too soon," 2019. | Cornell institutional retrospective and source-discovery pointer to Research Trends. | Yellow. Useful for lead generation, not load-bearing technical claims. |
+
+## Scene-Level Claim Table
+
+| Claim | Scene | Primary Anchor | Independent Confirmation | Status | Notes |
+|---|---|---|---|---|---|
+| Rosenblatt's foundational Psychological Review article appeared in volume 65(6), 1958, pp. 386-408. | 2 | `PsychRev58`, bibliographic metadata and p. 386 preview | MIT Press reprint metadata | Green | Safe bibliographic claim. |
+| The 1958 paper identifies Rosenblatt with Cornell Aeronautical Laboratory. | 1, 2 | `PsychRev58`, p. 386 | `Smithsonian-MarkI` object record | Green | Supports Buffalo/CAL setting. |
+| The 1958 paper states the work was carried out under ONR Contract Nonr-2381(00). | 1 | `PsychRev58`, p. 386 | `POND61`, report front matter and preface | Green | Direct funding anchor. |
+| The paper opens with three questions: sensing/detecting information, storage/remembering, and influence of memory on recognition and behavior. | 2 | `PsychRev58`, p. 386 | ResearchGate abstract metadata | Green | Good scene-opening anchor. |
+| Rosenblatt framed the perceptron theory as a bridge between biophysics and psychology. | 2 | `PsychRev58`, abstract metadata | `POND61`, pp. vii-viii | Green | Use carefully; bridge language is abstract metadata plus p. 386 setup. |
+| `POND61` was a Cornell Aeronautical Laboratory report dated March 1961 and later became the Spartan Books 1962 statement. | 4 | `POND61`, title/report front matter; Open Library metadata for Spartan 1962 | JAMA Psychiatry review metadata | Green/Yellow | Green for report date/title; Yellow for edition mapping unless citing metadata. |
+| Rosenblatt warned that "perceptron" was a generic name for theoretical nerve nets and that popularizers turned it into a hardware-like capitalized object. | 5 | `POND61`, p. vii | JAMA Psychiatry review context | Green | Useful anti-hype boundary. |
+| Rosenblatt distinguished his program from devices for artificial intelligence and called the perceptron first and foremost a brain model. | 5 | `POND61`, pp. vii-viii | JAMA Psychiatry review abstract | Green | Critical thesis anchor. |
+| The Buffalo program had ONR support from July 1957, and the Ithaca program from September 1959. | 1 | `POND61`, p. ix | `PsychRev58`, p. 386 for ONR | Green | Supports institutional timeline. |
+| Rome Air Development Center assisted the Mark I development, NYU computing resources were used, Charles Wightman and Francis Martin carried out Mark I engineering, and John Hay carried out the Mark I experimental program. | 3 | `POND61`, p. ix | `Smithsonian-MarkI`; `MarkI-Manual60` metadata for John Hay | Green | Names infrastructure people precisely. |
+| Principles of Neurodynamics organizes definitions around signals, elementary units, perceptron classification, stimuli/environments, response functions, solutions, reinforcement systems, and experimental systems. | 2, 4 | `POND61`, table of contents pp. 79-92 | `PsychRev58`, p. 386 problem statement | Green | Use for teaching section structure. |
+| The book's Part II covers three-layer series-coupled perceptrons and includes the principal convergence theorem. | 4 | `POND61`, table of contents pp. 97-117 | `TwoTheorems59` bibliographic bridge | Green | Safe theorem-location claim. |
+| Rosenblatt's theory includes discrimination, error-correction, detection, and generalization experiments, not just one static classifier. | 4 | `POND61`, table of contents pp. 153-193 | `IRE60` abstract | Green | Blocks over-narrow modern simplification. |
+| Rosenblatt explicitly discusses detection in organized environments and says elementary perceptrons cannot make the richer figural-organization judgments used in human perception. | 4 | `POND61`, p. 189 lines around organized environments | None needed | Green | Good limit-without-failure anchor. |
+| Rosenblatt's simulation work used the IBM 704 and had been in progress at Cornell Aeronautical Laboratory since 1957. | 3 | `IRE60`, abstract and metadata | `POND61`, p. ix for NYU computing | Green | Supports software-supplement, not hardware-only. |
+| The Mark I Perceptron was made in 1958 at Cornell Aeronautical Laboratory, Buffalo, with ONR and Rome Air Development Center funding. | 3 | `Smithsonian-MarkI`, object record | `POND61`, p. ix | Green | Hardware setting and funding. |
+| Smithsonian describes Mark I in terms of sensory, association, and response units, with plugboard, potentiometer array, response panel, and meters. | 3 | `Smithsonian-MarkI`, object record description | `NavyPhoto60` description | Green | Safe hardware architecture claim. |
+| The Navy release describes training by presenting letter patterns to the photoelectric cell "eye" and forcing correct responses after errors. | 3 | `NavyPhoto60`, description lines 121-125 | `POND61`, reinforcement-system pages | Green/Yellow | Green as public release wording; Yellow as performance evidence. |
+| The Mark I had a 20x20 / 400-photocell input array. | 3 | `MarkI-Manual60` pending direct pages | Smithsonian and secondary descriptions | Yellow | Required hardware detail but not Green until operator manual text is extracted. |
+| Mark I used motorized potentiometers as adjustable analog weights. | 3 | `MarkI-Manual60` pending direct pages | Smithsonian describes potentiometer array; secondary sources mention electric motors | Yellow | Do not mark Green until manual or another primary text is extracted. |
+| Charles Wightman appears in the famous Mark I photo as project engineer. | 3 | Commons/Practicum AI caption; `POND61`, p. ix for Wightman engineering | Cornell/Navy image records pending | Yellow | Name is Green as engineer from `POND61`; photo-caption role needs primary image page. |
+| The New York Times article used the "walk, talk, see, write..." future-capability rhetoric. | 5 | `NYT58` pending original scan | Olazaran and multiple bibliographic snippets | Yellow | Quote as press rhetoric only. |
+| Rosenblatt's own 1958 press language caused or amplified scientific controversy. | 5 | `POND61`, pp. vii-viii mentions popular press controversy | `NYT58`, `Olazaran96` pending | Yellow | Keep carefully attributed. |
+| The perceptron learning rule is essentially stochastic gradient descent on a linear classifier. | 4 | Modern interpretation; Ch15 pending | `POND61` convergence/separability anchors | Yellow | Useful forward-link to Ch15, not period vocabulary. |
+| Rosenblatt was outside the Dartmouth symbolic-AI circle. | 1 | Ch11 local contract and attendee-source worklist | `POND61` cybernetic framing | Yellow | Strong boundary, but exact attendee list belongs to Ch11 sources. |
+| The Mark I publicly demonstrated on June 23 or June 24, 1960. | 3 | `NavyPhoto60` release date June 24; public-demo date needs separate primary source | Secondary snippets | Yellow | Use "June 1960 public release/demonstration context" until exact date is settled. |
+| Minsky is relevant in Ch14 only as an early "loyal opposition" figure, not as the 1969 demolition author. | 5 | `POND61`, p. ix footnote to Minsky's 1961 IRE article as loyal opposition | Ch17 pending | Yellow/Green | Green for 1961 mention; Yellow for broader rivalry. |
+| Rosenblatt invented neural networks. | 2 | None | Ch5 prior McCulloch-Pitts/Hebb anchors contradict | Red | Forbidden. |
+| The Perceptron was a failed AI system in 1958-1962. | All | None | `POND61`, `IRE60`, `Smithsonian-MarkI` show active working program | Red | Forbidden. |
+| Mark I was just a digital algorithm running on a computer. | 3 | None | `Smithsonian-MarkI`, `NavyPhoto60`, `POND61` contradict | Red | Mark I is hardware; simulations are supplementary. |
+| Rosenblatt's NYT claims describe what Mark I actually achieved. | 5 | None | `POND61` and public-release anchors limit actual tasks | Red | Press rhetoric only. |
+| Rosenblatt was at Dartmouth. | 1 | None | Ch11 boundary | Red | Forbidden. |
+| Minsky and Papert proved perceptrons were useless. | 5 | None | Ch17 owns the complicated 1969 story | Red | Do not preempt. |
+| The perceptron could handle arbitrary nonlinearly separable problems by 1962. | 4 | None | `POND61` convergence/separability limits | Red | Modern wording; mathematically false for single-layer perceptron. |
+| The chapter should use the 1969 critique as its climax. | 5 | None | Boundary contract | Red | Forward-link only. |
+
+## Conflict Notes
+
+- **Rosenblatt versus the press:** `POND61` gives Rosenblatt's own complaint about press exuberance and says the program was not primarily the invention of AI devices. `NYT58` should be treated as rhetoric/reception, not as a capability source.
+- **Hardware versus simulation:** `IRE60` proves IBM 704 simulation work; `Smithsonian-MarkI`, `NavyPhoto60`, `POND61`, and `MarkI-Manual60` prove a physical Mark I line. The prose must keep both.
+- **Theory versus capability:** `POND61` supports convergence and separability claims, but it also names detection/generalization limits. The theorem is not a license to claim general visual intelligence.
+- **Cybernetics versus symbolic AI:** Rosenblatt's preface explicitly links "neurodynamics" to terms like cybernetics and distinguishes his program from artificial-intelligence devices. Ch14 should stage this as a real alternative, not a side note.
+- **Rosenblatt's collaborators:** Wightman, Martin, Hay, Joseph, Block, Feign, Kesler, Barker, Louise Hay, ONR administrators, and CAL staff are part of the program. Do not make Mark I a lone-inventor machine.
+
+## Page Anchor Worklist
+
+### Done
+
+- `PsychRev58`: Done for bibliographic metadata and p. 386 first-page anchors: Cornell Aeronautical Laboratory, three questions, ONR contract, and first-full-report note.
+- `POND61`: Done for report front matter, preface, support/funding/collaborator acknowledgments, table-of-contents page anchors, convergence-theorem location, experiment chapters, and organized-environment limitation passage.
+- `Smithsonian-MarkI`: Done for object record: date made, place, funding, S/A/R unit explanation, cabinet layout, potentiometer array, and Smithsonian transfer.
+- `NavyPhoto60`: Done for public release description: trainable electromechanical machine, training procedure, reported letter recognition, ONR/RADC sponsorship, and June 24, 1960 release.
+- `IRE60`: Done for metadata and abstract: IBM 704 simulation program at Cornell Aeronautical Laboratory since 1957.
+- Ch5/Ch6/Ch11 local cross-links: Done at contract level for neural/cybernetic/Dartmouth boundaries.
+
+### Tractable
+
+- Extract `MarkI-Manual60` directly from DTIC or Wayback and page-anchor: 400 photocells, 20x20 retina, motor-driven potentiometers, A-unit/R-unit counts, plugboard, training controls, and Figure 2 component layout.
+- Extract original `NYT58` article scan and record exact wording, page, headline, and whether the "walk, talk..." language is attributed to Navy, Rosenblatt, or newspaper voice.
+- Extract `TwoTheorems59` pages 421-456 for separability theorem wording and relationship to the 1962 convergence presentation.
+- Extract `VG1196G1` for the first full 1958 CAL report behind `PsychRev58`.
+- Extract full `IRE60` text for simulation task details and experimental curves.
+
+### Archive-blocked
+
+- McCorduck, Crevier, Nilsson page scans for secondary narrative.
+- ONR contract documents beyond the contract number and institutional records.
+- Cornell internal correspondence around Mark I design decisions and public announcement planning.
+- Full New Yorker and Aviation Week coverage for period reception.

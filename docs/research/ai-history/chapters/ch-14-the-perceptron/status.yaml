@@ -1,1 +1,17 @@
-status: researching
+status: capacity_plan_anchored
+owner: Codex
+part: 3
+chapter: 14
+review_state: codex_initial_draft_2026-04-27
+last_updated: 2026-04-27
+green_claims: 17
+yellow_claims: 12
+red_claims: 8
+notes: |
+  Full 8-file contract drafted for Chapter 14. Green anchors cover the 1958 Psychological Review first page for Cornell Aeronautical Laboratory, ONR Contract Nonr-2381(00), and Rosenblatt's three guiding questions; Principles of Neurodynamics for program motivation, press-boundary comments, ONR/RADC support, Mark I engineering and experiment roles, definitions, convergence-theorem location, discrimination/detection/generalization chapters, and organized-environment limitations; Smithsonian object record for Mark I date, place, S/A/R architecture, potentiometer array, funding, and transfer; Navy public-domain photo description for June 1960 public-release/training rhetoric; and IRE metadata/abstract for IBM 704 simulation work.
+
+  Yellow claims remain for the 400-photocell / 20x20 input array, motorized potentiometers as weights, exact Mark I unit counts, the NYT "walk, talk, see, write..." quote and attribution, the 1959 Two Theorems separability paper, the first full CAL report VG1196G1, exact public demonstration date, and broad historiographic claims pending Olazaran/Nilsson/McCorduck/Crevier page anchors.
+
+  Red claims block eight unsafe framings: the Perceptron as failed in 1958-1962; Rosenblatt as inventor of neural networks; Mark I as merely a digital algorithm; NYT rhetoric as actual capability; Rosenblatt at Dartmouth; Minsky-Papert proving perceptrons useless; arbitrary nonlinear capability by 1962; and using the 1969 critique as the Ch14 climax.
+
+  Local cold-start failed because this worktree lacks a local .venv. Browser-accessible PDF/HTML extraction was used for anchors. Book-only checklist applies: changed files are limited to docs/research/ai-history/chapters/ch-14-the-perceptron/.
