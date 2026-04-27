@@ -1,5 +1,4 @@
 ---
-revision_pending: true
 title: "Module 1.2: kubectl Basics"
 slug: prerequisites/kubernetes-basics/module-1.2-kubectl-basics
 sidebar:
