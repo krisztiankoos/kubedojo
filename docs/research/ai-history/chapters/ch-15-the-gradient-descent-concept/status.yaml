@@ -1,1 +1,42 @@
-status: researching
+status: capacity_plan_anchored
+note: |
+  Built directly via curl + pdftotext + ocrmypdf + pdfgrep per the new research role split
+  (Claude owns Part 3 research, effective 2026-04-28). All five Prose Capacity Plan layers in
+  brief.md reference at least one page-anchored entry in sources.md. Same anchor keys as Ch14
+  (`WidrowHoff60`, `POND61`).
+
+claims:
+  green: 24
+  yellow: 5
+  red: 1
+claims_note: |
+  Scene-Level Claim Table only. Of the 5 Yellow rows, 3 are pure Yellow
+  (Robbins-Monro step-size notation, Linnainmaa attribution, Linnainmaa reverse-mode
+  AD framing) and 2 are "Yellow → likely Red" (memistor, Hadamard 1908) — kept as
+  Yellow with explicit "do not draft" guidance. The 1 Red row is the Stanford TR
+  1553-1 dead-end. Of the Green rows, 7 belong to Scene 1 (Cauchy via Lemarechal12),
+  2 to Scene 2 (Robbins-Monro citation + problem statement), 10 to Scene 3
+  (Widrow-Hoff page-anchored claims), 2 to Scene 4 (Schmidhuber attribution chain),
+  and 3 to Scene 5 (Werbos forward-link, perceptron-rule-as-SGD, narrative synthesis).
+
+word_count_label: "3k-5k likely"
+word_count_range: "3,400–4,900"
+
+primary_anchors_extracted_this_pass:
+  - "Lemarechal12 (Documenta Math. ISMP 2012, pp. 251–254) — primary anchor bridge for Cauchy 1847"
+  - "WidrowHoff60 (1960 IRE WESCON Convention Record, Part 4, pp. 96–104) — OCR via ocrmypdf + pdftotext"
+  - "Schmidhuber15 (Neural Networks 61 (2015), Section 5.5 pp. 90–91) — primary anchor bridge for Linnainmaa 1970"
+
+primary_anchors_remaining_yellow:
+  - "RobbinsMonro51 Theorem 2 page anchor (Project Euclid Imperva-blocked)"
+  - "Linnainmaa 1976 BIT Numerical Mathematics paper (English-language primary)"
+  - "Stanford TR 1553-1 (Widrow-Hoff WESCON 1960 companion technical report; not cited in WESCON paper itself)"
+
+cross_chapter_anchor_reuse:
+  - "WidrowHoff60: Ch14 had Green for bibliographic metadata only; Ch15 promotes 8 specific in-paper claims to Green"
+  - "POND61: Ch14's anchor for Rosenblatt's Principles of Neurodynamics; Ch15 cites only at Scene 5 modern-reinterpretation"
+
+review_gates_required_before_acceptance:
+  - "Codex anchor verification (cross-family reviewer for Claude-authored research per docs/review-protocol.md)"
+  - "Gemini gap analysis (per dual-review-required gate)"
+  - "Status remains capacity_plan_anchored until both reviewers Green per TEAM_WORKFLOW.md"
