@@ -128,3 +128,29 @@ def test_ask_gemini_cached_unavailable_model_uses_fallback(monkeypatch):
         _gemini._MODEL_CACHE.clear()
 
     assert seen_models == [_gemini.GEMINI_FALLBACK_MODEL]
+
+
+def test_launch_gemini_background_uses_configured_python(monkeypatch, tmp_path):
+    captured: dict[str, list[str]] = {}
+
+    class FakeProcess:
+        pid = 321
+
+    def fake_popen(cmd, **_kwargs):
+        captured["cmd"] = cmd
+        return FakeProcess()
+
+    monkeypatch.setattr(_gemini, "PYTHON_CMD", "custom-python")
+    monkeypatch.setattr(_gemini, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(_gemini, "_is_task_locked", lambda *_args: False)
+    monkeypatch.setattr(_gemini, "_write_pid_file", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(_gemini.subprocess, "Popen", fake_popen)
+
+    _gemini._launch_gemini_background(
+        {"task_id": "task-1"},
+        123,
+        "gemini-test",
+        "prompt",
+    )
+
+    assert captured["cmd"][0] == "custom-python"

@@ -14,6 +14,8 @@ Configuration:
   else ``gemini-3-flash-preview``.
 - ``AB_GEMINI_REVIEW_MODEL``: defaults to ``gemini-3.1-pro-preview``.
 - ``AB_GEMINI_FALLBACK_MODEL``: defaults to ``gemini-3-flash-preview``.
+- ``AB_PYTHON``: defaults to ``$VIRTUAL_ENV/bin/python`` when set,
+  else ``.venv/bin/python``.
 - ``AB_PIPELINE_ENV_KEY``: defaults to ``LEARN_UKRAINIAN_PIPELINE``.
 
 All public functions are re-exported here for backward compatibility.
@@ -45,6 +47,7 @@ from ._config import (
     GEMINI_REVIEW_MODEL,
     GH_CHAR_LIMIT,
     PID_DIR,
+    PYTHON_CMD,
     REPO_ROOT,
 )
 from ._db import get_db, get_session, init_db, set_session
@@ -81,6 +84,7 @@ __all__ = [
     "GEMINI_REVIEW_MODEL",
     "GH_CHAR_LIMIT",
     "PID_DIR",
+    "PYTHON_CMD",
     "REPO_ROOT",
     "_MODEL_CACHE",
     "_MODEL_CACHE_TTL",

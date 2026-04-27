@@ -30,6 +30,12 @@ CLAUDE_CMD = ["npx", "@anthropic-ai/claude-code@latest"]
 GEMINI_CLI = shutil.which("gemini") or "gemini"
 CODEX_CLI = shutil.which("codex") or "codex"
 CLAUDE_DEFAULT_MODEL = os.environ.get("AB_CLAUDE_MODEL", "claude-opus-4-7")
+PYTHON_CMD = os.environ.get("AB_PYTHON", "")
+if not PYTHON_CMD:
+    if virtual_env := os.environ.get("VIRTUAL_ENV"):
+        PYTHON_CMD = str(Path(virtual_env) / "bin" / "python")
+    else:
+        PYTHON_CMD = ".venv/bin/python"
 GEMINI_REVIEW_MODEL = os.environ.get(
     "AB_GEMINI_REVIEW_MODEL", "gemini-3.1-pro-preview"
 )

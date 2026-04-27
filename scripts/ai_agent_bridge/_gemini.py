@@ -35,6 +35,7 @@ from ._config import (
     _PARENT_ENV,
     GEMINI_DEFAULT_MODEL,
     GEMINI_FALLBACK_MODEL,
+    PYTHON_CMD,
     REPO_ROOT,
 )
 from ._github import _post_review_to_github
@@ -242,7 +243,7 @@ def _launch_gemini_background(msg: dict, message_id: int, model: str, prompt: st
 
     try:
         bridge_cmd = [
-            ".venv/bin/python", str(Path(__file__).parent / "__main__.py"),
+            PYTHON_CMD, str(Path(__file__).parent / "__main__.py"),
             "process", str(message_id),
             "--model", model,
             "--no-timeout"
