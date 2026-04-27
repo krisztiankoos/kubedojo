@@ -1,1 +1,3 @@
-# Open Questions: Chapter 50
+# Open Questions
+
+- None. Archival anchors extracted and verified.

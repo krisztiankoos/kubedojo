@@ -1,1 +1,3 @@
-# Open Questions: Chapter 43
+# Open Questions
+
+- None. Archival anchors extracted and verified.
