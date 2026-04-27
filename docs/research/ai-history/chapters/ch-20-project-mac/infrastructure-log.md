@@ -49,3 +49,6 @@
 - Keep the narrative pointed toward expert-system commercialization: Ch20 should
   explain why symbolic AI had a machine room capable of sustaining large,
   interactive, knowledge-heavy programs.
+- Keep "Project MAC as machine room" scoped to interactive infrastructure.
+  Stanford, CMU, SRI, BBN, and other ARPA/IPTO sites remain parallel centers of
+  AI and computing history, not satellites of MIT.

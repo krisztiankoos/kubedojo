@@ -2,14 +2,15 @@
 
 ## Thesis
 
-Project MAC was the institutional and technical machine room behind much of
-1960s and early-1970s AI. It did not "solve" intelligence; it changed the
-working conditions under which AI could be attempted. ARPA-funded
-time-sharing, CTSS, Multics, ITS, PDP-6/PDP-10 hardware, MACLISP, MATHLAB,
-PLANNER, and early ARPANET links turned computation from a batch resource into
-an interactive research environment. That environment made symbolic AI feel
-practical: programs could be edited, run, debugged, shared, and connected while
-communities of researchers watched each other's tools evolve.
+Project MAC was the institutional and technical machine room behind much of the
+interactive infrastructure that 1960s and early-1970s AI relied on. It did not
+"solve" intelligence; it changed the working conditions under which AI could be
+attempted. ONR/ARPA-backed time-sharing, CTSS, Multics, ITS, PDP-6/PDP-10
+hardware, MACLISP, MATHLAB, PLANNER, and early ARPANET links turned computation
+from a batch resource into an interactive research environment. That environment
+made symbolic AI feel practical: programs could be edited, run, debugged,
+shared, and connected while communities of researchers watched each other's
+tools evolve.
 
 ## Scope
 

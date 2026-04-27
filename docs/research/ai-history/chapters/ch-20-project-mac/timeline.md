@@ -1,7 +1,8 @@
 # Timeline: Chapter 20 - Project MAC
 
-- 1961: CTSS is demonstrated at the MIT Computation Center; this predates
-  Project MAC and should be treated as a root, not a MAC invention.
+- 1960-1961: Norberg/O'Neill describe CTSS beginning at the MIT Computation
+  Center in 1960 and being demonstrated in 1961; this predates Project MAC and
+  should be treated as a root, not a MAC invention.
 - Spring 1963: Project MAC is organized at MIT for Machine-Aided Cognition and
   Multiple-Access Computer systems under ONR acting for ARPA.
 - Early 1963: Norberg/O'Neill describe DARPA approval of a $3-million Project
