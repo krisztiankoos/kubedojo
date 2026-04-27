@@ -60,9 +60,9 @@ harder question was whether one sample could support reliable statements over
 an entire class of events. They introduced machinery for talking about the
 complexity of such classes, including induced subsamples, the index of a
 system, and the growth function. The technical details belong in a probability
-text, not in this chapter. The historical point is enough: statistical learning
-theory gave machine learning a language for asking when experience with a
-finite sample could support trust beyond that sample.
+text. The historical point is that statistical learning theory gave machine
+learning a language for asking when experience with a finite sample could
+support trust beyond that sample.
 
 That language mattered after the winter because it changed what a learning
 paper could sound like. The authors of an SVM paper did not have to say,
@@ -312,11 +312,11 @@ measurable performance on shared recognition tasks.
 
 The results made SVMs hard to ignore. Cortes and Vapnik report strong
 polynomial support-vector network performance and a 1.1 percent test error on
-the NIST task for a fourth-degree polynomial multiclass system built from
+the NIST task for a fourth-degree polynomial multiclass setup built from
 one-vs-rest binary classifiers. They also compare their results with LeNet and
 other classifiers. The LeNet comparison should be read carefully: in this
-chapter, those comparison figures are Cortes and
-Vapnik's report, not an independent reanalysis. SVMs entered the same OCR
+case, those comparison figures are Cortes and Vapnik's report, not an
+independent reanalysis. SVMs entered the same OCR
 terrain as neural networks and performed credibly enough to become part of the
 central 1990s machine-learning conversation.
 
