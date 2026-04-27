@@ -7,7 +7,7 @@ sidebar:
 
 # Chapter 4: The Statistical Roots
 
-While Western mathematicians like Boole, Turing, and Shannon were formalizing logic and computing machinery, a radically different intellectual pursuit was unfolding in Russia. It was not concerned with binary switches, absolute truths, or universal machines. Instead, it was concerned with the messy, unpredictable nature of human language and probability.
+Decades before Turing or Shannon began their work, an entirely different mathematical lineage was already at play in Russia. It was not concerned with binary switches, absolute truths, or universal machines. Instead, it was concerned with the messy, unpredictable nature of human language and probability.
 
 This alternate path would remain largely disconnected from the hardware of the era for decades. Yet, the mathematical concept born from it—the Markov Chain—would eventually become the statistical ancestor of predictive text and modern Large Language Models. To understand how machines generate language today, we must look back to 1913, when a Russian mathematician decided to manually count the letters of a famous poem.
 
@@ -19,11 +19,11 @@ In the early 20th century, probability theory was not just a mathematical discip
 
 Markov was incensed by this mystical interpretation. He wanted to mathematically prove Nekrasov wrong. He needed to demonstrate that the Law of Large Numbers still applied even when events were strictly dependent on one another—when the next action was directly influenced by the previous one. 
 
-To prove this, Markov needed a dataset of dependent events. He chose human language. In any language, the probability of the next letter is not an independent coin flip; it is highly dependent on the letter that just preceded it. 
+In a foundational 1906 paper, Markov mathematically proved exactly this, extending the Law of Large Numbers to dependent variables. He had won the mathematical debate, but he needed a public-facing, undeniable demonstration to illustrate his proof. He needed a dataset of dependent events, and he chose human language. In any language, the probability of the next letter is not an independent coin flip; it is highly dependent on the letter that just preceded it. 
 
 ## Counting Pushkin
 
-In 1913, long before computers existed to automate the task, Markov sat down with a copy of Alexander Pushkin’s classic novel in verse, *Eugene Onegin*. 
+In 1913, serving as the applied illustration of his 1906 proof, Markov sat down with a copy of Alexander Pushkin’s classic novel in verse, *Eugene Onegin*. 
 
 He did not read it for its poetry. He read it as a dataset. Markov stripped away the meaning, the grammar, and the emotion of the text. He ignored the punctuation and the spaces. He reduced Pushkin’s masterpiece to a continuous, uninterrupted sequence of letters.
 

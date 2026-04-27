@@ -15,7 +15,7 @@ The pursuit of this question did not begin in a computer lab, nor did it involve
 
 The story of the universal computer begins in 1928, in Bologna, Italy. At the International Congress of Mathematicians, the legendary German mathematician David Hilbert threw down a gauntlet that would accidentally define the next century of engineering.
 
-Hilbert was a titan of his era, and he was deeply concerned about the absolute truth of mathematics. He wanted to prove that mathematics was complete, consistent, and decidable. In Bologna, he formalized a challenge to the global mathematical community known as the *Entscheidungsproblem*—the Decision Problem.
+Hilbert was a titan of his era, and he was deeply concerned about the absolute truth of mathematics. He wanted to prove that mathematics was complete, consistent, and decidable. At the 1928 International Congress of Mathematicians in Bologna, and in the *Grundzüge der theoretischen Logik* published the same year, Hilbert and Wilhelm Ackermann formalized a challenge to the global mathematical community known as the *Entscheidungsproblem*—the Decision Problem.
 
 The *Entscheidungsproblem* asked a seemingly simple question: Is there a universal, mechanical procedure—an algorithm—that can take any mathematical statement and, after a finite number of steps, definitively prove whether it is true or false?
 

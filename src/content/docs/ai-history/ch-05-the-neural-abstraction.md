@@ -15,7 +15,7 @@ The idea that biology and computation could be mathematically united was the bra
 
 Warren McCulloch was an established, well-respected neurophysiologist. For years, he had been searching for a rigorous, logical foundation to explain how the human brain processed information. He observed the electrical impulses traveling through neurons and suspected there was an underlying mathematical logic at play, but he lacked the advanced theoretical training to formalize it.
 
-In 1941, McCulloch met Walter Pitts. Pitts was an eccentric, eighteen-year-old runaway. He had fled a difficult home life in Detroit, hiding in libraries and teaching himself advanced logic, mathematics, and philosophy. Pitts was a true prodigy; he had independently mastered the *Principia Mathematica*, finding subtle errors in the monumental text written by Bertrand Russell and Alfred North Whitehead.
+In 1941, McCulloch met Walter Pitts. Pitts was an eccentric, eighteen-year-old runaway. He had fled a difficult home life in Detroit, hiding in libraries and teaching himself advanced logic, mathematics, and philosophy. Pitts was a true prodigy; according to Jerome Lettvin's later recollection (Gefter 2015), he had independently mastered the *Principia Mathematica*, finding subtle errors in the monumental text written by Bertrand Russell and Alfred North Whitehead.
 
 McCulloch recognized Pitts's genius immediately and invited the homeless teenager to live with him and his family in Chicago. Working together in McCulloch’s home, the two men began to translate the biological activity of the brain into the mathematical language of logical calculus. 
 

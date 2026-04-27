@@ -37,6 +37,7 @@ Shannon realized that the physics of electricity and the mathematics of logic we
 He then mapped Boole's algebraic operations to the physical wiring of the circuits:
 *   **Series Circuits (AND):** If you wire two switches in a straight line (in series), electricity will only flow if Switch A *AND* Switch B are closed. This is the exact physical manifestation of Boole’s multiplication (1 * 1 = 1).
 *   **Parallel Circuits (OR):** If you wire two switches side-by-side (in parallel), electricity will flow if *either* Switch A *OR* Switch B is closed. This is the exact physical manifestation of Boole’s addition.
+*   **Normally-Closed Contacts (NOT):** To complete the logic system, Shannon required a physical NOT operator. He utilized a "normally-closed" relay contact, where electricity flows by default, but a current application pulls the switch *open*, breaking the circuit. The physical switch executes the mathematical inversion of (1 - *x*).
 
 In 1937, Shannon wrote his master's thesis, *A Symbolic Analysis of Relay and Switching Circuits* (published in 1938). It is widely considered the most important master's thesis of the 20th century. 
 
@@ -49,7 +50,7 @@ Shannon’s thesis fundamentally changed the trajectory of human infrastructure.
 
 By proving that any logical equation could be evaluated by a network of electrical relays, Shannon built the bridge that Alan Turing's Universal Machine desperately needed. Turing had proved that software (instructions on a tape) could simulate intelligence. Shannon proved that hardware (electrical switches) could execute that software. 
 
-The age of theoretical mathematics was over. The blueprint was complete. The mathematical mind now had a physical body made of electricity and copper. The race to build the first true, physical "thinking machine" was ready to begin, but it would require the massive, desperate funding of the Second World War to push the infrastructure past its physical limits.
+The age of theoretical mathematics was over. The blueprint was complete. The mathematical mind now had a physical body made of electricity and copper. The race to build the first true, physical "thinking machine" was ready to begin, but it would require decades of engineering and the massive, desperate funding of the Second World War to push the infrastructure forward into the analog feedback loops of the Cybernetics era.
 
 ## Sources
 

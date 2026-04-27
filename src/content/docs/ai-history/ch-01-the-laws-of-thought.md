@@ -34,7 +34,8 @@ Boole assigned mathematical symbols to these two states. He let the number **1**
 With this binary foundation established, Boole began applying standard algebraic operations—addition and multiplication—to these two numbers. But in Boole's algebra, these operations did not represent adding quantities; they represented logical connections.
 
 *   **Multiplication (AND):** In Boolean algebra, multiplying two variables means they must *both* be true. If you are looking for an object that is "Round" (let's call this *x*) AND "Red" (let's call this *y*), you multiply them (*x* * *y*). If *x* is True (1) and *y* is True (1), then 1 * 1 = 1. The result is True. But if the object is Round (1) but NOT Red (0), then 1 * 0 = 0. The result is False. 
-*   **Addition (OR):** Adding two variables means *either* can be true. If you are looking for an object that is "Round" OR "Red" (*x* + *y*), the equation still holds. 
+*   **Addition (OR), in the modern reading of Boole's system:** Adding two variables (*x* + *y*) means *either* can be true. (It is important to note that Boole's own 1854 addition was defined only for disjoint, mutually exclusive classes; the inclusive-OR we use today via *x + y - xy* was a later simplification by thinkers like William Stanley Jevons and Charles Sanders Peirce).
+*   **Negation (NOT):** Boole also formulated the mathematical equivalent of "NOT" using subtraction. If the universe of all things is 1, then the concept of "NOT *x*" is simply written as (1 - *x*). 
 
 By replacing messy, ambiguous words with sterile mathematical symbols, Boole proved that any logical argument could be solved algebraically. You could take a complex human debate, translate it into variables, run it through the binary equations of 1 and 0, and mathematically prove whether the conclusion was True or False. Logic was no longer the exclusive domain of philosophy; it was a calculable mechanism.
 

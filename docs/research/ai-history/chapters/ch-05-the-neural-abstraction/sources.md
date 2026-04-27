@@ -4,6 +4,7 @@
 
 | Claim | Scene | Primary Source | Secondary Confirmation | Verification | Conflict |
 |---|---|---|---|---|---|
+| Pitts independently mastered Principia Mathematica and found errors | 1 | N/A | Lettvin's recollection via Gefter 2015 | Yellow | Anecdotal/legendary claim needing caution/hedge. |
 | McCulloch-Pitts modeled neurons as idealized logic gates | 2, 3 | McCulloch & Pitts 1943 | Piccinini 2004 | Green | None |
 
 ## Bibliography

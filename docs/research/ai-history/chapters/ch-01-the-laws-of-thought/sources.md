@@ -5,6 +5,7 @@
 | Claim | Scene | Primary Source | Secondary Confirmation | Verification | Conflict |
 |---|---|---|---|---|---|
 | Boole reduced logic to binary variables (1 and 0) | 2 | Boole 1854, *An Investigation of the Laws of Thought*, p. 47 | [Gleick 2011] | Green | None |
+| Boole formulated the mathematical equivalent of NOT using 1 - x | 2 | Boole 1854, Ch. III §§16-17 | N/A | Green | None |
 | Boole did not foresee physical computing | 3 | N/A | Specialist Source (e.g., Grattan-Guinness 2000) | Yellow | Need to anchor specific page for Boole's intent. |
 
 ## Bibliography
