@@ -6,7 +6,7 @@
 |---|---|---|---|---|---|
 | Pitts found errors in Principia | 1 | N/A | Lettvin via Gefter 2015 | Yellow | Anecdotal/legendary; hedge as recollection. |
 | Russell encouraged Pitts to come to Chicago | 1 | Russell Archives | Smalheiser 2000, p. 219 | Green | None |
-| The Chicago school formed around McCulloch/Wiener/Pitts/Lettvin | 2 | N/A | Conway & Siegelman 2005, Ch. 8 | Green | None |
+| The Chicago school formed around McCulloch/Wiener/Pitts/Lettvin | 2 | N/A | Conway & Siegelman 2005, pp. 148-152 | Green | None |
 | The 1943 paper used Carnap's logical syntax | 3 | McCulloch & Pitts 1943, Sec. II | Piccinini 2004, pp. 185-187 | Green | None |
 | The model lacked learning, solved conceptually by Hebb | 5 | Hebb 1949, Ch. 4 | Goodfellow 2016, Sec. 1.2 | Green | None |
 
