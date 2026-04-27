@@ -4,11 +4,13 @@
 
 | Claim | Scene | Primary Source | Secondary Confirmation | Verification | Conflict |
 |---|---|---|---|---|---|
-| MTurk was originally built to solve Amazon's internal catalog issues | 1, 2 | Jeff Bezos public statements (2006) | Pontin, MIT Tech Review 2007 | Green | None |
-| MTurk became the primary infrastructure for academic dataset labeling | 3 | Snow et al. 2008 (EMNLP) | [Fei-Fei Li retrospective] | Green | None |
+| MTurk was built to solve Amazon's internal duplicate catalog issues | 1 | Bezos public launch statements (2005/2006) | Pontin, MIT Tech Review 2007 | Green | None |
+| MTurk was launched as 'Artificial Artificial Intelligence' | 2 | AWS MTurk Launch Post (2005) | Pontin, MIT Tech Review 2007 | Green | None |
+| Academic researchers adopted MTurk for cheap, scalable NLP/vision labeling | 3 | Snow et al. 2008 (EMNLP) | [Fei-Fei Li retrospective] | Green | None |
 
 ## Bibliography
 ### Primary
+- **Amazon Web Services. "Announcing Amazon Mechanical Turk." (2005).** [URL: https://aws.amazon.com/about-aws/whats-new/2005/11/02/announcing-amazon-mechanical-turk/]
 - **Snow, Rion, Brendan O'Connor, Daniel Jurafsky, and Andrew Y. Ng. "Cheap and fast---but is it good?: evaluating non-expert annotations for natural language tasks." In *EMNLP*, 2008.**
 
 ### Secondary

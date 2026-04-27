@@ -3,4 +3,4 @@
 ## Technical Metrics & Constraints
 - **The Micro-Task Economy:**
   - Cost: Researchers could pay humans pennies to label an image or translate a sentence.
-  - Scale: Bypassed the bottleneck of hiring expensive graduate students, allowing datasets to scale from thousands of examples to millions.
+  - Scale: Bypassed the bottleneck of hiring expensive graduate students.

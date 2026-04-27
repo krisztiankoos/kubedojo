@@ -2,4 +2,4 @@
 
 ## Verified Protagonists
 - **Tim Berners-Lee:** Inventor of the WWW.
-- **Linguistics Researchers:** The academics who shifted from curated corpora (like the Brown Corpus) to web scraping.
+- **Michele Banko & Eric Brill:** Researchers who demonstrated the unreasonable effectiveness of scaling data to web sizes.

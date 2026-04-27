@@ -1,4 +1,6 @@
 # People: Chapter 39
 
 ## Verified Protagonists
-- **Computer Vision Researchers (e.g., Jitendra Malik, Andrew Zisserman):** Pushing the limits of classical, feature-based computer vision on small datasets.
+- **Mark Everingham:** Led the PASCAL VOC challenge.
+- **David Lowe & Bill Triggs:** Pioneers of hand-crafted features.
+- **Antonio Torralba & Alexei Efros:** Highlighted the limitations of biased, small datasets.

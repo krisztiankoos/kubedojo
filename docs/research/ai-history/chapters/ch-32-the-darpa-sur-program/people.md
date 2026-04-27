@@ -2,4 +2,4 @@
 
 ## Verified Protagonists
 - **Frederick Jelinek (1932–2010):** Information theorist at IBM who famously championed statistical methods in NLP over rule-based linguistics.
-- **J.C.R. Licklider / DARPA Program Managers:** Driving the funding metrics.
+- **Dennis Klatt (1938-1988):** Researcher and reviewer of the DARPA SUR project.
