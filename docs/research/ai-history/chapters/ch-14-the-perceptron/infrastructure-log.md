@@ -44,6 +44,27 @@ Use the 400-photocell and motorized-potentiometer details because the task bound
 - **Burroughs 220:** `POND61` later experiment text identifies Burroughs 220 at Cornell University for some experiments.
 - **NYU / AEC Applied Mathematics Center:** `POND61` identifies the IBM 704 at NYU's AEC Applied Mathematics Center.
 - **Narrative function:** This prevents a false either/or. The perceptron was not "only hardware" and not "only software." The theory moved between mathematical proof, digital simulation, and electromechanical demonstration.
+- **Supplementary-not-primary guardrail:** The simulations are explicitly *supplementary* to Mark I, not its substitute. The chapter must not say "the perceptron was a program running on the IBM 704" or describe the simulation work as Mark I's primary instantiation. If the simulation paragraph reads as if it could replace the hardware story, rewrite it. The simulations accelerated experimental iteration; Mark I is the chapter's primary engineering object.
+
+## Stanford Cybernetic-Hardware Contemporary
+
+- **ADALINE / MADALINE (Widrow-Hoff, 1960):** Bernard Widrow and Marcian E. Hoff at Stanford Electrical Engineering built ADALINE (Adaptive Linear Neuron) and MADALINE (Many ADALINEs) as a contemporaneous analog-hardware learning system using least-mean-squares weight adjustment (`WidrowHoff60`).
+- **Narrative function:** Mark I was not an isolated Buffalo quirk; it was part of a broader 1960 cybernetic-hardware movement that included Stanford. The chapter should anchor this in one paragraph in Scene 5 without expanding into a parallel ADALINE history.
+- **Boundary:** This is a parallel, not a rivalry. Do not stage ADALINE as a competitor to Mark I; both programs existed inside the same cybernetic-learning lineage and shared funding patterns through Navy/ONR-adjacent channels.
+
+## Tobermory Continuity Project
+
+- **Setting:** Cornell Aeronautical Laboratory, after the 1960 Mark I demonstration.
+- **Verified anchors:** `Tobermory62-65` worklist; secondary references and Cornell records.
+- **Narrative function:** Wightman's Tobermory project extended Mark I's pattern-recognition logic into auditory perception, providing program-continuity evidence beyond the 1960 demonstration. Use as a brief Scene-5 beat to show the perceptron line did not stop with Mark I.
+- **Boundary:** Do not turn Tobermory into its own chapter; it is a continuity beat that prepares the reader for the post-1969 historiographic question.
+
+## NPL 1958 Symposium Infrastructure
+
+- **Setting:** National Physical Laboratory, Teddington, UK, 24-27 November 1958.
+- **Verified anchors:** `MTP59-NPL` proceedings table of contents; Rosenblatt's "Two Theorems," Selfridge's "Pandemonium," and McCarthy's "Programs with Common Sense" co-presence.
+- **Narrative function:** This is the primary historical infrastructure evidence that the cybernetic-vs-symbolic split was a 1958 documentary fact, not a retrospective reconstruction. The proceedings volume is itself the infrastructure: a single HMSO publication that co-stages all three traditions.
+- **Boundary:** Do not turn the symposium into a deep dive on Selfridge or McCarthy; their full scenes belong elsewhere. Use it as the documented stage where the rivalry is visible.
 
 ## Unit Architecture
 

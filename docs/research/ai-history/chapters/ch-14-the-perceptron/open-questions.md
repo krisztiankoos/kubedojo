@@ -12,9 +12,51 @@
 ### New York Times Attribution
 
 - **Question:** Does the "walk, talk, see, write, reproduce itself..." sentence belong to the reporter's paraphrase, Navy expectation, or Rosenblatt's own quoted speech?
-- **Current status:** `NYT58` title/date/archive URL verified, but original text was not extracted. Multiple secondary snippets quote the sentence.
-- **Drafting risk:** Misattributing the quote would distort Rosenblatt's technical claims.
-- **Next action:** Pull original article scan/text and record headline, page, byline, and exact quote attribution.
+- **Current status:** `NYT58` title/date/archive URL verified, but original text was not extracted. Multiple secondary snippets quote the sentence. The Scene-Level Claim Table now Red-flags any direct attribution of the precise wording to Rosenblatt's technical voice until the original scan is in hand.
+- **Drafting risk:** Misattributing the quote would distort Rosenblatt's technical claims and violate the chapter's "serious scientist" thesis.
+- **Next action:** Pull original article scan/text and record headline, page, byline, and exact quote attribution. Until then, prose must use "press rhetoric" framing, never "Rosenblatt said."
+
+### Mark I Hardware Counts (Red on precise figures)
+
+- **Question:** What are the exact Mark I component counts (photocells, A-units, R-units, potentiometers) under the Project PARA configuration?
+- **Current status:** Yellow on the general 400-photocell / 20x20 retina / motorized potentiometer claim; Red on writing precise figures into prose without `MarkI-Manual60` page anchors. Secondary sources vary on Mark I hardware counts and using one without the primary engineering manual risks factual drift.
+- **Drafting risk:** Stating "exactly 400 photocells" or "exactly N association units" without the operator manual would make the chapter vulnerable to a later correction by someone with the manual.
+- **Next action:** Extract `MarkI-Manual60` from DTIC or Wayback and record verbatim hardware counts with page anchors. Until then, prose must use "approximately 400 photocells" or "a roughly 20x20 sensory array."
+
+### NPL 1958 Symposium Detail
+
+- **Question:** What were the session order, discussion record, and any documented direct interaction between Rosenblatt, Selfridge, and McCarthy at the November 1958 NPL symposium?
+- **Current status:** `MTP59-NPL` proceedings table of contents confirms paper-list co-presence (Green); session-order, discussant remarks, and any chair commentary remain a worklist item (Yellow).
+- **Drafting risk:** Asserting that "Rosenblatt and McCarthy debated face to face" or that "Selfridge supported Pandemonium against the perceptron" without proceedings-page evidence would over-dramatize the 1958 collision.
+- **Next action:** Pull `MTP59-NPL` table of contents and (where available) discussion sections; record any documented cross-paper exchanges.
+
+### Block 1962 / Novikoff 1962 Page Extraction
+
+- **Question:** What does H. D. Block's 1962 *Reviews of Modern Physics* exposition specifically argue, and how does Novikoff's 1962 tightened convergence proof relate structurally to Rosenblatt's `POND61` chapter 5 statement?
+- **Current status:** Both papers have Green bibliographic existence; the substance of the arguments is Yellow until pages are extracted.
+- **Drafting risk:** Citing Block as endorsing Rosenblatt's position without page anchors could overstate the endorsement; citing Novikoff's proof as "tighter" without page anchors could misrepresent the assumption set.
+- **Next action:** Extract `Block62-RMP` and `Novikoff62` from APS and the Symposium on the Mathematical Theory of Automata proceedings respectively.
+
+### Widrow-Hoff ADALINE Page Extraction
+
+- **Question:** What is the exact relationship between ADALINE's least-mean-squares weight-adjustment procedure and the perceptron error-correction reinforcement procedure?
+- **Current status:** `WidrowHoff60` bibliographic record is Green; the structural-comparison claim with Mark I's reinforcement procedure is Yellow until both papers are fully extracted.
+- **Drafting risk:** Asserting structural equivalence or precedence between ADALINE and the perceptron without page anchors would falsify a contested precedence claim that later neural-network-history literature still debates.
+- **Next action:** Extract `WidrowHoff60` from Stanford archives or IRE WESCON records.
+
+### Tobermory Continuity Records
+
+- **Question:** What are the specific Tobermory publications, dates, and authorship breakdown for the auditory-perceptron CAL successor?
+- **Current status:** Project existence and Wightman's continuing role at CAL are well-attested in secondary sources and Cornell records; specific publications remain a worklist item.
+- **Drafting risk:** Naming Tobermory as a continuity beat without primary publications would weaken the program-continuity claim.
+- **Next action:** Locate `Tobermory62-65` primary publication(s) with Wightman as continuity author.
+
+### Rosenblatt 1971 Death Record
+
+- **Question:** What is the primary record (Cornell faculty record, contemporary press obituary, ONR record) for Rosenblatt's 11 July 1971 sailing accident?
+- **Current status:** Widely cited in secondary literature (Cornell Chronicle 2019; Olazaran 1996; Anderson and Rosenfeld 1988); a primary obituary is the Yellow-to-Green upgrade.
+- **Drafting risk:** Asserting precise birthday-coincidence or boat-type detail without a primary record would make a melodramatic close vulnerable to correction.
+- **Next action:** Locate a primary obituary.
 
 ### Separability Sources Before Principles
 
@@ -51,14 +93,21 @@
 
 | Claim | Needed Source | Why It Matters |
 |---|---|---|
-| 400 photocells in a 20x20 sensory array | `MarkI-Manual60` direct page | Required hardware specificity. |
+| 400 photocells in a 20x20 sensory array | `MarkI-Manual60` direct page | Required hardware specificity; precise count is currently Red until manual page anchor lifts it. |
 | Motorized potentiometers implemented adjustable weights | `MarkI-Manual60` direct page | Makes analog learning physically concrete. |
 | Exact A/R unit counts for the Mark I configuration | `MarkI-Manual60` direct page | Avoids mixing versions of Mark I. |
-| NYT "walk, talk..." wording and attribution | `NYT58` original scan/text | Prevents quote misattribution. |
+| NYT "walk, talk..." wording and attribution direction | `NYT58` original scan/text | Currently Red against direct attribution to Rosenblatt's technical voice; lifts to Yellow or Green only with original scan. |
 | Statistical separability theorem chronology | `TwoTheorems59` pages | Strengthens mathematics scene. |
 | IBM 704 simulation experiment details | `IRE60` full pages | Supports a richer simulation paragraph. |
 | CAL first full report content | `VG1196G1` pages | Connects 1958 report to article and book. |
 | Minsky "loyal opposition" context | Minsky 1961 IRE article | Lets the chapter foreshadow Ch17 without importing it. |
+| NPL 1958 symposium session order and discussion | `MTP59-NPL` proceedings pages | Anchors the documented 1958 collision without overdramatizing direct interaction. |
+| Block 1962 mathematical exposition structure | `Block62-RMP` pages | Anchors the independent-legitimacy beat in Scene 4. |
+| Novikoff 1962 tightened convergence proof | `Novikoff62` pages | Pairs with Block as outside-Rosenblatt mathematical legitimacy. |
+| Widrow-Hoff ADALINE structure | `WidrowHoff60` pages | Anchors the contemporary cybernetic-hardware parallel. |
+| Hubel-Wiesel V1 receptive-field hierarchy | `HubelWiesel59-62` pages | Confirms the structural-resonance beat in Scene 2. |
+| Tobermory continuity record | `Tobermory62-65` primary publications | Anchors the program-continuity beat in Scene 5. |
+| Rosenblatt 1971 sailing-accident record | `Rosenblatt71` primary obituary | Anchors the historiographic-muting beat in Scene 5. |
 
 ## Gap-Audit Worklist Scaffolding
 

@@ -2,16 +2,67 @@ status: capacity_plan_anchored
 owner: Codex
 part: 3
 chapter: 14
-review_state: codex_initial_draft_2026-04-27
+review_state: claude_integrated_gemini_gap_audit_2026-04-27
 last_updated: 2026-04-27
-green_claims: 17
-yellow_claims: 12
-red_claims: 8
+green_claims: 26
+yellow_claims: 20
+red_claims: 10
 notes: |
-  Full 8-file contract drafted for Chapter 14. Green anchors cover the 1958 Psychological Review first page for Cornell Aeronautical Laboratory, ONR Contract Nonr-2381(00), and Rosenblatt's three guiding questions; Principles of Neurodynamics for program motivation, press-boundary comments, ONR/RADC support, Mark I engineering and experiment roles, definitions, convergence-theorem location, discrimination/detection/generalization chapters, and organized-environment limitations; Smithsonian object record for Mark I date, place, S/A/R architecture, potentiometer array, funding, and transfer; Navy public-domain photo description for June 1960 public-release/training rhetoric; and IRE metadata/abstract for IBM 704 simulation work.
+  Full 8-file contract drafted for Chapter 14 by Codex, then dual-reviewed: Codex authored,
+  Gemini gap-audited (gemini-3-flash-preview, message #2919), Claude integrated.
 
-  Yellow claims remain for the 400-photocell / 20x20 input array, motorized potentiometers as weights, exact Mark I unit counts, the NYT "walk, talk, see, write..." quote and attribution, the 1959 Two Theorems separability paper, the first full CAL report VG1196G1, exact public demonstration date, and broad historiographic claims pending Olazaran/Nilsson/McCorduck/Crevier page anchors.
+  Gemini correctly stayed in lane: NO page anchors, NO URLs (per
+  feedback_gemini_hallucinates_anchors.md). Audit returned 4 must-fixes,
+  4 should-adds, 3 framing observations, 2 Yellow→Red proposals. All integrated.
 
-  Red claims block eight unsafe framings: the Perceptron as failed in 1958-1962; Rosenblatt as inventor of neural networks; Mark I as merely a digital algorithm; NYT rhetoric as actual capability; Rosenblatt at Dartmouth; Minsky-Papert proving perceptrons useless; arbitrary nonlinear capability by 1962; and using the 1969 critique as the Ch14 climax.
+  Must-fix integrations:
+  1. NPL 1958 "Mechanisation of Thought Processes" symposium — added as documented
+     1958 collision beat in Scene 5; Rosenblatt's "Two Theorems," Selfridge's
+     "Pandemonium," and McCarthy's "Programs with Common Sense" co-presence anchored
+     via new MTP59-NPL primary source.
+  2. H. D. Block 1962 Reviews of Modern Physics + Novikoff 1962 convergence proof —
+     added as Block62-RMP and Novikoff62 primary sources, integrated into Scene 4
+     as independent-mathematical-legitimacy beat (anti-hype, outside Rosenblatt's
+     own voice).
+  3. Widrow-Hoff ADALINE/MADALINE 1960 — added as WidrowHoff60 primary source and
+     Stanford Cybernetic-Hardware Contemporary in infrastructure-log; Scene 5
+     beat showing Mark I was not an isolated Buffalo project.
+  4. Wightman/Hay/Murray Project PARA engineering team agency — Scene 3 renamed
+     to "The Machine the Engineering Team Built," with explicit team beat blocking
+     the lone-genius framing.
 
-  Local cold-start failed because this worktree lacks a local .venv. Browser-accessible PDF/HTML extraction was used for anchors. Book-only checklist applies: changed files are limited to docs/research/ai-history/chapters/ch-14-the-perceptron/.
+  Should-add integrations:
+  1. Hubel-Wiesel V1 receptive-field hierarchy resonance — added as HubelWiesel59-62
+     primary source; Scene 2 physiological-resonance beat with influence direction
+     held agnostic.
+  2. Tobermory auditory-perceptron successor — added as Tobermory62-65 worklist
+     source and Scene 5 program-continuity beat.
+  3. Rosenblatt 1971 sailing-accident historiographic-muting beat — added as
+     Rosenblatt71 worklist source and Scene 5 historiographic-fade beat (kept
+     non-melodramatic per anti-padding rule).
+  4. Over-curated demo conflict surface — added as Scene-3 drafting warning.
+
+  Framing observations integrated:
+  1. Simulations-as-supplementary guardrail — added explicit guardrail in
+     infrastructure-log so the chapter never reads as if Mark I "ran on" the IBM 704.
+  2. Rosenblatt's NOVEL contribution clarified — supervised error-correction
+     reinforcement procedure on random A-layer connections plus the convergence
+     theorem, NOT the threshold neuron (McCulloch-Pitts) or learning in general (Hebb).
+  3. Selfridge Pandemonium tighter cybernetic-cousin link — Scene 5 cybernetic-family
+     beat names Selfridge alongside Widrow-Hoff and Wightman.
+
+  Yellow → Red splits:
+  1. NYT "walk, talk..." sentence as Rosenblatt's technical claim about Mark I —
+     RED until NYT58 original scan resolves attribution direction (Rosenblatt vs.
+     Navy spokesperson vs. NYT reporter voice).
+  2. Precise "400 photocells" figure cited in prose without operator-manual
+     extraction — RED; secondary sources vary on Mark I hardware counts and using
+     one without the primary engineering manual risks factual drift. Yellow remains
+     for the general 20x20/400-photocell claim.
+
+  Counts after integration: 26 Green / 20 Yellow / 10 Red
+  (was 17 / 12 / 8 at Codex initial draft).
+
+  Local cold-start failed because this worktree lacks a local .venv. Browser-accessible
+  PDF/HTML extraction was used for anchors. Book-only checklist applies: changed files
+  are limited to docs/research/ai-history/chapters/ch-14-the-perceptron/.

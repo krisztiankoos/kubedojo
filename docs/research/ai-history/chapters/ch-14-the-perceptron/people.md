@@ -7,8 +7,9 @@
 - **Role:** Psychologist, head of the perceptron program's intellectual design, author of `PsychRev58` and `POND61`.
 - **Institutional setting:** Cornell Aeronautical Laboratory, Buffalo, New York; Cornell University, Ithaca.
 - **Verified anchors:** `PsychRev58` p. 386 identifies Rosenblatt at Cornell Aeronautical Laboratory and ONR sponsorship. `POND61` front matter identifies him as director of the Cognitive Systems Research Program; pp. vii-viii clarify that the perceptron program was motivated by brain modeling and natural intelligence, not primarily by building AI devices.
-- **Drafting use:** Treat Rosenblatt as serious and technically ambitious. He should not be reduced either to a hype source or to a victim of later critique.
-- **Warnings:** Do not call him the inventor of neural networks. Do not attribute the full "walk, talk..." press line to his demonstrated machine capability.
+- **End-of-program note:** `Rosenblatt71` records his death in a 1971 sailing accident on Chesapeake Bay; this is a historiographic-muting beat, not a Ch14 climax.
+- **Drafting use:** Treat Rosenblatt as serious and technically ambitious. He should not be reduced either to a hype source or to a victim of later critique. His novel contribution is narrower than "neural networks" — it is the supervised error-correction reinforcement procedure on the random A-layer connections plus the convergence theorem; the threshold neuron is McCulloch-Pitts and the Hebbian learning intuition is Hebb.
+- **Warnings:** Do not call him the inventor of neural networks. Do not attribute the full "walk, talk..." press line to his demonstrated machine capability — until `NYT58` is page-extracted, the precise wording cannot be assigned to his technical voice as opposed to a Navy spokesperson or NYT reporter. Do not melodramatize the 1971 sailing accident.
 
 ### Charles Wightman
 
@@ -43,15 +44,49 @@
 
 ### H. D. Block
 
-- **Role:** Perceptron theory contributor; later author of a 1962 perceptron review/model paper.
-- **Verified anchors:** `POND61` p. ix credits Block alongside Joseph for ideas, suggestions, criticism, and mathematical proofreading.
-- **Drafting use:** Mention as part of the mathematical discipline around the program. A richer role needs full Block paper extraction.
+- **Role:** Perceptron theory contributor; author of "The Perceptron: A Model for Brain Functioning. I" in *Reviews of Modern Physics* 34(1), January 1962, pp. 123-135 (`Block62-RMP`).
+- **Verified anchors:** `POND61` p. ix credits Block alongside Joseph for ideas, suggestions, criticism, and mathematical proofreading. `Block62-RMP` records his 1962 *Reviews of Modern Physics* exposition.
+- **Drafting use:** Block is the chapter's anchor for "the program had outside mathematical legitimacy in 1962, not just Rosenblatt's own voice." Use his 1962 review as the independent-legitimacy beat in Scene 4.
+- **Warnings:** Do not assert specific Block 1962 arguments until `Block62-RMP` is page-extracted; Yellow on content claims, Green on existence.
 
 ### Carl Kesler, Trevor Barker, David Feign, and Louise Hay
 
 - **Role:** Programming assistance for the digital-computer side of the project.
 - **Verified anchors:** `POND61` p. ix credits them with assistance in programming the various digital computers employed.
 - **Drafting use:** Useful in the IBM 704 / Burroughs 220 simulation paragraph. Avoid turning them into unsupported mini-biographies.
+
+### A. B. J. Novikoff
+
+- **Role:** Mathematician who tightened Rosenblatt's perceptron convergence proof under cleaner separability assumptions in 1962.
+- **Verified anchors:** `Novikoff62` bibliographic record; widely cited in subsequent neural-network and learning-theory literature.
+- **Drafting use:** Pair with H. D. Block in the Scene-4 independent-legitimacy beat. Novikoff's tighter proof is the 1962 mathematical answer to "is the convergence theorem just Rosenblatt vouching for himself?"
+- **Warnings:** Do not state Novikoff's specific assumption set or proof structure until `Novikoff62` is page-extracted.
+
+### Bernard Widrow and Marcian E. (Ted) Hoff
+
+- **Role:** Stanford Electrical Engineering team behind the contemporaneous ADALINE/MADALINE analog-hardware learning system; published "Adaptive Switching Circuits" at the August 1960 IRE WESCON Convention (`WidrowHoff60`).
+- **Verified anchors:** IRE WESCON 1960 record; Stanford archives.
+- **Drafting use:** Widrow-Hoff are the chapter's evidence that learning machines were a 1960 movement, not a Buffalo quirk. Use them sparingly in Scene 5; the chapter is about Rosenblatt, not ADALINE, but a single paragraph anchoring the contemporary parallel is essential.
+- **Warnings:** Do not turn Widrow-Hoff into a competitor narrative. They are a parallel, not a rival.
+
+### Charles Wightman (Tobermory continuity)
+
+- **Role:** In addition to his earlier Mark I engineering credit, Wightman led the Tobermory auditory-perceptron CAL successor project after Mark I; he is the project-continuity figure across Rosenblatt's death and through the 1960s.
+- **Verified anchors:** `POND61` p. ix for Mark I engineering; `Tobermory62-65` worklist for the auditory successor.
+- **Drafting use:** Use Wightman in two places: the Mark I Scene-3 engineering-team beat and a brief Scene-5 program-continuity beat showing the perceptron line did not stop at the 1960 demonstration.
+
+### David H. Hubel and Torsten N. Wiesel
+
+- **Role:** Neurophysiologists whose 1959 and 1962 *Journal of Physiology* papers established the V1 receptive-field hierarchy in cat striate cortex.
+- **Verified anchors:** `HubelWiesel59-62` bibliographic records.
+- **Drafting use:** Mention briefly in Scene 2 as a contemporaneous physiological resonance with Rosenblatt's S/A/R hierarchy. The chapter should flag the structural similarity without asserting a settled influence direction in either way.
+- **Warnings:** Do not describe Hubel-Wiesel as "inspiration for" or "post-dating" the perceptron without a primary cross-citation; the 1959 paper precedes `POND61`.
+
+### Oliver Selfridge
+
+- **Role:** Cybernetic-AI researcher (MIT Lincoln Lab) and author of "Pandemonium: A Paradigm for Learning" in the same 1958 NPL volume as Rosenblatt's "Two Theorems."
+- **Verified anchors:** `MTP59-NPL` table of contents.
+- **Drafting use:** Mention briefly in Scene 5 as a cybernetic cousin to anchor the broader cybernetic-learning family that includes Rosenblatt and Widrow-Hoff. Do not give Pandemonium its own scene; that belongs elsewhere in the book.
 
 ### Mark Kac and Barkley Rosser
 
