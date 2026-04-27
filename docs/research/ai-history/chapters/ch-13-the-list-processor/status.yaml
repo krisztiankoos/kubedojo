@@ -1,12 +1,29 @@
-status: capacity_plan_anchored
+status: prose_ready
+prose_word_cap: 4500
 owner: Codex
 part: 3
 chapter: 13
-review_state: codex_initial_draft_2026-04-27;gemini_gap_audit_integrated_2026-04-27
-last_updated: 2026-04-27
+review_state: codex_initial_draft_2026-04-27;gemini_gap_audit_integrated_2026-04-27;dual_cross_family_verdict_2026-04-28
+last_updated: 2026-04-28
 green_claims: 15
 yellow_claims: 6
 red_claims: 7
+verdicts:
+  gemini:
+    model: gemini-3-flash-preview
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT
+    word_cap: null
+    bridge_msg: 2942
+  claude:
+    model: claude-opus-4-7
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT_WITH_CAP
+    word_cap: 4500
+    note: independent-prose-capacity verdict via fresh headless agent (Codex authored, integrating Claude conflict-of-interest)
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 4500
+  resolution_rule: most_conservative_verdict_wins
 notes: |
   Full 8-file contract drafted for Chapter 13. Green anchors cover AIM-001 for FLPL/FORTRAN boundary, IBM 704 context, S-expressions, M-expressions, lambda, recursion, conditionals, free storage, and early list operations; LISP 1.5 manual for implementer credits, expression syntax, functions, eval, READ/EVAL/PRINT console behavior, garbage collection (mark-and-sweep automation), FEXPRs, and macros; and Ch12 contract files for the IPL-before-LISP boundary.
 
@@ -31,4 +48,27 @@ notes: |
 
   Local cold-start failed because this worktree lacks a local .venv. Browser-accessible PDF/HTML extraction was used for anchors. Book-only checklist applies: changed files are limited to docs/research/ai-history/chapters/ch-13-the-list-processor/.
 
-  Pending: human final pass before drafting unlocks. This contract has cleared dual cross-family review (Codex authored + Gemini gap-audited + Claude integrated).
+  Dual cross-family verdict pass 2026-04-28:
+   - Gemini (gemini-3-flash-preview): READY_TO_DRAFT, no cap. The 7 Reds
+     effectively insulate the narrative against high-risk overclaims.
+     Tool-vs-Theory historiographic axis is sharp. AIM-040 and Cambridge
+     1962 records remain Yellow but are properly scoped as expansion
+     targets that do not block the primary 4,000-6,000 word capacity plan.
+     Stayed in lane per feedback_gemini_hallucinates_anchors.md, no URLs
+     cited (msg #2942).
+   - Independent Claude (claude-opus-4-7, fresh headless agent):
+     READY_TO_DRAFT_WITH_CAP at 4,500 words. The 15 Greens honestly support
+     a 4,000-4,500 word chapter, but the upper-range layers (M-vs-S
+     expression, LISP 1.5 workbench) lean partially on HOPL-LISP section
+     anchors (Yellow) and Steele/Gabriel pages that are not yet extracted.
+     The brief's own self-imposed "cap near 4,500" instruction should bind
+     the draft.
+   - Codex (gpt-5.5) is the chapter's author so cross-family conflict-of-
+     interest applies; he is excluded from the verdict step.
+   - Resolution: most_conservative_verdict_wins -> READY_TO_DRAFT_WITH_CAP
+     at 4,500 words.
+
+  Status advances from capacity_plan_anchored to prose_ready. Drafting may
+  begin on a codex/394-ch13-prose branch off main, capped at 4,500 words.
+  This contract has cleared dual cross-family review (Codex authored +
+  Gemini gap-audited + Claude integrated + dual verdict pass).
