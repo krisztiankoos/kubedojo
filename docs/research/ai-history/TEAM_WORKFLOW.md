@@ -41,9 +41,21 @@ The contract must include:
 - timeline and people map
 - infrastructure constraints
 - open questions
-- honest prose-capacity estimate
+- a `## Prose Capacity Plan` section in `brief.md` (see capacity-plan gate below)
 
 Research-contract approval means the structure and source plan are good enough to continue research. It does not mean prose drafting may begin.
+
+#### Prose Capacity Plan gate
+
+Every `brief.md` must contain a `## Prose Capacity Plan` section. The plan is a contract for what the chapter is *allowed* to spend words on, not a wishlist:
+
+- Each evidence layer is a bullet of the form `N-M words: <topic>` and must reference at least one specific scene from `scene-sketches.md` and at least one anchored entry in `sources.md` (page number, section, or stable identifier — not just the source title).
+- Layer budgets must reflect evidence depth, not equal splits. A scene with 3 page anchors carries more words than a scene with 1.
+- Sum of layer budgets is the chapter's allowed range. Writers cannot land outside it.
+- The total range must match one of the Word Count Discipline labels (`4k-7k supported`, `4k-7k stretch`, `3k-5k likely`, `2k-4k natural`, `short chapter recommended`).
+- The plan ends with a one-line honesty close: "If the verified evidence runs out, cap the chapter."
+
+A plan whose bullets reference no `sources.md` page anchors is a *templated plan*, not an anchored plan. Templated plans pass `capacity_plan_drafted` but do not unlock prose drafting. See `chapters/ch-24-the-math-that-waited-for-the-machine/brief.md` for the canonical anchored-plan example.
 
 ### 2. Research Gap Analysis
 
@@ -124,6 +136,8 @@ The human editor decides:
 ## Status Terms
 
 - `researching`: contract or anchors are still incomplete.
+- `capacity_plan_drafted`: brief.md has a Prose Capacity Plan section but layers do not yet reference sources.md page anchors. Does not unlock drafting.
+- `capacity_plan_anchored`: every plan layer references at least one page anchor in sources.md. Eligible for `research_contract_approved` review.
 - `research_contract_approved`: reviewer approved the research plan, but prose is not unlocked.
 - `gap_analysis_requested`: reviewer has been asked to identify missing anchors and weak scenes.
 - `anchors_in_progress`: exact page/section anchors are being extracted.
@@ -131,6 +145,8 @@ The human editor decides:
 - `drafting`: prose is being written.
 - `prose_review`: draft is under cross-family review.
 - `accepted`: human/cross-family review has cleared the chapter.
+
+A drafted chapter (prose already exists) whose `brief.md` plan is templated, not anchored, regresses to `capacity_plan_drafted` until sources.md is upgraded. The existing prose stays on disk; it just cannot be cited as "accepted" while the contract behind it is incomplete.
 
 ## Word Count Discipline
 
