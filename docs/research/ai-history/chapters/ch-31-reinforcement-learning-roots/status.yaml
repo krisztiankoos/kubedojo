@@ -1,1 +1,12 @@
-status: researching
+status: research_review
+owner: Codex
+part: 5
+chapter: 31
+review_state: awaiting_cross_family_gap_review
+last_updated: 2026-04-27
+notes:
+  - "Codex expanded the scrubbed placeholder into a source-anchored research contract for reinforcement-learning roots."
+  - "Core frame: delayed reward became a mathematical/computational problem through Bellman-style sequential decisions, Samuel-style game evaluation, actor-critic control, temporal differences, and Q-learning action values."
+  - "Primary anchors include Samuel 1959, Barto/Sutton/Anderson 1983, Sutton 1988, Watkins 1989, Watkins/Dayan 1992, Kaelbling/Littman/Moore 1996, and Tesauro 1995."
+  - "Guardrail: do not overclaim Q-learning convergence beyond the finite/Markovian/repeated-sampling/learning-rate conditions recorded in Watkins and Dayan 1992."
+  - "Guardrail: Barto/Sutton/Anderson 1983 is visually anchored from a fetched PDF but not cleanly text-extracted; reviewers should decide whether more OCR is needed before prose."
