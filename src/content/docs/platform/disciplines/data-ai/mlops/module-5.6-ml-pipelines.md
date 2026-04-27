@@ -1,5 +1,4 @@
 ---
-revision_pending: true
 title: "Module 5.6: ML Pipelines & Automation"
 slug: platform/disciplines/data-ai/mlops/module-5.6-ml-pipelines
 sidebar:
