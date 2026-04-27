@@ -11,10 +11,10 @@ Verified protagonist bios. Bios are kept short — material that does not direct
 - **Verification:** Yellow — biographical facts are well-documented in standard sources; the *specific* claim about why he chose the name needs the McCarthy 2007 anchor.
 
 ### Marvin Minsky (1927-2016)
-- **Position in 1955-56:** Junior fellow at Harvard, soon moving to MIT.
-- **Role in the chapter:** Co-organizer; wrote the "neural nets" section of the Proposal.
+- **Position in 1955-56:** Junior Fellow at Harvard in Math and Neurology (per dartray.pdf), soon moving to MIT.
+- **Role in the chapter:** Co-organizer; wrote the "neural nets" section of the Proposal. **One of three full-time attendees** during the 8-week workshop (with McCarthy and Solomonoff).
 - **Why he matters here:** Brought the McCulloch-Pitts neural lineage into the Proposal; later co-founded the MIT AI Lab. His 1961 "Steps Toward Artificial Intelligence" *Proceedings of the IRE* paper is a useful follow-up source for what symbolic-AI research actually became.
-- **Verification:** Yellow — bio well-documented; specific Proposal-authorship contribution needs primary anchor on which sections he drafted.
+- **Verification:** **Green** for full-time attendance — dartray.pdf p.~3 verified by Claude `pdftotext` 2026-04-27. Yellow for specific Proposal-section authorship until Stanford McCarthy Papers anchor lands.
 
 ### Nathaniel Rochester (1919-2001)
 - **Position in 1955-56:** Manager of the IBM 701 development team; later chief architect of IBM Research.
@@ -31,10 +31,10 @@ Verified protagonist bios. Bios are kept short — material that does not direct
 ## The Other Substantial Attendees
 
 ### Ray Solomonoff (1926-2009)
-- **Position in 1955-56:** Independent researcher; affiliated loosely with University of Chicago.
-- **Role in the chapter:** Stayed at Dartmouth the longest of any non-organizer per multiple secondary accounts. His contemporaneous notes are the chapter's best primary source for "what actually happened during the summer."
-- **Why he matters here:** The contemporaneous record. His later work on algorithmic probability/inductive inference is out of scope for Ch11 but anchors the broader claim that important early-AI thinking happened in parallel to Dartmouth's organizers.
-- **Verification:** Yellow — Solomonoff's archive is publicly available (world.std.com/~rjs); the specific 1956 notes need to be located and dated.
+- **Position in 1955-56:** Independent researcher; B.S. from University of Chicago (1944), then Technical Research Group in New York.
+- **Role in the chapter:** **The Contemporaneous Chronicler.** One of three people — alongside organizers McCarthy and Minsky — who attended for the *entire* 8-week workshop (June 18–Aug 17, 1956). Solomonoff was the only non-organizer to do so. His handwritten notes are the chapter's most reliable primary source for what actually happened during the summer.
+- **Why he matters here:** The contemporaneous record. His full-time attendance + detailed notes corrects the often-repeated "6 weeks" myth (Ray's notes say 8 weeks; Marvin's and Trenchard's notes agree). His later work on algorithmic probability/inductive inference is out of scope for Ch11.
+- **Verification:** **Green** for full-time attendance and the 8-week duration — verified via dartray.pdf (Grace Solomonoff's synthesis citing Ray's notes [34]) by Claude `pdftotext` 2026-04-27. Specific archive items (rayattend.pdf, etc.) are image-only and need hand-verification for finer-grained scene anchors.
 
 ### Allen Newell (1927-1992)
 - **Position in 1955-56:** RAND Corporation, transitioning toward Carnegie Tech.
@@ -55,6 +55,12 @@ Verified protagonist bios. Bios are kept short — material that does not direct
 - **Role in the chapter:** Did not attend. Whether he was actively excluded, declined an invitation, or was never seriously invited is the chapter's largest unresolved factual question.
 - **Why he matters here:** McCarthy's choice of "Artificial Intelligence" over "cybernetics" was a deliberate distancing from Wiener's program. Wiener's absence at Dartmouth is therefore a load-bearing scene element if it can be sourced honestly.
 - **Verification:** **Red** — secondary sources (McCorduck 1979, Crevier 1993) offer different readings. The chapter cannot draft a load-bearing scene about Wiener's absence until either McCarthy's contemporary correspondence or Wiener's own letters resolve the question.
+
+### Trenchard More (rotation attendee)
+- **Position in 1955-56:** Rochester's student at IBM.
+- **Role in the chapter:** Attended three of the eight weeks "in place of" Rochester, who was busy on the IBM 704 (per dartray.pdf p.~14). Took detailed notes that survived; one of the three contemporaneous note-takers (with Solomonoff and Minsky).
+- **Why he matters here:** A second corroborating note-taker for the workshop's actual content; his 3-week rotation also illustrates the partial-attendance pattern the Proposal's "10-man" framing obscured.
+- **Verification:** **Green** for the 3-week rotation and Rochester-replacement role — dartray.pdf p.~14 verified by Claude `pdftotext` 2026-04-27.
 
 ## Notes on bios
 
