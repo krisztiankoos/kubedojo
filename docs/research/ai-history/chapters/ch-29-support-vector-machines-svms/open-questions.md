@@ -3,12 +3,12 @@
 ## Scrub Status
 
 - Upstream scrub note: all previous placeholder claims were downgraded to Yellow until backed by real empirical page/section anchors from verified online PDFs or archives.
-- Current Codex pass resolves the core scrub for Boser/Guyon/Vapnik 1992, Cortes/Vapnik 1995, and Burges 1998 with page-level anchors in `sources.md`.
-- Remaining Yellow items are intentionally narrow: VC-theory lineage beyond bibliographic support, optional Bottou OCR context, and optional Vapnik book context.
+- Current Codex pass resolves the core scrub for Vapnik/Chervonenkis 1971, Boser/Guyon/Vapnik 1992, Cortes/Vapnik 1995, and Burges 1998 with page-level anchors in `sources.md`.
+- Remaining Yellow items are intentionally narrow: optional Bottou OCR context and optional Vapnik book context.
 
 ## Must Resolve Before Prose
 
-- Does Gemini consider the VC-theory lineage sufficient with Cortes/Vapnik + MathNet bibliographic anchor, or should Codex find a clean Vapnik/Chervonenkis/Vapnik book page extraction?
+- Resolved after Gemini gap review: add clean Vapnik/Chervonenkis 1971 page anchors before prose. Source now appears as Green in `sources.md`.
 - Should Bottou et al. 1994/1995 be added for independent OCR benchmark context, or is Cortes/Vapnik 1995 enough because it contains the comparison details needed for Ch29?
 - How much contrast with neural networks is safe? Current contract supports "SVMs looked more controlled and benchmark-ready," not "neural networks were defeated."
 
