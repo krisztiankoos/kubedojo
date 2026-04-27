@@ -6,10 +6,10 @@
 |---|---|---|---|---|
 | John McDermott, [*"R1: A Rule-Based Configurer of Computer Systems"*](https://web.cs.wpi.edu/Research/aidg/CS540/papers/McDermott-R1-XCON.pdf), *Artificial Intelligence* 19, 1982, pp.39-88 | Primary technical paper / scanned PDF OCR | pp.39-40, 41-42, 45-46, 58, 64-66, 68-70 | Core technical description of R1, VAX configuration task, production rules, Match, rule counts, development history, validation, manufacturing integration | Green |
 | John McDermott and Barbara Steele, [*"Extending a Knowledge-Based System to Deal with Ad Hoc Constraints"*](https://www.ijcai.org/Proceedings/81-2/Papers/047.pdf), IJCAI 1981, pp.824-828 | Primary conference paper | pp.824-828 | XSEL/R1 relationship, customer-specific constraints, OPS5, 850 rules, "almost all VAX-11 systems shipped," 15-person maintenance group, 20 commands, 87 command-recognition rules | Green |
-| John McDermott and Judith Bachant, [*"R1 Revisited: Four Years in the Trenches"*](https://studylib.net/doc/13831835/ri--revisited--judith--bachant-john--mcdermott), *AI Magazine* 5(3), Fall 1984, pp.21-32 | Primary deployment/maintenance retrospective; AI Magazine PDF mirror locally extracted | pp.21-32 | Four-year production use, rule/data-base growth, DEC organization, testing/release process, performance data, 80,000 orders, maintenance conclusions | Green |
+| John McDermott and Judith Bachant, [*"R1 Revisited: Four Years in the Trenches"*](https://studylib.net/doc/13831835/ri--revisited--judith--bachant-john--mcdermott), *AI Magazine* 5(3), Fall 1984, pp.21-32 | Primary deployment/maintenance retrospective; AI Magazine PDF mirror locally extracted | pp.21-32 | Four-year production use, rule/data-base growth, DEC organization, testing/release process, performance data, 80,000 orders, maintenance conclusions | Yellow |
 | Reid G. Smith, [*"On the Development of Commercial Expert Systems"*](https://ngds.egi.utah.edu/files/GL01352/GL01352.pdf), *AI Magazine* 5(3), Fall 1984, pp.61-73 | Primary/in-period commercial expert-system reflection; scanned PDF compilation | pp.61-73 | Broader commercial expert-system context: real problem vs demo, domain experts, knowledge engineering, rapid prototyping, technology transfer, progressive releases | Green |
 | Reid G. Smith, [personal bibliography entry for "On the Development of Commercial Expert Systems"](https://www.reidgsmith.com/) | Author bibliography / source-discovery check | 1984 section | Confirms bibliographic metadata for Smith 1984 article | Yellow |
-| AAAI AI Magazine bibliography, [Volume 5, Issue 3 listing](https://auld.aaai.org/Magazine/bibliography.php) | Publisher bibliography / source-discovery check | Fall 1984 issue listing | Confirms McDermott/Bachant and Smith AI Magazine issue placement and page ranges | Yellow |
+| DBLP, [record for McDermott and Bachant, "R1 Revisited"](https://dblp.org/rec/journals/aim/McDermottB84) | Bibliographic index / source-discovery check | AI Magazine 5(3), pp.21-32 | Confirms McDermott/Bachant AI Magazine issue placement and page range | Yellow |
 | John McDermott, [*"R1 ('XCON') at Age 12: Lessons from an Elementary School Achiever"*](https://doi.org/10.1016/0004-3702(93)90192-E), *Artificial Intelligence* 59(1-2), 1993, pp.241-247 | Later retrospective | DOI/metadata only; full text not extracted | Potential stretch unlock for later XCON lessons; do not use for factual prose until full text is available and parsed | Red |
 
 ## Claim Matrix
@@ -37,21 +37,21 @@
 | R1 was not initially designed for customer-specific constraints, but the authors added a relatively small set of rules rather than redesigning the system. | Advice, Customers | McDermott/Steele 1981 p.825 | Green | Good example of extension vs redesign. |
 | R1 understood 20 XSEL commands; 87 rules recognized XSEL commands, and about 20 ordinary rules were changed in adding the capability. | Advice, Customers | McDermott/Steele 1981 pp.826-827 | Green | Use as concrete capacity, not as a detour. |
 | The ad-hoc constraints extension made R1 more flexible within the configuration task, not beyond it. | Advice, Customers / Close | McDermott/Steele 1981 p.828 | Green | Important scope guardrail. |
-| By 1984 R1/XCON had been used in DEC manufacturing since January 1980 and configured systems made of roughly 50-150 components. | Into DEC Manufacturing | Bachant/McDermott 1984 p.21 | Green | Complements 1982 paper with four-year perspective. |
-| The authors expected R1 might eventually enter maintenance mode, but by 1984 found it hard to believe R1 would ever be done. | System Keeps Growing | Bachant/McDermott 1984 p.21 | Green | Core maintenance thesis. |
-| Early performance expectations were wrong: 90-95 percent perfect configurations took three years to reach, and the system was useful before that because humans did not demand more than they demanded of predecessors. | Deployment Discipline | Bachant/McDermott 1984 p.22 | Green | Avoid sloppy "success from day one." |
-| DEC's Intelligent Systems Technologies group grew from five people with no AI background to 77 people responsible for eight knowledge-based systems, one of which was R1. | System Keeps Growing | Bachant/McDermott 1984 p.22 | Green | Useful for "fortune" and organizational growth. |
-| The R1 technical group remained about eight people, with less distinction over time between knowledge collection and knowledge encoding. | System Keeps Growing | Bachant/McDermott 1984 p.22 | Green | Shows ongoing labor. |
-| Over four years, work devoted to adding R1 knowledge stayed around four worker-years per year. | System Keeps Growing | Bachant/McDermott 1984 p.23 | Green | Strong maintenance metric. |
-| By November 1983 R1 had about 3300 rules and around 5500 component descriptions, and work would continue to extend and deepen expertise. | System Keeps Growing | Bachant/McDermott 1984 p.23 | Green | Source-backed growth number. |
-| As DEC depended more on R1, planned releases were preceded by extensive testing. | System Keeps Growing | Bachant/McDermott 1984 p.23 | Green | Shows commercial engineering discipline. |
-| About 65 percent of the 2526 rules added since 1980 extended general configuration capabilities, while at least 15 percent of those corrected/refined known subtasks. | System Keeps Growing | Bachant/McDermott 1984 pp.24-25 | Green | Use if prose needs growth analysis. |
-| Bachant/McDermott conclude that R1's development would never be finished because its domain kept changing and users kept asking it to do more. | System Keeps Growing | Bachant/McDermott 1984 pp.27-28 | Green | Do not make this sound like failure; it is success pressure. |
-| R1 began as a technical editor with mentors; every order it configured was examined more or less closely, and problems were reported to developers. | Deployment Discipline | Bachant/McDermott 1984 p.28 | Green | Human-in-the-loop deployment scene. |
-| R1 had configured more than 80,000 orders by 1984, but still had seen only a fraction of possible situations. | Deployment Discipline | Bachant/McDermott 1984 p.29 | Green | Key scale plus humility anchor. |
-| By 1984 fewer than one in a thousand orders was misconfigured because of rule problems. | Deployment Discipline | Bachant/McDermott 1984 p.29 | Green | Exact claim from performance discussion; keep category precise. |
-| Missing part descriptions were a persistent problem because R1 knew about about 5500 of more than 100,000 possible parts that could appear on an order. | Deployment Discipline | Bachant/McDermott 1984 p.29 | Green | Shows data maintenance, not only rules. |
-| The authors warn that near-perfection during the first few years of production use is unrealistic and that waiting for complete knowledge before production use is a poor strategy. | Deployment Discipline / Close | Bachant/McDermott 1984 pp.31-32 | Green | Good closing lesson. |
+| By 1984 R1/XCON had been used in DEC manufacturing since January 1980 and configured systems made of roughly 50-150 components. | Into DEC Manufacturing | Bachant/McDermott 1984 p.21 | Yellow | Mirror-sourced; per-order component count, distinct from the 420 supported component types in McDermott 1982 p.41. |
+| The authors expected R1 might eventually enter maintenance mode, but by 1984 found it hard to believe R1 would ever be done. | System Keeps Growing | Bachant/McDermott 1984 p.21 | Yellow | Mirror-sourced; needs publisher/independent verification before prose. |
+| Early performance expectations were wrong: 90-95 percent perfect configurations took three years to reach, and the system was useful before that because humans did not demand more than they demanded of predecessors. | Deployment Discipline | Bachant/McDermott 1984 p.22 | Yellow | Mirror-sourced; avoid sloppy "success from day one." |
+| DEC's Intelligent Systems Technologies group grew from five people with no AI background to 77 people responsible for eight knowledge-based systems, one of which was R1. | System Keeps Growing | Bachant/McDermott 1984 p.22 | Yellow | Mirror-sourced; useful for "fortune" and organizational growth if independently verified. |
+| The R1 technical group remained about eight people, with less distinction over time between knowledge collection and knowledge encoding. | System Keeps Growing | Bachant/McDermott 1984 p.22 | Yellow | Mirror-sourced; shows ongoing labor. |
+| Over four years, work devoted to adding R1 knowledge stayed around four worker-years per year. | System Keeps Growing | Bachant/McDermott 1984 p.23 | Yellow | Mirror-sourced; strong maintenance metric if independently verified. |
+| By November 1983 R1 had about 3300 rules and around 5500 component descriptions, and work would continue to extend and deepen expertise. | System Keeps Growing | Bachant/McDermott 1984 p.23 | Yellow | Mirror-sourced growth number; verify before prose. |
+| As DEC depended more on R1, planned releases were preceded by extensive testing. | System Keeps Growing | Bachant/McDermott 1984 p.23 | Yellow | Mirror-sourced; shows commercial engineering discipline if verified. |
+| About 65 percent of the 2526 rules added since 1980 extended general configuration capabilities; at least 15 percent of the total added rules corrected or refined known subtasks. | System Keeps Growing | Bachant/McDermott 1984 pp.24-25 | Yellow | Mirror-sourced and should be rechecked against page image before prose. |
+| Bachant/McDermott conclude that R1's development would never be finished because its domain kept changing and users kept asking it to do more. | System Keeps Growing | Bachant/McDermott 1984 pp.27-28 | Yellow | Mirror-sourced; do not make this sound like failure; it is success pressure. |
+| R1 began as a technical editor with mentors; every order it configured was examined more or less closely, and problems were reported to developers. | Deployment Discipline | Bachant/McDermott 1984 p.28 | Yellow | Mirror-sourced human-in-the-loop deployment scene. |
+| R1 had configured more than 80,000 orders by 1984, but still had seen only a fraction of possible situations. | Deployment Discipline | Bachant/McDermott 1984 p.29 | Yellow | Mirror-sourced scale plus humility anchor. |
+| By 1984 fewer than one in a thousand orders was misconfigured because of rule problems. | Deployment Discipline | Bachant/McDermott 1984 p.29 | Yellow | Mirror-sourced; exact category must stay precise if used. |
+| Missing part descriptions were a persistent problem because R1 knew about about 5500 of more than 100,000 possible parts that could appear on an order. | Deployment Discipline | Bachant/McDermott 1984 p.29 | Yellow | Mirror-sourced; shows data maintenance, not only rules. |
+| The authors warn that near-perfection during the first few years of production use is unrealistic and that waiting for complete knowledge before production use is a poor strategy. | Deployment Discipline / Close | Bachant/McDermott 1984 pp.31-32 | Yellow | Mirror-sourced closing lesson. |
 | Smith argues commercial expert systems solve real problems rather than test architectures, so developers should avoid a demonstration mentality. | Commercial Reality | Smith 1984 pp.66-67 | Green | Generalize from R1 with care. |
 | Smith identifies domain expertise, knowledge engineering, expert-system tool design, and programming support as typical commercial expert-system development skills. | Commercial Reality | Smith 1984 p.67 | Green | Useful for "team" and organization. |
 | Smith argues rapid prototyping and successive refinement help but complicate technology transfer because systems stay in flux. | Commercial Reality | Smith 1984 pp.67-69 | Green | Supports broader commercial-engineering frame. |
@@ -65,8 +65,8 @@ Minimum sources before prose:
 - McDermott 1982 pp.45-46, 58, 64-66 for production-system architecture, rule counts, and runtime/knowledge-use data.
 - McDermott 1982 pp.68-70 for development history, exceptional cases, validation, and manufacturing integration.
 - McDermott/Steele 1981 pp.824-828 for XSEL, ad-hoc constraints, 15-person DEC maintenance group, and "almost all VAX-11 systems shipped."
-- Bachant/McDermott 1984 pp.21-32 for four-year deployment, growth, performance, 80,000 orders, and maintenance conclusions.
-- Smith 1984 pp.61-73 for broader commercial expert-system development and technology-transfer context.
+- Bachant/McDermott 1984 pp.21-32 for four-year deployment, growth, performance, 80,000 orders, and maintenance conclusions, after mirror-source verification.
+- Smith 1984 pp.66-69 for broader commercial expert-system development and technology-transfer context.
 
 ## Source Discipline Notes
 
@@ -76,8 +76,9 @@ Minimum sources before prose:
 - The R1 Revisited AAAI/OJS download route returned an empty stream during
   extraction. The Studylib mirror was downloaded as a PDF and its metadata
   identifies *R1 Revisited: Four Years in the Trenches*, AI Magazine Volume 5
-  Number 3. Treat it as Green for anchored research, but a reviewer should
-  prefer an AAAI-hosted PDF if one becomes retrievable.
+  Number 3. Treat it as Yellow until an AAAI/archive/publisher-hosted PDF is
+  retrieved or at least two specific anchors are cross-checked against an
+  independent copy.
 - The Smith 1984 file is a scanned compilation that includes several articles;
   local text extraction places "On the Development of Commercial Expert
   Systems" at the AI Magazine article pages. Use article page numbers, not PDF

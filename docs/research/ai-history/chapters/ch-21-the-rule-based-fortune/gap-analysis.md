@@ -8,7 +8,9 @@ The chapter has enough anchored evidence for a 4,000-5,000 word draft if it
 keeps R1/XCON as a narrow industrial expert-system success and treats the
 commercial lesson as maintenance, product integration, and source-backed
 engineering discipline. It should not use unverified savings numbers or broad
-market claims.
+market claims. Bachant/McDermott 1984 remains a Yellow provenance risk until an
+independent copy is checked, so any draft using its four-year production claims
+must re-verify those anchors first.
 
 Word Count Discipline label: `4k-5k confirmed; 5k-5.6k requires stretch unlocks`
 
@@ -27,9 +29,6 @@ Word Count Discipline label: `4k-5k confirmed; 5k-5.6k requires stretch unlocks`
 - **Manufacturing integration:** McDermott 1982 and McDermott/Steele 1981
   support regular DEC manufacturing use, almost all VAX-11 systems shipped, and
   the 15-person maintenance group.
-- **Four-year maintenance:** Bachant/McDermott 1984 supports rule growth,
-  component-description growth, four worker-years per year, release testing,
-  mentors, more than 80,000 orders, and continuing incompleteness.
 - **Ad-hoc/customer constraints:** McDermott/Steele 1981 supports XSEL commands,
   customer-specific constraints, and the bounded extension to R1.
 - **Commercial expert-system context:** Smith 1984 supports the broader lesson:
@@ -40,6 +39,11 @@ Word Count Discipline label: `4k-5k confirmed; 5k-5.6k requires stretch unlocks`
 
 - **Economic value:** The chapter can claim usefulness and commercial
   credibility, but not exact savings or ROI. Savings claims need a parsed source.
+- **Four-year maintenance:** Bachant/McDermott 1984 supplies rule growth,
+  component-description growth, four worker-years per year, release testing,
+  mentors, more than 80,000 orders, and continuing incompleteness, but the
+  current copy is a mirror and must be independently checked before prose uses
+  those claims as Green.
 - **Later XCON retrospective:** McDermott 1993 is identified but not parsed; it
   should remain a stretch unlock.
 - **Broader market boom:** Smith 1984 is enough for product-development context,
@@ -76,6 +80,7 @@ Path to 4,000 without bloat:
 
 Path to 5,000-5,600 without bloat:
 
+- Verify Bachant/McDermott 1984 against an independent copy.
 - Parse McDermott 1993 and add later reflective lessons.
 - Add a verified source for economic impact if a dollar-value scene is needed.
 - Add one broader in-period business source on expert-system adoption, without

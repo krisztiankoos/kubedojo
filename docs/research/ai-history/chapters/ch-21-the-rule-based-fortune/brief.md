@@ -92,32 +92,32 @@ Core range: 4,000-5,000 words supported by current verified anchors. Stretch
 range: 5,000-5,600 words only if a verified source is added for later XCON
 economic claims or the 1993 "R1/XCON at age 12" retrospective.
 
-- 450-650 words: open with the DEC manufacturing scene and the difference
+- 450-550 words: open with the DEC manufacturing scene and the difference
   between a customer order and a buildable VAX system, anchored by McDermott
   1982 pp.39-40 and Bachant/McDermott 1984 p.21.
-- 650-850 words: explain the configuration task as knowledge work: VAX-11/780
+- 550-700 words: explain the configuration task as knowledge work: VAX-11/780
   variation, 420 components, over 3300 component facts, 480 extracted rules, and
   ad hoc constraints, anchored by McDermott 1982 pp.40-42.
-- 650-850 words: describe R1's production-system machinery and Match without
+- 550-700 words: describe R1's production-system machinery and Match without
   drowning the reader in implementation detail, anchored by McDermott 1982
   pp.45-46, p.58, and pp.64-66.
-- 600-800 words: knowledge acquisition and validation narrative: December 1978
+- 550-700 words: knowledge acquisition and validation narrative: December 1978
   start, simple-orders demo, expert scrutiny, exceptional cases, rule splitting,
   50-order validation, anchored by McDermott 1982 pp.68-70.
-- 650-900 words: four-year production growth: DEC organization, 77-person
+- 600-700 words: four-year production growth: DEC organization, 77-person
   Intelligent Systems Technologies group, 4 worker-years/year on R1 knowledge,
   3300 rules, 5500 component descriptions, structured release/testing, and
   never-finished maintenance, anchored by Bachant/McDermott 1984 pp.21-27.
-- 450-650 words: performance and deployment discipline: mentors, all-or-nothing
+- 450-550 words: performance and deployment discipline: mentors, all-or-nothing
   correctness metric, more than 80,000 orders, missing/incorrect rules falling
   below one in a thousand orders, and why early high-volume deployment would
   have been dangerous, anchored by Bachant/McDermott 1984 pp.28-32.
-- 350-550 words: ad-hoc/customer constraints and XSEL relationship, anchored by
+- 300-400 words: ad-hoc/customer constraints and XSEL relationship, anchored by
   McDermott/Steele 1981 pp.824-828.
-- 350-550 words: broader commercial expert-system lesson: avoid demonstration
+- 300-400 words: broader commercial expert-system lesson: avoid demonstration
   mentality, use domain experts and knowledge engineers, plan transfer and
-  progressive releases, anchored by Smith 1984 pp.61-73.
-- 250-400 words: close with handoff to Ch22/Ch23: commercial legitimacy without
+  progressive releases, anchored by Smith 1984 pp.66-69.
+- 250-300 words: close with handoff to Ch22/Ch23: commercial legitimacy without
   general intelligence; expert systems became a business proposition and a
   maintenance promise.
 
