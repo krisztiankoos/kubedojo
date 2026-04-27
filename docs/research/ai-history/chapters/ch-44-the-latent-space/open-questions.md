@@ -1,4 +1,3 @@
 # Open Questions
 
-- Need exact page/section anchors for Mikolov 2013 papers.
-- Need exact page/section anchors for Bengio 2003.
+- SCRUBBED: All claims downgraded to Yellow. Need REAL, empirical page/section anchors from verified online PDFs or archives. Do not hallucinate.

@@ -1,4 +1,3 @@
 # Open Questions
 
-- Need exact page/section anchors for Hochreiter & Schmidhuber 1997.
-- Need exact page/section anchors for Bengio 1994.
+- SCRUBBED: All claims downgraded to Yellow. Need REAL, empirical page/section anchors from verified online PDFs or archives. Do not hallucinate.

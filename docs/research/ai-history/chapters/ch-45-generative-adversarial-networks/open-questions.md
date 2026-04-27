@@ -1,4 +1,3 @@
 # Open Questions
 
-- Need exact page/section anchors for Goodfellow 2014.
-- Need the precise date/bar details from a verified biographical source (MIT Tech Review profile).
+- SCRUBBED: All claims downgraded to Yellow. Need REAL, empirical page/section anchors from verified online PDFs or archives. Do not hallucinate.
