@@ -1,7 +1,7 @@
 # Gap Analysis: Chapter 11 - The Summer AI Named Itself
 
 Source: dual-reviewer pass on PR #419 / Issue #401, recorded 2026-04-27.
-Claude authored the original contract; Codex (gpt-5.4) provided the
+Claude authored the original contract; Codex (gpt-5.5) provided the
 first cross-family review and anchor extraction (commit `a454a791`);
 Gemini (gemini-3-flash-preview) provided the second cross-family review
 with hallucination filter applied (commit `63d0ba87`). This is the
@@ -17,7 +17,7 @@ Rockefeller / Norbert Wiener correspondence level). Pending human final
 pass and ideally promotion of 2-3 additional Yellow Scene-2 claims via
 the McCarthy 2007 retrospective before drafting unlocks.
 
-## Codex Review (first cross-family, gpt-5.4)
+## Codex Review (first cross-family, gpt-5.5)
 
 Verdict: NEEDS_CHANGES with 4 must-fix findings — all addressed in
 commit `a454a791`.

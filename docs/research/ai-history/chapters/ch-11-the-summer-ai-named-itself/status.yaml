@@ -1,10 +1,27 @@
-status: capacity_plan_anchored
-review_state: codex_approved_2026-04-27;gemini_substance_integrated_with_hallucination_filter_2026-04-27
+status: prose_ready
+prose_word_cap: 5100
+review_state: codex_approved_2026-04-27;gemini_substance_integrated_with_hallucination_filter_2026-04-27;dual_cross_family_verdict_2026-04-28
 green_claims: 13
 yellow_claims: 12
 red_claims: 1
+verdicts:
+  gemini:
+    model: gemini-3-flash-preview
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT
+    word_cap: null
+    bridge_msg: 2938
+  codex:
+    model: gpt-5.5
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT_WITH_CAP
+    word_cap: 5100
+    bridge_msg: 2946
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 5100
+  resolution_rule: most_conservative_verdict_wins
 notes: |
-  Codex cross-family review (gpt-5.4) 2026-04-27: NEEDS_CHANGES with 4 must-fixes,
+  Codex cross-family review (gpt-5.5) 2026-04-27: NEEDS_CHANGES with 4 must-fixes,
   all integrated. Codex anchor-extraction via `pdftotext` on Stanford Dartmouth
   Proposal PDF promoted 7 claims to Green. Codex APPROVED the integrated contract.
 
@@ -30,5 +47,17 @@ notes: |
   framing) all integrated using verified anchors. Must-fix #1 (Mauchly IRE)
   declined as unverifiable.
 
-  Pending: Claude/human final pass before drafting unlocks. This contract has
-  cleared dual cross-family review with hallucination-cleanup applied.
+  Dual cross-family verdict pass 2026-04-28:
+   - Gemini (gemini-3-flash-preview): READY_TO_DRAFT, no cap. Stayed in lane
+     per feedback_gemini_hallucinates_anchors.md, no URLs cited (msg #2938).
+   - Codex (gpt-5.5): READY_TO_DRAFT_WITH_CAP at 5,100 words. Spot-checked
+     major Green anchors via curl on Stanford-hosted proposal HTML mirror and
+     dartray.pdf; no shaky Greens. 12 Yellows are honestly Yellow with no
+     unexploited anchors. Wiener-exclusion correctly Red. Bound the chapter
+     at 5,100 because the 7k stretch depends on Yellow aftermath and
+     archive-blocked claims (msg #2946).
+   - Resolution: most_conservative_verdict_wins -> READY_TO_DRAFT_WITH_CAP
+     at 5,100 words.
+
+  Status advances from capacity_plan_anchored to prose_ready. Drafting may
+  begin on a claude/394-ch11-prose branch off main, capped at 5,100 words.
