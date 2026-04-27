@@ -25,8 +25,8 @@ Coordination happens across 9 Part Tracking issues linked to Epic #394:
 - #402 : Part 4: The First Winter & The Shift to Knowledge (Ch 17-23)
 - #403 : Part 5: The Mathematical Resurrection (Ch 24-31) (Codex)
 - #404 : Part 6: The Rise of Data & Distributed Compute (Ch 32-40) (Gemini)
-- #405 : Part 7: The Deep Learning Revolution & GPU Coup (Ch 41-49)
-- #406 : Part 8: The Transformer, Scale & Open Source (Ch 50-58)
+- #405 : Part 7: The Deep Learning Revolution & GPU Coup (Ch 41-49) (Gemini)
+- #406 : Part 8: The Transformer, Scale & Open Source (Ch 50-58) (Gemini)
 - #407 : Part 9: The Product Shock & Physical Limits (Ch 59-68)
 
 Note: The 630 changed files in the original PR include automatically generated placeholder directories for the 68 chapters to ensure proper boundaries. These placeholders are intentional and expected in diff reviews.
