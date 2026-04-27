@@ -1,1 +1,15 @@
-status: researching
+status: capacity_plan_anchored
+owner: Codex
+part: 3
+chapter: 12
+review_state: codex_initial_draft_2026-04-27
+last_updated: 2026-04-27
+green_claims: 14
+yellow_claims: 5
+red_claims: 3
+notes: |
+  Full 8-file contract drafted for Chapter 12. Green anchors cover P-868 for LT specification, hand-simulation boundary, symbolic representation, Shaw's realization role, and digital-computer constraints; P-1584 and GPS61 for GPS-I, means-ends analysis, recursive goals/subgoals, planning, and generality limits; and CBI91 for Newell's RAND/Selfridge/Dartmouth retrospective.
+
+  Theorem-count folklore, Theorem 2.85/JSL rejection, typewriter-driven Theorem 2.01, exact JOHNNIAC/IPL run chronology, and "first running symbolic-AI program" priority nuance remain Yellow until NSS57, Programming-LT, IPL-V, Simon's autobiography, or archival correspondence are page-anchored.
+
+  Red claims explicitly block three unsafe framings: LT as the first AI program full stop, GPS as working general intelligence, and live LT execution at Dartmouth without evidence.
