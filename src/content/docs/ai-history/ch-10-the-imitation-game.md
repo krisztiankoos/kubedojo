@@ -60,7 +60,3 @@ The digital blank slate was ready. The empirical goalpost had been set. Six year
 - **Proudfoot, Diane. "Anthropomorphism and AI: Turing's Much Misunderstood Imitation Game." *Artificial Intelligence* 175 (2011).**
 - **Saygin, A. P. et al. "Turing Test: 50 Years Later." *Minds and Machines* 10(4), 2000.**
 - **Hodges, Andrew. *Alan Turing: The Enigma*. Burnett Books, 1983.**
-
----
-> [!note] Honesty Over Output
-> Following our 3.5k-5k capacity plan, this chapter implements the verified expansion seams (Turing's 1948 NPL report, his 1947 lecture, the 1952 BBC broadcast, and Proudfoot's 2011 analysis of the gender-imitation origins). We explicitly cite the 1952 BBC transcript to safely anchor Turing's views on embodiment without over-relying on historical inference, maintaining a robust, evidence-backed narrative cap.

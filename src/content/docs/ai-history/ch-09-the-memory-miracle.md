@@ -37,7 +37,7 @@ The genius of core memory lay in magnetic polarity. By passing an electrical cur
 
 Core memory was fast, incredibly reliable, and non-volatile. It solved the amnesia crisis and immediately became the standard memory infrastructure for the entire computing industry from 1955 until the invention of the silicon RAM chip in the 1970s. 
 
-However, the manufacturing of this cutting-edge digital infrastructure relied on an ancient, highly manual human skill: textile weaving. The ferrite donuts were microscopic—often just a millimeter wide. Threading the delicate copper wires through thousands of these tiny cores in a dense, intersecting matrix could not be automated by the machines of the 1950s. To build the memory banks for machines like the MIT Whirlwind, manufacturers hired female textile workers to painstakingly hand-weave the delicate wire matrices.
+However, the manufacturing of this cutting-edge digital infrastructure relied on an ancient, highly manual human skill: textile weaving. The ferrite donuts were microscopic—often just a millimeter wide. Threading the delicate copper wires through thousands of these tiny cores in a dense, intersecting matrix could not be automated by the machines of the 1950s. Early manufacturing of these core matrices was incredibly labor-intensive, often requiring delicate manual threading that resembled textile weaving rather than industrial electronics.
 
 ## Commercialization
 
@@ -59,7 +59,3 @@ The physical prerequisite for complex software and symbolic AI was finally in pl
 - **Redmond, Kent C., Thomas M. Smith. *Project Whirlwind: The History of a Pioneer Computer*. Digital Press, 1980.**
 - **Pugh, Emerson W. *Memories That Shaped an Industry*. MIT Press, 1984.**
 - **Ceruzzi, Paul E. *A History of Modern Computing*. MIT Press, 2003.**
-
----
-> [!note] Honesty Over Output
-> Following our 3k-4.5k capacity plan, this chapter explicitly utilizes the 1948 Williams/Kilburn paper to anchor the fragility of electrostatic tubes, and Redmond/Smith (1980) to ground the Project Whirlwind context. We intentionally keep the description of manual weaving and IBM 704 commercialization brief, adhering precisely to the verified archival anchors (IBM Corporate Archives, 1954) without artificially expanding the narrative.

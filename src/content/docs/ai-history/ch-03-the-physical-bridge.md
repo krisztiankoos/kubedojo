@@ -71,7 +71,3 @@ The age of theoretical mathematics was over. The blueprint was complete. The mat
 - **Owens, Larry. "Vannevar Bush and the Differential Analyzer." *Technology and Culture* 27, no. 1 (1986): 63-95.**
 - **Stanković, Radomir S., and Jaakko Astola. "Reprints from the Early Days of Information Sciences." *TICSP series* (2008).**
 - **Gleick, James. *The Information: A History, a Theory, a Flood*. Pantheon, 2011.**
-
----
-> [!note] Honesty Over Output
-> Following our capacity plan, this chapter implements the verified expansion seams (Nakashima's parallel discovery and Shannon's Theorem 4 minimization pedagogy) to deepen the historical and mathematical context without padding the word count with unanchored digressions.

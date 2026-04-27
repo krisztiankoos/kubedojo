@@ -64,7 +64,3 @@ Regardless of who deserved the ultimate credit, the infrastructural paradigm had
 - **Haigh, Thomas, Mark Priestley, Crispin Rope. "Reconsidering the Stored Program Concept." *IEEE Annals of the History of Computing*, 36(1), 2014.**
 - **Light, Jennifer S. "When Computers Were Women." *Technology and Culture* 40(3), 1999.**
 - **Dyson, George. *Turing's Cathedral: The Origins of the Digital Universe*. Pantheon, 2012.**
-
----
-> [!note] Honesty Over Output
-> Following our 4k-5k capacity plan, this chapter implements the verified expansion seams (Jean Bartik's 2013 memoir, Haigh et al. 2014 on the collaborative evolution of the concept, and exact archival anchors for the EDVAC meeting minutes) to provide a comprehensive, rigorous account of the credit dispute without inventing dramatic dialogue or straying from the primary sources.

@@ -87,7 +87,3 @@ Yet, just like George Boole's algebra, Turing's Universal Machine was trapped on
 ### Secondary
 - **Hodges, Andrew. *Alan Turing: The Enigma*. Burnett Books, 1983.**
 - **Davis, Martin. *The Universal Computer*. W.W. Norton, 2000.**
-
----
-> [!note] Honesty Over Output
-> Following our 4k-5k capacity plan, this chapter explicitly utilizes the heavily-anchored expansion seams (Gödel 1931, Church 1936, and the Princeton collaboration) to naturally extend the narrative depth without relying on unverified filler. The structural transitions and constraints established in the `sources.md` contract are strictly honored.

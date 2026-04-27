@@ -67,7 +67,3 @@ While the imminent rise of digital computers would soon sideline cybernetics as 
 - **Kline, Ronald R. *The Cybernetics Moment: Or Why We Call Our Age the Information Age*. Johns Hopkins University Press, 2015.**
 - **Heims, Steve J. *The Cybernetics Group, 1946–1953*. MIT Press, 1991.**
 - **Pickering, Andrew. *The Cybernetic Brain: Sketches of Another Future*. U Chicago Press, 2010.**
-
----
-> [!note] Honesty Over Output
-> Following our 3.5k-5k capacity plan, this chapter integrates heavily anchored expansion seams including Wiener's 1956 autobiography for the predictor backstory, verbatim Macy transcripts (Pias 2003), and Ashby's Homeostat (1952) to ground the narrative of continuous feedback and teleology without fabricating philosophical debates.

@@ -42,7 +42,7 @@ He discovered that in *Eugene Onegin*, if the current letter is a consonant, the
 But Markov did not stop at simple one-step transitions. In the same 1913 paper, he explored "2-step" (second-order) chains. He calculated the probabilities based not just on the immediate preceding letter, but on the preceding *two* letters, deepening the statistical context of the prediction.
 
 > [!note] Pedagogical Insight: The Chain of Probability
-> This is the essence of a Markov Chain. It is a mathematical system that transitions from one state to another, where the probability of the next state depends *only* on the defined local history. Markov proved that you do not need to understand the entire history of a sequence (or the deep grammatical rules of a language) to make a statistically accurate prediction about what comes next. You only need to know where you are right now, and the transition probabilities.
+> This is the essence of a Markov Chain. It is a mathematical system that transitions from one state to another, where the probability of the next state depends *only* on a strictly defined local history. In a first-order chain, you only need to know where you are right now. In a second-order (2-step) chain, you look at the current two-symbol window. Markov proved that you do not need to understand the entire history of a sequence (or the deep grammatical rules of a language) to make a statistically accurate prediction about what comes next.
 
 ## The Ancestry of Generation
 
@@ -65,7 +65,3 @@ Markov's manual counting of 20,000 characters was the absolute physical limit of
 - **Sheynin, Oscar. *Russian Papers on the History of Probability and Statistics*. Berlin, 2004.**
 - **Hayes, Brian. "First Links in the Markov Chain." *American Scientist*, 2013.**
 - **Gleick, James. *The Information: A History, a Theory, a Flood*. Pantheon, 2011.**
-
----
-> [!note] Honesty Over Output
-> Following our 3k-4.5k capacity plan, this chapter implements the verified expansion seams (the 1906 mathematical proof, the theological Nekrasov correspondence, and the 2-step chains) to provide historical depth without inflating Markov's intent. We explicitly maintain the framing of Markov's work as the *statistical ancestry* of predictive text, avoiding anachronistic claims that he envisioned modern AI.

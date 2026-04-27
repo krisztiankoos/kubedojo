@@ -33,7 +33,9 @@ To build their mathematical model, McCulloch and Pitts had to strip away the imm
 
 They focused on a single, binary physiological mechanism: the "all-or-nothing" firing principle. A biological neuron either fires an electrical action potential down its axon, or it remains dormant. There is no half-fire. It is either **On** (1) or **Off** (0).
 
-To express this rigorously, they utilized the formal logical syntax developed by the philosopher Rudolf Carnap. They mathematically modeled this artificial neuron as a "threshold logic unit." The idealized neuron would receive multiple inputs from other connected neurons. It would sum up these inputs. If the total sum crossed a specific, predefined mathematical threshold, the neuron would fire (output a 1). If the sum was below the threshold, the neuron would remain dormant (output a 0).
+To express this rigorously, they utilized the formal logical syntax developed by the philosopher Rudolf Carnap. They mathematically modeled this artificial neuron as a "threshold logic unit." 
+
+Instead of vague descriptions of "excitation," they introduced explicit symbolic notation. Let N_i(t) represent the statement "neuron i fires at time t." Let N_j and N_k be input neurons, and let theta be the threshold. If the sum of the inputs equals or exceeds theta, then N_i(t) is true. For example, to represent an AND gate where neuron 3 fires only if both neuron 1 and neuron 2 fired at the previous time step (t-1), they set the threshold theta = 2. The logical proposition is: N_3(t) = N_1(t-1) AND N_2(t-1). If both inputs are 1, the sum is 2, crossing the threshold, and the output is 1.
 
 > [!note] Pedagogical Insight: The Neural Logic Gate
 > By reducing the neuron to a simple mathematical threshold using Carnap's syntax, McCulloch and Pitts proved that artificial neurons could act as logical gates (like the AND and OR gates described by George Boole and Claude Shannon). For example, to create an AND gate, you set the neuron's threshold to 2. It requires both Input A (1) AND Input B (1) to fire. To create an OR gate, you set the threshold to 1. It will fire if *either* Input A (1) OR Input B (1) is active. Within their abstraction, the biological brain could be analyzed as if it were an electrical circuit. 
@@ -63,7 +65,3 @@ The blueprint for the artificial neural network was established, but before lear
 - **Conway, Flo, and Jim Siegelman. *Dark Hero of the Information Age*. Basic Books, 2005.**
 - **Piccinini, Gualtiero. "The First Computational Theory of Mind and Brain." *Synthese* (2004).**
 - **Gefter, Amanda. "The Man Who Tried to Redeem the World with Logic." *Nautilus*, 2015.**
-
----
-> [!note] Honesty Over Output
-> Following our 3.5k-5k capacity plan, this chapter implements the verified expansion seams (the Carnap logical syntax pedagogy, the Chicago School formation, and the explicit limitation handoff to Hebb 1949) to deepen the narrative. We explicitly maintain the required caveats regarding the idealized nature of the model and the anecdotal nature of Pitts's early legend, keeping the chapter firmly anchored to verifiable history without fabricating lab dialogue.

@@ -72,7 +72,3 @@ The theoretical foundation for artificial intelligence had been laid. Human reas
 - **Hailperin, Theodore. *Boole's Logic and Probability*. Reidel, 2nd ed. 1986.**
 - **MacHale, Desmond. *George Boole: His Life and Work*. Boole Press, 1985.**
 - **Macfarlane, Alexander. *Lectures on Ten British Mathematicians of the Nineteenth Century*. Wiley, 1916.**
-
----
-> [!note] Honesty Over Output
-> Following our 4k-7k capacity plan, this chapter has been drafted to accurately represent the maximum verified context anchored in the `sources.md` matrix, hitting the natural cap for this milestone (~3.5k-4.5k allocated). We do not pad the narrative with unanchored dialogue or anachronistic predictions of modern computers.

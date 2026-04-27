@@ -39,7 +39,7 @@ The primary limitation was the vacuum tube. A vacuum tube is a fragile glass bul
 
 Walter had achieved remarkable behavior with just two vacuum tubes. But what if you wanted to scale this approach? What if you wanted to build an analog machine that possessed the complexity of a human brain?
 
-It was thermodynamically impossible. In 1952, John von Neumann delivered a series of lectures at Caltech (later published in *Automata Studies* as "Probabilistic Logics and the Synthesis of Reliable Organisms from Unreliable Components"). Von Neumann rigorously analyzed the failure rates and constraints of complex vacuum tube systems. He noted mathematically that as the number of components increased, the probability of a system failure skyrocketed. An analog machine possessing the complexity required for true intelligence, built from 1950s vacuum tubes, would experience a hardware failure constantly.
+Scaling such an architecture introduced an insurmountable reliability wall. In 1952, John von Neumann delivered a series of lectures at Caltech (later published in *Automata Studies* as "Probabilistic Logics and the Synthesis of Reliable Organisms from Unreliable Components"). Von Neumann rigorously analyzed the failure rates and constraints of complex vacuum tube systems. He noted mathematically that as the number of components increased, the probability of a system failure skyrocketed. An analog machine possessing the complexity required for true intelligence, built from 1950s vacuum tubes, would experience a hardware failure constantly.
 
 ## The End of the Analog Dream
 
@@ -57,7 +57,3 @@ To achieve true artificial intelligence, the field had to abandon biological mim
 - **Holland, Owen. "Grey Walter: The Pioneer of Real Artificial Life." *Proc. 5th Intl. Workshop on Artificial Life*, MIT Press, 1997.**
 - **Hayward, Rhodri. "The Tortoise and the Love-Machine." *Science in Context* 14(4), 2001.**
 - **Boden, Margaret A. *Mind as Machine: A History of Cognitive Science*. Oxford University Press, 2006.**
-
----
-> [!note] Honesty Over Output
-> Following our 3k-4.5k capacity plan, this chapter rigorously anchors the minimalist analog approach to Walter's original 1950 paper and archival circuit diagrams (Holland 1997). We explicitly use von Neumann's 1952 quantitative analysis to ground the thermodynamic scaling wall, avoiding exaggerated claims about skyscraper-sized machines or speculative physics limits beyond what contemporary sources verify.
