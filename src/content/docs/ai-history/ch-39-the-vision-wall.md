@@ -9,7 +9,7 @@ sidebar:
 
 While natural language processing was busy scaling up to billions of words on the World Wide Web, the field of computer vision remained stuck in a deep, frustrating plateau. By the late 2000s, researchers were dedicating years of their lives to squeezing out tiny, fractional improvements in accuracy, entirely missing the fact that their underlying infrastructure was fatally flawed.
 
-The bottleneck was not a lack of computational power, nor was it a lack of mathematical brilliance. The wall was constructed from two interconnected problems: the reliance on hand-engineered mathematical features, and the severe lack of variance in academic benchmark datasets.
+The main bottlenecks were the reliance on hand-engineered features and the severe lack of variance in academic benchmark datasets.
 
 ## The Hand-Crafted Era
 
@@ -19,7 +19,7 @@ Two of the most famous examples were SIFT (Scale-Invariant Feature Transform), p
 
 If a researcher wanted a computer to recognize a pedestrian, they would use HOG to mathematically describe the typical gradient of light falling on a human shoulder and head. The machine would scan a photo, extract these hand-crafted mathematical features, and run them through a statistical classifier (like a Support Vector Machine) to guess if a person was present.
 
-This approach was elegant, highly mathematical, and completely unscalable. Humans are simply not smart enough to write mathematical rules that account for every possible lighting condition, angle, and occlusion in the real world. 
+This approach was elegant and mathematically powerful, but difficult to scale across the full variability of real-world images. Hand-engineering rules for every lighting condition, angle, and occlusion was impractical. 
 
 ## The Benchmark Plateau
 
