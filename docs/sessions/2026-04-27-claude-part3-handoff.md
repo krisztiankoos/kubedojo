@@ -35,14 +35,20 @@ Every chapter in this Part follows the same standard, calibrated against Codex C
 
 ## Ch11 specific state (2026-04-27, end of this session)
 
-- Status: **`capacity_plan_anchored`** as of commit `a454a791`.
-- Codex review: **APPROVED** with 4 must-fixes (all integrated). 7 claims promoted to Green via `pdftotext` on Stanford Dartmouth Proposal PDF (pp. 1, 2, 4, 5).
-- Gemini review: **IN FLIGHT** at session end. Resume by checking the bridge:
-  ```bash
-  /Users/krisztiankoos/projects/kubedojo/scripts/ab status
-  ```
-  Output appears in `/var/folders/pd/wvj52r1j3bd4z9y3dfc2k4180000gn/T/*ch11-gemini-review*.txt` once complete.
-- After Gemini review integrated → flip status to `accepted` → unlock prose drafting.
+- Status: **`capacity_plan_anchored`** as of commit `63d0ba87`.
+- **13 Green claims**, 12 Yellow, 1 Red (Wiener exclusion — archive-blocked).
+- Codex review (gpt-5.4): **APPROVED** post-fixes. Anchor extraction via `pdftotext` on Stanford Dartmouth Proposal PDF promoted **7 claims to Green** (pp. 1, 2, 4, 5).
+- Gemini review (gemini-3-flash-preview): **INTEGRATED with hallucination filter**. Gemini self-admitted (epic commit `03640e20`, Issue #421) to systemic URL/anchor hallucination across 37 chapters. The Mauchly/IRE March 1956 claim Gemini gave was not findable in dartray.pdf — **declined**. The verbatim McCarthy quote URL Gemini cited was 404 — **substance kept, URL declined**, re-anchored to dartray paraphrase + McCorduck 1979 p.53.
+- Claude independent anchor-hunt via dartray.pdf (`pdftotext` on `https://raysolomonoff.com/dartmouth/dartray.pdf`) added **6 more Green claims** beyond Codex: 8-week duration (June 18-Aug 17 1956 — corrects the "6 weeks" myth); three full-time attendees (Ray, Marvin, McCarthy); McCarthy naming motive paraphrase chain; alternative-names list; Trenchard More 3-week rotation; Aug 31/Sep 2 date reconciliation.
+- Wiener-personality framing was demoted to "contested interpretation" per Codex review and re-clarified per Gemini's substantive note: dartray says BOTH "cybernetics too focused on analog feedback" AND "Wiener as guru" — keep both, do NOT turn it into a Wiener takedown.
+- Ch11 has cleared dual cross-family review with hallucination filter applied. **Pending: human final pass.** Once the human approves, status flips to `accepted` and prose drafting unlocks.
+
+## What I learned about the team this session
+
+1. **Codex reliably finds anchors that exist.** His pdftotext+grep workflow works. 7 Green claims via verifiable Stanford PDF.
+2. **Gemini reliably finds *substantive gaps* but hallucinates citations.** His must-fix list pointed at real holes (Solomonoff precision, McCarthy motive, Moor framing) but the URLs/page numbers he gave were partly fabricated. Memory `feedback_gemini_hallucinates_anchors.md` records this. Always cross-check Gemini citations with `curl -I` and `pdftotext` before promoting.
+3. **The dual-review pattern works** because it surfaces what each reviewer alone misses. Codex didn't surface the 8-week vs 6-week issue (he focused on the Stanford PDF). Gemini surfaced the Solomonoff precision but with a hallucinated date for the IRE event. Claude's independent verification reconciled both.
+4. **The substance-vs-citation split** is the right disposition for Gemini's output: keep the substance where it survives independent verification, drop the citation where it doesn't, re-anchor to whatever does verify.
 
 ## Tractable anchor upgrades for Ch11 (do BEFORE drafting)
 
@@ -85,8 +91,15 @@ Boundary contract preview: Logic Theorist as the *first running symbolic-AI prog
 New durable lessons saved to memory:
 - `feedback_team_over_solo_for_book.md` — for #394 chapters Claude owns, default to team collaboration; finish one Part fully before claiming a second
 - `feedback_dual_review_required.md` — chapter contracts need approval from BOTH Gemini AND Codex
-- `feedback_chapter_word_count_via_contract.md` (existing) — chapters hit the word count their Plan budgets
-- `feedback_chapter_word_count_via_contract.md` was added earlier in the session and validated this turn
+- `feedback_gemini_hallucinates_anchors.md` — never promote a Gemini-cited claim to Green without independent `curl`+`pdftotext`+`grep` verification. Gemini self-admitted 2026-04-27 to systemic URL/anchor hallucination across 37 chapters
+- `reference_gemini_handoff_2026_04_27.md` — Gemini's chapter-finalization loop pattern documented from his own Ch01 cycle
+- `feedback_chapter_word_count_via_contract.md` (existing) — chapters hit the word count their Plan budgets, validated this turn
+
+## PRs in flight
+
+- **#419** — `claude/394-part3-symbolic-ai` → `epic/394-ai-history`. Part 3 ownership claim + Ch11 full anchored contract. Latest commit `63d0ba87` (Gemini integration + hallucination filter).
+- **#416** — `claude/394-capacity-plan-anchor-gate` → `epic/394-ai-history`. Workflow doctrine: prose-capacity plan as required brief.md section + `capacity_plan_drafted` / `capacity_plan_anchored` statuses.
+- **#421** (Gemini-owned) — Track: Gemini's Real Archival Hunt. Gemini's cleanup-and-honest-rebuild after the hallucination admission.
 
 ## Cold-start function
 
