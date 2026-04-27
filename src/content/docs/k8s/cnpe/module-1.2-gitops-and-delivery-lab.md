@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "CNPE GitOps and Delivery Lab"
 slug: k8s/cnpe/module-1.2-gitops-and-delivery-lab
 sidebar:

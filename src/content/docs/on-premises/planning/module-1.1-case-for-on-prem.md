@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 1.1: The Case for On-Premises Kubernetes"
 slug: on-premises/planning/module-1.1-case-for-on-prem
 sidebar:

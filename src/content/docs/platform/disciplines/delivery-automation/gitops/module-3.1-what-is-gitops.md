@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 3.1: What is GitOps?"
 slug: platform/disciplines/delivery-automation/gitops/module-3.1-what-is-gitops
 sidebar:

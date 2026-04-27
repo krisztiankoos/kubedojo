@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 1.4: Kustomize - Template-Free Configuration"
 slug: k8s/cka/part1-cluster-architecture/module-1.4-kustomize
 sidebar:

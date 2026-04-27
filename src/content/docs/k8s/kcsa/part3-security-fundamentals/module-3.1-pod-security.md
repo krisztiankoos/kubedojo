@@ -1,5 +1,4 @@
 ---
-qa_pending: true
 title: "Module 3.1: Pod Security"
 slug: k8s/kcsa/part3-security-fundamentals/module-3.1-pod-security
 sidebar:
