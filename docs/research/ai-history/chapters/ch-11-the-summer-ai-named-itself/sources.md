@@ -87,6 +87,11 @@ Anchors to extract before drafting unlocks:
 - Newell & Simon 1956 IRE paper — confirmation of in-summer demonstration. IRE Transactions on Information Theory, IT-2(3), pp. 61-79. Tractable via library access.
 - Moor 2006 *AI Magazine* — primary quotations. AAAI open access.
 
+### Investigated 2026-04-27 — both leads dead-end (kept for transparency)
+
+- ❌ **Solomonoff mirror at `world.std.com/~rjs/dartray.pdf`** — handoff suggested fetching this for naming/attendance synthesis at pp. 5-10. URL returned HTTP 404 on Claude's fetch 2026-04-27. The same file is preserved at `https://raysolomonoff.com/dartmouth/dartray.pdf` (already anchored above); no second mirror to extract from.
+- ❌ **McCarthy "What is AI?" retrospective deeper crawl** — handoff suggested deeper crawl of `www-formal.stanford.edu/jmc/whatisai/node{N}.html` (Codex tried 1-5). Claude probed nodes 1-15: only nodes 1-6 exist; 7-15 return HTTP 404. Text extraction via stdlib HTML parser plus keyword grep across all 6 nodes for `dartmouth|chose|cybernet|name|term|automata|wiener` surfaced no naming-decision passage. Conclusion: McCarthy's whatisai retrospective does not contain the naming passage; the McCorduck-1979-via-dartray paraphrase chain remains the strongest available anchor without physical book access. Recorded so the next session does not re-investigate.
+
 ### Removed — Gemini hallucination cleanup 2026-04-27
 
 - ❌ **`http://jmc.stanford.edu/history/dartmouth/dartmouth.html`** — URL Gemini cited in Ch11 review as anchor for verbatim McCarthy quote on naming choice. URL returns 404. Per Gemini's own admission via user message 2026-04-27 (epic commit `03640e20`, Issue #421), Gemini systemically hallucinated URLs and page anchors across 37 chapters; cleanup script run by Gemini scrubbed his side. Chapter Ch11's McCarthy-naming-motive claim is anchored via dartray paraphrase + McCorduck 1979 p.53 instead — substance preserved, fabricated URL not used.
