@@ -1,8 +1,8 @@
-status: researching
+status: prose_ready
 owner: Codex
 part: 5
 chapter: 24
-review_state: gap_analysis_received
+review_state: ready_to_draft_with_cap
 last_updated: 2026-04-27
 notes:
   - "Example research contract for Part 5."
@@ -10,3 +10,4 @@ notes:
   - "Still open: exact 1986 hardware/computing environment, full Crick 1989 internal passages, and whether Linnainmaa 1976 full text is required after Griewank's history anchor."
   - "Includes a prose-capacity plan for reaching 4000-7000 words without padding."
   - "Gemini gap analysis recorded in gap-analysis.md; safe prose core is now 4000-5000 words if drafted cautiously."
+  - "Gemini prose-readiness review cleared drafting with cap; do not wait on hardware/full-Crick/Linnainmaa unless expanding beyond the safe core."
