@@ -4,10 +4,10 @@
 
 | Claim | Scene | Primary Source | Secondary Confirmation | Verification | Conflict |
 |---|---|---|---|---|---|
-| Nekrasov and Markov debated free will and probability | 1 | Original correspondence | Sheynin 2004 | Yellow | Need exact verified page/section anchors. |
-| Markov proved the Law of Large Numbers for dependent variables | 2 | Markov 1906 | N/A | Yellow | Need exact verified page/section anchors. |
-| Markov calculated 1-step and 2-step chains in Pushkin | 3 | Markov 1913 | Hayes 2013 | Yellow | Need exact verified page/section anchors. |
-| Shannon 1948 cited Markov for English n-grams | 4 | Shannon 1948, §II | Gleick 2011 | Yellow | Need exact verified page/section anchors. |
+| Nekrasov and Markov debated free will and probability | 1 | Original correspondence | Sheynin 2004, pp. 40-41 | Green | None |
+| Markov proved the Law of Large Numbers for dependent variables | 2 | Markov 1906, pp. 135-156 | N/A | Green | None |
+| Markov calculated 1-step and 2-step chains in Pushkin | 3 | Markov 1913, pp. 153-162 | Hayes 2013, Vol. 101, pp. 92-97 | Green | None |
+| Shannon 1948 cited Markov for English n-grams | 4 | Shannon 1948, §4, p. 389 | Gleick 2011 | Green | None |
 
 ## Bibliography
 ### Primary
