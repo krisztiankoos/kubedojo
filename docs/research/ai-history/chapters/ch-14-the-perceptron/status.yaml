@@ -1,1 +1,108 @@
-status: researching
+status: prose_ready
+prose_word_cap: 4500
+owner: Codex
+part: 3
+chapter: 14
+review_state: claude_integrated_gemini_gap_audit_2026-04-27;dual_cross_family_verdict_2026-04-28
+last_updated: 2026-04-28
+green_claims: 26
+yellow_claims: 20
+red_claims: 10
+verdicts:
+  gemini:
+    model: gemini-3-flash-preview
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT_WITH_CAP
+    word_cap: 4500
+    bridge_msg: 2944
+  claude:
+    model: claude-opus-4-7
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT_WITH_CAP
+    word_cap: 4500
+    note: independent-prose-capacity verdict via fresh headless agent (Codex authored, integrating Claude conflict-of-interest)
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 4500
+  resolution_rule: dual_concurring_verdict
+notes: |
+  Full 8-file contract drafted for Chapter 14 by Codex, then dual-reviewed: Codex authored,
+  Gemini gap-audited (gemini-3-flash-preview, message #2919), Claude integrated.
+
+  Gemini correctly stayed in lane: NO page anchors, NO URLs (per
+  feedback_gemini_hallucinates_anchors.md). Audit returned 4 must-fixes,
+  4 should-adds, 3 framing observations, 2 Yellow→Red proposals. All integrated.
+
+  Must-fix integrations:
+  1. NPL 1958 "Mechanisation of Thought Processes" symposium — added as documented
+     1958 collision beat in Scene 5; Rosenblatt's "Two Theorems," Selfridge's
+     "Pandemonium," and McCarthy's "Programs with Common Sense" co-presence anchored
+     via new MTP59-NPL primary source.
+  2. H. D. Block 1962 Reviews of Modern Physics + Novikoff 1962 convergence proof —
+     added as Block62-RMP and Novikoff62 primary sources, integrated into Scene 4
+     as independent-mathematical-legitimacy beat (anti-hype, outside Rosenblatt's
+     own voice).
+  3. Widrow-Hoff ADALINE/MADALINE 1960 — added as WidrowHoff60 primary source and
+     Stanford Cybernetic-Hardware Contemporary in infrastructure-log; Scene 5
+     beat showing Mark I was not an isolated Buffalo project.
+  4. Wightman/Hay/Murray Project PARA engineering team agency — Scene 3 renamed
+     to "The Machine the Engineering Team Built," with explicit team beat blocking
+     the lone-genius framing.
+
+  Should-add integrations:
+  1. Hubel-Wiesel V1 receptive-field hierarchy resonance — added as HubelWiesel59-62
+     primary source; Scene 2 physiological-resonance beat with influence direction
+     held agnostic.
+  2. Tobermory auditory-perceptron successor — added as Tobermory62-65 worklist
+     source and Scene 5 program-continuity beat.
+  3. Rosenblatt 1971 sailing-accident historiographic-muting beat — added as
+     Rosenblatt71 worklist source and Scene 5 historiographic-fade beat (kept
+     non-melodramatic per anti-padding rule).
+  4. Over-curated demo conflict surface — added as Scene-3 drafting warning.
+
+  Framing observations integrated:
+  1. Simulations-as-supplementary guardrail — added explicit guardrail in
+     infrastructure-log so the chapter never reads as if Mark I "ran on" the IBM 704.
+  2. Rosenblatt's NOVEL contribution clarified — supervised error-correction
+     reinforcement procedure on random A-layer connections plus the convergence
+     theorem, NOT the threshold neuron (McCulloch-Pitts) or learning in general (Hebb).
+  3. Selfridge Pandemonium tighter cybernetic-cousin link — Scene 5 cybernetic-family
+     beat names Selfridge alongside Widrow-Hoff and Wightman.
+
+  Yellow → Red splits:
+  1. NYT "walk, talk..." sentence as Rosenblatt's technical claim about Mark I —
+     RED until NYT58 original scan resolves attribution direction (Rosenblatt vs.
+     Navy spokesperson vs. NYT reporter voice).
+  2. Precise "400 photocells" figure cited in prose without operator-manual
+     extraction — RED; secondary sources vary on Mark I hardware counts and using
+     one without the primary engineering manual risks factual drift. Yellow remains
+     for the general 20x20/400-photocell claim.
+
+  Counts after integration: 26 Green / 20 Yellow / 10 Red
+  (was 17 / 12 / 8 at Codex initial draft).
+
+  Local cold-start failed because this worktree lacks a local .venv. Browser-accessible
+  PDF/HTML extraction was used for anchors. Book-only checklist applies: changed files
+  are limited to docs/research/ai-history/chapters/ch-14-the-perceptron/.
+
+  Dual cross-family verdict pass 2026-04-28:
+   - Gemini (gemini-3-flash-preview): READY_TO_DRAFT_WITH_CAP at 4,500 words.
+     The integration successfully anchors the 1958 NPL collision and independent
+     mathematical legitimacy, but unextracted hardware manuals (MarkI-Manual60)
+     and press scans (NYT58) necessitate the 4,500-word ceiling to avoid
+     overclaiming in the engineering and reception beats. Stayed in lane per
+     feedback_gemini_hallucinates_anchors.md, no URLs cited (msg #2944).
+   - Independent Claude (claude-opus-4-7, fresh headless agent):
+     READY_TO_DRAFT_WITH_CAP at 4,500 words. The 26 Greens fund a faithful
+     4,000-4,500-word chapter with disciplined Yellow supplementation. Six
+     named page extractions remain outstanding (operator manual, NYT scan,
+     NPL pages, Block62, Novikoff62, Widrow-Hoff). The contract's own capped
+     core range should govern.
+   - Codex (gpt-5.5) is the chapter's author so cross-family conflict-of-
+     interest applies; he is excluded from the verdict step.
+   - Resolution: dual_concurring_verdict -> READY_TO_DRAFT_WITH_CAP at 4,500
+     words.
+
+  Status advances from capacity_plan_anchored to prose_ready. Drafting may
+  begin on a codex/394-ch14-prose branch off main, capped at 4,500 words.
+  This contract has cleared dual cross-family review (Codex authored +
+  Gemini gap-audited + Claude integrated + dual verdict pass).
