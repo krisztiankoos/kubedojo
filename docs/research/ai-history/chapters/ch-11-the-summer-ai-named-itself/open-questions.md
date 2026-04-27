@@ -22,25 +22,25 @@ Surfaced from `brief.md` *Conflict Notes* and the Yellow/Red entries in `sources
 - **Evidence needed:** Solomonoff's contemporaneous notes; McCarthy 2007 retrospective; surviving conference correspondence.
 - **Status:** Red→Yellow. Solomonoff archive is publicly available; specific notes need locating.
 
-### Q4. Pre-1955 use of "Artificial Intelligence"
-- **Question:** Did the term "Artificial Intelligence" appear in print anywhere before the August 31, 1955 Proposal?
-- **Why it matters:** The chapter's coinage claim becomes weaker if the term was already in informal circulation. The Proposal would still be the institutional anchor, but the *coinage* attribution would shift.
-- **Evidence needed:** Search of pre-1955 academic literature (mathematics, psychology, computer science, philosophy of mind). Solomonoff's pre-1955 papers as one candidate. Library of Congress newspaper archives as another.
-- **Status:** Red. Useful but not blocking — the chapter can still credit McCarthy with the *institutional* coinage even if the phrase appeared informally earlier.
-
 ### Q5. Pre-1955 McCarthy-Shannon correspondence pattern
 - **Question:** What was the pre-Proposal correspondence between McCarthy and Shannon that led to the joint application?
 - **Why it matters:** The Proposal's institutional weight came partly from Shannon's name. Understanding *why* Shannon agreed to co-sign tightens the credentialing-mechanism claim in Scene 5.
 - **Evidence needed:** Shannon papers (MIT or Bell Labs archives); Stanford McCarthy Papers.
 - **Status:** Red. Archival access required.
 
+## Lower-Priority Questions (Do Not Block Drafting)
+
+### Q4. Pre-1955 use of "Artificial Intelligence"
+- **Question:** Did the term "Artificial Intelligence" appear in print anywhere before the August 31, 1955 Proposal?
+- **Why it matters:** The chapter no longer claims McCarthy *coined* the phrase — it claims he *named the program* via the Proposal (per Codex review 2026-04-27, the contract was downgraded across brief.md, sources.md, scene-sketches.md). With the language downgraded, Q4 is informational rather than load-bearing.
+- **Evidence needed:** Search of pre-1955 academic literature (mathematics, psychology, computer science, philosophy of mind). Solomonoff's pre-1955 papers as one candidate. Library of Congress newspaper archives as another.
+- **Status:** Yellow. Non-blocking. If discovered, the chapter would add a footnote noting earlier informal usage; the institutional naming claim stands.
+
 ### Q6. Conference dates with week-level precision
 - **Question:** When exactly did the conference run? Sources cite slightly different week-of-the-summer ranges.
-- **Why it matters:** Minor — the chapter does not depend on week-level precision. But where dates are mentioned in prose, they should be correct.
-- **Evidence needed:** Solomonoff contemporaneous notes; Dartmouth special collections; the Proposal's stated dates if they were specific.
-- **Status:** Yellow. Solomonoff archive is the most likely source.
-
-## Lower-Priority Questions (Do Not Block Drafting)
+- **Why it matters:** Minor — the chapter does not depend on week-level precision. The Proposal anchors "summer 1956" at p.2 (Green). Specific weeks are background detail.
+- **Evidence needed:** Solomonoff contemporaneous notes; Dartmouth special collections.
+- **Status:** Yellow. Non-blocking. Per Codex review 2026-04-27 — this question's own note already said the precision is "Minor", inconsistent with prior blocking classification.
 
 ### Q7. Did the Proposal exist in a public form before August 31, 1955?
 - Earlier drafts may have circulated among the four organizers in spring 1955.
@@ -54,12 +54,14 @@ Surfaced from `brief.md` *Conflict Notes* and the Yellow/Red entries in `sources
 
 ## Notes on resolution sequence
 
-The order of attempted resolution should be:
-1. Solomonoff Papers (publicly accessible) — resolves Q3, Q6, partially Q1 and Q4.
-2. McCarthy 2007 retrospective (publicly accessible) — resolves Q8, partially Q1 and Q2.
-3. McCorduck 1979 / Crevier 1993 / Nilsson 2010 page anchors (book-scan or hardcopy) — partially resolves all.
-4. Stanford McCarthy Papers (archival) — resolves Q1, Q5, Q9.
-5. Rockefeller archives (archival) — resolves Q2.
-6. MIT Wiener Papers (archival) — resolves Q1.
+The order of attempted resolution:
+1. ✅ **Done (Codex 2026-04-27):** Dartmouth Proposal PDF — promoted Scenes 1, 3 to multiple Green anchors (date, location, 7 topics, $13,500 request, Shannon's planned partial attendance).
+2. Solomonoff Papers (publicly accessible, image-only — needs hand-verification) — would resolve Q3 and partially Q1.
+3. McCarthy 2007 retrospective (publicly accessible — Codex did not find naming passage on indexed pages) — would resolve Q8, partially Q1, and the McCarthy-naming-language Yellow claims in Scene 2.
+4. G. Solomonoff *dartray.pdf* (publicly accessible) — direct fetch, would tighten naming/attendance synthesis.
+5. McCorduck 1979 / Crevier 1993 / Nilsson 2010 page anchors (book-scan or hardcopy) — partially resolves all.
+6. Stanford McCarthy Papers (archival) — resolves Q1, Q5, Q9.
+7. Rockefeller archives (archival) — resolves Q2.
+8. MIT Wiener Papers (archival) — resolves Q1.
 
-The first three rows are tractable without physical archive trips. The last three require either archive access or correspondence with archivists. The chapter can reach `capacity_plan_anchored` status from the first three rows alone if their anchors land cleanly. The last three rows are stretch upgrades that would lift specific scenes from Yellow to Green.
+Rows 2-5 are tractable without physical archive trips. Rows 6-8 require either archive access or correspondence with archivists. The chapter has now reached `capacity_plan_anchored` status: every Prose Capacity Plan layer cites at least one source identifier, and 7 Scene-Level Claim Table rows are Green via the Stanford PDF anchor extraction. Promotion of additional scenes from Yellow to Green is a stretch upgrade pursued via rows 2-5 next.

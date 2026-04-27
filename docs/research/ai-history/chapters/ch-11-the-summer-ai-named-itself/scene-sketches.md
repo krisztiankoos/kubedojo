@@ -8,12 +8,13 @@ Anchored layer: *600-900 words: The 1955 proposal as institutional artifact* (br
 
 | Beat | Anchor | Status |
 |---|---|---|
-| McCarthy and three co-organizers submit a Rockefeller funding application dated August 31, 1955. | Dartmouth Proposal cover page (Stanford-hosted PDF). | Yellow |
-| The Proposal opens with the conjecture that "every aspect of learning or any other feature of intelligence can in principle be so precisely described that a machine can be made to simulate it." | Dartmouth Proposal opening section, Stanford-hosted PDF p.1. | Yellow — exact wording verification pending. |
-| The Proposal lists seven research topics: (1) automatic computers, (2) programming for natural language, (3) neuron nets, (4) theory of the size of a calculation, (5) self-improvement, (6) abstractions, (7) randomness and creativity. | Dartmouth Proposal body section. | Yellow — exact list-numbering verification pending. |
-| The Proposal asks Rockefeller for $13,500 and proposes a 2-month, 10-man study at Dartmouth College, Hanover NH, summer 1956. | Dartmouth Proposal opening + budget section. | Yellow |
-| The four signatories are McCarthy (Dartmouth), Minsky (Harvard), Rochester (IBM), Shannon (Bell Labs). | Dartmouth Proposal cover page. | Yellow |
-| Rockefeller eventually grants ~$7,500 — about 55% of the request. | Rockefeller Foundation archival records. | Red — primary access pending. |
+| McCarthy and three co-organizers submit a Rockefeller funding application dated August 31, 1955. | Dartmouth Proposal p.1 (Stanford PDF). | **Green** — verified by Codex `pdftotext` 2026-04-27. |
+| The Proposal opens with the conjecture that every aspect of learning or any feature of intelligence can in principle be so precisely described that a machine can be made to simulate it. | Dartmouth Proposal p.1 (Stanford PDF). | **Green** — verified by Codex `pdftotext` 2026-04-27. |
+| The Proposal lists seven research topics: automatic computers, programming for natural language, neuron nets, theory of the size of a calculation, self-improvement, abstractions, randomness and creativity. | Dartmouth Proposal p.2 (Stanford PDF). | **Green** — verified by Codex `pdftotext` 2026-04-27. |
+| The Proposal asks Rockefeller for $13,500 and proposes a 2-month, 10-man study at Dartmouth College, Hanover NH, summer 1956. | Dartmouth Proposal p.2 (location/duration) + p.4 (request amount), Stanford PDF. | **Green** — verified by Codex `pdftotext` 2026-04-27. |
+| Shannon's portion of the Proposal indicates he plans to attend only partially. | Dartmouth Proposal p.5 (Stanford PDF). | **Green** — verified by Codex `pdftotext` 2026-04-27. NB this anchors *planned* attendance only; actual attendance is a separate Yellow beat. |
+| The four signatories are McCarthy (Dartmouth), Minsky (Harvard), Rochester (IBM), Shannon (Bell Labs). | Dartmouth Proposal p.1 (Stanford PDF). | **Green** — verified by Codex `pdftotext` 2026-04-27. |
+| Rockefeller eventually grants approximately $7,500 — about 55% of the request. | Rockefeller Foundation archival records (not yet accessed). | Yellow — secondary sources widely repeat; primary anchor still archive-blocked. |
 
 **Scene-level note:** The infrastructure beat to foreground is the *gap* between the Proposal's framing (10-man, organized, productive summer) and the reality (~6 substantial attendees, partial attendance, no shared machine). Don't draft the gap until the infrastructure beats land Yellow at minimum.
 
@@ -23,9 +24,9 @@ Anchored layer: *700-1,000 words: The naming decision* (brief.md Prose Capacity 
 
 | Beat | Anchor | Status |
 |---|---|---|
-| McCarthy chose "Artificial Intelligence" rather than reusing "cybernetics," "automata theory," or "complex information processing." | McCarthy 2007 retrospective ("What is AI?"). | Yellow — specific paragraph citation pending. |
+| McCarthy chose "Artificial Intelligence" rather than reusing "cybernetics," "automata theory," or "complex information processing." | McCarthy 2007 retrospective ("What is AI?"). | Yellow — Codex anchor-hunt did not locate the specific passage on indexed whatisai pages 1-5; primary anchor still needed. |
 | McCarthy's stated reason was practical, not philosophical: he wanted a label that would let his project be funded and recognized as its own program rather than a sub-branch of an existing field. | McCarthy 2007 retrospective; McCorduck 1979 Ch.5. | Yellow |
-| "Cybernetics" carried Wiener's name and his strong personality; McCarthy did not want to operate under that shadow. | McCorduck 1979 Ch.5; Crevier 1993 Ch.2. | Yellow — careful framing required (McCarthy himself was guarded about Wiener in print). |
+| Whether McCarthy's rejection of "cybernetics" was specifically a reaction to Wiener's personality, or just to the disciplinary scope of the term, is **a contested interpretation across secondary sources**. | McCorduck 1979 Ch.5 (one reading); Crevier 1993 Ch.2 (another reading). | Yellow — **contested interpretation**, do NOT draft as a load-bearing motive claim. Demoted from prior framing per Codex review 2026-04-27. |
 | "Automata theory" was associated with mathematical-logic work and did not capture the goal of *building* learning machines. | McCarthy 2007 retrospective. | Yellow |
 | "Complex information processing" was Newell-Simon's preferred term and they continued to use it for years; McCarthy chose a new label rather than adopting theirs. | McCorduck 1979 Ch.5; secondary sources on Newell-Simon's continued use of the term. | Yellow |
 | The naming choice was ratified institutionally by the Proposal's acceptance and dispersion of the term across funding documents over 1957-1958. | Multiple secondary sources; primary anchors pending. | Yellow |

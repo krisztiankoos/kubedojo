@@ -1,1 +1,11 @@
-status: researching
+status: capacity_plan_anchored
+review_state: codex_contract_review_passed_2026-04-27
+green_claims: 7
+yellow_claims: 14
+red_claims: 1
+notes: |
+  Codex cross-family review 2026-04-27 (gpt-5.4) returned NEEDS_CHANGES with 4
+  must-fix findings; all 4 addressed in commit on this branch. Codex also did
+  anchor extraction via curl + pdftotext on the Stanford-hosted Dartmouth
+  Proposal PDF, promoting 7 claims to Green. Pending Claude/human final pass
+  before drafting unlocks.

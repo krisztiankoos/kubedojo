@@ -6,7 +6,7 @@ Verified protagonist bios. Bios are kept short — material that does not direct
 
 ### John McCarthy (1927-2011)
 - **Position in 1955-56:** Assistant professor of mathematics at Dartmouth College.
-- **Role in the chapter:** Lead drafter of the Proposal; coined the term "Artificial Intelligence." Hosted the conference at Dartmouth.
+- **Role in the chapter:** Lead drafter of the Proposal; institutionalized the term "Artificial Intelligence" through it (whether McCarthy was the absolute first to use the phrase in print is open question Q4). Hosted the conference at Dartmouth.
 - **Why he matters here:** McCarthy is the chapter's central protagonist. His later career (Stanford SAIL, LISP, situation calculus) is out of scope; his 2007 retrospective ("What is Artificial Intelligence?") is a primary source for the naming-decision scene.
 - **Verification:** Yellow — biographical facts are well-documented in standard sources; the *specific* claim about why he chose the name needs the McCarthy 2007 anchor.
 
