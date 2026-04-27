@@ -690,6 +690,49 @@ def cmd_reset_stage(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---- cleanup banners ---------------------------------------------------
+
+
+def cmd_cleanup_banners(args: argparse.Namespace) -> int:
+    """Sweep for stranded COMMITTED modules (where completion/banner clear
+    failed) and try to clear them again.
+    """
+    fixed = 0
+    failed = 0
+    primary = stages._primary()
+
+    for module_path in iter_all_modules():
+        if args.only and state.slug_for(module_path) not in args.only:
+            continue
+            
+        slug = state.slug_for(module_path)
+        with state.state_lease(slug, timeout=5) as lease:
+            st = lease.load()
+            if st is None or st["stage"] != "COMMITTED":
+                continue
+                
+            q = st.get("queue")
+            if not q or q.get("completed_at") is not None:
+                continue
+
+            print(f"Cleaning stranded banner for {slug}...")
+            try:
+                # We need to make sure we don't accidentally do auto_approved=True 
+                # unless it really was auto-approved. It's stored in history or we can default to False.
+                is_auto_approved = any(h.get("note") == "auto-approved under KUBEDOJO_SKIP_REVIEW" for h in st.get("history", []))
+                
+                stages._clear_banner_and_complete_queue(
+                    primary, slug, st["module_path"], auto_approved=is_auto_approved
+                )
+                fixed += 1
+            except Exception as e:
+                print(f"Failed to clean banner for {slug}: {e}")
+                failed += 1
+
+    print(f"\nCleanup complete. Fixed: {fixed}, Failed: {failed}")
+    return 0 if failed == 0 else 1
+
+
 # ---- main -------------------------------------------------------------
 
 
@@ -770,6 +813,13 @@ def main(argv: list[str] | None = None) -> int:
         help="override the agent used by citation_backfill",
     )
     p_backfill.set_defaults(func=cmd_backfill_pending)
+
+    p_cleanup = sub.add_parser(
+        "cleanup-banners",
+        help="sweep for COMMITTED modules where banner clear failed, and retry",
+    )
+    p_cleanup.add_argument("--only", nargs="*", help="filter by slug(s)")
+    p_cleanup.set_defaults(func=cmd_cleanup_banners)
 
     ns = parser.parse_args(argv)
     return ns.func(ns)
