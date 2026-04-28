@@ -15,7 +15,9 @@ Evidence: Fuchi 1992 pp.3-4; Fuchi 1984 pp.18-19; OTA 1983 pp.206-208.
 Use Kinoshita's FGCS'84 speech: computers and personal computers spreading fast,
 semiconductor costs collapsing, software demand exploding, and projected
 software personnel shortages. FGCS should feel like Japan's attempt to solve an
-internal bottleneck, not only an export strategy.
+internal bottleneck, not only an export strategy. Bridge this directly to the
+logic-programming choice as a higher-level, declarative productivity bet, while
+avoiding unanchored claims that it would let non-specialists program computers.
 
 Evidence: Kinoshita 1984 pp.7-12; Furukawa 1987 p.1.
 
@@ -24,7 +26,10 @@ Evidence: Kinoshita 1984 pp.7-12; Furukawa 1987 p.1.
 Make Furukawa's conceptual stack the explanatory center: knowledge information
 processing on top, logic programming in the middle, highly parallel architecture
 below, VLSI underneath. Explain why logic programming was attractive as a bridge:
-symbolic expressiveness above, machine-executable parallelism below.
+symbolic expressiveness above, machine-executable parallelism below. Where the
+anchors permit it, make the parallel-logic rationale concrete as proof/search
+work that can be distributed across a non-von-Neumann architecture, leading into
+GHC/KL1 without turning the scene into a language survey.
 
 Evidence: Furukawa 1987 pp.1-3; Kurozumi 1992 pp.9-10.
 
@@ -71,6 +76,9 @@ Close with the evaluation workshop and follow-on project. Gallaire sees limited
 real-world use and limited direct manufacturer impact, but real technical skill
 in machines, parallel OS, load distribution, and logic programming. Uchida shows
 the portability problem and the KLIC/free-software solution. The legacy is
-research infrastructure and trained people, not market conquest.
+research infrastructure and trained people, not market conquest. Use the final
+paragraph as a hinge to Part 5: specialized symbolic infrastructure had taught
+real lessons, but its portability and application limits leave the book ready
+for the mathematical/statistical turn rather than another hardware-first promise.
 
 Evidence: FinalEval p.4; Gallaire 1992 p.64; Uchida 1994 section 1.
