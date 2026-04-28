@@ -77,7 +77,7 @@ STAGES = [
 
 DEFAULT_WRITER = "gpt-5.5"
 DEFAULT_REASONING = "high"
-DEFAULT_REVIEWER = "{args.reviewer}"
+DEFAULT_REVIEWER = "gemini-3.1-pro-preview"
 
 
 # ---- state management ----------------------------------------------------
@@ -726,13 +726,13 @@ def review_one(state: dict[str, Any], args: argparse.Namespace) -> None:
     """WRITE_DONE → REVIEW_APPROVED or REVIEW_CHANGES. Gemini cross-family."""
     slug = state["slug"]
     prompt = _review_prompt(state)
-    cmd = [_VENV_PYTHON, DISPATCH, "gemini", "-", "--model", "{args.reviewer}", "--timeout", str(timeout)]
+    cmd = [_VENV_PYTHON, DISPATCH, "gemini", "-", "--model", args.reviewer, "--timeout", str(args.timeout)]
     log = log_path_for(slug, "review")
     t0 = time.time()
     try:
         result = subprocess.run(cmd, input=prompt, capture_output=True, text=True, timeout=args.timeout + 30)
     except subprocess.TimeoutExpired:
-        record_failure(state, f"review timeout after {timeout + 30}s")
+        record_failure(state, f"review timeout after {args.timeout + 30}s")
         return
     log.write_text((result.stdout or "") + "\n---STDERR---\n" + (result.stderr or ""), encoding="utf-8")
     if result.returncode != 0:
