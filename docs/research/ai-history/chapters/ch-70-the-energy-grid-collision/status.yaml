@@ -8,8 +8,8 @@ green_claims: 11
 yellow_claims: 3
 red_claims: 0
 guardrail_count: 7
-prose_word_cap_recommendation: 5800
-word_count_range: "4800-5800"
+prose_word_cap_recommendation: 5600
+word_count_range: "4500-5600"
 verdicts:
   claude:
     model: null

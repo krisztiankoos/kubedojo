@@ -58,7 +58,7 @@ with a grid built through slower planning cycles.
 
 ## Prose Capacity Plan
 
-Target range: 4,800-5,800 words after source verification.
+Target range: 4,500-5,600 words after source verification.
 
 - 500-650 words: bridge from Ch69 to physical load and define data-center
   components.

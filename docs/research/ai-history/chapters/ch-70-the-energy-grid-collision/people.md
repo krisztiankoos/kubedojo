@@ -4,9 +4,8 @@
   system-level demand/supply framing rather than individual personalities.
 - EPRI analysts and Epoch AI contributors behind the power-demand forecast:
   present as technical forecasters translating scaling into grid quantities.
-- Joe Dominguez / Constellation, Bobby Hollis / Microsoft: TMI/Crane Clean
-  Energy Center company statements. Use as company positions, not neutral
-  adjudication.
+- Joe Dominguez / Constellation: TMI/Crane Clean Energy Center company
+  statement. Use as company position, not neutral adjudication.
 - Michael Terrell / Google Energy and Climate: Google/Kairos announcement voice.
 - Urvi Parekh / Meta Global Energy: Meta/Clinton announcement voice.
 - Utility planners, interconnection engineers, local regulators: composite
