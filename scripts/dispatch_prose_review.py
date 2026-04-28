@@ -72,7 +72,9 @@ def research_branch_for(slug: str) -> str:
     """Determine the research branch that gated this prose. Claude owns
     research on Parts 1, 2, 3, 6, 7; Codex on Parts 4, 5, 8, 9. We don't
     need to enforce ownership here — just try claude/ then codex/ and
-    use the one that exists."""
+    use the one that exists. If neither is present (research already
+    merged to main), fall back to main, since gather_contract just
+    needs *some* ref where the contract lives."""
     chapnum = slug.split("-")[1]  # "ch-01-the-laws-of-thought" -> "01"
     candidates = [
         f"claude/394-ch{chapnum}-research",
@@ -85,6 +87,13 @@ def research_branch_for(slug: str) -> str:
         )
         if r.returncode == 0:
             return branch
+    main_path = f"docs/research/ai-history/chapters/{slug}/brief.md"
+    r = subprocess.run(
+        ["git", "show", f"origin/main:{main_path}"],
+        cwd=REPO, capture_output=True,
+    )
+    if r.returncode == 0:
+        return "main"
     raise ValueError(f"no research branch found for {slug}")
 
 
