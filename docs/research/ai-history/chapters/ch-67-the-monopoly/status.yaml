@@ -1,1 +1,37 @@
-status: researching
+status: prose_ready
+owner: Codex
+part: 9
+chapter: 67
+review_state: dual_cross_family_approved
+last_updated: 2026-04-28
+green_claims: 10
+yellow_claims: 7
+red_claims: 0
+guardrail_count: 5
+prose_word_cap_recommendation: 5400
+word_count_range: "4300-5400"
+verdicts:
+  claude:
+    model: claude-opus-4-7
+    date: 2026-04-28
+    verdict: APPROVE
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/526#issuecomment-4339516612
+  gemini:
+    model: gemini-3.1-pro-preview
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT_WITH_CAP
+    word_cap: 5400
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/526#issuecomment-4339533382
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 5400
+  resolution_rule: dual_cross_family_verdict_with_cap
+notes: |
+  Built from scrubbed shell into an anchored platform-concentration contract.
+  Core anchors are NVIDIA FY2024 10-K, Microsoft/OpenAI 2019/2025/2026 company
+  statements, Amazon/Anthropic and Google/Anthropic company statements, FTC 6(b)
+  inquiry/report, and the July 2024 joint US/EU/UK competition statement.
+
+  Claude approved source fidelity and Gemini approved gap/capacity at a
+  5,400-word cap. Do not claim a legal monopoly. Date Microsoft/OpenAI
+  exclusivity carefully, especially the April 27, 2026 amendment. Ch68 owns
+  data labor, copyright, and data control in depth.
