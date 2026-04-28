@@ -65,11 +65,11 @@ The transition from biology-inspired analog hardware to von Neumann digital arch
 
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
-| 6 | The Cybernetics Movement | researching | [yes](./ch-06-the-cybernetics-movement/) |
-| 7 | The Analog Bottleneck | researching | [yes](./ch-07-the-analog-bottleneck/) |
-| 8 | The Stored Program | researching | [yes](./ch-08-the-stored-program/) |
-| 9 | The Memory Miracle | researching | [yes](./ch-09-the-memory-miracle/) |
-| 10 | The Imitation Game | researching | [yes](./ch-10-the-imitation-game/) |
+| 6 | The Cybernetics Movement | accepted | [yes](./ch-06-the-cybernetics-movement/) |
+| 7 | The Analog Bottleneck | accepted | [yes](./ch-07-the-analog-bottleneck/) |
+| 8 | The Stored Program | accepted | [yes](./ch-08-the-stored-program/) |
+| 9 | The Memory Miracle | accepted | [yes](./ch-09-the-memory-miracle/) |
+| 10 | The Imitation Game | accepted | [yes](./ch-10-the-imitation-game/) |
 
 ## Part 3 — The Birth of Symbolic AI & Early Optimism (1950s–1960s)
 
@@ -79,10 +79,10 @@ The Dartmouth consensus, early search algorithms, and military funding.
 
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
-| 11 | The Summer AI Named Itself | prose_review (cap 5,100) | no |
-| 12 | Logic Theorist & GPS | prose_review (cap 4,500) | no |
-| 13 | The List Processor | prose_review (cap 4,500) | no |
-| 14 | The Perceptron | prose_review (cap 4,500) | no |
+| 11 | The Summer AI Named Itself | accepted | [yes](./ch-11-the-summer-ai-named-itself/) |
+| 12 | Logic Theorist & GPS | accepted | [yes](./ch-12-logic-theorist-gps/) |
+| 13 | The List Processor | accepted | [yes](./ch-13-the-list-processor/) |
+| 14 | The Perceptron | accepted | [yes](./ch-14-the-perceptron/) |
 | 15 | The Gradient Descent Concept | prose_ready | no |
 | 16 | The Cold War Blank Check | researching | no |
 

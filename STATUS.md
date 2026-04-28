@@ -2,7 +2,36 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-28 evening — smart-router wrapper shipped; Claude resumes Parts 2/3 work)
+## Active Work (2026-04-28 late evening — Parts 2 & 3 prose fully shipped)
+
+**Branch**: `main` clean, pushed. Part 2 (Ch06-10) and Part 3 (Ch11-14) prose all merged with dual cross-family review fix-passes applied. The only remaining Part 3 prose chapter is **Ch15** (verdict cleared on PR #457, prose not yet drafted). Ch16 is still at `researching`.
+
+**Session tally** (this run, 2026-04-28 PM):
+- **Ch10 prose** drafted via `gemini → codex` pipeline against `claude/394-ch10-research`. Dual-reviewed (Claude source-fidelity NEEDS_FIX_AND_MERGE, Gemini prose-quality READY_TO_MERGE). Inline fix-pass tightened §6 paraphrases to match contract Yellow status. Merged via PR #500.
+- **Ch10 supersede research** (#470) rebased onto post-prose main, force-pushed, merged → Part 2 fully closed.
+- **Ch11–Ch14 prose** (PRs #451, #452, #454, #455) — pre-existing Codex-drafted PRs. Each ran the dual-review gate and inline orchestrator fix-pass:
+  - Ch11: hedge JOHNNIAC line per Claude (Yellow). Gemini READY_TO_MERGE.
+  - Ch12: cut meta-narrative ("the contract", "primary-page anchor"), rename closing heading, soften Claude-flagged "joined by correspondence". Both reviewers NEEDS_FIX_AND_MERGE → applied.
+  - Ch13: full meta-narrative purge (Claude optional + Gemini hard-flag). Both reviewers said the production-process diction had bled into reader-facing prose.
+  - Ch14: same meta-narrative pattern (Hubel/Wiesel hedge, Mark I hardware hedge, NYT walk/talk attribution).
+- **Dispatcher fix shipped on main**: `scripts/dispatch_prose_review.py` now falls back to `main` as research-source ref when no `claude/394-chNN-research` or `codex/394-chNN-research` branch exists (research already merged). Was crashing the Part 3 dual-review batch.
+
+**Reusable lessons this run**:
+1. **Meta-narrative diction pattern**: Codex's expander prose tends to leak production-process vocabulary ("the contract", "Yellow", "anchor", "unsafe", "deliberately cautious") into the narrative. Pattern was consistent across Ch12/Ch13/Ch14 — both reviewers caught it independently. Future Codex prose runs: prompt should explicitly forbid contract-vocabulary in reader-facing text.
+2. **Dispatcher word-count vs reviewer estimates**: Claude reviewers sometimes estimate word count by eye and overshoot by 20–30%. The dispatcher's `[read] prose: NN words` print is authoritative; trust it over reviewer estimates before trimming.
+3. **Bash-tool background timeout**: `run_in_background: true` with `timeout: 600000` enforces a 10-minute cap on the bash chain, even though the harness will keep notifying me. Long sequential chains (5× Gemini reviews ≈ 15 min) get truncated. Re-fire as separate background tasks instead.
+4. **Gemini transient 429s on review dispatch**: One ch13 review crashed at the post-tool stage with `RateLimitedError: ... File not found`. A simple re-fire 2 minutes later succeeded — the rate limiter had cleared and the path was fine. Pattern matches the existing `feedback_runner_false_failure_recovery.md` shape: tool-work succeeded out-of-band; runner classification was wrong.
+
+**Open work — order**:
+1. **Ch15 prose** — verdict cleared (PR #457). `dispatch_chapter_prose.py 15 --slug ch-15-the-gradient-descent-concept --research-branch claude/394-ch15-research --cap-words <from #457>`. Then dual review + fix-pass + merge.
+2. **Ch16 research** — `status: researching` stub. Build contract via `dispatch_chapter_research.py 16 --slug ch-16-the-cold-war-blank-check`.
+3. **Part 6 research PRs (#471–#476)** — Claude's pre-policy-flip Ch32-37 research contracts. Verdicts on file but never merged. Same `git rebase origin/main && push --force-with-lease && gh pr merge` dance that worked on Part 1 and on #470.
+4. **Cleanup** — there are now 6 newly-merged worktrees + branches eligible for prune (codex-394-ch11/12/13/14-prose, prose-394-ch10, claude-394-ch10-research). `git worktree prune` + `git cleanup-merged` (per briefing alert).
+5. **Codex's progress on Parts 4–9** — Codex now drives Parts 4, 5, 6, 7, 8, 9 research per the policy. Part 8 had Ch50-52 at `prose_ready` and Ch53-58 still `researching`. Don't dispatch fresh research from Claude there.
+
+---
+
+## Prior — 2026-04-28 evening — smart-router wrapper shipped; Claude resumes Parts 2/3 work
 
 **Branch**: `main` at `303e4e3c` (clean, pushed). `feat(dispatch): generalize research dispatcher + add smart-router wrapper (#394)` + STATUS update.
 
