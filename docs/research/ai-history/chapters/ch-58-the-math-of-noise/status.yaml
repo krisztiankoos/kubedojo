@@ -1,1 +1,52 @@
-status: researching
+status: capacity_plan_anchored
+owner: Codex
+part: 8
+chapter: 58
+review_state: awaiting_claude_source_review_and_gemini_gap_audit
+last_updated: 2026-04-28
+green_claims: 16
+yellow_claims: 3
+red_claims: 0
+guardrail_count: 6
+prose_word_cap_recommendation: 5800
+word_count_range: "4000-5800"
+verdicts:
+  claude:
+    model: null
+    date: null
+    verdict: null
+    review_url: null
+  gemini:
+    model: null
+    date: null
+    verdict: null
+    word_cap: null
+    review_url: null
+  resolved: null
+  resolved_word_cap: null
+  resolution_rule: dual_cross_family_verdict_with_cap
+notes: |
+  Rebuilt from scrubbed/yellow skeleton into an anchored research contract using
+  direct curl + pdftotext extraction from:
+
+  - Sohl-Dickstein et al. 2015, arXiv:1503.03585.
+  - Ho/Jain/Abbeel 2020 DDPM, arXiv:2006.11239.
+  - Dhariwal/Nichol 2021, arXiv:2105.05233.
+  - Rombach et al. 2022 LDM, arXiv:2112.10752.
+  - Ho/Salimans 2022 classifier-free guidance, arXiv:2207.12598.
+  - CompVis Stable Diffusion v1-4 Hugging Face model card.
+  - Stability AI Aug 10/Aug 22 Stable Diffusion release posts.
+
+  Green claims cover the thermodynamic/Markov-chain origin, DDPM forward and
+  reverse process, epsilon/noise prediction, progressive denoising, diffusion vs
+  GAN benchmark layer, latent diffusion, classifier-free guidance, Stable
+  Diffusion architecture/training facts, and release/hardware/limitation facts.
+
+  Yellow claims are intentionally scoped: Midjourney technical details,
+  Stable Diffusion first-party adoption claims, and the transition to
+  open-weights/copyright politics. No Red claims remain in the drafting spine.
+
+  Safe prose range is 4,000-5,800 words. The chapter should not exceed that
+  unless a reviewer adds independent adoption/public-impact anchors. Do not pad
+  with Midjourney internals, copyright/labor analysis, or open-weights politics;
+  those belong to later chapters.
