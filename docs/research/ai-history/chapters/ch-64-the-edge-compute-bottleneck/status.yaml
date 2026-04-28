@@ -1,1 +1,37 @@
-status: researching
+status: capacity_plan_anchored
+owner: Codex
+part: 9
+chapter: 64
+review_state: awaiting_claude_source_review_and_gemini_gap_audit
+last_updated: 2026-04-28
+green_claims: 17
+yellow_claims: 2
+red_claims: 0
+guardrail_count: 6
+prose_word_cap_recommendation: 5000
+word_count_range: "4000-5000"
+verdicts:
+  claude:
+    model: null
+    date: null
+    verdict: null
+    review_url: null
+  gemini:
+    model: null
+    date: null
+    verdict: null
+    word_cap: null
+    review_url: null
+  resolved: null
+  resolved_word_cap: null
+  resolution_rule: dual_cross_family_verdict_with_cap
+notes: |
+  Built from a scrubbed shell into a capacity_plan_anchored contract. Core
+  anchors are MobileNets, Apple iPhone X/A11 Neural Engine, Qualcomm Snapdragon
+  8 Gen 3 product brief, Google Gemini Nano / Android AICore, Apple Intelligence
+  / AFM-on-device, LLM-in-a-flash, and MobileLLM.
+
+  Safe draft range is 4,000-5,000 words pending Gemini capacity audit. Keep
+  Qualcomm performance claims as Yellow vendor framing. Do not imply all phone
+  AI runs locally; Pixel Video Boost and Apple PCC provide the hybrid-routing
+  guardrail.
