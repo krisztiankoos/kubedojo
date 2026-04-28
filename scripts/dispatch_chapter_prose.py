@@ -334,21 +334,29 @@ def fire_phase(*, agent: str, prompt: str, worktree: Path, task_id: str,
     if agent == "gemini":
         model = "gemini-3.1-pro-preview"
         timeout = 2400
+        mode = "workspace-write"
     elif agent == "codex":
         # gpt-5.5 + model_reasoning_effort=high pinned in
-        # ~/.codex/config.toml.
+        # ~/.codex/config.toml. Codex needs `danger` mode (not
+        # workspace-write) so it can self-commit on the worktree
+        # branch — workspace-write blocks
+        # `.git/worktrees/<name>/index.lock` as documented in
+        # `feedback_codex_workspace_write_default.md` and observed
+        # again 2026-04-29 on the Ch03 fix-applier dispatch.
         model = "gpt-5.5"
         timeout = 3600
+        mode = "danger"
     elif agent == "claude":
         model = "claude-opus-4-7"
         timeout = 3600
+        mode = "workspace-write"
     else:
         raise ValueError(agent)
 
-    print(f"[fire] {agent} ({model}) on {task_id}")
+    print(f"[fire] {agent} ({model}, mode={mode}) on {task_id}")
     r = invoke(
         agent, prompt,
-        mode="workspace-write",
+        mode=mode,
         cwd=worktree,
         model=model,
         task_id=task_id,
