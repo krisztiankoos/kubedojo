@@ -85,7 +85,7 @@ The Dartmouth consensus, early search algorithms, and military funding.
 | 12 | Logic Theorist & GPS | accepted | [yes](./ch-12-logic-theorist-gps/) |
 | 13 | The List Processor | accepted | [yes](./ch-13-the-list-processor/) |
 | 14 | The Perceptron | accepted | [yes](./ch-14-the-perceptron/) |
-| 15 | The Gradient Descent Concept | prose_ready | no |
+| 15 | The Gradient Descent Concept | prose_ready (cap 4,900) | no |
 | 16 | The Cold War Blank Check | researching | no |
 
 ## Part 4 — The First Winter & The Shift to Knowledge (1970s–1980s)
@@ -129,10 +129,10 @@ The shift to empiricism, enabled by the internet and cluster computing.
 
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
-| 32 | The DARPA SUR Program | researching | [yes](./ch-32-the-darpa-sur-program/) |
-| 33 | Deep Blue | researching | [yes](./ch-33-deep-blue/) |
-| 34 | The Accidental Corpus | researching | [yes](./ch-34-the-accidental-corpus/) |
-| 35 | Indexing the Mind | researching | [yes](./ch-35-indexing-the-mind/) |
+| 32 | The DARPA SUR Program | prose_ready (cap 5,600) | [yes](./ch-32-the-darpa-sur-program/) |
+| 33 | Deep Blue | prose_ready (cap 4,900) | [yes](./ch-33-deep-blue/) |
+| 34 | The Accidental Corpus | prose_ready (cap 5,200) | [yes](./ch-34-the-accidental-corpus/) |
+| 35 | Indexing the Mind | prose_ready (cap 4,300) | [yes](./ch-35-indexing-the-mind/) |
 | 36 | The Multicore Wall | researching | [yes](./ch-36-the-multicore-wall/) |
 | 37 | Distributing the Compute | researching | [yes](./ch-37-distributing-the-compute/) |
 | 38 | The Human API | researching | [yes](./ch-38-the-human-api/) |
@@ -200,8 +200,8 @@ Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 |---|---:|
 | `accepted` (drafted, all reviews cleared) | 29 |
 | `prose_review` (drafted, in review) | 0 |
-| `prose_ready` (contract dual-cleared, awaiting prose draft) | 7 |
+| `prose_ready` (contract dual-cleared, awaiting prose draft) | 11 |
 | `capacity_plan_anchored` (contract anchored, awaiting verdict) | 0 |
-| `researching` with prose merged on legacy contract | 11 |
+| `researching` with prose merged on legacy contract | 7 |
 | `researching` (no prose yet) | 21 |
 | **Total** | **68** |

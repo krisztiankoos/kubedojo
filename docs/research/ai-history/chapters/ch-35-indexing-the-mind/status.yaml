@@ -1,6 +1,20 @@
-status: capacity_plan_anchored
-prose_word_cap: null
-review_state: claude_research_contract_built_2026-04-28;awaiting_dual_cross_family_review
+status: prose_ready
+prose_word_cap: 4300
+review_state: gemini_ready_to_draft_2026-04-28;codex_ready_to_draft_with_cap_2026-04-28
+last_updated: 2026-04-28
+verdicts:
+  gemini:
+    model: gemini-3.1-pro-preview
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/474#issuecomment-4332671499
+  codex:
+    model: gpt-5.5
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT_WITH_CAP
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/474#issuecomment-4332671578
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 4300
 green_claims: 26
 yellow_claims: 7
 red_claims: 0
