@@ -51,23 +51,23 @@ deals made the hidden supply chain visible.
 
 ## Prose Capacity Plan
 
-Target range: 4,500-5,600 words after source verification.
+Target range: 4,500-5,500 words after source verification.
 
-- 500-700 words: bridge from Ch67's platform gates to the less visible data
+- 500-650 words: bridge from Ch67's platform gates to the less visible data
   gate: the model stack needs people and rights-cleared material, not just
   compute.
-- 900-1,100 words: the human filter. Use Ch57/Ouyang for the research pipeline
+- 850-1,000 words: the human filter. Use Ch57/Ouyang for the research pipeline
   and TIME for Sama/Kenya reporting. Do not turn anonymous workers into scenery.
-- 850-1,050 words: the scraped corpus. Explain Common Crawl, GPT-3's training
+- 800-950 words: the scraped corpus. Explain Common Crawl, GPT-3's training
   mixture, The Pile's 825 GiB/22-subset design, and Books3 as a named book
   component that later becomes legally salient.
-- 850-1,100 words: the image flashpoint. LAION-5B, Stable Diffusion v1-4, Getty's
+- 800-1,000 words: the image flashpoint. LAION-5B, Stable Diffusion v1-4, Getty's
   claim of copied images/captions/metadata, and watermark/trademark allegations.
-- 950-1,200 words: the news/book courtroom phase. NYT allegations, OpenAI's fair
+- 900-1,100 words: the news/book courtroom phase. NYT allegations, OpenAI's fair
   use/opt-out/regurgitation framing, the 2025 NYT motion-to-dismiss narrowing,
   and the Bartz/Anthropic order's split between training copies, purchased
   scanning, and pirated library copies.
-- 650-850 words: enclosure close. Robots.txt/crawler controls, publisher
+- 600-800 words: enclosure close. Robots.txt/crawler controls, publisher
   licensing, Reddit Data API, and handoff to Ch69's question: what happens when
   high-quality human data becomes scarce, expensive, or legally fenced?
 
