@@ -1,1 +1,94 @@
-status: researching
+status: capacity_plan_anchored
+green_claims: 17
+yellow_claims: 1
+red_claims: 0
+notes: |
+  Research contract built fresh under the new Part 6 role split (Claude owns
+  Part 6 research, effective 2026-04-28). All Green claims trace to verified
+  primary or transmitted-verbatim secondary anchors via direct `pdftotext`
+  extraction performed 2026-04-28.
+
+  Primary sources anchored at the page or section level:
+   - Newell et al. 1971 *Speech-Understanding Systems: Final Report of a
+     Study Group* (CMU technical report, May 1971; 149 pages). Anchored at
+     Section 1.1 Conclusions 1/2/5 (PDF p.11), Section 1.2 Final
+     Specifications table items (1)-(19) (PDF p.12), and Section 8.6 "Public
+     Data and Public Analysis" methodological proposal (PDF p.50).
+   - Bahl, Jelinek, Mercer 1983 *IEEE Trans. PAMI* 5(2): 179-190. Anchored
+     at abstract/noisy-channel framing (p.179), Markov source modeling
+     (Section IV, p.181 ff.), Forward-Backward Algorithm (Section VII,
+     p.185 ff.), perplexity definition (Section IX, pp.187-188), CMU-AIX05
+     task confirmation (Section X, p.189). Reference [21] confirms the 1973
+     North-Holland republication of the Newell SUR final report.
+   - Jelinek 2005 LREC slides (`http://www.lrec-conf.org/lrec2004/doc/jelinek.pdf`).
+     Anchored at the December 1988 / Wayne PA "fire a linguist" quote
+     provenance (PDF p.2), verbatim Pierce 1969 transmission (PDF p.2-3),
+     SUR-AI-dominated-except-Baker (PDF p.3), 35/75/43 IBM accuracy chain
+     (PDF p.3-4), Arden House 1985 Mercer attribution (PDF p.5), ACL
+     1990-vs-2003 statistical-paper counts (PDF p.4).
+   - CMU 1977 *Speech Understanding Systems: Summary of Results of the
+     Five-Year Research Effort at Carnegie-Mellon University*. Anchored at
+     Section I institutional framing (PDF p.7), Figure 1 HARPY-vs-Newell
+     1971 targets (PDF p.8), and HEARSAY-II AIX05/AIX15 semantic-error
+     numbers (PDF p.13).
+   - Lowerre & Reddy 1979 chapter "The HARPY Speech Understanding System"
+     (Trends in Speech Recognition, ed. Lea, Prentice-Hall 1980).
+     Anchored at Section 15-2 institutional framing and Figure 15-1
+     targets-vs-performance with the 13 August 1976 operational date.
+
+  Secondary anchors:
+   - Juang & Rabiner 2005 *Encyclopedia of Language and Linguistics*
+     speech-recognition history article. Anchored at SUR scope (PDF p.8-9),
+     IBM Tangora parallel track (PDF p.10), and the late-1980s/1990s DARPA
+     revival via statistical methods (PDF p.15).
+   - Church 2018 *Natural Language Engineering* tribute to Charles Wayne.
+     Open access. Anchors the 1975-1986 funding-winter framing, Wayne's
+     mid-1980s common-task method revival, and verbatim Pierce 1969 quotes
+     (verified by WebFetch 2026-04-28; convergent with Jelinek 2005 slide
+     transmission).
+
+  Single Yellow claim:
+   - HWIM and SDC specific failure-to-meet-target numbers at the September
+     1976 demonstration. Currently anchored only via Klatt 1977 transmission
+     through Juang & Rabiner 2005 PDF p.9. Klatt 1977 JASA PDF is paywalled
+     at AIP. Non-blocking — Scene 3's narrative arc holds with HARPY (Green
+     anchored) plus HEARSAY-II (Green anchored) plus the framing claim "of
+     the four contractor systems, only HARPY met the Newell 1971 Final
+     Specifications" (Green via Juang & Rabiner 2005). Specific HWIM/SDC
+     numbers are useful but not load-bearing.
+
+  Capacity-plan anchoring check:
+   - Layer 1 (Pierce + ALPAC, 600-900 words) — 3 page-level anchors
+     (Jelinek 2005 slides p.2-3; Church 2018 NLE; Newell 1971 cover/§1.1
+     for the responding-to-skepticism framing).
+   - Layer 2 (Newell charter, 1100-1500 words) — 3 page-level anchors
+     in Newell 1971 (§1.1 PDF p.11, §1.2 PDF p.12, §8.6 PDF p.50).
+   - Layer 3 (1976 demonstration, 800-1100 words) — 3 page-level anchors
+     (CMU 1977 PDF p.7-8 + p.13; Lowerre & Reddy 1979 Figure 15-1; Juang
+     & Rabiner 2005 PDF p.9).
+   - Layer 4 (IBM parallel track, 700-1000 words) — 3 page-level anchors
+     in Bahl/Jelinek/Mercer 1983 (abstract p.179, §IV p.181 ff., §IX
+     pp.187-188, §X p.189) plus Jelinek 2005 slides p.3-4.
+   - Layer 5 (methodology that outlived SUR, 800-1100 words) — 3+ page-
+     level anchors (Jelinek 2005 slides p.2 + p.5; Church 2018 NLE;
+     Juang & Rabiner 2005 PDF p.15; structural pointer back to Newell
+     1971 §8.6).
+
+  Total budget: 4,000-5,600 words. Word Count Discipline label:
+  `4k-7k stretch` — feasible at the upper end if Klatt 1977 page anchors
+  land for Scene 3 four-system comparison and Pierce 1969 PDF lands for
+  Scene 1 verbatim chain. Otherwise `3k-5k likely` is the honest
+  expectation.
+
+  Misattribution flagged for cleanup: the legacy Ch32 sources.md cited
+  Jelinek's "Some of my Best Friends are Linguists" as *Language Resources
+  and Evaluation* vol. 18 (2005). The correct citation is volume 39, pp.
+  25-34 (DOI 10.1007/s10579-005-2693-4). Corrected in this contract's
+  sources.md and timeline.md.
+
+  Next gate: dual cross-family review per the new role split. Codex
+  reviews anchor verification (does every Green claim trace to a real
+  page in a real PDF that Claude actually extracted). Gemini reviews
+  capacity-plan honesty and narrative gaps (without asserting page anchors,
+  per `feedback_gemini_hallucinates_anchors.md`). Status advances to
+  `research_contract_approved` only when both reviewers approve.
