@@ -1,8 +1,8 @@
-status: prose_review
+status: accepted
 owner: Codex
 part: 4
 chapter: 23
-review_state: needs_cross_family_prose_review
+review_state: accepted
 last_updated: 2026-04-28
 prose_path: src/content/docs/ai-history/ch-23-the-japanese-threat.md
 prose_words: 4068
@@ -17,3 +17,4 @@ notes:
   - "Claude source-discipline review on PR #458 returned READY_TO_DRAFT_WITH_CAP; non-blocking nits applied for TR-228 dating, PSI/KLO co-anchor, and opening perception frame."
   - "Gemini gap/capacity review on PR #458 returned READY_TO_DRAFT_WITH_CAP; source-safe narrative nits applied for the software-crisis-to-logic bridge, parallel-logic explanation, and Part 5 handoff."
   - "Codex drafted first prose pass at 4,068 words, inside the approved 4,000-5,000 range without unverified Western-response budget or sole-causation claims."
+  - "Claude source-fidelity review approved PR #489; Gemini narrative review approved with no required fixes."
