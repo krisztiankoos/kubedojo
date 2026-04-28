@@ -184,7 +184,7 @@ Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
-| 59 | The Product Shock | researching | no |
+| 59 | The Product Shock | capacity_plan_anchored | no |
 | 60 | The Agent Turn | researching | no |
 | 61 | The Physics of Scale | researching | no |
 | 62 | Multimodal Convergence | researching | no |
@@ -206,7 +206,7 @@ Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 | `accepted` (drafted, all reviews cleared) | 29 |
 | `prose_review` (drafted, in review) | 0 |
 | `prose_ready` (contract dual-cleared, awaiting prose draft) | 15 |
-| `capacity_plan_anchored` (contract anchored, awaiting verdict) | 1 |
+| `capacity_plan_anchored` (contract anchored, awaiting verdict) | 2 |
 | `researching` with prose merged on legacy contract | 5 |
-| `researching` (no prose yet) | 22 |
+| `researching` (no prose yet) | 21 |
 | **Total** | **72** |
