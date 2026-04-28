@@ -1,16 +1,71 @@
-# Sources: Chapter 58
+# Sources: Chapter 58 - The Math of Noise
 
-## Claim Matrix
+## Verification Key
 
-| Claim | Scene | Primary Source | Secondary Confirmation | Verification | Conflict |
+- Green: claim has direct primary evidence from a paper, model card, or first-party announcement.
+- Yellow: claim is interpretive, source-limited, adoption/contextual, or depends on careful wording.
+- Red: claim should not be drafted unless new evidence is added.
+
+## Primary Sources
+
+| Source | Use | Verification |
+|---|---|---|
+| Jascha Sohl-Dickstein, Eric A. Weiss, Niru Maheswaranathan, Surya Ganguli, "Deep Unsupervised Learning using Nonequilibrium Thermodynamics," ICML 2015 / arXiv:1503.03585. URL: https://arxiv.org/pdf/1503.03585 | Foundational thermodynamic/Markov-chain framing, forward diffusion, reverse trajectory, and early image/denoising demonstrations. | Green: PDF fetched 2026-04-28. PDF p.1 abstract says the essential idea is inspired by non-equilibrium statistical physics, slowly destroys structure through an iterative forward diffusion process, and learns a reverse process that restores structure. PDF p.2 says the method uses a Markov chain to gradually convert one distribution into another, from non-equilibrium statistical physics, and can train thousands of layers/time steps. PDF pp.3-5 give Figure 1, forward trajectory, reverse trajectory, and training objective anchors. |
+| Jonathan Ho, Ajay Jain, Pieter Abbeel, "Denoising Diffusion Probabilistic Models," NeurIPS 2020 / arXiv:2006.11239. URL: https://arxiv.org/pdf/2006.11239 | DDPM mechanism, high-quality image synthesis, forward Gaussian noising, reverse Markov chain, epsilon/noise prediction, progressive denoising. | Green: PDF fetched 2026-04-28. PDF p.1 abstract reports high-quality image synthesis, CIFAR10 Inception score 9.46/FID 3.17, and LSUN quality similar to ProgressiveGAN. PDF pp.2-3 define the reverse process, forward Gaussian diffusion process, and variational bound. PDF p.4 gives Algorithms 1-2 and the epsilon/noise-prediction parameterization. PDF pp.6-7 support progressive lossy compression and the claim that large-scale features appear first and details last. |
+| Prafulla Dhariwal and Alex Nichol, "Diffusion Models Beat GANs on Image Synthesis," arXiv:2105.05233, 2021. URL: https://arxiv.org/pdf/2105.05233 | Anchor the "diffusion beats GANs" layer, classifier guidance, metric caveats, and slow sampling limitation. | Green: PDF fetched 2026-04-28. PDF p.1 abstract says diffusion models can achieve sample quality superior to current state-of-the-art generative models, reports FID 2.97/4.59/7.72 at ImageNet 128/256/512, and notes matching BigGAN-deep with as few as 25 forward passes. PDF pp.2-3 explain GAN state-of-art context, diffusion sampling as gradual noise removal, and the noise-prediction training objective. PDF pp.11-12 give Table 6, limitations, and the slower-than-GAN sampling caveat. |
+| Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, Bjoern Ommer, "High-Resolution Image Synthesis with Latent Diffusion Models," CVPR 2022 / arXiv:2112.10752. URL: https://arxiv.org/pdf/2112.10752 | Latent diffusion, compute reduction, cross-attention conditioning, text-to-image, public code/pretrained model context. | Green: PDF fetched 2026-04-28. PDF pp.1-3 say pixel-space diffusion consumes hundreds of GPU days, inference is expensive, and LDMs apply diffusion in an autoencoder latent space to reduce computational complexity while retaining quality. PDF p.2 lists contributions including cross-attention for text/layout conditioning and pretrained model release. PDF pp.7-9 anchor text-to-image conditioning, LAION-400M, class-conditional comparison, limitations, and societal-impact caveats. Appendix printed p.28/Table 18 compares training compute and inference throughput. |
+| Jonathan Ho and Tim Salimans, "Classifier-Free Diffusion Guidance," arXiv:2207.12598, 2022. URL: https://arxiv.org/pdf/2207.12598 | Prompt/control mechanism used by Stable Diffusion variants: conditional/unconditional score mixing without a separate classifier. | Green: PDF fetched 2026-04-28. Abstract and Sections 1-3 say classifier-free guidance jointly trains conditional and unconditional diffusion behavior, mixes their score estimates, and trades sample quality/fidelity against diversity without a separate classifier. |
+| CompVis, "Stable Diffusion v1-4 Model Card," Hugging Face. URL: https://huggingface.co/CompVis/stable-diffusion-v1-4/raw/main/README.md | First-party/maintainer model-card facts: model type, training data, latent-space architecture, cross-attention, classifier-free guidance, hardware, limitations. | Green: fetched 2026-04-28. Lines around "Model Details" identify Stable Diffusion as a latent text-to-image diffusion model using CLIP ViT-L/14; Training section says v1-4 combines an autoencoder with latent-space diffusion, maps images to latents with downsampling factor 8, feeds text through the UNet via cross-attention, trains on noise reconstruction, and used 32 x 8 A100 GPUs. Limitations and Bias section lists lossy autoencoding, LAION data, memorization risk, English-caption bias, and non-perfect photorealism/text/compositionality limits. |
+| Stability AI, "Stable Diffusion Launch Announcement," August 10, 2022. URL: https://stability.ai/news-updates/stable-diffusion-announcement | Public researcher-release framing, relation to CompVis/Runway latent diffusion, consumer-GPU claim, LAION-Aesthetics, A100 cluster, beta usage. | Green: fetched 2026-04-28. Page date is Aug 10; article says Stable Diffusion builds on CompVis/Runway latent diffusion work, runs on under 10 GB VRAM on consumer GPUs at 512x512 in seconds, used LAION-Aesthetics/LAION-5B, was trained on a 4,000 A100 Ezra-1 ultracluster, and had over 10,000 beta testers creating 1.7M images/day. Treat as first-party promotional source; avoid unqualified hype. |
+| Stability AI, "Stable Diffusion Public Release," August 22, 2022. URL: https://stability.ai/news-updates/stable-diffusion-public-release. Archived 2022 capture: https://web.archive.org/web/20220822232033/https://stability.ai/blog/stable-diffusion-public-release | Public release date, weights/model card/code availability, license/safety classifier, v1.4/VRAM release facts. | Green: fetched 2026-04-28. Live page date is Aug 22; Wayback capture exposes schema.org `datePublished: 2022-08-22T19:06:20+0100`. Article announces public release after researcher release, says the model was released under CreativeML OpenRAIL-M, includes a default safety classifier, points to weights/model card/code, names recommended v1.4 weights, and states final memory usage should be 6.9 GB VRAM. |
+
+## Secondary and Context Sources
+
+| Source | Use | Verification |
+|---|---|---|
+| Wikipedia, "Stable Diffusion." URL: https://en.wikipedia.org/wiki/Stable_Diffusion | Source-discovery pointer for release chronology, repository/model-card links, and downstream topics. | Yellow: useful for checking what public sources exist, not used as a primary anchor for technical claims. |
+| Britannica, "Stable Diffusion." URL: https://www.britannica.com/technology/Stable-Diffusion | Neutral public-facing context for Stable Diffusion's public release and general description. | Yellow: background only; prefer Stability/Hugging Face/Rombach for claims. |
+
+## Scene-Level Claim Table
+
+| Claim | Scene | Primary Anchor | Independent Confirmation | Status | Notes |
 |---|---|---|---|---|---|
-| Diffusion models were inspired by non-equilibrium thermodynamics | 1 | Sohl-Dickstein et al. 2015 | N/A | Yellow | Need exact page anchors. |
-| High-quality image generation was achieved by reversing the noise process | 2, 3 | Ho et al. 2020 (Denoising Diffusion Probabilistic Models) | N/A | Yellow | Need exact page anchors. |
+| Sohl-Dickstein et al. explicitly framed the method as inspired by non-equilibrium statistical physics and as a process that slowly destroys then restores data structure. | Thermodynamic Metaphor | Sohl-Dickstein 2015 PDF p.1 abstract | Ho 2020 p.1 cites nonequilibrium thermodynamics lineage | Green | Use "inspired by" and "mathematical framing," not literal entropy reversal. |
+| The 2015 method uses a Markov chain to gradually convert one distribution into another and then defines the probabilistic model as the endpoint/reversal of that chain. | Thermodynamic Metaphor | Sohl-Dickstein 2015 PDF p.2 | Sohl Figure 1 pp.3-5 | Green | Strong anchor for the explanatory spine. |
+| The early framework could train models with thousands of layers/time steps. | Thermodynamic Metaphor | Sohl-Dickstein 2015 PDF p.2 | N/A | Green | Avoid implying these were already photorealistic systems. |
+| The forward process can be taught as gradually adding Gaussian noise until signal is destroyed. | Dog Becomes Static | Ho 2020 PDF p.2 | Sohl 2015 pp.3-4 | Green | Pedagogical dog/cat example is illustrative; do not present it as a source experiment. |
+| DDPM defines a reverse process as a Markov chain with learned Gaussian transitions beginning from noise. | Network Learns Noise | Ho 2020 PDF p.2 | Dhariwal/Nichol 2021 pp.2-3 | Green | Technical core. |
+| DDPM can train the model to predict the noise component rather than directly reconstruct the image at once. | Network Learns Noise | Ho 2020 PDF p.4 Algorithm 1 and epsilon parameterization | Dhariwal/Nichol 2021 p.3 summary | Green | Explain as "predict the noise to remove." |
+| DDPM reported high-quality image synthesis and strong CIFAR10/LSUN metrics, but not best likelihoods. | Network Learns Noise | Ho 2020 PDF p.1 and pp.6-7 | Dhariwal/Nichol 2021 background | Green | Useful caveat: sample quality vs likelihood. |
+| DDPM sampling produces coarse/global structure before fine details, supporting a narrative of progressive image emergence. | Network Learns Noise / Progressive Denoising | Ho 2020 PDF p.7 | Rombach p.2 perceptual/semantic compression framing | Green | Good scene material; do not over-psychologize. |
+| Diffusion models surpassed GAN baselines on several metrics/datasets after architectural changes and classifier guidance. | GAN Wall Breaks | Dhariwal/Nichol 2021 PDF p.1 and Table 6 pp.11-12 | Rombach 2022 p.7 class-conditional comparison | Green | Say "several metrics/datasets," not universal superiority. |
+| Dhariwal and Nichol emphasized that GANs had held state of the art, had training/density-coverage drawbacks, and that diffusion models were still slower at sampling. | GAN Wall Breaks | Dhariwal/Nichol 2021 PDF pp.2-3 and p.12 | Rombach 2022 pp.1-2 | Green | Prevents triumphalist simplification. |
+| Classifier guidance and classifier-free guidance are quality/control levers that trade diversity for fidelity or mix conditional/unconditional scores. | GAN Wall Breaks / Stable Diffusion | Dhariwal/Nichol 2021 pp.1-3; Ho/Salimans 2022 abstract/Sections 1-3 | Stable Diffusion model card training notes | Green | Do not reduce prompt following to this mechanism alone. |
+| Latent diffusion lowers pixel-space compute by training diffusion in an autoencoder latent space. | Latent Shortcut | Rombach 2022 PDF pp.1-3 | Stable Diffusion model card Training section | Green | Strong infrastructure layer. |
+| Cross-attention let LDMs condition generation on text/layout-style inputs. | Latent Shortcut | Rombach 2022 PDF pp.2 and 7 | Stable Diffusion model card Model Details/Training | Green | Connects the math of noise to promptable systems. |
+| Stable Diffusion v1-4 was a latent text-to-image model that combined autoencoding, latent diffusion, CLIP text encoding, cross-attention, and noise-reconstruction training. | Stable Diffusion | Stable Diffusion v1-4 model card | Rombach 2022 | Green | Good prose bridge to public adoption. |
+| Stability AI publicly announced Stable Diffusion on August 22, 2022, with weights/model card/code available and a stated 6.9 GB VRAM release memory footprint. | Stable Diffusion | Stability AI public release post, Aug 22 2022 | Model card | Green | First-party promotional source; state as "Stability said." |
+| The August 10 researcher-release post claimed consumer-GPU feasibility under 10 GB VRAM, LAION-Aesthetics data, a 4,000 A100 cluster, and large beta usage. | Stable Diffusion | Stability AI launch post, Aug 10 2022 | Model card for training/data details | Green/Yellow | Green for what Stability claimed; Yellow for treating beta numbers as independent adoption metrics. |
+| Stable Diffusion's model card records material limitations: lossy autoencoder, imperfect photorealism/text/compositionality, LAION data risks, memorization risk, and English-caption bias. | Stable Diffusion close | Stable Diffusion v1-4 model card Limitations/Bias/Training Data | Rombach 2022 p.9 societal impact | Green | Prevents celebratory-only ending. |
+| Midjourney belongs in the broader 2022 image-generator explosion, but its internal architecture and training details are not sufficiently anchored here. | Boundary | Lack of primary technical source in this pass | Public context only | Yellow | Mention only as a public-facing peer product if needed; no technical claims. |
+| Stable Diffusion's release became politically important for open weights and copyright/data-labor debates. | Boundary / Close | Stability release + model card LAION notes | Chapters 65 and 68 roadmap | Yellow | Use only as a transition; full treatment belongs to Ch65/Ch68. |
 
-## Bibliography
-### Primary
-- **Sohl-Dickstein, Jascha, et al. "Deep unsupervised learning using nonequilibrium thermodynamics." In *ICML*, 2015.**
-- **Ho, Jonathan, Ajay Jain, and Pieter Abbeel. "Denoising diffusion probabilistic models." *Advances in neural information processing systems* 33 (2020): 6840-6851.**
+## Conflict Notes
 
-### Secondary
-- **TBD**
+- Do not write "diffusion reversed entropy" without qualification. The source-supported claim is a learned reverse process for a mathematically defined diffusion/noising trajectory.
+- Do not claim diffusion models universally replaced GANs. Dhariwal/Nichol show superiority on several metrics/datasets and still note slower sampling.
+- Do not use FID or Inception Score as if they settle artistic quality. They are benchmark metrics, not a neutral public-value measure.
+- Do not add copyright, artist-consent, or LAION labor arguments here beyond a transition. Chapter 68 owns that conflict.
+- Do not invent Midjourney implementation details. If Midjourney appears, it should be framed as a public product in the same cultural moment, not as a sourced technical lineage.
+- Avoid "magic" wording except as a user's felt experience; the mechanism is iterative neural denoising.
+
+## Anchor Worklist
+
+- Sohl-Dickstein 2015: Done for abstract, non-equilibrium inspiration, forward diffusion, reverse process, Figure 1, and training objective from fetched arXiv PDF.
+- Ho 2020 DDPM: Done for high-quality sample claim, forward/reverse definitions, epsilon prediction, Algorithms 1-2, U-Net note, and progressive generation/compression anchors from fetched arXiv PDF.
+- Dhariwal/Nichol 2021: Done for "beat GANs" claim, GAN context, classifier guidance, Table 6 results, and sampling-speed limitation from fetched arXiv PDF.
+- Rombach 2022 LDM: Done for latent-space compute reduction, autoencoder split, cross-attention conditioning, text-to-image, limitations, and Table 18 compute comparison from fetched arXiv PDF.
+- Ho/Salimans 2022: Done for classifier-free guidance mechanism from fetched arXiv PDF.
+- Stable Diffusion model card: Done for architecture/training/data/hardware/limitations from fetched Hugging Face raw README.
+- Stability AI August 2022 posts: Done for release-date, weights/code/model-card, VRAM, consumer GPU, LAION, cluster, and beta-usage first-party claims. Aug 22 release-date year has an archived Wayback/schema.org anchor.
+- Optional later: independent adoption metrics, Midjourney technical sourcing, and third-party public-reception history. Not required for safe 4k-5.8k prose.
