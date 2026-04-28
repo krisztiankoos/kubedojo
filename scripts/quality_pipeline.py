@@ -494,6 +494,37 @@ Hard requirements:
 """
 
 
+
+def _section_prompt(state: dict[str, Any], args: argparse.Namespace, module_text: str) -> str:
+    rubric_rules = (REPO_ROOT / ".claude" / "rules" / "module-quality.md").read_text(encoding="utf-8")
+    return f"""You are rewriting ONLY a specific section of a KubeDojo module.
+
+## Target module path
+{state['module_path']}
+
+## Target section to rewrite
+{args.section}
+
+## Project-specific module quality standards
+{rubric_rules}
+
+## Current module content
+```markdown
+{module_text}
+```
+
+## Your task
+Rewrite ONLY the '{args.section}' section to improve its quality, depth, or formatting, while keeping ALL other sections of the file identical.
+For example, if target is 'prereqs', update the prerequisites in the frontmatter or initial block.
+
+Output ONLY the new full module markdown (including frontmatter). No prose before or after. No code fence around the whole output. The output will be written directly to {state['module_path']} verbatim.
+
+Hard requirements:
+- Keep the frontmatter (title, slug, sidebar order) unchanged.
+- Preserve ALL existing content outside of the targeted section verbatim.
+- Do NOT use emojis.
+"""
+
 def _git_current_branch() -> str:
     return subprocess.check_output(["git", "-C", str(REPO_ROOT), "rev-parse", "--abbrev-ref", "HEAD"], text=True).strip()
 
@@ -527,7 +558,11 @@ def write_one(state: dict[str, Any], args: argparse.Namespace) -> None:
         return
     module_text = module_path.read_text(encoding="utf-8")
 
-    if track == "rewrite":
+    if args.section:
+        prompt = _section_prompt(state, args, module_text)
+        track = f"section-{args.section}"
+        state["track"] = track
+    elif track == "rewrite":
         prompt = _rewrite_prompt(state, module_text)
     elif track == "structural":
         prompt = _structural_prompt(state, module_text)
@@ -689,6 +724,7 @@ Rules:
 - Ignore missing ## Sources section — citations are handled separately.
 - For track=structural, verify: no existing content was rewritten (preservation check), new sections follow canonical order and Bloom L3+.
 - For track=rewrite, verify: narrative flow not listicle, worked examples present, active-learning prompts embedded.
+- For track starting with section-, verify ONLY that specific section was improved and everything else remains identical.
 - Return ONLY the JSON object. No markdown code fence. No explanatory text before or after.
 """
 
@@ -862,6 +898,7 @@ def main() -> int:
         p.add_argument("--writer", type=str, default=DEFAULT_WRITER, help="Model for writing (Codex)")
         p.add_argument("--reasoning", type=str, default=DEFAULT_REASONING, help="Reasoning effort for writing")
         p.add_argument("--reviewer", type=str, default=DEFAULT_REVIEWER, help="Model for reviewing (Gemini)")
+        p.add_argument("--section", type=str, default=None, help="Target specific section to rewrite (e.g. 'prereqs')")
 
     p_audit = sub.add_parser("audit", help="UNAUDITED → AUDITED")
     _shared(p_audit, default_timeout=300)
