@@ -74,20 +74,28 @@ def read_branch_file(branch: str, path: str) -> str:
     return r.stdout if r.returncode == 0 else ""
 
 
-def stage_contract_locally(*, ch_num: int, research_branch: str, slug: str,
+def stage_contract_locally(*, worktree: Path,
+                           research_branch: str, slug: str,
                            verdicts: str) -> dict[str, str]:
-    """Materialize the 8 contract files + verdicts to /tmp so the
-    headless agent can read them via its file-read tools instead of
-    receiving the full text inline in the prompt.
+    """Materialize the 8 contract files + verdicts inside the worktree
+    so the headless agent can read them via its file-read tools instead
+    of receiving the full text inline in the prompt.
 
-    Returns ``{"brief.md": "/tmp/.../brief.md", ..., "verdicts.md": "..."}``.
+    Returns ``{"brief.md": "<worktree>/.dispatch-context/brief.md", ...,
+    "verdicts.md": "..."}``.
 
     Why: the inline approach blew the Gemini per-window input quota
     (Ch06 first-draft hit 429 even on the OAuth path). Pointing the
-    agent at local files drops the prompt from ~10–15 k tokens to
+    agent at staged files drops the prompt from ~10–15 k tokens to
     ~1 k.
+
+    Why inside the worktree (not /tmp): Gemini's workspace-write
+    sandbox rejects ``/tmp`` paths with "Path not in workspace" when a
+    retry fires. Ch07 hit this. Staging inside the worktree at
+    ``.dispatch-context/`` keeps everything within the sandbox while
+    the agent prompts explicitly forbid committing the directory.
     """
-    base = Path(f"/tmp/dispatch-prose-ch{ch_num:02d}-context")
+    base = worktree / ".dispatch-context"
     base.mkdir(parents=True, exist_ok=True)
     paths: dict[str, str] = {}
     for fn in CONTRACT_FILES:
@@ -207,15 +215,16 @@ def gemini_prompt(*, slug: str, ch_num: int, cap_words: int,
 
         ## Research contract — read these files BEFORE you start drafting
 
-        The 8 contract files have been staged to /tmp by the
-        orchestrator. Read each one with your file-read tool (don't
-        skim — these are your only source of truth):
+        The 8 contract files are staged inside this worktree under
+        `.dispatch-context/` by the orchestrator. Read each one with
+        your file-read tool (don't skim — these are your only source
+        of truth):
 
 {contract_listing}
 
-        These paths are absolute and outside the worktree, so reading
-        them is free; do NOT copy them into the worktree, do NOT
-        commit them.
+        These are absolute paths inside the worktree. Do NOT include
+        `.dispatch-context/` in any `git add` — only commit
+        `{prose_path}`.
 
         ## Workflow
 
@@ -324,14 +333,13 @@ def _expansion_prompt(*, agent_label: str, slug: str, ch_num: int,
 
         ## Research contract — read these files BEFORE editing
 
-        Staged at /tmp by the orchestrator. Read each one with your
-        file-read tool — these are absolute paths outside the worktree,
-        so reading them costs nothing and they will not appear in your
-        diff:
+        Staged inside this worktree under `.dispatch-context/` by the
+        orchestrator. Read each one with your file-read tool:
 
 {contract_listing}
 
-        Do NOT copy them into the worktree, do NOT commit them.
+        Do NOT include `.dispatch-context/` in any `git add` — only
+        commit `{prose_path}`.
 
         ## Workflow
 
@@ -450,11 +458,16 @@ def main() -> int:
     if args.verdict_notes_pr is not None:
         verdicts = fetch_pr_verdicts(args.verdict_notes_pr)
 
-    # Stage contract + verdicts to /tmp so every agent reads via its
-    # file-read tool instead of receiving ~10 k tokens of contract text
-    # inline. Saves input quota across gemini/codex/claude.
+    worktree, branch = setup_worktree(ch_num=args.ch_num, slug=args.slug)
+    prose_path = f"src/content/docs/ai-history/{args.slug}.md"
+
+    # Stage contract + verdicts inside the worktree so every agent
+    # reads via its file-read tool instead of receiving ~10 k tokens of
+    # contract text inline. Inside the worktree (not /tmp) so Gemini's
+    # workspace-write sandbox accepts the paths even on retry.
     staged_paths = stage_contract_locally(
-        ch_num=args.ch_num, research_branch=args.research_branch,
+        worktree=worktree,
+        research_branch=args.research_branch,
         slug=args.slug, verdicts=verdicts,
     )
     if not any(fn != "verdicts.md" for fn in staged_paths):
@@ -462,10 +475,7 @@ def main() -> int:
               file=sys.stderr)
         return 1
     print(f"[stage] {len(staged_paths)} contract files at "
-          f"/tmp/dispatch-prose-ch{args.ch_num:02d}-context/")
-
-    worktree, branch = setup_worktree(ch_num=args.ch_num, slug=args.slug)
-    prose_path = f"src/content/docs/ai-history/{args.slug}.md"
+          f"{worktree}/.dispatch-context/")
 
     phases = [s.strip() for s in args.phases.split(",") if s.strip()]
     for phase in phases:
