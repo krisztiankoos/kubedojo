@@ -1,1 +1,35 @@
-status: researching
+status: capacity_plan_anchored
+owner: Codex
+part: 9
+chapter: 63
+review_state: awaiting_claude_source_review_and_gemini_gap_audit
+last_updated: 2026-04-28
+green_claims: 20
+yellow_claims: 1
+red_claims: 0
+guardrail_count: 6
+prose_word_cap_recommendation: 5400
+word_count_range: "4600-5400"
+verdicts:
+  claude:
+    model: null
+    date: null
+    verdict: null
+    review_url: null
+  gemini:
+    model: null
+    date: null
+    verdict: null
+    word_cap: null
+    review_url: null
+  resolved: null
+  resolved_word_cap: null
+  resolution_rule: dual_cross_family_verdict_with_cap
+notes: |
+  Built from a scrubbed shell into a capacity_plan_anchored inference-serving
+  contract. Core anchors are Orca, FlashAttention, SmoothQuant, FlexGen,
+  vLLM/PagedAttention, speculative decoding/sampling, and DistServe.
+
+  Safe draft range is 4,600-5,400 words pending Gemini capacity audit. Avoid
+  live API-price claims, unsourced product-cost rumors, benchmark politics,
+  copyright/data-labor disputes, and power-grid/datacenter expansion material.
