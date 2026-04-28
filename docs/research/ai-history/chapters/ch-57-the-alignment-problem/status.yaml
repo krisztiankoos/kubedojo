@@ -1,1 +1,42 @@
-status: researching
+status: prose_ready
+owner: Codex
+part: 8
+chapter: 57
+review_state: claude_source_approved_2026-04-28;gemini_gap_ready_with_cap_2026-04-28
+last_updated: 2026-04-28
+green_claims: 15
+yellow_claims: 1
+red_claims: 0
+guardrail_count: 6
+prose_word_cap_recommendation: 5800
+prose_word_cap: 5800
+verdicts:
+  claude:
+    model: claude-opus-4-7
+    date: 2026-04-28
+    verdict: APPROVE
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/502#issuecomment-4335562074
+  gemini:
+    model: gemini-3.1-pro-preview
+    requested_model: gemini-3.1-pro-preview
+    date: 2026-04-28
+    verdict: READY_WITH_CAP
+    word_cap: 5800
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/502#issuecomment-4335551182
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 5800
+  resolution_rule: dual_cross_family_verdict_with_cap
+notes: |
+  Rebuilt the scrubbed/yellow contract from verified online sources: Ouyang et
+  al. 2022 InstructGPT, OpenAI's January 2022 instruction-following blog,
+  Christiano et al. 2017 human-preferences RL, and Stiennon et al. 2020
+  summarization from human feedback.
+
+  Strongest safe prose range: 4,800-5,800 words. The chapter has enough
+  evidence for a full treatment if it balances technical pedagogy, labor/data
+  infrastructure, measured results, and limitations. It must not claim RLHF
+  solved alignment or equate labeler preferences with all human values.
+
+  Claude source-fidelity review approved all 15 Green claims and confirmed the
+  single Yellow claim is correctly interpretive. Gemini gap/capacity audit
+  returned READY_WITH_CAP at 5,800 words using gemini-3.1-pro-preview.
