@@ -1,15 +1,36 @@
-status: researching
+status: prose_ready
 owner: Codex
 part: 9
 chapter: 66
-review_state: not_started
+review_state: dual_cross_family_verdict_accepted
 last_updated: 2026-04-28
-green_claims: 0
-yellow_claims: 0
+green_claims: 16
+yellow_claims: 3
 red_claims: 0
-guardrail_count: 4
-prose_word_cap_recommendation: null
+guardrail_count: 6
+prose_word_cap_recommendation: 5400
+word_count_range: "4300-5400"
+verdicts:
+  claude:
+    model: claude-opus-4-7
+    date: 2026-04-28
+    verdict: APPROVE
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/524#issuecomment-4339452573
+  gemini:
+    model: gemini-3.1-pro-preview
+    date: 2026-04-28
+    verdict: READY_TO_DRAFT_WITH_CAP
+    word_cap: 5400
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/524#issuecomment-4339449025
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 5400
+  resolution_rule: dual_cross_family_verdict_with_cap
 notes: |
-  New chapter added by the modern-era coverage pass after Claude/Gemini
-  structural consultation. It reserves evaluation/benchmark politics as a
-  first-class chapter instead of burying them inside Product Shock or Monopoly.
+  Built into a dual-cleared prose_ready benchmark-politics contract. Core
+  anchors are MMLU, BIG-bench, HELM, GPT-4 Technical Report / OpenAI Evals,
+  MT-Bench / Chatbot Arena, SWE-bench, and a Goodhart-law source.
+
+  Safe draft range is 4,300-5,400 words after Claude source review and Gemini
+  gap/capacity audit. Keep benchmark rankings dated and source-bound, do not
+  treat scores as direct intelligence measures, and avoid unsourced contamination
+  accusations.
