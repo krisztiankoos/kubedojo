@@ -1,1 +1,103 @@
-status: researching
+status: capacity_plan_anchored
+green_claims: 13
+yellow_claims: 11
+red_claims: 1
+prose_word_target: "3,100-4,600"
+word_count_label: "3k-5k likely"
+review_state: claude_built_2026-04-28
+notes: |
+  Chapter 9 research contract built by Claude under the role split established
+  2026-04-28 (Claude owns Part 2 research after the Gemini hallucination
+  self-admission, epic commit 03640e20, Issue #421).
+
+  Replaces the legacy stubs (the four files that existed on the chapter
+  directory prior to this contract: brief.md, sources.md, timeline.md,
+  people.md, infrastructure-log.md, scene-sketches.md, open-questions.md,
+  status.yaml — all rewritten). Supersedes Gemini's PR #438 (research
+  duties were taken away from Gemini before that PR could merge).
+
+  Anchor pass 2026-04-28 (Claude shell + WebFetch):
+
+   - Williams & Kilburn 1948 Nature 162:487 — bibliographic shell + first
+     paragraph verified via WebFetch + Python HTML extraction. DOI
+     10.1038/162487a0.
+   - Kilburn 1947 internal report (Univ. Manchester Electrical Engineering
+     Department, signed Dec 1, 1947) — Summary-section quotes for
+     0.2-second short-term memory, >5 cycles/second refresh requirement,
+     600 μs hypothetical-machine instruction time. Verified via curl +
+     Python HTML strip against Manchester curation transcription.
+   - Forrester 1951 J. Appl. Phys. 22(1), pp. 44-48 — abstract verified via
+     WebFetch against ADS Harvard mirror. DOI 10.1063/1.1699817. Switching
+     times (<1 μs nonmetallic vs 20-10,000 μs metallic), 2:1 selection
+     ratio, one-core-per-bit architecture all anchored at abstract level.
+   - US Patent 2,736,880 (Forrester, "Multicoordinate Digital Information
+     Storage Device") — face-sheet verified via WebFetch on Google
+     Patents. Filed 1951-05-11; issued 1956-02-28; assignee Research
+     Corporation, New York.
+   - US Patent 2,708,722 (Wang, "Pulse Transfer Controlling Device") —
+     face-sheet verified via WebFetch on Google Patents. Filed
+     1949-10-21; issued 1955-05-17; inventor of record An Wang
+     (Way-Dong Woo co-inventorship dispute tracked as Q1).
+   - Forrester Concord (MA) Free Public Library Oral History Program
+     interview by Renee Garrelick, Dec 6, 1994 — full HTML transcription
+     extracted via curl + Python HTML strip. Approximately 10 verbatim
+     quotes anchored across Scenes 1-5, including: "expensive and
+     short-lived and not very reliable" (CRT memory); "people were
+     desperate for memory for computers"; the Boston-Buffalo television-
+     link anecdote; the 1947 glow-discharge-cell concept and its drift
+     failure mode; the 1949 magnetic-material insight; the Memory Test
+     Computer in "about nine months" by Norman Taylor and Ken Olsen; "by
+     1956, the SAGE air defense system was essentially cast in its
+     direction"; SAGE 30-some control centers + 99.8% availability; IBM
+     selection from approximately 15 surveyed companies.
+   - Rajchman 1953 Proc. IRE 41(10):1407-1421 "A Myriabit Magnetic-Core
+     Matrix Memory" — bibliographic citation confirmed via IEEE Xplore
+     surface; full text behind paywall (Yellow for body claims).
+   - IEEE Computer Society Pioneers entries (Forrester, Rajchman) —
+     biographical career-arc dates verified via WebFetch (Forrester
+     1947 glow-discharge-cell concept; 1949 toroidal coincident-current
+     reconception; Rajchman 1936-1958 RCA Camden tenure; 1947 Selectron
+     tube; aspirin-tablet-press core-shaping anecdote).
+
+  Counts (from Scene-Level Claim Table in sources.md):
+   - 13 Green claims (Williams-tube specifications; Kilburn hypothetical
+     machine; Manchester 1948 Nature bibliographic anchor; Forrester
+     recollections of CRT failure / mercury delay line / TV link
+     anecdote / 1947 glow-tube concept / 1949 magnetic-material insight;
+     Forrester 1951 abstract claims; Forrester and Wang patent
+     face-sheets; Rajchman 1953 bibliographic citation; Memory Test
+     Computer 9-month build; IBM selection from 15 companies; SAGE 1956
+     deployment marker).
+   - 11 Yellow claims (Wang/Woo co-inventorship dispute; IBM purchase of
+     Wang patent for ~$500,000; first Whirlwind core memory installation
+     date; first Whirlwind core array dimensions 32×32×16; Whirlwind
+     core access time 9 μs vs CRT 25 μs; IBM 704 introduction date and
+     production count; IBM AN/FSQ-7 specifications as historical fact;
+     end-date of magnetic-core dominance; cost trajectory; manufacturing
+     labor in 1953-1956 era; 1956 IBM wiring efficiency improvement on
+     128×128 array).
+   - 1 Red claim (specific Rajchman/RCA patent number that maps to the
+     Myriabit paper — Q8 in open-questions.md).
+
+  Prose Capacity Plan: 5 layers, 3,100-4,600 words total. Each layer
+  cites at least one Green primary anchor in sources.md. Word Count
+  Discipline label: 3k-5k likely. Upper bound depends on Pugh 1984 /
+  Bashe 1986 / Redmond & Smith 1980 page-anchor pulls for the
+  commercialization scene; lower bound is achievable from the existing
+  Green anchors alone.
+
+  Boundary contract explicitly: (1) parallel invention by Forrester /
+  Wang / Rajchman, not single-inventor primacy; (2) Apollo / Raytheon
+  "Little Old Ladies" core-rope-memory labor history is OUT OF SCOPE
+  (different technology, different decade); (3) 1953-1956-era core RAM
+  manufacturing labor scene deliberately constrained pending primary
+  archival anchors; (4) Forrester 1994 oral-history quotes are
+  Forrester's recollection, not third-person fact.
+
+  Status capacity_plan_anchored — eligible for cross-family review and
+  prose-readiness verdict pass per TEAM_WORKFLOW.md gate. Per the new
+  role split, dual cross-family review (Codex + Gemini) required before
+  status can advance to research_contract_approved or prose_ready.
+  Gemini reviews capacity-plan honesty + narrative gaps + missing scenes
+  only — Gemini does NOT assert page anchors or URLs (per
+  feedback_gemini_hallucinates_anchors.md).
