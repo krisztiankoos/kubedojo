@@ -1,1 +1,40 @@
-status: researching
+status: prose_ready
+owner: Codex
+part: 9
+chapter: 70
+review_state: dual_cross_family_approved
+last_updated: 2026-04-29
+green_claims: 12
+yellow_claims: 4
+red_claims: 0
+guardrail_count: 8
+prose_word_cap_recommendation: 6000
+word_count_range: "5000-6000"
+verdicts:
+  claude:
+    model: claude-opus-4-7
+    date: 2026-04-29
+    verdict: APPROVE
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/533#issuecomment-4339827059
+  gemini:
+    model: gemini-3-flash-preview
+    date: 2026-04-29
+    verdict: READY_TO_DRAFT_WITH_CAP
+    word_cap: 6000
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/533#issuecomment-4339829276
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 6000
+  resolution_rule: dual_cross_family_verdict_with_cap
+notes: |
+  Built from placeholder into an anchored electricity/grid contract. Core
+  anchors are IEA Energy and AI demand/supply pages, EPRI Scaling Intelligence,
+  DOE/LBNL U.S. data-center share framing, FERC/Talen Susquehanna co-located
+  load materials, and official Microsoft/Constellation, Google/Kairos, and
+  Meta/Constellation energy announcements.
+
+  Claude source-fidelity re-review approved the FERC/Talen additions. Gemini
+  gap/capacity re-review approved the revised 5,000-6,000 word plan with a
+  6,000-word cap after the Susquehanna regulatory-collision scene was added.
+
+  Ch71 owns chip geopolitics/export controls; Ch72 owns datacenter megasites,
+  cooling, water, and land.
