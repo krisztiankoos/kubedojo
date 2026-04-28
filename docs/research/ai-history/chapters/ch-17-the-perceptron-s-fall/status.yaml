@@ -1,8 +1,8 @@
-status: prose_review
+status: accepted
 owner: Codex
 part: 4
 chapter: 17
-review_state: needs_cross_family_prose_review
+review_state: gemini_and_claude_prose_approved
 last_updated: 2026-04-28
 prose_path: src/content/docs/ai-history/ch-17-the-perceptron-s-fall.md
 prose_words: 4360
@@ -19,4 +19,4 @@ notes:
   - "Claude source-fidelity review approved PR #464; Codex applied optional nits on continuation domains and forward-looking Part 5 phrasing."
   - "Gemini narrative review approved PR #464; Codex applied optional prose nits on repetition, section title, and explicit parity framing."
   - "Current prose markdown is 4,360 words after review nits."
-  - "Next transition: accepted after final PR checks and merge."
+  - "PR #464 passed GitHub checks and merged; Ch17 prose is accepted."
