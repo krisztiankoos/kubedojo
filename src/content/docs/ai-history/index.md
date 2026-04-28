@@ -34,14 +34,16 @@ Honesty over output is the highest rule. When verified evidence cannot honestly 
 - Active per-chapter pull requests are not reflected here until merged. See the [open PRs](https://github.com/kube-dojo/kube-dojo.github.io/pulls) for in-flight work.
 - The book's tracking epic is [#394](https://github.com/kube-dojo/kube-dojo.github.io/issues/394).
 
-## Role split (effective 2026-04-28)
+## Role split (effective 2026-04-28 PM)
 
-After Gemini self-admitted to systemic URL/anchor hallucination across his prior research work, sourcing duties moved off Gemini. Updated the same evening to off-load the Part 6/7/9 research backlog from Claude to Codex (Claude's weekly credit pool burned ~30 % in a day on the initial Ch32-37 push):
+After Gemini self-admitted to systemic URL/anchor hallucination across his prior research work, sourcing duties moved off Gemini. After empirical comparison of Codex-drafted vs Claude-drafted prose this session, the writer seat consolidated to Codex; Claude's role is now purely orchestration + source-fidelity review.
 
-- **Claude** owns the research contract for Parts 1, 2, 3 (anchor extraction directly via `curl` + `pdftotext`). After Parts 1/2/3 close, Claude monitors but does not drive new research.
-- **Codex** owns the research contract for Parts 4, 5, 6, 7, 8, 9 — drives the full pipeline end-to-end. Same shell tooling. Sequential dispatches per `feedback_codex_dispatch_sequential.md`.
-- **Gemini** stops touching sources entirely. Becomes the gap auditor on every chapter and the first-draft prose writer for Parts 1 and 2 (Claude expands the draft).
+- **Codex** is the writer and researcher for ALL remaining chapters. Drives Parts 8 and 9 end-to-end autonomously (research → prose → review-fix → merge). Drives the writer/researcher seat for Parts 3, 6, 7 too — but Claude orchestrates those (firing pipelines, running reviews, applying fix-passes, merge dance). Same shell tooling for research (`pdftotext`, `pdfgrep`, `curl`). Sequential dispatches per `feedback_codex_dispatch_sequential.md`.
+- **Claude** orchestrates Parts 3, 6, 7 + serves as cross-family source-fidelity reviewer on every chapter. No drafting. No primary research. The credit-burn that triggered the 2026-04-28 evening hand-off was Claude doing research; this policy locks that off.
+- **Gemini** is the prose-quality cross-family reviewer (Codex is conflicted as author) + gap auditor. Never cites URLs, page anchors, or DOIs.
 - **Cross-family verdict** rule unchanged: every chapter needs a `READY_TO_DRAFT` or `READY_TO_DRAFT_WITH_CAP` from BOTH cross-family reviewers before drafting unlocks.
+
+Already-merged Claude-authored research and prose (Parts 1, 2, 3 Ch11–14, plus the Part 6 supersede research PRs #471–#476) stays as-is and follows the standard verdict-pass-then-merge path. After those land, Claude does no more drafting or research.
 
 ## Part 1 — The Mathematical Foundations (1840s–1940s)
 
@@ -73,7 +75,7 @@ The transition from biology-inspired analog hardware to von Neumann digital arch
 
 ## Part 3 — The Birth of Symbolic AI & Early Optimism (1950s–1960s)
 
-Research: **Claude** · Prose: **Codex → Claude expansion** · Tracking: [#401](https://github.com/kube-dojo/kube-dojo.github.io/issues/401)
+Research: **Claude (Ch11–14, merged) → Codex (Ch15–16)** · Prose: **Codex** · Orchestrator: **Claude** · Tracking: [#401](https://github.com/kube-dojo/kube-dojo.github.io/issues/401)
 
 The Dartmouth consensus, early search algorithms, and military funding.
 
@@ -121,7 +123,7 @@ The silent algorithmic breakthroughs that laid the foundation for modern Machine
 
 ## Part 6 — The Rise of Data & Distributed Compute (1990s–2000s)
 
-Research: **Codex** · Prose: **Codex** · Tracking: [#404](https://github.com/kube-dojo/kube-dojo.github.io/issues/404)
+Research: **Codex** · Prose: **Codex** · Orchestrator: **Claude** · Tracking: [#404](https://github.com/kube-dojo/kube-dojo.github.io/issues/404)
 
 The shift to empiricism, enabled by the internet and cluster computing.
 
@@ -139,7 +141,7 @@ The shift to empiricism, enabled by the internet and cluster computing.
 
 ## Part 7 — The Deep Learning Revolution & GPU Coup (2010s)
 
-Research: **Codex** · Prose: **Codex** · Tracking: [#405](https://github.com/kube-dojo/kube-dojo.github.io/issues/405)
+Research: **Codex** · Prose: **Codex** · Orchestrator: **Claude** · Tracking: [#405](https://github.com/kube-dojo/kube-dojo.github.io/issues/405)
 
 The repurposing of graphics cards for massive parallel matrix multiplication.
 

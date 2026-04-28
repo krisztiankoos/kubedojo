@@ -2,9 +2,11 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-28 late evening — Parts 2 & 3 prose fully shipped)
+## Active Work (2026-04-28 late evening — Parts 2 & 3 prose shipped + role split simplified)
 
 **Branch**: `main` clean, pushed. Part 2 (Ch06-10) and Part 3 (Ch11-14) prose all merged with dual cross-family review fix-passes applied. The only remaining Part 3 prose chapter is **Ch15** (verdict cleared on PR #457, prose not yet drafted). Ch16 is still at `researching`.
+
+**Policy update — 2026-04-28 PM**: Codex is the writer/researcher for ALL remaining #394 chapters. Claude orchestrates Parts 3, 6, 7 (fires `dispatch_chapter_*.py`, runs reviews, applies fix-passes, merge dance). Codex drives Parts 8 and 9 end-to-end autonomously. Claude does NO drafting and NO primary research. See `project_ai_history_research_split_2026-04-28.md` and `feedback_codex_default_prose_expander.md`. The codex meta-narrative leak pattern (`"the contract"`, `"Yellow"`, `"unsafe"`) is now baked into `STRICT_SOURCE_RULE` in `scripts/dispatch_chapter_prose.py` so every future Codex chapter prevents the leak in-prompt rather than catching it in fix-pass.
 
 **Session tally** (this run, 2026-04-28 PM):
 - **Ch10 prose** drafted via `gemini → codex` pipeline against `claude/394-ch10-research`. Dual-reviewed (Claude source-fidelity NEEDS_FIX_AND_MERGE, Gemini prose-quality READY_TO_MERGE). Inline fix-pass tightened §6 paraphrases to match contract Yellow status. Merged via PR #500.

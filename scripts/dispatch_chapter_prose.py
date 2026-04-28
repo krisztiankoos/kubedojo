@@ -138,6 +138,29 @@ rather than filling it. Do NOT:
 - expand beyond the approved Prose Capacity Plan
 
 If you can't anchor a claim, weaken the claim — never invent a source.
+
+**No production-process diction in reader-facing prose.** The contract
+is your *input*, not your *topic*. Do NOT use any of these words in
+the prose: `the contract`, `Yellow`, `Red`, `Green` (as a status),
+`unsafe` (as a claim-status verdict), `paginated anchor`, `paginated
+source`, `anchor` (as a research-process noun, e.g. "a primary-page
+anchor"), `extraction` (e.g. "operator-manual page extraction"),
+`safe claim`, `deliberately cautious`, `the chapter cannot claim`.
+Convert hedges into natural historical-prose diction:
+- ❌ "the contract has it anchored to McCarthy's retrospective"
+  ✅ "the strongest available source is McCarthy's retrospective"
+- ❌ "the contract keeps that anecdote Yellow because it lacks a
+  paginated anchor"
+  ✅ "that anecdote rests on McCarthy's reminiscence rather than a
+  paginated contemporary source"
+- ❌ "the broader priority claim is unsafe"
+  ✅ "the broader priority claim does not survive scrutiny"
+- ❌ "the chapter cannot claim X. The evidence does not support that"
+  ✅ "no direct causal link between the two is established in the
+  primary record"
+The reader should never see your research-process scaffolding.
+Pattern confirmed cross-family on Ch12/13/14 fix-passes 2026-04-28;
+this rule prevents the next batch from needing the same fix.
 """
 
 
