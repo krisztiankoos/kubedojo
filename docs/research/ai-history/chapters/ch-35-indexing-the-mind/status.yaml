@@ -1,1 +1,86 @@
-status: researching
+status: capacity_plan_anchored
+prose_word_cap: null
+review_state: claude_research_contract_built_2026-04-28;awaiting_dual_cross_family_review
+green_claims: 26
+yellow_claims: 7
+red_claims: 0
+verdicts:
+  codex:
+    model: null
+    date: null
+    verdict: null
+    word_cap: null
+    bridge_msg: null
+  gemini:
+    model: null
+    date: null
+    verdict: null
+    word_cap: null
+    bridge_msg: null
+  resolved: null
+  resolved_word_cap: null
+  resolution_rule: most_conservative_verdict_wins
+notes: |
+  Claude built the Ch35 research contract 2026-04-28 per the new role split
+  (Claude owns Part 6 research, effective 2026-04-28 per Gemini's hallucination
+  self-admission and the AI-history research-split memory note).
+
+  Anchor extraction performed via direct `curl` + `pdftotext` against three
+  primary papers plus one corroborating primary:
+
+  1. Page, Brin, Motwani, Winograd. "The PageRank Citation Ranking: Bringing
+     Order to the Web." Stanford InfoLab Tech Report 1999-66, dated January 29,
+     1998 on cover. Origin URL `ilpubs.stanford.edu:8090/422/1/1999-66.pdf`
+     returned HTTP 500; retrieved via Internet Archive Wayback snapshot
+     (`web.archive.org/web/20180415000000id_/...`). 17 pages.
+  2. Brin and Page. "The Anatomy of a Large-Scale Hypertextual Web Search
+     Engine." WWW7, Brisbane, April 1998, pp. 107-117. Stanford InfoLab mirror
+     `infolab.stanford.edu/pub/papers/google.pdf`. 20 pages.
+  3. Barroso, Dean, Hölzle. "Web Search for a Planet: The Google Cluster
+     Architecture." IEEE Micro vol. 23 no. 2 (March-April 2003), pp. 22-28.
+     Mirror `static.googleusercontent.com/.../googlecluster-ieee.pdf`. 7 pages.
+     NB: legacy chapter stub cited "vol. 18" — incorrect; verified vol. 23 via
+     masthead and IEEE Micro chronology.
+  4. Ghemawat, Gobioff, Leung. "The Google File System." SOSP '03, October
+     2003. Mirror `static.googleusercontent.com/.../gfs-sosp2003.pdf`. 15
+     pages. Background-corroboration only.
+
+  Total Green: 26 (across the chapter's three load-bearing scenes —
+  algorithmic framing, eigenvector / random-surfer, commodity cluster).
+  Yellow: 7 (Sept 4 1998 incorporation; Page-Brin Stanford 1995 meeting;
+  BackRub dorm-room folklore; BackRub broader-narrative claim split off the
+  Green URL anchor; Dean/Ghemawat attribution caveat; Hennessy-Patterson 5e
+  WSC inheritance; deep-learning-substrate forward-reference). Red: 0 —
+  every claim in the scene-level table reaches Yellow at minimum; only the *Barroso-Hölzle 2009 Datacenter-as-a-Computer source* is
+  Red because the PDF could not be retrieved 2026-04-28 (multiple URL
+  attempts), but no chapter claim depends on it.
+
+  Capacity plan: 3,200-4,300 words across five layers. Label `3k-5k likely`.
+  Every Prose Capacity Plan layer references at least one anchored entry in
+  sources.md (verified page anchors from one or more of the four primary
+  papers above). Honesty close at end of brief.md: "If the verified evidence
+  runs out, cap the chapter."
+
+  Boundary contract: Ch35 is the *naming + crystallization* moment — PageRank
+  reduces semantic relevance to an eigenvector calculation (Scene 2-3); the
+  Barroso 2003 paper crystallizes the warehouse-scale-computing pattern
+  (Scene 4). Ch35 explicitly does NOT cover Google as a corporation, AdWords,
+  the post-2003 software stack, or deep learning at Google. The
+  deep-learning-substrate inheritance is one closing sentence, not a chapter
+  argument.
+
+  No URLs hallucinated. No page anchors fabricated. Every Green claim traces
+  to a specific page in a verified PDF that Claude fetched and extracted via
+  `pdftotext` 2026-04-28.
+
+  Awaiting dual cross-family review (per docs/review-protocol.md and
+  feedback_dual_review_required.md):
+   - Codex: anchor verification (re-curl + pdftotext, confirm quoted phrases
+     at cited pages).
+   - Gemini: capacity-plan honesty / narrative-gap analysis ONLY. Per
+     feedback_gemini_hallucinates_anchors.md, Gemini must NOT assert page
+     anchors or URLs in this review — review the structure, not the citations.
+
+  Status advances to capacity_plan_anchored. research_contract_approved
+  requires both Codex and Gemini Green; prose_ready additionally requires
+  cross-family verdict pass per the chapter lifecycle.
