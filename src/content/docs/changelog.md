@@ -6,6 +6,19 @@ sidebar:
   label: "What's New"
 ---
 
+## April 28, 2026 — AI History Part 1 Prose Shipped
+
+### Part 1 (Ch 1–5) Merged Under the Anchored-Contract Pipeline
+The first five chapters of the AI History book — *The Laws of Thought*, *The Universal Machine*, *The Physical Bridge*, *The Statistical Roots*, and *The Neural Abstraction* — are now live (PRs #477, #479, #480, #481, #483). All five passed two cross-family review gates: a Codex prose-quality review and an independent Claude source-fidelity review against the approved research contract. Surgical hedges and cuts were applied where prose drifted beyond the contract's anchored claims (most notably striking unsourced biographical color and meta-references to "the contract" that had leaked from the research apparatus into finished prose).
+
+### Prose Pipeline Pivot — Codex as Default Expander
+The chapter-prose pipeline pivoted from Claude-default to Codex-default expansion (gpt-5.5, reasoning=high). Codex now expands Gemini's first drafts to verdict cap; Claude opus serves as the source-fidelity reviewer in an independent fresh session. The strict-source rule — no source additions, no new page anchors, no Yellow→Green upgrades — applies to both expansion paths.
+
+### Cross-Family Prose Review Dispatcher
+A new `scripts/dispatch_prose_review.py` packages source-fidelity (Claude) and prose-quality (Codex / Gemini) reviews against the chapter's research contract, mirroring the existing `dispatch_research_verdict.py` pattern.
+
+---
+
 ## April 26, 2026 — Site-wide Quality Rewrite + Route Design + AI History Book Planning
 
 ### Site-wide Module Quality Rewrite Underway
