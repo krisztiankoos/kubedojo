@@ -2,25 +2,32 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-28 evening — Parts 6/7 research flipped to Codex + smart-router wrapper)
+## Active Work (2026-04-28 evening — smart-router wrapper shipped; Claude resumes Parts 2/3 work)
 
-**Branch**: `main` at `76f55f8e` (clean). `feat(dispatch): generalize research dispatcher + add smart-router wrapper (#394)`.
+**Branch**: `main` at `303e4e3c` (clean, pushed). `feat(dispatch): generalize research dispatcher + add smart-router wrapper (#394)` + STATUS update.
 
-**Why this session pivoted**: Claude burned ~30% of the weekly credit pool on the Ch32-37 research push — unsustainable. User reassigned Parts 6/7 (Ch38–Ch49, 12 chapters) from Claude to Codex and asked for a headless-Claude wrapper that picks haiku/sonnet/opus by task-class so the orchestrator stops burning opus on cheap work.
+**The credit-burn problem and fix**: Claude burned ~30% of the weekly credit pool in one day on Part 6 research. Solution is NOT to flip Parts 6/7 to Codex (he's busy with Parts 4/5/8). Solution is the orchestrator using `scripts/dispatch_smart.py` to route cheap work (codebase scans, single-file edits) to haiku/sonnet headless instances rather than burning opus inline.
 
 **Deliverables this session**:
-- **`scripts/dispatch_chapter_research.py` generalized** — now accepts `--agent {claude,codex}`. Branch + worktree paths derive from the agent name; `AGENT_DEFAULTS` holds model + timeout per agent. Codex path uses `gpt-5.5` (reasoning=high comes from `~/.codex/config.toml`).
-- **`scripts/dispatch_smart.py` shipped** — task-class headless-Claude dispatcher. `search`→haiku-4-5, `edit`/`draft`→sonnet-4-6, `architect`→opus-4-7. Each call logged to `logs/smart_dispatch.jsonl`. Smoke-tested: haiku echo round-trip in 10s.
-- **Ch38 dispatched** to Codex in background (`.worktrees/codex-394-ch38-research`) as the smoke-test of the new agent path. ~30-60 min wall time typical.
-- **Memory updated** — `project_ai_history_research_split_2026-04-28.md` now reflects Parts 6/7 → Codex; `reference_dispatch_smart.md` added.
+- **`scripts/dispatch_smart.py` shipped** — task-class headless-Claude dispatcher.
+  - `search` → claude-haiku-4-5 (read-only) — codebase scans, factual lookups
+  - `edit` → claude-sonnet-4-6 (workspace-write) — small/medium fixes
+  - `draft` → claude-sonnet-4-6 (workspace-write, 60min) — prose drafting
+  - `architect` → claude-opus-4-7 (workspace-write) — deep reasoning, multi-file refactors
+  - Every call logged to `logs/smart_dispatch.jsonl` for usage audit.
+  - Smoke-tested: haiku echo round-trip in 10s.
+- **`scripts/dispatch_chapter_research.py` generalized** — accepts `--agent {claude,codex}`. Built so Codex can be a research-dispatcher target if needed; the default + actual usage stays Claude-on-1/2/3/6/7/9 and Codex-on-4/5/8 per `project_ai_history_research_split_2026-04-28.md`.
+- **Memory updated** — `reference_dispatch_smart.md` added. `project_ai_history_research_split_2026-04-28.md` left at the original split (briefly mis-edited and rolled back).
 
-**Pending — when Ch38 returns**:
-- If Ch38 contract is clean, queue Ch39 → Ch40 → Ch41 … Ch49 sequentially (Codex is sequential-only per `feedback_codex_dispatch_sequential.md`). 12 chapters × ~45 min = ~9 hours wall time end-to-end.
-- After each chapter contract lands, open PR + run dual cross-family verdict (Claude + Gemini, NOT Codex on his own work).
+**Misstep + recovery**: Initially mis-read user's note as "flip Parts 6/7 to Codex" and dispatched Ch38 on Codex. User clarified: Claude handles Parts 1/2/3 (Codex is busy with his own). Killed the dispatch, removed worktree + branch, rolled back the memory edit. ~3 min of wasted Codex time, no commits made on the branch, no further damage.
 
-**Doc sync still TODO**:
-- `docs/research/ai-history/README.md` ownership table still shows Claude on Parts 6/7 — update on next research-docs touch.
-- `docs/research/ai-history/TEAM_WORKFLOW.md` Roles section likewise.
+**Open work — order**:
+1. **Part 2 prose pipeline (Ch06-10)**. Verdicts already cleared `READY_TO_DRAFT_WITH_CAP` from a prior session. Per chapter: `dispatch_chapter_prose.py N --slug ... --research-branch claude/394-chNN-research --cap-words <from verdict PR> --verdict-notes-pr <PR#>` then `dispatch_prose_review.py <prose_pr> --reviewer codex` and `--reviewer claude`. Verdict PRs: #467 Ch06, #466 Ch07, #468 Ch08, #469 Ch09, #470 Ch10. Wall: ~80-100 min/chapter end-to-end, ~7-8 hr for all 5.
+2. **Part 3 work**:
+   - **Ch11-14 prose PRs (#451, #452, #454, #455)** — Codex-drafted, awaiting cross-family review. Fire `dispatch_prose_review.py --reviewer claude` (source-fidelity).
+   - **Ch15 prose** — verdict cleared (PR #457). `dispatch_chapter_prose.py 15 --slug ch-15-the-gradient-descent-concept --research-branch claude/394-ch15-research --cap-words <from #457>`.
+   - **Ch16 research** — `status: researching` stub. Build contract via `dispatch_chapter_research.py 16 --slug ch-16-the-cold-war-blank-check`.
+3. **After Parts 2/3 ship — check Codex's progress on Parts 4/5**. User believes Codex has finished them. Verify by listing #394 PRs for Ch17-31 and reading their `status.yaml` to see which are at `capacity_plan_anchored` / drafted / merged.
 
 ---
 
