@@ -1,15 +1,37 @@
-status: researching
+status: capacity_plan_anchored
 owner: Codex
 part: 9
 chapter: 62
-review_state: not_started
+review_state: awaiting_claude_source_review_and_gemini_gap_audit
 last_updated: 2026-04-28
-green_claims: 0
-yellow_claims: 0
+green_claims: 17
+yellow_claims: 3
 red_claims: 0
-guardrail_count: 4
-prose_word_cap_recommendation: null
+guardrail_count: 8
+prose_word_cap_recommendation: 5700
+word_count_range: "4600-5700"
+verdicts:
+  claude:
+    model: null
+    date: null
+    verdict: null
+    review_url: null
+  gemini:
+    model: null
+    date: null
+    verdict: null
+    word_cap: null
+    review_url: null
+  resolved: null
+  resolved_word_cap: null
+  resolution_rule: dual_cross_family_verdict_with_cap
 notes: |
-  New chapter added by the modern-era coverage pass after Claude/Gemini
-  structural consultation. It reserves multimodal/video convergence as a
-  first-class chapter instead of treating it as a footnote to diffusion or scale.
+  Built from the modern-era placeholder into a capacity_plan_anchored contract.
+  Core anchors are CLIP, Flamingo, GPT-4 Technical Report, GPT-4V System Card,
+  Gemini technical report, GPT-4o System Card / Hello GPT-4o, Sora technical
+  page / System Card, and Google's Veo announcement. Veo remains Yellow product
+  framing, not independent technical evaluation.
+
+  Safe prose range is 4,600-5,700 words. Do not pad by importing image diffusion
+  history from Ch58, inference economics from Ch63, benchmark politics from Ch66,
+  or copyright/data-labor fights from Ch68.
