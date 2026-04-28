@@ -1,1 +1,37 @@
-status: researching
+status: capacity_plan_anchored
+owner: Codex
+part: 9
+chapter: 69
+review_state: awaiting_claude_source_review_and_gemini_gap_audit
+last_updated: 2026-04-29
+green_claims: 17
+yellow_claims: 1
+red_claims: 0
+guardrail_count: 7
+prose_word_cap_recommendation: 5500
+word_count_range: "4500-5500"
+verdicts:
+  claude:
+    model: null
+    date: null
+    verdict: null
+    review_url: null
+  gemini:
+    model: null
+    date: null
+    verdict: null
+    word_cap: null
+    review_url: null
+  resolved: null
+  resolved_word_cap: null
+  resolution_rule: dual_cross_family_verdict_with_cap
+notes: |
+  Built from placeholder into an anchored contract on public human-text scarcity,
+  data-constrained scaling, synthetic-data workarounds, model-collapse risk, and
+  benchmark contamination as an evaluation-data freshness problem.
+
+  Core anchors are Chinchilla, Llama 3 model card, FineWeb, Villalobos/Epoch,
+  Scaling Data-Constrained Language Models, Self-Instruct, phi-1/Textbooks Are
+  All You Need, model collapse, GPT-4 technical report contamination sections,
+  and LiveBench. Ch68 owns legal/labor data enclosure; Ch70-Ch72 own physical
+  compute/power/datacenter limits.
