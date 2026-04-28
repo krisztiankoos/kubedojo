@@ -74,19 +74,6 @@ def read_branch_file(branch: str, path: str) -> str:
     return r.stdout if r.returncode == 0 else ""
 
 
-def gather_contract(*, research_branch: str, slug: str) -> str:
-    chunks = []
-    for fn in CONTRACT_FILES:
-        body = read_branch_file(
-            research_branch,
-            f"docs/research/ai-history/chapters/{slug}/{fn}",
-        )
-        if not body:
-            continue
-        chunks.append(f"### `{fn}`\n\n```\n{body}\n```\n")
-    return "\n".join(chunks)
-
-
 def stage_contract_locally(*, ch_num: int, research_branch: str, slug: str,
                            verdicts: str) -> dict[str, str]:
     """Materialize the 8 contract files + verdicts to /tmp so the
@@ -169,7 +156,7 @@ def gemini_prompt(*, slug: str, ch_num: int, cap_words: int,
         You are the **first-draft writer** in a four-step pipeline:
 
         ```
-        1. Approved contract        ← already done, embedded below
+        1. Approved contract        ← staged on disk, paths listed below
         2. Gemini first draft       ← THIS STEP, target ~3,000 words
         3. Codex expansion to cap   ← downstream, will tighten + lengthen
         4. Cross-family review      ← downstream
@@ -252,10 +239,23 @@ def gemini_prompt(*, slug: str, ch_num: int, cap_words: int,
 
 
 def _expansion_prompt(*, agent_label: str, slug: str, ch_num: int,
-                      cap_words: int, contract: str, verdicts: str,
+                      cap_words: int, staged_paths: dict[str, str],
                       prose_path: str) -> str:
     """Build the expansion prompt. Identical for Codex and Claude —
-    same strict-source rule, same Prose Capacity Plan discipline."""
+    same strict-source rule, same Prose Capacity Plan discipline.
+
+    The contract files are staged on disk at the paths in
+    ``staged_paths`` so we don't re-embed ~10 k tokens of contract text
+    per call. The agent reads them via its file-read tool.
+    """
+    contract_listing = "\n".join(
+        f"           - `{fn}` → `{p}`"
+        for fn, p in staged_paths.items()
+        if fn != "verdicts.md"
+    )
+    verdicts_path = staged_paths.get(
+        "verdicts.md", "(no verdict notes for this chapter)"
+    )
     return dedent(f"""\
         # Task: Expand and tighten Chapter {ch_num} prose (`{slug}`) (#394)
 
@@ -270,8 +270,8 @@ def _expansion_prompt(*, agent_label: str, slug: str, ch_num: int,
         You are the **expansion writer** in a four-step pipeline:
 
         ```
-        1. Approved contract        ← already done, embedded below
-        2. Gemini first draft       ← already on disk at the path above
+        1. Approved contract        ← staged on disk, paths below
+        2. Gemini first draft       ← already on disk at {prose_path}
         3. Expansion to cap         ← THIS STEP — you ({agent_label})
         4. Cross-family review      ← downstream (Claude source-fidelity, Gemini/Claude prose-quality)
         ```
@@ -320,16 +320,23 @@ def _expansion_prompt(*, agent_label: str, slug: str, ch_num: int,
 
         ## Verdict caveats
 
-        {verdicts}
+        Read the verdict comments at: `{verdicts_path}`
 
-        ## Research contract
+        ## Research contract — read these files BEFORE editing
 
-        {contract}
+        Staged at /tmp by the orchestrator. Read each one with your
+        file-read tool — these are absolute paths outside the worktree,
+        so reading them costs nothing and they will not appear in your
+        diff:
+
+{contract_listing}
+
+        Do NOT copy them into the worktree, do NOT commit them.
 
         ## Workflow
 
-        1. Read `{prose_path}` (Gemini's draft) and the contract files
-           above.
+        1. Read `{prose_path}` (Gemini's draft) and the staged contract
+           files listed above.
         2. Identify under-developed Plan layers. Add anchored content
            targeted at those layers. Tighten any unanchored claims
            Gemini left in.
@@ -345,20 +352,20 @@ def _expansion_prompt(*, agent_label: str, slug: str, ch_num: int,
 
 
 def codex_prompt(*, slug: str, ch_num: int, cap_words: int,
-                 contract: str, verdicts: str, prose_path: str) -> str:
+                 staged_paths: dict[str, str], prose_path: str) -> str:
     return _expansion_prompt(
         agent_label="Codex (gpt-5.5, default expander)",
         slug=slug, ch_num=ch_num, cap_words=cap_words,
-        contract=contract, verdicts=verdicts, prose_path=prose_path,
+        staged_paths=staged_paths, prose_path=prose_path,
     )
 
 
 def claude_prompt(*, slug: str, ch_num: int, cap_words: int,
-                  contract: str, verdicts: str, prose_path: str) -> str:
+                  staged_paths: dict[str, str], prose_path: str) -> str:
     return _expansion_prompt(
         agent_label="Claude opus-4-7 (fallback expander when Codex bandwidth exhausted)",
         slug=slug, ch_num=ch_num, cap_words=cap_words,
-        contract=contract, verdicts=verdicts, prose_path=prose_path,
+        staged_paths=staged_paths, prose_path=prose_path,
     )
 
 
@@ -439,26 +446,21 @@ def main() -> int:
                         "or gemini,claude (Claude-fallback) or any single phase")
     args = p.parse_args()
 
-    contract = gather_contract(
-        research_branch=args.research_branch, slug=args.slug,
-    )
-    if not contract:
-        print(f"[err] no contract found on branch {args.research_branch}",
-              file=sys.stderr)
-        return 1
-
     verdicts = ""
     if args.verdict_notes_pr is not None:
         verdicts = fetch_pr_verdicts(args.verdict_notes_pr)
 
-    # Stage contract + verdicts to /tmp so the Gemini phase can read
-    # them via tools instead of receiving the full text inline. The
-    # codex/claude expansion phases still receive contract inline below
-    # because they have different rate-limit budgets and are working.
+    # Stage contract + verdicts to /tmp so every agent reads via its
+    # file-read tool instead of receiving ~10 k tokens of contract text
+    # inline. Saves input quota across gemini/codex/claude.
     staged_paths = stage_contract_locally(
         ch_num=args.ch_num, research_branch=args.research_branch,
         slug=args.slug, verdicts=verdicts,
     )
+    if not any(fn != "verdicts.md" for fn in staged_paths):
+        print(f"[err] no contract files found on branch {args.research_branch}",
+              file=sys.stderr)
+        return 1
     print(f"[stage] {len(staged_paths)} contract files at "
           f"/tmp/dispatch-prose-ch{args.ch_num:02d}-context/")
 
@@ -484,8 +486,8 @@ def main() -> int:
         elif phase == "codex":
             prompt = codex_prompt(
                 slug=args.slug, ch_num=args.ch_num,
-                cap_words=args.cap_words, contract=contract,
-                verdicts=verdicts, prose_path=prose_path,
+                cap_words=args.cap_words, staged_paths=staged_paths,
+                prose_path=prose_path,
             )
             log = Path(f"/tmp/prose-ch{args.ch_num:02d}-codex.log")
             ok = fire_phase(
@@ -498,8 +500,8 @@ def main() -> int:
         elif phase == "claude":
             prompt = claude_prompt(
                 slug=args.slug, ch_num=args.ch_num,
-                cap_words=args.cap_words, contract=contract,
-                verdicts=verdicts, prose_path=prose_path,
+                cap_words=args.cap_words, staged_paths=staged_paths,
+                prose_path=prose_path,
             )
             log = Path(f"/tmp/prose-ch{args.ch_num:02d}-claude.log")
             ok = fire_phase(
