@@ -1,1 +1,19 @@
-status: researching
+status: research_review
+owner: Codex
+part: 8
+chapter: 54
+review_state: awaiting_cross_family_review
+last_updated: 2026-04-28
+green_claims: 9
+yellow_claims: 4
+red_claims: 6
+prose_word_cap_recommendation: 4800
+notes: |
+  Rebuilt the scrubbed/yellow contract from verified online sources:
+  Transformers EMNLP 2020 PDF, legacy Transformers v4.0.1 docs, GitHub API
+  metadata for huggingface/transformers, current Hugging Face Hub docs, and
+  contemporary TechCrunch 2017/2019 coverage.
+
+  Strongest safe prose range: 4,000-4,800 words. The infrastructure evidence is
+  strong; the internal pivot narrative is thin. Do not invent company dialogue,
+  user anecdotes, or community reaction to reach the top of the book target.
