@@ -30,7 +30,7 @@ Honesty over output is the highest rule. When verified evidence cannot honestly 
 ## Notes on the current state
 
 - Several Part 2/6/7 chapters have **legacy prose merged from the pre-2026 research pipeline**; their lifecycle reads `researching` until each chapter's claim-level-anchored research contract lands on `main` and the prose is re-drafted from it.
-- Part 1's verified anchor-level research is now on `main` (the supersede PRs landed 2026-04-28). Part 1 prose drafted from that contract is also merged. Part 4 and Part 5 are fully shipped.
+- Parts 1, 2, 4, and 5 are fully shipped (verified-anchor research + prose merged). Part 3 is 4/6 shipped; Ch15 prose is pending and Ch16 is still researching.
 - Active per-chapter pull requests are not reflected here until merged. See the [open PRs](https://github.com/kube-dojo/kube-dojo.github.io/pulls) for in-flight work.
 - The book's tracking epic is [#394](https://github.com/kube-dojo/kube-dojo.github.io/issues/394).
 
@@ -166,9 +166,9 @@ Scaling laws, Attention, and the democratization of AI through open weights.
 | 50 | Attention Is All You Need | prose_ready | no |
 | 51 | The Open Source Distribution Layer | prose_ready | no |
 | 52 | Bidirectional Context | prose_ready | no |
-| 53 | The Dawn of Few-Shot Learning | researching | no |
-| 54 | The Hub of Weights | researching | no |
-| 55 | The Scaling Laws | researching | no |
+| 53 | The Dawn of Few-Shot Learning | prose_ready (cap 5,000) | no |
+| 54 | The Hub of Weights | prose_ready (cap 4,800) | no |
+| 55 | The Scaling Laws | prose_ready (cap 5,500) | no |
 | 56 | The Megacluster | researching | no |
 | 57 | The Alignment Problem | researching | no |
 | 58 | The Math of Noise | researching | no |
@@ -196,10 +196,10 @@ Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 
 | Stage | Count |
 |---|---:|
-| `accepted` (drafted, all reviews cleared) | 20 |
-| `prose_review` (drafted, in review) | 4 |
-| `prose_ready` (contract dual-cleared, awaiting prose draft) | 4 |
+| `accepted` (drafted, all reviews cleared) | 29 |
+| `prose_review` (drafted, in review) | 0 |
+| `prose_ready` (contract dual-cleared, awaiting prose draft) | 7 |
 | `capacity_plan_anchored` (contract anchored, awaiting verdict) | 0 |
-| `researching` with prose merged on legacy contract | 16 |
-| `researching` (no prose yet) | 24 |
+| `researching` with prose merged on legacy contract | 11 |
+| `researching` (no prose yet) | 21 |
 | **Total** | **68** |
