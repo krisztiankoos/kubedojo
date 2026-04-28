@@ -1,1 +1,50 @@
-status: researching
+chapter: ch-41-the-graphics-hack
+status: capacity_plan_anchored
+owner: Codex
+issue: 394
+updated: 2026-04-29
+word_count_discipline: 3k-5k likely
+prose_capacity:
+  min_words: 3200
+  max_words: 4500
+claims:
+  green: 20
+  yellow: 3
+  red: 3
+green_claim_ids:
+  - C01
+  - C02
+  - C03
+  - C04
+  - C05
+  - C06
+  - C07
+  - C08
+  - C09
+  - C10
+  - C11
+  - C12
+  - C13
+  - C14
+  - C15
+  - C16
+  - C17
+  - C18
+  - C19
+  - C20
+yellow_claim_ids:
+  - C21
+  - C22
+  - C23
+red_claim_ids:
+  - C24
+  - C25
+  - C26
+checks:
+  every_capacity_layer_has_sources_anchor: true
+  every_green_claim_has_page_or_section_anchor: true
+  generated_artifacts_included: false
+  legacy_prose_trusted: false
+notes:
+  - "Shell curl could not resolve external hosts in this sandbox, so external source fetching was verified through browser-accessible open PDFs rather than local curl."
+  - "CUDA, AlexNet, ImageNet, and NVIDIA market-power claims are scoped to later chapters."
