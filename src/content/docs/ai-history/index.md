@@ -136,7 +136,7 @@ The shift to empiricism, enabled by the internet and cluster computing.
 | 35 | Indexing the Mind | accepted | [yes](./ch-35-indexing-the-mind/) |
 | 36 | The Multicore Wall | accepted | [yes](./ch-36-the-multicore-wall/) |
 | 37 | Distributing the Compute | accepted | [yes](./ch-37-distributing-the-compute/) |
-| 38 | The Human API | researching | [yes](./ch-38-the-human-api/) |
+| 38 | The Human API | accepted | [yes](./ch-38-the-human-api/) |
 | 39 | The Vision Wall | researching | [yes](./ch-39-the-vision-wall/) |
 | 40 | Data Becomes Infrastructure | researching | [yes](./ch-40-data-becomes-infrastructure/) |
 
