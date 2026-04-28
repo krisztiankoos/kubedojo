@@ -15,13 +15,13 @@
 - **Evidence anchors:** Google TensorFlow post; GitHub TensorFlow API metadata.
 - **Drafting warning:** Keep the corporate incentive visible. Google was opening a framework, not dissolving its internal advantage.
 
-## Scene 4: Frameworks as Distribution
-- **Action:** Place PyTorch alongside TensorFlow as research infrastructure that moved through open repositories, tutorials, cloud support, and model/code sharing.
+## Scene 4: Clashing Distribution Philosophies
+- **Action:** Place TensorFlow and PyTorch side by side as different public framings of open ML software: Google's scalable system made external, and Meta/Facebook's research-prototyping tool presented as a path toward production.
 - **Evidence anchors:** Meta PyTorch 1.0 post; GitHub PyTorch API metadata.
 - **Drafting warning:** Do not make this a TensorFlow-vs-PyTorch product comparison. The chapter's object is distribution infrastructure.
 
-## Scene 5: The Index Layer
-- **Action:** Papers with Code becomes a visible connector between arXiv papers, code, and datasets. This is the step from "paper is online" to "paper is linked to implementable artifacts."
+## Scene 5: The Index Layer Matures
+- **Action:** Papers with Code becomes a visible connector between arXiv papers, code, and datasets. This is the later step from "paper is online" to "paper is linked to implementable artifacts."
 - **Evidence anchors:** arXiv Annual Report 2021.
 - **Drafting warning:** Hugging Face and model weights stay for Chapter 54.
 

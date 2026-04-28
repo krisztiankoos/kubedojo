@@ -2,7 +2,7 @@
 
 ## Blocking Before Draft?
 
-No blocker for a capped 4,000-5,000 word draft after cross-family approval. The core infrastructure layers are anchored, but the chapter should stay honest about the lack of specific human scenes.
+No blocker for a capped 4,000 word draft after cross-family approval. The core infrastructure layers are anchored, but the chapter should stay honest about the lack of specific human scenes.
 
 ## Expansion Targets
 

@@ -34,19 +34,21 @@
 | arXiv is moderated but not peer-reviewed, so it accelerates circulation without replacing evaluation. | Paper Server | arXiv About | Later reproducibility caveat | Green | Blocks "arXiv replaced peer review" overclaim. |
 | arXiv gives machine learning explicit category homes through cs.LG and stat.ML. | Machine Learning Gets Its Shelf | arXiv Category Taxonomy | arXiv About field list | Green | Do not claim ML-specific submission explosion unless another source is added. |
 | Overall arXiv submissions grew substantially across the deep-learning era. | Machine Learning Gets Its Shelf | arXiv monthly-submissions CSV | arXiv About scale statement | Green | Use exact extracted totals with extraction date. |
-| TensorFlow's open-source announcement explicitly framed working code as a faster medium for exchanging ML ideas than research papers alone. | Code Stops Being Optional Context | Google TensorFlow post | GitHub TensorFlow repo metadata | Green | Strongest "code as infrastructure" quote anchor. |
+| TensorFlow's open-source announcement explicitly framed working code as a faster medium for exchanging ML ideas than research papers alone. | Working Code Becomes a Distribution Argument | Google TensorFlow post | GitHub TensorFlow repo metadata | Green | Strongest "code as infrastructure" quote anchor; do not generalize to universal code mandates. |
 | PyTorch was framed by Meta/Facebook as an open-source AI framework bridging research prototyping and production deployment. | Frameworks Become Distribution Channels | Meta PyTorch 1.0 post | GitHub PyTorch repo metadata | Green | Keep as framework-distribution example, not full PyTorch history. |
 | Major ML framework/model-library repositories were public GitHub projects created during 2015-2018. | Frameworks Become Distribution Channels | GitHub API repo records | Google/Meta posts | Green/Yellow | Green for creation dates; Yellow for current popularity metrics. |
-| arXiv's Papers with Code integration linked papers to code and datasets at large scale by 2021. | Index Layer | arXiv Annual Report 2021 | Papers with Code public context optional | Green | Good bridge toward Chapter 54, but keep Hugging Face separate. |
+| arXiv's Papers with Code integration linked papers to code and datasets at large scale by 2021. | Index Layer Matures | arXiv Annual Report 2021 | Papers with Code public context optional | Green | Use as later maturation signal and bridge toward Chapter 54, but keep Hugging Face separate. |
 | GitHub code availability did not guarantee reproducibility or maintenance. | Reproducibility Caveat | Zhang et al. 2019 | arXiv non-peer-review guardrail | Green/Yellow | Essential balance against open-source boosterism. |
-| A 4,000-5,000 word chapter is feasible if it stays on infrastructure layers and avoids invented human scenes. | All | This source table and brief capacity plan | Ch24/Ch50 contract pattern | Green/Yellow | Larger draft needs more primary accounts or policy sources. |
+| A 4,000 word chapter is feasible if it stays on infrastructure layers and avoids invented human scenes. | All | This source table and brief capacity plan | Gemini gap audit; Ch24/Ch50 contract pattern | Green/Yellow | Larger draft needs ML-specific arXiv data, conference code-policy sources, or primary maintainer accounts. |
 
 ## Conflict Notes
 
 - Do not claim arXiv was peer review. It explicitly is not.
 - Do not claim GitHub code release became universal or mandatory. The safe claim is "increasingly expected and infrastructural, but uneven."
+- Do not claim conference code policies drove the shift unless a conference-policy source is added.
 - Do not claim open source broke corporate dominance. It lowered distribution friction while compute, data, and production still mattered.
 - Do not use current GitHub stars/forks as historical evidence without date-stamping them.
+- Do not treat the 2021 Papers with Code/arXiv integration as the cause of the 2017-2019 Transformer-era spread. It is a later maturation signal.
 - Do not turn Chapter 51 into Hugging Face. That belongs to Chapter 54.
 
 ## Page/Section Anchor Worklist
