@@ -1,1 +1,28 @@
-status: researching
+status: capacity_plan_anchored
+# Counts cover the Scene-Level Claim Table in sources.md (19 rows) plus the
+# Primary Sources / Secondary Sources tables and the Open Questions Reds.
+green_claims: 17
+yellow_claims: 6
+red_claims: 3
+primary_sources_anchored: 5
+plan_layers: 5
+plan_layers_with_anchors: 5
+word_range_low: 3600
+word_range_high: 5100
+word_count_label: 4k-7k stretch
+last_updated: 2026-04-28
+researcher: claude
+notes: |
+  All five Prose Capacity Plan layers reference at least one Green primary
+  anchor in sources.md. Five primary sources anchored by direct curl +
+  pdftotext / HTML extraction by Claude on 2026-04-28: Sutter 2005 (gotw.ca
+  HTML), Borkar & Chien 2011 (CACM PDF, Auburn open mirror), Vance 2004
+  (Register Wayback snapshot), Asanovic et al. 2006 (UC Berkeley TR
+  EECS-2006-183 PDF), and Shimpi 2004 (AnandTech Wayback snapshot). Borkar
+  1999 itself is paywalled and remains Yellow for verbatim quotation; its
+  existence/date/warning content is Green via the secondary-confirmation
+  chain (Asanovic et al. 2006 + Borkar & Chien 2011). Olukotun et al. 1996
+  is similarly Yellow for content. Three Red items remain: original Intel
+  internal documents (earnings calls, post-Tejas press release), the unnamed
+  Intel spokesman's identity, and primary Intel/AMD ship-date press releases
+  for Pentium D and Athlon 64 X2.
