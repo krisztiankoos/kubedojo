@@ -1,15 +1,37 @@
-status: researching
+status: capacity_plan_anchored
 owner: Codex
 part: 9
 chapter: 68
-review_state: not_started
+review_state: awaiting_claude_source_review_and_gemini_gap_audit
 last_updated: 2026-04-28
-green_claims: 0
-yellow_claims: 0
+green_claims: 9
+yellow_claims: 11
 red_claims: 0
-guardrail_count: 4
-prose_word_cap_recommendation: null
+guardrail_count: 8
+prose_word_cap_recommendation: 5600
+word_count_range: "4500-5600"
+verdicts:
+  claude:
+    model: null
+    date: null
+    verdict: null
+    review_url: null
+  gemini:
+    model: null
+    date: null
+    verdict: null
+    word_cap: null
+    review_url: null
+  resolved: null
+  resolved_word_cap: null
+  resolution_rule: dual_cross_family_verdict_with_cap
 notes: |
-  New chapter added by the modern-era coverage pass after Claude/Gemini
-  structural consultation. It separates labor/copyright/data-rights history
-  from the technical data-exhaustion chapter.
+  Built from placeholder into an anchored labor/data-rights/copyright contract.
+  Core anchors are Ouyang/InstructGPT, TIME/Sama reporting, GPT-3/Pile/Common
+  Crawl, LAION/Stable Diffusion model card, Getty/NYT filings, OpenAI responses
+  and crawler/licensing pages, and the 2025 Bartz/Anthropic fair-use order.
+
+  Safe draft range is 4,500-5,600 words pending Claude source review and Gemini
+  capacity audit. Allegations, company positions, and court holdings must remain
+  lexically separate. Recheck Bartz/Anthropic settlement status before prose if
+  settlement finality appears in the chapter.
