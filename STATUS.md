@@ -2,7 +2,39 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-27 evening — Part 3 dual-reviewed pipeline + ownership rebalance)
+## Active Work (2026-04-28 — AI History Part 1 prose shipped)
+
+**Branch**: `main` (clean, pushed). Part 1 prose cohort (Ch01–Ch05) merged to `origin/main`.
+
+**This session's deliverables**:
+- **Ch01–Ch05 prose merged** (PRs #477, #479, #480, #481, #483). Each passed two cross-family review gates: Codex prose-quality + independent Claude source-fidelity against the approved research contract. All flagged-and-applied fixes were surgical strict-source edits — cuts, hedges, and elision marks where prose drifted past contract-anchored claims.
+- **Reviews not previously on PR were added to the audit log** (Ch04 Codex review from /tmp posted as comment; Claude reviews on Ch01/Ch02 captured in commit messages since the in-session reviews from the prior session were never posted).
+- **`scripts/dispatch_prose_review.py`** added — generalized Claude / Codex / Gemini prose-review dispatcher mirroring `dispatch_research_verdict.py` (reads prose from prose branch + contract from research branch, posts review as PR comment).
+- **Changelog entry** added at `src/content/docs/changelog.md` for the 2026-04-28 ship + the Codex-default expander pivot.
+- **Build**: `npm run build` clean (1881 pages, 41.79s).
+- **Git hygiene**:
+  - Primary tree pinned to `main` (was parked on stale `pr-484` from a prior local checkout).
+  - 5 merged prose worktrees + branches removed.
+  - 27 prunable worktrees + 29 branches deleted (briefing alert cleared from "29 prunable" → 0 from this session's set).
+  - `pr-484` orphan branch + `codex-interactive` detached-HEAD worktree removed.
+- **#429 closed** (superseded Gemini-only Ch01 prose draft, per handoff Priority 5 trigger condition).
+
+**Source-fidelity tension worth recording**:
+On Ch04 the contract says "49-year-old Markov" reading Nekrasov 1902 — arithmetically wrong (Markov b.1856 → 45/46 in 1902). Codex review caught the math; Claude review then flagged "45" as a strict-source violation (the contract literally says 49). Resolution per the strict-source rule: strike the age entirely. The contract gets the math wrong, but the prose must not silently substitute a more accurate number that has no contract anchor. Reviewer-vs-historicity tension is exactly what the dual-pass pipeline catches.
+
+**Open for next session**:
+- **Priority 2 — Part 2 prose pipeline (Ch06–Ch10)**: research verdicts already cleared `READY_TO_DRAFT_WITH_CAP`. Fire `dispatch_chapter_prose.py` with default `--phases gemini,codex` (Codex-default expansion). Each chapter then needs the two-review gate via `dispatch_prose_review.py --reviewer codex` then `--reviewer claude`. ~25–40 min/chapter expansion, ~10–15 min/review.
+- **Priority 3 — Part 3 prose work (Ch11–16)**: Ch11–14 prose PRs (#451–#455) are Codex-drafted and still need cross-family review. Ch15 prose can be drafted from PR #457's verdict. Ch16 research is `status: researching` — Claude-owned, needs contract built via `dispatch_chapter_research.py 16`.
+- **Priority 4 — Part 6/7 research queue (paused)**: 14 chapters (Ch38–Ch49) still need Claude-owned research contracts. Resume after Parts 1–3 ship.
+- **Priority 5 — close superseded research PRs as their replacements merge**: #425/#426/#427/#431/#433/#435/#436/#437/#438/#439 are already CLOSED. Only #429 (Ch01 prose) was open this session and is now closed.
+
+**Reusable patterns this session**:
+1. **Cross-family prose review = independent fresh-session dispatch**, not orchestrator self-review. The Claude source-fidelity reviewer caught my own (orchestrator-Claude) inline-fix regressions on Ch04 ("forty-five-year-old" violated strict-source even though it was historically correct) and on Ch05 ("the contract leaves" research-vocabulary leak from my Codex-fix pass). Lesson: orchestrator's inline edits MUST go through the cross-family gate, not just dispatched-Codex/Gemini's edits.
+2. **Rebase-and-drop** for stale infrastructure commits in PR branches. The 5 prose branches each carried 2 dispatcher commits (`e964b3c9`, `2c0644b7`) that had landed on main as different SHAs through the pivot — `git rebase --onto origin/main 2c0644b7 prose/394-chNN` cleanly dropped them and replayed only the chapter prose commits.
+
+---
+
+## Prior — 2026-04-27 evening — Part 3 dual-reviewed pipeline + ownership rebalance
 
 **Branch**: `claude/394-part3-symbolic-ai` → `epic/394-ai-history` via PR **#419** (latest commit `a3e227ae`).
 
