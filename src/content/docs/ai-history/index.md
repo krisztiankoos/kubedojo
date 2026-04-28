@@ -86,7 +86,7 @@ The Dartmouth consensus, early search algorithms, and military funding.
 | 12 | Logic Theorist & GPS | accepted | [yes](./ch-12-logic-theorist-gps/) |
 | 13 | The List Processor | accepted | [yes](./ch-13-the-list-processor/) |
 | 14 | The Perceptron | accepted | [yes](./ch-14-the-perceptron/) |
-| 15 | The Gradient Descent Concept | prose_ready (cap 4,900) | no |
+| 15 | The Gradient Descent Concept | accepted | no |
 | 16 | The Cold War Blank Check | researching | no |
 
 ## Part 4 — The First Winter & The Shift to Knowledge (1970s–1980s)
@@ -130,12 +130,12 @@ The shift to empiricism, enabled by the internet and cluster computing.
 
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
-| 32 | The DARPA SUR Program | prose_ready (cap 5,600) | [yes](./ch-32-the-darpa-sur-program/) |
-| 33 | Deep Blue | prose_ready (cap 4,900) | [yes](./ch-33-deep-blue/) |
-| 34 | The Accidental Corpus | prose_ready (cap 5,200) | [yes](./ch-34-the-accidental-corpus/) |
-| 35 | Indexing the Mind | prose_ready (cap 4,300) | [yes](./ch-35-indexing-the-mind/) |
-| 36 | The Multicore Wall | prose_ready (cap 5,000) | [yes](./ch-36-the-multicore-wall/) |
-| 37 | Distributing the Compute | prose_ready (cap 5,000) | [yes](./ch-37-distributing-the-compute/) |
+| 32 | The DARPA SUR Program | accepted | [yes](./ch-32-the-darpa-sur-program/) |
+| 33 | Deep Blue | accepted | [yes](./ch-33-deep-blue/) |
+| 34 | The Accidental Corpus | accepted | [yes](./ch-34-the-accidental-corpus/) |
+| 35 | Indexing the Mind | accepted | [yes](./ch-35-indexing-the-mind/) |
+| 36 | The Multicore Wall | accepted | [yes](./ch-36-the-multicore-wall/) |
+| 37 | Distributing the Compute | accepted | [yes](./ch-37-distributing-the-compute/) |
 | 38 | The Human API | researching | [yes](./ch-38-the-human-api/) |
 | 39 | The Vision Wall | researching | [yes](./ch-39-the-vision-wall/) |
 | 40 | Data Becomes Infrastructure | researching | [yes](./ch-40-data-becomes-infrastructure/) |
@@ -166,14 +166,14 @@ Scaling laws, Attention, and the democratization of AI through open weights.
 
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
-| 50 | Attention Is All You Need | prose_ready (cap 5,200) | no |
-| 51 | The Open Source Distribution Layer | prose_ready (cap 4,000) | no |
-| 52 | Bidirectional Context | prose_ready (cap 5,000) | no |
-| 53 | The Dawn of Few-Shot Learning | prose_ready (cap 5,000) | no |
-| 54 | The Hub of Weights | prose_ready (cap 4,800) | no |
-| 55 | The Scaling Laws | prose_ready (cap 5,500) | no |
-| 56 | The Megacluster | prose_ready (cap 5,200) | no |
-| 57 | The Alignment Problem | prose_ready (cap 5,800) | no |
+| 50 | Attention Is All You Need | accepted | no |
+| 51 | The Open Source Distribution Layer | accepted | no |
+| 52 | Bidirectional Context | accepted | no |
+| 53 | The Dawn of Few-Shot Learning | accepted | no |
+| 54 | The Hub of Weights | accepted | no |
+| 55 | The Scaling Laws | accepted | no |
+| 56 | The Megacluster | accepted | no |
+| 57 | The Alignment Problem | accepted | no |
 | 58 | The Math of Noise | capacity_plan_anchored | no |
 
 ## Part 9 — The Product Shock & Physical Limits (2022–Present)
