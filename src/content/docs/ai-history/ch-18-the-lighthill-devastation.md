@@ -313,8 +313,8 @@ software ecosystem growing around US laboratories.
 
 His DEC System 10/PDP-10 argument captures the point. For AI researchers of the
 period, the machine was not a neutral box. The useful environment included
-LISP, POP-2, SNOBOL, QA4, PLANNER, CONNIVER, operating systems, libraries,
-tools, and an accumulating body of programs and habits. To compete with
+LISP, POP-2, operating systems, libraries, tools, and an accumulating body of
+programs and habits. To compete with
 American AI work, British labs needed access to that ecosystem. A local machine
 without the same software world was not an equivalent substitute.
 
@@ -341,10 +341,10 @@ psychology or neurobiology. But the central AI lab, the place building general
 languages, search methods, and representation systems, needed the council to
 believe that basic AI was a legitimate target.
 
-The language list in Michie's response was not incidental. LISP and POP-2 were
-not just programming conveniences; they carried styles of thought about
-symbols, lists, procedures, and interactive experimentation. PLANNER,
-CONNIVER, QA4, and related systems represented a moving software frontier.
+The language list in Michie's response was not incidental. LISP, POP-2, and
+related facilities were not just programming conveniences; they carried styles
+of thought about symbols, lists, procedures, and interactive experimentation.
+The surrounding toolchain represented a moving software frontier.
 Access to those tools shaped what problems a lab could attack and how quickly
 students could learn the field's working idioms. A funding decision about a
 machine was also a decision about participation in a software culture.
