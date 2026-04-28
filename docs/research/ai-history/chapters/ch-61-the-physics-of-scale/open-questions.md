@@ -8,6 +8,6 @@
 
 ## Remaining Review Questions
 
-- **Claude source-fidelity review:** Verify page/section anchors and make sure the Megatron 2021 PDF text extraction is sufficient despite null bytes in the intermediate text file.
+- **Claude source-fidelity review:** Changes requested on three page locators and then applied: Megatron 2019 Section 3 is pages 4-5, PaLM Section 4 is pages 7-9, and Chinchilla's 70B/1.4T claim is p.1 abstract plus p.2 introduction. Claude confirmed the Megatron 2021 null bytes are figure-symbol extraction noise and do not threaten source fidelity.
 - **Gemini gap/capacity audit:** Confirm 4,600-5,800 words is honest and that PaLM/Chinchilla do not pull too much material from later Part 9 chapters.
 - **Optional PipeDream/GShard:** Not required for current contract. Add only if a reviewer sees a real narrative gap; otherwise the GPipe/Megatron/ZeRO/PaLM spine is already dense enough.
