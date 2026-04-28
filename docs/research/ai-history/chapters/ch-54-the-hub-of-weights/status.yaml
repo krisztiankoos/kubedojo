@@ -6,7 +6,8 @@ review_state: awaiting_cross_family_review
 last_updated: 2026-04-28
 green_claims: 6
 yellow_claims: 5
-red_claims: 6
+red_claims: 0
+guardrail_count: 6
 prose_word_cap_recommendation: 4800
 notes: |
   Rebuilt the scrubbed/yellow contract from verified online sources:
@@ -17,5 +18,5 @@ notes: |
   Strongest safe prose range: 4,000-4,800 words. The infrastructure evidence is
   strong; the internal pivot narrative is thin. Do not invent company dialogue,
   user anecdotes, or community reaction to reach the top of the book target.
-  The red_claims count reflects explicit guardrail prohibitions, not rows in
-  the scene-level claim table.
+  Guardrail_count records explicit prohibitions; red_claims is reserved for
+  in-scope claims that fail verification.
