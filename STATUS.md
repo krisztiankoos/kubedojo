@@ -2,9 +2,59 @@
 
 > **Read this first every session. Update before ending.**
 
-## Active Work (2026-04-28 late evening — handoff mid-Part-6-prose-batch)
+## Active Work (2026-04-28 night — Part 6 fully closed; Part 7 next)
 
-**Branch**: `main` at `32c97908` (clean apart from `scripts/local_api.py` user-side dashboard panel edits and an orphan `test_rendering.js`; both pre-existing, leave alone). All 7 Claude-owned research PRs from Part 3 (Ch15) and Part 6 (Ch32-37) are merged and at `prose_ready`. Ch15 prose shipped (PR #506); Ch32 prose is mid-review.
+**Branch**: `main` at `df95b0f9` (clean apart from `scripts/local_api.py` user-side dashboard panel edits and an orphan `test_rendering.js`; both pre-existing, leave alone). Part 6 prose batch (Ch32-37) all merged and rolled up to `accepted`. Ch15 also rolled up (was merged earlier today).
+
+**Shipped this session (2026-04-28 night, ~6:00 PM → 8:00 PM)**:
+- **Ch32 prose** PR #508 → main `1b98e6d8` (Gemini→Codex draft 4,475 words / cap 5,600, dual-reviewed READY_TO_MERGE on flash-preview after pro-preview outage forced model switch).
+- **Ch33 prose** PR #512 → main `b292a750` (3,983 / 4,900). Claude flagged 2 fixes (dequote "incredibly bad" → "totally illogical" anchored in Newborn 2003; restore Hsu "apparently" hedge); applied inline.
+- **Ch34 prose** PR #513 → main `03b50425` (4,653 / 5,200). Claude flagged 4 unanchored phrases (CERN DD division, "linked information" quote, "or the United Nations", Penn Treebank); all dropped/hedged inline.
+- **Ch35 prose** PR #514 → main `8e9131eb` (3,953 / 4,300). Claude flagged Brin bio "information retrieval" → "information extraction" + over-broad PageRank convergence claim; both fixed.
+- **Ch36 prose** PR #515 → main `660f956d` (4,037 / 5,000). Claude flagged 7 surgical issues (Hyper Pipelined unanchored, Vance quote tense, Tejas sample count "ten" not "several", AMD Athlon line history, Berkeley citing both Borkar and Gelsinger, Dwarfs list trim, Sutter title); all 7 applied.
+- **Ch37 prose** PR #516 → main `a3cfdd39` (3,904 / 5,000). Claude flagged sock-drawer misattribution (Vance's parenthetical, not a Cutting NYT quote), vague "later account" attribution → name Bonaci, "standard for open-source search" editorial flourish → "widely adopted"; all 3 fixed.
+- **Part 6 roll-up** `df95b0f9` direct-pushed to main (regex caught Ch15 too — both correct).
+- **Infra fix shipped**: `scripts/dispatch_chapter_prose.py` now honors `KUBEDOJO_GEMINI_DRAFT_MODEL` env override (mirrors `dispatch_prose_review.py:298`'s `KUBEDOJO_GEMINI_REVIEW_MODEL`). The first session-internal commit `94d594a4` rode along inside Ch33's squash-merge `b292a750` because the worktree was created from local main *before* I pushed; not bad enough to revert (content-equivalent, message preserved as the squash's first sub-message), but the lesson is "push local main commits to origin BEFORE creating a new worktree, otherwise they ride along in the next prose PR's squash."
+
+**Decision: pro-preview broken 2026-04-28 PM → fall back to flash-preview via env override**:
+gemini-3.1-pro-preview hung on both API key and OAuth/subscription paths around 6:00 PM CEST (smoke-tested 12 min apart, both timed out → runner translated as `RateLimitedError`). flash-preview returned `pong` on the API path. Used `KUBEDOJO_GEMINI_DRAFT_MODEL=gemini-3-flash-preview KUBEDOJO_GEMINI_REVIEW_MODEL=gemini-3-flash-preview` for the entire Ch33-37 batch. Drafting in 7-17 min, reviews in 1-3 min — clean. Drop the env vars when pro capacity returns.
+
+**Cosmetic backlog (do not block on, flag for next session)**:
+- `scripts/dispatch_prose_review.py:368-381` reuses `codex_prose_quality_prompt` for the gemini reviewer. Side effects: (a) Gemini's review header reads "Codex Prose Review — {slug}" instead of "Gemini Prose Review", (b) the prompt instructs the reviewer to use `curl/pdftotext/pdfgrep` shell tools, which Gemini doesn't have — Gemini consequently writes preamble like "I will verify... using curl/pdftotext" then quietly verifies against the contract instead. Discipline held in practice for Ch32-37 (no fabricated URL fetches), but cosmetic and confusing. Fix: extract a `gemini_prose_quality_prompt` that mirrors the codex one minus shell-tool framing, fix the heading, mark the lane as "contract-verified, no shell-fetch claims allowed".
+- `scripts/dispatch_chapter_prose.py:403` has a pre-existing pyright warning (unused `slug` param in `setup_worktree`); not introduced this session, signature change has cascade risk.
+
+**Open work — order (cold-start function)**:
+
+```bash
+# 0. Resume orientation
+curl -s http://127.0.0.1:8768/api/briefing/session?compact=1
+git log -10 --oneline                             # confirm df95b0f9 + a3cfdd39 + 660f956d + ...
+gh pr list --state open --label '#394' 2>/dev/null # likely just Codex Part 9 in flight
+git worktree list                                  # codex-407-ch6N-research worktrees expected
+```
+
+1. **Verify Codex Part 9 progress**. The autonomous codex chain (resume PID seen this session at 39151, started 7:18 AM) had Ch60 anchored on main (`ab371359`), Ch61 anchored (`4de02c0d`) + locator-fix (`1c1d6f84` on the worktree), and was firing a Gemini gap audit on PR #511 at 6:30 PM. Check: `gh pr list --search 'is:open #394 ch6'` and the `.worktrees/codex-407-ch6*` directories. Codex's gemini-pro calls may have been hit by the same outage I dodged — check whether his chain is stuck or progressing.
+
+2. **Part 7 — Ch41-49 research → prose end-to-end**. Per the 2026-04-28 PM split, Codex is the research lead for Parts 3, 6, 7 (Claude orchestrates). 9 chapters end-to-end is ~12-15 hours of wall time at current dispatcher cadence. Run as overnight chain per `feedback_overnight_autonomous_codex_chain.md`. **PRECONDITION before firing the first verdict pass**: see step 3 below.
+
+3. **PRECONDITION — `scripts/dispatch_research_verdict.py` needs a Claude anchor-verification reviewer added before running on Codex-authored research**. CONFIRMED THIS SESSION by reading the script (`scripts/dispatch_research_verdict.py:247-276`). Current state:
+   - Two reviewers hardcoded: Codex (anchor verification, gpt-5.5) + Gemini (structural gap audit, gemini-3-flash-preview).
+   - `--only {codex,gemini}` flag toggles one off, but no Claude reviewer exists.
+   - For Codex-authored research, default invocation = Codex reviewing itself = violates cross-family rule (`docs/review-protocol.md`). `--only gemini` = no anchor verification at all, exactly the gap that got Gemini banned per #421.
+   - **Fix needed (~30-60 min)**: add a `claude_anchor_prompt(slug, contract)` mirroring `codex_prompt` (Claude has the same shell tooling), a `fire(agent="claude", ...)` branch using `claude-opus-4-7`, and auto-route based on PR branch prefix (`codex/394-chNN-research` → Claude for anchors, `claude/394-chNN-research` → Codex for anchors). Keep `--only` working. Untested-end-to-end until first Part 7 PR exists; first dispatch will validate.
+
+4. **Ch16 research** — `status: researching` stub. Per the 2026-04-29 pivot Ch16 is Codex-owned (transferred from Claude). Don't dispatch from Claude. Codex picks this up on his own schedule.
+
+5. **Cleanup** — `.worktrees/` had 4 codex/gemini research worktrees still alive at session end (`codex-344`, `gemini-394-ch01-research`, `gemini-394-ch06-research`, `gemini-394-ch08-research`). All Part 1/2 work shipped per the prior STATUS sections; check whether they can be safely removed (origin branches as safety net first). `scripts/local_api.py` and `test_rendering.js` are user-side dirty state — leave alone.
+
+**Reusable lessons this run** (in addition to the Ch15/Ch32 lessons in the prior section):
+1. **Bundled-commit hygiene on worktree-add**: when the primary tree has unpushed local commits, `git worktree add ... main` will base the new worktree on those commits. The eventual PR squash-merges them along with the prose. Push first, or accept that infra commits land hidden inside the next prose PR's squash. Confirmed Ch33 / commit `94d594a4`.
+2. **Aligning local main without losing user-dirty files**: `git stash push -m "..." -- scripts/local_api.py && git fetch origin main && git reset --hard origin/main && git stash pop` — used 5x this session, cleanly preserved the user's dirty state through every alignment. Stash pop was conflict-free because origin's `local_api.py` hadn't been touched recently.
+3. **`gh pr merge --squash --delete-branch` returns exit-1 if the local branch is in use by a worktree** — but the *remote* merge succeeds. The exit code reflects the local-branch-deletion failure, not the merge. Force-remove the worktree first, OR ignore the exit code and check actual merge state via `git log origin/main`.
+4. **Gemini eyeballs prose word count badly** — Ch37's gemini review claimed "approximately 2,400 words" when dispatcher reported 3,904. Trust dispatcher's `[read] prose: NN words` over reviewer estimates per the existing lesson item from the prior section.
+5. **Bash `nohup ... &` inside a `run_in_background: true` Bash invocation makes the harness lose track** — the outer bash exits when nohup forks, harness reports task complete prematurely, the actual watcher continues as an orphan. Use plain polling-loop bash with `run_in_background: true` instead — harness tracks the actual loop and notifies on real completion.
+
+**Earlier this session (handoff context, now historical)**:
 
 **In-flight at handoff time**:
 - **PR #508 — Ch32 prose** (`prose/394-ch32` HEAD `84333ef3`): Gemini→Codex draft (4,475 words / cap 5,600) plus a Claude-source-fidelity fix-pass already applied (restored `(e.g., Vicens, Gold)` in Newell quote, added SRI to contractor list).
