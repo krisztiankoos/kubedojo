@@ -391,10 +391,24 @@ def setup_worktree(*, ch_num: int, slug: str) -> tuple[Path, str]:
     return worktree, branch
 
 
+def _prose_committed_on_branch(worktree: Path, prose_path: str) -> bool:
+    """True if the worktree's branch has at least one commit ahead of
+    main that touches ``prose_path``. Used to recover from agents that
+    finish their file-write + commit work but then fail their final
+    streaming response (Gemini's 429-on-summary pattern, observed on
+    Ch07 2026-04-28). The work landed; the runner just couldn't tell."""
+    r = subprocess.run(
+        ["git", "log", "--oneline", "main..HEAD", "--", prose_path],
+        cwd=worktree, capture_output=True, text=True,
+    )
+    return bool(r.stdout.strip())
+
+
 def fire_phase(*, agent: str, prompt: str, worktree: Path, task_id: str,
-               log_path: Path) -> bool:
+               log_path: Path, prose_path: str) -> bool:
     sys.path.insert(0, str(REPO / "scripts"))
     from agent_runtime.runner import invoke
+    from agent_runtime.errors import RateLimitedError, AgentTimeoutError
 
     if agent == "gemini":
         model = "gemini-3.1-pro-preview"
@@ -419,26 +433,44 @@ def fire_phase(*, agent: str, prompt: str, worktree: Path, task_id: str,
         raise ValueError(agent)
 
     print(f"[fire] {agent} ({model}, mode={mode}) on {task_id}")
-    r = invoke(
-        agent, prompt,
-        mode=mode,
-        cwd=worktree,
-        model=model,
-        task_id=task_id,
-        entrypoint="delegate",
-        hard_timeout=timeout,
-    )
+    try:
+        r = invoke(
+            agent, prompt,
+            mode=mode,
+            cwd=worktree,
+            model=model,
+            task_id=task_id,
+            entrypoint="delegate",
+            hard_timeout=timeout,
+        )
+        ok = r.ok
+        response = r.response or ""
+        session_id = r.session_id
+        stderr_excerpt = r.stderr_excerpt or ""
+    except (RateLimitedError, AgentTimeoutError) as exc:
+        # The runner raised before returning, but the agent may have
+        # finished its file-write + commit work and only choked on the
+        # final streaming response. Probe the worktree.
+        ok = False
+        response = ""
+        session_id = None
+        stderr_excerpt = f"{type(exc).__name__}: {exc}"
+        if _prose_committed_on_branch(worktree, prose_path):
+            print(f"[fire] {agent} runner classified failure but commit "
+                  f"on {prose_path} is present — treating as success")
+            ok = True
+
     log_path.write_text("\n".join([
-        f"OK: {r.ok}",
-        f"session_id: {r.session_id}",
-        f"response chars: {len(r.response or '')}",
+        f"OK: {ok}",
+        f"session_id: {session_id}",
+        f"response chars: {len(response)}",
         "=" * 70,
-        r.response or "(no response)",
+        response or "(no response)",
         "=" * 70,
-        f"stderr_excerpt: {r.stderr_excerpt or '(none)'}",
+        f"stderr_excerpt: {stderr_excerpt or '(none)'}",
     ]))
-    print(f"[fire] {agent} OK={r.ok}, log -> {log_path}")
-    return r.ok
+    print(f"[fire] {agent} OK={ok}, log -> {log_path}")
+    return ok
 
 
 def main() -> int:
@@ -489,6 +521,7 @@ def main() -> int:
             ok = fire_phase(
                 agent="gemini", prompt=prompt, worktree=worktree,
                 task_id=f"prose-{args.slug}-gemini", log_path=log,
+                prose_path=prose_path,
             )
             if not ok:
                 print("[main] Gemini phase FAILED, stopping pipeline")
@@ -503,6 +536,7 @@ def main() -> int:
             ok = fire_phase(
                 agent="codex", prompt=prompt, worktree=worktree,
                 task_id=f"prose-{args.slug}-codex", log_path=log,
+                prose_path=prose_path,
             )
             if not ok:
                 print("[main] Codex expansion FAILED")
@@ -517,6 +551,7 @@ def main() -> int:
             ok = fire_phase(
                 agent="claude", prompt=prompt, worktree=worktree,
                 task_id=f"prose-{args.slug}-claude", log_path=log,
+                prose_path=prose_path,
             )
             if not ok:
                 print("[main] Claude expansion FAILED")
