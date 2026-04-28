@@ -1,15 +1,36 @@
-status: researching
+status: capacity_plan_anchored
 owner: Codex
 part: 9
 chapter: 66
-review_state: not_started
+review_state: awaiting_claude_source_review_and_gemini_gap_audit
 last_updated: 2026-04-28
-green_claims: 0
-yellow_claims: 0
+green_claims: 16
+yellow_claims: 3
 red_claims: 0
-guardrail_count: 4
-prose_word_cap_recommendation: null
+guardrail_count: 6
+prose_word_cap_recommendation: 5400
+word_count_range: "4300-5400"
+verdicts:
+  claude:
+    model: null
+    date: null
+    verdict: null
+    review_url: null
+  gemini:
+    model: null
+    date: null
+    verdict: null
+    word_cap: null
+    review_url: null
+  resolved: null
+  resolved_word_cap: null
+  resolution_rule: dual_cross_family_verdict_with_cap
 notes: |
-  New chapter added by the modern-era coverage pass after Claude/Gemini
-  structural consultation. It reserves evaluation/benchmark politics as a
-  first-class chapter instead of burying them inside Product Shock or Monopoly.
+  Built into an anchored benchmark-politics contract. Core anchors are MMLU,
+  BIG-bench, HELM, GPT-4 Technical Report / OpenAI Evals, MT-Bench / Chatbot
+  Arena, SWE-bench, and a Goodhart-law source.
+
+  Safe draft range is 4,300-5,400 words pending Claude source review and Gemini
+  capacity audit. Keep benchmark rankings dated and source-bound, do not treat
+  scores as direct intelligence measures, and avoid unsourced contamination
+  accusations.
