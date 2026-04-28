@@ -6,6 +6,10 @@
   definitions.
 - If prose mentions 2026 current frontier models, recheck official model cards
   and avoid unsourced claims about closed-lab training-token counts.
+- If prose mentions YouTube, podcasts, or any named platform as private
+  pretraining input, require a primary or court-record source first. Otherwise
+  keep the scene at the sourced Whisper level: internet audio paired with
+  transcripts can be converted into supervised text-token tasks.
 - If prose uses a quote-style phrase like "data exhaustion," immediately define
   it as a scaling constraint on public, high-quality human text, not literal
   depletion of all possible information.

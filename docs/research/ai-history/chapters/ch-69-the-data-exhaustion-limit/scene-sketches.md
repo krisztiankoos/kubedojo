@@ -32,7 +32,17 @@ more epochs rather than more parameters in constrained regimes, add code where i
 helps, and change filters carefully. This is the engineering middle of the
 chapter.
 
-## Scene 5 - Machines Write Lessons For Machines
+## Scene 5 - Beyond Text
+
+Before synthetic text, give the reader one sourced scene of moving beyond plain
+web text. Epoch models images and video as stocks, and Whisper shows internet
+audio paired with transcripts becoming 680,000 hours of multilingual,
+multitask supervision. This scene should not repeat Ch62's multimodal story or
+speculate about particular private training sets. Its job is to show why, when
+text gets tight, audio and video become tempting because they can be converted
+back into text tokens.
+
+## Scene 6 - Machines Write Lessons For Machines
 
 Synthetic data enters as a practical workaround. Self-Instruct bootstraps
 instructions from model generations and filters them. Phi-1 uses a small amount
@@ -41,14 +51,14 @@ code. The prose can be optimistic here, but the optimism must be specific:
 curated synthetic data can target gaps; it does not create unlimited fresh human
 experience.
 
-## Scene 6 - The Mirror Gets Noisy
+## Scene 7 - The Mirror Gets Noisy
 
 Model collapse supplies the warning image. If generated data feeds future
 models indiscriminately, tails disappear and the model starts learning a
 flattened version of reality. Use the "tails" concept, not melodrama. Human data
 becomes valuable because it anchors the distribution.
 
-## Scene 7 - The Tests Spoil Too
+## Scene 8 - The Tests Spoil Too
 
 Close with evaluation. GPT-4's report discusses contamination checks, excluded
 BIG-bench material, and special handling of GSM-8K. LiveBench answers by using

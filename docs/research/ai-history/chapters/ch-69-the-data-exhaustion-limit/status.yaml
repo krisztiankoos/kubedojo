@@ -4,12 +4,12 @@ part: 9
 chapter: 69
 review_state: awaiting_claude_source_review_and_gemini_gap_audit
 last_updated: 2026-04-29
-green_claims: 17
+green_claims: 20
 yellow_claims: 1
 red_claims: 0
-guardrail_count: 7
-prose_word_cap_recommendation: 5500
-word_count_range: "4500-5500"
+guardrail_count: 8
+prose_word_cap_recommendation: 6000
+word_count_range: "5000-6000"
 verdicts:
   claude:
     model: null
@@ -27,11 +27,12 @@ verdicts:
   resolution_rule: dual_cross_family_verdict_with_cap
 notes: |
   Built from placeholder into an anchored contract on public human-text scarcity,
-  data-constrained scaling, synthetic-data workarounds, model-collapse risk, and
-  benchmark contamination as an evaluation-data freshness problem.
+  data-constrained scaling, audio/video transcription as a data-rich-domain
+  path, synthetic-data workarounds, model-collapse risk, and benchmark
+  contamination as an evaluation-data freshness problem.
 
   Core anchors are Chinchilla, Llama 3 model card, FineWeb, Villalobos/Epoch,
-  Scaling Data-Constrained Language Models, Self-Instruct, phi-1/Textbooks Are
-  All You Need, model collapse, GPT-4 technical report contamination sections,
-  and LiveBench. Ch68 owns legal/labor data enclosure; Ch70-Ch72 own physical
-  compute/power/datacenter limits.
+  Scaling Data-Constrained Language Models, Whisper, Self-Instruct,
+  phi-1/Textbooks Are All You Need, model collapse, GPT-4 technical report
+  contamination sections, and LiveBench. Ch68 owns legal/labor data enclosure;
+  Ch70-Ch72 own physical compute/power/datacenter limits.

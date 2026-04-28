@@ -21,10 +21,12 @@ easy frontier of fresh, public, high-signal human text stops scaling smoothly.
   such as Llama 3 and FineWeb; Epoch's public-human-text stock estimate and
   2026-2032 utilization forecast; data repetition and multi-epoch training;
   filtering/deduplication tradeoffs; code and domain-transfer as data
-  substitutes; synthetic instruction data and synthetic textbook data; model
-  collapse as a recursive synthetic-data risk; benchmark/test-set contamination
-  as another symptom of exhausted public evaluation data; live/dynamic
-  benchmarks as a response.
+  substitutes; audio/video transcription as a data-rich-domain path, using
+  Whisper as the anchored example rather than unsourced platform-scraping
+  claims; synthetic instruction data and synthetic textbook data; model collapse
+  as a recursive synthetic-data risk; benchmark/test-set contamination as
+  another symptom of exhausted public evaluation data; live/dynamic benchmarks
+  as a response.
 - OUT OF SCOPE: copyright/labor/legal enclosure, which Ch68 owns; datacenter
   power and grid limits, which Ch70 and Ch72 own; chip export controls, which
   Ch71 owns; comprehensive benchmark politics, which Ch66 owns; claiming that
@@ -44,41 +46,54 @@ easy frontier of fresh, public, high-signal human text stops scaling smoothly.
 3. **Epoch's Data-Stock Clock:** Present the 2026-2032 forecast carefully as a
    model, not prophecy. Include the 300T/400T effective-stock language and the
    key caveat that overtraining accelerates consumption.
+   Make the definitions explicit: the Epoch blog's "around 300T" is a
+   quality/repetition-adjusted stock estimate, while the paper figure's
+   "around 4e14" is an indexed-web token estimate.
 4. **Squeezing The Dataset:** Explain multi-epoch repetition, filtering,
    deduplication, and code augmentation through the data-constrained scaling
    paper. The scene should show engineers turning one finite corpus into more
    effective training signal.
-5. **The Synthetic Escape Hatch:** Self-Instruct and phi-1 show productive uses
+5. **Beyond Text:** Epoch's paper explicitly models images and video as data
+   stocks, and Whisper shows how internet audio paired with transcripts can be
+   converted into a large-scale speech-recognition corpus. Use this scene to
+   show engineers looking sideways into other modalities without turning the
+   chapter into Ch62's multimodal history.
+6. **The Synthetic Escape Hatch:** Self-Instruct and phi-1 show productive uses
    of model-generated instructions and textbook-like code data. This is the
    optimistic half of the chapter: models begin manufacturing training
    problems for other models.
-6. **The Recursion Warning:** Model-collapse work supplies the caution. The
+7. **The Recursion Warning:** Model-collapse work supplies the caution. The
    prose must not say all synthetic data causes collapse; the supported claim is
    narrower: indiscriminate recursive training on model output can erase tails
    and make genuine human data more valuable.
-7. **Evaluation Starts Spoiling Too:** GPT-4's contamination checks and
+8. **Evaluation Starts Spoiling Too:** GPT-4's contamination checks and
    LiveBench's monthly/recent-question design show that the exhaustion problem
    extends to test sets. Public benchmarks become part of the data soup unless
    they stay fresh, private, or carefully filtered.
 
 ## Prose Capacity Plan
 
-Target range: 4,500-5,500 words after source verification.
+Target range: 5,000-6,000 words after source verification.
 
-- 500-650 words: bridge from Ch68's enclosed data market to the technical
+- 400-500 words: bridge from Ch68's enclosed data market to the technical
   scarcity question: rights and labor make data costly; scaling laws make it
   necessary.
-- 700-900 words: Chinchilla and the data turn. Explain why "more data" became
+- 650-750 words: Chinchilla and the data turn. Explain why "more data" became
   a scaling requirement, not a dataset-engineering footnote.
-- 750-900 words: public trillion-token horizon. Llama 3, FineWeb, Common Crawl,
+- 650-750 words: public trillion-token horizon. Llama 3, FineWeb, Common Crawl,
   and dataset curation as industrial infrastructure.
-- 700-850 words: Epoch's stock forecast and caveats. Keep the dates and token
+- 650-750 words: Epoch's stock forecast and caveats. Keep the dates and token
   estimates precise, but avoid deterministic exhaustion rhetoric.
-- 750-900 words: squeezing finite corpora through repetition, filtering,
+- 650-750 words: squeezing finite corpora through repetition, filtering,
   deduplication, and code/domain transfer.
-- 700-850 words: synthetic data as escape hatch and trap: Self-Instruct,
-  phi-1, GPT-4 synthetic comparison data, and model collapse.
-- 400-550 words: benchmark contamination and handoff to Ch70: when data can no
+- 450-550 words: beyond text. Use Epoch's image/video-stock discussion and
+  Whisper's internet-audio/transcript corpus as a sourced, non-speculative path
+  from finite text toward other modalities.
+- 500-650 words: synthetic data as escape hatch: Self-Instruct, phi-1, and
+  GPT-4 synthetic comparison data.
+- 500-650 words: synthetic data as trap: model collapse, tail loss, and why
+  genuine human data remains valuable.
+- 350-500 words: benchmark contamination and handoff to Ch70: when data can no
   longer be assumed fresh, evaluation and training become infrastructure
   problems, not just research methodology.
 
@@ -95,7 +110,14 @@ Target range: 4,500-5,500 words after source verification.
 - Do not claim synthetic data is either a universal solution or a universal
   poison. Separate curated synthetic data from indiscriminate recursive
   self-training.
+- Do not cite unsourced claims about specific platforms' videos or podcasts
+  being used for LLM pretraining. The anchored claim here is narrower: audio and
+  video are data-rich domains, and Whisper demonstrates large-scale
+  internet-audio transcription/translation as a technical capability.
 - Do not reuse Ch68's copyright/labor claims except as one-paragraph context.
 - Do not let benchmark contamination become a repeat of Ch66's benchmark-politics
   chapter. Here it serves the data-scarcity argument: public tests become
   trainable data unless evaluation moves faster than training corpora.
+- Do not invent personal rivalry or lab-drama scenes around Chinchilla. Treat
+  Hoffmann/Rae/DeepMind and the later dataset teams as research groups making
+  design choices under constraints.

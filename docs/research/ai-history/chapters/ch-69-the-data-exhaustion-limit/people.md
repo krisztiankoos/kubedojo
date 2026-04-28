@@ -11,6 +11,10 @@
 - Niklas Muennighoff, Alexander M. Rush, Boaz Barak, Teven Le Scao, Aleksandra
   Piktus, Nouamane Tazi, Sampo Pyysalo, Thomas Wolf, Colin Raffel: authors of
   the data-constrained scaling paper.
+- Alec Radford, Jong Wook Kim, Tao Xu, Greg Brockman, Christine McLeavey, Ilya
+  Sutskever: Whisper authors; use only for the anchored internet-audio
+  transcription/translation scene, not for unsourced private LLM training-set
+  claims.
 - Guilherme Penedo, Hynek Kydlicek, Loubna Ben allal, Anton Lozhkov, Margaret
   Mitchell, Colin Raffel, Leandro Von Werra, Thomas Wolf: FineWeb authors.
 - Yizhong Wang, Yeganeh Kordi, Swaroop Mishra, Alisa Liu, Noah A. Smith, Daniel
@@ -30,6 +34,9 @@
 
 ## Narrative Handling
 
-No character-centered drama is needed here. The chapter is about infrastructure
-and research groups converting a vague "the internet is huge" assumption into
-measurable token budgets, curation recipes, and contamination defenses.
+Avoid lone-genius drama, but do not drain the chapter of human friction. The
+chapter should show research groups and engineering teams realizing that "the
+internet is huge" is not an engineering plan, then making hard choices: scrape
+or filter, repeat or discard, synthesize or preserve human tails, publish
+benchmarks or keep them fresh. The humans matter as decision-makers inside the
+data refinery, not as heroic inventors outside it.

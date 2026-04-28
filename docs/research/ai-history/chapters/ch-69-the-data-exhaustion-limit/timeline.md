@@ -5,6 +5,8 @@
 - 2022-11: Villalobos et al. first post the data-exhaustion analysis.
 - 2022-12: Self-Instruct appears, showing a model-generated instruction-data
   pipeline for alignment research.
+- 2022-12/2023: Whisper paper shows 680,000 hours of internet audio paired with
+  transcripts supporting multilingual transcription and translation.
 - 2023-05: Muennighoff et al. post data-constrained scaling work on repeated
   data and finite corpora.
 - 2023-06: Phi-1 paper shows high-quality web data plus synthetic textbook and

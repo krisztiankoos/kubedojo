@@ -13,6 +13,10 @@
 - **Repeated-data economics:** Data-constrained scaling says repeated data has
   value for a few epochs and then diminishing returns. This is an engineering
   lever, not a permanent escape from scarcity.
+- **Audio/video as convertible data:** Epoch treats images and video as data
+  stocks, and Whisper shows internet audio paired with transcripts becoming
+  multilingual speech-recognition and translation supervision. Keep this as a
+  conversion path, not a claim about any private LLM training run.
 - **Synthetic-data factory:** Self-Instruct and phi-1 show two synthetic-data
   styles: instruction/task generation and textbook/exercise generation.
 - **Distribution anchor:** Model collapse introduces the requirement for real
