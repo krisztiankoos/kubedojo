@@ -1,1 +1,45 @@
-status: researching
+status: prose_ready
+owner: Codex
+part: 8
+chapter: 51
+review_state: claude_source_approved_2026-04-28;gemini_gap_ready_with_cap_2026-04-28
+last_updated: 2026-04-28
+green_claims: 8
+yellow_claims: 4
+red_claims: 5
+prose_word_cap_recommendation: 4000
+prose_word_cap: 4000
+verdicts:
+  claude:
+    model: claude-opus-4-7
+    date: 2026-04-28
+    verdict: APPROVE
+    note: source-fidelity review posted to PR #491
+  gemini:
+    model: gemini-3-flash-preview
+    requested_model: gemini-3.1-pro-preview
+    date: 2026-04-28
+    verdict: READY_WITH_CAP
+    word_cap: 4000
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/491#issuecomment-4333630718
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 4000
+  resolution_rule: dual_cross_family_verdict_with_cap
+notes: |
+  Rebuilt the scrubbed/yellow contract from verified online sources: arXiv About,
+  arXiv category taxonomy, arXiv monthly-submissions CSV, arXiv Annual Report
+  2021, GitHub API repository metadata, Google TensorFlow announcement, Meta
+  PyTorch 1.0 announcement, and Zhang et al. 2019.
+
+  Strongest safe prose target: 4,000 words. The chapter is infrastructure-heavy
+  and character-light. Do not invent individual anecdotes or claim open source
+  erased corporate advantage. Expansion above 4,000 words needs stronger primary
+  sources on ML-specific arXiv growth, conference code norms, or named maintainer
+  histories.
+
+  Claude source-fidelity review approved all load-bearing anchors. Gemini
+  gap/capacity audit returned READY_WITH_CAP at 4,000 words, correctly rejecting
+  the original 5,000-word stretch without ML-specific arXiv growth, conference
+  code-policy, or named-maintainer sources. Follow-up edits reduced the cap,
+  reframed TensorFlow/PyTorch as contrasting distribution philosophies, and made
+  Papers with Code a later maturation layer.
