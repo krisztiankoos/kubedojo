@@ -10,6 +10,7 @@ This directory contains the operational research files for the definitive 72-cha
 - **Part 4 (The First Winter):** Ch17-23 cross-family cleared for capped prose drafting; Ch21 carries a Yellow-caveated Bachant/McDermott mirror-source guardrail.
 - **Part 5 (The Mathematical Resurrection):** Ch24-31 prose `accepted`.
 - **Part 8 (The Transformer, Scale & Open Source):** Ch50-57 dual-cleared `prose_ready`; Ch58 rebuilt to `capacity_plan_anchored` 2026-04-28 and awaits Claude source-fidelity review plus Gemini gap/capacity audit.
+- **Part 9 (The Product Shock & Physical Limits):** Ch59 rebuilt to `capacity_plan_anchored` 2026-04-28 and awaits Claude source-fidelity review plus Gemini gap/capacity audit.
 
 All drafting is paused for any chapter whose contract is not at `prose_ready` or beyond.
 

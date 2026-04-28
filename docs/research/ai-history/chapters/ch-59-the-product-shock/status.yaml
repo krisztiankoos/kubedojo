@@ -1,1 +1,41 @@
-status: researching
+status: capacity_plan_anchored
+owner: Codex
+part: 9
+chapter: 59
+review_state: awaiting_claude_source_review_and_gemini_gap_audit
+last_updated: 2026-04-28
+green_claims: 13
+yellow_claims: 4
+red_claims: 0
+guardrail_count: 6
+prose_word_cap_recommendation: 5700
+word_count_range: "4200-5700"
+verdicts:
+  claude:
+    model: null
+    date: null
+    verdict: null
+    review_url: null
+  gemini:
+    model: null
+    date: null
+    verdict: null
+    word_cap: null
+    review_url: null
+  resolved: null
+  resolved_word_cap: null
+  resolution_rule: dual_cross_family_verdict_with_cap
+notes: |
+  Built from an empty/scrubbed skeleton into a capacity_plan_anchored contract.
+  Core anchors are official OpenAI product pages (ChatGPT, Plus, GPT-3.5 Turbo
+  API, GPT-4), official Microsoft and Google product/partnership posts, Stack
+  Overflow policy, Chalkbeat NYC schools reporting, Reuters/UBS adoption
+  syndication, and a Threads caveat source.
+
+  The central guardrail is temporal honesty: ChatGPT may be described as the
+  fastest-growing consumer application according to the February 2023 Reuters/UBS
+  estimate at that time, but not as the still-current record holder in 2026.
+
+  Safe prose range is 4,200-5,700 words. Do not pad by importing plugins/RAG/tool
+  use (Ch60), benchmark politics (Ch66), open weights (Ch65), copyright/data
+  labor (Ch68), or inference-serving details (Ch63).
