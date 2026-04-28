@@ -22,10 +22,10 @@ prose_capacity:
       anchors: [G14, G19, G20, G21, G22]
     - scene: 5
       range_words: [650, 850]
-      anchors: [G23, G25, G26, G28]
+      anchors: [G23, G25, G28]
 claim_counts:
-  green: 28
-  yellow: 6
+  green: 27
+  yellow: 7
   red: 2
 checks:
   prose_capacity_plan_has_source_anchors: true
@@ -37,3 +37,4 @@ notes:
   - "Cold-start script failed because .venv/bin/python is absent in this worktree; proceeded with repository-file fallback and direct source checks."
   - "Shell curl could not resolve external hosts under sandbox networking, so online source verification used browser/search extraction and existing repository primary-source anchors."
   - "The title phrase 'blank check' is treated as a metaphor only; no Green claim treats it as participant wording."
+  - "2026-04-28 anchor-verification fix-pass: G26 (GAO B-167034) downgraded Green->Yellow after Claude verifier flagged that the family of B-167034 decisions spans 1970-1976 and the date/title/decision-number could not be confirmed; Scene 5 anchor list updated accordingly. S02/G03 anchor pinning corrected (Section 5 covers prereqs across 5.1-5.5, not 5.2 alone). S08 (Stanford CS-TR-74-409) flagged for re-pull from archive.org before any 'two-thirds of 128 members' line lands."

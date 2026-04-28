@@ -49,6 +49,7 @@ If the verified evidence runs out, cap the chapter.
 - **DARPA vs ARPA naming.** The agency was ARPA during most events in this chapter and added the D in 1972. Use ARPA/IPTO for 1962-1971 events; use DARPA only when referring to later institutional retrospectives or the modern agency.
 - **AI line-item timing.** Edwards says ARPA budgets did not include AI as a separate line item until 1968. Norberg/O'Neill's tables show "Intelligent systems" in FY1971 and FY1975. Treat both as compatible: AI work existed earlier under broader categories, with later explicit budget labeling.
 - **Mansfield impact.** The statute is Green; its effect on specific AI contracts is partly Yellow. Do not claim it immediately ended broad AI funding.
+- **GAO B-167034 ambiguity (added by anchor-verification fix-pass).** The 2026-04-28 anchor pass flagged that B-167034 covers a family of GAO decisions spanning 1970–1976; the FY1971 IR&D/B&P thread is a different topic from the FY1970 Mansfield-equipment ruling the contract assumed. Either Codex re-anchors the exact decision number, date, and topic before Scene 5 prose, or Scene 5 implementation discussion grounds itself on the statute (G25) plus Norberg/O'Neill program-area tables (G23) only and drops the GAO line.
 - **Military motive and researcher autonomy.** The evidence supports a dual story: command-and-control justification at the funding layer, and broad research autonomy inside selected centers. Do not collapse one into the other.
 
 ## Honest Prose-Capacity Estimate
