@@ -329,15 +329,14 @@ made intelligence inspectable, but inspection itself became work.
 MYCIN's performance was not imaginary. In a blinded evaluation of antimicrobial
 therapy recommendations for meningitis cases, outside specialists rated
 prescriptions without knowing which one came from the computer. MYCIN's
-recommendations received acceptable ratings at a rate that compared strongly
-with the human prescribers in that study. That result mattered because it
-showed that the rule-based system could produce serious advice in a difficult
-clinical domain.
+recommendations received acceptable ratings at a competitive rate under the
+study's stated criterion. That result mattered because it showed that the
+rule-based system could produce serious advice in a difficult clinical domain.
 
-The limits matter just as much. The evaluation used 10 challenging cases. The
-task was antimicrobial therapy selection, not all of medicine. The evaluators
-were judging prescriptions under the study's criteria. The result should not
-be shortened into "MYCIN was better than doctors." A more faithful statement is
+The limits matter just as much. The evaluation used 10 challenging cases in
+antimicrobial therapy selection, not all of medicine. The evaluators were
+judging prescriptions under the study's criteria. The result should not be
+shortened into "MYCIN was better than doctors." A more faithful statement is
 that, in this narrow blinded study, MYCIN's prescriptions received acceptable
 ratings more often than those of any of the nine human prescribers on the
 study's stated criterion.
