@@ -1,25 +1,28 @@
-"""Dispatch a fresh headless Claude on per-chapter AI History research.
+"""Dispatch a fresh headless agent on per-chapter AI History research.
 
-Replaces the inline copy-paste pattern for the Parts 1/2/6/7 re-research
-queue (Issue #394, Option C from the 2026-04-28 handoff). Each call
-spins up a fresh `claude/394-ch{N}-research` worktree off main, drops a
+Originally the Claude-only dispatcher for the Parts 1/2/6/7 re-research
+queue (Issue #394). Generalized 2026-04-28 evening so Parts 6/7 can flip
+to Codex when Claude's weekly credit pool is throttled. Each call spins
+up a fresh `<agent>/394-ch{N}-research` worktree off main, drops a
 focused prompt that points the headless agent at the chapter slug
-directory, and fires `agent_runtime.runner.invoke` with model
-claude-opus-4-7 in workspace-write mode.
+directory, and fires `agent_runtime.runner.invoke` in workspace-write
+mode with the agent's right model + reasoning settings.
 
 Usage:
+    # Claude (default — Parts 1, 2, 3, 9 per the 2026-04-28 split)
     .venv/bin/python scripts/dispatch_chapter_research.py 1 \
         --slug ch-01-the-laws-of-thought \
-        --supersede-pr 425 \
-        --extra-staging boole.tex,boole.txt,fix_ch1_anchor.py
+        --supersede-pr 425
+
+    # Codex (Parts 4, 5, 6, 7, 8 — 6/7 flipped 2026-04-28 evening
+    # to spare Claude's weekly cap)
+    .venv/bin/python scripts/dispatch_chapter_research.py 38 \
+        --slug ch-38-the-eliza-illusion \
+        --agent codex
 
 The script prints the worktree path, branch, dispatch log path, and
 runs the dispatch in the foreground (blocking). Caller decides whether
 to background the whole script.
-
-Chapters: 28 total across Parts 1, 2, 6, 7 per
-docs/research/ai-history/README.md ownership table (Claude is research
-lead; Gemini's prior PRs are to be superseded, not merged).
 """
 from __future__ import annotations
 
@@ -33,9 +36,29 @@ from textwrap import dedent
 REPO = Path("/Users/krisztiankoos/projects/kubedojo")
 
 
+AGENT_DEFAULTS: dict[str, dict[str, object]] = {
+    "claude": {
+        "model": "claude-opus-4-7",
+        "owner_label": "Claude",
+        # Keep claude-opus pegged at 60 min; mirrors prior behavior.
+        "hard_timeout": 3600,
+    },
+    "codex": {
+        # gpt-5.5 + reasoning=high is set in ~/.codex/config.toml as the
+        # user-level default; passing model="gpt-5.5" here keeps it
+        # explicit per reference_codex_models.md.
+        "model": "gpt-5.5",
+        "owner_label": "Codex",
+        "hard_timeout": 3600,
+    },
+}
+
+
 def make_prompt(*, ch_num: int, slug: str, supersede_pr: int | None,
-                staging_files: list[Path], part_num: int) -> str:
+                staging_files: list[Path], part_num: int,
+                agent: str) -> str:
     """Build the per-chapter dispatch prompt."""
+    owner_label = str(AGENT_DEFAULTS[agent]["owner_label"])
     staging_section = ""
     if staging_files:
         rel = "\n".join(f"- `{f.name}`" for f in staging_files)
@@ -72,16 +95,18 @@ def make_prompt(*, ch_num: int, slug: str, supersede_pr: int | None,
         # Task: Build the Chapter {ch_num} research contract for the AI History book (#394)
 
         You have **workspace-write** access to worktree
-        `{REPO}/.worktrees/claude-394-ch{ch_num:02d}-research` on
-        branch `claude/394-ch{ch_num:02d}-research` (forked off
+        `{REPO}/.worktrees/{agent}-394-ch{ch_num:02d}-research` on
+        branch `{agent}/394-ch{ch_num:02d}-research` (forked off
         `main`). Edit and commit there. Do NOT touch the main
         checkout.
 
         ## Chapter {ch_num} — `{slug}`
 
-        Per the new research role split (effective 2026-04-28),
-        Claude owns Part {part_num} research. Build the 8-file
-        chapter contract from verified primary and secondary sources.
+        Per the research role split (effective 2026-04-28; Parts 6/7
+        flipped from Claude to Codex on the evening of 2026-04-28 to
+        spare Claude's weekly credit pool), {owner_label} owns Part
+        {part_num} research. Build the 8-file chapter contract from
+        verified primary and secondary sources.
 
         ## Required reading — in this exact order
 
@@ -148,7 +173,7 @@ def make_prompt(*, ch_num: int, slug: str, supersede_pr: int | None,
 
         ## Workflow
 
-        1. `cd /Users/krisztiankoos/projects/kubedojo/.worktrees/claude-394-ch{ch_num:02d}-research`
+        1. `cd /Users/krisztiankoos/projects/kubedojo/.worktrees/{agent}-394-ch{ch_num:02d}-research`
         2. Read TEAM_WORKFLOW, the Ch11 templates, the existing
            legacy chapter dir and prose if any, the staged files if
            any.
@@ -166,10 +191,10 @@ def make_prompt(*, ch_num: int, slug: str, supersede_pr: int | None,
            ```
            docs(ai-history): build chapter {ch_num} research contract (#394)
 
-           Anchored research contract for `{slug}` per the new role
-           split (Claude owns Part {part_num} research, effective
-           2026-04-28). All Green claims trace to verified primary
-           or secondary anchors.
+           Anchored research contract for `{slug}` per the research
+           role split ({owner_label} owns Part {part_num} research,
+           effective 2026-04-28). All Green claims trace to verified
+           primary or secondary anchors.
 
            Status: capacity_plan_anchored | capacity_plan_drafted.
            N Green / N Yellow / N Red claims.
@@ -213,10 +238,10 @@ def detect_part(ch_num: int) -> int:
     raise ValueError(f"Chapter {ch_num} out of range 1-68")
 
 
-def setup_worktree(ch_num: int) -> tuple[Path, str]:
-    """Create the .worktrees/claude-394-chNN-research worktree."""
-    branch = f"claude/394-ch{ch_num:02d}-research"
-    worktree = REPO / f".worktrees/claude-394-ch{ch_num:02d}-research"
+def setup_worktree(ch_num: int, agent: str) -> tuple[Path, str]:
+    """Create the .worktrees/{agent}-394-chNN-research worktree."""
+    branch = f"{agent}/394-ch{ch_num:02d}-research"
+    worktree = REPO / f".worktrees/{agent}-394-ch{ch_num:02d}-research"
     if worktree.exists():
         print(f"[setup] worktree already exists at {worktree} — reusing")
         return worktree, branch
@@ -240,21 +265,24 @@ def stage_files(worktree: Path, files: list[Path]) -> list[Path]:
 
 
 def fire_dispatch(*, worktree: Path, prompt: str, task_id: str,
-                  log_path: Path) -> int:
+                  log_path: Path, agent: str) -> int:
     """Run the dispatch in the current process, tee output to log."""
     sys.path.insert(0, str(REPO / "scripts"))
     from agent_runtime.runner import invoke
 
-    print(f"[dispatch] firing claude opus-4-7 on {task_id} ...")
+    cfg = AGENT_DEFAULTS[agent]
+    model = str(cfg["model"])
+    timeout = int(cfg["hard_timeout"])  # type: ignore[arg-type]
+    print(f"[dispatch] firing {agent} ({model}) on {task_id} ...")
     result = invoke(
-        "claude",
+        agent,
         prompt,
         mode="workspace-write",
         cwd=worktree,
-        model="claude-opus-4-7",
+        model=model,
         task_id=task_id,
         entrypoint="delegate",
-        hard_timeout=3600,
+        hard_timeout=timeout,
     )
 
     log_path.write_text("\n".join([
@@ -276,6 +304,10 @@ def main() -> int:
     p.add_argument("ch_num", type=int, help="Chapter number 1-68")
     p.add_argument("--slug", required=True,
                    help="Chapter slug, e.g. ch-01-the-laws-of-thought")
+    p.add_argument("--agent", choices=sorted(AGENT_DEFAULTS),
+                   default="claude",
+                   help="Which research agent to dispatch. Parts 6/7 "
+                        "flipped to codex 2026-04-28 evening.")
     p.add_argument("--supersede-pr", type=int, default=None,
                    help="Open Gemini PR number to supersede (#425, #426, ...)")
     p.add_argument("--stage", action="append", default=[],
@@ -284,9 +316,10 @@ def main() -> int:
     args = p.parse_args()
 
     part_num = detect_part(args.ch_num)
-    print(f"[main] Ch{args.ch_num:02d} `{args.slug}` (Part {part_num})")
+    print(f"[main] Ch{args.ch_num:02d} `{args.slug}` "
+          f"(Part {part_num}, agent={args.agent})")
 
-    worktree, _ = setup_worktree(args.ch_num)
+    worktree, _ = setup_worktree(args.ch_num, args.agent)
     staging_files = stage_files(
         worktree,
         [Path(s) if Path(s).is_absolute() else (REPO / s) for s in args.stage],
@@ -298,14 +331,18 @@ def main() -> int:
         supersede_pr=args.supersede_pr,
         staging_files=staging_files,
         part_num=part_num,
+        agent=args.agent,
     )
 
-    log_path = Path(f"/tmp/dispatch-out-ch{args.ch_num:02d}-research.log")
+    log_path = Path(
+        f"/tmp/dispatch-out-{args.agent}-ch{args.ch_num:02d}-research.log"
+    )
     return fire_dispatch(
         worktree=worktree,
         prompt=prompt,
-        task_id=f"ch{args.ch_num:02d}-research-2026-04-28",
+        task_id=f"ch{args.ch_num:02d}-research-{args.agent}-2026-04-28",
         log_path=log_path,
+        agent=args.agent,
     )
 
 
