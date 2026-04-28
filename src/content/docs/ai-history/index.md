@@ -29,17 +29,18 @@ Honesty over output is the highest rule. When verified evidence cannot honestly 
 
 ## Notes on the current state
 
-- Several chapters have **legacy prose merged from the pre-2026 research pipeline** but their lifecycle still reads `researching` because the contract is being re-built under the new claim-level anchoring standard. Parts 1–2 are in active re-research; Parts 6–7 will follow.
+- Several Part 2/6/7 chapters have **legacy prose merged from the pre-2026 research pipeline**; their lifecycle reads `researching` until each chapter's claim-level-anchored research contract lands on `main` and the prose is re-drafted from it.
+- Part 1's verified anchor-level research is now on `main` (the supersede PRs landed 2026-04-28). Part 1 prose drafted from that contract is also merged. Part 4 and Part 5 are fully shipped.
 - Active per-chapter pull requests are not reflected here until merged. See the [open PRs](https://github.com/kube-dojo/kube-dojo.github.io/pulls) for in-flight work.
 - The book's tracking epic is [#394](https://github.com/kube-dojo/kube-dojo.github.io/issues/394).
 
 ## Role split (effective 2026-04-28)
 
-After Gemini self-admitted to systemic URL/anchor hallucination across his prior research work, sourcing duties moved off Gemini:
+After Gemini self-admitted to systemic URL/anchor hallucination across his prior research work, sourcing duties moved off Gemini. Updated the same evening to off-load the Part 6/7/9 research backlog from Claude to Codex (Claude's weekly credit pool burned ~30 % in a day on the initial Ch32-37 push):
 
-- **Claude** owns the research contract for Parts 1, 2, 3, 6, 7, 9 (anchor extraction directly via `curl` + `pdftotext`).
-- **Codex** owns the research contract for Parts 4, 5, 8 and helps with archive-blocked or scanned-PDF anchors when Claude is stuck. Continues as prose drafter for Part 3.
-- **Gemini** stops touching sources entirely. Becomes the gap auditor on every chapter and the first-draft prose writer for Parts 1, 2, 6, 7 (Claude expands the draft).
+- **Claude** owns the research contract for Parts 1, 2, 3 (anchor extraction directly via `curl` + `pdftotext`). After Parts 1/2/3 close, Claude monitors but does not drive new research.
+- **Codex** owns the research contract for Parts 4, 5, 6, 7, 8, 9 — drives the full pipeline end-to-end. Same shell tooling. Sequential dispatches per `feedback_codex_dispatch_sequential.md`.
+- **Gemini** stops touching sources entirely. Becomes the gap auditor on every chapter and the first-draft prose writer for Parts 1 and 2 (Claude expands the draft).
 - **Cross-family verdict** rule unchanged: every chapter needs a `READY_TO_DRAFT` or `READY_TO_DRAFT_WITH_CAP` from BOTH cross-family reviewers before drafting unlocks.
 
 ## Part 1 — The Mathematical Foundations (1840s–1940s)
@@ -50,11 +51,11 @@ Proving that human logic, reasoning, and probability can be formalized into mech
 
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
-| 1 | The Laws of Thought | researching | [yes](./ch-01-the-laws-of-thought/) |
-| 2 | The Universal Machine | researching | [yes](./ch-02-the-universal-machine/) |
-| 3 | The Physical Bridge | researching | [yes](./ch-03-the-physical-bridge/) |
-| 4 | The Statistical Roots | researching | [yes](./ch-04-the-statistical-roots/) |
-| 5 | The Neural Abstraction | researching | [yes](./ch-05-the-neural-abstraction/) |
+| 1 | The Laws of Thought | accepted | [yes](./ch-01-the-laws-of-thought/) |
+| 2 | The Universal Machine | accepted | [yes](./ch-02-the-universal-machine/) |
+| 3 | The Physical Bridge | accepted | [yes](./ch-03-the-physical-bridge/) |
+| 4 | The Statistical Roots | accepted | [yes](./ch-04-the-statistical-roots/) |
+| 5 | The Neural Abstraction | accepted | [yes](./ch-05-the-neural-abstraction/) |
 
 ## Part 2 — The Analog Dream & Digital Blank Slate (1940s–1950s)
 
@@ -78,11 +79,11 @@ The Dartmouth consensus, early search algorithms, and military funding.
 
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
-| 11 | The Summer AI Named Itself | prose_ready (cap 5,100) | no |
-| 12 | Logic Theorist & GPS | prose_ready (cap 4,500) | no |
-| 13 | The List Processor | prose_ready (cap 4,500) | no |
-| 14 | The Perceptron | prose_ready (cap 4,500) | no |
-| 15 | The Gradient Descent Concept | researching | no |
+| 11 | The Summer AI Named Itself | prose_review (cap 5,100) | no |
+| 12 | Logic Theorist & GPS | prose_review (cap 4,500) | no |
+| 13 | The List Processor | prose_review (cap 4,500) | no |
+| 14 | The Perceptron | prose_review (cap 4,500) | no |
+| 15 | The Gradient Descent Concept | prose_ready | no |
 | 16 | The Cold War Blank Check | researching | no |
 
 ## Part 4 — The First Winter & The Shift to Knowledge (1970s–1980s)
@@ -114,13 +115,13 @@ The silent algorithmic breakthroughs that laid the foundation for modern Machine
 | 26 | Bayesian Networks | accepted | [yes](./ch-26-bayesian-networks/) |
 | 27 | The Convolutional Breakthrough | accepted | [yes](./ch-27-the-convolutional-breakthrough/) |
 | 28 | The Second AI Winter | accepted | [yes](./ch-28-the-second-ai-winter/) |
-| 29 | Support Vector Machines (SVMs) | prose_review | [yes](./ch-29-support-vector-machines/) |
-| 30 | The Statistical Underground | prose_review | [yes](./ch-30-the-statistical-underground/) |
-| 31 | Reinforcement Learning Roots | prose_review | [yes](./ch-31-reinforcement-learning-roots/) |
+| 29 | Support Vector Machines (SVMs) | accepted | [yes](./ch-29-support-vector-machines/) |
+| 30 | The Statistical Underground | accepted | [yes](./ch-30-the-statistical-underground/) |
+| 31 | Reinforcement Learning Roots | accepted | [yes](./ch-31-reinforcement-learning-roots/) |
 
 ## Part 6 — The Rise of Data & Distributed Compute (1990s–2000s)
 
-Research: **Claude** · Prose: **Gemini → Claude expansion** · Tracking: [#404](https://github.com/kube-dojo/kube-dojo.github.io/issues/404)
+Research: **Codex** · Prose: **Codex** · Tracking: [#404](https://github.com/kube-dojo/kube-dojo.github.io/issues/404)
 
 The shift to empiricism, enabled by the internet and cluster computing.
 
@@ -138,7 +139,7 @@ The shift to empiricism, enabled by the internet and cluster computing.
 
 ## Part 7 — The Deep Learning Revolution & GPU Coup (2010s)
 
-Research: **Claude** · Prose: **Gemini → Claude expansion** · Tracking: [#405](https://github.com/kube-dojo/kube-dojo.github.io/issues/405)
+Research: **Codex** · Prose: **Codex** · Tracking: [#405](https://github.com/kube-dojo/kube-dojo.github.io/issues/405)
 
 The repurposing of graphics cards for massive parallel matrix multiplication.
 
@@ -162,9 +163,9 @@ Scaling laws, Attention, and the democratization of AI through open weights.
 
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
-| 50 | Attention Is All You Need | researching | no |
-| 51 | The Open Source Distribution Layer | researching | no |
-| 52 | Bidirectional Context | researching | no |
+| 50 | Attention Is All You Need | prose_ready | no |
+| 51 | The Open Source Distribution Layer | prose_ready | no |
+| 52 | Bidirectional Context | prose_ready | no |
 | 53 | The Dawn of Few-Shot Learning | researching | no |
 | 54 | The Hub of Weights | researching | no |
 | 55 | The Scaling Laws | researching | no |
@@ -174,7 +175,7 @@ Scaling laws, Attention, and the democratization of AI through open weights.
 
 ## Part 9 — The Product Shock & Physical Limits (2022–Present)
 
-Research: **Claude** · Prose: **Claude** · Tracking: [#407](https://github.com/kube-dojo/kube-dojo.github.io/issues/407)
+Research: **Codex** · Prose: **Codex** · Tracking: [#407](https://github.com/kube-dojo/kube-dojo.github.io/issues/407)
 
 Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 
@@ -195,10 +196,10 @@ Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 
 | Stage | Count |
 |---|---:|
-| `accepted` (drafted, all reviews cleared) | 5 |
-| `prose_review` (drafted, in review) | 3 |
+| `accepted` (drafted, all reviews cleared) | 20 |
+| `prose_review` (drafted, in review) | 4 |
 | `prose_ready` (contract dual-cleared, awaiting prose draft) | 4 |
-| `capacity_plan_anchored` (contract anchored, awaiting verdict) | 3 |
-| `researching` with prose merged on legacy contract | 22 |
-| `researching` (no prose yet) | 31 |
+| `capacity_plan_anchored` (contract anchored, awaiting verdict) | 0 |
+| `researching` with prose merged on legacy contract | 16 |
+| `researching` (no prose yet) | 24 |
 | **Total** | **68** |
