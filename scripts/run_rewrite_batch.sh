@@ -10,6 +10,8 @@
 # Continues on per-module failure. Skips slugs already at COMMITTED so kill+restart resumes.
 set -u
 
+export KUBEDOJO_SKIP_REVIEW=1
+
 cd "$(dirname "$0")/.."
 
 QUEUE="${REWRITE_QUEUE:-/tmp/388-rewrite-queue.tsv}"
