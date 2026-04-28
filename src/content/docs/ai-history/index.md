@@ -87,7 +87,7 @@ The Dartmouth consensus, early search algorithms, and military funding.
 | 13 | The List Processor | accepted | [yes](./ch-13-the-list-processor/) |
 | 14 | The Perceptron | accepted | [yes](./ch-14-the-perceptron/) |
 | 15 | The Gradient Descent Concept | accepted | [yes](./ch-15-the-gradient-descent-concept/) |
-| 16 | The Cold War Blank Check | researching | no |
+| 16 | The Cold War Blank Check | accepted | [yes](./ch-16-the-cold-war-blank-check/) |
 
 ## Part 4 — The First Winter & The Shift to Knowledge (1970s–1980s)
 
