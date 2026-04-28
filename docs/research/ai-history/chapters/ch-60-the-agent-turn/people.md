@@ -12,7 +12,7 @@
 - **OpenAI:** WebGPT, ChatGPT plugins, retrieval plugin, browser/code interpreter framing, and function calling.
 - **Meta AI Research / Universitat Pompeu Fabra:** Toolformer institutions as listed on the paper.
 - **Princeton / Google Research / UC Berkeley / Google DeepMind:** ReAct institutions as listed on the paper.
-- **LangChain:** Open-source orchestration project; use repository evidence for chains/data-augmented generation/agents rather than founder mythology.
+- **LangChain:** Open-source orchestration project; use repository evidence for composability and later chains/data-augmented-generation/agents taxonomy rather than founder mythology.
 - **LlamaIndex:** Adjacent document/data framework; currently Yellow context unless a historical README snapshot is pinned.
 - **Significant Gravitas / AutoGPT contributors:** Early public agent-demo project. Attribute claims to the repository/README rather than to unsourced media narratives.
 

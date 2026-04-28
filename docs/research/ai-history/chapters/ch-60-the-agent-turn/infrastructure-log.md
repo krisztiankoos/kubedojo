@@ -15,7 +15,7 @@
 - Toolformer: self-supervised API-call insertion; calculator, Q&A, search, translation, and calendar tools.
 - OpenAI plugins: browser, code interpreter, retrieval plugin, third-party services, prompt-injection/action-risk warnings.
 - Function calling: developer-provided function descriptions and JSON arguments for external tools/APIs.
-- LangChain/AutoGPT: practical packaging of chains, data-augmented generation, agents, internet access, memory, and action authorization.
+- LangChain/AutoGPT: practical packaging of composability, chains, data-augmented generation, agents, internet access, memory, and action authorization. Keep the LangChain chronology split between the October 2022 composability README and the July 2023 v0.0.1 taxonomy.
 
 ## Failure Modes To Preserve
 
