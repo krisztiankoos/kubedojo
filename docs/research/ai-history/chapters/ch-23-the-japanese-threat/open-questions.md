@@ -7,9 +7,8 @@
   4,000-5,000 range?
 - Should Alvey and MCC appear only as one-sentence response examples until
   primary sources are parsed? Current contract says yes.
-- Should the title's "threat" framing be explicitly explained in the opening as
-  Western perception to avoid endorsing xenophobic rhetoric? Current contract
-  says yes.
+- The opening must frame "threat" as Western perception inside the first 150
+  words to avoid endorsing xenophobic rhetoric.
 - Is OTA's $500 million/ten-year funding projection acceptable as a period U.S.
   estimate, or should the draft prefer Kurozumi's 54 billion yen final project
   budget when discussing FGCS scale?

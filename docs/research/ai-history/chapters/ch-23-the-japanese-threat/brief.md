@@ -93,8 +93,9 @@ range: 5,000-5,700 words only if primary sources are added for Alvey, MCC, or
 DARPA Strategic Computing beyond metadata/secondary summaries.
 
 - 500-600 words: open with FGCS'81/early reaction and why the project sounded
-  like a strategic challenge, anchored by Fuchi 1992 pp.3-4, OTA 1983 pp.206-208,
-  and NRC 2005 pp.36-38.
+  like a strategic challenge; explicitly frame "threat" as Western perception
+  inside the opening 150 words. Anchor with Fuchi 1992 pp.3-4, OTA 1983
+  pp.206-208, and NRC 2005 pp.36-38.
 - 500-650 words: domestic industrial/software context: computer spread,
   semiconductors, software crisis, software labor projections, and the search for
   knowledge information processing, anchored by Kinoshita 1984 pp.7-12 and

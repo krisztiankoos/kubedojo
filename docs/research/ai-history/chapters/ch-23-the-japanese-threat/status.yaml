@@ -12,4 +12,5 @@ notes:
   - "Guardrail: do not treat 'Japan' as a single actor or endorse the threat rhetoric."
   - "Guardrail: use Strategic Computing as stimulated/contributed-to reaction, not as solely caused by FGCS."
   - "Guardrail: Gemini may gap-audit capacity/narrative only; source-discipline review should come from Claude under the 2026-04-28 role split."
-  - "Next transition: READY_TO_DRAFT after Claude source-discipline review and Gemini gap/capacity review."
+  - "Claude source-discipline review on PR #458 returned READY_TO_DRAFT_WITH_CAP; non-blocking nits applied for TR-228 dating, PSI/KLO co-anchor, and opening perception frame."
+  - "Next transition: READY_TO_DRAFT after Gemini gap/capacity review."
