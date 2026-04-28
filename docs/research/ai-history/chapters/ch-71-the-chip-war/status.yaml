@@ -1,8 +1,8 @@
-status: capacity_plan_anchored
+status: prose_ready
 owner: Codex
 part: 9
 chapter: 71
-review_state: awaiting_claude_source_review_and_gemini_gap_audit
+review_state: dual_cross_family_approved
 last_updated: 2026-04-29
 green_claims: 10
 yellow_claims: 4
@@ -12,18 +12,18 @@ prose_word_cap_recommendation: 6200
 word_count_range: "5200-6200"
 verdicts:
   claude:
-    model: null
-    date: null
-    verdict: null
-    review_url: null
+    model: claude-opus-4-7
+    date: 2026-04-29
+    verdict: APPROVE
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/535#issuecomment-4339908105
   gemini:
-    model: null
-    date: null
-    verdict: null
-    word_cap: null
-    review_url: null
-  resolved: null
-  resolved_word_cap: null
+    model: gemini-3-flash-preview
+    date: 2026-04-29
+    verdict: READY_TO_DRAFT_WITH_CAP
+    word_cap: 6200
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/535#issuecomment-4339916579
+  resolved: READY_TO_DRAFT_WITH_CAP
+  resolved_word_cap: 6200
   resolution_rule: dual_cross_family_verdict_with_cap
 notes: |
   Built from placeholder into an anchored chip-geopolitics/export-control
@@ -34,3 +34,8 @@ notes: |
 
   Ch67 owns NVIDIA monopoly/software moat; Ch70 owns energy grid; Ch72 owns
   datacenter megasites and physical buildout.
+
+  Claude approved source fidelity on PR #535. Gemini approved the
+  gap/capacity plan with a 6,200-word cap after allied-coordination,
+  enforcement-friction, capacity-typo, and SME/foundry distinction fixes landed
+  in commit 26dcfa22.

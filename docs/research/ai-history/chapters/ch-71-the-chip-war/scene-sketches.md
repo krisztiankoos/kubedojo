@@ -1,6 +1,6 @@
 # Scene Sketches: Chapter 71 - The Chip War
 
-## Scene 1 - A GPU Becomes Policy
+## Scene 1 - The Server Becomes A Strategic Asset
 
 Begin with the mental reversal: yesterday's server accelerator is now named in a
 national-security rule. Let the prose show a procurement object becoming a
