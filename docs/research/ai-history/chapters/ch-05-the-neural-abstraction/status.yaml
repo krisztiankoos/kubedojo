@@ -1,1 +1,61 @@
-status: researching
+status: capacity_plan_anchored
+last_updated: 2026-04-28
+researcher: claude-opus-4-7
+review_role_split: 2026-04-28 (Claude owns Part 1 research per project_ai_history_research_split_2026-04-28)
+supersedes_pr: 436
+
+claim_counts:
+  green: 12
+  yellow: 7
+  red: 0
+
+# Scene-level claim table breakdown (sources.md):
+#  - 11 paper-internal Green claims anchored at verified primary-paper page level
+#    (M-P 1943 pp.115/117/118/124 and Hebb 1949 pp.xv/62, plus Piccinini 2004 abstract)
+#  - 1 Green honest-close claim newly anchored at von Neumann 1945 First Draft p.12 Section 4.2
+#  - 7 Yellow claims clustered on the Pitts-biography layer (Lettvin oral-history chain via
+#    Gefter 2015 / Talking Nets 2000) and on one out-of-scope honest-close forward-pointer
+#    (1959 frog's-eye paper)
+#  - 0 Red claims at the scene-level claim table
+
+prose_capacity_plan:
+  layers:
+    - name: vagabond_genius
+      words: 600-900
+      anchor_status: green_secondary  # Gefter 2015 full-text Green; Smalheiser/Conway-Siegelman Yellow
+    - name: chicago_setting
+      words: 500-700
+      anchor_status: green_primary  # M-P 1943 pp.118/131; Hebb 1949 p.xv; Piccinini abstract
+    - name: paper_read_slowly
+      words: 1000-1400
+      anchor_status: green_primary  # M-P 1943 pp.115-124 verified
+    - name: paper_proved_and_learning
+      words: 700-900
+      anchor_status: green_primary  # M-P 1943 pp.117/124/130-131 verified
+    - name: hebbian_bridge
+      words: 500-700
+      anchor_status: green_primary  # Hebb 1949 pp.xv/60-62 verified
+    - name: honest_close
+      words: 300-500
+      anchor_status: green_primary  # von Neumann 1945 First Draft p.12 verified
+  total_word_range: 3600-5100
+  word_count_discipline_label: "4k-7k stretch"
+  honest_close_present: true
+
+verification_summary:
+  primary_pdfs_extracted:
+    - "McCulloch & Pitts 1943 (1990 reprint via cs.cmu.edu)"
+    - "Hebb 1949 (Max Planck mirror)"
+    - "von Neumann 1945 First Draft of a Report on the EDVAC (Internet Archive)"
+  secondary_full_text_extracted:
+    - "Gefter 2015 Nautilus (HTML scrape)"
+  abstract_only_anchored:
+    - "Piccinini 2004 Synthese (Springer abstract; body paywalled)"
+  metadata_confirmed_only:
+    - "Smalheiser 2000 Perspectives in Biology and Medicine vol.43 pp.217-226 (Semantic Scholar)"
+    - "Aizawa & Schlatter 2008 Synthese DOI 10.1007/s11229-007-9229-y (forward-pointer)"
+
+next_steps:
+  - "Cross-family review: Codex (anchor verification) and Gemini (gap analysis, no URL/anchor assertions per 2026-04-28 role split)"
+  - "Optional anchor upgrade before drafting unlocks: fetch Aizawa-Schlatter 2008 metadata + open-access route"
+  - "Library access required for Smalheiser 2000 / McCorduck 1979 / Conway-Siegelman 2005 page anchors (would lift Pitts-biography Yellow rows)"
