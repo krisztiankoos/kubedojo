@@ -51,21 +51,21 @@ for a product.
 
 ## Prose Capacity Plan
 
-Target range: 4,600-5,400 words.
+Target range: 3,400-4,500 words.
 
-- 500-700 words: bridge from multimodal/product interfaces to repeated
+- 400-550 words: bridge from multimodal/product interfaces to repeated
   per-token serving cost; define TTFT, TPOT, throughput, latency, and goodput.
-- 650-850 words: autoregressive generation and Orca's scheduling critique:
+- 500-650 words: autoregressive generation and Orca's scheduling critique:
   request-level batching, iteration-level scheduling, selective batching.
-- 750-950 words: memory hierarchy and attention IO using FlashAttention; explain
+- 600-750 words: memory hierarchy and attention IO using FlashAttention; explain
   why "faster math" is not enough when HBM/SRAM movement dominates.
-- 900-1,100 words: KV cache as the central serving object; vLLM/PagedAttention,
+- 650-800 words: KV cache as the central serving object; vLLM/PagedAttention,
   fragmentation, continuous batching, and throughput improvement.
-- 750-950 words: cost levers: SmoothQuant, FlexGen, speculative
+- 500-700 words: cost levers: SmoothQuant, FlexGen, speculative
   decoding/sampling. Keep this comparative, not a catalog.
-- 650-850 words: DistServe and prefill/decode separation: TTFT vs TPOT, phase
+- 550-700 words: DistServe and prefill/decode separation: TTFT vs TPOT, phase
   interference, per-GPU goodput, and SLO-driven resource allocation.
-- 350-550 words: close on architecture consequences and handoff to Ch64/70/72.
+- 200-350 words: close on architecture consequences and handoff to Ch64/70/72.
 
 ## Guardrails
 

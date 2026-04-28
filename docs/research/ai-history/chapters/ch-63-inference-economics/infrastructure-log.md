@@ -32,7 +32,7 @@
 ## Metrics And Claims To Keep Source-Bound
 
 - Orca: 36.9x throughput improvement at same latency versus FasterTransformer
-  under its GPT-3-scale evaluation.
+  under its GPT-3 175B evaluation.
 - FlashAttention: 7.6x attention-computation speedup on GPT-2 in Figure 1; exact
   attention with fewer HBM accesses.
 - SmoothQuant: up to 1.56x speedup and 2x memory reduction; W8A8 quantization.

@@ -5,7 +5,8 @@
 Contract is `capacity_plan_anchored` as of 2026-04-28. Sources below were
 verified from arXiv and USENIX PDFs using local `curl` + `pdftotext`. The
 chapter still needs Claude source-fidelity review and Gemini gap/capacity audit
-before prose drafting.
+before prose drafting. Gemini's first gap audit requested a tighter 3,400-4,500
+word natural cap to prevent the cost-lever scene from becoming a catalog.
 
 ## Primary Source Spine
 
