@@ -47,7 +47,7 @@ Full agent recipe: [`scripts/agent_onboarding.md`](scripts/agent_onboarding.md).
 1. **Orient via `/api/briefing/session`** (see *Agent Orientation* above). `STATUS.md` is the fallback when the API is down.
 2. Use `scripts/prompts/module-writer.md` for new modules
 3. Send completed work to the designated cross-family reviewer (see `docs/review-protocol.md`) before closing issues
-4. **UPDATE `STATUS.md`** before ending session (the briefing parses it, so stale entries mislead the next session)
+4. **At session end**: write the full handoff to a new `docs/session-state/YYYY-MM-DD-<topic>.md` file, then update `STATUS.md` (the index) — promote the new file to "Latest handoff", shift the previous Latest into "Predecessor chain", refresh "Cross-thread notes" / `## TODO` / `## Blockers`. **Do NOT inline the full handoff into STATUS.md** — it is an index, not a log. The briefing API (`scripts/local_api.py:_parse_status_md`) parses `## TODO` (unchecked `- [ ]`) and `## Blockers` (`- `) from STATUS.md, so keep those headings populated.
 
 ## Build & Serve
 
