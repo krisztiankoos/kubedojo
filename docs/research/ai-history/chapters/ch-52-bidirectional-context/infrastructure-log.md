@@ -5,6 +5,11 @@
   - BERTBASE: 12 layers, hidden size 768, 12 attention heads, 110M parameters.
   - BERTLARGE: 24 layers, hidden size 1024, 16 attention heads, 340M parameters.
 
+- **Input representation:**
+  - WordPiece embeddings with a 30,000 token vocabulary.
+  - Input representation sums token, segment, and position embeddings.
+  - Sentence pairs use [SEP] and learned sentence A/B segment embeddings; [CLS] is used as aggregate representation for classification.
+
 - **Pre-training corpus:**
   - BooksCorpus: 800M words.
   - English Wikipedia: 2,500M words.
@@ -23,6 +28,7 @@
 - **Release artifact:**
   - Google blog: release includes TensorFlow source code and pre-trained language representation models.
   - GitHub API extraction on 2026-04-28: `google-research/bert` created 2018-10-25.
+  - Treat the repository/checkpoint as a bridge from paper/code distribution to later model-hub infrastructure, not as a full Chapter 54 substitute.
 
 ## Do Not Say
 

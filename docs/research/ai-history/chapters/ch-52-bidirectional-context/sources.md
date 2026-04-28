@@ -28,6 +28,8 @@
 |---|---|---|---|---|---|
 | BERT's distinguishing claim is deep bidirectional pre-training, not human-like comprehension. | Left-Context Constraint | BERT Abstract; Section 1; Google blog "What Makes BERT Different?" | BERT Section 5.1 ablation | Green | Use "representations," not "understanding" except in paper-title context. |
 | GPT-style Transformer pre-training used constrained left-context attention, while BERT used bidirectional self-attention in the encoder. | Left-Context Constraint | BERT Section 3 model architecture; Figure 3 | Google blog architecture comparison | Green | Keep GPT details short; Chapter 53 owns GPT. |
+| Static/context-free embeddings represent the same word similarly across contexts, while contextual representations vary by surrounding words. | Static vs. Contextual Words | Google blog bank/account vs. bank/river explanation | BERT Section 1 representation-learning framing | Green | Use as pedagogical hook; do not overclaim semantic comprehension. |
+| BERT uses WordPiece embeddings with a 30,000 token vocabulary plus token, segment, and position embeddings. | Input and Masking Layer | BERT Section 3 Input/Output Representations; Figure 2 | MLM mechanics in Section 3.1 | Green | Do not claim WordPiece "solved OOV" unless another source is added. |
 | MLM masks 15% of WordPiece positions and predicts original tokens; BERT uses 80% [MASK], 10% random token, 10% unchanged token among selected positions. | Masking Trick | BERT Section 3.1 | Google blog explanation | Green | Good pedagogical core. |
 | NSP trains whether sentence B follows sentence A, with 50% IsNext and 50% NotNext examples. | Sentence Relationships | BERT Section 3.1 | BERT Section 5.1 ablation | Green | Later literature may critique NSP; not needed here unless framed as future caveat. |
 | BERT uses [CLS], [SEP], token, segment, and position embeddings to support sentence and sentence-pair tasks. | Sentence Relationships | BERT Section 3; Figure 2 | BERT fine-tuning sections | Green | Useful for explaining why one checkpoint can serve many task formats. |
@@ -44,6 +46,7 @@
 - Do not write "true comprehension" except to reject it.
 - Do not write "anyone could cheaply train BERT from scratch." The release made fine-tuning accessible; pre-training remained expensive.
 - Do not invent dollar costs. Use TPU/GPU time claims from the paper/blog.
+- Do not claim WordPiece solved the out-of-vocabulary problem unless a source is added.
 - Do not make BERT a GPT chapter. GPT-style left-to-right modeling is context, not the center.
 - Do not claim BERT was the final dominant NLP paradigm. Later GPT-style generative models change the story in Chapter 53.
 
