@@ -656,13 +656,15 @@ def write_one(state: dict[str, Any], args: argparse.Namespace) -> None:
 
 def _extract_module_markdown(raw: str) -> str | None:
     """Codex exec prints prose + the module. Extract the module (starts with ---frontmatter---)."""
-    # Find the first line that starts with "---" followed by title:
     lines = raw.splitlines()
     start = -1
     for i, line in enumerate(lines):
-        if line.strip() == "---" and i + 1 < len(lines) and "title:" in lines[i + 1]:
-            start = i
-            break
+        if line.strip() == "---":
+            # Check the next 3 lines for "title:" or "revision_pending:"
+            next_lines = [l.strip() for l in lines[i+1:i+4]]
+            if any(l.startswith("title:") or l.startswith("revision_pending:") for l in next_lines):
+                start = i
+                break
     if start < 0:
         return None
     body = "\n".join(lines[start:]).strip()
