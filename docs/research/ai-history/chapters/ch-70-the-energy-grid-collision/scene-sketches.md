@@ -31,13 +31,21 @@ Renewables grow fastest, but near-term demand is also met by gas and coal; SMRs
 enter later. Use IEA's physical-vs-contractual distinction to prevent clean-PPA
 language from washing out the actual grid mix.
 
-## Scene 6 - The Nuclear Turn
+## Scene 6 - The Susquehanna Collision
+
+Make the abstract grid collision concrete. PJM, Susquehanna Nuclear, PPL, Talen,
+and AWS are not a sidebar; the FERC order is where co-located AI load becomes a
+legal, reliability, and cost-allocation problem. Use the 300 MW to 480 MW
+amended ISA, Christie's concurrence, Phillips' dissent, and Talen's 300 MW
+caveat to keep both sides visible.
+
+## Scene 7 - The Nuclear Turn
 
 Microsoft/Three Mile Island, Google/Kairos, and Meta/Clinton are not random
 press releases. They show hyperscalers trying to buy time, firm power, and
 political legitimacy. Keep future projects caveated.
 
-## Scene 7 - Flexibility Is Not Magic
+## Scene 8 - Flexibility Is Not Magic
 
 Close with EPRI's flexibility point. Some inference can move in time or place;
 training is harder. This sets up Ch71 and Ch72: if power becomes strategic,

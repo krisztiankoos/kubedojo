@@ -14,3 +14,7 @@
   is less flexible. The mitigation is real but partial.
 - **Regional bottlenecks:** Global percentages can hide local strain. The same
   load can be manageable in one grid and a bottleneck in another.
+- **Co-located load is a legal and physical boundary problem:** The
+  Susquehanna/FERC case turns on whether a load behind a generator meter is
+  really separate from transmission-system benefits, backup service, ancillary
+  services, market effects, and customer-cost allocation.

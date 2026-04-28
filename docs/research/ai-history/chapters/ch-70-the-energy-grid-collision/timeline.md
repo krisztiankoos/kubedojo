@@ -8,6 +8,11 @@
   restart TMI Unit 1 as Crane Clean Energy Center.
 - 2024-10: Google and Kairos Power announce an agreement for multiple SMRs, with
   first deployment intended by 2030 and up to 500 MW by 2035.
+- 2024-11-01: FERC rejects PJM's amended Susquehanna ISA, which sought to
+  increase co-located load from 300 MW to 480 MW, with Phillips dissenting and
+  Christie concurring on the need to handle co-location carefully.
+- 2024-11-03: Talen says the existing ISA still allows 300 MW of co-located load
+  for the first AWS campus phases while it pursues approval of the amendment.
 - 2024-12: DOE/LBNL publishes the U.S. Data Center Energy Usage Report, with
   2028 U.S. data-center share scenarios.
 - 2025-06: Meta and Constellation announce a 20-year Clinton Clean Energy Center
