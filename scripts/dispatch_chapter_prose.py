@@ -87,6 +87,39 @@ def gather_contract(*, research_branch: str, slug: str) -> str:
     return "\n".join(chunks)
 
 
+def stage_contract_locally(*, ch_num: int, research_branch: str, slug: str,
+                           verdicts: str) -> dict[str, str]:
+    """Materialize the 8 contract files + verdicts to /tmp so the
+    headless agent can read them via its file-read tools instead of
+    receiving the full text inline in the prompt.
+
+    Returns ``{"brief.md": "/tmp/.../brief.md", ..., "verdicts.md": "..."}``.
+
+    Why: the inline approach blew the Gemini per-window input quota
+    (Ch06 first-draft hit 429 even on the OAuth path). Pointing the
+    agent at local files drops the prompt from ~10–15 k tokens to
+    ~1 k.
+    """
+    base = Path(f"/tmp/dispatch-prose-ch{ch_num:02d}-context")
+    base.mkdir(parents=True, exist_ok=True)
+    paths: dict[str, str] = {}
+    for fn in CONTRACT_FILES:
+        body = read_branch_file(
+            research_branch,
+            f"docs/research/ai-history/chapters/{slug}/{fn}",
+        )
+        if not body:
+            continue
+        target = base / fn
+        target.write_text(body)
+        paths[fn] = str(target)
+    if verdicts:
+        target = base / "verdicts.md"
+        target.write_text(verdicts)
+        paths["verdicts.md"] = str(target)
+    return paths
+
+
 def fetch_pr_verdicts(pr_num: int) -> str:
     """Pull the codex+gemini verdict comments from a PR so the drafter
     sees the cap rationale."""
@@ -114,13 +147,22 @@ If you can't anchor a claim, weaken the claim — never invent a source.
 
 
 def gemini_prompt(*, slug: str, ch_num: int, cap_words: int,
-                  contract: str, verdicts: str, prose_path: str) -> str:
+                  staged_paths: dict[str, str], prose_path: str) -> str:
+    contract_listing = "\n".join(
+        f"           - `{fn}` → `{p}`"
+        for fn, p in staged_paths.items()
+        if fn != "verdicts.md"
+    )
+    verdicts_path = staged_paths.get(
+        "verdicts.md", "(no verdict notes for this chapter)"
+    )
     return dedent(f"""\
         # Task: First-draft prose for Chapter {ch_num} (`{slug}`) (#394)
 
         You have **workspace-write** in this worktree. Replace the
         existing short stub at `{prose_path}` with a fresh first-draft
-        prose based on the anchored research contract below.
+        prose based on the anchored research contract whose files are
+        listed below.
 
         ## Pipeline position (post-2026-04-29 prose pivot)
 
@@ -174,16 +216,24 @@ def gemini_prompt(*, slug: str, ch_num: int, cap_words: int,
 
         ## Verdicts (with caveats — respect them)
 
-        {verdicts}
+        Read the verdict comments at: `{verdicts_path}`
 
-        ## Research contract
+        ## Research contract — read these files BEFORE you start drafting
 
-        {contract}
+        The 8 contract files have been staged to /tmp by the
+        orchestrator. Read each one with your file-read tool (don't
+        skim — these are your only source of truth):
+
+{contract_listing}
+
+        These paths are absolute and outside the worktree, so reading
+        them is free; do NOT copy them into the worktree, do NOT
+        commit them.
 
         ## Workflow
 
-        1. Read the contract files above. Internalize the brief's
-           Prose Capacity Plan.
+        1. Read every staged contract file listed above plus the
+           verdict notes. Internalize the brief's Prose Capacity Plan.
         2. Replace `{prose_path}` with your draft. Use the title
            from `brief.md`'s thesis. Use scene structure from
            `scene-sketches.md`.
@@ -196,8 +246,8 @@ def gemini_prompt(*, slug: str, ch_num: int, cap_words: int,
            ```
         5. Print word count and any claims you couldn't anchor.
 
-        Do NOT push. The orchestrator handles PR creation after the
-        expansion phase.
+        Do NOT push. Do NOT commit anything other than `{prose_path}`.
+        The orchestrator handles PR creation after the expansion phase.
         """)
 
 
@@ -401,6 +451,17 @@ def main() -> int:
     if args.verdict_notes_pr is not None:
         verdicts = fetch_pr_verdicts(args.verdict_notes_pr)
 
+    # Stage contract + verdicts to /tmp so the Gemini phase can read
+    # them via tools instead of receiving the full text inline. The
+    # codex/claude expansion phases still receive contract inline below
+    # because they have different rate-limit budgets and are working.
+    staged_paths = stage_contract_locally(
+        ch_num=args.ch_num, research_branch=args.research_branch,
+        slug=args.slug, verdicts=verdicts,
+    )
+    print(f"[stage] {len(staged_paths)} contract files at "
+          f"/tmp/dispatch-prose-ch{args.ch_num:02d}-context/")
+
     worktree, branch = setup_worktree(ch_num=args.ch_num, slug=args.slug)
     prose_path = f"src/content/docs/ai-history/{args.slug}.md"
 
@@ -409,8 +470,8 @@ def main() -> int:
         if phase == "gemini":
             prompt = gemini_prompt(
                 slug=args.slug, ch_num=args.ch_num,
-                cap_words=args.cap_words, contract=contract,
-                verdicts=verdicts, prose_path=prose_path,
+                cap_words=args.cap_words, staged_paths=staged_paths,
+                prose_path=prose_path,
             )
             log = Path(f"/tmp/prose-ch{args.ch_num:02d}-gemini.log")
             ok = fire_phase(
