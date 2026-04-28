@@ -1,1 +1,37 @@
-status: researching
+status: capacity_plan_anchored
+chapter: ch-08-the-stored-program
+title: The Stored Program
+researcher: claude
+research_role_split_effective: 2026-04-28
+last_updated: 2026-04-28
+word_count_label: 3k-5k likely
+prose_capacity_plan:
+  total_low: 3500
+  total_high: 5000
+  layer_count: 5
+  every_layer_has_sources_md_anchor: true
+claims:
+  green: 17
+  yellow: 7
+  red: 0
+primary_sources_directly_verified:
+  - First Draft of a Report on the EDVAC (Godfrey 1992 TeX reset, archive.org/details/vnedvac and FabLab mirror) — title page, sections 1.1-1.4, 2.2-2.8, 4.2 anchored
+  - Burks/Goldstine/von Neumann 1946 IAS Preliminary Discussion (ias.edu PDF, OCR'd) — preface, sections 1.1, 1.2, 1.3 anchored
+  - Eckert OH 13 (Charles Babbage Institute, conservancy.umn.edu) — abstract, p.37, pp.46-47 anchored
+  - Bartik CHM oral history (archive.computerhistory.org, X4596.2008) — pp.22, 23, 31, 32, 33 anchored
+secondary_sources_directly_verified:
+  - Haigh/Priestley/Rope 2014 (eniacinaction.com mirror) — Annals pp.4-17 anchored, PDF-page→Annals-page footer map confirmed
+  - Light 1999 (cs.brown.edu mirror of JSTOR PDF) — pp.455, 469, 470 anchored
+hard_rules_compliance:
+  no_fabricated_urls: true
+  no_fabricated_page_numbers: true
+  no_fabricated_quotes: true
+  boundary_contract_explicit: true
+  honesty_close_present: true
+  forward_references_sparse: true
+review_requested:
+  - codex (anchor verification — please re-fetch primary sources and cross-check Scene-Level Claim Table)
+  - claude (gap analysis — please flag layers where the anchored evidence cannot honestly produce the budgeted word range)
+notes:
+  - Supersedes the legacy Gemini-drafted Ch8 stub (commit 2026-04-28). The Gemini PR #427 should NOT be merged; this contract replaces it.
+  - The legacy prose at src/content/docs/ai-history/ch-08-the-stored-program.md was inspected for scene scope only; every claim was re-verified independently. Do not migrate the legacy bibliography entries without cross-checking against this contract's sources.md.

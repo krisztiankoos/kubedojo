@@ -1,23 +1,73 @@
-# Brief: Chapter 8 - The Stored Program
+# Brief: Chapter 8 — The Stored Program
 
 ## Thesis
-The architectural separation of processing and memory bypassed the hardware rewiring bottleneck. This "von Neumann architecture" (built on the work of the ENIAC team) created the blank slate required for software, though its collaborative origins sparked intense credit disputes.
+
+The chapter most often described as the moment "the von Neumann architecture appeared" was, in June 1945, a 101-page unfinished mimeographed typescript signed only by John von Neumann, sent out by Herman Goldstine before the Moore School team had agreed on whether or how to seek patents. The document — the *First Draft of a Report on the EDVAC* — argued for treating one electronic memory as the holding place for both data and instructions and for splitting an automatic computer into specialized organs (CA, CC, M, I, O). It did not coin the phrase "stored program" (that arrived in 1949 inside IBM's Poughkeepsie team), it did not propose a conditional-branch instruction, and it required programs to modify their own address fields to perform loops or branches. The first electronic computer to actually run a stored program was not the EDVAC and not the IAS machine but the ENIAC itself, retrofitted in 1948 under Richard Clippinger's Moore School contract with Jean Jennings Bartik leading the programming team. What June 1945 produced was less an invention than an institutional artifact — a credentialed-but-incomplete paper, a damaging-to-patents disclosure event, and a name (von Neumann's) that would attach to a class of machines whose final shape was assembled retroactively over the next eight years.
 
 ## Scope
-- IN SCOPE: The ENIAC's physical cabling, the women programmers (Bartik/Holberton), J. Presper Eckert, John Mauchly, Herman Goldstine, John von Neumann, the EDVAC report, the 1946 IAS follow-on report.
-- OUT OF SCOPE: High-level programming languages.
+
+- IN SCOPE: ENIAC's plug-and-switch programming model and the six women selected to program it; the EDVAC successor discussions at the Moore School in 1944-1945; von Neumann's June 30, 1945 *First Draft* (its specialized-organs argument, its unified-memory passage, its omission of Eckert and Mauchly from the title page, its forward-reference gaps); the 1946 Burks/Goldstine/von Neumann IAS report that re-formalized the design; the 1948 ENIAC conversion to run from a 60-order code stored in its function tables; Eckert and Mauchly's 1946 departure from the Moore School and the long credit dispute; the 1973 *Honeywell v. Sperry Rand* ruling that retroactively cited the *First Draft* as enabling-disclosure prior art.
+- OUT OF SCOPE: how Williams tubes, mercury delay lines, and core memory eventually delivered the storage the architecture required (Ch9); Turing's *Imitation Game* (Ch10); the 1956 Dartmouth conference and the naming of "Artificial Intelligence" (Ch11); programming languages above machine-level order codes (Ch13); cybernetics' simultaneous trajectory (Ch6, already drafted).
+
+## Boundary Contract
+
+This chapter must not present the *First Draft* as "the founding document of modern computing." It is one document in a chain. The chapter must avoid four specific overclaims:
+
+1. **The "von Neumann coined the architecture" overclaim.** The architectural ideas the *First Draft* organized — separating arithmetic, control, and memory; storing instructions in writable electronic memory; using the same memory for code and data — were under active discussion at the Moore School before von Neumann arrived as a consultant in summer 1944 (Eckert oral history OH 13, p.46-47; Haigh-Priestley-Rope 2014, p.5). Von Neumann's contribution was to write up the discussion in his own logical-formal idiom, not to author the ideas alone. The chapter's stance: he was a synthesizer and a credentialed signal-amplifier, not a sole inventor.
+
+2. **The "stored-program concept" overclaim.** Per Haigh-Priestley-Rope 2014 (pp. 4-17), the phrase "stored program" was not used in print in the 1940s; it appears first in 1949 IBM internal documents. What later writers compressed into a single phrase actually contains three distinct ideas — the modern code paradigm (writable executable instructions), the von Neumann architecture paradigm (organ subdivision), and the EDVAC hardware paradigm (mercury delay lines + serial bit-stream layout). The chapter should treat them separately, not collapse them.
+
+3. **The "ENIAC was wired, EDVAC was programmed" overclaim.** ENIAC was retrofitted in 1948 (under a Moore School contract, with Jean Bartik leading the programmer team and consulting with von Neumann at Princeton) to read a 60-order code from its function tables. The first machine to run a stored program in production was therefore ENIAC. EDSAC at Cambridge ran the first stored program on a purpose-built stored-program machine in May 1949 (per Haigh 2014 p.7); the Manchester "Baby" had run a smaller test program on June 21, 1948 (Haigh 2014 p.7).
+
+4. **The "credit dispute was a clean two-sided argument" overclaim.** Eckert in 1977 frames it as von Neumann deliberately publishing through Goldstine in order to reach the public domain so he could consult for IBM (Eckert OH 13, p.46-47). That is one party's reading, given thirty-two years after the events. The chapter must present Eckert's reading as one source, alongside the documented fact of *First Draft* circulation, without converting Eckert's interpretation into established fact.
+
+The chapter must not invent dialogue, internal states, or motives for any participant. Every direct quote must come from a primary source (the *First Draft* itself, the IAS *Preliminary Discussion* of 1946, the Eckert OH 13 transcript, the Bartik CHM oral history, the Light 1999 article). Reconstructed atmospherics are permitted only where two independent sources converge.
 
 ## Scenes Outline
-1. **The Ballistics Bottleneck:** The ENIAC programmers (women mathematicians like Bartik) physically route cables, highlighting the pain of wiring logic.
-2. **Reconsidering the Stored Program:** The intellectual evolution of the stored-program concept among the Moore School team.
-3. **The EDVAC Draft:** Von Neumann synthesizes the ideas into a formal report, omitting Eckert and Mauchly.
-4. **The Credit Dispute:** Goldstine mimeographs the report; Eckert's rebuttal and the formalization of the architecture via the 1946 Burks/Goldstine/von Neumann paper.
 
-## 4k-5k Prose Capacity Plan
-This chapter can support a detailed narrative only if it is built from verified layers rather than padding:
-- 800-1200 words: The ENIAC programming bottleneck, utilizing primary accounts from Jean Bartik.
-- 800-1100 words: The intellectual development of the stored-program concept (Haigh et al. 2014).
-- 1000-1400 words: Von Neumann's First Draft and Goldstine's distribution of it (Goldstine 1972).
-- 800-1300 words: The credit dispute, featuring Eckert's oral history rebuttals and the 1946 formalization.
+1. **The plug-and-switch machine.** ENIAC programming as physical labor, performed by six women selected by Goldstine from a pool of human computers (Light 1999, p.469). What the program-tray and master-programmer model could and couldn't do. The Mauchly/Eckert intuition before von Neumann arrived that this architecture could not scale.
 
-Do not invent dialogue. The historical record genuinely supports ~4,000-5,000 words; cap the chapter here without padding to 7k.
+2. **Von Neumann's draft.** Summer 1944 - June 1945. Von Neumann joins the Moore School project as consultant. Goldstine distributes the *First Draft* on June 30, 1945 with a single-author title page. What the document actually argues — five specialized organs (CA, CC, M, I, O), one electronic memory holding both numbers and orders, an explicit analogy to McCulloch-Pitts neurons (First Draft §4.2). What it leaves unwritten: programming, conditional control, the input/output system. Who saw the draft within days, who didn't.
+
+3. **The IAS re-formalization.** June 28, 1946. Burks, Goldstine, and von Neumann issue *Preliminary Discussion of the Logical Design of an Electronic Computing Instrument* — a tighter, three-author follow-on (IAS Contract W-36-034-ORD-7481). §1.3 of that report contains the explicit unified-memory statement: "the orders to the machine are reduced to a numerical code... the memory organ can be used to store both numbers and orders." The report is the *First Draft*'s clean presentation; it cleans up forward-references and adds named co-authors.
+
+4. **The credit dispute and the departure.** What Goldstine's distribution actually did: by mailing the *First Draft* to scientists worldwide before any patents were filed, the disclosure went into the public domain. Eckert's 1977 reading is that von Neumann engineered this deliberately; the chapter does not endorse that reading, but documents the consequences — Eckert and Mauchly resigned from the Moore School in March 1946, and twenty-eight years later, *Honeywell v. Sperry Rand* (1973, 180 U.S.P.Q. 673) cited the June 30, 1945 *First Draft* as one of four grounds for invalidating the ENIAC patent.
+
+5. **The first machine actually to do it.** 1948. Richard Clippinger contracts with the Moore School to convert ENIAC to read instructions from its function tables. Jean Jennings Bartik leads the programmer team and the consulting trips to Princeton (Bartik CHM oral history, pp. 31-33). The "60 order code" runs in production. The Manchester Baby runs its first stored program on June 21, 1948 (Haigh 2014 p.7); EDSAC follows in May 1949. Closing reframe: what the *First Draft* really achieved was not "starting modern computing" but seeding a vocabulary that other engineers, three years later, finally had hardware reliable enough to fit. Pointer to Ch9.
+
+## Prose Capacity Plan
+
+This chapter can support a long narrative only if each layer is built from anchored evidence rather than padding. Each layer's word range reflects how many distinct page-anchored claims sources.md actually delivers; layers with three or four anchors carry more words than layers with one.
+
+- **600-900 words: ENIAC's programming model and the six women.** Anchored to: Light 1999 p.469 (Goldstine assigning "six of the best computers" — Kathleen McNulty, Frances Bilas, Betty Jean Jennings, Ruth Lichterman, Elizabeth Snyder, Marlyn Wescoff); Light 1999 p.470 (McNulty quote on "a whole stack of blueprints"); Bartik CHM p.22 (program trays plugged in and out); Bartik CHM p.23 (the role evolved from "wiring up" to programming); Haigh 2014 footnote 12 (BRL Report 971, 1955 — 17,468 ENIAC tubes). Scene: 1.
+
+- **900-1,200 words: The First Draft as document.** Anchored to: First Draft (Godfrey TeX reset) title page (Moore School, Contract W-670-ORD-4926, June 30, 1945, "John von Neumann" as sole listed author); First Draft §1.1-1.4 (defining "automatic digital computing system"); First Draft §2.2 (CA — first specific part); §2.3 (CC — second); §2.4-2.5 (M — third, with the "tempting to treat the entire memory as one organ" passage); §2.6 (the three internal organs as "associative neurons"); §2.7-2.8 (I and O as fourth and fifth); §4.2 (citing "MacCulloch and Pitts ('A logical calculus of the ideas immanent in nervous activity')"); Haigh 2014 p.5 (the von Neumann language is "uncharacteristically tentative"). Scene: 2.
+
+- **600-900 words: The 1946 IAS re-formalization.** Anchored to: Burks/Goldstine/von Neumann 1946 IAS report — preface page (28 June 1946, Contract W-36-034-ORD-7481, three authors); §1.1 (general organ subdivision); §1.2 (machine must store both data and instructions); **§1.3 verbatim** ("Conceptually we have discussed two different forms of memory: storage of numbers and storage of orders. If, however, the orders to the machine are reduced to a numerical code and if the machine can in some fashion distinguish a number from an order, the memory organ can be used to store both numbers and orders"). Scene: 3.
+
+- **600-900 words: The credit dispute and the public-domain disclosure.** Anchored to: Eckert OH 13 abstract (First Draft circulation "placed the ENIAC inventions in the public domain"); Eckert OH 13 p.46-47 (von Neumann published reports through the Library of Congress to bar patents — Eckert's own framing); Eckert OH 13 p.37 (von Neumann's IBM consultancy as Eckert's interpretive frame); Honeywell v. Sperry Rand 1973 (180 U.S.P.Q. 673; First Draft as one of four grounds for ENIAC patent invalidation). Scene: 4.
+
+- **800-1,100 words: The first machine to run a stored program, and the honest close.** Anchored to: Bartik CHM oral history pp.31-33 (the 1948 Clippinger contract; "60 order code"; Princeton consulting trips; "the ENIAC was really the first stored program computer, actually"); Haigh 2014 p.5 ("we have been unable to locate the phrase ['stored program'] in any publication of the 1940s"); Haigh 2014 p.8 (earliest located use is 1949 IBM Poughkeepsie team); Haigh 2014 p.7 (Manchester Baby, June 21, 1948; EDSAC, May 1949). The layer ends with the boundary reframing: the *First Draft* did not "start" modern computing; it seeded a vocabulary that three years and three teams later finally had silent, reliable storage to inhabit. Pointer to Ch9. Scene: 5.
+
+Total: **3,500-5,000 words**. Label: `3k-5k likely` from currently anchored primary and secondary sources. Stretch to `4k-7k` is feasible only if Goldstine 1972 (*The Computer from Pascal to von Neumann*), Stern 1981 (*From ENIAC to UNIVAC*), and Williams 1985 (*A History of Computing Technology*) yield page-anchored quotes for the credit-dispute and aftermath scenes; physical-book access required.
+
+If the verified evidence runs out, cap the chapter.
+
+## Citation Bar
+
+- Minimum primary sources before review: First Draft 1945 (Godfrey TeX reset, archive.org/details/vnedvac); Burks/Goldstine/von Neumann 1946 IAS *Preliminary Discussion* (ias.edu PDF); Eckert OH 13 (CBI / conservancy.umn.edu); Bartik CHM oral history (archive.computerhistory.org).
+- Minimum secondary sources before review: Haigh/Priestley/Rope 2014 (IEEE Annals 36(1) — eniacinaction.com mirror); Light 1999 (*Technology and Culture* 40(3) — JSTOR / cs.brown.edu mirror).
+- All Prose Capacity Plan layers must already be anchored in sources.md (they are — see the Scene-Level Claim Table).
+
+## Conflict Notes
+
+- **"Who invented the stored-program concept?"** Heavily disputed. Eckert (OH 13) attributes the ideas to himself, Mauchly, and the broader Moore School team. Von Neumann never claimed sole authorship in print but signed the *First Draft* alone. Haigh-Priestley-Rope 2014 argue the question is malformed because "stored program concept" wasn't a coherent single idea in 1945. The chapter's stance: present the dispute, do not adjudicate it, and note that retroactive collapsing of three paradigms into one phrase makes "who invented it" partially un-decidable in principle.
+- **First Draft length.** Wikipedia and most secondary sources report 101 pages; the original typescripts at the APS Library and Moore School Library (per Godfrey 1992 introduction) are not directly available to verify against. The Godfrey 1992 TeX reset (49 pages of reset typesetting) is what has page-anchored content. The chapter says "≈100-page mimeograph" rather than asserting a verified 101.
+- **First Draft date.** Title page reads June 30, 1945. Wikipedia notes 24 copies were distributed five days earlier on June 25. The chapter uses "June 30, 1945" as the date on the document, with a note about earlier limited circulation.
+- **IAS *Preliminary Discussion* date.** Preface dated 28 June 1946. Some bibliographic records (e.g. Bonhams, some library catalogues) cite 1947 — that refers to a re-issue. The chapter uses 1946 as the original date.
+- **Eckert's IBM-consultancy reading.** Eckert in 1977 says von Neumann engineered the public-domain release to enable IBM consultancy. Goldstine's 1972 book gives a different account. The chapter presents Eckert's reading as one party's frame, not as established fact.
+- **"ENIAC was first" claim (Bartik 2008).** Bartik says "the ENIAC was really the first stored program computer, actually." Strictly, this is the modern-code-paradigm sense (executing instructions stored in memory), and via the 1948 retrofit. Some historians grant Manchester Baby (June 1948) priority since it was a purpose-built stored-program machine. The chapter records both claims and Haigh-Priestley-Rope's nuance.
+
+## Honest Prose-Capacity Estimate
+
+Pre-anchor estimate: **3,500-5,000 words** with the source plan above. Confidence the lower bound is achievable from currently anchored sources: high. Confidence the upper bound is achievable: depends on whether Goldstine 1972 page anchors can be added (physical book). I plan to write to the natural length the verified evidence supports — not pad to reach 4k+ if the archives do not yield additional anchors. If the verified evidence runs out, cap the chapter.
