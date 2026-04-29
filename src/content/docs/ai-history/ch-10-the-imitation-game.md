@@ -132,6 +132,12 @@ He estimated that a human programmer could write about a thousand digits of code
 
 This leads to Section 7, "Learning Machines," which reorients the entire engineering problem. Rather than attempting to programme an adult mind from scratch, Turing proposes programming a child mind and subjecting it to "an appropriate course of education." The idea reaches back to the 1948 unorganized-machine report. Start with something closer to the infant cortex than to an adult expert; then organize it through training.
 
+:::note
+> "Instead of trying to produce a programme to simulate the adult mind, why not rather try to produce one which simulates the child's?"
+
+The hinge of the *Mind* paper. Turing turns intelligence from a hand-coded artefact into a staged engineering problem in which education does work that direct instruction cannot.
+:::
+
 Turing's notebook metaphor makes the proposal concrete. The child brain, he suggests, is something like a notebook bought from a stationer's: little mechanism and many blank sheets. The metaphor can be misleading if read too softly. He is not saying the child mind is empty in a philosophical sense. He is separating initial structure from education and later experience so that each can become an engineering variable. A machine designer can alter the starting configuration, the teaching method, or the non-educational experiences to which the machine is exposed.
 
 Turing divides the mind into three components: "(a) The initial state of the mind, say at birth, (b) The education to which it has been subjected, (c) Other experience, not to be described as education, to which it has been subjected." He returns to the system of rewards and punishments he had outlined in 1948, remarking modestly that he had done "some experiments with one such child machine, and succeeded in teaching it a few things, but the teaching method was too unorthodox for the experiment to be considered really successful." The modesty is important. Turing is not reporting a triumphant prototype. He is marking a line of attack that is still crude, experimental, and in need of better teaching methods.
