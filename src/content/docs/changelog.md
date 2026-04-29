@@ -6,6 +6,19 @@ sidebar:
   label: "What's New"
 ---
 
+## April 29, 2026 — AI History Part 1 Reader Aids Released
+
+### Part 1 Now Reader-Ready (Chapters 1–9)
+The first nine chapters of the AI History book are released with the full reader-aid layout. Each chapter (Ch1 *The Laws of Thought* through Ch9 *The Memory Miracle*) now carries a one-paragraph TL;DR, a six-row cast of characters, a Mermaid timeline, a five-to-seven-term plain-words glossary, and a closing "Why this still matters today" aside — added above and below the prose without modifying a single line of the underlying body. Ch1 keeps its math-on-demand sidebar; Ch4 adds one for Markov-chain transition probabilities and the Onegin counts; Ch3 lands one Tier-3 plain-reading callout for theorem 17b's absorption law (the only candidate that survived the per-chapter Codex adversarial review).
+
+### Right-Nav Fix Across Part 1
+Eight of nine Part 1 chapters lacked the `##` section headers that drive Starlight's right-side table of contents — they showed only "Overview" with no scene navigation. Section headers are now in place at every `brief.md` scene boundary on Ch1, Ch3, Ch4, Ch5, Ch6, Ch7, Ch8, and Ch9 (Ch2 was unaffected). Each chapter now exposes 3–4 named scenes in the right rail, matching the pattern of Ch10–Ch14 and Ch17 onward.
+
+### Tier 3 Calibration
+The Tier 3 adversarial review workflow (Claude proposes, Codex reviews) ran on every Part 1 chapter. Out of 26 candidates total, 3 landed (Ch1: 2 of 5; Ch3: 1 of 3; Ch2 and Ch4–Ch9: 0 of 3 to 0 of 4 each). Refusal is the calibrated default when the prose carries inline plain-readings of dense paragraphs and quote-worthy sentences are already framed in-prose.
+
+---
+
 ## April 28, 2026 — AI History Part 1 Prose Shipped
 
 ### Part 1 (Ch 1–5) Merged Under the Anchored-Contract Pipeline
