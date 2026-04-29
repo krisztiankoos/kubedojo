@@ -437,7 +437,12 @@ def main() -> int:
 
     prose = read_branch_file(prose_branch, prose_path)
     if not prose:
-        print(f"[fail] could not read {prose_path} from {prose_branch}")
+        # Branch was deleted post-merge (common for backfill on already-merged PRs).
+        # Fall back to main, where the prose lives now.
+        print(f"[info] {prose_branch} unreadable; falling back to main")
+        prose = read_branch_file("main", prose_path)
+    if not prose:
+        print(f"[fail] could not read {prose_path} from {prose_branch} or main")
         return 1
     print(f"[read] prose: {len(prose.split())} words")
 
