@@ -20,12 +20,13 @@
 
 | Date | Thread | File | Status |
 |------|--------|------|--------|
-| 2026-04-29 (overnight) | Parts 3/6/7 shipped (13 chapters) + STATUS.md index migration + STEP 0 routing | [`docs/session-state/2026-04-29-parts-3-6-7-shipped.md`](./docs/session-state/2026-04-29-parts-3-6-7-shipped.md) | **Closed** — all three user-directed parts fully on `main` |
+| 2026-04-29 (morning) | Ch01 reader-aid prototype (Tier 1+2+3) + math rendering fix + 6 sub-issues for rollout | [`docs/session-state/2026-04-29-reader-aids-ch01-prototype.md`](./docs/session-state/2026-04-29-reader-aids-ch01-prototype.md) | **Closed** — Ch01 prototype on `main` (PR #566); Codex's autonomous chain quietly closed Part 8 in parallel |
 
 ## Predecessor chain (most-recent first)
 
 | Date | Thread | Where to find it |
 |------|--------|------------------|
+| 2026-04-29 (overnight) | Parts 3/6/7 shipped (13 chapters) + STATUS.md index migration + STEP 0 routing | [`docs/session-state/2026-04-29-parts-3-6-7-shipped.md`](./docs/session-state/2026-04-29-parts-3-6-7-shipped.md) |
 | 2026-04-28 night | Parts 3/6/7 finish queue setup (Ch16 + Ch38-40 + Ch41-49 plan) | [`docs/session-state/2026-04-28-night-handoff-2.md`](./docs/session-state/2026-04-28-night-handoff-2.md) |
 | 2026-04-28 night | Part 6 fully closed (Ch32-37 + roll-up) | archive § "2026-04-28 night — Part 6 fully closed" |
 | 2026-04-28 evening | Smart-router wrapper shipped; Claude resumes Parts 2/3 | archive § "2026-04-28 evening — smart-router wrapper" |
@@ -46,13 +47,16 @@
 
 These are state items that span individual sessions. Prune entries as threads close.
 
-- **#394 AI History — Parts 3/6/7 shipped 2026-04-29.** All Claude-orchestrated chapters now on `main` (Ch16, Ch38-49). Codex's autonomous chain continues to drive Part 9 (anchored Ch63-72 over the same 7-hour window). Part 8 (Ch50-58) is Codex-autonomous and unstarted at session end.
-- **STEP 0 routing shipped** (`scripts/dispatch_research_verdict.py`): branch-prefix routing puts Claude on anchor verification for `codex/394-...` research PRs and Codex for `claude/394-...` PRs. Live-tested on 12 verdict passes (#519, #525, #528, #532, #536, #539, #543, #545, #547, #549, #551, #553, #555). All routed correctly.
-- **`gemini-3.1-pro-preview` capacity flap intermittent under combined load.** When Codex's autonomous chain + Claude's chain both run, pro-preview can return 429 "No capacity available" mid-session. Fix: `KUBEDOJO_GEMINI_REVIEW_MODEL=gemini-3-flash-preview` env override on the dispatch_prose_review call. Used routinely 2026-04-29 03:50 onward; flash-preview performs equivalently for prose-quality reviews.
-- **Codex Part 9 chain still in flight** — `codex resume 019dcbc8-...`. Don't disturb. Latest anchor commit visible via `gh pr list --search 'is:open #394 ch7'` or `git log --oneline | grep "anchor ch"`.
-- **Stale worktrees safe to clean later** (not blocking): `codex-344`, `gemini-394-ch01-research`, `gemini-394-ch06-research`, `gemini-394-ch08-research`. Origin branches as safety net first.
+- **#394 AI History — 58 of 72 chapters shipped (2026-04-29 morning).** Parts 1-8 fully closed. Part 8 (Ch50-58) shipped autonomously by Codex during the reader-aid session. Only Part 9 (Ch59-72, 14 chapters) remains.
+- **Codex Part 9 chain still in flight** — `codex resume 019dcbc8-...`. Don't disturb. Latest commits visible via `git log --oneline | head`.
+- **Reader-aid layout pattern frozen** — Tier 1 + 2 + 3, non-invasive on bit-identical prose. Canonical doc: `docs/research/ai-history/READER_AIDS.md`. Ch01 prototype on `main` as `49e8e299` (PR #566). Tier 3 coeditor: Claude proposes / Codex reviews adversarially / Gemini for tie-breaks (Issue #564, memory `feedback_tier3_coeditor_pattern.md`).
+- **Math rendering live** — `remark-math` + `rehype-katex` + KaTeX CSS in `astro.config.mjs` (commit `8c93d8db`). `$inline$` and `$$display$$` LaTeX both render. Fixes inline math across the entire AI history book retroactively.
+- **STEP 0 routing shipped** (`scripts/dispatch_research_verdict.py`): branch-prefix routing puts Claude on anchor verification for `codex/394-...` research PRs and Codex for `claude/394-...` PRs.
+- **`gemini-3.1-pro-preview` capacity flap intermittent under combined load.** When two chains run in parallel, pro-preview can return 429 "No capacity available". Fix: `KUBEDOJO_GEMINI_REVIEW_MODEL=gemini-3-flash-preview` env override.
+- **Codex `mode="danger"` rule** for end-to-end dispatches that include `git push` + `gh pr create` (memory `feedback_codex_danger_for_git_gh.md`). Workspace-write silently fails on `.git/worktrees/.../index.lock` and `api.github.com`.
+- **PR #558 (Ch51) and PR #565 (Ch52)** — both stale, content already on main. Close or rebase the index.md changes before next prose chain ships.
+- **PR #567 (review-coverage schema)** — open, ready to review. After merge, re-run `scripts/audit_review_coverage.py` with live `gh` access (initial audit ran in offline-fallback mode, count of 30 backfill_pending may revise downward).
 - **User-side dirty files to leave alone**: `scripts/local_api.py` (dashboard panel WIP), `test_rendering.js` (orphan).
-- **Cosmetic backlog (not blocking)**: `dispatch_prose_review.py:368-381` reuses `codex_prose_quality_prompt` for the Gemini reviewer — header reads "Codex Prose Review", prompt instructs reviewer to use shell tools Gemini doesn't have. Extract a `gemini_prose_quality_prompt`.
 
 ## End-of-session ritual
 
@@ -116,6 +120,13 @@ Per-track breakdowns (Cert / Cloud / On-Prem / Platform / AI/ML / AI / UK transl
 
 ## TODO
 
+- [ ] AI history #394: Part 9 (Ch59-72, 14 chapters) — Codex autonomous chain in flight
+- [ ] AI history #559: cross-family review backfill on Ch01-31 (28 chapters, 30 marked backfill_pending per offline audit)
+- [ ] AI history #562: Tier 1 reader-aid rollout to Ch02-72 (template frozen via Ch01 prototype)
+- [ ] AI history #563: Tier 2 math + architecture sidebars on ~15 target chapters
+- [ ] AI history #564: Tier 3 selective passes (Claude proposes / Codex reviews) after Tier 1/2 settle
+- [ ] PR #567 review + merge → then re-run audit_review_coverage.py with live gh
+- [ ] PR #558 + PR #565 stale-prose cleanup (content already on main)
 - [ ] AI/ML Engineering #199 remaining: Phase 7 cross-link (run), Phase 8 UK translate (skipped for now)
 - [ ] AI/ML Engineering #200: local per-section module numbering (delegated to Codex)
 - [ ] Remaining pipeline: On-Premises (30), Platform (209), Specialty (18) — #180
