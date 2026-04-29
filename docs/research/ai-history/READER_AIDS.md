@@ -36,6 +36,28 @@ These aids apply only when the topic genuinely benefits from them. Don't add the
 6. **The math, on demand** — `<details><summary><strong>The math, on demand</strong></summary>` collapsible. Mathematical notation, equations, derivations relevant to the chapter, listed as bullets with brief commentary. Use `$…$` inline math (the renderer accepts dollar-delimited LaTeX as a stylistic convention; see `grep '\$' <chapter>` for in-prose usage). Apply to: **Ch01, Ch04, Ch15, Ch24, Ch25, Ch27, Ch29, Ch44, Ch50, Ch55, Ch58.**
 7. **Architecture sketch** — A diagram (Mermaid `flowchart`, `sequenceDiagram`, or block diagram) of the system the chapter describes. Apply to: **Ch41, Ch42, Ch49, Ch50, Ch52, Ch58.** Form to be finalised in those chapters; not part of the Ch01 prototype.
 
+### Tier 3 — selective, by adversarial review only
+
+These aids are *opt-in per chapter and per element*. They are not added by checklist. The author proposes; a cross-family reviewer adversarially evaluates each candidate; only the elements the reviewer approves land in prose.
+
+8. **Inline parenthetical definition (Starlight tooltip).** Reserved for a future tooltip component. Plain HTML `<abbr title="…">` violates the bit-identity rule because it modifies the prose line. Until a non-destructive component lands (custom Astro `<Tooltip>` reading from a sidecar terms file, or equivalent), this element is **SKIPPED on every chapter**. The collapsible *Plain-words glossary* (Tier 1, item 4) covers the same job non-destructively.
+
+9. **Pull-quote** — at most one per chapter. Render as a `:::note` callout immediately *after* the paragraph the quote comes from, with the sentence in a `>` blockquote and a 1-sentence annotation that does *new* work (provenance, stakes, intellectual lineage — not paraphrase). **Refuse if (a) no candidate sentence is genuinely quote-worthy, or (b) the prose paragraph already quotes the sentence verbatim** — duplicating it as a callout creates adjacent repetition. The Ch01 prototype skipped its pull-quote on (b): the chapter's load-bearing sentence was already quoted in-prose.
+
+10. **Selective dense-paragraph asides** — 1-3 per chapter, **`:::tip[Plain reading]`** callout inserted immediately after the dense paragraph. Use only on paragraphs that are *symbolically* dense (mathematical formulas, derivations, abstract definitions stacked) — **not** narratively dense (history, biography, who-said-what). The aside paraphrases the *gist* in 1-3 sentences, doing work the surrounding prose does *not*. Refuse on chapters where no paragraph is genuinely dense, and refuse the *individual* aside if its commentary would only repeat the surrounding prose.
+
+#### Tier 3 workflow — author proposes, cross-family adversary reviews
+
+Forced Tier 3 elements produce filler. The workflow is therefore explicitly adversarial:
+
+1. The chapter's primary author drafts a `tier3-proposal.md` in the chapter's contract directory listing each candidate as PROPOSED or SKIPPED, with insertion anchor and rationale for each PROPOSED.
+2. The proposal is sent for adversarial review to a different model family (`scripts/ab ask-codex` from a Claude-authored chapter; `scripts/ab ask-claude` from a Codex- or Gemini-authored chapter), with explicit instructions to be willing to reject.
+3. The reviewer returns APPROVE / REJECT (with reason) / REVISE (with suggestion) for each PROPOSED element. The response is saved to `tier3-review.md` in the same directory.
+4. The author applies only APPROVE-d elements, applies the suggested revision for REVISE-d elements, and skips REJECT-ed and originally SKIPPED elements.
+5. The PR body documents which Tier 3 elements landed, which were skipped, and the adversarial verdicts (one-line summary per element).
+
+The Ch01 prototype demonstrated the workflow exactly: 5 elements proposed (1 skip + 4 candidates); Codex rejected 1 (pull-quote, on adjacent-repetition grounds), revised 1 (Venn-diagram framing for the inclusive-OR aside), approved 2, agreed with 2 skips. **2 of 5 candidates landed.** That ratio is the right calibration — Tier 3 is the place to refuse.
+
 ## Source discipline
 
 Every claim in every aid must trace to one of:
@@ -59,6 +81,8 @@ When the contract conflicts (e.g. two sources disagree on a date), use the locut
 | Plain-words glossary | 5–7 terms |
 | "The math, on demand" | bullets only; one-sentence commentary per equation |
 | "Why this still matters today" (`:::note[]`) | ≤120 words |
+| Pull-quote (`:::note[]`) | at most 1 per chapter; ≤60 words including annotation |
+| Plain-reading aside (`:::tip[Plain reading]`) | 1–3 per chapter; 1–3 sentences each |
 
 ## Markdown syntax reference
 
