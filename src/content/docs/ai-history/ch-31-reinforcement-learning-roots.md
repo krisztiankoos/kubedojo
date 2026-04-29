@@ -6,6 +6,55 @@ sidebar:
   order: 31
 ---
 
+:::tip[In one paragraph]
+Reinforcement learning became a mathematical field when researchers turned the problem of delayed reward into a precise program: Bellman supplied recursive value for sequential decisions; Samuel showed a game-playing machine improving its own evaluation through experience; Barto, Sutton, and Anderson built an actor-critic controller from sparse failure signals; Sutton's temporal-difference methods let successive predictions teach each other; and Watkins and Dayan gave Q-learning a convergence theorem — bounded, honest, and lasting.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Richard Bellman | — | Operations-research mathematician; his 1957 Markov decision process paper gave RL its recursive sequential-decision ancestry. |
+| Arthur Samuel | — | IBM researcher; 1959 checkers program demonstrated machine improvement through self-play and evaluation adjustment — an early value-function precursor. |
+| Andrew Barto, Richard Sutton, Charles Anderson | — | Trio whose 1983 IEEE paper used an adaptive critic and associative search element to learn pole-balancing from sparse failure feedback. |
+| Richard Sutton | — | Lead author of the 1988 temporal-difference paper; gave the field a way to assign credit through successive prediction differences rather than only final outcomes. |
+| Christopher Watkins | — | King's College PhD; 1989 thesis framed delayed rewards via Markov decision processes and action values; co-proved Q-learning convergence with Dayan in 1992. |
+| Gerald Tesauro | — | IBM researcher; 1995 TD-Gammon paper showed self-play with temporal-difference learning reaching expert backgammon strength, closing the chapter's arc. |
+
+</details>
+
+<details>
+<summary><strong>Timeline (1957–1996)</strong></summary>
+
+```mermaid
+timeline
+    title Reinforcement Learning Roots, 1957–1996
+    1957 : Bellman publishes "A Markovian Decision Process" — dynamic-programming recurrence for sequential decisions
+    1959 : Samuel's checkers paper shows a program improving play through evaluation adjustment and self-play experience
+    1983 : Barto, Sutton, and Anderson publish the ASE/ACE pole-balancing actor-critic paper in IEEE Transactions
+    1988 : Sutton publishes "Learning to Predict by the Methods of Temporal Differences" in Machine Learning
+    1989 : Watkins submits Learning from Delayed Rewards thesis at King's College, Cambridge
+    1992 : Watkins and Dayan publish "Q-learning" with a convergence proof for restricted Markovian settings
+    1995 : Tesauro publishes the TD-Gammon paper in Communications of the ACM
+    1996 : Kaelbling, Littman, and Moore publish "Reinforcement Learning: A Survey" in JAIR
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- **Delayed reward** — Feedback that arrives only after a sequence of actions, not after each one. The agent cannot know immediately whether a choice was good; it must wait for a consequence that may come many steps later.
+- **Temporal credit assignment** — The problem of deciding which earlier actions deserve credit (or blame) for an outcome that arrives late. Getting this backwards is one way reinforcement learning can fail.
+- **Temporal difference (TD) learning** — A method that updates a prediction by comparing it to the *next* prediction rather than waiting for the final outcome. Each step's estimate bootstraps from the estimate that follows it.
+- **Q-value (action value)** — An estimate of how good it is to take a specific action in a specific state and then continue behaving well afterward. Q-learning builds these estimates from sampled experience, not from a known model.
+- **Markov decision process (MDP)** — A mathematical framework for sequential decisions where the next state depends only on the current state and action, not on the full history. Watkins used MDPs as the formal home for Q-learning.
+- **Exploration vs. exploitation** — The dilemma between trying unknown actions (exploration) and repeating actions known to be good (exploitation). An agent that never explores cannot discover better strategies; one that never exploits wastes what it has learned.
+- **Actor-critic** — An architecture that separates the decision-maker (the actor, which chooses actions) from the evaluator (the critic, which estimates how good the current situation is). Barto, Sutton, and Anderson's 1983 pole-balancer introduced this split to RL.
+
+</details>
+
 # Chapter 31: Reinforcement Learning Roots
 
 Reinforcement learning begins with a different kind of silence.
@@ -423,6 +472,10 @@ It could act, observe consequences, update value, and act again.
 
 That loop would become one of AI's most durable ideas.
 
+:::note[Why this still matters today]
+The loop this chapter traces — act, observe consequence, update value, act again — is the foundation of modern deep reinforcement learning. AlphaGo, robotic control, large-language-model fine-tuning with human feedback (RLHF), and recommendation systems all inherit Bellman's recursive value, Sutton's temporal-difference updates, and the exploration-exploitation framing Watkins formalized. The convergence conditions Watkins and Dayan specified remain a live engineering constraint: today's practitioners still manage exploration schedules, approximate value functions carefully, and stay alert to the guarantees that break when environments are non-Markovian or partially observable.
+:::
+
 ## Sources
 
 ### Primary
@@ -478,3 +531,4 @@ That loop would become one of AI's most durable ideas.
 > abstract-level p.834 claims, Watkins 1989 only within the thesis summary and
 > early framing, and Q-learning only under the convergence conditions stated by
 > Watkins and Dayan.
+
