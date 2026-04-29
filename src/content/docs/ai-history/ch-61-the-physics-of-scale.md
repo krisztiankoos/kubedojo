@@ -127,7 +127,7 @@ The utilization number also protects against a common misconception. If a compan
 
 Then Chinchilla complicated the slogan "bigger is better."
 
-Hoffmann and collaborators argued that many large language models were undertrained for their compute budget. Their compute-optimal analysis suggested that model size and training tokens should scale together. Chinchilla used the same compute budget as Gopher but with 70 billion parameters and far more training data. The point was not that smaller is always better. It was that parameter count alone is a bad definition of scale.
+Hoffmann and collaborators argued that many large language models were undertrained for their compute budget. Their compute-optimal analysis suggested that model size and training tokens should scale together. Chinchilla used the same compute budget as Gopher but with 70 billion parameters and about 1.4 trillion training tokens. The point was not that smaller is always better. It was that parameter count alone is a bad definition of scale.
 
 This was a correction to the culture of giant numbers. A 500B parameter model sounds larger than a 70B parameter model. But if the 500B model is trained on too few tokens for the available compute, it may be a poor allocation. Scale has a budget. Spend too much of it on parameters and too little on data, and the model is undertrained. Spend it differently, and a smaller model can be stronger for the same compute.
 
