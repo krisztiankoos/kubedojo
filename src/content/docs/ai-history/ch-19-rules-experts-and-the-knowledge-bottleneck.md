@@ -122,6 +122,12 @@ practical after the winter's skepticism. It also made the labor visible. If the
 knowledge was the source of power, then the acquisition of knowledge became the
 central problem.
 
+:::note[Feigenbaum's maxim]
+> "Our agents must be knowledge-rich, even if they are methods-poor."
+
+Feigenbaum made this the expert-system era's organizing maxim in 1977: power would come from specialist knowledge, while reusable inference methods stayed secondary.
+:::
+
 This was a different answer from both early symbolic optimism and later
 statistical learning. The program was not expected to discover all structure
 from data. It was also not expected to reason from first principles about every
@@ -497,4 +503,5 @@ could not be wished away.
 :::note[Why this still matters today]
 The MYCIN architecture's core tension — separable knowledge and inference, modular rules, explanation as engineering — anticipates questions every production AI system faces today. Modern rule engines, decision-service platforms, and clinical decision-support tools still separate a knowledge store from an execution layer. The knowledge bottleneck MYCIN named — that encoded expertise must be acquired, validated, maintained, and kept current — remains the price of any system that claims to reason. The gap between a strong evaluation result and a deployed clinical product, which MYCIN revealed in 1979, is still the central challenge in translating AI research into institutional practice.
 :::
+
 
