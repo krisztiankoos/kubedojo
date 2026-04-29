@@ -138,7 +138,7 @@ Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 | Ch | Title |
 |---:|---|
 | 59 | [The Product Shock](./ch-59-the-product-shock/) |
-| 60 | The Agent Turn *(coming soon)* |
+| 60 | [The Agent Turn](./ch-60-the-agent-turn/) |
 | 61 | The Physics of Scale *(coming soon)* |
 | 62 | Multimodal Convergence *(coming soon)* |
 | 63 | Inference Economics *(coming soon)* |
@@ -154,4 +154,4 @@ Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 
 ---
 
-59 of 72 chapters published. New chapters land regularly.
+60 of 72 chapters published. New chapters land regularly.

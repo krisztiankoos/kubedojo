@@ -1,8 +1,8 @@
-status: prose_ready
+status: prose_review
 owner: Codex
 part: 9
 chapter: 60
-review_state: dual_cross_family_verdict_accepted
+review_state: prose_drafted_pending_cross_family_review
 last_updated: 2026-04-29
 green_claims: 21
 yellow_claims: 3
@@ -26,6 +26,11 @@ verdicts:
   resolved_word_cap: 5800
   resolution_rule: dual_cross_family_verdict_with_cap
 notes: |
+  Drafted by Codex on 2026-04-29 from the dual-cleared contract. Draft stays
+  inside the architectural bridge from chat to operational loops: RAG, WebGPT,
+  chain-of-thought, ReAct, Toolformer, plugins, function calling, LangChain /
+  LlamaIndex context, and AutoGPT as a visible but brittle agent demo.
+
   Built from the modern-era placeholder into a capacity_plan_anchored contract.
   Core anchors are RAG (Lewis et al. 2020), WebGPT (OpenAI/Nakano et al.),
   Chain-of-Thought prompting (Wei et al.), ReAct (Yao et al.), Toolformer
