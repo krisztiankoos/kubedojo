@@ -247,6 +247,12 @@ the boundary. The table-top world was a carefully delimited universe. Its
 objects, relations, and possible actions were under control. The achievement
 did not dissolve the problem of wider language and wider common sense.
 
+:::note[Lighthill's scaling objection]
+> Extension of the methods used to a much wider universe of discourse would be opposed violently by the combinatorial explosion.
+
+This is not a hardware complaint; it is Lighthill turning Winograd's success into evidence that fenced domains could not yet carry general AI.
+:::
+
 That example is important because it prevents an easy pro-AI answer. The best
 response to Lighthill could not be, "But look, the program works." He was
 already looking at a program that worked. His question was what kind of world
@@ -493,4 +499,5 @@ learning to make smaller promises with better machinery behind them.
 :::note[Why this still matters today]
 Every modern AI funding cycle inherits the Lighthill structure. Funders still ask whether a system works only inside a bounded domain or whether it generalises — the combinatorial explosion argument recurs each time a language model meets an edge case it was not trained on. Research programmes still survive by anchoring claims to applications rather than general intelligence; the rebranding from "AI" to "machine learning" to "foundation models" each time optimism overshoots results repeats the IKBS move. Knowing that this cycle is structural, not new, helps practitioners calibrate expectations and distinguish genuine capability advances from re-labelled promises.
 :::
+
 
