@@ -150,8 +150,8 @@ Consumer adoption, edge constraints, and AI transitioning to heavy industry.
 | 69 | [The Data Exhaustion Limit](./ch-69-the-data-exhaustion-limit/) |
 | 70 | [The Energy Grid Collision](./ch-70-the-energy-grid-collision/) |
 | 71 | [The Chip War](./ch-71-the-chip-war/) |
-| 72 | The Infinite Datacenter *(coming soon)* |
+| 72 | [The Infinite Datacenter](./ch-72-the-infinite-datacenter/) |
 
 ---
 
-71 of 72 chapters published. New chapters land regularly.
+72 of 72 chapters published.

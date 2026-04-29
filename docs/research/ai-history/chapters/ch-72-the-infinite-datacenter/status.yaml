@@ -1,9 +1,9 @@
-status: prose_ready
+status: accepted
 owner: Codex
 part: 9
 chapter: 72
-review_state: dual_cross_family_approved
-last_updated: 2026-04-29
+review_state: prose_accepted_after_cross_family_fixes_2026-04-30
+last_updated: 2026-04-30
 green_claims: 6
 yellow_claims: 14
 red_claims: 0
@@ -25,7 +25,28 @@ verdicts:
   resolved: READY_TO_DRAFT_WITH_CAP
   resolved_word_cap: 6400
   resolution_rule: dual_cross_family_verdict_with_cap
+prose_review:
+  status: fixes_applied
+  claude:
+    model: claude-opus-4-7
+    date: 2026-04-30
+    verdict: READY_TO_MERGE
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/617#issuecomment-4348316112
+  gemini:
+    model: gemini-3.1-pro-preview
+    date: 2026-04-30
+    verdict: NEEDS_FIX_AND_MERGE
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/617#issuecomment-4348301941
 notes: |
+  Drafted by Codex on 2026-04-30 from the dual-cleared contract. Current draft
+  is 5,401 words and covers Stargate, hyperscaler capex, Richland/Hyperion,
+  El Paso, Meta/Blue Owl financing, AWS Project Rainier, Anthropic/Amazon
+  capacity commitments, DOE/LBNL data-center electricity baselines, Google
+  PUE/water metrics, community bargains, and the book-level closing synthesis.
+  Gemini requested removal of brief/guardrail meta-text leaks. Claude returned
+  READY_TO_MERGE with one soft source-fidelity note; Codex trimmed the
+  responsibility-split phrase to stay inside the approved contract excerpt.
+
   Built from placeholder into the Part 9 capstone contract. Core anchors are
   OpenAI Stargate, Microsoft FY2025 AI datacenter capex, Meta Richland/Hyperion
   and El Paso announcements, Meta/Blue Owl financing, AWS Project Rainier,
