@@ -1,8 +1,8 @@
-status: prose_review
+status: accepted
 owner: Codex
 part: 8
 chapter: 55
-review_state: prose_drafted_awaiting_cross_family_review
+review_state: prose_accepted_dual_cross_family_review
 last_updated: 2026-04-29
 green_claims: 8
 yellow_claims: 2
@@ -39,3 +39,6 @@ notes: |
 
   Drafted 2026-04-29 at roughly 4,500 words and opened for cross-family prose
   review. Keep any review fixes inside the approved evidence boundary.
+
+  Accepted 2026-04-29 after Claude approval, Gemini approval, and Claude
+  final recheck on commit db122b28. Published draft is 4,512 words.
