@@ -5,6 +5,56 @@ sidebar:
   order: 7
 ---
 
+:::tip[In one paragraph]
+Between 1948 and 1949, the neurophysiologist W. Grey Walter built two electronic tortoises — Elmer and Elsie — at the Burden Neurological Institute in Bristol. With two miniature radio tubes, one photocell, one touch contact, and two motors, they explored, sought light, avoided obstacles, and self-recharged. Walter's *Machina speculatrix* proved life-like behaviour did not require a brain. But behaviour was the wiring; revising it meant rebuilding the circuit. In January 1952, von Neumann's Caltech lectures quantified the scaling wall — a multiplexing factor of N ≈ 14,000 to make a 2,500-tube machine reliable enough to run for 8 hours.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| W. Grey Walter | 1910–1977 | Kansas City–born neurophysiologist; director of the physiological department at the Burden Neurological Institute (BNI), Bristol, from 1939; designer of *Machina speculatrix*. |
+| John von Neumann | 1903–1957 | Professor at the Institute for Advanced Study, Princeton; delivered five Caltech lectures (January 1952) on probabilistic logics and reliable organisms from unreliable components. |
+| R. S. Pierce | — | Note-taker for von Neumann's January 1952 Caltech lectures; the 1956 *Automata Studies* text is "based on notes taken by R. S. Pierce." |
+| W. J. "Bunny" Warren | — | BNI engineer, recruited by Walter after the war; built the more robust 1951 batch of six improved tortoises that supported public demonstrations. |
+| Owen E. Holland | — | Roboticist whose 2003 *Phil. Trans. R. Soc. A* paper is the chained anchor for the chapter's circuit-level reconstruction and biographical detail. |
+| Bernarda Bryson Shahn | — | Artist whose eight stylised sketches accompanied Walter's May 1950 *Scientific American* article *An Imitation of Life*. |
+
+</details>
+
+<details>
+<summary><strong>Timeline (1939–2001)</strong></summary>
+
+```mermaid
+timeline
+    title Walter's Tortoises and von Neumann's Reliability Argument
+    1939 : Walter joins the Burden Neurological Institute, Bristol
+    1948-1949 : Walter designs and builds Elmer and Elsie ; behavioural-interpretation work
+    May 1950 : "An Imitation of Life" published in Scientific American (vol. 182 no. 5, pp. 42-45)
+    Early 1951 : W. J. Warren's BNI team builds six improved tortoises ; Festival of Britain demonstrations ; Elmer and Elsie scrapped
+    August 1951 : "A Machine That Learns" published in Scientific American — introduces CORA / Machina docilis
+    Jan 4-15 1952 : Von Neumann delivers five Caltech lectures on Probabilistic Logics and the Synthesis of Reliable Organisms from Unreliable Components ; notes by R. S. Pierce
+    1953 : Walter's The Living Brain published (Duckworth)
+    1956 : Caltech lectures published in Automata Studies (Princeton, eds. Shannon and McCarthy)
+    2000-2001 : Two surviving 1951 tortoises go on display at the London Science Museum (2000) and the MIT Museum (2001)
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- **Machina speculatrix** — Walter's name for the genus of his electronic tortoises. The Latin *speculatrix* means "the one who watches" or "the explorer"; Walter coined the term to mark them as instruments for testing how much nervous-system-like behaviour could be produced by a small number of interacting parts.
+- **Photoelectric cell (photocell)** — A device whose electrical output varies with the light falling on it. The tortoise's "eye" was a single photocell shrouded so that it saw only what lay directly in front of the front drive wheel; voltage from the photocell controlled the first stage of the two-tube amplifier.
+- **Multivibrator** — A two-stage electronic oscillator that flips back and forth between two states. In the tortoise, the obstacle-avoidance circuit converted the ordinary two-stage amplifier into a multivibrator whenever the shell-mounted contact closed; relays RL1 and RL2 then oscillated, producing the characteristic butt–withdraw–sidestep pattern.
+- **Tropism (positive / negative)** — Walter's term for orientation toward (positive) or away from (negative) a stimulus. The tortoise exhibited a positive tropism toward moderate light and a negative tropism away from intense light, with the threshold built into the amplifier's saturation behaviour.
+- **Multiplexing (von Neumann sense)** — A reliability technique in which each computational line is replaced by a bundle of N parallel lines, the true state determined by majority vote among them. Von Neumann's January 1952 Caltech lectures showed that N grows quickly with target reliability — for a 2,500-tube machine running 8 hours, N ≈ 14,000.
+- **Mean free path (between errors)** — Borrowed from physics, where it means the average distance a particle travels between collisions. Von Neumann used the phrase for the average time a computing machine runs before a system-crashing error; his worked example asked for an 8-hour mean free path.
+- **Hardware-as-program** — The arrangement in which a machine's behaviour is fixed by the physical layout of its components: to revise the behaviour, you open the shell and rewire. Elmer and Elsie were the canonical case; the architectural escape route — separating *what* a machine does from *how* its parts are wired — is the subject of Chapter 8.
+
+</details>
+
 Between the years 1948 and 1949, the American-born neurophysiologist W. Grey Walter designed and constructed two electronic tortoises, pioneering prototypes of an artificial genus he called *Machina speculatrix*. The design of these tortoises, and the intricate interpretation of their behaviour, was carried out during those two critical years in Bristol (Holland 2003, p. 2087). Walter himself was an eclectic figure. Born on February 19, 1910, in Kansas City, Missouri, his career would unfold almost entirely across the Atlantic in the United Kingdom, ending in his death in Clifton, Bristol, in May 1977.
 
 By 1939, Walter had taken up a position as a neurophysiologist at the Burden Neurological Institute (BNI) in Bristol, where he served as director of the physiological department. He would remain at the BNI for decades, working continuously until 1970, when a severe motor-scooter accident abruptly ended his active research career. Within the history of cybernetics, Walter occupies a unique space. As described by Rhodri Hayward and quoted by Owen Holland (2003, p. 2088), Walter possessed a "maverick" and "swashbuckling" public profile, yet he was fundamentally a working clinical researcher rather than an isolated outsider. He always received due recognition for his achievements from the electroencephalography (EEG) community.
@@ -94,3 +144,8 @@ CORA sharpens the boundary rather than dissolving it. Walter did not stop at lig
 Simultaneously, the mechanical legacy of the *Machina speculatrix* lineage was secured. Of the six robust, improved tortoises engineered by W. J. Warren's team for the 1951 Festival of Britain, two managed to survive into the modern era. These exemplars of early cybernetic hardware eventually found permanent homes in major institutions, with one going on display in the London Science Museum in 2000 and another joining the MIT Museum in 2001 (Holland 2003, p. 2092).
 
 Ultimately, Walter's electronic tortoises were an essential bridge in the history of artificial intelligence. They proved that life-like, goal-directed behaviour could emerge from a minimal network of physical components. But unreliable components and the rigid constraint of hardware-as-program meant that complex behaviour could not endlessly scale by simply adding more relays and amplifiers. The architectural escape route, separating *what* a machine does from *how* its parts are physically wired together, was already being worked out in parallel at the Institute for Advanced Study. That is the subject of the next chapter. This one ends at the bottleneck, not at a funeral.
+
+:::note[Why this still matters today]
+Two of this chapter's themes still shape working systems. *Hardware-as-program* — behaviour fixed by wiring — is still how custom silicon and FPGAs work; the answer Walter could not yet reach, separating logic from physical layout, is now the default in everything from microcontrollers running firmware to GPUs running tensor kernels. *Reliability from unreliable parts* — von Neumann's framing of error as essential rather than incidental — is the design principle of every modern distributed system, from RAID arrays and blockchain consensus to Kubernetes leader election. Walter's tortoises also anticipated a quieter idea: that goal-directed behaviour can come from a small number of well-chosen feedback loops, not from a central controller.
+:::
+
