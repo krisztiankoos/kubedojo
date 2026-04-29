@@ -5,6 +5,59 @@ sidebar:
   order: 2
 ---
 
+:::tip[In one paragraph]
+In 1936, Alonzo Church at Princeton and Alan Turing at Cambridge independently proved Hilbert's *Entscheidungsproblem* — the demand for a mechanical procedure deciding the provability of any first-order formula — unsolvable. Church's λ-calculus proof reached the negative answer first; Turing's "computing machine" reading a paper tape gave the second proof its enduring metaphor. In §6 of the same paper, Turing described a single universal machine that runs any other machine's instructions off its tape — five years before any physical stored-program computer existed.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| David Hilbert | 1862–1943 | Göttingen mathematician; with Ackermann's 1928 *Grundzüge der theoretischen Logik* (ch. 3) and his Bologna ICM address that same year, posed the *Entscheidungsproblem*. |
+| Kurt Gödel | 1906–1978 | Vienna logician; the 1931 *Monatshefte* paper (Theorem VI) showed any ω-consistent recursive extension of *Principia Mathematica* contains formulas neither provable nor disprovable — demolishing completeness while leaving decidability standing. |
+| Alonzo Church | 1903–1995 | Princeton assistant professor; lambda-calculus founder; presented the negative answer to the AMS on April 19, 1935 and published it in *Am. J. Math.* April 1936 — first to the result. |
+| Stephen Cole Kleene | 1909–1994 | Church's just-graduated Princeton Ph.D.; joint developer of λ-definability; independently proved λ-definability equivalent to Gödel-Herbrand recursiveness. |
+| Alan Turing | 1912–1954 | Fellow of King's College, Cambridge (1935); independently solved the *Entscheidungsproblem* via the a-machine model in "On Computable Numbers" (received LMS 28 May 1936); §6 introduced the universal computing machine. |
+| Max Newman | 1897–1984 | Cambridge mathematician; his foundations-of-mathematics lectures introduced Turing to the *Entscheidungsproblem*; wrote to Church recommending Turing for Princeton. |
+
+</details>
+
+<details>
+<summary><strong>Timeline (1928–1938)</strong></summary>
+
+```mermaid
+timeline
+    title The Entscheidungsproblem from Hilbert to Princeton
+    1928 : Hilbert and Ackermann publish Grundzüge der theoretischen Logik (Berlin)
+         : Hilbert's Probleme der Grundlegung address at the Bologna ICM
+    1931 : Gödel publishes Über formal unentscheidbare Sätze in Monatshefte 38
+    1935 : April 19 — Church presents An Unsolvable Problem to the AMS
+    1936 : March — Church's JSL note extends the result to Hilbert-Ackermann's first-order logic
+         : April — Church 1936 published in Am. J. Math.
+         : May 28 — LMS receives Turing's On Computable Numbers
+         : August 28 — Turing finishes the appendix from the Graduate College, Princeton
+         : November 12 — Turing's paper read before the LMS
+    1937 : Turing 1936 published in Proc. London Math. Soc. (2) 42
+         : March — Church's JSL review of Turing 1936 coins "Turing machine"
+    1938 : Turing submits Systems of Logic Based on Ordinals (supervisor: Church)
+         : Summer — Turing returns to Britain
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- ***Entscheidungsproblem*** — German for "decision problem." Hilbert's 1928 demand for a mechanical procedure that, given any first-order logical formula, decides in finite time whether the formula is provable. The chapter's load-bearing question.
+- **Lambda calculus (λ-calculus)** — Church's symbolic system for defining mathematical functions, developed from the late 1920s onward. A function is written as a λ-expression; what gets computed is what reduces to a normal form by a finite chain of conversion rules.
+- **a-machine** — Turing's term for his abstract device: a finite-state scanner moving along an infinite tape divided into squares, reading and writing one symbol at a time per a finite table of m-configurations. Church's 1937 review renamed it the "Turing machine."
+- **Universal computing machine (U)** — A single fixed-hardware Turing machine that, when fed the standard description (S.D) of any other machine M on its tape, computes the same sequence M does. Introduced in §6 of Turing 1936.
+- **Recursive function** — A function definable from basic arithmetic operations by a finite sequence of substitutions, primitive-recursive constructions, and minimization. Built up by Gödel and Herbrand by 1934; Kleene proved it equivalent to λ-definability.
+- **Church-Turing thesis** — The *philosophical* claim that recursive, λ-definable, and Turing-computable functions all capture the intuitive notion of "effectively calculable." A thesis, not a theorem; asserted in §7 of Church 1936 and the appendix of Turing 1936.
+
+</details>
+
 The challenge was laid out clearly, in the third chapter of a textbook that would come to define the foundational crisis of early twentieth-century mathematics. In *Grundzüge der theoretischen Logik*, published in Berlin in 1928, David Hilbert and Wilhelm Ackermann systematically formulated what they called the *Entscheidungsproblem*. The problem asked a seemingly straightforward question about the absolute limits of formal logic: is there a "general process" for determining whether any given formula of the functional calculus is provable? The ambition was concrete: a finite procedure that any sufficiently patient computer — a human one, in 1928 — could mechanically execute, taking a logical formula as input and emitting a single bit of output (*provable* or *not provable*) without recourse to ingenuity or insight.
 
 Hilbert, the most influential mathematician of his generation, had spent the preceding decades trying to secure the foundations of mathematics against the creeping paradoxes of set theory. His broader program rested on the hope that all mathematical truths could be formalized into a rigorous, mechanical system. In historical retrospectives, Hilbert's ambition is often decomposed into three distinct requirements: completeness, ensuring that every true mathematical statement could be proved within the system; consistency, ensuring that the system could never prove a contradiction; and decidability, the demand that a mechanical procedure must exist to determine the truth or falsity of any formal assertion. The *Entscheidungsproblem* was the demand for decidability. Unlike completeness, which spoke to what the system could in principle demonstrate, decidability spoke to what a machine could in finite time decide. If it could be solved positively, mathematics would be reducible, in principle, to the mechanical execution of a finite set of rules.
@@ -94,3 +147,7 @@ With Turing's appendix, the theoretical foundations of computer science locked i
 The mathematical proof of their equivalence was a theorem; Turing's appendix demonstrated it, and Kleene's prior equivalence between λ-definability and Gödel-Herbrand recursiveness had closed the third side of the triangle. The philosophical assertion that this specific, formal class of functions perfectly captured the informal, human intuition of what it meant to be "effectively calculable" — that was, and remained, a thesis. Church, in his own §7, had been careful to mark it as such: "This definition is thought to be justified," he had written, "so far as positive justification can ever be obtained for the selection of a formal definition to correspond to an intuitive notion." Today the proposition is known as the Church-Turing thesis, honoring both the man who first formalised the boundary and the man who gave the boundary its most enduring mechanical metaphor.
 
 The year 1936 was not the year the computer was invented. No physical machine was built, no wires were soldered, and no vacuum tubes were illuminated. The universal computing machine existed only as a sequence of logical propositions printed on the pages of the *Proceedings of the London Mathematical Society*. But 1936 was the year that computation ceased to be merely an activity that humans performed, and became instead a rigorously defined mathematical object. The *Entscheidungsproblem* had fallen. The era of software had quietly begun.
+
+:::note[Why this still matters today]
+Every computer in production today is, at its lowest level of abstraction, a Turing-style universal machine: a fixed processor reading instructions stored in the same memory as its data. The program-as-data framing of §6 is what makes compilers, interpreters, virtual machines, and containers possible — they are all programs that read other programs as input. The negative result still bites, too: the print-symbol/circle-free decision problem is the reason no static analyser can perfectly decide every program's behaviour, the reason no antivirus can definitively classify every binary, and the reason formal verification stops at proof-decidable subsets of code. Hilbert asked whether mathematics could be reduced to a procedure; the answer is no, and that "no" set the architecture of computing.
+:::
