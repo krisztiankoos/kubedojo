@@ -1,8 +1,8 @@
-status: prose_ready
+status: prose_review
 owner: Codex
 part: 9
 chapter: 61
-review_state: dual_cross_family_verdict_accepted
+review_state: prose_drafted_pending_cross_family_review
 last_updated: 2026-04-29
 green_claims: 17
 yellow_claims: 1
@@ -26,6 +26,11 @@ verdicts:
   resolved_word_cap: 5800
   resolution_rule: dual_cross_family_verdict_with_cap
 notes: |
+  Drafted by Codex on 2026-04-29 from the dual-cleared contract. Draft stays
+  inside training-time scale physics: memory inventory, GPipe, Megatron-LM 2019
+  tensor parallelism, ZeRO, Megatron-LM 2021 PTD-P, PaLM/Pathways, and
+  Chinchilla's compute/data allocation correction.
+
   Built from a scrubbed skeleton into a capacity_plan_anchored contract. Core
   anchors are GPipe, Megatron-LM 2019, ZeRO, Megatron-LM 2021, PaLM/Pathways,
   and Chinchilla. GitHub repository metadata is Yellow context only and must
