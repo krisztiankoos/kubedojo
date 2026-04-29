@@ -36,7 +36,8 @@ prose_review:
     requested_model: gemini-3.1-pro-preview
     fallback_model: gemini-3-flash-preview
     date: 2026-04-29
-    verdict: UNAVAILABLE_RATE_LIMITED
+    verdict: APPROVE
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/569#issuecomment-4341480727
 notes: |
   Rebuilt the scrubbed/yellow contract from verified online sources:
   Transformers EMNLP 2020 PDF, legacy Transformers v4.0.1 docs, GitHub API
@@ -54,5 +55,5 @@ notes: |
   requested removal of reader-facing meta diction and one unanchored contributor
   count; Codex removed both, applied the final wording nit, and Claude approved
   the recheck on PR #569. Gemini review was requested with
-  gemini-3.1-pro-preview and fallback to gemini-3-flash-preview, but the bridge
-  did not return a usable Gemini review.
+  gemini-3.1-pro-preview, fell back to gemini-3-flash-preview, and also
+  returned APPROVE.
