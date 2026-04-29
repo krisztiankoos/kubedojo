@@ -20,7 +20,7 @@
 
 | Date | Thread | File | Status |
 |------|--------|------|--------|
-| 2026-04-30 | Part 4 reader-aids (Ch17–Ch23) — 7 PRs open against main; parallel headless-Claude + parallel Codex Tier 3 dispatch end-to-end | [`docs/session-state/2026-04-30-part4-reader-aids-prs.md`](./docs/session-state/2026-04-30-part4-reader-aids-prs.md) | **PRs open #600–#606** — 6 chapters land 1 Codex-verified pull-quote; Ch21 lands 0 |
+| 2026-04-30 | Part 4 reader-aids (Ch17–Ch23) — **RELEASED** — 7 PRs merged via squash; parallel headless-Claude + parallel Codex Tier 3 dispatch end-to-end | [`docs/session-state/2026-04-30-part4-reader-aids-prs.md`](./docs/session-state/2026-04-30-part4-reader-aids-prs.md) | **PRs #600–#606 merged** — 6 chapters land 1 Codex-verified pull-quote; Ch21 lands 0 |
 
 ## Predecessor chain (most-recent first)
 
@@ -54,7 +54,7 @@ These are state items that span individual sessions. Prune entries as threads cl
 
 - **#394 AI History — 65 of 72 chapters shipped (2026-04-29 evening).** Parts 1-8 fully closed. Codex's Part 9 chain shipped Ch62-65 during the evening reader-aid session (Ch59-61 landed earlier in the day). Only Ch66-72 (7 chapters) remain in the prose track.
 - **Codex Part 9 chain still in flight** — past Ch65. Don't disturb.
-- **Parts 1, 2, 3 RELEASED on main; Part 4 PR-pending (2026-04-30).** Ch01–Ch16 all carry Tier 1 (TL;DR + Cast + Timeline + Glossary + Why-this-still-matters); Ch01/Ch04/Ch15 carry Tier 2 math sidebars; 1-of-N Tier 3 pull-quotes landed per chapter under cross-family Codex review. **Part 4 (Ch17–Ch23) shipped as 7 PRs (#600–#606)**, not direct-to-main: per-chapter PR pattern reinstated after the prior session's on-main incident. Pattern held: Codex caught an author-verbatim error in 6/6 Part 4 chapters that landed a pull-quote (16/16 across Ch10–Ch23 — robust enough to assume on every chapter).
+- **Parts 1, 2, 3, 4 RELEASED on main (2026-04-30).** Ch01–Ch23 all carry Tier 1 (TL;DR + Cast + Timeline + Glossary + Why-this-still-matters); Ch01/Ch04/Ch15 carry Tier 2 math sidebars; 1-of-N Tier 3 pull-quotes landed per chapter under cross-family Codex review (Ch21 = 0 — both candidates rejected on calibration grounds). **Part 4 (Ch17–Ch23) shipped as 7 PRs (#600–#606), all merged via squash.** Pattern held: Codex caught an author-verbatim error in 6/6 Part 4 chapters that landed a pull-quote (16/16 across Ch10–Ch23 — robust enough to assume on every chapter).
 - **Parallel `codex exec` dispatch confirmed working** under `--dangerously-bypass-approvals-and-sandbox` direct invocation. 6 simultaneous Codex Tier 3 reviews ran cleanly to completion in ~5 min wall-clock. The old `feedback_codex_dispatch_sequential.md` constraint applied to wrapper scripts, NOT direct `codex exec`.
 - **Headless Claude `isolation="worktree"` has a race condition** — when the agent does early read-only work without writing to its worktree, the worktree gets auto-garbage-collected and subsequent edits land in the primary CWD instead. Hit on Ch17 this session; recovered by `git branch + git reset --hard`. Mitigation for future batch dispatches: tell the agent to write a sentinel file at step 0 to keep the worktree alive.
 - **Concurrent `npm run build` in 6 worktrees corrupts the shared vite/astro cache** — all 6 Ch18–23 agents flagged a false-alarm CSS build error caused by parallel-build interleaving. Mitigation: skip build verify in parallel agent dispatches; rely on CI post-merge.
@@ -135,7 +135,7 @@ Per-track breakdowns (Cert / Cloud / On-Prem / Platform / AI/ML / AI / UK transl
 
 - [ ] AI history #394: Part 9 (Ch66-72, 7 chapters remain) — Codex autonomous chain past Ch65
 - [ ] AI history #559: cross-family review backfill on Ch01-31 (28 chapters, 30 marked backfill_pending per offline audit)
-- [ ] AI history #562: Tier 1 reader-aid rollout — Parts 1/2/3 RELEASED on main (Ch01–Ch16); **Part 4 PR-open (Ch17–Ch23 → PRs #600–#606)**; Part 5 (Ch24–Ch31) is next, with Tier 2 math on Ch24/Ch25/Ch27/Ch29
+- [ ] AI history #562: Tier 1 reader-aid rollout — Parts 1/2/3/4 RELEASED on main (Ch01–Ch23); Part 5 (Ch24–Ch31) is next, with Tier 2 math on Ch24/Ch25/Ch27/Ch29
 - [ ] Google Search Console verification — user will paste the meta-tag token (or HTML file). Then submit `https://kube-dojo.github.io/sitemap-index.xml` to GSC. Same flow optional for Bing Webmaster Tools.
 - [ ] AI history #563: Tier 2 math + architecture sidebars on remaining target chapters (Ch24, Ch25, Ch27, Ch29, Ch41, Ch42, Ch44, Ch49, Ch50, Ch52, Ch55, Ch58 — Ch01/Ch04/Ch15 done)
 - [ ] AI history #564: Tier 3 selective passes — pattern proven on Ch01–Ch16 (1-pull-quote-per-chapter cap; cross-family Codex review with source-PDF verification)
