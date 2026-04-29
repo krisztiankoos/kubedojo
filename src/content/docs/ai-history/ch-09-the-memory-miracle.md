@@ -5,6 +5,62 @@ sidebar:
   order: 9
 ---
 
+:::tip[In one paragraph]
+In 1947, Manchester's Williams tube held a bit for 0.2 seconds and demanded constant refresh; mercury delay lines stored data by sending shock-waves down a column of mercury. MIT's Project Whirlwind needed memory that did not forget. Jay Forrester's 1947 three-dimensional coincident-current concept used neon glow tubes that drifted with temperature. In 1949 he switched to magnetic materials with rectangular hysteresis. Three parallel inventors — Forrester at MIT, Jan Rajchman at RCA, An Wang at Harvard — converged on magnetic-core memory between 1949 and 1953. SAGE turned MIT's variant into the IBM 704's industrial standard.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Jay W. Forrester | 1918–2016 | Director, MIT Digital Computer Laboratory (1946–1951); led Project Whirlwind and the SAGE memory effort; conceived the 3D coincident-current store in 1947 and switched to magnetic materials in 1949. |
+| Frederic C. Williams | 1911–1977 | Professor of Electrical Engineering, University of Manchester; co-author of the September 1948 *Nature* Letter that announced a working stored-program experimental machine using the Williams-tube electrostatic CRT memory. |
+| Tom Kilburn | 1921–2001 | Manchester researcher under Williams; author of the December 1, 1947 internal report "A Storage System for Use with Binary Digital Computing Machines" — the chapter's primary anchor for Williams-tube operating limits. |
+| Jan A. Rajchman | 1911–1989 | RCA Laboratories (Camden NJ); developed the Selectron tube (1946–1947); pursued ferrite-core matrix memory in parallel with Forrester; coined "myriabit" in his October 1953 *Proc. IRE* paper. |
+| An Wang | 1920–1990 | Research fellow at Harvard's Computation Laboratory under Howard Aiken; filed US Patent 2,708,722 ("Pulse Transfer Controlling Device") on October 21, 1949, eighteen months before Forrester's filing. |
+| Kenneth H. "Ken" Olsen | 1926–2011 | MIT research assistant under Norman Taylor; co-builder of the Memory Test Computer that validated coincident-current core memory at scale before transplanting it into Whirlwind. |
+
+</details>
+
+<details>
+<summary><strong>Timeline (1944–1956)</strong></summary>
+
+```mermaid
+timeline
+    title From the Williams Tube to the IBM 704
+    Late 1944 : Forrester accepts the Navy aircraft stability-and-control analyzer project ; analog approach pursued through 1945
+    1946 : Project pivots from analog to serial digital with Perry Crawford ; Special Devices Center merges into the Office of Naval Research
+    1947 : Forrester arrives at the 3D coincident-current concept using neon glow-discharge tubes ; tests fail to scale
+    Dec 1 1947 : Kilburn signs the internal report on Williams-tube limits — 0.2-second retention, more than 5-Hz refresh required
+    Sep 25 1948 : Williams and Kilburn publish 'Electronic Digital Computers' as a Letter in Nature 162 p. 487
+    1949 : Forrester sees magazine ads for rectangular-hysteresis magnetic materials and replaces the glow tubes
+    Oct 21 1949 : An Wang files US Patent 2,708,722 'Pulse Transfer Controlling Device' at Harvard's Computation Laboratory
+    Jan 1951 : Forrester publishes 'Digital Information Storage in Three Dimensions Using Magnetic Cores' in J. Appl. Phys. 22(1)
+    May 11 1951 : Forrester files US Patent 2,736,880 'Multicoordinate Digital Information Storage Device' (assigned to Research Corporation)
+    1951 : Whirlwind I becomes operational with Williams-tube storage
+    Summer 1953 : Whirlwind upgraded to a 32x32x16-bit core array — cycle time roughly 9 microseconds vs the displaced 25
+    Oct 1953 : Rajchman publishes 'A Myriabit Magnetic-Core Matrix Memory' in Proc. IRE 41(10)
+    1954 : IBM 704 announced — first IBM mainframe with magnetic-core memory standard
+    May 17 1955 : Wang's patent 2,708,722 issues
+    1956 : IBM purchases Wang's patent for approximately $500,000 ; Forrester's patent 2,736,880 issues on Feb 28
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- **Williams tube** — An electrostatic memory that stored binary digits as a charge pattern on the inner phosphor screen of a commercial cathode-ray tube. Fast random access but volatile: the 1947 Kilburn report specified short-term retention "of the order of 0.2 seconds" and a refresh frequency greater than 5 cycles per second.
+- **Mercury delay line** — A serial memory in which a bit travelled as an acoustic shock-wave down a roughly one-metre tube of mercury, was sensed at the far end, and was reinjected to keep the bit alive. Robust but slow; access time was set by waiting for a specific bit to emerge from the tube.
+- **Rectangular hysteresis loop** — A magnetic material's response curve in which magnetisation snaps cleanly between two saturation states with a sharp threshold between them. The "rectangular" shape — almost no intermediate response — is what made coincident-current selection trustworthy.
+- **Coincident-current selection** — The addressing trick at the heart of magnetic-core memory: each coordinate line carries only half the current needed to switch a core, so only the core at the intersection of two activated lines flips. Half-selected cores along the same row or column remain unchanged.
+- **Magnetic-core memory** — A non-volatile random-access memory built from a 3D grid of small ferrite rings (cores), each holding one bit by its magnetisation direction. Reading the bit destroys it, so every read is followed by a rewrite — Wang's 1949 pulse-transfer patent solved that cycle.
+- **Project Whirlwind / SAGE** — Whirlwind was MIT's real-time digital-computer project, which by 1949 had pivoted from a Navy flight simulator toward Air Force air-defence work. SAGE — the Semi-Automatic Ground Environment — became the production air-defence network that funded the industrial scale-up of magnetic-core memory and routed the technology to IBM.
+- **Memory Test Computer** — A purpose-built MIT machine, built by Norman Taylor and Ken Olsen out of existing digital test equipment, that validated coincident-current core memory at full system scale before it was transplanted into Whirlwind in summer 1953.
+
+</details>
+
 The von Neumann stored-program architecture, detailed in previous chapters, was a brilliant logical construct that solved the problem of machine configuration. On paper, it assumed the existence of a memory substrate that could hold instructions and data reliably and without forgetting them. But when the architecture was first realized in hardware, that assumption collided with physical reality. The earliest machines were amnesiacs.
 
 That weakness mattered because the stored-program idea had moved the center of gravity inside the machine. Configuration was no longer merely external setup; a stored-program machine put its instructions into the same physical store as numbers. If that store drifted, the machine did not merely lose an answer; it could lose the instructions by which it knew what operation to perform next. Memory was no longer a passive cabinet attached to calculation. It was the condition that made the architecture real.
@@ -24,6 +80,8 @@ The contemporary alternative was the mercury acoustic delay line. This relied on
 Faced with these options, builders often chose the Williams tube for its faster access speeds, despite its volatility. Yet Forrester would later characterize the electrostatic CRT memory that his own project originally used as "expensive and short-lived and not very reliable." The infrastructure cost of running real programs on hardware that forgot them was immense.
 
 Delay lines and Williams tubes therefore failed in opposite ways. The delay line remembered by making time into a loop: the bit existed as an acoustic event circulating through mercury, and the machine waited for the event to return. The Williams tube gave faster random access, but only by accepting a storage surface that was continually slipping away from the machine. Between them lay the central engineering dilemma of the late 1940s. A useful computer needed memory that was both addressable and durable. The available devices tended to offer one virtue by sacrificing the other.
+
+## Project Whirlwind's Memory Crisis
 
 The fragility of electrostatic and delay-line memory was a frustrating constraint for scientific computation, but it was an existential threat for engineers attempting to build real-time control systems. This distinction between batch processing and continuous control defined the crisis that enveloped Project Whirlwind at the Massachusetts Institute of Technology, fundamentally changing the trajectory of computer memory.
 
@@ -45,6 +103,8 @@ The Boston-to-Buffalo idea is best read not as comic relief but as an engineerin
 
 While Whirlwind I became operational in 1951, utilizing Williams-tube storage, the memory remained a severe bottleneck. To fulfill its mandate, the engineering team had to find a completely different physical substrate.
 
+## The Three-Dimensional Idea
+
 The search for a robust memory led to the three-dimensional coincident-current magnetic core memory. While it eventually became the industrial standard, the architecture began as a logical structure in search of a viable material.
 
 In his oral history, Forrester recalled that in about 1947 he began thinking about the geometry of storage: "if we had one-dimensional storage and two-dimensional storage, what's the possibility of a three-dimensional storage." He arrived at a logical structure that satisfied the requirements, but the initial physical implementation relied on neon glow-discharge tubes.
@@ -65,6 +125,8 @@ On May 11, 1951, Forrester filed US Patent 2,736,880 for a "Multicoordinate Digi
 
 The patent did not issue until February 28, 1956. The delay matters for the narrative because the invention did not pass cleanly from one mind to one patent to one industry. By the time Forrester's application became an issued patent, other claims to magnetic memory had already been filed, published, or absorbed into corporate strategy. The core-memory story is therefore not a priority race with a simple finish line. It is a convergence of mechanisms, materials, patents, and production channels.
 
+## The Patent War
+
 The popular narrative often frames Forrester as the sole inventor of magnetic-core memory, but the historical record reveals a landscape of parallel invention. In the critical window between 1949 and 1953, three distinct paths toward magnetic-core memory were being pursued simultaneously.
 
 At RCA Laboratories in Camden, New Jersey, Jan A. Rajchman had already established himself as a pioneer in memory technology. Between 1946 and 1947, he developed the Selectron tube, an electrostatic-storage tube capable of holding 256 bits that saw use in the JOHNNIAC computer at RAND. Following this, Rajchman began pursuing a coincident-current magnetic-core path in parallel with Forrester. Shaping his prototype ferrite cores using a converted aspirin-tablet press, Rajchman developed RCA's matrix memory technology. This parallel track culminated in October 1953 with the publication of "A Myriabit Magnetic-Core Matrix Memory" in the *Proceedings of the IRE*, whose title used "myriabit" to describe the 10,000-bit matrix.
@@ -76,6 +138,8 @@ Simultaneously, crucial work was underway at the Harvard Computation Laboratory.
 Wang's claim cut at a different but equally practical part of the problem. A magnetic state could represent a bit, but a usable random-access memory also needed a reliable cycle for sensing and restoring that state. The patent language about residual flux density was not decorative physics. It specified how strongly the material should remember after the applied pulse ended. In a memory technology, remanence was the point: the device had to retain a distinction without continuous power or mechanical motion.
 
 These parallel developments generated overlapping claims. The priority dispute appears not to have been resolved by a definitive judicial ruling in a patent court, but rather by the force of commercial licensing. A major commercial resolution came in 1956 when, according to widespread historical accounts, IBM purchased Wang's patent for approximately $500,000. That transaction absorbed Wang's foundational claims into IBM's portfolio and helped settle the patent war commercially.
+
+## Commercialization
 
 The industrial dominance of Forrester's variant of magnetic-core memory did not arise from technical primacy alone. Instead, it was the result of MIT's institutional pipeline. The technology matured within a military-funded ecosystem that provided an urgent use case, deep resources, and a direct path to massive industrial production.
 
@@ -105,4 +169,9 @@ This military investment quickly produced commercial dividends. Secondary accoun
 
 The timing of this commercialization arc was critical. By the time researchers gathered for the Dartmouth Summer Research Project on Artificial Intelligence in the summer of 1956, the von Neumann architecture's most glaring physical vulnerability had been substantially resolved. The symbolic-AI agenda inherited a memory infrastructure that was fast, non-volatile, and scaling industrially. That did not make computers cheap, small, or easy to program. It did change the question. For the large institutional machines that symbolic AI initially used, hardware memory was no longer the primary load-bearing constraint; the next bottleneck would be the software itself (see Chapter 11).
 
+:::note[Why this still matters today]
+The chapter's two engineering ideas still organise modern computing. *Coincident-current selection* — addressing a single bit by the agreement of two coordinates that each carry only half the activation force — is the direct ancestor of every memory cell that distinguishes "selected" from "half-selected" by analog margin. DRAM sense amplifiers, flash memory's threshold-voltage cells, and content-addressable lookups in network routers all descend from the same threshold-and-coincidence trick. *Parallel invention with commercial resolution* — the Forrester / Rajchman / Wang convergence settled by IBM's $500,000 patent purchase rather than a court ruling — is also still with us: most modern hardware patent disputes resolve through licensing rather than litigation, for the same institutional reasons that drove SAGE-era memory.
+:::
+
 [^1]: Multiple secondary sources credit An Wang and Way-Dong Woo at the Harvard Computation Laboratory with the 1949 magnetic-core invention. However, US Patent 2,708,722 names only An Wang as the inventor of record on its face-sheet. The co-inventorship remains a matter of historical dispute.
+
