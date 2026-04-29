@@ -6,6 +6,64 @@ sidebar:
   order: 29
 ---
 
+:::tip[In one paragraph]
+After the second AI winter, Vladimir Vapnik and colleagues gave machine learning a disciplined new promise: pick the separating hyperplane with the widest margin between classes, use kernel functions to work in high-dimensional feature spaces without building them explicitly, and solve a convex optimization problem with a unique global solution. Tested on handwritten-digit benchmarks in the 1990s, SVMs showed that generalization could be an engineering argument — one backed by statistical learning theory — not just a hope.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Vladimir Vapnik | 1936– | Central figure in VC theory and support-vector networks; coauthor of Boser/Guyon/Vapnik 1992 and Cortes/Vapnik 1995. |
+| Alexey Chervonenkis | 1938–2014 | Vapnik's collaborator on uniform-convergence theory and the VC-dimension framework. |
+| Bernhard Boser | — | Coauthor of the 1992 optimal-margin training algorithm that brought kernels into the maximum-margin setting. |
+| Isabelle Guyon | — | Coauthor of the 1992 algorithm; part of the Bell Labs OCR and SVM ecosystem. |
+| Corinna Cortes | — | Coauthor of the 1995 support-vector networks paper; central to soft-margin SVMs and OCR benchmark experiments. |
+| Christopher Burges | — | Author of the 1998 tutorial that transmitted SVMs to the broader pattern-recognition community. |
+
+</details>
+
+<details>
+<summary><strong>Timeline (1964–1998)</strong></summary>
+
+```mermaid
+timeline
+    title Support Vector Machines, 1964–1998
+    1964 : Aizerman, Braverman, and Rozonoer publish potential-function work — later cited as kernel lineage in Cortes and Vapnik
+    1971 : Vapnik and Chervonenkis publish uniform-convergence theory : foundation for capacity and generalization vocabulary
+    1982 : Vapnik's Estimation of Dependences consolidates optimal-hyperplane foundations
+    1992 : Boser, Guyon, and Vapnik publish optimal-margin classifier training at COLT : kernels and maximum margins combined
+    1995 : Cortes and Vapnik publish support-vector networks : soft margins for non-separable data; USPS and NIST OCR benchmarks
+    1998 : Burges publishes widely used SVM tutorial in Data Mining and Knowledge Discovery
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- **Support vector** — A training example that lies on or nearest to the decision boundary; the final classifier depends only on these examples, not on the full training set.
+- **Margin** — The width of the empty strip between the two classes on either side of a separating hyperplane. Maximum-margin classifiers choose the hyperplane that makes this strip as wide as possible.
+- **Kernel function** — A function that computes the inner product of two points in a high-dimensional feature space without constructing that space explicitly; allows SVMs to draw curved decision boundaries in the original input space.
+- **VC dimension (Vapnik-Chervonenkis dimension)** — A measure of a classifier's capacity: roughly, the largest set of points the classifier can separate in every possible way. Higher capacity risks overfitting; VC theory bounds the gap between training and test error.
+- **Soft margin** — An extension that allows some training examples to violate the margin or be misclassified, penalizing violations rather than demanding perfect separation; makes SVMs practical for noisy, overlapping real-world data.
+- **Convex optimization** — An optimization problem in which any local solution is also a global solution; SVM training is formulated this way, making the result independent of starting conditions.
+
+</details>
+
+<details>
+<summary><strong>The math, on demand</strong></summary>
+
+- **Maximum-margin objective:** Given labeled training points $(x_i, y_i)$ with $y_i \in \{-1, +1\}$, find a weight vector $w$ and bias $b$ such that $y_i(w \cdot x_i + b) \geq 1$ for all $i$, while minimizing $\|w\|^2$. Minimizing $\|w\|^2$ is equivalent to maximizing the margin $2/\|w\|$ between the two class boundaries.
+- **Support vectors:** The training points for which $y_i(w \cdot x_i + b) = 1$ exactly — they sit on the margin boundary and are the only examples that determine $w$ and $b$. All other training points are irrelevant to the final classifier.
+- **Dual formulation:** Introducing Lagrange multipliers $\alpha_i \geq 0$ for each constraint transforms the problem into maximizing $\sum_i \alpha_i - \frac{1}{2}\sum_{i,j} \alpha_i \alpha_j y_i y_j (x_i \cdot x_j)$. The solution satisfies $\alpha_i = 0$ for non-support vectors (Karush-Kuhn-Tucker complementary slackness). Only the inner products $x_i \cdot x_j$ appear.
+- **Kernel trick:** Because the dual depends only on inner products, replace $x_i \cdot x_j$ with a kernel $K(x_i, x_j) = \phi(x_i) \cdot \phi(x_j)$ for some feature map $\phi$. The machine behaves as if it operates in the high-dimensional space defined by $\phi$ without ever constructing $\phi(x)$ explicitly. Mercer's theorem gives the condition under which $K$ is a valid inner product in some feature space.
+- **Soft-margin slack:** Introduce slack variables $\xi_i \geq 0$ so that the constraint becomes $y_i(w \cdot x_i + b) \geq 1 - \xi_i$. The objective becomes $\min \frac{1}{2}\|w\|^2 + C \sum_i \xi_i$, where $C$ trades off margin width against training violations. The problem remains convex quadratic, preserving the global-solution guarantee.
+- **Structural risk minimisation:** VC theory bounds test error by training error plus a capacity term depending on the VC dimension $h$ and sample size $n$: roughly $\sqrt{(h(\log(2n/h)+1) - \log(\delta/4))/n}$ with probability $1 - \delta$. SVMs control $h$ implicitly by maximising the margin, linking geometry to generalization theory.
+
+</details>
+
 # Chapter 29: Support Vector Machines
 
 After the second AI winter, the field did not need another promise that a
@@ -421,6 +479,10 @@ model the brain. They claimed to choose a disciplined boundary from data.
 For the 1990s, that was enough to matter deeply. The field was learning how to
 trust learning itself.
 
+:::note[Why this still matters today]
+SVM ideas remain embedded in modern machine learning infrastructure. Kernel methods continue to appear in Gaussian processes and kernel approximation techniques used in large-scale models. The maximum-margin principle shaped later regularization thinking in neural networks, including weight-decay and dropout as implicit capacity controls. Statistical learning theory's vocabulary — generalization bounds, capacity control, bias-variance trade-off — became the shared language in which researchers evaluate models today. Every time a practitioner asks not just "does this model fit the training data?" but "why should it generalize?", they are asking the question SVMs made standard.
+:::
+
 ## Sources
 
 ### Primary and Near-Primary
@@ -449,3 +511,4 @@ trust learning itself.
   *Data Mining and Knowledge Discovery* 2, 121-167 (1998): tutorial anchor for
   margins, support vectors, convex quadratic programming, kernels, Mercer
   conditions, implementation concerns, VC dimension, and generalization.
+
