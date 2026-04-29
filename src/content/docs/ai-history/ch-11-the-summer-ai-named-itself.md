@@ -61,6 +61,12 @@ Dartmouth did something narrower and, in institutional terms, more durable. It g
 
 The central document was not a manifesto published to the world. It was a funding proposal. Dated August 31, 1955, and sent to the Rockefeller Foundation in early September, "A Proposal for the Dartmouth Summer Research Project on Artificial Intelligence" carried four names across its cover: John McCarthy of Dartmouth, Marvin Minsky of Harvard, Nathaniel Rochester of IBM, and Claude Shannon of Bell Labs. The mixture mattered. McCarthy provided the local host and the phrase. Minsky connected the project to mathematical neurology and the McCulloch-Pitts lineage. Rochester brought industrial computing weight from IBM. Shannon brought the authority of information theory and Bell Labs.
 
+:::note
+> "We propose that a 2 month, 10 man study of artificial intelligence be carried out during the summer of 1956 at Dartmouth College in Hanover, New Hampshire."
+
+The opening sentence frames AI as a fundable summer study; the attendance pattern shrank, but the title survived.
+:::
+
 The proposal's first move was to compress a large philosophical wager into an administrable research program. Its opening conjecture was that learning, and other features of intelligence, could in principle be described precisely enough for a machine to simulate them. That was not a small claim. But in the proposal it appeared as the premise for a summer project, not as the conclusion of a completed science. The tone was practical: assemble a small group, give them two months, and see how far they could push the problem.
 
 The proposed setting was specific: Dartmouth College, Hanover, New Hampshire, in the summer of 1956. The proposed scale was also specific: a two-month, ten-man study. That number is important because it records the organizers' institutional imagination before the messy reality of attendance intervened. The proposal imagined a concentrated working group. The summer became a rotating gathering, with only a few people present throughout.
