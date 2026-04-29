@@ -22,8 +22,8 @@ balance sheets.
   Project Rainier and Anthropic/Amazon as cloud capacity becoming dedicated
   frontier-model infrastructure; land/power/construction/equipment sourcing;
   cooling and water stewardship; municipal roads, water, wastewater, and
-  workforce; project finance, joint ventures, debt, and operating leases; the
-  lag between model ambition and physical delivery.
+  workforce; project finance, joint ventures, sovereign/global capital, debt,
+  and operating leases; the lag between model ambition and physical delivery.
 - OUT OF SCOPE: detailed grid fuel-mix and nuclear-PPA analysis (Ch70);
   export controls and chip access (Ch71); NVIDIA market power (Ch67);
   inference unit economics (Ch63); benchmark politics (Ch66); copyright/data
@@ -49,7 +49,8 @@ balance sheets.
 4. **Finance Becomes Architecture:** Use Meta/Blue Owl's Hyperion joint
    venture to show that AI infrastructure strain changed financing structure:
    80/20 ownership, about $27B of development costs, land and construction in
-   progress, leases, guarantees, and private debt.
+   progress, leases, guarantees, private debt, and sovereign/global capital
+   participation such as MGX and SoftBank in Stargate.
 5. **Cloud Turns Into Dedicated Frontier Capacity:** Use AWS Project Rainier
    and Anthropic/Amazon to show hyperscale cloud moving toward named clusters
    and long-term gigawatt commitments. This is not just "renting servers"; it

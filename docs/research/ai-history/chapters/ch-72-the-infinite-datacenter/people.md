@@ -7,6 +7,8 @@
 - **Masayoshi Son / SoftBank:** Stargate chair and financial lead in the
   January 2025 announcement; useful for showing that AI buildout became a
   capital-allocation story.
+- **MGX:** Stargate equity funder in the January 2025 announcement; use as a
+  narrow sovereign/global-capital signal, not as a broader UAE policy chapter.
 - **Oracle:** Stargate infrastructure partner and operator/developer of major
   Stargate capacity, including the Abilene flagship and later site expansion.
 - **Brad Smith / Microsoft:** Author of the January 2025 Microsoft essay that
