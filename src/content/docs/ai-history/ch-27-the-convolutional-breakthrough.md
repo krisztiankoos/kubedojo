@@ -163,6 +163,10 @@ every location, it learns a smaller number of detectors that can be reused
 across the image. The architecture reduces the number of independent choices
 the optimizer has to make.
 
+:::tip[Plain reading]
+Expressiveness is what a model could represent; learnability is whether the available data can pin down the right settings. A fully connected network spends separate knobs at many locations, while a convolutional network reuses the same detector across the image. That reuse gives each learned parameter more evidence to learn from.
+:::
+
 That reduction also changes the meaning of data. If one learned edge detector
 can apply across positions, then examples in one part of the image help train
 behavior in another part. The model gets more mileage from limited labeled
