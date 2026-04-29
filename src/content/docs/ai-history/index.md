@@ -149,7 +149,7 @@ The repurposing of graphics cards for massive parallel matrix multiplication.
 | Ch | Title | Lifecycle | Drafted |
 |---:|---|---|---|
 | 41 | The Graphics Hack | accepted | [yes](./ch-41-the-graphics-hack/) |
-| 42 | CUDA | researching | no |
+| 42 | CUDA | accepted | [yes](./ch-42-cuda/) |
 | 43 | The ImageNet Smash | researching | [yes](./ch-43-the-imagenet-smash/) |
 | 44 | The Latent Space | researching | no |
 | 45 | Generative Adversarial Networks | researching | no |
