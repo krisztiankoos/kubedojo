@@ -135,6 +135,12 @@ It was contingent, not fated.
 
 The most compact way to see LISP's theory side is to follow `eval`.
 
+:::note[McCarthy on the 1960 formalism]
+> "We believe this formalism has advantages both as a programming language and as a vehicle for developing a theory of computation."
+
+The chapter's Tool-vs-Theory thesis in McCarthy's own published voice. The CACM paper does not present the language as one or the other; it claims the formalism does both jobs.
+:::
+
 McCarthy's 1958 memo and 1960 CACM paper built the language around recursive functions of symbolic expressions. Lambda notation gave a way to define functions. `cond` gave a way to branch on tests. Elementary operations such as `atom`, `eq`, `car`, `cdr`, and `cons` gave a base vocabulary. Recursive definitions then made it possible to state a procedure by cases: if the expression is empty, stop; if it is an atom, treat it one way; otherwise take the first part, process the rest, and combine the results.
 
 This was a different way of writing programs from the numerical style that had made FORTRAN successful. The program's main objects were not arrays of numbers but expressions whose form mattered. A recursive function could mirror the structure it consumed. If the expression had a head and a tail, the function could have a head case and a tail recursion. If the expression was atomic, the function could stop or look up a property. The program's control structure followed the data's shape.
