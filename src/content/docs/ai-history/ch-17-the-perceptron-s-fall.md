@@ -308,6 +308,12 @@ computations in some abstract sense, but still have little chance of solving a
 high-order problem efficiently. A big bag of possible features is not the same
 as the right representation.
 
+:::note[The 1969 hinge]
+> "But we do believe that significant learning at a significant rate presupposes some significant prior structure."
+
+The critique was not anti-learning; it shifted the burden from trainable weights to architecture and task-matched features.
+:::
+
 That argument was not anti-AI. It was a demand for theory. It said that learning
 machines could not be judged only by small demonstrations or by biological
 analogy. They needed mathematical accounts of what their architectures could
@@ -515,4 +521,5 @@ most of AI chose not to walk through it.
 :::note[Why this still matters today]
 Every modern deep-learning system still answers the question Minsky and Papert posed: what prior structure makes learning tractable? Convolutional layers encode spatial locality and translation invariance. Attention mechanisms build a different structure for sequence context. Scaling laws depend on the relationship between data, parameters, and compute. The specific architecture of the perceptron lost, but the argument from the perceptron controversy — that trainable weights alone do not guarantee useful generalization — remains the working assumption behind every architecture choice in contemporary machine learning.
 :::
+
 
