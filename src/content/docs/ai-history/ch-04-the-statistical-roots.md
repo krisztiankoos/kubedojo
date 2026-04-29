@@ -5,6 +5,72 @@ sidebar:
   order: 4
 ---
 
+:::tip[In one paragraph]
+In 1906, Andrei Markov refuted Pavel Nekrasov's free-will-by-statistics argument by proving the Weak Law of Large Numbers extends to two-state chains in which successive trials are not independent. Seven years later, on January 23, 1913 (o.s.), he hand-counted 20,000 vowels and consonants in Pushkin's *Eugene Onegin* to give the theorem an empirical demonstration. Shannon adopted the Markoff-process formalism in 1948 via Fréchet — the conceptual lineage to language models is real, the bibliographic citation is indirect.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Andrei Markov | 1856–1922 | Petersburg mathematician; took over Chebyshev's probability course on his retirement in 1883; published the 1906 chain-dependence proof in the Kazan Bulletin and the 1913 *Eugene Onegin* analysis at the Imperial Academy of Sciences. The chapter's protagonist. |
+| Pavel Nekrasov | 1853–1924 | Moscow mathematician with a theological-seminary background; the 1902 paper Markov read as arguing pairwise independence is necessary for the Weak Law of Large Numbers — the "abuse of mathematics" Markov set out to refute. |
+| Pafnuty Chebyshev | 1821–1894 | St. Petersburg mathematician; published a broader proof of the Weak Law of Large Numbers than Bernoulli's; mentor to Markov; passed his probability course to Markov on his 1883 retirement. |
+| Aleksandr Chuprov | 1874–1926 | Petersburg statistician; long-running correspondent of Markov; the carrier of Markov's "abuse of mathematics" and "concerned only with questions of pure analysis" sentences (preserved in Ondar 1981). |
+| Maurice Fréchet | 1878–1973 | French mathematician; his 1938 *Méthode des fonctions arbitraires* is the work Shannon 1948 footnote 6 cites for "detailed treatment" of Markoff processes — the bibliographic bridge between Markov and Shannon. |
+| Claude Shannon | 1916–2001 | Bell Labs mathematician; "A Mathematical Theory of Communication" (BSTJ, 1948) §3 "The Series of Approximations to English" runs n-gram approximations on English text using the Markoff-process formalism. Reaches Markov via the genus name, not direct citation. |
+
+</details>
+
+<details>
+<summary><strong>Timeline (1902–2006)</strong></summary>
+
+```mermaid
+timeline
+    title From Nekrasov's free will to Shannon's English approximations
+    1902 : Nekrasov publishes the free-will-by-statistics argument (Moscow)
+    1906 : Markov publishes the 2-state chain proof in the Kazan Bulletin (counterexample to Nekrasov)
+    1907 : Markov's six-year, eight-paper purely theoretical chain-dependence series begins
+    1912 : Heinrich Liebmann's German translation of Markov's Calculus of Probabilities published
+    1913 : Jan 23 (o.s.) — Markov delivers the Onegin lecture at the Imperial Academy of Sciences (Bernoulli Ars Conjectandi bicentenary)
+    1922 : Markov dies in Petrograd
+    1924 : Posthumous 4th edition with Aksakov 100,000-letter analysis (appendix); Nekrasov dies
+    1933 : Kolmogorov's Grundbegriffe recasts probability theory in measure-theoretic language
+    1938 : Fréchet publishes Méthode des fonctions arbitraires (Paris)
+    1948 : Shannon's A Mathematical Theory of Communication adopts the Markoff process via Fréchet
+    1955 : Morris Halle (MIT) circulates an unpublished English translation of the Onegin paper
+    2006 : David Link et al. publish the first widely available English translation in Science in Context
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- **Weak Law of Large Numbers (WLLN)** — The theorem that, for an arithmetic average over many trials, the average converges in probability to the expected value. Bernoulli proved a special case in 1713; Chebyshev gave a broader version. Markov's 1906 paper showed it still holds when successive trials depend on each other in a chain.
+- **Independence (of random variables)** — Two random variables are *independent* if knowing one tells you nothing about the other. Coin flips are the textbook example. Nekrasov, as Markov read him, argued that the WLLN held only for independent variables; Markov's 1906 paper supplied a counterexample.
+- **Markov chain** — A sequence of random states where the probability of the next state depends only on the current one (first-order chain) — or, in higher orders, only on the last $n$ states. Markov's 1906 proof was for a two-state first-order chain with all four transition probabilities strictly between 0 and 1.
+- **Transition probability** — In a Markov chain, the probability of moving from one state to a specified next state. Markov's *Onegin* analysis estimated, for example, that the probability of a vowel after a consonant in Pushkin's Cyrillic was $p_0 \approx 0.663$; the probability of a vowel after a vowel was $p_1 \approx 0.128$.
+- **Dispersion coefficient** — A goodness-of-fit statistic: the ratio of empirical variance to the variance the chain model predicts. A coefficient near 1 means the model fits; departure from 1 measures how much the data's variability deviates from what the model would produce. For the *Onegin* counts the empirical value was 0.208; the second-order chain predicted 0.195 (good fit), the first-order chain predicted 0.300 (worse fit).
+- **N-gram** — A contiguous sequence of $n$ tokens (here, letters or words) drawn from a text. Shannon's 1948 §3 ran first-, second-, third-order, and word-level n-gram approximations to English. *N*-grams are the simplest predictive language model and the direct descendant of Markov's count-and-condition method on Pushkin.
+
+</details>
+
+<details>
+<summary><strong>The math, on demand</strong></summary>
+
+Markov's 1906 proof and 1913 demonstration both run on a short list of definitions and counts.
+
+- **Two-state first-order chain.** If the current state is A, the next state is A with probability $p_1$ and B with probability $1 - p_1$. From B, A with probability $p_0$ and B with probability $1 - p_0$. Markov 1906 proved the WLLN holds for any chain with $0 < p_0, p_1 < 1$.
+- **Independence test.** Under independence the two transition probabilities coincide: $p_1 = p_0$. Markov's diagnostic was the gap $\delta = p_1 - p_0$; the larger $|\delta|$, the deeper the dependence between successive trials.
+- **Onegin block variance.** Average vowels per 100-letter block: $43.19$, so the unconditional vowel probability $p \approx 0.432$. Sum of squared deviations $1022.8$ over $200$ blocks gives variance $5.114$ and standard deviation $\sigma \approx 2.26$.
+- **Onegin first-order counts.** Out of $8{,}638$ vowels in $20{,}000$ letters, $p_1 = 1{,}104 / 8{,}638 \approx 0.128$ (a vowel follows a vowel). Out of the consonant-following positions, $p_0 \approx 0.663$ (a vowel follows a consonant). Therefore $\delta = p_1 - p_0 = -0.535$ — a substantial separation from independence.
+- **Second-order chain.** Conditioning on the previous *two* letters yields four transition probabilities $p_{1,1}, p_{1,0}, p_{0,1}, p_{0,0}$. Markov found $p_{1,1} \approx 0.104$ — after two vowels in a row, the chance of a third vowel is *lower* than after just one ($0.104 < p_1 = 0.128$), and far below the unconditional $p \approx 0.432$.
+- **Dispersion coefficient as model fit.** The empirical coefficient was $0.208$; the second-order chain predicted $0.195$, the first-order chain $0.300$. The closer the model's prediction to the empirical value, the better the fit — so the chain of dependence in Pushkin's prose extends at least one letter back.
+
+</details>
+
 Russia at the turn of the twentieth century held two empires of probability theory, separated by the Pulkovo meridian and a long-running dispute over what mathematics was permitted to claim about human action. On one side stood St. Petersburg University, the secular, republican heir to a mathematical lineage stretching from Jakob Bernoulli's 1713 *Ars Conjectandi* through Pafnuty Chebyshev, who had published a broader proof of the Weak Law of Large Numbers than Bernoulli's own and whose probability-theory course passed to a single successor on his retirement in 1883. On the other stood Moscow University, an ecclesiastical stronghold whose faculty was closely aligned with the Russian Orthodox Church.
 
 The spark for what would become the mathematical foundation of language modeling was struck in Moscow. Pavel Alekseevich Nekrasov, a mathematician on the Moscow faculty who had begun his education at a theological seminary, published a paper in 1902. Nekrasov's claim, according to Andrei Andreevich Markov's interpretation, was that the pairwise independence of summands was both necessary and sufficient for the Weak Law of Large Numbers to hold. The implication of this argument was sweeping. As paraphrased by the science writer Brian Hayes, the popular form of the argument ran like this: voluntary acts are independent, like coin flips; the law of large numbers applies only to such independent events; data gathered by social scientists, such as crime statistics, conform to the law of large numbers; therefore, the underlying acts of individuals must be independent and voluntary. Free will, in Nekrasov's formulation, was mathematically demonstrable.
@@ -52,3 +118,7 @@ What lay between Markov's pencil-and-paper Pushkin tables and any practical use 
 Markov did not foresee text generation. He proved a theorem against a theological misuse of mathematics, gave it a literary demonstration, and walked away. The chain of transmission to twenty-first-century language modeling is real, but it is deeply indirect — running through Liebmann, Kolmogorov, and Fréchet for the formalism, through Shannon's 1948 §3 for the n-gram demonstration on English, and through a fifty-year delay before published English access to the *Onegin* paper itself. It would take the Cold War theory of communication explored in Chapter 9, and the eventual emergence of the statistical underground covered in Chapter 30, to turn a mathematical counterexample into the foundation of a new artificial intelligence.
 
 One last clarification belongs at the close. The autoregressive language models of the early twenty-first century are statistical predictors of the next token in a sequence, and to that extent they share a family with Markov's count-and-condition method on Pushkin. They are not, however, Markov chains in any technically meaningful sense. The Markov property — that the next state depends only on the current one, or in higher orders only on the last n — is precisely what a transformer's full-context attention mechanism violates. The 1906 theorem says something specific about a class of stochastic process; modern language models are not in that class. The lineage from Markov to large language models is genuine, but it runs through the *idea* of statistical conditioning on prior text, not through the *machinery* of finite-state chains. That indirection is itself the chapter's point.
+
+:::note[Why this still matters today]
+Every modern language model is, in spirit, a count-and-condition machine: it estimates the probability of the next token given the prior context — the same task Markov performed by hand on Pushkin in 1913. The Markov property does not literally hold for transformer-based models, whose attention mechanism reads the entire context window, so the technical machinery has changed. But the *idea* of statistical conditioning on prior text is the inheritance Markov bequeathed. The chapter's quieter point — that Markov did not foresee text generation, that the bibliographic chain to Shannon ran through Fréchet rather than direct citation, and that the *Onegin* paper waited 93 years for an English translation — is the historiographical correction worth keeping.
+:::
