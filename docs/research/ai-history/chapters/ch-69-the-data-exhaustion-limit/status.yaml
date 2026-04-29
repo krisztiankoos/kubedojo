@@ -1,8 +1,8 @@
-status: prose_ready
+status: accepted
 owner: Codex
 part: 9
 chapter: 69
-review_state: dual_cross_family_approved
+review_state: prose_accepted_after_cross_family_fixes_2026-04-29
 last_updated: 2026-04-29
 green_claims: 20
 yellow_claims: 1
@@ -25,7 +25,29 @@ verdicts:
   resolved: READY_TO_DRAFT_WITH_CAP
   resolved_word_cap: 6000
   resolution_rule: dual_cross_family_verdict_with_cap
+prose_review:
+  status: fixes_applied
+  claude:
+    model: claude-opus-4-7
+    date: 2026-04-29
+    verdict: NEEDS_FIX_AND_MERGE
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/599#issuecomment-4348014164
+  gemini:
+    model: gemini-3.1-pro-preview
+    date: 2026-04-29
+    verdict: READY_TO_MERGE
+    review_url: https://github.com/kube-dojo/kube-dojo.github.io/pull/599#issuecomment-4348005689
 notes: |
+  Drafted by Codex on 2026-04-29 from the dual-cleared contract. Current draft
+  is 5,008 words and covers Chinchilla's data-scaling turn,
+  Llama 3 and FineWeb trillion-token public examples, Epoch/Villalobos public
+  human-text stock estimates and caveats, data-constrained repetition/filtering
+  tactics, Whisper-style audio/transcript conversion, Self-Instruct and phi-1
+  synthetic-data use, model-collapse risk, and benchmark contamination/freshness.
+  Cross-family prose review found the draft faithful; Codex removed the
+  unanchored GPT-3/Gopher parameter-count aside and kept the Chinchilla scene
+  anchored to Hoffmann et al.
+
   Built from placeholder into an anchored contract on public human-text scarcity,
   data-constrained scaling, audio/video transcription as a data-rich-domain
   path, synthetic-data workarounds, model-collapse risk, and benchmark
