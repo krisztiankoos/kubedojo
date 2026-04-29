@@ -156,7 +156,7 @@ The repurposing of graphics cards for massive parallel matrix multiplication.
 | 46 | The Recurrent Bottleneck | accepted | [yes](./ch-46-the-recurrent-bottleneck/) |
 | 47 | The Depths of Vision | accepted | [yes](./ch-47-the-depths-of-vision/) |
 | 48 | AlphaGo | accepted | [yes](./ch-48-alphago/) |
-| 49 | The Custom Silicon | researching | no |
+| 49 | The Custom Silicon | accepted | [yes](./ch-49-the-custom-silicon/) |
 
 ## Part 8 — The Transformer, Scale & Open Source (2017–2022)
 
