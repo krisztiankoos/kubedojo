@@ -5,6 +5,67 @@ sidebar:
   order: 15
 ---
 
+:::tip[In one paragraph]
+Gradient descent did not arrive in machine learning fully formed. It accumulated across 123 years from four loose pieces: Cauchy's 1847 sketch (no convergence proof, never followed up), Robbins and Monro's 1951 root-finding-under-noise framework, Widrow and Hoff's 1960 IRE WESCON paper that *explicitly* named "the method of steepest descent" on a parabolic loss surface and built it into the lunch-pail Adaline, and Linnainmaa's 1970 master's thesis on rounding errors that gave the first reverse-mode chain-rule machinery for arbitrary computational graphs.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Augustin-Louis Cauchy | 1789–1857 | French mathematician. Presented the three-page note "Méthode générale pour la résolution des systèmes d'équations simultanées" to the Académie des Sciences on 18 October 1847. Promised a follow-up *Mémoire* with convergence proofs that never appeared. |
+| Herbert Robbins | 1915–2001 | American mathematical statistician at the University of North Carolina. Co-author of the September 1951 *Annals of Mathematical Statistics* paper "A Stochastic Approximation Method." |
+| Sutton Monro | 1920–1995 | Robbins's co-author. The 1951 paper proposed a recursive update procedure that drives a parameter toward the root of an unknown monotone function from noisy observations. |
+| Bernard Widrow | 1929– | Stanford EE professor; built the lunch-pail Adaline. Co-author of the August 1960 IRE WESCON paper "Adaptive Switching Circuits." |
+| Marcian E. "Ted" Hoff | 1937– | Widrow's doctoral student in 1960. Co-author on Adaline; later (out of scope here) co-designer of the Intel 4004. |
+| Seppo Linnainmaa | 1945– | Finnish computer scientist. His 1970 University of Helsinki master's thesis on cumulative rounding errors gave the first explicit, efficient reverse-mode chain-rule machinery for arbitrary computational graphs — without ever mentioning neural networks. |
+
+</details>
+
+<details>
+<summary><strong>Timeline (1847–1970)</strong></summary>
+
+```mermaid
+timeline
+    title The four nodes of gradient descent, 1847–1970
+    18 October 1847 : Cauchy presents "Méthode générale pour la résolution des systèmes d'équations simultanées" to the Académie des Sciences in Paris : Three-page note in Comptes Rendus; promised follow-up Mémoire never appeared
+    September 1951 : Robbins and Monro publish "A Stochastic Approximation Method" in Annals of Mathematical Statistics 22(3), pp. 400–407 : Root-finding under noise; vanishing-step-size convergence in probability
+    August 1960 : Widrow and Hoff present "Adaptive Switching Circuits" at the IRE WESCON convention : Adaline; explicit "method of steepest descent" on a parabolic mean-square-error surface; ONR-funded
+    1970 : Linnainmaa submits master's thesis at the University of Helsinki on the cumulative rounding error of an algorithm as a Taylor expansion : First explicit reverse-mode automatic differentiation on arbitrary graphs, with FORTRAN code; never mentions neural networks
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- **Gradient descent** — An iterative procedure for minimising a function: at each step, move the current point in the direction *opposite* to the gradient (the vector of partial derivatives), which is the locally steepest descent direction.
+- **Steepest descent (line-search variant)** — The variant of gradient descent that, at each step, searches along the descent direction for the locally best step length. Cauchy 1847 distinguishes this from a fixed-step variant on the same page.
+- **Stochastic approximation** — Robbins and Monro's 1951 framework: drive a parameter toward the root of an *unknown* monotone function using only noisy observations of the function at chosen levels, with a vanishing step size that dampens noise without freezing the procedure.
+- **LMS rule (Least Mean Square)** — Widrow and Hoff's 1960 learning rule: adjust the Adaline's gains in proportion to the *gradient* of the mean-square error before the final threshold. The first published learning rule for an analog hardware classifier framed explicitly as gradient descent.
+- **Adaline (adaptive linear neuron)** — Widrow and Hoff's lunch-pail-sized analog device. Binary ±1 inputs, linear combination through adjustable gains stored in MAD magnetic-core memory, hard threshold output. Sibling architecture to Rosenblatt's perceptron (Ch14), distinguished by the continuous-error LMS rule.
+- **Reverse-mode automatic differentiation** — Linnainmaa's 1970 contribution: a procedure that computes the partial derivatives of a final output with respect to every intermediate variable in a computational graph at essentially the same cost as the forward computation. The machinery later instantiated by neural-network backpropagation (Ch24).
+- **Computational graph** — The dependency structure of an algorithm, drawn as nodes (intermediate variables) and edges (the elementary operations producing them). Linnainmaa's reverse-mode procedure walks this graph backward to accumulate derivatives.
+
+</details>
+
+<details>
+<summary><strong>The math, on demand</strong></summary>
+
+The four nodes can be stated compactly. None of these formulae appears in only one of the chapter's sources; together they show what each scene contributed.
+
+- **Cauchy's 1847 step.** For $u = f(x, y, z, \dots)$ with partial derivatives $X, Y, Z, \dots$ at the current point and a small positive $\theta$, Cauchy proposed increments $\alpha = -\theta X,\ \beta = -\theta Y,\ \gamma = -\theta Z,\ \dots$ — the first published descent rule.
+- **Cauchy's two variants on the same page.** The line-search variant minimises $\Theta = f(x - \theta X,\ y - \theta Y,\ z - \theta Z,\ \dots)$ along the descent direction; the steepest-descent-proper variant fixes $\theta$ by the univariate stationarity condition $\Theta'_\theta = 0$.
+- **Cauchy's least-squares extension.** A system of equations $u = 0,\ v = 0,\ w = 0,\ \dots$ becomes the single non-negative target $u^2 + v^2 + w^2 + \dots$, attacked by the same iteration.
+- **Robbins–Monro step-size conditions.** Later expositions write the convergence-in-probability requirement as $\sum c_n = \infty$ and $\sum c_n^2 < \infty$ — large enough that the procedure does not freeze, small enough that noise washes out.
+- **Widrow–Hoff LMS rule (1960).** With $a_1, \dots, a_n$ the adjustable gains, the rule changes each gain in proportion to the *gradient of the mean square error* with respect to that gain — the parabolic surface in gain-space the chapter pivots on.
+- **Widrow–Hoff time constant.** For the 4×4-input Adaline, the per-pattern step shrinks the error magnitude by a factor of $1/17$; the one-pattern-at-a-time time constant is $\tau = n + 1 = 17$ patterns. Steepest descent acquires a measurable physical pace.
+
+</details>
+
+## The Note Cauchy Never Followed Up
+
 The idea now known as gradient descent did not arrive in the study of learning machines fully formed. It was not the sudden invention of a single mind working on artificial intelligence, nor was it the product of a unified research program aimed at optimizing complex models. Instead, the concept accumulated across a hundred and twenty-three years from four loosely connected, historically distinct pieces of work. It began as a three-page sketch by a French mathematician proposing an iterative technique for calculating the orbits of heavenly bodies. A century later, it was adapted by mathematical statisticians to drive a parameter toward an unknown root under conditions of noise. Before the 1960s had begun, the technique was wired into an analog hardware classifier that explicitly named the method as it searched a parabolic error surface. Finally, at the dawn of the 1970s, the chain-rule machinery required to compute the gradient through arbitrary computational graphs was codified in a master's thesis about rounding errors. None of these researchers believed they were inventing neural network training. The engine of modern machine learning is an accumulation of historical accidents, bridging deterministic astronomy, applied statistics, electrical engineering, and numerical analysis.
 
 On October 18, 1847, Augustin-Louis Cauchy presented a brief note to the Académie des Sciences in Paris. Published in the *Comptes Rendus de l'Académie des Sciences* under the title "Méthode générale pour la résolution des systèmes d'équations simultanées," the three-page communication was motivated not by abstract optimization, but by the practical demands of contemporary astronomy. According to the historical documentation of optimization researcher Claude Lemaréchal, Cauchy noted that astronomical calculations of the period were normally very voluminous. Cauchy sought a more direct way to compute the orbit of a heavenly body. Rather than reducing the complex differential equations that governed celestial motion, he proposed treating the six elements of the orbit themselves as the unknown variables to be solved for simultaneously.
@@ -25,6 +86,8 @@ Crucially, Cauchy did not provide a rigorous proof that his iterative method wou
 
 Within the context of Cauchy's vast mathematical output, the 1847 note was a marginal contribution. Cauchy was producing a paper nearly every week, with his central and enduring work focused on analysis, complex functions, mechanics, and other parts of nineteenth-century mathematics. The gradient note was not a masterpiece of his career; it was a pragmatic sketch that he abandoned. Yet, it stands as the published-on-paper origin point of the mathematical technique that would eventually reshape computational learning.
 
+## Robbins, Monro, and the Stochastic Bridge
+
 The deterministic descent method Cauchy sketched assumed that the function and its exact partial derivatives could be evaluated perfectly at any point. When learning from empirical data, however, exact gradients are rarely available; the system must instead rely on noisy, imperfect observations. The conceptual bridge between Cauchy's pure mathematics and the reality of learning from data was built in September 1951, when Herbert Robbins and Sutton Monro published "A Stochastic Approximation Method" in *The Annals of Mathematical Statistics*.
 
 Robbins and Monro were operating in the environment of mid-century applied mathematical statistics, where experiments often involved physical sampling, clinical trials, quality-control measurements, or response-curve estimation. The problem they framed was not one of multidimensional surface optimization, but of root-finding under noise. They posited a monotone, unknown regression function $M(x)$. The experimenter's goal was to find the specific level $x^*$ where the function equals a given constant $\alpha$. The severe constraint was that the experimenter could not evaluate $M(x)$ directly; they could only take successive noisy observations of the function at chosen levels $x_1, x_2, \dots$, one at a time.
@@ -34,6 +97,8 @@ This is a different picture of computation from Cauchy's. The central object is 
 To solve this, Robbins and Monro proposed a recursive update procedure that would drive the sequence of guesses $x_n$ toward the true root $x^*$ in probability. The critical mechanism that allowed their procedure to converge despite the constant injection of experimental noise was a vanishing step-size sequence. Under the restrictions of their stochastic-approximation setup, the step sizes had to remain large enough for the procedure not to freeze too early, but small enough for the effects of noise to wash out. In later expositions, this balance is usually written as the dual requirement that the sum of the step sizes diverges ($\sum c_n = \infty$) while the sum of their squares converges ($\sum c_n^2 < \infty$).
 
 The 1951 paper does not use the word "gradient," nor does it mention neural networks, which did not yet exist as a formalized computational paradigm. It is strictly a root-finding paper based on noisy observations. However, by demonstrating that an iterative update rule could provably converge on an unknown target even when every individual step was corrupted by noise, Robbins and Monro provided the exact mathematical framework that the gradient-descent concept later inherited. Modern hindsight routinely applies the label "stochastic gradient descent" to their discovery, but historically, they built the stochastic bridge without knowing what algorithmic traffic would eventually cross it.
+
+## Widrow, Hoff, and the Lunch-Pail Adaline
 
 The translation of these abstract mathematical concepts into explicitly named learning algorithms on physical hardware occurred in August 1960. At the IRE WESCON convention, Stanford University electrical engineering professor Bernard Widrow and his doctoral student Marcian E. Hoff presented a paper titled "Adaptive Switching Circuits." Supported by a contract with the Office of Naval Research at the Stanford Department of Electrical Engineering, their paper introduced a built physical device that merged learning theory with contemporary analog electronics.
 
@@ -65,6 +130,8 @@ That difference should not be exaggerated into a rivalry or a clean victory. The
 
 Yet, the Adaline was fundamentally a single-layer device. It computed a direct linear combination of its inputs. To apply the method of steepest descent to deeper, multi-stage networks where the inputs are themselves the outputs of previous layers, the algorithm requires a way to efficiently calculate the chain rule of calculus through an arbitrary graph of operations. 
 
+## Linnainmaa and the Chain Rule on Arbitrary Graphs
+
 The machinery to accomplish this was formalized in 1970 by Seppo Linnainmaa at the University of Helsinki. Linnainmaa's master's thesis, written in Finnish under the title "The representation of the cumulative rounding error of an algorithm as a Taylor expansion of the local rounding errors," had nothing to do with artificial intelligence or learning hardware. It was an investigation into how floating-point rounding errors propagate through complex numerical algorithms.
 
 That origin is important. Linnainmaa was not trying to solve the credit-assignment problem in a multilayer neural network. He was asking how errors introduced locally by finite-precision arithmetic accumulate through an algorithm. To answer that question, the algorithm itself had to be treated as a structured object: a sequence of elementary operations, with intermediate quantities depending on earlier intermediate quantities. Once an algorithm is represented that way, the chain rule becomes a procedure that can move through the dependency structure. The later neural-network interpretation depends on this representational step, but it was not the setting in which the step first appeared.
@@ -76,6 +143,8 @@ The conceptually decisive property of Linnainmaa's algorithmic machinery, restat
 Schmidhuber's history places Linnainmaa's abstraction downstream of a cluster of optimal-control research from the early 1960s. Researchers working within the framework of Euler-Lagrange equations and the Calculus of Variations, including Henry J. Kelley in 1960, Arthur E. Bryson in 1961, and Stuart E. Dreyfus in 1962, had developed methods for optimizing multi-stage dynamic systems. Dreyfus's 1962 paper, in particular, is presented in that history as a simplified derivation using the chain rule only. The point is not that these optimal-control researchers were secretly writing neural-network algorithms. It is that multistage systems had already forced mathematicians and engineers to think about how derivative information travels backward through a sequence of dependent operations.
 
 Linnainmaa generalized that reverse movement of derivative information into an abstract procedure applicable to arbitrary computational graphs. The shift is subtle but decisive. A flight path, a control policy, and a numerical algorithm can all be drawn as chains of dependent operations. Once the graph itself is the object, the same derivative machinery can operate without caring whether the graph represents a trajectory, a rounding-error calculation, or, later, a layered neural network. Crucially, Linnainmaa did this entirely without reference to neural networks.
+
+## The Modern Reinterpretation, and Where Ch15 Stops
 
 The gradient descent concept, as it is understood today, is a synthesis of these isolated discoveries. In modern reading, the perceptron learning rule and the Adaline LMS rule can both be understood as instances of stochastic gradient descent operating on different loss surfaces. The perceptron rule can be read as descent on a piecewise-linear loss function, while the Adaline rule descends a squared-error loss function.
 
@@ -90,3 +159,7 @@ The history of gradient descent is therefore an accumulation of partial tools. C
 Each step removed a different obstacle. Cauchy answered the local-direction question: which way should an approximate solution move if the function is differentiable? Robbins and Monro answered the noise question: how can a recursive procedure keep learning when each observation is unreliable? Widrow and Hoff answered the hardware-learning question: how can an adaptive classifier turn error into physical coefficient changes? Linnainmaa answered the graph question: how can all the necessary derivatives be computed efficiently when the computation has many dependent stages? Modern machine learning needs all four answers, but history delivered them in separate disciplines.
 
 None of these four milestones were intended as a comprehensive algorithm for training artificial neural networks. The realization that Linnainmaa's reverse-mode chain rule could be applied specifically to neural networks to train multiple layers of representations was first published by Paul Werbos in 1981, several years before the technique was widely popularized. That later chain, running from reverse-mode automatic differentiation into neural-network backpropagation, belongs to Chapter 24. Here, the story stops at the hinge: by 1970, the pieces existed, but they had not yet been assembled into the familiar training algorithm for multilayer networks.
+
+:::note[Why this still matters today]
+Every gradient-descent step in every modern training run — every SGD update, every Adam moment, every backpropagated weight change in every neural network — descends from these four nodes. The chapter's discipline matters: Cauchy gave the iteration; Robbins and Monro gave it convergence under noise; Widrow and Hoff gave the *first explicit gradient-method framing* on physical analog hardware; Linnainmaa gave the *machinery* to compute the gradient through any computational graph. None of the four claimed to have invented "neural network training." The unity belongs to the later mathematical reconstruction, not to a single historical project unfolding with one destination in mind.
+:::
