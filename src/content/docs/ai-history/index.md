@@ -154,7 +154,7 @@ The repurposing of graphics cards for massive parallel matrix multiplication.
 | 44 | The Latent Space | accepted | [yes](./ch-44-the-latent-space/) |
 | 45 | Generative Adversarial Networks | accepted | [yes](./ch-45-generative-adversarial-networks/) |
 | 46 | The Recurrent Bottleneck | accepted | [yes](./ch-46-the-recurrent-bottleneck/) |
-| 47 | The Depths of Vision | researching | no |
+| 47 | The Depths of Vision | accepted | [yes](./ch-47-the-depths-of-vision/) |
 | 48 | AlphaGo | researching | no |
 | 49 | The Custom Silicon | researching | no |
 
