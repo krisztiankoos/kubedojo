@@ -129,6 +129,12 @@ GPS, the General Problem Solver, was not simply Logic Theorist with a broader ti
 
 In the 1959 account, Newell, Shaw, and Simon described GPS-I as a digital-computer program for investigating intelligent, adaptive, and creative behavior by synthesis. That phrase signals the method: build a program that exhibits the behavior, then study what the construction reveals. By 1961, Newell and Simon framed GPS even more explicitly as a program that simulates human thought, developed in relation to protocol data from people solving problems. This was the pivot from performance alone toward cognitive simulation.
 
+:::note[GPS as synthesis]
+> "Our principal means of investigation is synthesis: programming large digital computers to exhibit intelligent behavior..."
+
+The methodological wager: GPS was built as an instrument for studying problem solving, not just as a solver.
+:::
+
 GPS represented a problem in terms of objects, operators, and differences. An object was a state or expression in the task environment. An operator was an action that could transform one object into another. A difference was a way of describing how the current object diverged from the desired object. Problem solving became a disciplined cycle: identify the difference, choose an operator that might reduce it, and create whatever subgoal is necessary to make that operator applicable.
 
 This pattern is usually called means-ends analysis. Its appeal is easy to see. Suppose the current state and the goal state differ in some respect. Rather than search blindly through every possible operator, the system asks which operator is associated with reducing that kind of difference. If the operator cannot yet be applied, the system does not simply give up. It sets a subgoal: change the situation so the operator becomes feasible. That subgoal may generate another subgoal, creating a recursive structure of problem solving.
