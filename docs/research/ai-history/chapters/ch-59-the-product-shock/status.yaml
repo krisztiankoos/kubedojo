@@ -1,8 +1,8 @@
-status: prose_ready
+status: prose_review
 owner: Codex
 part: 9
 chapter: 59
-review_state: dual_cross_family_verdict_accepted
+review_state: prose_drafted_pending_cross_family_review
 last_updated: 2026-04-29
 green_claims: 14
 yellow_claims: 4
@@ -26,6 +26,11 @@ verdicts:
   resolved_word_cap: 5700
   resolution_rule: dual_cross_family_verdict_with_cap
 notes: |
+  Drafted by Codex on 2026-04-29 from the dual-cleared contract. Draft stays
+  inside the product/interface shock: ChatGPT research preview, adoption
+  caveats, institutional moderation/education reaction, Plus/API/Search race,
+  and GPT-4 aftershock. Ch60 retains RAG/plugins/tool use/agents.
+
   Built from an empty/scrubbed skeleton into a capacity_plan_anchored contract.
   Core anchors are official OpenAI product pages (ChatGPT, Plus, GPT-3.5 Turbo
   API, GPT-4), official Microsoft and Google product/partnership posts, Stack
