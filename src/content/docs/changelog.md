@@ -6,16 +6,19 @@ sidebar:
   label: "What's New"
 ---
 
-## April 29, 2026 — AI History Part 1 Reader Aids Released
+## April 29, 2026 — AI History Book: Part 1 is Reader-Ready
 
-### Part 1 Now Reader-Ready (Chapters 1–9)
-The first nine chapters of the AI History book are released with the full reader-aid layout. Each chapter (Ch1 *The Laws of Thought* through Ch9 *The Memory Miracle*) now carries a one-paragraph TL;DR, a six-row cast of characters, a Mermaid timeline, a five-to-seven-term plain-words glossary, and a closing "Why this still matters today" aside — added above and below the prose without modifying a single line of the underlying body. Ch1 keeps its math-on-demand sidebar; Ch4 adds one for Markov-chain transition probabilities and the Onegin counts; Ch3 lands one Tier-3 plain-reading callout for theorem 17b's absorption law (the only candidate that survived the per-chapter Codex adversarial review).
+The first nine chapters of the [AI History book](/ai-history/) are polished and ready to read end-to-end. Part 1 covers the mathematical foundations of AI from the 1840s through the early 1950s — Boole's algebra of thought, Turing's universal machine, Shannon's bridge from logic to circuits, Markov's statistical chains, McCulloch and Pitts on neural calculus, the cybernetics movement, Walter's electronic tortoises, von Neumann's stored program, and the magnetic-core memory that made it all run.
 
-### Right-Nav Fix Across Part 1
-Eight of nine Part 1 chapters lacked the `##` section headers that drive Starlight's right-side table of contents — they showed only "Overview" with no scene navigation. Section headers are now in place at every `brief.md` scene boundary on Ch1, Ch3, Ch4, Ch5, Ch6, Ch7, Ch8, and Ch9 (Ch2 was unaffected). Each chapter now exposes 3–4 named scenes in the right rail, matching the pattern of Ch10–Ch14 and Ch17 onward.
+### What's new for readers
 
-### Tier 3 Calibration
-The Tier 3 adversarial review workflow (Claude proposes, Codex reviews) ran on every Part 1 chapter. Out of 26 candidates total, 3 landed (Ch1: 2 of 5; Ch3: 1 of 3; Ch2 and Ch4–Ch9: 0 of 3 to 0 of 4 each). Refusal is the calibrated default when the prose carries inline plain-readings of dense paragraphs and quote-worthy sentences are already framed in-prose.
+- **One-paragraph summaries** open every chapter, so you can decide in 30 seconds whether to dive in.
+- **Cast of characters, timeline, and plain-words glossary** are tucked inside each chapter — collapsed by default, one click to expand. Useful for keeping six engineers and three institutions straight on a long flight.
+- **"Why this still matters today"** closes each chapter, connecting the historical material to working modern systems.
+- **Math sidebars** on the chapters that need them (Boole's algebra, Markov's letter counts), so the equations are there if you want them and out of the way if you don't.
+- **Section navigation** in the right sidebar of every chapter — jump straight to the scene you want.
+
+[Start with Chapter 1 →](/ai-history/ch-01-the-laws-of-thought/)
 
 ---
 
