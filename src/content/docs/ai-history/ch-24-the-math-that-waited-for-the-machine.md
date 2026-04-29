@@ -190,6 +190,10 @@ errors it helped produce. The same pattern repeats layer by layer. Each weight
 update is based on two facts: what arrived during the forward pass, and how
 sensitive the final error is to that connection during the backward pass.
 
+:::tip[Plain reading]
+An output unit gets a direct grade: "your contribution changed the final error by this much." A hidden unit has no direct target, so backpropagation builds its signal from the downstream units it fed: add up their error signals weighted by the outgoing connections, then scale that by how responsive the hidden unit was at that moment. That constructed signal is what lets hidden-layer weights be updated from the same forward-pass activity.
+:::
+
 Rumelhart, Hinton, and Williams were not simply saying "use calculus." They
 described a procedure: a forward pass through the network, a backward pass
 computing error signals, and a generalized delta rule that could adjust
