@@ -93,6 +93,12 @@ On its 44th move, Deep Blue played 44.Rxd3, a "totally illogical" rook capture t
 
 Campbell later offered a cautious interpretation of what followed. Kasparov's team, trying to understand why the machine had made so poor a move, examined alternatives and found that they also lost. From that, Campbell believed, they may have inferred that Deep Blue had searched thirty or forty plies ahead, seen that all roads lost, and therefore played any move at all. That was not what had happened. The move was not a resigned insight into the future; it was a fail-safe. Still, the misunderstanding mattered because it changed the atmosphere around the machine. A random move from a bug could be mistaken for a glimpse of impossible depth.
 
+:::note[Campbell's caution]
+> "They were overestimating Deep Blue's talents here."
+
+Campbell's sentence is evidence for IBM's interpretation of the misreading, not proof of Kasparov's private psychology. The verbatim retrospective preserves the *epistemic limit* of the claim — Campbell believed the team had misread the bug; the inference about Kasparov's state of mind is itself an inference. Source: Newborn 2003, *Deep Blue: An Artificial Intelligence Milestone*, p.151.
+:::
+
 This episode is the hinge between the engineering story and the human story. The bug itself belonged to the ordinary world of large systems: a rare trigger, an incomplete fix, a fall-back behavior, an overnight repair. The interpretation belonged to the psychology of playing against an opaque machine. A human opponent cannot see the search tree, cannot inspect the evaluation function, and cannot know whether a strange move is a mistake, a trap, or the result of deeper calculation. Deep Blue's weakness therefore had a paradoxical effect. Precisely because the bad move was inexplicable at the board, it could be read as strength.
 
 Game 2, played on May 4, became the emotional center of the match because it turned that atmosphere into suspicion. Deep Blue had White in a Ruy Lopez Smyslov Variation. After 35.Bxd6 Bxd6, the machine faced a choice. One candidate, 36.Qb6, looked like the sort of material-grabbing move Kasparov expected from a computer. The other, 36.axb5, was quieter and more positional. The engineering account later reported by Bruce Weber and preserved by Newborn shows that Deep Blue did not choose the subtle move because it had acquired grandmaster taste. It chose it because its search was becoming alarmed by the alternative.
