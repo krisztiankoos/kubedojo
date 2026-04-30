@@ -56,22 +56,23 @@ timeline
 <summary><strong>Architecture sketch</strong></summary>
 
 ```mermaid
-flowchart LR
-    %% Form: flowchart LR — reused from Ch41 (form-lock PR #627). The CUDA programming model
-    %% is a left-to-right data-flow pipeline: host code launches a kernel; the launch expands
-    %% into a grid of blocks; blocks execute across streaming multiprocessors; threads read/write
-    %% shared and global device memory; results are copied back to host. LR reflects this
-    %% sequential data-flow directionality. flowchart TD would imply a pure hierarchy;
-    %% sequenceDiagram would add an unnecessary time-axis. LR is the correct form.
-    A["Host (CPU)\nOrchestrates app;\ncopies data to device"] --> B["Kernel launch\n(grid + block dims\ndeclared by programmer)"]
-    B --> C["Grid\n(many independent\nthread blocks)"]
-    C --> D["Thread block\n(threads cooperate;\nshared memory +\nbarrier sync)"]
-    D --> E["Streaming multiprocessors\n(SMs schedule and\nexecute warps — SIMT)"]
-    E --> F["Device memory\n(global DRAM +\non-chip shared memory)"]
-    F --> G["Read-back\n(results copied\nto host)"]
+flowchart TD
+    %% Form: flowchart TD — REVISED from the Ch41 LR default after Codex Tier 3 review.
+    %% CUDA's grid → block → thread is a nested execution hierarchy with memory scopes
+    %% attached at each level, not a linear data-flow pipeline. TD makes the hierarchy
+    %% legible; LR flattened the threads out of view and put memory at the end as if
+    %% it were a final stage rather than a per-level scope.
+    H["Host (CPU)\nallocates device memory\nlaunches kernel"]
+    H -->|"kernel launch\n(grid + block dims)"| G["Grid\nmany independent\nthread blocks"]
+    G --> B["Thread block\nthreads cooperate via\nshared memory + barriers"]
+    B --> T["Threads\n32-thread warps\nSIMT execution on SMs"]
+    G -.->|"global memory"| GM["Device DRAM\n(per-grid, host-visible)"]
+    B -.->|"shared memory"| SH["On-chip cache\n(per-block)"]
+    T -.->|"registers"| RG["Per-thread"]
+    H <--> GM
 ```
 
-The diagram shows how CUDA interposes a programmer-visible abstraction — the grid/block/thread hierarchy — between the host application and the GPU's physical streaming multiprocessors. Threads inside a block can share data through low-latency on-chip memory; blocks are independent, which is what lets the hardware schedule them across however many SMs the chip provides, and lets future chips with more SMs run the same code faster.
+The diagram makes visible why the same CUDA program runs faster on a chip with more streaming multiprocessors: blocks are independent, so the hardware schedules them across however many SMs the chip provides. The memory hierarchy attaches at the level that owns each scope (registers per thread, shared memory per block, global DRAM per grid) — the price the abstraction pays to preserve that portability across chips.
 
 </details>
 
