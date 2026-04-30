@@ -5,6 +5,71 @@ sidebar:
   order: 44
 ---
 
+:::tip[In one paragraph]
+In 1954, Zellig Harris argued that a word's meaning could be read from the company it keeps. By 1990 that idea had become a matrix-factorisation algorithm (LSA); by 2003 a neural language model (Bengio et al.) embedded it in learned parameters. In 2013, Mikolov, Chen, Corrado, and Dean stripped away the expensive machinery, leaving two log-linear objectives — CBOW and Skip-gram — that converted co-occurrence signals into dense, reusable vectors fast enough to train on billions of tokens.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Zellig S. Harris | 1909–1992 | Linguist; 1954 distributional-structure framework |
+| Yoshua Bengio | 1964– | Lead author, 2003 neural probabilistic language model |
+| Tomas Mikolov | 1986– | Lead author, 2013 Word2Vec papers (CBOW, Skip-gram) |
+| Kai Chen / Greg Corrado / Jeffrey Dean | — | Google co-authors on "Efficient Estimation" and NIPS 2013 paper |
+| Wen-tau Yih / Geoffrey Zweig | — | Microsoft Research co-authors, "Linguistic Regularities" analogy paper |
+| Ilya Sutskever | 1986– | Google co-author, NIPS 2013 negative-sampling paper |
+
+</details>
+
+<details>
+<summary><strong>Timeline (1954–2013)</strong></summary>
+
+```mermaid
+timeline
+    title Word2Vec lineage
+    1954 : Harris publishes "Distributional Structure" — language described through occurrence without meaning or history
+    1990 : Deerwester et al. publish LSA — SVD on a term-document matrix produces a latent semantic factor space
+    2003 : Bengio et al. propose learned distributed word feature vectors inside a neural language model
+    2003 : Bengio et al. AP News training — five epochs on 40 CPUs takes approximately three weeks
+    January 2013 : Mikolov, Chen, Corrado, Dean circulate arXiv:1301.3781 — CBOW and Skip-gram architectures
+    June 2013 : Mikolov, Yih, Zweig present "Linguistic Regularities" at NAACL-HLT — vector-offset analogy evaluation
+    2013 : Mikolov, Sutskever et al. publish NIPS paper — negative sampling, subsampling, phrase vectors
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- **Distributional hypothesis** — the principle that words appearing in similar contexts tend to have similar meanings; the intellectual foundation for co-occurrence-based representations, traced to Harris 1954.
+- **Latent Semantic Analysis (LSA)** — a 1990 technique that applies singular-value decomposition to a term-document matrix to compress it into roughly 100 orthogonal factors, exposing semantic proximity without exact word matching.
+- **Distributed representation** — encoding a concept not as a single symbol but as a pattern across many continuous values; Bengio et al. (2003) placed this inside a language model's learnable parameters.
+- **CBOW / Skip-gram** — the two log-linear architectures in Word2Vec. CBOW predicts a center word from its context; Skip-gram predicts context words from a center word. Both remove the non-linear hidden layer that made earlier models slow.
+- **Negative sampling** — a training shortcut introduced in the 2013 NIPS paper that replaces full-vocabulary softmax with a binary discrimination task: distinguish one true context word from a small set of randomly drawn noise words.
+- **Static embedding** — one fixed vector per vocabulary word, regardless of sentence context; the fundamental architectural constraint of Word2Vec, later superseded by contextual embeddings.
+- **Vector-offset analogy** — the empirical test that word-relation pairs share a roughly constant vector difference, so that King − Man + Woman produces a point near Queen in the trained space.
+
+</details>
+
+<details>
+<summary><strong>The math, on demand</strong></summary>
+
+- **Skip-gram objective (full softmax).** $p(w_O \mid w_I) = \dfrac{\exp(v_{w_O}^{\prime\top} v_{w_I})}{\sum_{w=1}^{W} \exp(v_w^{\prime\top} v_{w_I})}$ — the probability of observing context word $w_O$ given input word $w_I$, normalised over the entire vocabulary $W$; cost is proportional to $W$, which drove the search for cheaper alternatives. Source: S6 (Mikolov et al. NIPS 2013) pp. 2–3.
+
+- **Negative sampling objective.** $\log \sigma(v_{w_O}^{\prime\top} v_{w_I}) + \sum_{i=1}^{k} \mathbb{E}_{w_i \sim P_n(w)}\!\left[\log \sigma(-v_{w_i}^{\prime\top} v_{w_I})\right]$ — replace the vocabulary-wide softmax with a sum over $k$ noise samples drawn from $P_n(w)$; each update checks one positive pair against $k$ negatives rather than all $W$ words. Source: S6 pp. 3–4.
+
+- **Subsampling formula.** $P(\text{discard } w_i) = 1 - \sqrt{\dfrac{t}{f(w_i)}}$ — probability of discarding a training token for word $w_i$ with corpus frequency $f(w_i)$, given threshold $t$; high-frequency words (articles, prepositions) are thinned probabilistically rather than deleted. Source: S6 pp. 4–5.
+
+- **Curse-of-dimensionality bottleneck.** For a language model over sequences of $n$ words from a vocabulary of size $V$, there are up to $V^n$ possible sequences; Bengio et al. illustrate with $V = 100{,}000$, $n = 10$, giving $\approx 10^{50}$ combinations that no training corpus can cover. Distributed vectors share statistical strength across words and reduce the effective dimensionality of the problem. Source: S3 (Bengio et al. 2003) p. 1137.
+
+- **CBOW / Skip-gram training complexity.** Mikolov et al. define model complexity as $O = E \times T \times Q$, where $E$ is epochs, $T$ is training words, and $Q$ is the per-word architecture cost. Removing the non-linear hidden layer collapses $Q$ dramatically; the tradeoff is spent on larger $T$ (more text) rather than a deeper network. Source: S4 (arXiv:1301.3781) pp. 3–4.
+
+- **Vector-offset analogy.** Given word pairs $(a, b)$ and $(c, d)$ sharing a relation, the offset hypothesis predicts $v_b - v_a \approx v_d - v_c$, so $d$ can be found by nearest-neighbour search on $v_b - v_a + v_c$. "Linguistic Regularities" evaluated this on 8,000 syntactic questions and the SemEval-2012 Task 2 semantic battery. Source: S5 (Mikolov, Yih, Zweig 2013) pp. 746–749.
+
+</details>
+
 The understanding that words acquire their operational meaning from the company they keep did not begin with the advent of neural networks. Long before dense vector representations became the default computational substrate for natural language processing, the theoretical foundation for extracting linguistic structure from statistical co-occurrence was laid in structural linguistics. In 1954, Zellig S. Harris published "Distributional Structure" in the journal *WORD*, establishing a formal framework for analyzing language purely through its distributional properties. Harris argued that the description of a language could proceed entirely without any intrusion of other features, explicitly ruling out the necessity of referencing historical etymology or abstract human semantic meaning. Instead, he proposed a strictly empirical definition: the distribution of a linguistic element should be understood simply as the sum of all its environments—the existing array of its co-occurrents within a body of text. In this view, if two words frequently appeared in identical surrounding contexts, they shared a structural relationship that could be formally measured and cataloged. 
 
 That last move was more austere than the later slogan makes it sound. Harris was not offering a psychological theory in which a machine would discover inner meanings; he was describing what could be said from the linguistic record itself. A word's neighbors, substitutions, and recurring positions became evidence. The point was methodological discipline: before importing intention, reference, or etymology, one could first ask what patterns of occurrence were already present in the material. This gave later computational work a narrow but powerful permission. It could treat language as a field of measurable relations without pretending that the measurement exhausted everything speakers know.
@@ -88,3 +153,7 @@ Combined, these engineering optimizations created an extraordinarily efficient p
 Yet, for all its utility, this vector paradigm operated under a fundamental architectural constraint. As subsequent textbook synthesis by Dan Jurafsky and James H. Martin would clarify, these were static embeddings. The system learned exactly one fixed embedding per word in its vocabulary. In the latent space mapped by these 2013 architectures, a single point permanently fused all definitions of a polysemous word into one averaged geometric coordinate. The 2003 neural language model had already recognized the tension created when a word carries multiple senses but receives one point in the representation space. Word2Vec made that point cheaper and more useful; it did not make it context-sensitive.
 
 That boundary is the honest close to the chapter. Word2Vec did not invent distributional meaning, did not make vector arithmetic infallible, and did not give a machine human understanding. Its achievement was narrower, more durable, and more technical. It turned an old idea about co-occurrence, a 1990s matrix factorization tradition, and a 2003 neural language-model insight into fast static embeddings that could be trained on huge corpora, tested by explicit relation benchmarks, and reused as representation infrastructure. Resolving the remaining limitation—allowing a word's vector to shift with the sentence around it—would require abandoning the single-point assumption, marking the boundary where continuous word representations would eventually give way to contextual embeddings.
+
+:::note[Why this still matters today]
+Word2Vec's skip-gram objective and negative sampling remain the reference design for token-level representation learning. The distributional hypothesis it operationalised underlies every embedding layer in modern large language models. The analogy benchmark it popularised still anchors evaluation of semantic geometry in sentence encoders and multilingual models. And the static-versus-contextual boundary it exposed — one fixed point per word, regardless of sentence — defined the next problem that transformer-based architectures were built to solve. Understanding Word2Vec is understanding the floor that every subsequent contextual model stands on.
+:::
