@@ -36,7 +36,7 @@ timeline
        : Submission deadline (September 30)
        : Preliminary results released to participants (October 8)
        : ILSVRC2012 workshop at ECCV (October 12)
-       : Full results released — SuperVision wins by an unprecedented margin (October 13)
+       : Full results released — SuperVision 15.3 % top-5 error vs ISI 26.2 % (October 13)
        : Krizhevsky et al. publish AlexNet paper at NIPS 2012
   2013 : Vast majority of ILSVRC entries use deep convolutional neural networks
   2014 : Almost all ILSVRC teams use CNNs as the basis for their submissions
@@ -58,7 +58,7 @@ timeline
 
 **Dropout:** A regularization method that randomly sets each neuron's output to zero with some probability during training. Prevents the network from relying on fragile patterns among particular units, helping a large model generalize rather than memorize the training set.
 
-**Fisher vector:** A compact encoding that summarizes how a collection of local image descriptors deviates from a statistical model.
+**Fisher vector:** A compact encoding that summarizes how a collection of local image descriptors deviates from a statistical model. In this chapter, it marks the competitive feature-engineering regime AlexNet had to beat.
 
 </details>
 

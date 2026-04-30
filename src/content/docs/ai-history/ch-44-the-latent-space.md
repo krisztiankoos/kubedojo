@@ -46,10 +46,10 @@ timeline
 - **Distributional hypothesis** — the principle that words appearing in similar contexts tend to have similar meanings; the intellectual foundation for co-occurrence-based representations, traced to Harris 1954.
 - **Latent Semantic Analysis (LSA)** — a 1990 technique that applies singular-value decomposition to a term-document matrix to compress it into roughly 100 orthogonal factors, exposing semantic proximity without exact word matching.
 - **Distributed representation** — encoding a concept not as a single symbol but as a pattern across many continuous values; Bengio et al. (2003) placed this inside a language model's learnable parameters.
-- **CBOW / Skip-gram** — the two simplified log-linear architectures introduced in the 2013 Word2Vec papers.
-- **Negative sampling** — a training shortcut introduced in the 2013 NIPS paper that replaces full-vocabulary softmax with a cheaper sampled objective.
+- **CBOW / Skip-gram** — the two simplified log-linear architectures introduced in the 2013 Word2Vec papers. CBOW predicts a center word from its context; Skip-gram predicts context words from a center word.
+- **Negative sampling** — a training shortcut introduced in the 2013 NIPS paper that replaces full-vocabulary softmax with a cheaper task: distinguish one true context word from a small set of randomly drawn noise words.
 - **Static embedding** — one fixed vector per vocabulary word, regardless of sentence context; the fundamental architectural constraint of Word2Vec, later superseded by contextual embeddings.
-- **Vector-offset analogy** — the empirical test that word-relation pairs share a roughly constant vector difference in the trained space.
+- **Vector-offset analogy** — the empirical test that word-relation pairs share a roughly constant vector difference, so that King - Man + Woman produces a point near Queen in the trained space.
 
 </details>
 

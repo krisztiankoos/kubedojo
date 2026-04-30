@@ -14,7 +14,7 @@ Before 2006, harnessing GPU arithmetic for non-graphics work required disguising
 
 | Name | Lifespan | Role |
 |---|---|---|
-| Ian Buck | — | Stanford PhD researcher and GPU-computing abstraction pioneer; joined NVIDIA to help start CUDA (date conflict: NVIDIA bio says 2004, Buck said 2005). |
+| Ian Buck | — | Stanford PhD researcher and Brook project lead; joined NVIDIA to help start CUDA (date conflict: NVIDIA bio says 2004, Buck said 2005). |
 | Pat Hanrahan | — | Stanford graphics professor and Buck's co-author on the 2003 data-parallel computation report and the 2004 Brook SIGGRAPH paper. |
 | John Nickolls | — | NVIDIA director of architecture for GPU computing and public technical explainer of CUDA's programming model. |
 | Michael Garland | — | NVIDIA researcher involved in public technical documentation of CUDA's early programming model. |
@@ -45,10 +45,10 @@ timeline
 <summary><strong>Plain-words glossary</strong></summary>
 
 - **Kernel (CUDA)** — A C-like function written once by the programmer and executed many times by GPU threads.
-- **Grid / thread block / thread** — CUDA's nested labels for grouping parallel work, from a whole launch down to individual execution instances.
+- **Grid / thread block / thread** — CUDA's nested labels for grouping parallel work. A kernel launch specifies a grid of blocks; threads inside a block can share data and synchronize.
 - **SIMT (Single-Instruction, Multiple-Thread)** — CUDA's execution model: the hardware issues the same instruction to many threads at once, each operating on its own data. It differs from classical SIMD in that individual threads can take divergent code paths, at a performance cost.
 - **Shared memory** — A fast scratchpad-style memory space that threads in the same local group can use to cooperate.
-- **Host / device split** — CUDA's term for the CPU-side ("host") and GPU-side ("device") parts of a program and their separate memory spaces.
+- **Host / device split** — CUDA's term for the CPU-side ("host") and GPU-side ("device") parts of a program and their separate memory spaces. Data must be explicitly copied between them, so transfer cost shapes program design.
 
 </details>
 
