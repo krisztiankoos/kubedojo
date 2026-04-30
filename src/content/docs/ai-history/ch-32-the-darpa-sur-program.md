@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-In May 1971, an ARPA-IPTO study group chaired by Allen Newell published a five-year charter for connected speech understanding research. CMU's HARPY met its specifications in September 1976 at 1,011 words and 5% semantic error. But the program's most durable contribution was Section 8.6's call for public data, common tasks, and instrumented measurement — the methodology Charles Wayne re-institutionalised in the mid-1980s and that the statistical-ASR groups inherited.
+In May 1971, an ARPA-IPTO study group chaired by Allen Newell gave connected speech-understanding research a bounded five-year charter. CMU's HARPY met the program's specifications in 1976, but SUR's longer legacy was methodological: public data, common tasks, and instrumented measurement.
 :::
 
 <details>
@@ -14,12 +14,12 @@ In May 1971, an ARPA-IPTO study group chaired by Allen Newell published a five-y
 
 | Name | Lifespan | Role |
 |---|---|---|
-| Allen Newell | 1927–1992 | CMU University Professor; chair of the ARPA-IPTO study group; principal author of the May 1971 charter and its Section 8.6 methodological proposal. |
+| Allen Newell | 1927–1992 | CMU University Professor; chair of the ARPA-IPTO study group and principal author of the May 1971 charter. |
 | John R. Pierce | 1910–2002 | Bell Telephone Laboratories engineer; chaired the 1966 ALPAC report; author of the October 1969 *JASA* letter "Whither Speech Recognition?" |
 | Raj Reddy | b. 1937 | CMU faculty; principal investigator of CMU's SUR contracts; member of the 1971 study group; co-author of the 1979 HARPY chapter. |
 | Bruce T. Lowerre | — | CMU PhD student under Reddy; principal architect of HARPY; April 1976 dissertation; co-author of the 1979 *Trends in Speech Recognition* chapter. |
 | Frederick Jelinek | 1932–2010 | Manager of IBM Yorktown Heights' Continuous Speech Recognition Group from 1972; co-author of the 1983 PAMI paper; first uttered "Whenever I fire a linguist…" in December 1988. |
-| Charles L. Wayne | — | DARPA program manager who, in the mid-1980s, restarted US speech-and-language funding via the "common task method" (NIST as neutral evaluator, shared datasets). |
+| Charles L. Wayne | — | DARPA program manager who restarted US speech-and-language funding around shared evaluation in the mid-1980s. |
 
 </details>
 
@@ -33,7 +33,7 @@ timeline
     1969 : Pierce publishes "Whither Speech Recognition?" in JASA
     1971 : Newell et al. study-group report (May, CMU technical report) : ARPA-IPTO awards SUR contracts to CMU, BBN, SDC
     1971-1976 : SUR program runs as five-year multi-contractor effort
-    1976 : HARPY operational at the 1,011-word task (13 August) : September four-system demonstration — HARPY meets Final Specs
+    1976 : HARPY becomes operational before the September four-system demonstration and meets Final Specs
     1977 : Klatt publishes "Review of the ARPA Speech Understanding Project" in JASA
     1983 : Bahl, Jelinek, Mercer "Maximum Likelihood Approach" in PAMI
     1985 : Mercer at Arden House — "There is no data like more data"
@@ -47,8 +47,8 @@ timeline
 
 - **Speech-understanding system** — A research goal beyond pure transcription: a machine that recognises spoken words *and* extracts enough meaning to carry out a defined task (data retrieval, document lookup) within a constrained vocabulary and grammar.
 - **Final Specifications (Newell 1971)** — The reduced, measurable target adopted by the May 1971 study group: ~1,000 words, an artificial syntax, a quiet room, cooperative speakers of General American dialect, less than 10% semantic error, demonstrable by 1976.
-- **Semantic error** — A scoring rule that counts an utterance wrong only if the system's interpretation would cause the wrong action — not if it merely mis-heard a phoneme. Newell's charter chose this metric over phonetic-purity scores.
-- **Common task method** — Charles Wayne's mid-1980s framework: a defined dataset, a neutral evaluator (NIST), a fixed metric. Multiple research groups submit systems against the same task. Structurally a return to Newell 1971 §8.6.
+- **Semantic error** — A task-level scoring rule that judges whether the system's interpretation would cause the wrong action.
+- **Common task method** — A shared-evaluation framework in which multiple research groups test systems on the same defined task.
 - **Maximum-likelihood decoding** — IBM's framing of speech recognition as recovering the most probable word sequence given an acoustic signal. The probability factors into a *language model* (how likely is this text?) and an *acoustic model* (how likely are these sounds given that text?).
 - **Perplexity** — An information-theoretic measure of task difficulty introduced for ASR by Bahl, Jelinek, and Mercer in 1983. Higher perplexity means the language model leaves more plausible next words at each step. Vocabulary size alone, the IBM group argued, was "practically useless" by comparison.
 - **Forward-Backward Algorithm** — The iterative procedure the IBM group used to estimate the parameters of a hidden-Markov speech model from training data. The same machinery underlies modern HMM training pipelines.

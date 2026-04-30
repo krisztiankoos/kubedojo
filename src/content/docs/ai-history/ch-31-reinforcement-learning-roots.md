@@ -7,7 +7,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-Reinforcement learning became a mathematical field when researchers turned the problem of delayed reward into a precise program: Bellman supplied recursive value for sequential decisions; Samuel showed a game-playing machine improving its own evaluation through experience; Barto, Sutton, and Anderson built an actor-critic controller from sparse failure signals; Sutton's temporal-difference methods let successive predictions teach each other; and Watkins and Dayan gave Q-learning a convergence theorem — bounded, honest, and lasting.
+Reinforcement learning became a mathematical field when researchers turned delayed reward into a precise program for learning from consequences. Dynamic programming, self-play, adaptive control, temporal prediction, and Q-learning gave the field a vocabulary for action, value, exploration, and bounded claims.
 :::
 
 <details>
@@ -17,9 +17,9 @@ Reinforcement learning became a mathematical field when researchers turned the p
 |---|---|---|
 | Richard Bellman | — | Operations-research mathematician; his 1957 Markov decision process paper gave RL its recursive sequential-decision ancestry. |
 | Arthur Samuel | — | IBM researcher; 1959 checkers program demonstrated machine improvement through self-play and evaluation adjustment — an early value-function precursor. |
-| Andrew Barto, Richard Sutton, Charles Anderson | — | Trio whose 1983 IEEE paper used an adaptive critic and associative search element to learn pole-balancing from sparse failure feedback. |
-| Richard Sutton | — | Lead author of the 1988 temporal-difference paper; gave the field a way to assign credit through successive prediction differences rather than only final outcomes. |
-| Christopher Watkins | — | King's College PhD; 1989 thesis framed delayed rewards via Markov decision processes and action values; co-proved Q-learning convergence with Dayan in 1992. |
+| Andrew Barto, Richard Sutton, Charles Anderson | — | Trio whose 1983 IEEE paper made sparse evaluative feedback into a concrete adaptive-control problem. |
+| Richard Sutton | — | Lead author of the 1988 temporal-difference paper; helped turn prediction through time into a learning method. |
+| Christopher Watkins | — | King's College PhD; 1989 thesis formalized learning from delayed rewards; co-proved Q-learning convergence with Dayan in 1992. |
 | Gerald Tesauro | — | IBM researcher; 1995 TD-Gammon paper showed self-play with temporal-difference learning reaching expert backgammon strength, closing the chapter's arc. |
 
 </details>
@@ -32,7 +32,7 @@ timeline
     title Reinforcement Learning Roots, 1957–1996
     1957 : Bellman publishes "A Markovian Decision Process" — dynamic-programming recurrence for sequential decisions
     1959 : Samuel's checkers paper shows a program improving play through evaluation adjustment and self-play experience
-    1983 : Barto, Sutton, and Anderson publish the ASE/ACE pole-balancing actor-critic paper in IEEE Transactions
+    1983 : Barto, Sutton, and Anderson publish on adaptive control from sparse reinforcement in IEEE Transactions
     1988 : Sutton publishes "Learning to Predict by the Methods of Temporal Differences" in Machine Learning
     1989 : Watkins submits Learning from Delayed Rewards thesis at King's College, Cambridge
     1992 : Watkins and Dayan publish "Q-learning" with a convergence proof for restricted Markovian settings
@@ -47,11 +47,11 @@ timeline
 
 - **Delayed reward** — Feedback that arrives only after a sequence of actions, not after each one. The agent cannot know immediately whether a choice was good; it must wait for a consequence that may come many steps later.
 - **Temporal credit assignment** — The problem of deciding which earlier actions deserve credit (or blame) for an outcome that arrives late. Getting this backwards is one way reinforcement learning can fail.
-- **Temporal difference (TD) learning** — A method that updates a prediction by comparing it to the *next* prediction rather than waiting for the final outcome. Each step's estimate bootstraps from the estimate that follows it.
-- **Q-value (action value)** — An estimate of how good it is to take a specific action in a specific state and then continue behaving well afterward. Q-learning builds these estimates from sampled experience, not from a known model.
+- **Temporal difference (TD) learning** — A family of methods that learn from successive predictions over time.
+- **Q-value (action value)** — A learned estimate used to compare possible actions in a state; central to Q-learning.
 - **Markov decision process (MDP)** — A mathematical framework for sequential decisions where the next state depends only on the current state and action, not on the full history. Watkins used MDPs as the formal home for Q-learning.
 - **Exploration vs. exploitation** — The dilemma between trying unknown actions (exploration) and repeating actions known to be good (exploitation). An agent that never explores cannot discover better strategies; one that never exploits wastes what it has learned.
-- **Actor-critic** — An architecture that separates the decision-maker (the actor, which chooses actions) from the evaluator (the critic, which estimates how good the current situation is). Barto, Sutton, and Anderson's 1983 pole-balancer introduced this split to RL.
+- **Actor-critic** — A control architecture that separates choosing actions from evaluating situations.
 
 </details>
 
@@ -531,4 +531,3 @@ The loop this chapter traces — act, observe consequence, update value, act aga
 > abstract-level p.834 claims, Watkins 1989 only within the thesis summary and
 > early framing, and Q-learning only under the convergence conditions stated by
 > Watkins and Dayan.
-
