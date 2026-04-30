@@ -5,6 +5,57 @@ sidebar:
   order: 62
 ---
 
+:::tip[In one paragraph]
+Between 2021 and 2024, frontier AI stopped being text-only. CLIP (2021) and Flamingo (2022) aligned language with images and interleaved video. GPT-4 and GPT-4V (2023) put images into the chat window and exposed new visual risks. Gemini (2023) was framed as jointly trained across image, audio, video, and text. GPT-4o (2024) collapsed speech into real-time interaction. Sora and Veo (2024) pushed generation into video while listing simulator limits. Language stayed the control surface; the model's world became visual, audible, temporal.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Alec Radford et al. (OpenAI CLIP team) | — | Trained image and text encoders on 400M image-text pairs; established natural language as a supervisor for visual concepts. |
+| Jean-Baptiste Alayrac et al. (Flamingo team) | — | Built a visual language model handling arbitrarily interleaved images, videos, and text with free-form text outputs. |
+| OpenAI GPT-4 / GPT-4V teams | — | Shipped GPT-4 as a multimodal model with image and text inputs, then deployed vision through GPT-4V with documented risk surfaces. |
+| Google Gemini team | — | Framed Gemini as trained jointly across image, audio, video, and text with interleaved multimodal inputs. |
+| OpenAI GPT-4o team | — | Delivered the omni interface: text/audio/image/video inputs, text/audio/image outputs, end-to-end training, sub-second audio latency. |
+| OpenAI Sora team / Google Veo team | — | Pushed text-conditional video generation to minute-scale clips while documenting simulator limits, safety filters, and provenance. |
+
+</details>
+
+<details>
+<summary><strong>Timeline (2021–2024)</strong></summary>
+
+```mermaid
+timeline
+    title Multimodal convergence, 2021-2024
+    2021-03 : CLIP paper (400M image-text pairs, language-supervised vision)
+    2022-04 : Flamingo (interleaved image/video/text, free-form text output)
+    2023-03 : GPT-4 Technical Report (image+text inputs, text outputs)
+    2023-09 : GPT-4V System Card (vision deployed, risk surfaces documented)
+    2023-12 : Gemini report (jointly trained across text/image/audio/video)
+    2024-02 : Sora "world simulators" page (text-conditional video, up to 1 min)
+    2024-05-13 : GPT-4o announced (real-time audio/vision/text, ~320 ms avg latency)
+    2024-05-14 : Veo announced (1080p video longer than a minute)
+    2024-08 : GPT-4o System Card (omni I/O, end-to-end, voice risk surfaces)
+    2024-12 : Sora System Card (deployment, red teaming, multimodal moderation)
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- **Multimodal model.** A system that accepts or produces more than one kind of media — for example, text and images, or text plus audio plus video — instead of being limited to a single modality.
+- **Contrastive image-text pretraining.** CLIP's training setup: separate image and text encoders are trained so that matching pairs (a caption and its picture) land near each other in a shared representation space, while mismatched pairs are pushed apart.
+- **Interleaved input.** A prompt that mixes media in order — for example, a screenshot, then a question, then another image — rather than one isolated picture or one block of text. Flamingo and Gemini are described in their reports as supporting interleaved inputs.
+- **Native multimodality.** Used in the Gemini report to mean joint training across image, audio, video, and text in one model family, rather than a text model stitched together with separate specialist systems. Treat as a source-bound term, not a generic adjective.
+- **Spacetime patches.** Sora's representation unit: pieces of video and image latent codes that carry both spatial and temporal information, letting one model handle clips of varying duration, resolution, and aspect ratio.
+- **Three-model voice pipeline.** The earlier ChatGPT Voice Mode setup: one model transcribed audio to text, GPT-3.5 or GPT-4 processed the text, and a third model converted text back to audio. Tone, multiple speakers, background sound, and emotion were lost on the way through.
+- **Image-borne jailbreak.** A prompt-injection attempt that hides instructions inside an image — text written on a sign, a screenshot of a UI, an embedded note — so the model has to decide whether visible text is content to describe, evidence to use, or a command to follow.
+
+</details>
+
 By the mid-2020s, "language model" had become both useful shorthand and an incomplete description. Language was still the control surface. Users typed or spoke requests, and systems often answered in words. But the frontier product was no longer only a text machine. It could inspect images, interpret screenshots, listen to audio, respond with speech, reason over mixed media, and generate video. The chat window had begun to absorb the senses.
 
 This was not just an interface upgrade. It was a category break. A text-only model predicts and generates language. A multimodal system has to map images, audio, video, and text into a shared computational space where they can condition one another. A prompt can become a bundle: a question, a diagram, a screenshot, a photograph, an audio stream, a video clip, and a desired output. The model is asked not only to answer, but to connect media.
@@ -87,6 +138,12 @@ Sora moved the public imagination there. OpenAI described Sora as a text-conditi
 
 The patch idea is important because video does not fit neatly into the same frame as text or a single image. Text can be tokenized into a sequence. Images can be represented through spatial patches or latents. Video needs space and time together. A "spacetime" patch carries a piece of visual sequence, not just a static crop. That lets a model work across media of different lengths and shapes, but it also makes the task harder: the representation has to carry motion and continuity.
 
+:::note
+> Whereas LLMs have text tokens, Sora has visual patches.
+
+This is the source's own tokenizer analogy; it frames patches as a representation choice, not proof of stable physics or causal continuity, which the same page later lists among Sora's simulator limitations.
+:::
+
 Sora's use of diffusion also connects to the earlier image-generation chapter without repeating it. Diffusion had already made image synthesis powerful by learning to reverse noise. Video generation extends the burden: the system must generate plausible denoising trajectories across time. Image diffusion's history sits in Chapter 58; what matters here is that the same family of generative ideas moved into temporal media and exposed new failure modes.
 
 Video is hard because it adds time. A single generated image can be plausible while hiding inconsistencies outside the frame. A video has to preserve identity, motion, geometry, object state, and temporal continuity across many frames. A cup should not morph. A hand should not forget its fingers. A bitten cookie should remain bitten. A character's clothes should not randomly drift unless the scene calls for it. The model is no longer only arranging pixels. It is producing a sequence where the world is expected to persist.
@@ -115,4 +172,10 @@ That collapse made the phrase "assistant" more literal. The system was no longer
 
 By the end of this arc, AI products no longer asked users to translate everything into a typed prompt before the machine could help. A user could show, speak, point, upload, ask, and watch. That made the systems feel more capable because they met more of the user's world directly. It also made them harder to trust because every modality brought its own failure modes.
 
+:::note[Why this still matters today]
+The interface most people now reach for can read a screenshot, hear a question, and answer in speech because of the convergence this chapter covers. Pointing at a chart instead of describing it, asking a question out loud instead of typing it, and uploading a video clip alongside a prompt are all behaviours the cited reports made standard product expectations. The same convergence keeps multimodal evaluation, voice safety, image-borne prompt injection, and video provenance on every frontier-lab roadmap. "LLM" survives as shorthand, but the systems behind the chat window stopped being only language models years ago.
+:::
+
 Multimodal convergence did not make AI understand the world the way humans do. It made the model's inputs and outputs look more like the world humans inhabit: visual, auditory, temporal, messy, and mixed. That was enough to break the old category.
+
+
