@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-Between 2003 and 2004, Google engineers published two papers — the Google File System (SOSP 2003) and MapReduce (OSDI 2004) — describing production systems that stored and processed hundreds of terabytes across thousands of commodity machines while treating failure as normal. Doug Cutting and Mike Cafarella ported those specifications to Java as Apache Hadoop, splitting it from the Nutch crawler on 28 January 2006. The compute the deep-learning era would later inherit was not built for AI; it was pre-paid by web search.
+Between 2003 and 2004, Google engineers published two papers — the Google File System and MapReduce — describing production systems for storing and processing web-scale data across ordinary machines. Doug Cutting and Mike Cafarella ported those ideas to Java as Apache Hadoop. The compute the deep-learning era would later inherit was not built for AI; it was pre-paid by web search.
 :::
 
 <details>
@@ -18,7 +18,7 @@ Between 2003 and 2004, Google engineers published two papers — the Google File
 | Sanjay Ghemawat | — | Google engineer; lead author of *The Google File System* (SOSP 2003) and co-author of the MapReduce paper. |
 | Howard Gobioff | — | Google engineer; co-author of *The Google File System* (SOSP 2003) with Ghemawat and Leung. |
 | Shun-Tak Leung | — | Google engineer; co-author of *The Google File System* (SOSP 2003) with Ghemawat and Gobioff. |
-| Doug Cutting | — | Author of Lucene (1997); co-creator of Apache Nutch; reporter on Apache JIRA INFRA-700 (28 January 2006) splitting Hadoop out of Nutch; joined Yahoo January 2006. |
+| Doug Cutting | — | Author of Lucene (1997); co-creator of Apache Nutch and Hadoop; joined Yahoo in January 2006. |
 | Mike Cafarella | — | University of Washington graduate student; Cutting's collaborator on Apache Nutch and the Java re-implementation of GFS and MapReduce that became Hadoop. |
 
 </details>
@@ -48,8 +48,8 @@ timeline
 - **Distributed file system** — A file system that stores data across many machines at once, making them appear as one large, reliable store. GFS was Google's version; NDFS (later HDFS) was its open-source Java clone.
 - **Chunkserver** — In GFS, one of many machines that actually holds file data. Files are cut into 64 MB chunks; each chunk lives on multiple chunkservers so that if one machine dies the data is not lost.
 - **MapReduce** — A programming model in which the user writes two functions — Map (transform each record) and Reduce (aggregate matching records) — and the runtime handles splitting the work, running it on many machines, and recovering from failures automatically.
-- **Commodity hardware** — Ordinary, inexpensive off-the-shelf machines rather than specialized fault-tolerant servers. GFS and MapReduce were designed assuming these machines *would* fail, and built failure recovery into the system itself.
-- **Straggler / backup task** — A straggler is a worker machine that runs unusually slowly near the end of a job. MapReduce counters this by launching duplicate backup copies of nearly-finished tasks; whichever copy finishes first is used, cutting total job time significantly.
+- **Commodity hardware** — Ordinary, inexpensive off-the-shelf machines rather than specialized fault-tolerant servers.
+- **Straggler / backup task** — A straggler is a worker machine that runs unusually slowly near the end of a job.
 - **Fault tolerance** — The ability of a system to continue operating correctly when individual components fail. GFS achieved this through replication (three copies of each chunk by default); MapReduce achieved it by detecting dead workers and reassigning their tasks.
 - **Open-source port** — Reimplementing a design described in a research paper as publicly available software anyone can run. Cutting and Cafarella used the GFS and MapReduce papers as specifications and rebuilt them in Java, giving the broader industry access to the same architecture Google had built internally.
 

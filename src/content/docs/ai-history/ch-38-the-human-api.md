@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-In 2001, Amazon inventors Harinarayan, Rajaraman, and Ranganathan patented a "hybrid machine/human computing arrangement" that routed stubborn perceptual tasks to human-operated nodes through a formal API. When Amazon launched this infrastructure publicly on November 2, 2005 as Mechanical Turk, it rebranded the arrangement as "Artificial Artificial Intelligence." By 2008–2009, Snow et al. and the ImageNet team had proved that callable, metered crowd labor could supply supervised learning with annotation at a scale and cost that expert pipelines could not match.
+Amazon Mechanical Turk turned small human judgments into callable infrastructure. What began in Amazon's catalog-maintenance world became a public web-service API for tasks software could not yet solve alone. By 2008–2009, NLP and vision researchers had shown that metered crowd labor could supply supervised learning with annotation at a scale expert pipelines could not match.
 :::
 
 <details>
@@ -14,12 +14,12 @@ In 2001, Amazon inventors Harinarayan, Rajaraman, and Ranganathan patented a "hy
 
 | Name | Lifespan | Role |
 |---|---|---|
-| Venky Harinarayan | — | Amazon inventor; IEEE Spectrum identifies him as the manager whose patent described the hybrid machine/human computing arrangement. Co-inventor on US7197459B1. |
-| Anand Rajaraman | — | Co-inventor on US7197459B1; listed alongside Harinarayan and Ranganathan with Amazon Technologies Inc. as original assignee. |
-| Anand Ranganathan | — | Co-inventor on US7197459B1. |
+| Venky Harinarayan | — | Amazon inventor; IEEE Spectrum identifies him as a manager behind the internal system that became Mechanical Turk. Co-inventor on US7197459B1. |
+| Anand Rajaraman | — | Co-inventor on US7197459B1, listed with Amazon Technologies Inc. as original assignee. |
+| Anand Ranganathan | — | Co-inventor on US7197459B1, listed with Harinarayan and Rajaraman. |
 | Jeff Bezos | 1964– | Amazon founder/CEO; Computerworld reports his September 27, 2006 MIT keynote grouped MTurk with S3 and EC2 as developer-facing cloud services. |
-| Rion Snow, Brendan O’Connor, Daniel Jurafsky, Andrew Y. Ng | — | Co-authors of the 2008 EMNLP paper "Cheap and Fast — But is it Good?" validating MTurk for five NLP annotation tasks. |
-| Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, Li Fei-Fei | — | Authors of the 2009 ImageNet CVPR paper; used AMT to verify millions of candidate images at 99.7% reported precision. |
+| Rion Snow, Brendan O’Connor, Daniel Jurafsky, Andrew Y. Ng | — | Co-authors of the 2008 EMNLP paper "Cheap and Fast — But is it Good?" on MTurk annotation. |
+| Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, Li Fei-Fei | — | Authors of the 2009 ImageNet CVPR paper; used AMT to verify candidate images at large scale. |
 
 </details>
 
@@ -29,15 +29,15 @@ In 2001, Amazon inventors Harinarayan, Rajaraman, and Ranganathan patented a "hy
 ```mermaid
 timeline
     title Amazon Mechanical Turk and the Human Annotation Infrastructure
-    2001 : March 19 — priority date for US7197459B1 "Hybrid machine/human computing arrangement"
+    2001 : Amazon patent work begins on routing difficult subtasks to human workers
          : October 12 — filing date; inventors Harinarayan, Rajaraman, Ranganathan; assignee Amazon Technologies
     2004 : Von Ahn and Dabbish publish the ESP Game paper at CHI — pre-MTurk human-computation boundary
-    2005 : November 2 — AWS publicly launches Amazon Mechanical Turk as "Artificial Artificial Intelligence" web-services API
+    2005 : AWS publicly launches Amazon Mechanical Turk as a web-services API
     2006 : September 27 — Bezos MIT keynote groups MTurk with S3 and EC2 as "hidden Amazon" developer services
     2007 : March 27 — US7197459B1 granted and published
-    2008 : October — Snow et al. publish "Cheap and Fast - But is it Good?" at EMNLP : five NLP tasks, $2 per 7,000 labels
-    2009 : June — Deng et al. publish ImageNet at CVPR : 5,247 synsets, 3.2M images, AMT cleaning pipeline
-    2018 : Hara et al. CHI wage analysis — median ~$2/h; 4% of workers above US federal minimum wage
+    2008 : October — Snow et al. publish "Cheap and Fast - But is it Good?" at EMNLP
+    2009 : June — Deng et al. publish ImageNet at CVPR with an AMT cleaning pipeline
+    2018 : Hara et al. CHI wage analysis documents low effective worker pay
 ```
 
 </details>
@@ -48,9 +48,9 @@ timeline
 - **Human Intelligence Task (HIT)** — The unit of work on Mechanical Turk. A requester posts a HIT with a title, instructions, a price, and a rule for when it counts as complete. A worker picks it up, does the task, and submits an answer. The HIT structure is what lets software treat human judgment as an addressable request.
 - **Requester** — MTurk vocabulary for the party that posts tasks. A requester could be an individual researcher, a company, or a software system issuing API calls programmatically. Requesters set pay rates, qualifications, and approval or rejection rules.
 - **Turker (worker)** — Colloquial name for people who accept and complete HITs on Amazon Mechanical Turk. Workers browse available tasks, choose which to accept, and receive payment only for work the requester approves.
-- **Synset** — A set of words in WordNet that share a single meaning. ImageNet used WordNet’s roughly 80,000 noun synsets as the concept scaffold for its image hierarchy, aiming to collect 500–1,000 clean images per synset.
-- **Redundancy (annotation)** — The practice of collecting multiple independent labels for the same item instead of trusting a single worker’s answer. Snow et al. used ten annotations per item in their affect task; ImageNet required at least ten votes per image for initial quality thresholds. Aggregating many cheaper judgments is what made MTurk annotation statistically competitive with expert annotation.
-- **Artificial Artificial Intelligence** — Amazon’s deliberate phrase in the 2005 MTurk launch announcement, pointing to the gap between AI ambitions and what software could then achieve alone. A nod to the original eighteenth-century Mechanical Turk illusion: a chess automaton that appeared autonomous but concealed a person inside.
+- **Synset** — A set of words in WordNet that share a single meaning, used by ImageNet as a concept scaffold.
+- **Redundancy (annotation)** — The practice of collecting multiple independent labels for the same item instead of trusting a single worker’s answer.
+- **Artificial Artificial Intelligence** — Amazon’s deliberate phrase for human judgment packaged behind an AI-like interface.
 
 </details>
 
@@ -94,7 +94,7 @@ In that workflow, the unit of annotation was not a classroom exercise or a labor
 
 The choice of tasks was important because the paper was not testing one toy labeling problem. Affect recognition asked workers to judge emotional content. Word similarity asked for semantic closeness. Textual entailment required deciding whether one sentence followed from another. Temporal event ordering asked for judgments about sequence in language. Word sense disambiguation required choosing which meaning of a word was intended in context. Together, those tasks sampled the kinds of small interpretive decisions that made supervised natural language processing expensive. They were easy to describe as individual questions, but hard to automate reliably without examples, and the examples themselves required human judgment.
 
-The paper did not argue that a single anonymous click from the internet was equivalent to the nuanced judgment of a trained linguist. Instead, the researchers relied on careful task design and deliberate redundancy. In their affect recognition experiment, for example, they collected ten independent annotations per item. By using this built-in redundancy, they could study how aggregating multiple non-expert opinions improved the reliability of the final label. The economic results of this approach were striking. The team reported paying $2.00 to collect 7,000 non-expert annotations for the affect task. They interpreted this rate as yielding 3,500 non-expert labels per US dollar. Even after accounting for the need for redundancy and bias correction, they calculated that this provided at least 875 expert-equivalent labels per dollar spent.
+The paper did not argue that a single anonymous click from the internet was equivalent to the nuanced judgment of a trained linguist. Instead, the researchers relied on careful task design and deliberate redundancy. In their affect recognition experiment, for example, they collected ten independent annotations per item. By using this built-in redundancy, they could study how aggregating multiple non-expert opinions improved the reliability of the final label. The economic results of this approach were striking. The team reported paying 2 dollars to collect 7,000 non-expert annotations for the affect task. They interpreted this rate as yielding 3,500 non-expert labels per US dollar. Even after accounting for the need for redundancy and bias correction, they calculated that this provided at least 875 expert-equivalent labels per dollar spent.
 
 Repeated labeling changed the meaning of the individual worker response. A single answer could be noisy, hurried, or mistaken, but a set of answers could be treated statistically. The requester could compare workers to one another, measure agreement, infer which items were difficult, and use aggregation to move from raw clicks toward a usable label. The human API therefore did not eliminate expertise by magic. It replaced one expensive, high-trust judgment with several cheaper, lower-trust judgments plus a method for combining them. That bargain was only attractive because the platform made it cheap enough to ask the same question multiple times.
 
@@ -120,7 +120,7 @@ The reported 99.7 percent average precision on sampled synsets should be read in
 
 This is the point at which Mechanical Turk becomes difficult to separate from the later history of artificial intelligence, even though the direct causal chain must be kept narrow. ImageNet's 2009 paper was not yet the story of the 2012 deep-learning breakthrough. It was the story of how a large, structured visual dataset could be built at all. The contribution of MTurk in that story was not conceptual glamour. It was the unglamorous ability to ask many people, many times, whether a candidate image matched a defined category, then turn those answers into a cleaner corpus than automated web search alone could supply.
 
-However, the success of ImageNet and the broader utility of Mechanical Turk relied on an abstraction that profoundly obscured the reality of the labor involved. The API made human judgment look frictionless, callable, and meterable to the requester, but the human-operated nodes executing the subtasks were actual people operating within a precarious labor market. The costs of this abstraction were later detailed in an empirical analysis by Kotaro Hara, Abigail Adams, Kristy Milland, Saiph Savage, Chris Callison-Burch, and Jeffrey P. Bigham. By recording 2,676 workers performing 3.8 million tasks, they found that the median hourly wage was roughly $2.00, with only 4 percent of workers earning more than the federal minimum wage of $7.25 per hour. Their analysis highlighted the unpaid work components hidden behind the API call: the uncompensated time workers spent searching for tasks, the labor lost when work was rejected by requesters, and the effort expended on tasks that were ultimately not submitted. To the software developer, the human API was a cheap and fast function call; to the workers fulfilling the requests, it was an environment characterized by low median wages, constant search time, and unpaid friction. This hidden labor force provided the crucial verification layer for the datasets that would soon reshape the trajectory of artificial intelligence research.
+However, the success of ImageNet and the broader utility of Mechanical Turk relied on an abstraction that profoundly obscured the reality of the labor involved. The API made human judgment look frictionless, callable, and meterable to the requester, but the human-operated nodes executing the subtasks were actual people operating within a precarious labor market. The costs of this abstraction were later detailed in an empirical analysis by Kotaro Hara, Abigail Adams, Kristy Milland, Saiph Savage, Chris Callison-Burch, and Jeffrey P. Bigham. By recording 2,676 workers performing 3.8 million tasks, they found that the median hourly wage was roughly 2 dollars, with only 4 percent of workers earning more than the federal minimum wage of 7.25 dollars per hour. Their analysis highlighted the unpaid work components hidden behind the API call: the uncompensated time workers spent searching for tasks, the labor lost when work was rejected by requesters, and the effort expended on tasks that were ultimately not submitted. To the software developer, the human API was a cheap and fast function call; to the workers fulfilling the requests, it was an environment characterized by low median wages, constant search time, and unpaid friction. This hidden labor force provided the crucial verification layer for the datasets that would soon reshape the trajectory of artificial intelligence research.
 
 That closing tension is the durable meaning of Mechanical Turk in AI history. The same design that made human judgment usable by software also made the worker easy to overlook. In the requester view, the worker appeared as latency, price, approval rate, and output. In the research view, the worker often appeared as a row in an annotation table or a vote in an aggregation rule. Yet the labels that made supervised systems learn did not fall out of the web by themselves. They were produced through a market whose interface hid search time, rejection risk, and low effective pay behind the smooth language of services.
 

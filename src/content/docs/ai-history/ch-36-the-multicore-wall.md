@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-For thirty years, software ran faster on new hardware for free — a promise powered by Dennard scaling. That promise ended on May 7, 2004, when Intel cancelled the Tejas Pentium 4 and Jayhawk Xeon and pulled its dual-core roadmap forward by twelve to eighteen months. Herb Sutter named the consequence in December 2004: the single-thread free lunch was over. The Berkeley View report of 2006 named the cause: Power Wall plus Memory Wall plus ILP Wall equalled Brick Wall.
+For thirty years, software ran faster on new hardware for free, a promise powered by Dennard scaling. By 2004, Intel's single-core roadmap had broken, and software developers were being warned that future speedups would require concurrency. The Berkeley View report of 2006 gave the new regime its clearest architectural language.
 :::
 
 <details>
@@ -17,9 +17,9 @@ For thirty years, software ran faster on new hardware for free — a promise pow
 | Robert N. Dennard | 1932–2024 | IBM engineer who laid down the transistor-scaling recipe in the early 1970s; its breakdown is the chapter's founding event. |
 | Shekhar Borkar | — | Intel engineer who warned in a July/August 1999 *IEEE Micro* paper that continued technology scaling would push CPU power density past manageable limits. |
 | Kunle Olukotun | — | Stanford architecture researcher who argued at ASPLOS 1996, eight years before Intel acted, that transistor budgets should be spent on multiple smaller cores. |
-| Herb Sutter | — | Software architect at Microsoft and ISO C++ committee chair; author of "The Free Lunch Is Over" (December 2004 / *Dr. Dobb's Journal* March 2005), the canonical software-industry account of the pivot. |
+| Herb Sutter | — | Software architect at Microsoft and ISO C++ committee chair; author of the canonical software-industry account of the multicore pivot. |
 | Ashlee Vance | — | *The Register* journalist who anchored the Tejas/Jayhawk cancellation in real time on May 7, 2004. |
-| Krste Asanović and David A. Patterson | — | Lead authors of the December 2006 *View from Berkeley* report that formalized the post-2004 regime as "Power Wall + Memory Wall + ILP Wall = Brick Wall." |
+| Krste Asanović and David A. Patterson | — | Lead authors of the December 2006 *View from Berkeley* report that formalized the post-2004 parallel-computing regime. |
 
 </details>
 
@@ -36,10 +36,10 @@ timeline
     2001 : Intel chips reach 2 GHz : IBM ships dual-core POWER4 server processor
     2003 : Intel clock-speed growth visibly flattens; Sutter would later mark this as where the wall appeared
     2004 Jan : AnandTech reports Tejas engineering samples at 2.8 GHz — consuming ~150 W
-    2004 May 7 : Intel confirms cancellation of Tejas and Jayhawk; dual-core schedule pulled 12–18 months forward
-    2004 Dec : Herb Sutter posts "The Free Lunch Is Over" — later published in Dr. Dobb's Journal March 2005
+    2004 May : Intel confirms cancellation of its next single-core Pentium 4 and Xeon successors
+    2004 Dec : Herb Sutter posts his software warning about the multicore pivot
     2005 : Intel ships Pentium D and AMD ships Athlon 64 X2 — first mainstream x86 dual-core desktop chips : Sun ships Niagara 8-core server processor
-    2006 Dec 18 : Berkeley View report names the regime — Power Wall + Memory Wall + ILP Wall = Brick Wall
+    2006 Dec 18 : Berkeley View report names the post-frequency regime
 ```
 
 </details>
@@ -47,11 +47,11 @@ timeline
 <details>
 <summary><strong>Plain-words glossary</strong></summary>
 
-- **Dennard scaling** — The 1970s IBM recipe by which each transistor generation was 30% smaller, 40% faster, and consumed proportionally less power. For three decades it delivered the "free lunch." It stopped paying its full bill around 2003 when voltage could no longer fall cleanly without leakage growing.
+- **Dennard scaling** — The 1970s IBM recipe by which smaller transistors could become faster and more numerous without proportional power growth.
 - **Power Wall** — The limit reached when a chip contains more transistors than it can afford to turn on at full speed without exceeding its heat and power budget. One of the three walls the Berkeley View report identified in 2006.
 - **ILP Wall (Instruction-Level Parallelism Wall)** — The limit at which architects run out of independent instructions inside a single sequential program to execute simultaneously. More transistors can no longer improve single-thread speed because there is not enough hidden parallelism left to exploit.
 - **Memory Wall** — The growing gap between how fast a processor can execute instructions and how fast it can fetch data from main memory. The Berkeley report noted a DRAM access could take ~200 clock cycles while a floating-point multiply took only four.
-- **Brick Wall** — The Berkeley View 2006 term for the combined effect of the Power Wall, Memory Wall, and ILP Wall — the reason the old strategy of faster single-core clocks had no remaining escape route.
+- **Brick Wall** — The Berkeley View 2006 term for the combined limits that ended the old strategy of faster single-core clocks.
 - **Multicore** — A processor die that contains two or more independent execution cores. Where one fast core had previously delivered performance growth, multiple cores offered a way to use additional transistors without violating the power budget.
 - **Concurrency revolution** — Herb Sutter's term for the software-industry consequence of multicore: programs that were not written to do more than one thing at a time would no longer automatically benefit from newer hardware.
 
