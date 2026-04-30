@@ -5,6 +5,60 @@ sidebar:
   order: 68
 ---
 
+:::tip[In one paragraph]
+Frontier AI needed people and rights-cleared material, not just compute. Ouyang et al. 2022 described about 40 RLHF contractors; TIME reported Sama workers in Kenya labeling toxic content for OpenAI safety filtering. GPT-3, The Pile, Books3, LAION-5B, and Stable Diffusion turned web pages, books, and images into training inputs. Getty (2023), New York Times (2023), and Bartz v. Anthropic (2025) put that pipeline into court records. Crawler controls and publisher licensing closed the loop: data became negotiated, blocked, or priced.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| OpenAI labelers / Ouyang et al. contractors | — | About 40 contractors who wrote demonstrations and rankings for InstructGPT/RLHF (March 2022). |
+| Sama workers in Kenya | — | TIME's anonymous sources for toxic-content labeling on an OpenAI safety-filtering project (Nov. 2021–March 2022). |
+| Getty Images | — | Stock-image licensor; commenced UK proceedings against Stability AI and amended a US complaint in 2023. |
+| The New York Times | — | News publisher; sued Microsoft/OpenAI on December 27, 2023. |
+| Sidney H. Stein | — | US District Judge, S.D.N.Y.; authored the April 4, 2025 NYT/OpenAI motion-to-dismiss opinion. |
+| William Alsup | — | US District Judge, N.D. Cal.; authored the June 23, 2025 Bartz v. Anthropic fair-use order. |
+
+</details>
+
+<details>
+<summary><strong>Timeline (2008–2026)</strong></summary>
+
+```mermaid
+timeline
+    title Data labor and the copyright reckoning
+    2008 : Common Crawl begins petabyte-scale web collection
+    2020 : GPT-3 reports filtered Common Crawl, WebText2, Books1, Books2, Wikipedia mixture
+    2020-2021 : The Pile formalizes 825 GiB / 22 subsets, including Books3
+    Nov 2021-Mar 2022 : TIME reports Sama/Kenya safety-labeling work for OpenAI
+    Mar 2022 : Ouyang et al. publish InstructGPT/RLHF (about 40 contractors)
+    2022 : LAION-5B and Stable Diffusion publish open image-caption work
+    Jan-Mar 2023 : Getty commences UK proceedings; files/amends US complaint
+    Dec 27 2023 : New York Times sues Microsoft and OpenAI
+    Jan 8 2024 : OpenAI publishes "OpenAI and journalism" response
+    Dec 2023-May 2024 : OpenAI announces Axel Springer, FT, Reddit, News Corp deals
+    Apr 4 2025 : NYT/OpenAI motion-to-dismiss opinion narrows some claims
+    Jun 23 2025 : Bartz v. Anthropic fair-use order splits training, purchase, piracy
+    Apr 2026 : Bartz settlement-finality hearing pending
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- **RLHF (Reinforcement Learning from Human Feedback):** Training a language model to prefer answers that human labelers ranked higher; Ouyang et al. 2022 used demonstrations, rankings, a reward model, and PPO.
+- **Common Crawl:** A public web corpus collected at petabyte scale since 2008, distributed as raw web pages, metadata, and text extracts.
+- **The Pile / Books3:** An 825 GiB English language-model dataset of 22 subsets; Books3 is one named book component that later became legally salient in book-corpus litigation.
+- **LAION-5B:** An open dataset of 5.85 billion CLIP-filtered image-text pairs used to train and study image-generation models such as Stable Diffusion v1-4.
+- **Fair use:** A US copyright defense that excuses some unlicensed copying based on factors including transformativeness, purpose, market harm, and amount used; the defense is fact-specific, not a general permission.
+- **Motion to dismiss:** An early procedural request asking a court to throw out claims; at this stage the court assumes complaint facts are true to test legal sufficiency, not to find liability.
+- **Robots.txt / GPTBot:** A web-server file telling crawlers which paths they may visit; OpenAI documents OAI-SearchBot and GPTBot tags so site owners can allow search while disallowing training-related crawling.
+
+</details>
+
 The model stack did not begin with the model.
 
 Chapter 67 followed the visible gates: GPUs, cloud capacity, partnerships, enterprise distribution, and platform contracts. Ch68 turns to a quieter gate underneath them. Frontier AI needed more than compute. It needed people to make outputs usable, corpora to make language broad, images and captions to make generation visual, books and articles to make systems literate, and legal theories to explain why any of that was allowed.
@@ -119,6 +173,12 @@ Books produced the sharpest court-record lesson.
 
 In June 2025, the Bartz v. Anthropic order drew distinctions that should shape how the whole chapter is read. The order described book-copy sources including Books3, LibGen, and PiLiMi and discussed millions of book copies. It then separated uses and acquisition paths. In that order, training copies were treated as fair use, purchased print-to-digital copies were treated differently and also found fair for that use, while pirated central-library copies were not justified by fair use. The order granted and denied summary judgment in a split way and set remaining issues, including pirated copies and damages, for further proceedings.
 
+:::note
+> A separate justification was required for each use.
+
+This one district-court order matters because it separates use from acquisition path; it does not turn AI training into a universal yes or no. — *Bartz et al. v. Anthropic PBC*, Order on Fair Use, N.D. Cal., June 23, 2025.
+:::
+
 The order was especially important because books carry a different cultural weight from web pages. A book is an authored object, a commercial object, a library object, and often a registered copyright object. When book corpora entered foundation-model training debates, authors did not have to argue in the abstract about "the web." They could point to titles, libraries, scans, downloads, and acquisition paths.
 
 That is a narrow legal posture, but a historically powerful one.
@@ -164,3 +224,8 @@ That realization connects backward and forward. Ch67 showed platform concentrati
 The model stack needed people and culture before it needed predictions.
 
 The reckoning began when those people and that culture asked who had been counted as infrastructure.
+
+:::note[Why this still matters today]
+Every modern assistant inherits this supply chain. Behind a chat reply sits a chain of contractors, safety labelers, scraped pages, image-text corpora, books, and platform APIs — each with its own permission and labor story. Court orders, robots.txt distinctions between search and training crawlers, and publisher licensing deals are now standard parts of how AI products are built and sold. Procurement, indemnity, and dataset provenance are no longer back-office concerns; they are gates on shipping. The chapter's split — training use, acquisition path, market harm, and worker conditions — is the working vocabulary practitioners read in model cards, terms of use, and risk disclosures today.
+:::
+
