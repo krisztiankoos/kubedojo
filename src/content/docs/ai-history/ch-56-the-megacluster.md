@@ -5,6 +5,58 @@ sidebar:
   order: 56
 ---
 
+:::tip[In one paragraph]
+On March 11, 2019 OpenAI announced OpenAI LP — a capped-profit structure under nonprofit control, designed to raise the billions in capital its scaling roadmap required. Four months later (July 22, 2019) a $1B Microsoft investment locked in an exclusive Azure computing partnership. By May 19, 2020 Microsoft had publicly disclosed an Azure supercomputer built for OpenAI: 285,000+ CPU cores, 10,000 GPUs, 400 Gbps per GPU server. Scaling-law forecasts had become datacenter procurement.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Greg Brockman | — | OpenAI co-founder; coauthor of the OpenAI LP announcement; institutional voice for the capped-profit/compute rationale |
+| Ilya Sutskever | 1986– | OpenAI co-founder; coauthor of the OpenAI LP announcement |
+| Sam Altman | — | OpenAI CEO in the 2019 Microsoft release; public advocate for the OpenAI/Microsoft supercomputing foundation |
+| Satya Nadella | 1967– | Microsoft CEO in the 2019 Microsoft release; public advocate for Azure AI supercomputing |
+| Kevin Scott | — | Microsoft CTO in the 2020 supercomputer feature; technical lead connecting OpenAI supercomputer to broader Azure AI at Scale strategy |
+| OpenAI Nonprofit / OpenAI LP / Azure engineering | — | Institutional actors: nonprofit retains control; LP employs staff and pursues scale; unnamed Azure engineering teams build the supercomputer |
+
+</details>
+
+<details>
+<summary><strong>Timeline (March 2019 – May 2020)</strong></summary>
+
+```mermaid
+timeline
+    title Chapter 56 — The Megacluster
+    Mar 11 2019 : OpenAI announces OpenAI LP — capped-profit structure under nonprofit control
+    Jul 22 2019 : Microsoft and OpenAI announce $1B exclusive computing partnership; OpenAI services move to Azure
+    Feb 13 2020 : Microsoft Research announces Turing-NLG (17B params) — DeepSpeed, ZeRO, model parallelism
+    May 19 2020 : Microsoft discloses Azure supercomputer for OpenAI — 285,000+ CPU cores, 10,000 GPUs, 400 Gbps per GPU server
+    May 2020 : Microsoft frames the supercomputer as part of "AI at Scale" — large models + tools + supercomputing on Azure
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+**Capped-profit structure** — A hybrid corporate form OpenAI introduced in March 2019. Investor and employee returns are limited to a multiple of investment; returns beyond the cap flow to the OpenAI Nonprofit, which retains control. Designed to raise the billions of dollars compute and talent require while keeping mission-first governance.
+
+**Hyperscaler / hyperscale cloud** — A small set of cloud providers (Microsoft Azure, Amazon AWS, Google Cloud) operating at the global-datacenter scale where they can offer customers the kind of infrastructure customers cannot easily build themselves. Frontier-AI training is now a hyperscaler-only workload.
+
+**Megacluster** — Working name for the Azure-OpenAI machine and its successors: tens of thousands of accelerators wired together with high-speed interconnects (InfiniBand, custom NVLink topologies), purpose-built for training one very large model rather than running many small jobs.
+
+**Distributed training (model parallelism, data parallelism, pipeline parallelism)** — The systems-software layer that splits a model and its training batches across many devices. *Data parallelism* replicates the model and partitions the batch. *Model parallelism* partitions the model itself across devices. *Pipeline parallelism* stages forward and backward passes through the model. Modern frameworks like DeepSpeed and ZeRO combine all three.
+
+**DeepSpeed / ZeRO** — Microsoft Research's open-source distributed-training stack. *ZeRO* (Zero Redundancy Optimizer) shards optimizer state, gradients, and (later) parameters across data-parallel workers, dramatically reducing per-GPU memory. Made Turing-NLG (17B parameters) trainable on the available hardware in early 2020.
+
+**400 Gbps per GPU server** — The Azure supercomputer's per-server interconnect bandwidth as publicly disclosed. Necessary because gradient synchronisation across 10,000 GPUs becomes the bottleneck before compute does; without high-bandwidth networking, the cluster behaves like many small clusters rather than one machine.
+
+**AI at Scale** — Microsoft's 2020 platform-level framing for the OpenAI supercomputer + DeepSpeed + Turing-NLG bundle: large models, training optimisation tools, and supercomputing made available through Azure AI services and GitHub.
+
+</details>
+
 The scaling laws changed what a large training run meant. A bigger model no longer looked only like a heroic experiment or a gamble on brute force. It could be discussed as a point on a curve: more parameters, more data, more compute, lower loss, all within the empirical limits and caveats of the measurements. That did not make success automatic. It did not prove intelligence. It did something more practical. It gave organizations a reason to treat compute as a strategic planning variable.
 
 Once compute becomes a planning variable, the next question is not philosophical. It is logistical. Who can get enough accelerators? Who can keep them connected? Who can feed them data fast enough? Who can hire the distributed-systems engineers, negotiate the cloud relationship, pay for the run, and absorb the failures that happen when thousands of devices are asked to behave like one machine? The answer was no longer just "the best research group." It was the group that could become, or partner with, an infrastructure company.
@@ -16,6 +68,12 @@ This made forecasting and procurement part of the same conversation. If a loss c
 This is why the megacluster belongs in the history of AI. It is not just a bigger computer sitting behind a famous model. It is the moment when frontier AI became visibly dependent on cloud-scale industrial systems. The old image of AI research was a clever idea, a paper, a workstation, and a graduate student. That image had always been incomplete, but by 2019 and 2020 it became actively misleading. The new image included corporate structure, capital, procurement, networking, storage, distributed training software, runtime optimization, platform services, and commercialization rights.
 
 OpenAI's 2019 restructuring was one of the public signals that the old research-lab form was no longer enough for the scale the organization wanted to pursue. On March 11, 2019, Greg Brockman and Ilya Sutskever announced OpenAI LP, a capped-profit structure under the control of the OpenAI Nonprofit. The announcement framed the change around scale. OpenAI said it had seen that dramatic AI systems used the most computational power, that it wanted to increase its pace, and that it expected to need billions of dollars for large-scale cloud compute, talent, and AI supercomputers.
+
+:::note
+> We've experienced firsthand that the most dramatic AI systems use the most computational power in addition to algorithmic innovations, and decided to scale much faster than we'd planned when starting OpenAI.
+
+OpenAI turned Ch55's curve into governance: faster scaling now required capital formation, not only experimental patience. — *OpenAI LP announcement, opening paragraphs, 2019-03-11.*
+:::
 
 That sentence is the hinge. It ties organizational form directly to infrastructure. OpenAI was not describing compute as a line item that could be handled after the research plan was set. It was saying that the ability to raise capital for compute, talent, and supercomputers had become part of the research plan itself. The legal structure was therefore not a side story. It was a piece of the machine.
 
@@ -120,3 +178,7 @@ By 2020, the direction was visible. Frontier AI was no longer just a sequence of
 That larger machine is the megacluster. It is not simply a room of GPUs, not simply a Microsoft press release, and not simply an OpenAI funding decision. It is the convergence of empirical scaling, corporate structure, hyperscale cloud, and software systems. It marks the point where the history of AI and the history of cloud infrastructure become inseparable.
 
 The next chapters follow what happens once that machine exists. Larger clusters make alignment more urgent, because more capable models create new failure modes. They make open weights more politically charged, because access to trained artifacts can partly bypass access to training infrastructure. They make product deployment faster and more consequential, because the same cloud platform that trains a model can also distribute it. The megacluster is therefore not the end of the scaling story. It is the hardware-and-cloud threshold after which modern AI becomes an industrial system.
+
+:::note[Why this still matters today]
+Every frontier model in 2026 — GPT-5, Claude 4, Gemini 3, Llama 4 — was trained on a megacluster descendant: tens of thousands of H100/H200/Blackwell GPUs wired with InfiniBand or NVLink, sustained at the limit of available networking. The OpenAI/Microsoft template (lab + hyperscaler partnership + capped-profit-or-equivalent structure) repeated with Anthropic+AWS, Anthropic+Google, xAI+self-built Colossus, and DeepMind+Google. The chapter's three-way binding — scaling-law forecast → capital structure → hyperscale cluster → trained model → cloud-API distribution → revenue — is the operating template for the entire frontier-model industry today.
+:::
