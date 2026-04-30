@@ -5,6 +5,60 @@ sidebar:
   order: 63
 ---
 
+:::tip[In one paragraph]
+Once large models entered products, the cost story moved from training to serving. Autoregressive generation makes every output token a serial step on scarce accelerators. From 2022 to 2024 the field reframed inference as a systems discipline: Orca scheduled by iteration, FlashAttention shrank attention's memory traffic, vLLM/PagedAttention made the KV cache a paged resource, SmoothQuant/FlexGen/speculative decoding traded precision, memory tier, or pass count for cost, and DistServe split prefill from decode for goodput under SLOs.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Gyeong-In Yu, Joo Seong Jeong, Geon-Woo Kim, Soojeong Kim, Byung-Gon Chun | — | Orca authors (Seoul National University / FriendliAI); iteration-level scheduling and selective batching for generative Transformer serving (OSDI 2022) |
+| Tri Dao | — | Lead author of FlashAttention (Stanford); IO-aware exact attention, HBM/SRAM traffic as the bottleneck (May 2022) |
+| Guangxuan Xiao | — | Lead author of SmoothQuant (MIT); post-training W8A8 quantization that migrates activation outliers to weights (Nov 2022) |
+| Ying Sheng | — | Lead author of FlexGen (Stanford); GPU/CPU/disk offload for high-throughput inference under limited GPU memory (Mar 2023) |
+| Woosuk Kwon | — | Lead author of vLLM/PagedAttention (Berkeley); virtual-memory-style paging for the KV cache (SOSP 2023) |
+| Yaniv Leviathan, Matan Kalman, Yossi Matias; Charlie Chen et al. | — | Speculative decoding/sampling authors (Google; DeepMind); draft-and-verify decoding that preserves the target distribution (2022/2023) |
+
+</details>
+
+<details>
+<summary><strong>Timeline (May 2022 – 2024)</strong></summary>
+
+```mermaid
+timeline
+    title Chapter 63 — Inference Economics
+    May 2022 : FlashAttention reframes attention speed around HBM/SRAM IO, not just FLOPs
+    Jul 2022 : Orca (OSDI) proposes iteration-level scheduling and selective batching for generative Transformer serving
+    Nov 2022 : SmoothQuant shows a post-training W8A8 path for LLM inference
+    Nov 2022 / Feb 2023 : Speculative decoding (Leviathan, Kalman, Matias) and speculative sampling (Chen et al.) — draft-and-verify with preserved distribution
+    Mar 2023 : FlexGen demonstrates GPU/CPU/disk offload for throughput-oriented generation on a single T4
+    Sep / Oct 2023 : vLLM / PagedAttention (SOSP) makes KV-cache paging a first-class serving primitive
+    2024 : DistServe (OSDI) disaggregates prefill and decode onto different GPU pools for goodput under SLOs
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+**Autoregressive generation** — A language model produces output one token at a time, feeding each new token back as input for the next step. A long answer is therefore a chain of serial model passes, not a single forward computation. This is why generation latency compounds and why scheduling has to look at iterations rather than whole requests.
+
+**KV cache (key/value cache)** — The per-request store of attention keys and values from prior tokens, kept so the model does not recompute them at every decoding step. It grows with prompt length, output length, and concurrent users. Because model weights are static but the KV cache is dynamic, KV cache memory — not parameter count — often determines how many requests fit on an accelerator.
+
+**Iteration-level scheduling** — Orca's scheduling unit. Instead of treating each user request as a single batch member from start to finish, the serving system decides at every model iteration which active requests continue, which finished requests leave, and which newly arrived requests join. Required for generative workloads where requests have wildly different lengths.
+
+**PagedAttention** — vLLM's KV-cache memory manager. It borrows operating-system virtual-memory paging: store the KV cache in non-contiguous fixed-size blocks, then let the attention kernel treat them as a coherent sequence. Reduces fragmentation, allows higher concurrency, and is the mechanism behind vLLM's 2–4× throughput claim over FasterTransformer/Orca.
+
+**TTFT and TPOT (time to first token, time per output token)** — DistServe's two-axis latency model. TTFT is the delay before the user sees any output — it is dominated by *prefill* (processing the prompt). TPOT is the rhythm of streaming — it is dominated by *decode* (the per-token loop). Optimising one can hurt the other, which is why DistServe runs them on different GPU pools.
+
+**Goodput** — Useful work completed within a service-level objective. A request finished after its SLO deadline is throughput but not goodput. Inference serving is paid, in effect, for goodput, which is why average throughput numbers can hide tail-latency failures.
+
+**Speculative decoding / sampling** — A small "draft" model proposes several next tokens; the larger "target" model verifies them in a single parallel pass and accepts or rejects under a rejection-sampling rule that preserves the target's output distribution. Trades cheap draft compute for fewer expensive target-model passes; speedup depends on draft acceptance and overhead.
+
+</details>
+
 Training made frontier AI look expensive. Inference made it operationally expensive.
 
 The distinction became unavoidable once large models moved from research demos into products. A lab might train a model once, or a few times, at enormous cost. But a product has to run the model every time a user asks a question, uploads a document, requests a summary, calls a tool, or speaks into a microphone. The meter starts again with every prompt. Each output token consumes compute, memory bandwidth, scheduling attention, and latency budget.
@@ -14,6 +68,10 @@ This was the quiet shift underneath the product shock. The public saw chat inter
 Autoregressive generation is the first reason. A conventional classifier can often process an input once and produce a result. A large language model generating text loops. It reads the prompt, produces a token, then feeds the growing sequence back through the model to produce the next token. A long answer is not one model run. It is a chain of repeated decoding steps.
 
 That loop turns latency into a compound problem. There is time to first token, the delay before a user sees the answer begin. There is time per output token, the rhythm at which the answer continues. There is throughput, the number of requests or tokens a serving system can handle. There is utilization, the fraction of expensive accelerator capacity doing useful work. There is goodput, the useful work completed while meeting the service-level objective rather than merely producing tokens too late to matter.
+
+:::tip[Plain reading]
+Keep two axes separate: TTFT and TPOT describe what one user feels, while throughput and utilization describe how full the system is. Goodput is the bridge between them: work only counts economically when it finishes inside the product's latency promise, so later speedup numbers should be read as paper-specific capacity claims under stated latency constraints.
+:::
 
 These quantities pull against one another. A serving system can often improve throughput by batching requests together, but batching can make individual users wait. It can reduce latency by serving smaller batches, but that may strand accelerator capacity. It can accept longer contexts, but those contexts consume memory that might otherwise serve more users. Product AI is therefore not only model science. It is queueing, memory management, and systems engineering.
 
@@ -87,6 +145,12 @@ Zhong and collaborators argued that colocating prefill and decoding on the same 
 
 The distinction also makes "fast" less vague. A system can have a low time to first token and then generate slowly. It can start slowly and then stream quickly. It can satisfy average latency while violating the tail latency that users notice during spikes. DistServe's goodput framing matters because throughput alone can be misleading: a request completed after its SLO is not equally useful to the product. The serving system is paid, in effect, for timely work.
 
+:::note
+> As a result, DistServe significantly improves LLM serving performance in terms of the maximum rate that can be served within both TTFT and TPOT constraints on each GPU.
+
+This quote forces the metric down to per-GPU SLO-compliant work: the economic unit is not raw token flow, but requests that land inside TTFT/TPOT limits.
+:::
+
 DistServe separated the phases onto different GPUs and optimized for goodput under service-level objectives. Its reported results were large: up to 7.4x more requests or 12.6x tighter SLOs than state-of-the-art baselines in its evaluation. The exact numbers belong to the paper's setup. The enduring idea is that inference serving became phase-aware. A product system could no longer treat a request as one undifferentiated blob of computation.
 
 The prefill/decode split also explains why product requirements complicate hardware planning. A long prompt with a short answer stresses the system differently from a short prompt with a long answer. A retrieval-augmented workflow that stuffs many documents into context may increase prefill work. A chatty assistant producing long responses may emphasize decode. A voice product may make both phases more latency-sensitive because silence feels awkward. The serving architecture has to match the workload.
@@ -109,4 +173,9 @@ This is why inference became a discipline of margins. A small reduction in waste
 
 Inference economics also sets up the next constraints. If serving every request consumes scarce memory and accelerator time, edge deployment becomes attractive but difficult. If low latency matters, geography and device placement matter. If tokens become industrial workload, power and datacenter planning become central. The product era did not end the training race. It added a second race: making intelligence cheap enough, fast enough, and available enough to be used all day.
 
+:::note[Why this still matters today]
+Every operator who has run a chat assistant, copilot, or agent at scale has met this chapter's vocabulary. Capacity planning is no longer just "how many GPUs" — it is goodput under TTFT and TPOT targets. Open-source serving stacks (vLLM, TGI, TensorRT-LLM, SGLang) ship the techniques described here as defaults: paged KV cache, continuous batching, quantized weights, speculative decoders, prefill/decode disaggregation. The shape of a product feature — long context, streaming voice, retrieval-augmented agents — translates directly into memory pressure, scheduler load, and serving cost. When practitioners argue about API price per token, they are arguing about the same trade-offs Orca, FlashAttention, vLLM, and DistServe formalised between 2022 and 2024.
+:::
+
 The user sees an answer appear in a chat window. Underneath, a scheduling system is making thousands of small economic decisions. Which requests share a batch? Which tokens occupy cache? Which precision is acceptable? Which phase gets which GPU? Which work can be drafted, compressed, offloaded, or delayed? Inference economics is the name for that hidden discipline.
+
