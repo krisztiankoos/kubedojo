@@ -5,6 +5,62 @@ sidebar:
   order: 64
 ---
 
+:::tip[In one paragraph]
+Moving AI onto phones did not shrink the cloud — it created a second frontier with different physics: battery, heat, DRAM, flash bandwidth, privacy. MobileNets (2017) and Apple's A11 Neural Engine were the pre-generative pattern. By 2023–2024 Gemini Nano in AICore, Qualcomm's Snapdragon 8 Gen 3, Apple Intelligence's ~3B AFM-on-device, the LLM-in-a-flash paper, and MobileLLM made the bottleneck explicit. Edge AI became a routing discipline: some work runs locally, larger work routes to Private Cloud Compute or Pixel Video Boost.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Andrew G. Howard et al. | — | Lead authors of MobileNets (2017); efficient mobile-vision model lineage before LLMs |
+| Apple hardware/software teams | — | Institutional actor for A11 Neural Engine, Face ID, Apple Intelligence, AFM-on-device, Private Cloud Compute |
+| Google Pixel / Android / Gemini Nano teams | — | Institutional actor for Gemini Nano on Pixel 8 Pro, AICore, and the on-device-vs-cloud capacity caveat |
+| Qualcomm Snapdragon team | — | Institutional actor for the Snapdragon 8 Gen 3 product brief and phone-NPU framing |
+| Keivan Alizadeh et al. | — | Authors of "LLM in a flash" (Apple, 2023); DRAM/flash hierarchy for models exceeding memory |
+| Zechun Liu et al. | — | Authors of MobileLLM (2024); sub-billion-parameter language models for on-device tasks |
+
+</details>
+
+<details>
+<summary><strong>Timeline (2017–2024)</strong></summary>
+
+```mermaid
+timeline
+    title Chapter 64 — The Edge Compute Bottleneck
+    Apr 2017 : MobileNets frames neural-network architecture as a mobile and embedded deployment problem
+    Sep 2017 : Apple announces iPhone X with A11 Bionic Neural Engine and on-device Face ID processing
+    Oct 2023 : Qualcomm Snapdragon 8 Gen 3 product brief markets phone silicon for on-device multimodal generative AI up to 10B parameters
+    Dec 2023 : Google ships Gemini Nano on Pixel 8 Pro for Recorder Summarize and Smart Reply; Video Boost shows cloud fallback
+    Dec 2023 : Apple's "LLM in a flash" paper studies models exceeding available DRAM by streaming weights from flash
+    Feb 2024 : MobileLLM develops sub-billion-parameter language models for mobile use cases (June 2024 revision follows)
+    Jun 2024 : Apple Intelligence introduced — ~3B on-device language model plus Private Cloud Compute for larger requests
+    Jul 2024 : Apple publishes the Apple Intelligence Foundation Language Models report (AFM-on-device architecture, quantization, deployment)
+    Oct 2024 : Android opens experimental Gemini Nano access through AICore; on-device models framed as smaller and less generalized than cloud equivalents
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+**Neural Engine / NPU** — A piece of dedicated silicon on a phone for running neural-network inference efficiently. Apple's A11 Neural Engine (2017) and Qualcomm's Hexagon NPU on the Snapdragon 8 Gen 3 are the two product-era examples this chapter uses; both let a phone run ML workloads without leaning on the general-purpose CPU or GPU.
+
+**Depthwise separable convolution** — The architectural trick MobileNets used to reduce computation: split a standard convolution into a depthwise step (spatial filtering per channel) and a pointwise step (channel mixing). Reduced compute and memory enough to make accurate vision models fit a mobile latency and power budget.
+
+**Grouped-query attention (GQA)** — An attention variant that shares key/value projections across groups of query heads, reducing the size of the KV cache the model has to hold during inference. Apple's AFM-on-device and MobileLLM both use it specifically because cache memory is one of the tightest constraints on a phone.
+
+**Quantization (and bits-per-weight)** — Storing model weights at lower numerical precision than full 16- or 32-bit floats to shrink memory and energy use. Apple's AFM paper discusses quality around 3.5 bits per weight and identifies 3.7 bpw as the production deployment choice.
+
+**KV cache** — The intermediate keys and values the Transformer accumulates while generating tokens. It grows with context length and is one of the dominant memory costs of running an LLM, on a phone or in a datacenter.
+
+**AICore (Android)** — A system service that hosts Gemini Nano on Android devices, manages model updates, safety boundaries, and access to hardware accelerators, and exposes the on-device model to apps without each app shipping its own weights.
+
+**Private Cloud Compute (Apple)** — Apple's server-side fallback path for Apple Intelligence: when a request is judged larger than the on-device model can handle, it routes to Apple-operated server hardware. The architecture's role in the chapter is to mark the boundary where local processing stops, not to certify the privacy model.
+
+</details>
+
 The obvious place to run a frontier model was the datacenter. It had power, cooling, accelerators, memory, network links, and operators who could tune the serving stack. The tempting place to run a product was the device in the user's hand. It had immediacy, privacy advantages, offline access, and no round trip to a remote server.
 
 The gap between those two places became the edge compute bottleneck.
@@ -50,6 +106,12 @@ This is a different deployment problem from a web API. A cloud provider can upda
 It also changes the developer contract. If an app can call a local generative model through a system service, developers may get lower latency and fewer server-side costs for suitable tasks. But they also inherit device variability. A feature that behaves well on a high-end phone may be unavailable, slower, or different on another device. The edge makes capability uneven across the installed base.
 
 The Android developer blog made the trade-off more explicit. Gemini Nano was described as smaller and less generalized than cloud equivalents. That sentence is the honest center of edge AI. Local models can be useful precisely because they are narrower. They are optimized for device tasks. They avoid some network calls. They can respond under local latency and privacy constraints. But they are not simply frontier cloud models copied into a phone.
+
+:::note
+> Since on-device generative AI models run on devices with less computational power than cloud servers, they are significantly smaller and less generalized than their cloud-based equivalents.
+
+Google's caveat matters because it names edge AI as a capacity boundary from inside the vendor's own product framing.
+:::
 
 This is where the small model stops being a toy. Small can mean deliberate. A model designed for summarizing a recording, drafting a short reply, extracting information, or handling an app-specific action does not need the full open-ended breadth of a frontier datacenter model. It needs enough capability for the task, predictable behavior, small memory footprint, efficient inference, and integration with the device.
 
@@ -130,3 +192,8 @@ By the mid-2020s, the question was no longer whether AI could run on a phone. It
 That sequence should make the history feel less sudden. The generative edge did not appear from nowhere in 2024. It grew from efficient mobile vision, biometric hardware, dedicated neural accelerators, operating-system model services, small-model research, quantization, and memory-hierarchy work. What changed was the ambition of the interface. The same device that once ran a narrow classifier was now expected to host a local assistant.
 
 The edge compute bottleneck is the name for that sequence of compromises. Intelligence can move closer to the user, but only by becoming smaller, more specialized, more compressed, more carefully scheduled, and more honest about when the cloud must take over.
+
+:::note[Why this still matters today]
+Every assistant feature on a modern phone — keyboard rewriting, recording summary, on-device search, biometric unlock — sits inside the same envelope this chapter describes. Battery, DRAM, flash bandwidth, and thermals still set the local capacity ceiling, and the operating system still has to decide what runs locally, what routes to a private or public cloud, and what should not be offered at all. A practitioner deploying any AI feature to a constrained device — phone, watch, vehicle, embedded sensor — inherits the same routing discipline, the same memory-hierarchy questions, and the same need to scope the task narrowly enough that local execution is honest rather than aspirational.
+:::
+
