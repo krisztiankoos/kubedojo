@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-Between 2004 and 2005, researchers Kyoung-Su Oh, Keechul Jung, Dave Steinkraus, Ian Buck, and Patrice Y. Simard proved that consumer graphics cards could accelerate neural-network training — not because GPUs were designed for machine learning, but because matrix operations could be disguised as pixel-shader rendering. The hack delivered real speedups (up to 20-fold for Oh and Jung; 3.3x for Steinkraus et al.) while also making clear that the graphics API was the wrong long-term abstraction.
+Between 2004 and 2005, researchers Kyoung-Su Oh, Keechul Jung, Dave Steinkraus, Ian Buck, and Patrice Y. Simard proved that consumer graphics cards could accelerate neural-network training. The gains were real, but the programming route was awkward: machine-learning arithmetic had to pass through graphics concepts that were never meant to be the field's long-term abstraction.
 :::
 
 <details>
@@ -14,10 +14,10 @@ Between 2004 and 2005, researchers Kyoung-Su Oh, Keechul Jung, Dave Steinkraus, 
 
 | Name | Lifespan | Role |
 |---|---|---|
-| Dave Steinkraus | — | Co-author of the 2005 ICDAR paper applying DirectX 9 shaders to machine-learning primitives; reported a 3.3x speedup on a GeForce 6800 Ultra. |
+| Dave Steinkraus | — | Co-author of the 2005 ICDAR paper applying graphics-card shaders to machine-learning primitives on a GeForce 6800 Ultra. |
 | Ian Buck | — | Co-author of both Steinkraus et al. 2005 and Brook for GPUs (2004); appeared in both the ML-GPU and stream-abstraction lines of the chapter. |
 | Patrice Y. Simard | — | Co-author of Steinkraus et al. 2005; the paper's handwriting-recognition setting supplied the CPU-bottleneck and speedup anchors. |
-| Kyoung-Su Oh | — | Co-author of Oh and Jung 2004; mapped MLP inner products to matrix multiplication on an ATI Radeon 9700 Pro and reported up to a 20-fold speedup. |
+| Kyoung-Su Oh | — | Co-author of Oh and Jung 2004; helped show how neural-network arithmetic could be organized for an ATI Radeon 9700 Pro. |
 | Keechul Jung | — | Co-author of Oh and Jung 2004; same neural-network GPU implementation and speedup evidence. |
 
 </details>
@@ -28,9 +28,9 @@ Between 2004 and 2005, researchers Kyoung-Su Oh, Keechul Jung, Dave Steinkraus, 
 ```mermaid
 timeline
     title The Graphics Hack — Key Events
-    2004 : Oh and Jung publish "GPU implementation of neural networks" — MLP as matrix multiplication on ATI Radeon 9700 Pro
+    2004 : Oh and Jung publish "GPU implementation of neural networks" — MLP computation on a commodity graphics card
     2004 : Buck et al. publish "Brook for GPUs" — stream kernels as an abstraction over graphics hardware
-    2005 : Steinkraus, Buck, and Simard publish "Using GPUs for Machine Learning Algorithms" at ICDAR — DirectX 9 shaders, 3.3x speedup
+    2005 : Steinkraus, Buck, and Simard publish "Using GPUs for Machine Learning Algorithms" at ICDAR
     2007 : Owens et al. publish GPGPU survey in Computer Graphics Forum — retrospective synthesis of general computation on graphics hardware
 ```
 
@@ -39,11 +39,11 @@ timeline
 <details>
 <summary><strong>Plain-words glossary</strong></summary>
 
-- **Pixel shader** — A small program that the graphics hardware runs once for every pixel generated in a scene. Because millions of pixels are processed independently and simultaneously, the chip runs many copies of the shader in parallel. Researchers exploited this to run the same numerical operation over many data elements at once.
+- **Pixel shader** — A small program that graphics hardware runs to determine the output for generated pixels in a rendered scene. Because many pixels are processed independently at once, researchers could repurpose shaders for parallel numerical work.
 - **GPGPU (General-Purpose computing on Graphics Processing Units)** — Using a graphics card to perform computations that have nothing to do with rendering images. In the shader era, this required disguising the computation as graphics operations; later, dedicated APIs like CUDA removed the disguise.
-- **Texture** — In graphics, a 2-D image applied to a surface to give it color or detail. In the GPGPU hack, textures were repurposed as flat numerical arrays: a matrix of weights or input data packed into the color channels of an image the GPU could read at high speed.
+- **Texture** — In graphics, a 2-D image applied to a surface to give it color or detail. In the GPGPU hack, textures were repurposed as flat numerical arrays for weights or input data.
 - **Stream kernel (Brook's framing)** — Brook's abstraction for a computation applied identically across an ordered collection of data elements (a "stream"). The term recast the GPU's pixel-shader invocations as a general-purpose parallel loop, hiding the graphics vocabulary beneath a more mathematical one.
-- **AGP bus** — The Accelerated Graphics Port, the physical link between a PC's CPU and its graphics card in this era. Its bandwidth was asymmetric: fast in the CPU-to-GPU direction (sending textures and geometry) and much slower reading back from the GPU. This asymmetry forced researchers to keep weights and intermediate results on the card throughout training.
+- **AGP bus** — The Accelerated Graphics Port, the physical link between a PC's CPU and its graphics card in this era. Its uneven bandwidth made GPU-to-CPU read-back costly, pushing researchers to keep intermediate training data on the card.
 - **Multilayer perceptron (MLP)** — A class of neural network organized into layers, where each unit in a layer computes a weighted sum of the previous layer's outputs. Oh and Jung showed that these weighted sums can be organized as matrix multiplication, which is the mathematical bridge that made GPU acceleration possible for their workload.
 
 </details>

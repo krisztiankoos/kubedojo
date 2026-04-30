@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-From 2004 to 2011, computer vision matured into an empirical science. Lowe's SIFT and Dalal and Triggs's HOG encoded invariance and edge structure by hand; PASCAL VOC supplied fixed classes, hidden test labels, and an evaluation server. Then Torralba and Efros showed the ceiling: datasets have signatures, and car detectors trained on one collection dropped from 53.4% to 27.5% AP on another. The wall was not failure — it proved that scale and variety, not only cleverness, were needed next.
+From 2004 to 2011, computer vision matured into an empirical science. Hand-designed features made recognition measurable; PASCAL VOC supplied fixed classes, hidden test labels, and an evaluation server. Then Torralba and Efros showed the ceiling: systems could perform well inside one collection while weakening sharply on another. The wall was not failure — it proved that scale and variety, not only cleverness, were needed next.
 :::
 
 <details>
@@ -14,11 +14,11 @@ From 2004 to 2011, computer vision matured into an empirical science. Lowe's SIF
 
 | Name | Lifespan | Role |
 |---|---|---|
-| David G. Lowe | — | Author of the 2004 IJCV SIFT article; established scale- and rotation-invariant local features as the foundation of object recognition. |
-| Navneet Dalal and Bill Triggs | — | Co-authors of HOG (CVPR 2005); introduced gradient-histogram descriptors evaluated with a linear SVM for human detection. |
+| David G. Lowe | — | Author of the 2004 IJCV SIFT article, a major reference point for local feature-based object recognition. |
+| Navneet Dalal and Bill Triggs | — | Co-authors of HOG (CVPR 2005), a foundational hand-designed descriptor for human detection. |
 | Mark Everingham | —–2012 | Key organiser of PASCAL VOC; died 2012; the ECCV 2012 VOC workshop was dedicated to his memory. |
 | Luc van Gool, Chris Williams, John Winn, Andrew Zisserman | — | Listed VOC2012 co-organisers, spread across ETH Zurich, Edinburgh, Microsoft Research Cambridge, and Oxford. |
-| Antonio Torralba and Alexei A. Efros | — | Authors of "Unbiased Look at Dataset Bias" (CVPR 2011); made dataset signatures and cross-dataset generalisation failures numerically visible. |
+| Antonio Torralba and Alexei A. Efros | — | Authors of "Unbiased Look at Dataset Bias" (CVPR 2011), a key critique of benchmark distribution limits. |
 | Pedro Felzenszwalb, Ross Girshick, David McAllester, Deva Ramanan | — | Developers of the discriminatively trained part-based HOG/latent-SVM detection model, the organiser-supplied VOC detection example for all 20 classes. |
 
 </details>
@@ -43,12 +43,12 @@ timeline
 <details>
 <summary><strong>Plain-words glossary</strong></summary>
 
-- **SIFT (Scale-Invariant Feature Transform)** — A method for finding and describing small, distinctive patches in an image that remain recognisable even when the image is taken from a different distance, angle, or under different lighting. Published by Lowe in 2004.
-- **HOG (Histograms of Oriented Gradients)** — A descriptor that represents an image region by measuring the direction and strength of edges across a grid of overlapping blocks, then normalising for lighting variation. Introduced by Dalal and Triggs in 2005 for human detection.
+- **SIFT (Scale-Invariant Feature Transform)** — A method for finding and describing distinctive local image patches so they can be matched across photographs. Published by Lowe in 2004.
+- **HOG (Histograms of Oriented Gradients)** — A descriptor that summarizes edge-orientation patterns in an image region. Introduced by Dalal and Triggs in 2005 for human detection.
 - **Bag of visual words** — A recognition technique that converts a set of local image descriptors into a histogram of how often each "visual word" (a cluster centroid from a dictionary of descriptor types) appears, discarding spatial arrangement. A dominant VOC classification approach before deep learning.
 - **Mean Average Precision (mAP / AP)** — The evaluation metric used in PASCAL VOC: for each object class, precision is measured at each recall threshold, averaged into an Average Precision figure; mAP averages AP across classes. Higher is better; a random baseline is far below 50%.
-- **Cross-dataset generalisation** — How well a model trained on one image collection performs when tested on images from a different collection. Torralba and Efros showed it was much lower than within-dataset performance, revealing that models learned dataset-specific signatures.
-- **Negative-set bias** — In object detection, the system must learn what "not the target object" looks like. If the training set samples non-object backgrounds unevenly (e.g. mostly open water near boats), the detector becomes brittle when the background distribution changes.
+- **Cross-dataset generalisation** — How well a model trained on one image collection performs when tested on images from a different collection.
+- **Negative-set bias** — In object detection, a brittleness caused by the limited and uneven examples used to represent everything outside the target class.
 - **Evaluation server** — A centralised submission system that scores algorithm results against hidden test labels, preventing researchers from tuning directly on test answers. Adopted by VOC from 2008; it made leaderboard numbers harder to game.
 
 </details>
