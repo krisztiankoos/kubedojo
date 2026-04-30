@@ -14,10 +14,10 @@ Between 2004 and 2005, researchers Kyoung-Su Oh, Keechul Jung, Dave Steinkraus, 
 
 | Name | Lifespan | Role |
 |---|---|---|
-| Dave Steinkraus | — | Co-author of the 2005 ICDAR paper applying graphics-card shaders to machine-learning primitives. |
+| Dave Steinkraus | — | Co-author of the 2005 ICDAR paper applying graphics-card shaders to machine-learning primitives on a GeForce 6800 Ultra. |
 | Ian Buck | — | Co-author of both Steinkraus et al. 2005 and Brook for GPUs (2004); appeared in both the ML-GPU and stream-abstraction lines of the chapter. |
 | Patrice Y. Simard | — | Co-author of Steinkraus et al. 2005; the paper's handwriting-recognition setting supplied the CPU-bottleneck and speedup anchors. |
-| Kyoung-Su Oh | — | Co-author of Oh and Jung 2004; helped show how neural-network arithmetic could be organized for a graphics card. |
+| Kyoung-Su Oh | — | Co-author of Oh and Jung 2004; helped show how neural-network arithmetic could be organized for an ATI Radeon 9700 Pro. |
 | Keechul Jung | — | Co-author of Oh and Jung 2004; same neural-network GPU implementation and speedup evidence. |
 
 </details>
@@ -39,11 +39,11 @@ timeline
 <details>
 <summary><strong>Plain-words glossary</strong></summary>
 
-- **Pixel shader** — A small program that graphics hardware runs to determine the output for generated pixels in a rendered scene.
+- **Pixel shader** — A small program that graphics hardware runs to determine the output for generated pixels in a rendered scene. Because many pixels are processed independently at once, researchers could repurpose shaders for parallel numerical work.
 - **GPGPU (General-Purpose computing on Graphics Processing Units)** — Using a graphics card to perform computations that have nothing to do with rendering images. In the shader era, this required disguising the computation as graphics operations; later, dedicated APIs like CUDA removed the disguise.
-- **Texture** — In graphics, a 2-D image applied to a surface to give it color or detail.
+- **Texture** — In graphics, a 2-D image applied to a surface to give it color or detail. In the GPGPU hack, textures were repurposed as flat numerical arrays for weights or input data.
 - **Stream kernel (Brook's framing)** — Brook's abstraction for a computation applied identically across an ordered collection of data elements (a "stream"). The term recast the GPU's pixel-shader invocations as a general-purpose parallel loop, hiding the graphics vocabulary beneath a more mathematical one.
-- **AGP bus** — The Accelerated Graphics Port, the physical link between a PC's CPU and its graphics card in this era.
+- **AGP bus** — The Accelerated Graphics Port, the physical link between a PC's CPU and its graphics card in this era. Its uneven bandwidth made GPU-to-CPU read-back costly, pushing researchers to keep intermediate training data on the card.
 - **Multilayer perceptron (MLP)** — A class of neural network organized into layers, where each unit in a layer computes a weighted sum of the previous layer's outputs. Oh and Jung showed that these weighted sums can be organized as matrix multiplication, which is the mathematical bridge that made GPU acceleration possible for their workload.
 
 </details>

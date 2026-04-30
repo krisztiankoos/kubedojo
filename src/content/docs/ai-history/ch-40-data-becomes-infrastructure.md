@@ -33,7 +33,7 @@ timeline
     1990 : WordNet paper collection reports synsets and semantic relations
     2005 : Amazon announces Mechanical Turk (November 2) as a web-services API for distributable microtasks
     2007 : ImageNet crowdsourced-verification phase begins — 49k workers across 167 countries
-    2009 : Deng, Dong, Socher, Li-Jia Li, Kai Li, and Li Fei-Fei publish ImageNet at CVPR : an initial large-scale hierarchical image database is reported
+    2009 : Deng, Dong, Socher, Li-Jia Li, Kai Li, and Li Fei-Fei publish ImageNet at CVPR : 5,247 synsets and 3.2 million verified images reported
     2010 : ILSVRC begins as an annual large-scale visual recognition benchmark built from ImageNet
     2014 : ImageNet reaches 21,841 synsets and 14,197,122 annotated images (August)
 ```
@@ -46,10 +46,10 @@ timeline
 - **WordNet** — An online lexical database developed at Princeton from 1985. Instead of listing words alphabetically, it groups English nouns, verbs, and adjectives into synonym sets linked by semantic relations such as hypernym (broader category) and hyponym (more specific instance).
 - **Synset** — A synonym set in WordNet: a cluster of words that all name the same underlying concept. ImageNet's unit of organization was the synset, not a bare word or arbitrary tag.
 - **Hypernym / hyponym** — WordNet terms for conceptual hierarchy: hypernyms are broader categories, while hyponyms are more specific instances.
-- **Amazon Mechanical Turk (AMT)** — A crowdsourcing marketplace for routing small tasks to distributed workers.
+- **Amazon Mechanical Turk (AMT)** — A crowdsourcing marketplace for routing small tasks to distributed workers. ImageNet used it to verify whether each candidate image contained the target synset's object, not to generate labels from scratch.
 - **ILSVRC (ImageNet Large Scale Visual Recognition Challenge)** — An annual benchmark competition that began in 2010, built on the ImageNet database. It provided a common training set, held-out evaluation images, and a workshop; it scaled from PASCAL VOC's 20 classes and ~20,000 images to 1,000 classes and over 1.4 million images.
 - **Query expansion** — A search-strategy technique that widens or clarifies a search by adding related terms instead of relying on one literal keyword.
-- **Precision (ImageNet sense)** — The fraction of collected images correctly showing the target concept after verification.
+- **Precision (ImageNet sense)** — The fraction of collected images correctly showing the target concept after verification; the ImageNet paper reported about 99.7 percent after verification versus about 10 percent average raw search-result accuracy.
 
 </details>
 
