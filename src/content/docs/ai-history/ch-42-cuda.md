@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-Before 2006, harnessing GPU arithmetic for non-graphics work required disguising computations as pixel-shader tricks. CUDA ended that era. By marrying Ian Buck's C-like programming model to NVIDIA's G80 unified architecture — with its 128 stream processors, shared on-chip memory, and a grid/block/thread execution hierarchy — NVIDIA converted GPGPU from a research curiosity into a stable, vendor-supported infrastructure platform. The GPU did not stop rendering; it became a parallel compute engine that scientists could program without first becoming graphics specialists.
+Before 2006, harnessing GPU arithmetic for non-graphics work required disguising computations as pixel-shader tricks. CUDA ended that era. By pairing a C-like programming surface with NVIDIA's rebuilt GPU architecture, NVIDIA converted GPGPU from a research curiosity into a stable, vendor-supported infrastructure platform. The GPU did not stop rendering; it became a parallel compute engine that scientists could program without first becoming graphics specialists.
 :::
 
 <details>
@@ -14,11 +14,11 @@ Before 2006, harnessing GPU arithmetic for non-graphics work required disguising
 
 | Name | Lifespan | Role |
 |---|---|---|
-| Ian Buck | — | Stanford PhD researcher, Brook development lead; joined NVIDIA to start CUDA (date conflict: NVIDIA bio says 2004, Buck said 2005). |
+| Ian Buck | — | Stanford PhD researcher and GPU-computing abstraction pioneer; joined NVIDIA to help start CUDA (date conflict: NVIDIA bio says 2004, Buck said 2005). |
 | Pat Hanrahan | — | Stanford graphics professor and Buck's co-author on the 2003 data-parallel computation report and the 2004 Brook SIGGRAPH paper. |
-| John Nickolls | — | NVIDIA director of architecture for GPU computing; co-author of the 2008 ACM Queue CUDA article documenting the programming model. |
-| Michael Garland | — | NVIDIA researcher; co-author of the 2008 ACM Queue CUDA article. |
-| Kevin Skadron | — | University of Virginia professor, on sabbatical with NVIDIA Research; co-author of the 2008 ACM Queue CUDA article. |
+| John Nickolls | — | NVIDIA director of architecture for GPU computing and public technical explainer of CUDA's programming model. |
+| Michael Garland | — | NVIDIA researcher involved in public technical documentation of CUDA's early programming model. |
+| Kevin Skadron | — | University of Virginia professor, on sabbatical with NVIDIA Research during CUDA's early technical-publication period. |
 | Jensen Huang | — | NVIDIA CEO; later reporting describes him marketing programmable GPUs to the supercomputing community in 2006. |
 
 </details>
@@ -31,12 +31,12 @@ timeline
     title CUDA — Key Events
     1999 : NVIDIA introduces GeForce; GPU branding established
     2003 : Buck and Hanrahan publish Stanford tech report arguing that a correct abstraction over graphics hardware is necessary; Brook named as implementation
-    2004 : Buck et al. publish "Brook for GPUs" at SIGGRAPH — stream kernels, C extension, compiler/runtime abstraction
+    2004 : Buck et al. publish "Brook for GPUs" at SIGGRAPH
     2004/2005 : Buck moves from Stanford to NVIDIA; CUDA project begins (date conflict in sources)
     2006 : Summer 2002–2006 G80 hardware design arc culminates; GeForce 8800 GTX launches with 128 unified stream processors
     2006 : CUDA announced during GeForce 8800 launch week (trade coverage: November 8, 13, 16)
     2007 : CUDA released to developers; CUDA Programming Guide 1.1 cited in later technical writing
-    2008 : Nickolls, Buck, Garland, Skadron publish "Scalable Parallel Programming with CUDA" in ACM Queue; tens of thousands of developers reported
+    2008 : Nickolls, Buck, Garland, Skadron publish "Scalable Parallel Programming with CUDA" in ACM Queue
 ```
 
 </details>
@@ -44,11 +44,11 @@ timeline
 <details>
 <summary><strong>Plain-words glossary</strong></summary>
 
-- **Kernel (CUDA)** — A C-like function written once by the programmer but executed simultaneously by thousands of GPU threads. The programmer writes the logic for one thread; CUDA launches it across the entire grid.
-- **Grid / thread block / thread** — The three-level hierarchy CUDA uses to organize parallel work. A kernel launch specifies a grid of blocks; each block contains a set of cooperating threads; threads inside a block can share data and synchronize with barriers. Blocks are independent of one another, which lets the hardware schedule them freely.
+- **Kernel (CUDA)** — A C-like function written once by the programmer and executed many times by GPU threads.
+- **Grid / thread block / thread** — CUDA's nested labels for grouping parallel work, from a whole launch down to individual execution instances.
 - **SIMT (Single-Instruction, Multiple-Thread)** — CUDA's execution model: the hardware issues the same instruction to many threads at once, each operating on its own data. It differs from classical SIMD in that individual threads can take divergent code paths, at a performance cost.
-- **Shared memory** — A small, fast, on-chip memory space available to all threads within a block. On Tesla-architecture GPUs it maps to low-latency SRAM, making it a software-managed cache that threads can use to cooperate without hitting the slower board DRAM.
-- **Host / device split** — CUDA's term for the CPU-side ("host") and GPU-side ("device") memory spaces. Data must be explicitly copied between them; this transfer cost shapes how CUDA programs are designed, encouraging programmers to keep large computations on the GPU side rather than shuttling results back and forth.
+- **Shared memory** — A fast scratchpad-style memory space that threads in the same local group can use to cooperate.
+- **Host / device split** — CUDA's term for the CPU-side ("host") and GPU-side ("device") parts of a program and their separate memory spaces.
 
 </details>
 

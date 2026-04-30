@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-In 2012, Alex Krizhevsky, Ilya Sutskever, and Geoffrey Hinton entered the ImageNet Large Scale Visual Recognition Challenge under the name SuperVision and posted 15.3% top-5 error against the runner-up's 26.2% — a gap too large to explain away. The result did not invent neural networks or GPU computing; it turned scale into public, benchmarked proof that learned visual features could beat hand-built feature-engineering pipelines on their own contest.
+In 2012, Alex Krizhevsky, Ilya Sutskever, and Geoffrey Hinton entered the ImageNet Large Scale Visual Recognition Challenge under the name SuperVision and won by a margin too large to explain away. The result did not invent neural networks or GPU computing; it turned scale into public, benchmarked proof that learned visual features could beat hand-built feature-engineering pipelines on their own contest.
 :::
 
 <details>
@@ -36,7 +36,7 @@ timeline
        : Submission deadline (September 30)
        : Preliminary results released to participants (October 8)
        : ILSVRC2012 workshop at ECCV (October 12)
-       : Full results released — SuperVision 15.3 % top-5 error vs ISI 26.2 % (October 13)
+       : Full results released — SuperVision wins by an unprecedented margin (October 13)
        : Krizhevsky et al. publish AlexNet paper at NIPS 2012
   2013 : Vast majority of ILSVRC entries use deep convolutional neural networks
   2014 : Almost all ILSVRC teams use CNNs as the basis for their submissions
@@ -52,13 +52,13 @@ timeline
 
 **Top-5 error:** The fraction of test images for which the correct label is absent from the model's five highest-scoring guesses. A model may return up to five candidate labels; the prediction is wrong only if none of them match. Used by ILSVRC because many natural photographs are genuinely ambiguous.
 
-**Convolutional neural network (CNN):** A network that applies learned filters sliding across local image regions rather than connecting every pixel to every unit independently. Early layers detect local patterns; deeper layers combine those into more abstract features. AlexNet used five convolutional layers followed by three fully connected layers.
+**Convolutional neural network (CNN):** A network that applies learned filters sliding across local image regions rather than connecting every pixel to every unit independently. Early layers detect local patterns; deeper layers combine those into more abstract features.
 
-**ReLU (Rectified Linear Unit):** A nonlinearity that returns zero for negative inputs and grows linearly for positive ones. Avoids the slow learning seen in earlier saturating units; the AlexNet paper reported ReLU networks trained several times faster, which mattered when training already took five to six days.
+**ReLU (Rectified Linear Unit):** A nonlinearity that returns zero for negative inputs and grows linearly for positive ones, often making optimization easier than with saturating units.
 
 **Dropout:** A regularization method that randomly sets each neuron's output to zero with some probability during training. Prevents the network from relying on fragile patterns among particular units, helping a large model generalize rather than memorize the training set.
 
-**Fisher vector:** A compact encoding that summarizes how a collection of local image descriptors deviates from a statistical model. Together with SIFT and LBP descriptors, Fisher vectors defined the competitive feature-engineering regime that AlexNet defeated in ILSVRC2012.
+**Fisher vector:** A compact encoding that summarizes how a collection of local image descriptors deviates from a statistical model.
 
 </details>
 
