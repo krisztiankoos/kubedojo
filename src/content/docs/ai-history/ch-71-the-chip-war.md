@@ -5,6 +5,65 @@ sidebar:
   order: 71
 ---
 
+:::tip[In one paragraph]
+In 2022 the United States began treating advanced AI accelerators as instruments of geopolitical power. BIS's October 7, 2022 controls linked advanced computing ICs, supercomputers, AI, military modernization, WMD design, and surveillance, then expanded across 2023 and December 2024 to cover HBM, manufacturing equipment, and software tools. ASML, TSMC, the Netherlands, and Japan became part of the rulebook. CHIPS funded slow re-shoring; China answered with materials controls. Frontier AI capability became a negotiated property of supply chains and law.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Gina Raimondo (BIS / U.S. Commerce) | — | Public face of the 2023/2024 export-control announcements |
+| Alan Estevez / Thea Rozman Kendler / Jeffery Kessler (BIS) | — | BIS leadership voices through the 2025 policy pivot |
+| Jensen Huang (NVIDIA) | — | Company-side witness to product-threshold adaptation through H20 |
+| C.C. Wei (TSMC) | — | Annual-report voice for advanced-node and CoWoS packaging capacity |
+| ASML management / investor relations | — | Institutional witness for EUV/DUV and export-control exposure |
+| MOFCOM / China's Bureau of Industrial Security | — | Counterparty in the December 2024 materials-control notice |
+
+</details>
+
+<details>
+<summary><strong>Timeline (2022–2025)</strong></summary>
+
+```mermaid
+timeline
+    title Chapter 71 — The Chip War
+    Aug 2022 : CHIPS and Science Act signed into law
+    Oct 2022 : BIS advanced-computing and SME controls take effect (87 FR 62186)
+    Jul 2023 : Japan METI controls on high-performance SME take effect
+    Sep 2023 : Dutch national export-control rules for advanced SME in force
+    Oct 2023 : BIS releases updates reinforcing the 2022 controls
+    Sep 2024 : Dutch SME rules expanded to DUV lithography equipment
+    Q4 2024 : TSMC Arizona first fab enters 4nm volume production
+    Dec 2 2024 : BIS announces SME / software / HBM / Entity List package; ASML statement
+    Dec 3 2024 : China MOFCOM Notice 2024 No. 46 restricts gallium / germanium / antimony / graphite
+    Jan 15 2025 : AI Diffusion Rule issued in Federal Register
+    Apr 9 2025 : NVIDIA discloses H20 license requirement for China / HK / Macau / D:5
+    May 13 2025 : Commerce announces rescission of AI Diffusion Rule and new BIS guidance
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+**Export controls** — A government's legal authority to restrict the shipment of items, technology, software, services, and U.S.-person support across borders. BIS's October 2022 rule used controls to link advanced computing ICs, supercomputers, and AI applications to national-security rationale.
+
+**Foreign direct product (FDP) rule** — A jurisdictional reach that brings items made outside the United States under U.S. export controls when they are direct products of certain U.S. technology or software. The 2022 BIS package used FDP and Entity List footnotes to extend reach across a globally distributed semiconductor industry.
+
+**Semiconductor manufacturing equipment (SME)** — The machines that produce advanced chips: lithography systems, deposition tools, etch tools, metrology, and process-control equipment. The December 2024 BIS package added controls on additional SME types and software tools used in chip manufacturing.
+
+**EUV / DUV lithography** — Two patterning technologies used to print circuit features onto wafers. EUV uses 13.5 nanometer light and prints the smallest, highest-density features at advanced nodes. ASML is the world's only manufacturer of EUV systems; DUV immersion remains important and entered the December 2024 control conversation.
+
+**High-bandwidth memory (HBM)** — Stacked memory packaged close to an accelerator to feed it data fast enough for AI training and inference at scale. The December 2024 BIS package added HBM controls because raw arithmetic units cannot be used efficiently without enough memory bandwidth.
+
+**Advanced packaging / CoWoS** — The back-end manufacturing step that integrates compute dies, memory, and substrates into a single accelerator package. TSMC's CoWoS capacity sat alongside its 3nm and 2nm wafer capacity as a strategic bottleneck for frontier AI chips.
+
+**Entity List** — A BIS-published list of foreign persons and organizations that require licenses for items subject to U.S. export controls. The December 2024 package added 140 entities and modified 14 more, often with FDP footnotes that extend reach.
+
+</details>
+
 The server became a strategic asset.
 
 Chapter 70 followed the power. Frontier AI stopped looking like software alone and became a load on substations, generation fleets, interconnection rules, nuclear contracts, and local grids. Ch71 follows the machine upstream. Before a model can draw power in a data center, someone has to get the accelerators, memory, packaging, lithography, foundry capacity, software tools, and legal permissions that make the accelerator exist.
@@ -60,6 +119,12 @@ This loop has a strange side effect: regulation becomes part of product architec
 The moving-threshold dynamic also creates uncertainty for customers. A buyer can build a training plan around a permitted product, only to see the rules shift. A cloud provider can plan a region around a compliant accelerator, only to face license uncertainty. A chip vendor can create a product for a specific regulatory window, only to have the window close. The rule does not need to confiscate a chip already installed to change behavior; the possibility of future restriction changes purchasing, inventory, and architecture decisions today.
 
 NVIDIA's public filings made that loop concrete. The company disclosed that U.S. licensing requirements applied to products exceeding thresholds, including A100, A800, H100, H800, L40, RTX 4090, GB200, and B200. It also disclosed that on April 9, 2025, the U.S. government informed it that H20 exports to China, Hong Kong, Macau, and D:5 countries required a license. NVIDIA said it incurred a $4.5 billion charge and warned that if it could not offer a competitive approved product, it might be foreclosed from China's data-center compute market.
+
+:::note
+> "Repeated changes in the export control rules are likely to impose compliance burdens on our business and our customers, negatively and materially impacting our business."
+
+This turns moving export thresholds into SEC-disclosed operating risk: a U.S. semiconductor leader pricing rule volatility into shareholder language.
+:::
 
 That filing should not be turned into a NVIDIA monopoly chapter. Ch67 owns that story. Here, H20 matters because it shows policy and product co-evolving. Export thresholds do not merely block old products; they shape future products. A chip can become the artifact of a negotiation between customer demand, engineering constraints, and government limits.
 
@@ -177,6 +242,11 @@ The people answering those questions were not only presidents and ministers. The
 
 That question points directly to the book's final chapter. Ch70 showed that chips need power. Ch71 showed that chips need supply-chain permission. Ch72 asks where all of this actually lands: the campuses, land, water, financing structures, construction timelines, and industrial-scale commitments that turn models into permanent infrastructure.
 
+:::note[Why this still matters today]
+Every frontier model launch you read about in the late 2020s sits inside this stack. The accelerators in the cluster came from a foundry that is mostly in Taiwan; the lithography came from one Dutch supplier; the memory and packaging came from a small group of vendors; the legal permission to ship them came from BIS, plus Dutch and Japanese coordinated controls. CHIPS funding moved capacity slowly while AI scaled fast. China's materials controls were a reminder that supply-chain leverage runs both ways. When you read "export license" or "sanctioned chip" next to an AI announcement, you are seeing this chapter still operating: AI capability remains a negotiated property of supply chains and law.
+:::
+
 At the beginning of AI history, intelligence looked like a theorem, a neuron, a program, or a search tree.
 
 By the 2020s, it also looked like an export license.
+
