@@ -5,6 +5,106 @@ sidebar:
   order: 58
 ---
 
+:::tip[In one paragraph]
+Image generation crossed a different threshold than text. In 2015, Sohl-Dickstein et al. framed generation as forward diffusion (data → noise) plus a learned reverse diffusion (noise → data). Ho et al. (2020) made the recipe practical with DDPMs and noise-prediction training. Dhariwal and Nichol (2021) beat GANs on benchmarks. Rombach et al. (2021/22) moved denoising from pixel space into a compressed autoencoder *latent* with cross-attention conditioning. On August 22, 2022 Stability AI released Stable Diffusion publicly. Noise had become a medium.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Jascha Sohl-Dickstein | — | Lead author of the 2015 nonequilibrium-thermodynamics diffusion paper; physics/Markov-chain origin story |
+| Jonathan Ho | — | Lead author of DDPM (2020) and co-author of classifier-free guidance; noise-prediction parameterization |
+| Pieter Abbeel | — | DDPM co-author (Berkeley); broader RL/robotics lab context for the diffusion line |
+| Prafulla Dhariwal & Alex Nichol | — | OpenAI authors of "Diffusion Models Beat GANs on Image Synthesis" (2021); benchmark-break + classifier guidance |
+| Robin Rombach & Patrick Esser | — | Latent-diffusion authors (CompVis/LMU + Runway); compressed-latent shift that feeds Stable Diffusion |
+| Stability AI / CompVis / Runway | — | Institutional actors: CompVis built latent diffusion; Stability AI funded the 4,000-A100 training run and published Stable Diffusion v1 |
+
+</details>
+
+<details>
+<summary><strong>Timeline (2015–August 2022)</strong></summary>
+
+```mermaid
+timeline
+    title Chapter 58 — The Math of Noise
+    2015 : Sohl-Dickstein et al. publish "Deep Unsupervised Learning using Nonequilibrium Thermodynamics" — generation as forward diffusion + learned reverse
+    2020 : Ho, Jain, Abbeel publish DDPM — noise-prediction parameterisation, U-Net backbone, high-quality image synthesis
+    2021 : Dhariwal and Nichol publish "Diffusion Models Beat GANs on Image Synthesis" — classifier guidance + improved architecture
+    2021/22 : Rombach et al. publish latent diffusion — denoise in autoencoder latent space, cross-attention conditioning
+    Aug 10 2022 : Stability AI announces researcher release of Stable Diffusion — 4,000-A100 cluster, LAION-Aesthetics
+    Aug 22 2022 : Stability AI publicly releases Stable Diffusion v1.4 — weights + code + model card + safety classifier under OpenRAIL-M license
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+**Forward diffusion / reverse diffusion** — Two coupled Markov chains. *Forward* gradually corrupts a data sample by adding small amounts of Gaussian noise across many timesteps until the sample is indistinguishable from pure noise. *Reverse* is the learned chain that walks back: given a noisy state and a timestep, produce a slightly less-noisy state. Generation is sampling random noise and running the reverse chain to completion.
+
+**DDPM (Denoising Diffusion Probabilistic Model)** — Ho, Jain, and Abbeel 2020. Specifies the forward chain as fixed-variance Gaussian noise on a schedule, the reverse chain as learned Gaussian transitions, and reparameterizes the training target to *predict the noise* added at each step rather than the clean image directly. This noise-prediction simplification is what made diffusion practical.
+
+**Noise-prediction objective ($\epsilon$-prediction)** — During training, sample a clean image $x_0$, sample noise $\epsilon$, and a timestep $t$; produce the noisy state $x_t$ from a known formula; train the network to predict $\epsilon$. Loss is mean-squared error between predicted and actual noise. At sampling time, the same network's prediction is used to step $x_t \to x_{t-1}$.
+
+**U-Net backbone** — The convolutional encoder-decoder architecture (originally for biomedical segmentation) DDPM used as its denoiser. Combines broad-context downsampling with skip connections that preserve spatial detail; well-suited to image-shape outputs that diffusion needs at every step.
+
+**Classifier guidance / classifier-free guidance** — Two ways to make conditional samples follow a target class or text. *Classifier guidance* uses a separate classifier to push samples toward the desired class. *Classifier-free guidance* (Ho & Salimans) trains conditional and unconditional models jointly and mixes their score estimates at sampling time — the underlying mechanism behind "prompt strength" in modern image generators.
+
+**Latent diffusion** — Rombach et al. 2021/22. Train an autoencoder that compresses an image (e.g., 512×512) into a much smaller latent (e.g., 64×64), then run the diffusion process *in the latent space* rather than in pixels. Cuts compute cost by roughly the spatial-compression factor while preserving perceptual quality. This is what made Stable Diffusion runnable on consumer GPUs.
+
+**Cross-attention conditioning** — The mechanism by which latent diffusion accepts text prompts: text is encoded (CLIP text encoder, in Stable Diffusion v1), then the diffusion U-Net's intermediate layers attend over the text embeddings via cross-attention. Conditioning is mixed in at every layer, not just at the start.
+
+</details>
+
+<details>
+<summary><strong>The math, on demand</strong></summary>
+
+- **Forward diffusion (one step).** $q(x_t \mid x_{t-1}) = \mathcal{N}(x_t;\, \sqrt{1-\beta_t}\, x_{t-1},\, \beta_t \mathbf{I})$ — at timestep $t$, add Gaussian noise with variance $\beta_t$ from a chosen schedule $\{\beta_1, \dots, \beta_T\}$. The mean is shrunk by $\sqrt{1-\beta_t}$ to keep variance bounded as the chain progresses. Source: Sohl-Dickstein et al. 2015 / Ho et al. 2020 §2.
+
+- **Forward closed form (jump to step $t$).** $q(x_t \mid x_0) = \mathcal{N}(x_t;\, \sqrt{\bar{\alpha}_t}\, x_0,\, (1-\bar{\alpha}_t) \mathbf{I})$ with $\alpha_t = 1 - \beta_t$ and $\bar{\alpha}_t = \prod_{s=1}^{t} \alpha_s$. So $x_t = \sqrt{\bar{\alpha}_t}\, x_0 + \sqrt{1-\bar{\alpha}_t}\, \epsilon$ for $\epsilon \sim \mathcal{N}(0, \mathbf{I})$ — the entire forward chain can be sampled in one shot, which is what makes the noise-prediction loss cheap to compute. Source: Ho et al. 2020 §2.
+
+- **Noise-prediction training objective ($L_{\text{simple}}$).** $L_{\text{simple}} = \mathbb{E}_{t, x_0, \epsilon}\!\left[\,\lVert \epsilon - \epsilon_\theta(x_t, t) \rVert^2\,\right]$ — sample a timestep, a clean image, and Gaussian noise; ask the network $\epsilon_\theta$ to predict the noise that was added; minimize squared error. This MSE form is what made DDPMs trainable with standard supervised-learning machinery. Source: Ho et al. 2020 Eq. 14.
+
+- **Reverse step (DDPM ancestral sampling).** $x_{t-1} = \dfrac{1}{\sqrt{\alpha_t}}\!\left(x_t - \dfrac{\beta_t}{\sqrt{1-\bar{\alpha}_t}}\, \epsilon_\theta(x_t, t)\right) + \sigma_t z$, with $z \sim \mathcal{N}(0, \mathbf{I})$ for $t > 1$ and $z = 0$ at $t = 1$. The network's noise prediction sets the mean of the reverse step; $\sigma_t$ is a fixed schedule choice (DDPM uses $\beta_t$ or $\tilde{\beta}_t$). Source: Ho et al. 2020 Algorithm 2.
+
+- **Classifier-free guidance (sampling-time score mixing).** $\tilde{\epsilon}_\theta(x_t, t, c) = (1+w)\, \epsilon_\theta(x_t, t, c) - w\, \epsilon_\theta(x_t, t, \emptyset)$ — at each step, predict noise both *with* the condition $c$ (e.g., text embedding) and *without* (using a learned null token $\emptyset$), then extrapolate by guidance scale $w$. $w = 0$ recovers ordinary conditional sampling; larger $w$ extrapolates away from the unconditional estimate, pushing harder toward the condition at the cost of diversity. Source: Ho & Salimans 2022.
+
+- **Latent diffusion (where the chain runs).** Encode $x_0 \to z_0 = \mathcal{E}(x_0)$ with a frozen autoencoder; run the entire DDPM forward/reverse chain on $z_t$ instead of $x_t$; decode the final $\hat{z}_0 \to \hat{x}_0 = \mathcal{D}(\hat{z}_0)$. With an 8× spatial compression (512×512 → 64×64), per-step compute drops dramatically, which is what made Stable Diffusion runnable on a single consumer GPU. Source: Rombach et al. 2021/22 §3.
+
+</details>
+
+<details>
+<summary><strong>Architecture sketch</strong></summary>
+
+```mermaid
+flowchart LR
+    %% Form: flowchart LR — default form-lock per Ch41/Ch49 sequential dataflow.
+    %% Latent diffusion (Stable Diffusion) is a left-to-right pipeline: encode
+    %% pixels to latent → run T denoising steps in latent space (each step uses
+    %% U-Net with cross-attention to text conditioning) → decode latent to pixels.
+    %% No nested memory hierarchy — Ch42's TD-deviation does not apply.
+    PIX["Pixel image\n(training only:\nclean image x_0)"] --> ENC["Autoencoder encoder E\nspatial 8x downsample\nfrozen after pretraining"]
+    ENC --> Z0["Latent z_0\n(64x64x4 for\n512x512 input)"]
+    Z0 --> Q["Forward diffusion q\nadd noise on schedule\nbeta_1 ... beta_T"]
+    Q --> ZT["Pure-noise latent z_T\n(sampling starts here)"]
+    TXT["Text prompt"] --> CLIP["CLIP text encoder\nfrozen"]
+    CLIP --> EMB["Text embeddings\n(K, V for cross-attention)"]
+    ZT --> UNET["Denoising U-Net\nepsilon_theta(z_t, t, c)\nself-attn + cross-attn\non text embeddings"]
+    EMB --> UNET
+    TIME["Timestep t\nsinusoidal embedding"] --> UNET
+    UNET --> STEP["Reverse step\nz_{t-1} from epsilon prediction\n(repeat ~50 times)"]
+    STEP --> UNET
+    STEP --> ZHAT["Final latent z_hat_0"]
+    ZHAT --> DEC["Autoencoder decoder D\nspatial 8x upsample"]
+    DEC --> OUT["Output pixel image"]
+```
+
+The frozen autoencoder is what makes latent diffusion cheap; the U-Net with cross-attention is where text conditioning enters at every layer; the schedule $\{\beta_t\}$ is fixed at training time and reused at sampling. Stable Diffusion v1 ran ~50 sampling steps to produce a 512×512 image on a single consumer GPU — a constant the public shock would build on.
+
+</details>
+
 While Transformers were remaking text, a different mathematical line was remaking images. It did not begin with chat, prompts, or product demos. It began with a strange idea: to generate data, first learn how to destroy it. Take an image, add a little noise, then a little more, then a little more, until the original structure is gone. If the corruption process is controlled, perhaps a model can learn the path backward.
 
 That idea sounds like a physics metaphor, and it partly was. Sohl-Dickstein, Weiss, Maheswaranathan, and Ganguli framed their 2015 method as inspired by non-equilibrium statistical physics. But the important word is "inspired." The model was not literally reversing entropy in the physical world. It was defining a mathematical process: a Markov chain that gradually transforms data into a tractable noise distribution, and a learned reverse process that tries to restore structure step by step.
@@ -116,3 +216,7 @@ The result was a second generative revolution running beside the language-model 
 The pairing matters. Text models made machines conversational. Diffusion models made them visually generative. Together they changed what the public thought AI could do, and they did it through different mathematics, different infrastructure, and different failure modes, setting up the product shock, creative disruption, and governance fights that follow in the next era of modern AI.
 
 Noise had become a medium, not merely a defect, and that changed image generation permanently for everyone watching closely.
+
+:::note[Why this still matters today]
+Every modern image-generation model — Stable Diffusion 3, FLUX, DALL·E 3, Midjourney, Imagen, video models like Sora — descends from this stack: latent diffusion + classifier-free guidance + cross-attention on a text encoder. The DDPM noise-prediction loss is still the dominant training objective; latent autoencoders make the cost tractable; CFG is the prompt-strength knob users adjust without knowing it. The 2022 Stable Diffusion open release also opened the unresolved fights of the next part: artist consent, training-data copyright, deepfake misuse, and the open-weights vs API divide that Ch65–Ch68 trace.
+:::
