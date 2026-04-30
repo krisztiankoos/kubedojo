@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-In 2014, Ian Goodfellow and seven collaborators at the Université de Montréal reframed image generation as a two-player game. A generator transforms random noise into synthetic samples; a discriminator tries to expose them as fake. Backpropagation trains both simultaneously, bypassing Markov chains and variational approximations. DCGAN stabilized the architecture in 2016; NVIDIA's Progressive GAN and StyleGAN extended it to photorealistic 1024×1024 faces by 2019. The price was a new problem: finding a Nash equilibrium instead of minimizing a simple loss.
+In 2014, Ian Goodfellow and seven collaborators at the Université de Montréal reframed image generation as a two-player game. A generator transforms random noise into synthetic samples; a discriminator tries to expose them as fake. Backpropagation trains both simultaneously, bypassing Markov chains and variational approximations. Later convolutional and high-resolution variants made adversarial image generation culturally visible. The price was training instability: the model now had to balance two opponents rather than minimize one simple loss.
 :::
 
 <details>
@@ -17,9 +17,9 @@ In 2014, Ian Goodfellow and seven collaborators at the Université de Montréal 
 | Ian Goodfellow | — | First author of the 2014 GAN paper; origin-story protagonist of the Montreal bar-night narrative. |
 | Yoshua Bengio | — | CIFAR Senior Fellow and co-author; head of the Montreal lab that produced the paper. |
 | Jurgen Schmidhuber | — | Author of predictability minimization (1992), named by the 2014 paper as the most relevant prior work with competing neural networks. |
-| Alec Radford | — | Lead author of DCGAN; introduced convolutional architecture constraints that stabilized adversarial training in most settings. |
+| Alec Radford | — | Lead author of DCGAN; helped make adversarial image generation more repeatable through convolutional design rules. |
 | Soumith Chintala | — | DCGAN co-author at Facebook AI Research; the DCGAN paper thanks NVIDIA for a Titan-X GPU used in the work. |
-| Tero Karras | — | Lead author on Progressive GAN (2018) and StyleGAN (2019) at NVIDIA Research; drove the 1024×1024 photorealistic face-generation arc. |
+| Tero Karras | — | NVIDIA Research author central to the high-resolution GAN work that pushed synthetic faces into public view. |
 
 </details>
 
@@ -31,12 +31,12 @@ timeline
     title Generative Adversarial Networks
     1992 : Schmidhuber publishes predictability minimization — opposing neural forces as the most relevant GAN precursor
     2014 : GAN concept reported to emerge at Les 3 Brasseurs, Montreal
-         : Goodfellow et al. publish "Generative Adversarial Nets" at NeurIPS — generator/discriminator minimax game
+         : Goodfellow et al. publish "Generative Adversarial Nets" at NeurIPS — adversarial generative framework
          : First experiments on MNIST, Toronto Face Database, and CIFAR-10 using Theano and Pylearn2
     2016 : Radford, Metz, and Chintala release DCGAN — convolutional constraints stabilize training; latent-vector arithmetic demonstrated
          : Goodfellow presents NeurIPS 2016 GAN tutorial
-    2018 : Karras, Aila, Laine, and Lehtinen publish Progressive GAN — progressive resolution growth to 1024x1024 CelebA-HQ images
-    2019 : Karras, Laine, and Aila publish StyleGAN at CVPR — style/noise separation and FFHQ photorealistic faces
+    2018 : NVIDIA Research high-resolution GAN work scales synthetic face generation
+    2019 : NVIDIA Research face-generation work advances photorealistic control
 ```
 
 </details>
@@ -48,11 +48,11 @@ timeline
 
 **Discriminator** — The half of a GAN that classifies inputs as real or fake. It receives a mixture of genuine training examples and generator outputs, and it outputs a probability. Its gradients flow back to the generator, making the discriminator the mechanism through which the generator learns.
 
-**Minimax game** — The mathematical structure of GAN training. The discriminator maximizes its ability to tell real from fake; the generator minimizes the same objective. The two networks play against each other in every update round rather than optimizing toward a shared target.
+**Minimax game** — A training setup in which two objectives are opposed, so one model's improvement changes the other model's problem.
 
-**Mode collapse** — A training failure in which the generator learns to produce only a narrow subset of plausible outputs (a single digit, for example, rather than all ten) because those few examples reliably fool the current discriminator. The 2014 paper called an extreme version the "Helvetica scenario."
+**Mode collapse** — A training failure in which the generator covers only a narrow part of the data distribution because those few outputs fool the current discriminator.
 
-**Nash equilibrium** — The theoretical endpoint of the minimax game, reached when neither player can improve by changing strategy unilaterally. In the GAN formulation, this occurs when the generator distribution matches the training data distribution and the discriminator can do no better than guessing. Reaching this point with finite networks and stochastic gradients is not guaranteed.
+**Nash equilibrium** — A game state where no player can improve by changing strategy alone. GAN training borrows this concept but rarely reaches the ideal cleanly in finite neural networks.
 
 **Latent vector** — The random noise vector fed into the generator as input. DCGAN demonstrated that arithmetic operations on latent vectors (addition, subtraction) produce semantically interpretable changes in the generated output, suggesting the generator organizes visual factors in a structured internal space.
 

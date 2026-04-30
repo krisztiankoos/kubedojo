@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-In 2015, He, Zhang, Ren, and Sun at Microsoft Research discovered that adding layers to a neural network could worsen training error — not from vanishing gradients but because the optimizer failed to find even an identity mapping. Their fix was a shortcut connection carrying the input around a stack of learned layers, letting the stack correct the residual. The 152-layer ResNet won ILSVRC 2015 with 3.57 percent top-5 error; residual connections became a default grammar for deep learning.
+In 2015, He, Zhang, Ren, and Sun at Microsoft Research discovered that adding layers to a neural network could make training worse even when the model had more capacity. Their fix routed information around learned layers so the network could use depth without forcing every stack to relearn what should pass through unchanged. A 152-layer ResNet won ILSVRC 2015, and residual connections became a default grammar for deep learning.
 :::
 
 <details>
@@ -33,7 +33,7 @@ timeline
     September 2014 : Simonyan and Zisserman release the VGG paper — ImageNet depth pushed to 16–19 weight layers with 3x3 filters
     2014 : GoogLeNet and VGG make "very deep" ImageNet models the state of the art, with leading architectures at roughly 16 to 30 layers
     February–July 2015 : Batch Normalization appears at ICML 2015, addressing gradient instability and enabling tens-layer networks to begin converging
-    December 10 2015 : He, Zhang, Ren, and Sun post ResNet to arXiv — residual learning with identity shortcuts, up to 152 layers, 3.57% ensemble ImageNet error
+    December 10 2015 : He, Zhang, Ren, and Sun post ResNet to arXiv — residual learning makes very deep ImageNet models trainable
     ILSVRC / COCO 2015 : ResNet team wins first place in ImageNet classification, detection, localization, COCO detection, and COCO segmentation
     June 2016 : ResNet paper published at CVPR 2016, pp. 770–778
 ```
@@ -43,15 +43,15 @@ timeline
 <details>
 <summary><strong>Plain-words glossary</strong></summary>
 
-**Optimization degradation** — The phenomenon where adding more layers to a neural network makes training error *worse*, not better. This is distinct from overfitting, which reduces training error while worsening test error. Optimization degradation means the optimizer itself is failing.
+**Optimization degradation** — The phenomenon where adding more layers to a neural network makes training harder or causes training error to get worse.
 
-**Residual mapping** — Instead of asking a stack of layers to learn the target function H(x) directly, residual learning reformulates the task as learning F(x) = H(x) − x, the difference between the desired output and the input. The original mapping is then recovered as F(x) + x.
+**Residual mapping** — A formulation where a stack of layers learns a correction to its input rather than the whole desired transformation from scratch.
 
-**Shortcut connection** — A path in the neural network's computational graph that carries the input directly around one or more learned layers and adds it to their output. In ResNet, the default shortcut is a parameter-free identity function.
+**Shortcut connection** — A path in the neural network's computational graph that carries activations around learned layers so they can be combined later.
 
-**Bottleneck block** — A residual block design used for networks of 50 layers and deeper. It uses three layers (1×1, 3×3, 1×1 convolutions) instead of two, first reducing dimensions, then expanding them, reducing arithmetic cost while preserving depth.
+**Bottleneck block** — A residual block design that reduces arithmetic cost while preserving enough depth for very large networks.
 
-**FLOP (floating-point operation)** — A single arithmetic step a processor performs. FLOP counts measure how much computation a model requires per forward pass; the 152-layer ResNet used 11.3 billion FLOPs, fewer than VGG-19's 19.6 billion.
+**FLOP (floating-point operation)** — A single arithmetic step a processor performs. FLOP counts estimate how much computation a model requires per forward pass.
 
 **Projection shortcut** — A shortcut connection that applies a learned linear transformation to the input before addition, used when the input and output of a residual block have different dimensions. The ResNet paper showed identity shortcuts were sufficient to resolve degradation; projection provides only marginal gains.
 

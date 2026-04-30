@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-Recurrent neural networks promised to learn from sequences of any length, but gradient descent failed across long gaps: error signals vanished or exploded during backpropagation through time. In 1997, Hochreiter and Schmidhuber introduced Long Short-Term Memory, a gated architecture whose constant error carousel kept gradients stable across thousands of steps. LSTM powered speech recognition and machine translation at scale, yet its inherently sequential computation prevented parallelisation within a single sequence — the bottleneck Vaswani et al. named explicitly in 2017.
+Recurrent neural networks promised to learn from sequences of any length, but gradient descent failed across long gaps: error signals vanished or exploded during backpropagation through time. In 1997, Hochreiter and Schmidhuber introduced Long Short-Term Memory, a gated architecture that made long-range learning practical. LSTM powered speech recognition and machine translation at scale, yet its step-by-step computation exposed a hardware bottleneck that Vaswani et al. named explicitly in 2017.
 :::
 
 <details>
@@ -19,7 +19,7 @@ Recurrent neural networks promised to learn from sequences of any length, but gr
 | Yoshua Bengio | — | Co-author of the 1994 paper that independently formalized the difficulty of learning long-term dependencies with gradient descent. |
 | Ilya Sutskever, Oriol Vinyals, and Quoc V. Le | — | Authors of the 2014 sequence-to-sequence LSTM paper; provide the chapter's infrastructure detail: deep LSTMs, 8 GPUs, ten-day training. |
 | Felix A. Gers and Fred Cummins | — | Co-authors with Schmidhuber on the 2000 paper that introduced the adaptive forget gate for continual LSTM streams. |
-| Ashish Vaswani et al. | — | Authors of "Attention Is All You Need" (2017); named the sequential parallelisation constraint of recurrent models that concludes this chapter's arc. |
+| Ashish Vaswani et al. | — | Authors of "Attention Is All You Need" (2017); made the recurrent sequential bottleneck central to the Transformer argument. |
 
 </details>
 
@@ -44,13 +44,13 @@ timeline
 <details>
 <summary><strong>Plain-words glossary</strong></summary>
 
-- **Backpropagation through time (BPTT)** — The standard method for training recurrent networks: the network is conceptually unrolled across every time step, then ordinary backpropagation is applied to the resulting deep structure. Error signals must travel backward through every step, which creates the vanishing- and exploding-gradient problem at long distances.
+- **Backpropagation through time (BPTT)** — The standard method for training recurrent networks: the network is conceptually unrolled across time, then ordinary backpropagation is applied to that unfolded structure.
 - **Vanishing gradient** — When error signals shrink toward zero as they travel backward through many time steps, the network can no longer assign credit to inputs far in the past. Training may appear stable while the model silently ignores distant dependencies.
-- **Constant error carousel (CEC)** — The self-connected, linear memory-cell path at the centre of an LSTM unit. Its self-connection weight is fixed at 1.0, so the gradient passing through it is multiplied by 1 at each step, neither shrinking nor exploding over long sequences.
-- **Gate (LSTM)** — A multiplicative mechanism that controls whether information can enter a memory cell, leave it, or be discarded. The input gate controls writing, the output gate controls reading, and the forget gate (added in 2000) controls selective erasure of stored content.
+- **Constant error carousel (CEC)** — The protected memory path at the centre of an LSTM unit, designed to preserve error flow across long spans.
+- **Gate (LSTM)** — A learned multiplicative control that regulates what information is written, exposed, or erased inside an LSTM memory cell.
 - **Sequence-to-sequence learning** — A framework in which one recurrent network encodes a variable-length input into a fixed-size vector, and a second recurrent network decodes that vector into a variable-length output. Used in the 2014 Sutskever et al. paper for English-French machine translation.
-- **Model parallelism** — Splitting a single neural network across multiple hardware devices (e.g. one LSTM layer per GPU) so the model fits and runs, as opposed to data parallelism, which runs copies of the same model on different batches. The 2014 seq2seq paper and 2016 GNMT system both relied on model parallelism to handle deep recurrent stacks.
-- **Sequential operations** — Computations that must be performed in order because each depends on the previous result. Vaswani et al. 2017 quantified recurrent layers as requiring O(n) sequential operations for a sequence of length n, versus O(1) for self-attention — the architectural signature of the recurrent bottleneck.
+- **Model parallelism** — Splitting one neural network across multiple hardware devices so pieces of a large model can fit and run together.
+- **Sequential operations** — Computations that must be performed in order because each result depends on the previous result.
 
 </details>
 
