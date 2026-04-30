@@ -61,6 +61,14 @@ timeline
 
 In 2012, visual recognition was transformed by the realization that scale, both in model capacity and computational power, could unlock performance previously thought unattainable. Alex Krizhevsky, Ilya Sutskever, and Geoffrey Hinton introduced an architecture for the ImageNet Large Scale Visual Recognition Challenge that firmly established deep convolutional neural networks as the dominant approach. Their model, often referred to as AlexNet, was large for its era. It consisted of five convolutional layers followed by three fully connected layers, containing roughly sixty million parameters and 650,000 neurons. Training such a network required specialized infrastructure. The team utilized two NVIDIA GTX 580 GPUs, each with three gigabytes of memory, and ran the training process for five to six days. The resulting performance on ImageNet demonstrated that a deep architecture, given enough data and parallel compute, could achieve breakthrough accuracy.
 
+:::note
+> "All of our experiments suggest that our results can be improved simply by waiting for faster GPUs and bigger datasets to become available."
+>
+> — Krizhevsky et al. 2012, p.1
+
+AlexNet's own forward bet on scale, which Ch47 complicates: depth itself, not just data and compute, becomes the constraint.
+:::
+
 The lesson was not simply that neural networks had become fashionable again. AlexNet made the machinery of scale visible. A contest built around more than a million natural images had become a proving ground for learned feature hierarchies, and the winning system depended on both algorithmic decisions and the practical ability to keep a large convolutional model moving through data. Its split across two GPUs was not an incidental footnote; it showed that the architecture was already pressing against memory and throughput limits. The five convolutional layers extracted increasingly abstract visual patterns, while the fully connected layers turned those patterns into ImageNet class decisions. The system's success made a once-risky proposition feel empirical: if the data and compute were available, deeper learned vision systems could outperform hand-engineered recognition pipelines.
 
 Following this success, the field naturally asked how far the principle of scale could be pushed. If an eight-layer network produced a massive leap in capability, perhaps a deeper network could do even better. This intuition drove subsequent research, most notably by Karen Simonyan and Andrew Zisserman at the University of Oxford. Their work on Very Deep Convolutional Networks, known as VGG, pushed the depth of ImageNet models to between sixteen and nineteen weight layers. To manage the complexity of deeper networks, the VGG architecture standardized the use of small, three-by-three convolutional filters, demonstrating that stacking more layers of simple filters improved ImageNet accuracy compared to fewer layers of larger filters.
