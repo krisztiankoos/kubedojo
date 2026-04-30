@@ -21,7 +21,7 @@ This section is organized as a Tier-1 spine of twelve practitioner-essentials, f
 |---|---|---|
 | 1.1 | [Scikit-learn API & Pipelines](module-1.1-scikit-learn-api-and-pipelines/) | Available |
 | 1.2 | Linear & Logistic Regression with Regularization | Coming soon (Phase 1b) |
-| 1.3 | Model Evaluation, Validation, Leakage & Calibration | Coming soon (Phase 1a) |
+| 1.3 | [Model Evaluation, Validation, Leakage & Calibration](module-1.3-model-evaluation-validation-leakage-and-calibration/) | Available |
 | 1.4 | Feature Engineering & Preprocessing | Coming soon (Phase 1a) |
 | 1.5 | Decision Trees & Random Forests | Coming soon (Phase 1b) |
 | 1.6 | [XGBoost & Gradient Boosting](module-1.6-xgboost-gradient-boosting/) | Available |

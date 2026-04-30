@@ -6,6 +6,10 @@ sidebar:
   label: "What's New"
 ---
 
+## May 1, 2026 — Machine Learning Module 1.3: Evaluation, Validation, Leakage & Calibration
+
+[Module 1.3](/ai-ml-engineering/machine-learning/module-1.3-model-evaluation-validation-leakage-and-calibration/) is the first Phase 1a module of the ML expansion in [issue #677](https://github.com/kube-dojo/kube-dojo.github.io/issues/677). It teaches an evaluation discipline rather than a metric reference: a three-way train/validation/test split where the test set is touched once, a decision table for cross-validation splitters (KFold vs StratifiedKFold vs GroupKFold vs StratifiedGroupKFold vs TimeSeriesSplit), a taxonomy of leakage failure modes (preprocessing, target, oversampling, group, temporal, threshold, train-as-generalization), classification and regression metric trade-offs, and a calibration workflow with Platt scaling versus isotonic regression via `CalibratedClassifierCV`, reliability diagrams, ECE, and the Brier decomposition. Every claim ties to the official scikit-learn user guide.
+
 ## May 1, 2026 — Machine Learning Track Restructured (Phase 0)
 
 The AI/ML Engineering track's `classical-ml/` section has been restructured and renamed to [Machine Learning](/ai-ml-engineering/machine-learning/), and a new peer section [Reinforcement Learning](/ai-ml-engineering/reinforcement-learning/) has been scaffolded. Old URLs redirect to their new homes; nothing existing 404s.
