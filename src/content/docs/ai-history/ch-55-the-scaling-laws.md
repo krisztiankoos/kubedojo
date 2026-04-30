@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-In January 2020, Kaplan, McCandlish, and OpenAI colleagues published "Scaling Laws for Neural Language Models": over more than seven orders of magnitude, autoregressive Transformer cross-entropy loss followed power-law relationships with parameters (N), tokens (D), and compute (C), with all three needed in tandem. Compute-optimal training favoured larger models stopped short of convergence. In March 2022 Hoffmann et al.'s Chinchilla refined the recipe — model size and tokens should scale roughly equally. Scaling became forecastable engineering.
+In January 2020, Kaplan, McCandlish, and OpenAI colleagues published "Scaling Laws for Neural Language Models": over more than seven orders of magnitude, autoregressive Transformer cross-entropy loss followed power-law relationships with parameters (N), tokens (D), and compute (C), with all three needed in tandem. Compute-optimal training made scale feel like a planning problem, and Chinchilla later revised the allocation by putting more weight on training data. Scaling became forecastable engineering.
 :::
 
 <details>
@@ -18,8 +18,8 @@ In January 2020, Kaplan, McCandlish, and OpenAI colleagues published "Scaling La
 | Sam McCandlish | — | Equal-contribution lead author of Kaplan et al. 2020 |
 | Tom B. Brown | — | Kaplan paper coauthor; later GPT-3 lead author (Ch53) |
 | Dario Amodei | — | Kaplan paper coauthor (project guidance); later Anthropic co-founder |
-| Richard S. Sutton | 1959– | Author of "The Bitter Lesson" (2019); philosophical framing for general methods that leverage computation |
-| Jordan Hoffmann | — | DeepMind lead author of "Training Compute-Optimal Large Language Models" (2022) — the Chinchilla correction |
+| Richard S. Sutton | 1959– | Author of "The Bitter Lesson" (2019); philosophical backdrop to the scaling-law era |
+| Jordan Hoffmann | — | DeepMind lead author of "Training Compute-Optimal Large Language Models" (2022) |
 
 </details>
 
@@ -29,10 +29,10 @@ In January 2020, Kaplan, McCandlish, and OpenAI colleagues published "Scaling La
 ```mermaid
 timeline
     title Chapter 55 — The Scaling Laws
-    2019 : Sutton publishes "The Bitter Lesson" — general methods that leverage computation tend to win
+    2019 : Sutton publishes "The Bitter Lesson"
     Jan 2020 : Kaplan et al. publish "Scaling Laws for Neural Language Models" (arXiv:2001.08361) — power-law fits across 7+ orders of magnitude
     May 2020 : GPT-3 paper (Ch53) cites scaling-law frame as part of the rationale for testing 175B parameters
-    Mar 2022 : Hoffmann et al. publish "Training Compute-Optimal Large Language Models" — Chinchilla; many prior LLMs were undertrained
+    Mar 2022 : Hoffmann et al. publish "Training Compute-Optimal Large Language Models" — Chinchilla revises compute-optimal allocation
 ```
 
 </details>
@@ -42,17 +42,15 @@ timeline
 
 **Cross-entropy loss** — How surprised the model is by the next token in held-out text. Lower is better. The scaling laws are about *this* number: not "intelligence", not benchmark accuracy, not user satisfaction — just the prediction loss on autoregressive language modelling.
 
-**Power law** — A relation $y = a \cdot x^{-\alpha}$ where output changes as input is raised to a power. Plotted on log–log axes, power laws appear as approximately straight lines. The chapter's "smoothness" claim is this visual regularity.
-
 **Parameters (N), tokens (D), compute (C)** — The three knobs Kaplan studied. *Parameters* are the model's adjustable numbers (capacity). *Tokens* are the text the model trains on (experience). *Compute* is FLOPs spent during training (work). The paper's "all three must scale in tandem" rule means a bottleneck in any one stalls the gain from the other two.
 
-**Compute-optimal training** — Under a *fixed* compute budget, the question of which N and D minimise loss. Kaplan's 2020 answer favoured training very large models for relatively few steps. Chinchilla's 2022 answer was *equal* scaling: doubling compute should double both parameters and tokens.
+**Compute-optimal training** — Under a *fixed* compute budget, the question of how to allocate model size, training data, and run length to minimise loss. The answer is empirical and can change as measurement improves.
 
 **Sample efficiency** — How well a model uses each training token. Kaplan reports that larger models reach a target loss with fewer optimisation steps and fewer training points than smaller models — which is what makes "bigger but shorter" sensible under a compute budget.
 
-**The Bitter Lesson** — Sutton's 2019 essay arguing that, across decades of AI history (chess, Go, speech, vision), general methods that scale with computation eventually win against approaches that hand-encode human knowledge. Cultural backdrop to Kaplan; not evidence for the equations.
+**The Bitter Lesson** — Sutton's 2019 essay that became a cultural backdrop to the scaling-law era. It is a research instinct and historical argument, not evidence for the Kaplan equations.
 
-**Kaplan vs. Chinchilla allocation** — Two empirical answers to the compute-optimal question. Kaplan ≈ "model bigger, train shorter." Chinchilla ≈ "scale model and data equally." Both are *empirical fits* in tested regimes, not natural laws.
+**Kaplan vs. Chinchilla allocation** — Two empirical answers to the compute-optimal question. Both are *empirical fits* in tested regimes, not natural laws.
 
 </details>
 

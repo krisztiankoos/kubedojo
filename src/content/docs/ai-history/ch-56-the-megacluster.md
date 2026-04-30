@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-On March 11, 2019 OpenAI announced OpenAI LP — a capped-profit structure under nonprofit control, designed to raise the billions in capital its scaling roadmap required. Four months later (July 22, 2019) a $1B Microsoft investment locked in an exclusive Azure computing partnership. By May 19, 2020 Microsoft had publicly disclosed an Azure supercomputer built for OpenAI: 285,000+ CPU cores, 10,000 GPUs, 400 Gbps per GPU server. Scaling-law forecasts had become datacenter procurement.
+In 2019 OpenAI changed its corporate structure so it could raise the capital its scaling roadmap required, then formed a major Azure computing partnership with Microsoft. By May 2020 Microsoft had publicly disclosed an Azure supercomputer built for OpenAI. Scaling-law forecasts had become datacenter procurement.
 :::
 
 <details>
@@ -29,10 +29,10 @@ On March 11, 2019 OpenAI announced OpenAI LP — a capped-profit structure under
 ```mermaid
 timeline
     title Chapter 56 — The Megacluster
-    Mar 11 2019 : OpenAI announces OpenAI LP — capped-profit structure under nonprofit control
-    Jul 22 2019 : Microsoft and OpenAI announce $1B exclusive computing partnership; OpenAI services move to Azure
-    Feb 13 2020 : Microsoft Research announces Turing-NLG (17B params) — DeepSpeed, ZeRO, model parallelism
-    May 19 2020 : Microsoft discloses Azure supercomputer for OpenAI — 285,000+ CPU cores, 10,000 GPUs, 400 Gbps per GPU server
+    Mar 11 2019 : OpenAI announces OpenAI LP
+    Jul 22 2019 : Microsoft and OpenAI announce a major Azure computing partnership
+    Feb 13 2020 : Microsoft Research announces Turing-NLG alongside DeepSpeed, ZeRO, and model parallelism
+    May 19 2020 : Microsoft discloses an Azure supercomputer for OpenAI
     May 2020 : Microsoft frames the supercomputer as part of "AI at Scale" — large models + tools + supercomputing on Azure
 ```
 
@@ -41,7 +41,7 @@ timeline
 <details>
 <summary><strong>Plain-words glossary</strong></summary>
 
-**Capped-profit structure** — A hybrid corporate form OpenAI introduced in March 2019. Investor and employee returns are limited to a multiple of investment; returns beyond the cap flow to the OpenAI Nonprofit, which retains control. Designed to raise the billions of dollars compute and talent require while keeping mission-first governance.
+**Capped-profit structure** — A hybrid corporate form in which investor and employee returns are limited while a nonprofit parent retains control. In OpenAI's case, the structure was presented as a way to fund compute-intensive scaling while preserving mission-first governance.
 
 **Hyperscaler / hyperscale cloud** — A small set of cloud providers (Microsoft Azure, Amazon AWS, Google Cloud) operating at the global-datacenter scale where they can offer customers the kind of infrastructure customers cannot easily build themselves. Frontier-AI training is now a hyperscaler-only workload.
 
@@ -49,9 +49,9 @@ timeline
 
 **Distributed training (model parallelism, data parallelism, pipeline parallelism)** — The systems-software layer that splits a model and its training batches across many devices. *Data parallelism* replicates the model and partitions the batch. *Model parallelism* partitions the model itself across devices. *Pipeline parallelism* stages forward and backward passes through the model. Modern frameworks like DeepSpeed and ZeRO combine all three.
 
-**DeepSpeed / ZeRO** — Microsoft Research's open-source distributed-training stack. *ZeRO* (Zero Redundancy Optimizer) shards optimizer state, gradients, and (later) parameters across data-parallel workers, dramatically reducing per-GPU memory. Made Turing-NLG (17B parameters) trainable on the available hardware in early 2020.
+**DeepSpeed / ZeRO** — Microsoft Research's open-source distributed-training stack. *ZeRO* (Zero Redundancy Optimizer) shards optimizer state, gradients, and later parameters across data-parallel workers, reducing per-GPU memory pressure.
 
-**400 Gbps per GPU server** — The Azure supercomputer's per-server interconnect bandwidth as publicly disclosed. Necessary because gradient synchronisation across 10,000 GPUs becomes the bottleneck before compute does; without high-bandwidth networking, the cluster behaves like many small clusters rather than one machine.
+**GPU-server interconnect bandwidth** — The network capacity linking accelerator servers during distributed training. Necessary because gradient synchronisation can become the bottleneck before compute does; without high-bandwidth networking, a large cluster behaves like many small clusters rather than one machine.
 
 **AI at Scale** — Microsoft's 2020 platform-level framing for the OpenAI supercomputer + DeepSpeed + Turing-NLG bundle: large models, training optimisation tools, and supercomputing made available through Azure AI services and GitHub.
 
