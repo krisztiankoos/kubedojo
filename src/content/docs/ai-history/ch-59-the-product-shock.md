@@ -5,6 +5,63 @@ sidebar:
   order: 59
 ---
 
+:::tip[In one paragraph]
+On November 30, 2022 OpenAI launched ChatGPT as a free research preview — a chat box wrapping a GPT-3.5 model fine-tuned with RLHF on Azure supercomputing. The break was not new science but packaging: conversational turn-taking turned model behaviour into consumer habit. Reuters/UBS estimated 100M monthly active users by January 2023, the fastest-growing consumer application at that time. Stack Overflow banned generated answers, NYC schools blocked it, and Microsoft's Bing and Google's Bard launched within ten days of each other.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Sam Altman | — | OpenAI CEO; public framing of adoption and monetization, including the early 1M-users tweet |
+| John Schulman | — | Named on the OpenAI ChatGPT launch page among the contributor list for the research preview |
+| Satya Nadella | — | Microsoft CEO; anchors the January 2023 OpenAI partnership extension and the Bing/search response |
+| Yusuf Mehdi | — | Microsoft executive author of the February 7, 2023 AI-powered Bing and Edge announcement |
+| Sundar Pichai | — | Google/Alphabet CEO; author of the February 6, 2023 Bard and AI-Search post |
+| Jenna Lyle | — | NYC education department spokesperson quoted by Chalkbeat on the school-device/network block |
+
+</details>
+
+<details>
+<summary><strong>Timeline (Nov 2022 – Mar 2023)</strong></summary>
+
+```mermaid
+timeline
+    title Chapter 59 — The Product Shock
+    Nov 30 2022 : OpenAI launches ChatGPT as a free research preview
+    Dec 5 2022 : Stack Overflow posts the temporary ban on generative AI content; Altman reports ChatGPT crossed 1M users
+    Jan 3 2023 : NYC education department confirms ChatGPT blocked on school devices and networks
+    Jan 2023 : Reuters relays UBS estimate of 100M monthly active users
+    Jan 23 2023 : Microsoft announces the third phase of its OpenAI partnership
+    Feb 1 2023 : OpenAI announces ChatGPT Plus at $20/month
+    Feb 6 2023 : Google announces Bard and AI-powered Search features
+    Feb 7 2023 : Microsoft announces the new AI-powered Bing and Edge in preview
+    Mar 1 2023 : OpenAI releases GPT-3.5 Turbo and Whisper APIs
+    Mar 14 2023 : OpenAI announces GPT-4
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+**Research preview** — OpenAI's framing for the ChatGPT launch: free public access while the company gathered user feedback to find strengths, weaknesses, and failure modes. The label sounded provisional, but the product was deployed at scale to millions of users from day one.
+
+**RLHF (Reinforcement Learning from Human Feedback)** — The training method that shaped ChatGPT's conversational behaviour: supervised fine-tuning on dialogues written by human AI trainers, comparison/ranking data, a learned reward model, and Proximal Policy Optimization. Inherited from InstructGPT (Ch57); ChatGPT made it the default assistant interface.
+
+**Monthly active users (MAU)** — A standard product metric: distinct users who interact with a service in a 30-day window. The Reuters/UBS estimate of 100M MAU in January 2023 is what made ChatGPT a coordination problem for executives, schools, regulators, and competitors rather than a research demo.
+
+**ChatGPT Plus** — OpenAI's first paid tier, announced February 1, 2023 at $20/month. It sold reliability under load — general access during peak times, faster responses, priority on new features — while preserving the free tier. Demand had made inference itself a consumer expectation.
+
+**Bing / Bard** — The search-side response: Microsoft's AI-powered Bing and Edge preview (Feb 7, 2023), built on a "next-generation OpenAI model" Microsoft called Prometheus, and Google's Bard (Feb 6, 2023), opened to trusted testers and based on LaMDA. The product race shifted from chatbot novelty to interface competition over how users find information.
+
+**Jailbreak / adversarial prompting** — User prompts crafted to route around a model's safety policy or refusal behaviour. The GPT-4 System Card (March 2023) explicitly treats jailbreaks as a deployment surface: mitigations reduce but do not eliminate them, and Figure 10 walks through example exploits against GPT-4-launch.
+
+**Hallucination** — Plausible but incorrect output. OpenAI's launch page warned ChatGPT could produce confident wrong answers, and the GPT-4 page kept the warning. Plausible wrongness is what made Stack Overflow and NYC schools react: cheap to produce, expensive to verify.
+
+</details>
+
 ChatGPT did not invent the Transformer. It did not invent reinforcement learning from human feedback. It did not invent the internet-scale language model, the autocomplete interface, the chatbot, or the dream of a conversational computer. Almost every layer underneath it had already appeared in the previous chapters: attention, scale, data, RLHF, alignment work, cloud supercomputers, and the public fascination with generative systems.
 
 What changed on November 30, 2022 was packaging.
@@ -16,6 +73,12 @@ The interface made the model social.
 Earlier language-model demos could be impressive, but they often required technical framing. ChatGPT compressed the machinery into ordinary turn-taking. A user did not need to know what a token was, how RLHF worked, why GPT-3.5 mattered, or what Azure supercomputing had supplied. The model behaved enough like a conversational partner that the research lineage disappeared behind the product surface. The public shock was not only that a model could generate text. It was that millions of people could immediately find a use for that generation inside a familiar human pattern: ask, answer, refine.
 
 OpenAI's launch page described exactly that surface. ChatGPT could answer follow-up questions, admit mistakes, challenge incorrect premises, and reject inappropriate requests. Those behaviors were not decorative. They were the whole product grammar. The model was no longer only completing a prompt. It was occupying a conversational role, with memory of the immediate dialogue and a safety policy visible enough for users to encounter it directly.
+
+:::note
+> The dialogue format makes it possible for ChatGPT to answer followup questions, admit its mistakes, challenge incorrect premises, and reject inappropriate requests.
+
+OpenAI's own framing puts the work on the *format* — not the model — making the chapter's "shock was packaging, not new science" thesis the launch page's own causal claim.
+:::
 
 That visibility mattered because ChatGPT turned alignment from an internal research topic into a public interaction. InstructGPT and RLHF had already shown that models could be trained to better follow human preferences. But most people did not meet RLHF as a method. They met it as an assistant that sometimes refused a request, softened a tone, avoided certain outputs, or tried to explain its own limits. Safety behavior became part of the user experience.
 
@@ -122,3 +185,8 @@ The honest conclusion is narrower than the hype. ChatGPT was not a mind suddenly
 By March 2023, the direction was clear. ChatGPT had become a subscription. Its underlying model family had become an API. Microsoft and Google had moved search into the conversational race. GPT-4 had turned the surprise into a cadence of higher-capability releases under safety and capacity pressure. The next step was obvious: if a chat box could answer, could it browse, retrieve, call tools, take actions, and behave less like a text generator and more like an agent?
 
 That question belongs to the next chapter. The product shock was the moment the public met the assistant. The agent turn began when companies and researchers tried to give that assistant hands.
+
+:::note[Why this still matters today]
+Almost every consumer-facing AI product after late 2022 borrows ChatGPT's grammar — a chat box, conversational turn-taking, visible refusals, a feedback button, a paid tier sold on capacity rather than only capability. Search engines now ship synthesised answers above link lists. Productivity tools embed conversational drafting into documents, mail, and code editors. Schools, publishers, and Q&A communities still litigate the line between fluent generation and verifiable expertise that Stack Overflow and NYC schools first hit in late 2022. The product shock also normalised release rhythm — usage caps, waitlists, subscription tiers, and capacity warnings — as part of how frontier capability reaches users.
+:::
+
