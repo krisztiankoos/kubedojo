@@ -66,32 +66,38 @@ def check_block_syntax(body: str) -> str | None:
     return None
 
 
-def extract_imports(body: str) -> tuple[list[str], list[tuple[str, str]]]:
-    """Return (top_level_modules, [(submodule, symbol), ...]) the block imports.
+def extract_imports(body: str) -> tuple[list[str], list[tuple[str, str]], bool]:
+    """Return (top_level_modules, [(submodule, symbol), ...], has_relative_imports).
 
     Top-level packages catch fictional package names. The submodule-symbol
     pairs catch fictional API symbols inside real packages — e.g. blocking
     ``from sklearn.linear_model import TotallyFakeEstimator`` even though
-    ``sklearn`` itself imports cleanly.
+    ``sklearn`` itself imports cleanly. Relative imports (``from .`` or
+    ``from .foo``) cannot be resolved without package context, so they are
+    surfaced as a hard error rather than silently skipped.
     """
     try:
         tree = ast.parse(body)
     except SyntaxError:
-        return [], []
+        return [], [], False
     top_level: dict[str, None] = {}
     members: list[tuple[str, str]] = []
+    has_relative = False
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
                 top_level.setdefault(alias.name.split(".")[0], None)
         elif isinstance(node, ast.ImportFrom):
+            if node.level and node.level > 0:
+                has_relative = True
+                continue
             if node.module:
                 top_level.setdefault(node.module.split(".")[0], None)
                 for alias in node.names:
                     if alias.name == "*":
                         continue
                     members.append((node.module, alias.name))
-    return list(top_level), members
+    return list(top_level), members, has_relative
 
 
 def try_imports(
@@ -126,10 +132,15 @@ def check_file(path: Path, imports_only: bool) -> list[BlockCheck]:
         err = check_block_syntax(body)
         failed_imports: list[str] = []
         if err is None and imports_only:
-            mods, members = extract_imports(body)
-            failed_imports = try_imports(mods, members)
-            if failed_imports:
-                err = f"failed imports: {', '.join(failed_imports)}"
+            mods, members, has_relative = extract_imports(body)
+            if has_relative:
+                err = (
+                    "relative imports unsupported in standalone docs snippets"
+                )
+            else:
+                failed_imports = try_imports(mods, members)
+                if failed_imports:
+                    err = f"failed imports: {', '.join(failed_imports)}"
         out.append(
             BlockCheck(
                 file=str(path),

@@ -84,6 +84,21 @@ def extract_sources_section(text: str) -> str | None:
     return match.group(1) if match else None
 
 
+_ROOT_EQUIVALENT_PATHS = {"/", "", "/index.html", "/index.htm", "/index.php"}
+
+
+def _normalize_root_path(path: str) -> str:
+    """Treat root-equivalent paths as `/` so canonicalization isn't a failure.
+
+    `/`, `/index.html`, `/index.htm`, and `/index.php` all render the
+    homepage; a redirect from `/index.html` to `/` is server-side
+    canonicalization, not a stale-link failure.
+    """
+    if path in _ROOT_EQUIVALENT_PATHS:
+        return "/"
+    return path
+
+
 def extract_urls(section_text: str) -> list[str]:
     """Return URLs in order of appearance, deduplicated, preserving order."""
     seen: dict[str, None] = {}
@@ -141,9 +156,11 @@ def check_url(url: str) -> CitationCheck:
 
     final_parsed = urlparse(resp.url)
     final_host = final_parsed.hostname or ""
-    final_path = (final_parsed.path or "/").rstrip("/") or "/"
+    final_path_raw = (final_parsed.path or "/").rstrip("/") or "/"
     original_parsed = urlparse(url)
-    original_path = (original_parsed.path or "/").rstrip("/") or "/"
+    original_path_raw = (original_parsed.path or "/").rstrip("/") or "/"
+    final_path = _normalize_root_path(final_path_raw)
+    original_path = _normalize_root_path(original_path_raw)
     cross_host = (
         final_host != original_host
         and not final_host.endswith("." + original_host)
@@ -151,8 +168,8 @@ def check_url(url: str) -> CitationCheck:
     )
     same_host_homepage_redirect = (
         not cross_host
-        and original_path not in ("/", "")
-        and final_path in ("/", "")
+        and original_path != "/"
+        and final_path == "/"
         and original_path != final_path
     )
     error: str | None = None
@@ -162,7 +179,8 @@ def check_url(url: str) -> CitationCheck:
         error = f"cross-host redirect: {original_host} -> {final_host}"
     elif same_host_homepage_redirect:
         error = (
-            f"same-host redirect to root/homepage: {original_path} -> {final_path}"
+            "same-host redirect to root/homepage: "
+            f"{original_path_raw} -> {final_path_raw}"
         )
 
     return CitationCheck(
