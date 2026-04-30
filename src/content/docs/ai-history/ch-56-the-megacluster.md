@@ -69,6 +69,12 @@ This is why the megacluster belongs in the history of AI. It is not just a bigge
 
 OpenAI's 2019 restructuring was one of the public signals that the old research-lab form was no longer enough for the scale the organization wanted to pursue. On March 11, 2019, Greg Brockman and Ilya Sutskever announced OpenAI LP, a capped-profit structure under the control of the OpenAI Nonprofit. The announcement framed the change around scale. OpenAI said it had seen that dramatic AI systems used the most computational power, that it wanted to increase its pace, and that it expected to need billions of dollars for large-scale cloud compute, talent, and AI supercomputers.
 
+:::note
+> We've experienced firsthand that the most dramatic AI systems use the most computational power in addition to algorithmic innovations, and decided to scale much faster than we'd planned when starting OpenAI.
+
+OpenAI turned Ch55's curve into governance: faster scaling now required capital formation, not only experimental patience. — *OpenAI LP announcement, opening paragraphs, 2019-03-11.*
+:::
+
 That sentence is the hinge. It ties organizational form directly to infrastructure. OpenAI was not describing compute as a line item that could be handled after the research plan was set. It was saying that the ability to raise capital for compute, talent, and supercomputers had become part of the research plan itself. The legal structure was therefore not a side story. It was a piece of the machine.
 
 The structure was unusual because OpenAI did not present it as a simple conversion into an ordinary startup. The public explanation emphasized a capped-profit hybrid. Investor and employee returns would be capped. Returns beyond the cap would go to the OpenAI Nonprofit. The nonprofit would remain in control, and the operating company would be governed by the OpenAI Charter. The purpose, as OpenAI described it, was to raise capital while keeping the mission in charge.
