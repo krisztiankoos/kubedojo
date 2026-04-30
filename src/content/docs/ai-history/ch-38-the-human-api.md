@@ -5,6 +5,55 @@ sidebar:
   order: 38
 ---
 
+:::tip[In one paragraph]
+In 2001, Amazon inventors Harinarayan, Rajaraman, and Ranganathan patented a "hybrid machine/human computing arrangement" that routed stubborn perceptual tasks to human-operated nodes through a formal API. When Amazon launched this infrastructure publicly on November 2, 2005 as Mechanical Turk, it rebranded the arrangement as "Artificial Artificial Intelligence." By 2008–2009, Snow et al. and the ImageNet team had proved that callable, metered crowd labor could supply supervised learning with annotation at a scale and cost that expert pipelines could not match.
+:::
+
+<details>
+<summary><strong>Cast of characters</strong></summary>
+
+| Name | Lifespan | Role |
+|---|---|---|
+| Venky Harinarayan | — | Amazon inventor; IEEE Spectrum identifies him as the manager whose patent described the hybrid machine/human computing arrangement. Co-inventor on US7197459B1. |
+| Anand Rajaraman | — | Co-inventor on US7197459B1; listed alongside Harinarayan and Ranganathan with Amazon Technologies Inc. as original assignee. |
+| Anand Ranganathan | — | Co-inventor on US7197459B1. |
+| Jeff Bezos | 1964– | Amazon founder/CEO; Computerworld reports his September 27, 2006 MIT keynote grouped MTurk with S3 and EC2 as developer-facing cloud services. |
+| Rion Snow, Brendan O’Connor, Daniel Jurafsky, Andrew Y. Ng | — | Co-authors of the 2008 EMNLP paper "Cheap and Fast — But is it Good?" validating MTurk for five NLP annotation tasks. |
+| Jia Deng, Wei Dong, Richard Socher, Li-Jia Li, Kai Li, Li Fei-Fei | — | Authors of the 2009 ImageNet CVPR paper; used AMT to verify millions of candidate images at 99.7% reported precision. |
+
+</details>
+
+<details>
+<summary><strong>Timeline (2001–2018)</strong></summary>
+
+```mermaid
+timeline
+    title Amazon Mechanical Turk and the Human Annotation Infrastructure
+    2001 : March 19 — priority date for US7197459B1 "Hybrid machine/human computing arrangement"
+         : October 12 — filing date; inventors Harinarayan, Rajaraman, Ranganathan; assignee Amazon Technologies
+    2004 : Von Ahn and Dabbish publish the ESP Game paper at CHI — pre-MTurk human-computation boundary
+    2005 : November 2 — AWS publicly launches Amazon Mechanical Turk as "Artificial Artificial Intelligence" web-services API
+    2006 : September 27 — Bezos MIT keynote groups MTurk with S3 and EC2 as "hidden Amazon" developer services
+    2007 : March 27 — US7197459B1 granted and published
+    2008 : October — Snow et al. publish "Cheap and Fast - But is it Good?" at EMNLP : five NLP tasks, $2 per 7,000 labels
+    2009 : June — Deng et al. publish ImageNet at CVPR : 5,247 synsets, 3.2M images, AMT cleaning pipeline
+    2018 : Hara et al. CHI wage analysis — median ~$2/h; 4% of workers above US federal minimum wage
+```
+
+</details>
+
+<details>
+<summary><strong>Plain-words glossary</strong></summary>
+
+- **Human Intelligence Task (HIT)** — The unit of work on Mechanical Turk. A requester posts a HIT with a title, instructions, a price, and a rule for when it counts as complete. A worker picks it up, does the task, and submits an answer. The HIT structure is what lets software treat human judgment as an addressable request.
+- **Requester** — MTurk vocabulary for the party that posts tasks. A requester could be an individual researcher, a company, or a software system issuing API calls programmatically. Requesters set pay rates, qualifications, and approval or rejection rules.
+- **Turker (worker)** — Colloquial name for people who accept and complete HITs on Amazon Mechanical Turk. Workers browse available tasks, choose which to accept, and receive payment only for work the requester approves.
+- **Synset** — A set of words in WordNet that share a single meaning. ImageNet used WordNet’s roughly 80,000 noun synsets as the concept scaffold for its image hierarchy, aiming to collect 500–1,000 clean images per synset.
+- **Redundancy (annotation)** — The practice of collecting multiple independent labels for the same item instead of trusting a single worker’s answer. Snow et al. used ten annotations per item in their affect task; ImageNet required at least ten votes per image for initial quality thresholds. Aggregating many cheaper judgments is what made MTurk annotation statistically competitive with expert annotation.
+- **Artificial Artificial Intelligence** — Amazon’s deliberate phrase in the 2005 MTurk launch announcement, pointing to the gap between AI ambitions and what software could then achieve alone. A nod to the original eighteenth-century Mechanical Turk illusion: a chess automaton that appeared autonomous but concealed a person inside.
+
+</details>
+
 Amazon’s storefront in the early 2000s had grown far beyond a tidy digital bookshelf. As the company expanded into a vast, universal retailer, its product catalog swelled relentlessly, fed by many disparate and overlapping product sources. This rapid growth brought a persistent and frustrating operational headache: duplicate product listings began to fracture search results, clutter the storefront, and degrade the shopping experience. The traditional software engineering instinct, when faced with such an issue, was to write a better automated detector—an algorithmic filter designed to scan the database, find identical items, and merge them. However, duplicate detection sat in an awkward and stubborn zone of computational capability. It required comparing images and text, making similarity judgments that were relatively easy for a person quickly glancing at two product pages, but which were described as insurmountable for the computer systems of the period. According to later reports, ordinary software simply could not reliably resolve the problem. The automated approaches failed to capture the nuances that a human eye could parse in an instant.
 
 The important point is not that Amazon discovered a new philosophical category of work. People had been labeling, classifying, transcribing, and correcting information for computers long before Mechanical Turk appeared. The sharper claim is infrastructural. Amazon had a class of small, repetitive judgments that were too ambiguous for the automated systems available to it and too numerous to treat as one-off clerical exceptions. A catalog problem became interesting when it was translated into a systems problem: how could software ask for a human judgment without pausing the whole machine around that person?
@@ -78,3 +127,7 @@ That closing tension is the durable meaning of Mechanical Turk in AI history. Th
 Hara and colleagues' wage analysis was later than the launch and later than ImageNet's first paper, so it should not be treated as a direct measurement of every earlier annotation campaign. Its value here is different. It shows the kind of cost that the interface was structurally good at hiding. The requester saw the price of a completed task. The worker experienced the time spent finding acceptable work, the possibility of rejection, and the effort lost when a task was abandoned or not submitted. The same system that made annotation cheap for a researcher could make the labor market opaque for the person doing the annotating.
 
 Mechanical Turk did not invent crowdsourcing, and it did not by itself cause the next wave of machine learning. Its more specific achievement was to make paid human judgment fit the operational grammar of the cloud. Storage could be rented. Compute could be rented. For certain stubborn perceptual and linguistic judgments, people could be queried through the same developer-facing style of interface. That abstraction helped researchers build data sets that earlier methods could not have assembled so easily, and it left a moral remainder that the abstraction itself could not erase: the intelligence in "Artificial Artificial Intelligence" was never artificial all the way down.
+
+:::note[Why this still matters today]
+Every large-scale supervised learning system depends on labeled data, and labeled data depends on people. The MTurk model — decompose a judgment into a bounded task, expose it through an API, aggregate many independent responses — remains the operating pattern for annotation platforms, data-labeling marketplaces, and reinforcement learning from human feedback pipelines. The tension the chapter closes on is equally durable: the cleaner the API abstraction, the easier it is to overlook the wages, search time, and rejection risk borne by the workers behind it. Practitioners building or using annotation infrastructure inherit that tension by default.
+:::
