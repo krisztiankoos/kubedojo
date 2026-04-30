@@ -20,12 +20,13 @@
 
 | Date | Thread | File | Status |
 |------|--------|------|--------|
-| 2026-04-30 (night-6) | **Ch59–Ch72 shipped — entire 72-chapter AI history book reader-aid rollout (#562) complete.** 14 chapters end-to-end in one session; 14 PRs merged-as-you-go; Tier 3 yield 14/26 (~54% — Codex source-fetch produced 4+ REVIVEs from concept-only proposals) | [`docs/session-state/2026-04-30-part8-9-ch59-72-shipped.md`](./docs/session-state/2026-04-30-part8-9-ch59-72-shipped.md) | **72 of 72 chapters with reader aids on main.** Caps verification mandated mid-session after Ch65 shipped 121w (1 over); worktree-write discipline tightened after Ch63 contract-file path violation. ~12 min/chapter wall-clock |
+| 2026-04-30 (night-7) | **Post-Ch59-72 followups** — reader-aid lint script (`check_reader_aids.py`), 9-Part sidebar grouping for AI history, deep-link bridge from AI/ML history module to the book; surfaced classical-ml curriculum gap (only 3 modules) needing dedicated next-session plan | [`docs/session-state/2026-04-30-night-7-followups.md`](./docs/session-state/2026-04-30-night-7-followups.md) | **Plan locked for next session: git hygiene sweep + context-monitor hook fix + dedicated ML home + 8 Tier 1 module specs (linear/log reg, unsupervised, dim reduction, FE, eval, HP tuning, NB/kNN/SVMs, RL practitioner)** |
 
 ## Predecessor chain (most-recent first)
 
 | Date | Thread | Where to find it |
 |------|--------|------------------|
+| 2026-04-30 (night-6) | **Ch59–Ch72 shipped — entire 72-chapter AI history book reader-aid rollout (#562) complete.** 14 chapters end-to-end; Tier 3 yield 14/26 (~54%, Codex source-fetch REVIVEs); caps verification + worktree-write discipline tightened mid-session | [`docs/session-state/2026-04-30-part8-9-ch59-72-shipped.md`](./docs/session-state/2026-04-30-part8-9-ch59-72-shipped.md) |
 | 2026-04-30 (night-5) | Part 8 reader-aids Ch50–Ch58 shipped — 9 PRs merged-as-you-go; all Tier 2 (math/architecture) chapters in the entire book landed; Codex caught 2 math errors + 1 verbatim hallucination | [`docs/session-state/2026-04-30-part8-9-ch50-58-shipped.md`](./docs/session-state/2026-04-30-part8-9-ch50-58-shipped.md) |
 | 2026-04-30 (night-4) | Part 7 reader-aids (Ch41–Ch49) RELEASED + 26-PR merge sweep + lifecycle bookkeeping migration — Parts 1–7 fully on main (49 chapters); arch-sketch form-lock confirmed (LR for sequential, TD for hierarchies) | [`docs/session-state/2026-04-30-part7-reader-aids-shipped.md`](./docs/session-state/2026-04-30-part7-reader-aids-shipped.md) |
 | 2026-04-30 (night-3) | Part 6 reader-aids (Ch32–Ch40) PR-complete — 9 PRs open; inline-sequential single-Agent-dispatch pattern validated at 9-chapter scale; first orchestrator-override of a Codex Tier 3 verdict (Ch38) | [`docs/session-state/2026-04-30-part6-reader-aids-prs.md`](./docs/session-state/2026-04-30-part6-reader-aids-prs.md) |
@@ -59,6 +60,11 @@ These are state items that span individual sessions. Prune entries as threads cl
 
 - **#394 AI History — all 72 chapters of prose are on main.** Codex's autonomous Part 9 chain shipped through Ch72 (verified by file existence and word counts ≥4k each).
 - **All 72 AI history chapters carry full reader aids on main (#562 complete, 2026-04-30 night-6).** Every chapter has Tier 1 (TL;DR + cast + timeline + glossary + Why-still-matters); 15 chapters carry selective Tier 2 (math sidebars on Ch01/04/15/24/25/27/29/44/50/55/58 + architecture sketches on Ch41/42/49/50/52/58); 51+ Tier 3 elements landed across the book under cross-family Codex review. Tier 3 yield averaged ~22% on Parts 5–8 and ~54% on Parts 8–9 (Ch59–Ch72) — the higher rate is driven by Codex REVIVEs from concept-only proposals.
+- **AI history sidebar grouped into 9 Parts** (commit `5ba5871e`, 2026-04-30 night-7). URLs unchanged — only render hierarchy. Implementation: explicit `items[]` in `astro.config.mjs` instead of flat `autogenerate`. Future chapter additions/renames now require a sidebar update (autogenerate convenience traded for grouping).
+- **Reader-aid lint script `scripts/check_reader_aids.py`** (commit `f56e87a6`, 2026-04-30 night-7). Manual-run validator for Tier 1 caps + structural presence across all 72 chapters. Surfaces 14 pre-existing cap violations (Ch07/08/09/14/18/21/22/23/27/33/35/37/50/58) — left for Codex's dedup pass to trim naturally.
+- **AI/ML history module bridges into the AI history book** (commit `7cd6291f`, 2026-04-30 night-7). 11 Part-level *Go deeper* asides + a top-level pointer in `src/content/docs/ai-ml-engineering/history/module-1.1-history-of-ai-machine-learning.md`. The module body is unchanged — survey + exercises preserved as the 30-min on-ramp.
+- **Classical-ml curriculum gap surfaced** (2026-04-30 night-7). `src/content/docs/ai-ml-engineering/classical-ml/` has only 3 modules; reinforcement learning has no practitioner home anywhere; `bridges/` directory is empty (only `index.md`). Block B in next session covers the dedicated ML home + 8 Tier 1 module specs (linear/log reg + reg, unsupervised, dim reduction, FE, model eval, HP tuning, NB/kNN/SVMs as practitioner content, RL practitioner module).
+- **`context-monitor.sh` hook handoff target is stale.** Hook hard-codes `.pipeline/session-handoff.md` (last touched 2026-04-17, 3 weeks old); actual practice writes to `docs/session-state/`. If the hook ever fires near the 95% emergency tier it'll point next session at the wrong file. Fix queued for next session.
 - **Caps verification is mandatory in Tier 1 dispatch prompts.** Ch65 shipped Why-still at 121 words (1 over the 120 cap) without it; from Ch66 onward, dispatches included a pre-commit `awk + wc -w` block on TL;DR and Why-still and zero further chapters shipped over-cap.
 - **Worktree-write discipline must be explicit in dispatch prompts.** Ch63's agent wrote contract files (`tier3-proposal.md` / `tier3-review.md`) to the primary tree path instead of the worktree path, causing an untracked-file conflict on `git pull`. From Ch64 onward, prompts banned primary-tree writes outright (`DO NOT write to /.../docs/research/...`) and zero further violations occurred.
 - **Architecture-sketch form-lock confirmed: `flowchart LR` for sequential dataflow, `flowchart TD` only when topology is genuinely hierarchical.** Three data points: Ch41 LR-lock, Ch42 LR→TD-deviation (CUDA grid → block → thread is hierarchical), Ch49 LR-reuse (TPU systolic array is linear). For Ch50/Ch52/Ch58, default to LR with explicit deviation justification only.
@@ -145,11 +151,30 @@ Per-track breakdowns (Cert / Cloud / On-Prem / Platform / AI/ML / AI / UK transl
 
 ## TODO
 
+**Next session — Block A (mechanical cleanups, ~30 min):**
+- [ ] Git hygiene sweep: 50 prunable branches (`git cleanup-merged`), 49 prunable worktrees, 2 stashes >24h, 1 detached HEAD at `.worktrees/codex-interactive`, 5 stale pid files
+- [ ] Fix `context-monitor.sh` handoff target — point at `docs/session-state/YYYY-MM-DD-<topic>.md` instead of stale `.pipeline/session-handoff.md` (or symlink)
+
+**Next session — Block B (proper ML curriculum home):**
+- [ ] Decide ML home structure: expand `classical-ml/` + add `reinforcement-learning/`, OR restructure into a unified `machine-learning/` with sub-categories
+- [ ] Draft Tier 1 module specs (titles + 2-line scope each) for the 8 foundational gaps:
+  - Linear/Logistic regression + regularization (L1/L2/Elastic Net, GLMs)
+  - Unsupervised learning (k-means, DBSCAN, hierarchical, GMM)
+  - Dimensionality reduction (PCA, t-SNE, UMAP)
+  - Feature engineering systematic (encoding, scaling, imputation, selection)
+  - Model evaluation deep dive (metrics, CV, calibration, leakage)
+  - Hyperparameter tuning depth (Optuna/Hyperopt/Ray Tune)
+  - Naive Bayes / k-NN / SVMs as practitioner content
+  - Reinforcement learning practitioner module (PPO/DQN/Stable-Baselines3/RLlib)
+- [ ] Decide whether `bridges/` directory is alive or should be removed (currently empty, only `index.md`)
+
+**Next session — Block C (after Blocks A + B):**
+- [ ] #388 rubric-critical rewrite work — 485 modules at <2.0 score. Note: rubric is regex-based per memory `reference_rubric_heuristic_structural.md`; read content before trusting score.
+
+**Background / lower priority:**
 - [ ] AI history #559: cross-family review backfill on Ch01-31 (28 chapters, 30 marked backfill_pending per offline audit)
-- [x] AI history #562: Tier 1 reader-aid rollout — **COMPLETE.** All 72 chapters on main with full Tier 1 + Why-still + selective Tier 2 (15 chapters) + selective Tier 3 (51+ elements landed under cross-family Codex review).
 - [ ] Google Search Console verification — user will paste the meta-tag token (or HTML file). Then submit `https://kube-dojo.github.io/sitemap-index.xml` to GSC. Same flow optional for Bing Webmaster Tools.
-- [x] AI history #563: Tier 2 math + architecture sidebars — **ALL DONE**: Ch01/Ch04/Ch15/Ch24/Ch25/Ch27/Ch29/Ch41/Ch42/Ch44/Ch49 + Ch50/Ch52/Ch55/Ch58 (15 chapters total). Every Tier 2 chapter in the entire book is now on main.
-- [x] AI history #564: Tier 3 selective passes — **COMPLETE.** Pattern proven on Ch01–Ch72; ~22% landing rate Parts 5–8, ~54% Parts 8–9 (driven by Codex REVIVEs from concept-only proposals); all Codex cross-family-reviewed.
+- [x] AI history #562/#563/#564 — all reader-aid work complete (Ch01–Ch72).
 - [ ] PR #567 review + merge → then re-run audit_review_coverage.py with live gh
 - [ ] PR #558 + PR #565 stale-prose cleanup (content already on main)
 - [ ] AI/ML Engineering #199 remaining: Phase 7 cross-link (run), Phase 8 UK translate (skipped for now)
