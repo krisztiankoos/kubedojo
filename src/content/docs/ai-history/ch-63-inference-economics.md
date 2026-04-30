@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-Once large models entered products, the cost story moved from training to serving. Autoregressive generation makes every output token a serial step on scarce accelerators. From 2022 to 2024 the field reframed inference as a systems discipline: Orca scheduled by iteration, FlashAttention shrank attention's memory traffic, vLLM/PagedAttention made the KV cache a paged resource, SmoothQuant/FlexGen/speculative decoding traded precision, memory tier, or pass count for cost, and DistServe split prefill from decode for goodput under SLOs.
+Once large models entered products, the cost story moved from training to serving. Autoregressive generation made every output token a serial step on scarce accelerators, and product latency turned memory, scheduling, precision, offload, speculation, and phase-aware routing into economic questions. From 2022 to 2024, inference became a systems discipline measured not just by raw throughput, but by timely, usable work.
 :::
 
 <details>
@@ -18,8 +18,8 @@ Once large models entered products, the cost story moved from training to servin
 | Tri Dao | — | Lead author of FlashAttention (Stanford); IO-aware exact attention, HBM/SRAM traffic as the bottleneck (May 2022) |
 | Guangxuan Xiao | — | Lead author of SmoothQuant (MIT); post-training W8A8 quantization that migrates activation outliers to weights (Nov 2022) |
 | Ying Sheng | — | Lead author of FlexGen (Stanford); GPU/CPU/disk offload for high-throughput inference under limited GPU memory (Mar 2023) |
-| Woosuk Kwon | — | Lead author of vLLM/PagedAttention (Berkeley); virtual-memory-style paging for the KV cache (SOSP 2023) |
-| Yaniv Leviathan, Matan Kalman, Yossi Matias; Charlie Chen et al. | — | Speculative decoding/sampling authors (Google; DeepMind); draft-and-verify decoding that preserves the target distribution (2022/2023) |
+| Woosuk Kwon | — | Lead author of vLLM/PagedAttention (Berkeley); KV-cache management for high-throughput serving (SOSP 2023) |
+| Yaniv Leviathan, Matan Kalman, Yossi Matias; Charlie Chen et al. | — | Speculative decoding/sampling authors (Google; DeepMind); faster generation through proposal-and-verification methods (2022/2023) |
 
 </details>
 
@@ -32,10 +32,10 @@ timeline
     May 2022 : FlashAttention reframes attention speed around HBM/SRAM IO, not just FLOPs
     Jul 2022 : Orca (OSDI) proposes iteration-level scheduling and selective batching for generative Transformer serving
     Nov 2022 : SmoothQuant shows a post-training W8A8 path for LLM inference
-    Nov 2022 / Feb 2023 : Speculative decoding (Leviathan, Kalman, Matias) and speculative sampling (Chen et al.) — draft-and-verify with preserved distribution
+    Nov 2022 / Feb 2023 : Speculative decoding and speculative sampling papers target the serial decoding loop
     Mar 2023 : FlexGen demonstrates GPU/CPU/disk offload for throughput-oriented generation on a single T4
-    Sep / Oct 2023 : vLLM / PagedAttention (SOSP) makes KV-cache paging a first-class serving primitive
-    2024 : DistServe (OSDI) disaggregates prefill and decode onto different GPU pools for goodput under SLOs
+    Sep / Oct 2023 : vLLM / PagedAttention makes KV-cache management a first-class serving primitive
+    2024 : DistServe (OSDI) separates serving phases to improve SLO-compliant capacity
 ```
 
 </details>
@@ -49,13 +49,13 @@ timeline
 
 **Iteration-level scheduling** — Orca's scheduling unit. Instead of treating each user request as a single batch member from start to finish, the serving system decides at every model iteration which active requests continue, which finished requests leave, and which newly arrived requests join. Required for generative workloads where requests have wildly different lengths.
 
-**PagedAttention** — vLLM's KV-cache memory manager. It borrows operating-system virtual-memory paging: store the KV cache in non-contiguous fixed-size blocks, then let the attention kernel treat them as a coherent sequence. Reduces fragmentation, allows higher concurrency, and is the mechanism behind vLLM's 2–4× throughput claim over FasterTransformer/Orca.
+**PagedAttention** — vLLM's KV-cache memory manager for reducing waste and improving serving concurrency.
 
-**TTFT and TPOT (time to first token, time per output token)** — DistServe's two-axis latency model. TTFT is the delay before the user sees any output — it is dominated by *prefill* (processing the prompt). TPOT is the rhythm of streaming — it is dominated by *decode* (the per-token loop). Optimising one can hurt the other, which is why DistServe runs them on different GPU pools.
+**TTFT and TPOT (time to first token, time per output token)** — two latency measures that separate when an answer starts from how smoothly it streams.
 
-**Goodput** — Useful work completed within a service-level objective. A request finished after its SLO deadline is throughput but not goodput. Inference serving is paid, in effect, for goodput, which is why average throughput numbers can hide tail-latency failures.
+**Goodput** — useful work completed within a service-level objective, not merely work completed eventually.
 
-**Speculative decoding / sampling** — A small "draft" model proposes several next tokens; the larger "target" model verifies them in a single parallel pass and accepts or rejects under a rejection-sampling rule that preserves the target's output distribution. Trades cheap draft compute for fewer expensive target-model passes; speedup depends on draft acceptance and overhead.
+**Speculative decoding / sampling** — a serving technique that uses cheaper proposals to reduce the number of expensive decoding passes.
 
 </details>
 
@@ -178,4 +178,3 @@ Every operator who has run a chat assistant, copilot, or agent at scale has met 
 :::
 
 The user sees an answer appear in a chat window. Underneath, a scheduling system is making thousands of small economic decisions. Which requests share a batch? Which tokens occupy cache? Which precision is acceptable? Which phase gets which GPU? Which work can be drafted, compressed, offloaded, or delayed? Inference economics is the name for that hidden discipline.
-

@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-Moving AI onto phones did not shrink the cloud — it created a second frontier with different physics: battery, heat, DRAM, flash bandwidth, privacy. MobileNets (2017) and Apple's A11 Neural Engine were the pre-generative pattern. By 2023–2024 Gemini Nano in AICore, Qualcomm's Snapdragon 8 Gen 3, Apple Intelligence's ~3B AFM-on-device, the LLM-in-a-flash paper, and MobileLLM made the bottleneck explicit. Edge AI became a routing discipline: some work runs locally, larger work routes to Private Cloud Compute or Pixel Video Boost.
+Moving AI onto phones did not shrink the cloud. It created a second frontier with different physics: battery, heat, DRAM, flash bandwidth, privacy, operating-system services, and uneven device capability. Edge AI became a routing discipline. Some work runs locally because locality matters; larger or heavier work still routes elsewhere because the phone is not a small datacenter.
 :::
 
 <details>
@@ -32,8 +32,8 @@ timeline
     Apr 2017 : MobileNets frames neural-network architecture as a mobile and embedded deployment problem
     Sep 2017 : Apple announces iPhone X with A11 Bionic Neural Engine and on-device Face ID processing
     Oct 2023 : Qualcomm Snapdragon 8 Gen 3 product brief markets phone silicon for on-device multimodal generative AI up to 10B parameters
-    Dec 2023 : Google ships Gemini Nano on Pixel 8 Pro for Recorder Summarize and Smart Reply; Video Boost shows cloud fallback
-    Dec 2023 : Apple's "LLM in a flash" paper studies models exceeding available DRAM by streaming weights from flash
+    Dec 2023 : Google ships Gemini Nano on Pixel 8 Pro while Video Boost shows cloud fallback
+    Dec 2023 : Apple's "LLM in a flash" paper studies edge memory limits
     Feb 2024 : MobileLLM develops sub-billion-parameter language models for mobile use cases (June 2024 revision follows)
     Jun 2024 : Apple Intelligence introduced — ~3B on-device language model plus Private Cloud Compute for larger requests
     Jul 2024 : Apple publishes the Apple Intelligence Foundation Language Models report (AFM-on-device architecture, quantization, deployment)
@@ -47,7 +47,7 @@ timeline
 
 **Neural Engine / NPU** — A piece of dedicated silicon on a phone for running neural-network inference efficiently. Apple's A11 Neural Engine (2017) and Qualcomm's Hexagon NPU on the Snapdragon 8 Gen 3 are the two product-era examples this chapter uses; both let a phone run ML workloads without leaning on the general-purpose CPU or GPU.
 
-**Depthwise separable convolution** — The architectural trick MobileNets used to reduce computation: split a standard convolution into a depthwise step (spatial filtering per channel) and a pointwise step (channel mixing). Reduced compute and memory enough to make accurate vision models fit a mobile latency and power budget.
+**Depthwise separable convolution** — the efficient convolution pattern MobileNets used to make mobile vision models cheaper to run.
 
 **Grouped-query attention (GQA)** — An attention variant that shares key/value projections across groups of query heads, reducing the size of the KV cache the model has to hold during inference. Apple's AFM-on-device and MobileLLM both use it specifically because cache memory is one of the tightest constraints on a phone.
 
@@ -55,7 +55,7 @@ timeline
 
 **KV cache** — The intermediate keys and values the Transformer accumulates while generating tokens. It grows with context length and is one of the dominant memory costs of running an LLM, on a phone or in a datacenter.
 
-**AICore (Android)** — A system service that hosts Gemini Nano on Android devices, manages model updates, safety boundaries, and access to hardware accelerators, and exposes the on-device model to apps without each app shipping its own weights.
+**AICore (Android)** — a system service for exposing Gemini Nano capabilities to Android apps on supported devices.
 
 **Private Cloud Compute (Apple)** — Apple's server-side fallback path for Apple Intelligence: when a request is judged larger than the on-device model can handle, it routes to Apple-operated server hardware. The architecture's role in the chapter is to mark the boundary where local processing stops, not to certify the privacy model.
 
@@ -196,4 +196,3 @@ The edge compute bottleneck is the name for that sequence of compromises. Intell
 :::note[Why this still matters today]
 Every assistant feature on a modern phone — keyboard rewriting, recording summary, on-device search, biometric unlock — sits inside the same envelope this chapter describes. Battery, DRAM, flash bandwidth, and thermals still set the local capacity ceiling, and the operating system still has to decide what runs locally, what routes to a private or public cloud, and what should not be offered at all. A practitioner deploying any AI feature to a constrained device — phone, watch, vehicle, embedded sensor — inherits the same routing discipline, the same memory-hierarchy questions, and the same need to scope the task narrowly enough that local execution is honest rather than aspirational.
 :::
-
