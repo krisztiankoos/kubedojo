@@ -59,11 +59,11 @@ timeline
 <details>
 <summary><strong>The math, on demand</strong></summary>
 
-- **Three power laws.** $L(N) \propto N^{-\alpha_N}$, $L(D) \propto D^{-\alpha_D}$, and $L(C) \propto C^{-\alpha_C}$ — cross-entropy loss decreases as a power of model parameters $N$, dataset tokens $D$, or training compute $C$, each measured when the other two are *not* the bottleneck. The exponents are small ($\alpha_N \approx 0.076$, $\alpha_D \approx 0.095$, $\alpha_C \approx 0.050$ in Kaplan's fit), so each tenfold scale increase yields a modest but compounding loss reduction. Source: Kaplan et al. 2020 §1.2 / §3.
+- **Three power laws.** $L(N) \propto N^{-\alpha_N}$, $L(D) \propto D^{-\alpha_D}$, and $L(C_{\min}) \propto C_{\min}^{-\alpha_C^{\min}}$ — cross-entropy loss decreases as a power of model parameters $N$, dataset tokens $D$, or *optimally allocated* training compute $C_{\min}$, each measured when the other two are *not* the bottleneck. The exponents are small ($\alpha_N \approx 0.076$, $\alpha_D \approx 0.095$, $\alpha_C^{\min} \approx 0.050$ in Kaplan's fit; the naive fixed-batch compute trend gives $\alpha_C \approx 0.057$ instead), so each tenfold scale increase yields a modest but compounding loss reduction. Source: Kaplan et al. 2020 §1.2 / Appendix A / Table 5.
 
 - **Bottleneck rule.** $L(N, D) \to L(N)$ only when $D$ is large enough; otherwise loss is bounded by the data, not the model. Symmetrically for $D$ vs. $N$. The clean power-law shape appears only when the studied resource is the binding constraint; outside that regime, the curves bend. Source: Kaplan et al. 2020 §1 Summary, §4 overfitting analysis.
 
-- **Kaplan compute-optimal allocation.** Under a fixed compute budget $C$, Kaplan recommends $N_{\text{opt}} \propto C^{\sim 0.73}$, batch size $B_{\text{opt}} \propto C^{\sim 0.24}$, and number of steps $S_{\text{opt}} \propto C^{\sim 0.03}$ — i.e., spend most additional compute on a *bigger* model and stop training well short of convergence. Source: Kaplan et al. 2020 §6 / Figure 3.
+- **Kaplan compute-optimal allocation.** Under a fixed compute budget $C_{\min}$, Kaplan recommends $N_{\text{opt}} \propto C_{\min}^{0.73}$, batch size $B \propto C_{\min}^{0.24}$, number of steps $S \propto C_{\min}^{0.03}$, and one-epoch tokens $D_{\text{opt}} \propto C_{\min}^{0.27}$ — i.e., spend most additional compute on a *bigger* model and stop training well short of convergence. Source: Kaplan et al. 2020 §1.2 / Eq. 1.7 / §6.
 
 - **Chinchilla correction (2022).** Hoffmann et al. argue Kaplan's allocation is suboptimal in practice and that the empirically compute-optimal frontier is closer to $N \propto C^{0.5}$ *and* $D \propto C^{0.5}$ — model size and token count should scale roughly equally. Concretely, doubling compute means roughly $\sqrt{2}$ more parameters and $\sqrt{2}$ more training tokens, not (mostly) more parameters. Chinchilla (70B parameters, ~1.4T tokens) outperformed the larger 280B-parameter Gopher under the same compute budget. Source: Hoffmann et al. 2022 Abstract / Introduction / Table 3.
 
@@ -82,6 +82,12 @@ The result did not prove a universal law of intelligence. It did not say that en
 Cross-entropy loss is not a household term, but its role is straightforward. A language model assigns probabilities to possible next tokens. If it assigns high probability to the token that actually appears, loss is lower. If it is surprised by the text, loss is higher. Training pushes the model to become less surprised by the distribution it sees. The scaling-law paper studied how that surprise changed as the model, data, and compute grew.
 
 The philosophical background was Richard Sutton's 2019 essay "The Bitter Lesson." Sutton argued that the largest lesson from decades of AI was that general methods leveraging computation tend to win over approaches that build in human knowledge. He pointed to search and learning as the main methods that scale with computation, using examples from chess, Go, speech recognition, and computer vision. The essay was not evidence for the Kaplan equations, but it provided a warning label for the era: do not bet too heavily on hand-coded cleverness when computation keeps getting cheaper and larger.
+
+:::note
+> The biggest lesson that can be read from 70 years of AI research is that general methods that leverage computation are ultimately the most effective, and by a large margin.
+
+This provenance matters: Sutton's blog framed a research instinct, not a fitted law; Kaplan later supplied the measured loss curves. — *Sutton 2019, "The Bitter Lesson," opening paragraph.*
+:::
 
 That argument had a long history behind it. Expert systems had tried to encode knowledge directly. Hand-engineered vision pipelines had tried to build the right features. Symbolic systems had tried to place human abstractions into machines. Those approaches often worked in constrained domains, but they repeatedly struggled when the world became too varied. Sutton's essay gave a name to the pattern that deep learning researchers had been living through: methods that learn from data and exploit computation can look wasteful until the scale arrives, and then the waste becomes the advantage.
 
