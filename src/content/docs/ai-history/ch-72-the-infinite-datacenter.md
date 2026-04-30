@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-The model became a construction project. Stargate's January 2025 announcement (intended $500B over four years, $100B immediate, Texas first) named power, land, construction, equipment as the bottleneck. Microsoft guided about $80B FY2025 capex; Meta guided $60–65B for 2025. Richland Parish, Hyperion, El Paso, and AWS Project Rainier turned compute into campuses, leases, joint ventures, transmission, and cooling. The closing chapter argues that frontier AI's last constraint is industrial coordination — that intelligence, once mechanized, became infrastructure.
+The model became a construction project. By 2025, frontier AI announcements were no longer just about architectures, benchmarks, or APIs; they were about power, land, financing, construction, cooling, transmission, and named campuses. Stargate, Richland Parish, Hyperion, El Paso, and AWS Project Rainier turned compute into industrial coordination. The closing chapter argues that intelligence, once mechanized, became infrastructure.
 :::
 
 <details>
@@ -16,7 +16,7 @@ The model became a construction project. Stargate's January 2025 announcement (i
 |---|---|---|
 | Sam Altman / OpenAI | — | Public face of the Stargate compute buildout |
 | Masayoshi Son / SoftBank | — | Stargate chair and financial lead in the January 2025 announcement |
-| Brad Smith / Microsoft | — | Author of the January 2025 essay framing AI infrastructure as construction, steel, electricians, and pipefitters |
+| Brad Smith / Microsoft | — | Author of the January 2025 essay framing AI infrastructure as a physical buildout |
 | Susan Li / Meta CFO | — | Capex guidance and Blue Owl financing voice for Meta's 2025 infrastructure push |
 | Blue Owl Capital | — | Infrastructure-finance partner; 80% owner of the Hyperion JV |
 | Dario Amodei / Anthropic | — | Frontier-model customer making the AWS 5GW agreement narratively concrete |
@@ -30,17 +30,17 @@ The model became a construction project. Stargate's January 2025 announcement (i
 timeline
     title Chapter 72 — The Infinite Datacenter
     Dec 3 2024 : AWS announces Trainium2 GA and Project Rainier with Anthropic
-    Dec 4 2024 : Meta and Louisiana announce Richland Parish: $10B, 4M sqft, 2,250 acres
+    Dec 4 2024 : Meta and Louisiana announce Richland Parish: 10 billion dollars, 4M sqft, 2,250 acres
     Dec 20 2024 : DOE/LBNL data-center electricity report (4.4% in 2023, 6.7–12% by 2028)
-    Jan 3 2025 : Microsoft on track to invest about $80B in FY2025 AI-enabled datacenters
-    Jan 21 2025 : OpenAI and SoftBank announce Stargate ($500B / four years; $100B immediate; Texas)
-    Jan 29 2025 : Meta reports 2024 capex $39.23B; guides 2025 capex $60–65B
+    Jan 3 2025 : Microsoft on track to invest about 80 billion dollars in FY2025 AI-enabled datacenters
+    Jan 21 2025 : OpenAI and SoftBank announce Stargate (500 billion dollars / four years; 100 billion dollars immediate; Texas)
+    Jan 29 2025 : Meta reports 2024 capex 39.23 billion dollars; guides 2025 capex 60-65 billion dollars
     Jun 2025 : Google publishes 2025 Environmental Report (PUE, water replenishment metrics)
-    Sep 23 2025 : OpenAI says Stargate has nearly 7GW planned and over $400B over three years
+    Sep 23 2025 : OpenAI says Stargate has nearly 7GW planned and over 400 billion dollars over three years
     Oct 15 2025 : Meta announces El Paso, can scale to 1GW, closed-loop cooling
-    Oct 21 2025 : Meta and Blue Owl announce Hyperion JV (~$27B development costs)
-    Dec 19 2025 : Meta says Richland Parish has contracted over $875M with Louisiana businesses
-    Apr 20 2026 : Anthropic announces expanded Amazon agreement, up to 5GW and over $100B over ten years
+    Oct 21 2025 : Meta and Blue Owl announce Hyperion JV (about 27 billion dollars development costs)
+    Dec 19 2025 : Meta says Richland Parish has contracted over 875 million dollars with Louisiana businesses
+    Apr 20 2026 : Anthropic announces expanded Amazon agreement, up to 5GW and over 100 billion dollars over ten years
 ```
 
 </details>
@@ -48,19 +48,17 @@ timeline
 <details>
 <summary><strong>Plain-words glossary</strong></summary>
 
-**Capex (capital expenditure)** — Spending on long-lived assets like buildings, land, transmission, and equipment, recorded on the balance sheet and depreciated over years rather than expensed immediately. Microsoft's roughly $80B FY2025 figure and Meta's $60–65B 2025 guidance moved AI from cloud bills into capex disclosures.
+**Capex (capital expenditure)** — Spending on long-lived assets like buildings, land, transmission, and equipment, recorded on the balance sheet and depreciated over years rather than expensed immediately.
 
-**Gigawatt (GW)** — One billion watts of power capacity. Stargate's path to 10GW, AWS/Anthropic's 5GW agreement, and Meta El Paso's "can scale to 1GW" use this unit because frontier AI campuses now operate at the scale of large industrial loads.
+**Gigawatt (GW)** — One billion watts of power capacity. Frontier AI campuses use this unit because their planned electrical loads resemble large industrial systems, not ordinary office computing.
 
 **PUE (Power Usage Effectiveness)** — Total facility energy divided by IT-equipment energy. Lower is better; Google reported a 2024 fleet PUE of 1.09 versus an industry average of 1.56. PUE measures overhead efficiency, not absolute power growth.
 
-**WUE / closed-loop cooling** — Water Use Effectiveness measures water consumed per unit of IT energy. Closed-loop cooling recirculates water inside the facility, reducing operational withdrawal — Meta says El Paso uses no operational water for most of the year — but does not mean lifecycle water is zero.
+**WUE / closed-loop cooling** — Water Use Effectiveness measures water consumed per unit of IT energy. Closed-loop cooling recirculates water inside the facility, reducing operational withdrawal, but it does not mean lifecycle water is zero.
 
-**Joint venture (JV) / residual value guarantee** — A jointly owned legal entity. Meta and Blue Owl funds formed an 80/20 JV to develop Hyperion with about $27B of development costs; the structure included operating leases, a residual value guarantee, and private debt to PIMCO and select bond investors.
+**Joint venture (JV) / residual value guarantee** — A jointly owned legal entity and a lease-finance promise about an asset's future value. In AI infrastructure, these structures can move datacenter construction into a mix of tenant commitments, investor ownership, private debt, and long-term guarantees.
 
 **Project Rainier / UltraCluster** — AWS's named compute cluster built around Trainium2 chips for Anthropic, with hundreds of thousands of chips, petabit-scale EFA networking, and dedicated long-term capacity — cloud as named industrial system rather than generic instance pool.
-
-**DOE/LBNL data-center load figures** — Department of Energy / Lawrence Berkeley National Laboratory baseline: U.S. data centers consumed 4.4% of national electricity in 2023, projected to reach 6.7–12% by 2028, used in the chapter as the public-sector measurement spine.
 
 </details>
 
@@ -249,4 +247,3 @@ Then it looked like data.
 Then it looked like a model.
 
 By the end of this arc, it also looked like a construction site.
-
