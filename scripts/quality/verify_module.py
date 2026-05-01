@@ -506,9 +506,15 @@ def anti_leak_metrics(text: str) -> dict[str, object]:
     if not has_k_shortcut:
         kubectl_alias_introduced = True
     elif first_kubectl:
-        start = max(0, first_kubectl.start() - 1000)
-        end = min(len(body_no_code), first_kubectl.end() + 1000)
-        kubectl_alias_introduced = bool(ALIAS_RE.search(body_no_code[start:end]))
+        # Search the original body (with code blocks) — `alias k=kubectl` is
+        # almost always defined inside a fenced bash snippet, so stripping
+        # code first would miss legitimate aliases. Anchor the proximity
+        # window on the same `kubectl` mention located in `body`.
+        first_kubectl_in_body = re.search(r"\bkubectl\b", body, re.IGNORECASE)
+        anchor = first_kubectl_in_body or first_kubectl
+        start = max(0, anchor.start() - 1000)
+        end = min(len(body), anchor.end() + 1000)
+        kubectl_alias_introduced = bool(ALIAS_RE.search(body[start:end]))
     else:
         kubectl_alias_introduced = False
     return {
@@ -669,15 +675,16 @@ def classify_tier(metrics: dict[str, float | int], gates: dict[str, bool | None]
         "density_short_rate_20pct",
         "density_max_consecutive_short_2",
         "sentence_length_12_28",
+        "body_words_5000",
     }
     structure_failed = [key for key in failed if key.startswith("structure_")]
     density_failed = [key for key in failed if key in density_keys]
-    other_failed = [key for key in failed if key not in density_keys and key != "body_words_5000" and not key.startswith("structure_")]
+    other_failed = [key for key in failed if key not in density_keys and not key.startswith("structure_")]
     if density_failed and structure_failed:
         return "T3", failed
-    if structure_failed and not density_failed and gates["body_words_5000"] is True and not other_failed and len(structure_failed) <= 2:
+    if structure_failed and not density_failed and not other_failed and len(structure_failed) <= 2:
         return "T1", failed
-    if density_failed and not structure_failed and gates["body_words_5000"] is True:
+    if density_failed and not structure_failed and not other_failed:
         return "T2", failed
     return "T3", failed
 
