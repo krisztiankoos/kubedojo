@@ -457,50 +457,60 @@ representations after several message-passing layers.
 PyG ships graph-level pooling layers (`global_mean_pool`, `global_max_pool`,
 `global_add_pool`) for exactly this case
 ([PyG nn module reference](https://pytorch-geometric.readthedocs.io/en/latest/modules/nn.html)).
-Each task has its own leakage failure modes.
-Node classification on a single graph leaks if you split nodes randomly and
-then propagate features through edges that cross train and test (covered in
-Section 11).
-Link prediction leaks if your negative samples include edges that exist in
-your validation or test set, or if your train edges include edges that
-appear in test as their reverse.
+Each task has its own evaluation failure modes.
+Node classification on a single graph is the slipperiest because the
+transductive setting deliberately exposes the whole graph at training time;
+the practitioner trap is reporting transductive numbers and silently
+implying inductive generalization (covered in Section 11).
+Link prediction *does* leak if your negative samples include edges that
+exist in your validation or test set, or if your train edges include the
+reverse of test edges in an undirected graph.
 Graph classification is closest to standard supervised learning because the
-graphs are independent, but it can still leak through scaffold structure
-if you split molecules randomly when chemistry-aware splits would have
-revealed brittleness ([Module 1.3: Model Evaluation, Validation, Leakage &
+graphs are independent, but random splits can still understate brittleness
+when scaffold-aware splits would have surfaced it
+([Module 1.3: Model Evaluation, Validation, Leakage &
 Calibration](../../machine-learning/module-1.3-model-evaluation-validation-leakage-and-calibration/)).
 
 ## Section 11: Evaluation discipline for graphs
 The leakage taxonomy from Module 1.3 applies directly to graphs, but with
 two extra wrinkles worth naming.
+
 The first wrinkle is the transductive-versus-inductive distinction.
 In a transductive node-classification setup, the model sees the entire
-graph at training time, including the structure around test nodes — only
-the labels are masked.
-This is the standard for Cora, CiteSeer, and Pubmed, and it is appropriate
-when the deployment scenario is the same: a fixed graph that grows with
-labels rather than with new nodes.
+graph at training time — full structure, full node features, edges in both
+directions across the train-test boundary. Only the **labels** of test
+nodes are masked. Aggregating across train-test edges during message
+passing is not leakage in this setup; it is the defining feature of
+transductive evaluation. This is the standard regime for Cora, CiteSeer,
+and Pubmed, and it is appropriate when deployment is the same shape: a
+fixed graph that grows with new labels rather than with new nodes.
+
 In an inductive setup, the test nodes (or test graphs) are completely held
-out, including their structural positions.
-The model has to generalize to unseen graph fragments.
-Most production fraud, recommendation, and biology problems are inductive
-in practice.
-Reporting transductive accuracy and claiming inductive generalization is a
-real and common form of leakage in published GNN work.
-The second wrinkle is that random node splits can leak even in the
-transductive setting.
-If two adjacent nodes end up on opposite sides of the train-test split, the
-test node's prediction was directly informed by the train node's features
-through the message-passing aggregation.
-The standard Cora/CiteSeer/Pubmed splits are publicly fixed precisely so
-that this kind of leakage is contained and benchmarks remain comparable.
-On a custom graph, the discipline is to split by some structural unit
-(connected component, time, scaffold, user cluster) rather than uniformly
-at random over nodes.
+out, including their edges and structural positions. The model has to
+generalize to unseen graph fragments at inference time. Most production
+fraud, recommendation, and molecular-property problems are inductive in
+practice. The real and common evaluation failure in published GNN work is
+not "messages crossed train-test edges" — it is **reporting transductive
+accuracy and silently claiming inductive generalization from it**. Match
+your evaluation to your deployment shape, or both numbers are uninterpretable.
+
+The second wrinkle is that random splits often understate failure modes
+that a structural split would expose. Adjacent nodes share community,
+time, or scaffold context, and a random shuffle distributes that context
+evenly across train, validation, and test, which makes the held-out
+performance look more robust than it is. On custom graphs, the discipline
+is to split by a structural unit that matches deployment — connected
+component, time window, molecular scaffold, user cluster — so that the
+test set actually exercises the kind of generalization the model will be
+asked to do in production. The standard Cora/CiteSeer/Pubmed splits are
+publicly fixed for benchmark comparability rather than for realism, which
+is why production-leaning papers usually report results on splits that
+respect graph structure as well.
+
 Cross-link [Module 1.3: Model Evaluation, Validation, Leakage &
 Calibration](../../machine-learning/module-1.3-model-evaluation-validation-leakage-and-calibration/)
-for the full leakage discipline; it transfers to graphs with the obvious
-modifications.
+for the full leakage discipline; it transfers to graphs with the
+modifications above.
 
 ## Section 12: PyTorch Geometric in practice
 PyTorch Geometric is the dominant Python library for GNN work today, and
@@ -692,7 +702,7 @@ They are the wrong tool when those conditions do not hold.
 | Mistake | Failure mode | Correct approach |
 |---|---|---|
 | Stacking 8 or more GCN layers expecting CNN-like depth gains | Over-smoothing collapses node embeddings; validation accuracy decays | Use 2-3 layers as the default; reach for JKNet or GCNII only with evidence that long-range information is the bottleneck |
-| Splitting nodes uniformly at random for transductive node classification | Adjacent nodes end up on both sides of the split; aggregation leaks across | Use the standard fixed splits on benchmark graphs; on custom data split by structural unit (component, time, scaffold) |
+| Splitting nodes uniformly at random on a custom graph and reporting transductive accuracy as if it were inductive | Random splits hide structural correlation; transductive numbers do not measure inductive generalization | Match the split shape to deployment — split by structural unit (component, time, scaffold, user cluster) when the model must generalize to unseen graph fragments |
 | Reaching for a GNN before running a tabular or graph-blind baseline | Wasted infrastructure if XGBoost or MLP already wins on cost | Beat XGBoost on engineered features and an MLP on node features alone before claiming a GNN result |
 | Forgetting to scale continuous node features | Distance- and attention-based layers see lopsided per-feature magnitudes | Standardize node features unless you are sure the scales are already comparable, mirroring the discipline in [Module 1.4: Feature Engineering & Preprocessing](../../machine-learning/module-1.4-feature-engineering-and-preprocessing/) |
 | Training a vanilla GCN on a heterophilic graph and reporting only its accuracy | A 2-layer MLP on the same features may beat the GCN; the comparison hides the diagnosis | Check the homophily ratio, run an MLP baseline, and use heterophily-aware architectures if the regime requires it |
