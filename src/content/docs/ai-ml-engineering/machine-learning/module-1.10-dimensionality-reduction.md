@@ -300,6 +300,17 @@ to mean something to a stakeholder, when the target signal is hidden in
 small-variance structure, or when the data is genuinely non-linear and a
 manifold approach would do better.
 
+> **Pause and predict** — A teammate runs PCA on a feature matrix where
+> one column is "annual revenue in dollars" (range 10⁴–10⁹) and another
+> is "customer tenure in years" (range 0–20), without any prior scaling.
+> They report that PC1 captures 99.7% of the variance. What does that
+> number actually mean about the data, and what would change if the
+> features were standardized first? (Answer: PC1 is essentially the
+> revenue column rotated slightly. The variance is dominated by units,
+> not by signal. After `StandardScaler`, both features contribute
+> comparable variance and PC1 reflects whatever covariance actually
+> exists between them.)
+
 ## Section 3: PCA Inside a Pipeline, Without Leakage
 
 The leakage discipline from
@@ -625,6 +636,21 @@ pipeline almost always wants something else: better feature engineering
 upstream, a non-linear classifier such as gradient boosting from
 [Module 1.6: XGBoost & Gradient Boosting](../module-1.6-xgboost-gradient-boosting/),
 or a learned representation from a neural network.
+
+> **Pause and decide** — A colleague proposes putting `TSNE(n_components=2)`
+> as a step inside a `Pipeline` ending in `LogisticRegression`, then
+> running 5-fold cross-validation. Even before the leakage argument, name
+> the structural reason this pipeline cannot be evaluated fairly. Then,
+> separately: would substituting `umap.UMAP` for `TSNE` make the pipeline
+> structurally valid, and would it make the choice a good idea? (Answer:
+> `TSNE` has no `transform()` method, only `fit_transform`, so a held-out
+> fold cannot be embedded in the basis fit on the training fold — the
+> per-fold refit cannot project new rows. UMAP does have `transform()`,
+> so the pipeline is at least structurally valid; whether it is a good
+> idea is a different question, and usually the answer is still no
+> because UMAP outputs are stochastic, sensitive to `n_neighbors`, and
+> rarely beat a properly-tuned PCA or supervised non-linear model on
+> downstream metrics.)
 
 ## Section 8: UMAP, Briefly and Honestly
 
@@ -1126,14 +1152,25 @@ profile looks similar to a regular PCA on a representative sample.
   all three side by side.
   Write one sentence on what changed, and one sentence comparing the
   UMAP plots to the t-SNE plots from Step 6.
-- [ ] Step 8: Pick one of the embeddings from Step 6 or Step 7 and
-  attempt to use its two-dimensional output as a feature for logistic
-  regression.
-  Cross-validate that pipeline and compare against the PCA pipeline
-  from Step 2.
-  Write a short paragraph explaining why the embedding-based pipeline
-  is unlikely to be a good production choice even if its
-  cross-validation score happens to be competitive.
+- [ ] Step 8 (deliberate leakage demonstration): Take the t-SNE
+  embedding from Step 6 — fit on the full `X_scaled` once — and naively
+  use its two-dimensional output as features for a logistic regression.
+  Run `cross_val_score` on `(embedding, y)` and record the score.
+  Then attempt the same comparison "honestly" by trying to put t-SNE
+  inside a `Pipeline` before logistic regression. Observe that
+  `TSNE` does not implement `transform()`, so the pipeline cannot
+  refit per-fold and there is no fair way to evaluate it.
+  Write a short paragraph naming both failure modes: (a) the naive
+  cross-validation score is biased upward because the embedding saw
+  every held-out row at fit time — this is a textbook leakage pattern
+  per [Module 1.3](../module-1.3-model-evaluation-validation-leakage-and-calibration/),
+  and (b) the "fix" of moving t-SNE into the pipeline is structurally
+  unavailable, which is the deeper reason t-SNE is not a supervised
+  preprocessing tool. For UMAP, repeat the experiment with `umap.UMAP`
+  inside a `Pipeline` (UMAP supports `transform()`) and compare its
+  fold-safe cross-validation score against the Step 2 PCA baseline.
+  Note that "fold-safe" does not mean "good idea" — observe whether
+  the score actually improves over PCA.
 - [ ] Completion check: confirm that every method that requires scaling
   was scaled inside its pipeline rather than once globally.
 - [ ] Completion check: confirm that the t-SNE and UMAP plots were
