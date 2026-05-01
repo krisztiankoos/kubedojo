@@ -41,7 +41,7 @@ This section is organized as a Tier-1 spine of twelve practitioner-essentials, f
 | 2.3 | [Probabilistic & Bayesian ML with PyMC](module-2.3-probabilistic-and-bayesian-ml-with-pymc/) | Available |
 | 2.4 | [Recommender Systems](module-2.4-recommender-systems/) | Available |
 | 2.5 | [Conformal Prediction & Uncertainty Quantification](module-2.5-conformal-prediction-and-uncertainty-quantification/) | Available |
-| 2.6 | Fairness & Bias Auditing | Coming soon (Phase 3) |
+| 2.6 | [Fairness & Bias Auditing](module-2.6-fairness-and-bias-auditing/) | Available |
 | 2.7 | Causal Inference for ML Practitioners | Coming soon (Phase 3) |
 
 ## Recommended Order
