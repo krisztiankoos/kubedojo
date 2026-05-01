@@ -20,3 +20,4 @@ By the end of this section, you will understand how to design, deploy, and opera
 | [Fleet Management](module-5.4-fleet-management/) | Managing multiple clusters at scale, policy distribution, and centralized observability | 45 min |
 | [Active-Active Multi-Site](module-5.5-active-active-multi-site/) | Disaster recovery, cross-cluster networking, global load balancing, and state replication | 60 min |
 | [Module 5.6: Gardener](module-5.6-gardener/) | Open-source Kubernetes-as-a-Service; Gardens/Seeds/Shoots architecture; cluster lifecycle at scale; comparison vs Cluster API and Crossplane | 60 min |
+| [Module 5.7: Multi-Cluster On-Prem](module-5.7-multi-cluster-on-prem/) | kube-vip virtual IPs (L2/BGP), Karmada federation policy, Liqo transparent offloading; layered architecture for the on-prem multi-cluster stack | 60-70 min |
