@@ -23,7 +23,9 @@ These outcomes extend Module 1.1 and Module 1.3. Module 1.1 taught the workflow 
 
 ## Why This Module Matters
 
-The scikit-learn user guide on preprocessing opens with a practical claim: many learning algorithms either require or behave better when their input features are on similar scales, free of missing values, and encoded in a form the algorithm can consume. The compose guide adds the structural counterpart: in real datasets, columns of different dtypes need different preprocessing, and the composition tool is `ColumnTransformer`. The common pitfalls guide closes the loop by stating that any statistic learned during preprocessing must come only from training data, and that `Pipeline` is the mechanism that makes this automatic.
+A model trains, scores cleanly on a held-out split, and then degrades on the first batch of truly new data. The cause is rarely the algorithm. More often the preprocessing layer broke in one of three documented ways. A scaler computed its mean and standard deviation on the full dataset before the split, so the held-out score quietly used statistics that included its own rows. A one-hot encoder was fit on training data only and now raises `ValueError` the first time a category that was always rare appears in production. An imputer filled missing values with a mean computed across train and test, smuggling target-correlated information through the imputation statistic. The scikit-learn common pitfalls guide documents all three patterns and prescribes one structural fix: every preprocessing decision must come from training-only statistics, and `Pipeline` is the mechanism that enforces this automatically.
+
+The compose guide adds the structural counterpart: in real datasets, columns of different dtypes need different preprocessing, and the composition tool is `ColumnTransformer`. The preprocessing user guide then catalogs the actual transformer choices - many algorithms either require or behave better when input features are on similar scales, free of missing values, and encoded in a form the algorithm can consume.
 
 Together, these three guides describe one thing - a preprocessing layer that is correct by construction. The reason a module exists for that is that the catalog is wider than it looks. Encoding has at least four legitimate strategies, each fitting a different cardinality regime. Scaling has at least five, each protecting against a different distributional pathology. Imputation has at least three, with a separate question of whether missingness should also be encoded as a feature. Feature selection has three families with very different cost-benefit tradeoffs. None of these decisions is the "default", and getting them wrong does not raise an exception - it just shifts the error budget into a place the evaluation cannot see. This module gives you a decision frame for each one and a single end-to-end pipeline that ties them together so a reviewer can read it in one pass.
 
@@ -69,7 +71,7 @@ Passing `categories=` explicitly is what locks the meaningful ordering. Without 
 
 ### Target Encoding for Medium Cardinality
 
-For columns with a few hundred to a few thousand levels, one-hot encoding becomes painful: the design matrix grows wide and sparse, distance metrics (k-NN, kernel SVMs) lose discrimination, and many of the indicator columns carry almost no signal. `TargetEncoder` (sklearn 1.3+) replaces a category with a smoothed estimate of the target's conditional mean (or the conditional log-odds for classification) for that category.
+For columns with a few hundred to a few thousand levels, one-hot encoding becomes painful: the design matrix grows wide and sparse, distance metrics (k-NN, kernel SVMs) lose discrimination, and many of the indicator columns carry almost no signal. `TargetEncoder` (sklearn 1.3+) replaces a category with a shrunk estimate of the target's conditional mean for that category - the per-class conditional probability for binary classification, regressed toward the global mean to keep low-count categories from dominating, and one column per class for multiclass classification.
 
 The catch is that target encoding reads `y`. Module 1.3's leakage taxonomy names the failure: if a row's own label contributes to that row's encoded feature, the validation score is no longer testing unseen behavior. The sklearn `TargetEncoder` documentation is explicit that the encoder uses an internal cross-fitting scheme during `fit_transform` so that, for each training row, the encoded value is computed from a fold that excludes that row.
 
@@ -103,7 +105,7 @@ The naive failure mode - `df.groupby("category")[target].mean()` over the full d
 
 For columns with thousands to millions of levels - user IDs, ZIP codes, raw URLs - both one-hot and target encoding become awkward. One-hot blows the dimensionality up. Target encoding is statistically thin for any category seen only a handful of times, even with smoothing. Two pragmatic patterns survive at this scale.
 
-The first is *feature hashing*: map each category to one of `m` buckets via a hash function, then use the bucket index. Collisions are accepted as a regularization cost. This is the pattern behind `HashingVectorizer` for text and is implementable for arbitrary categorical columns by hashing the raw string. It is fast, requires no fit, and tolerates unseen categories gracefully.
+The first is *feature hashing*: map each category to a fixed-width sparse feature vector by hashing the raw string into `m` buckets, with each row producing a one-hot (or signed) entry in the bucket the hash selects. Collisions are accepted as a regularization cost - the model treats categories that happen to land in the same bucket as the same feature, and useful signal usually survives because most categories collide with low-information ones. This is the pattern behind `HashingVectorizer` for text and is implementable for arbitrary categorical columns by hashing the raw string. It is fast, requires no fit, and tolerates unseen categories gracefully because a never-seen category simply hashes into the same fixed feature space as everything else. The crucial property is that the output is a *fixed-width feature vector*, not a single integer bucket id - encoding categories as a raw integer bucket index would reintroduce the spurious-ordering problem that motivated leaving `OrdinalEncoder` for explicitly ordered columns.
 
 The second is *learned embeddings* - mapping each category to a dense low-dimensional vector trained jointly with the model. This is the dominant pattern in deep tabular models and is delegated to a deep-learning framework rather than to sklearn. The deep-learning track covers this in its tabular module.
 
@@ -484,6 +486,7 @@ from sklearn.experimental import enable_iterative_imputer  # noqa: F401
 from sklearn.feature_selection import SelectFromModel
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import average_precision_score, roc_auc_score
 from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import (
@@ -576,7 +579,9 @@ scores = cross_validate(
 print("cv roc_auc:", scores["test_roc_auc"].mean(), "+/-", scores["test_roc_auc"].std())
 
 model.fit(X_dev, y_dev)
-print("final test roc_auc:", model.score(X_test, y_test))
+y_proba = model.predict_proba(X_test)[:, 1]
+print("final test roc_auc:", roc_auc_score(y_test, y_proba))
+print("final test avg_precision:", average_precision_score(y_test, y_proba))
 ```
 
 Read the structure rather than the result. Numeric columns are routed by dtype to a median-imputer-with-indicator and a `RobustScaler`. Low-cardinality categoricals (`country`) get one-hot encoding. Ordered categoricals (`tier`) get explicit `OrdinalEncoder` with the order locked by `categories=`. High-cardinality categoricals (`merchant_id`) get cross-fitted target encoding. Feature selection runs as an embedded step over an L1-regularized logistic regression. The final classifier sees the selected feature set. The whole graph fits in one call and runs inside cross-validation correctly because every learned statistic - imputation medians, scaling IQRs, one-hot vocabularies, target-encoder mappings, L1 coefficients used for selection - lives inside the pipeline and is refit per fold.
@@ -642,14 +647,14 @@ The model cannot learn the missingness pattern itself, because mean imputation o
 
 </details>
 
-### 4. A pipeline using `IterativeImputer` raises `ImportError` on import in a fresh environment.
+### 4. A pipeline that worked locally for months breaks the first time a teammate runs it on a fresh checkout. The traceback ends with `ImportError: cannot import name 'IterativeImputer' from 'sklearn.impute'`. Both environments have the same sklearn version pinned.
 
-What is the diagnosis, and what does the import line look like?
+What does the traceback tell you about how `IterativeImputer` differs from the other imputers in this section, and how do you fix the local environment without changing the sklearn version?
 
 <details>
 <summary>Answer</summary>
 
-`IterativeImputer` is still experimental in sklearn and requires an explicit opt-in. The import order is `from sklearn.experimental import enable_iterative_imputer`, then `from sklearn.impute import IterativeImputer`. Without the experimental import, the public name is not registered.
+Imports that fail with a name-not-found error from a real submodule, despite a matching package version, signal that the symbol is gated rather than absent. `IterativeImputer` is still classified experimental in sklearn, so importing it requires an explicit opt-in: `from sklearn.experimental import enable_iterative_imputer` (a side-effecting import) before `from sklearn.impute import IterativeImputer`. Your environment has likely cached a partially imported `sklearn.impute` module without the experimental opt-in. Add the opt-in line above the imputer import in the pipeline file, restart any long-running Python processes, and the symbol resolves.
 
 </details>
 
