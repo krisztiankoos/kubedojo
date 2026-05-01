@@ -4,7 +4,7 @@ sidebar:
   order: 0
   label: "ML Platforms"
 ---
-> **Toolkit Track** | 10 Modules | ~8.5 hours total
+> **Toolkit Track** | 11 Modules | ~9.5 hours total
 
 ## Overview
 
@@ -34,6 +34,7 @@ Before starting this toolkit:
 | 9.8 | [KServe](module-9.8-kserve/) | `[COMPLEX]` | 55-65 min |
 | 9.9 | [Seldon Core](module-9.9-seldon-core/) | `[COMPLEX]` | 55-65 min |
 | 9.10 | [BentoML](module-9.10-bentoml/) | `[COMPLEX]` | 50-60 min |
+| 9.11 | [Bare-Metal MLOps](module-9.11-bare-metal-mlops/) | `[COMPLEX]` | 60-70 min |
 
 ## Learning Outcomes
 
@@ -47,6 +48,7 @@ After completing this toolkit, you will be able to:
 6. **Create RAG applications** — LangChain and LlamaIndex for LLM apps
 7. **Deploy inference graphs** — Seldon Core 2 pipelines, multi-model serving, and Alibi explainability
 8. **Package and serve Python-first models** — BentoML Service/runners/Bento lifecycle, K8s deployment, adaptive micro-batching
+9. **Build bare-metal ML platforms** — Assemble MinIO, MLflow, KServe, Argo Workflows, and kube-prometheus-stack into a production ML platform without managed cloud
 
 ## Tool Selection Guide
 
@@ -112,6 +114,12 @@ WHICH ML PLATFORM TOOL?
 
 "I need to build LLM applications"
 └──▶ LangChain / LlamaIndex
+
+"I need a production ML platform without AWS/GCP/Azure"
+└──▶ Bare-Metal MLOps Recipe (Module 9.11)
+     • kubeadm/k3s + MetalLB + Longhorn + MinIO
+     • MLflow self-hosted + KServe/Seldon/BentoML
+     • Argo Workflows + ArgoCD + kube-prometheus-stack
      • RAG (Retrieval-Augmented Generation)
      • Chains and agents
      • Memory management
@@ -241,6 +249,11 @@ Module 9.10: BentoML
      │
      │  Python-first model packaging
      │  Runners, micro-batching, K8s deployment
+     ▼
+Module 9.11: Bare-Metal MLOps
+     │
+     │  Integration capstone
+     │  Full platform assembly without managed cloud
      ▼
 [Toolkit Complete] → Production AI/ML!
 ```
@@ -427,6 +440,7 @@ Latency: < 100ms total
 | KServe | Deploy InferenceService, canary rollout, switch to raw mode |
 | Seldon Core | Deploy inference graph with two model variants, A/B Experiment, and Alibi explainer |
 | BentoML | Build two-runner Bento (embedder + classifier), deploy to K8s with adaptive micro-batching, observe throughput/latency |
+| Bare-Metal MLOps | Deploy full platform: MinIO + MLflow + KServe + Argo Workflows + Prometheus; train sklearn model, register, serve, observe |
 
 ## Tool Comparison
 
