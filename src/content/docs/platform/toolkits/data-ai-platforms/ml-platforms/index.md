@@ -4,7 +4,7 @@ sidebar:
   order: 0
   label: "ML Platforms"
 ---
-> **Toolkit Track** | 9 Modules | ~7.5 hours total
+> **Toolkit Track** | 10 Modules | ~8.5 hours total
 
 ## Overview
 
@@ -33,6 +33,7 @@ Before starting this toolkit:
 | 9.7 | [GPU Scheduling](module-9.7-gpu-scheduling/) | `[COMPLEX]` | 50 min |
 | 9.8 | [KServe](module-9.8-kserve/) | `[COMPLEX]` | 55-65 min |
 | 9.9 | [Seldon Core](module-9.9-seldon-core/) | `[COMPLEX]` | 55-65 min |
+| 9.10 | [BentoML](module-9.10-bentoml/) | `[COMPLEX]` | 50-60 min |
 
 ## Learning Outcomes
 
@@ -45,6 +46,7 @@ After completing this toolkit, you will be able to:
 5. **Build distributed inference** — Ray Serve for multi-model pipelines
 6. **Create RAG applications** — LangChain and LlamaIndex for LLM apps
 7. **Deploy inference graphs** — Seldon Core 2 pipelines, multi-model serving, and Alibi explainability
+8. **Package and serve Python-first models** — BentoML Service/runners/Bento lifecycle, K8s deployment, adaptive micro-batching
 
 ## Tool Selection Guide
 
@@ -114,6 +116,13 @@ WHICH ML PLATFORM TOOL?
      • Chains and agents
      • Memory management
      • Document processing
+
+"I need Python-first model packaging and custom serving logic"
+└──▶ BentoML
+     • Python Service + runner architecture
+     • Bento packaging with reproducible artifacts
+     • Adaptive micro-batching per runner
+     • K8s deployment via Helm or Yatai control plane
 
 ML PLATFORM STACK:
 ─────────────────────────────────────────────────────────────────
@@ -227,6 +236,11 @@ Module 9.9: Seldon Core
      │
      │  Multi-framework model serving
      │  Inference graphs, Alibi explainability
+     ▼
+Module 9.10: BentoML
+     │
+     │  Python-first model packaging
+     │  Runners, micro-batching, K8s deployment
      ▼
 [Toolkit Complete] → Production AI/ML!
 ```
@@ -412,6 +426,7 @@ Latency: < 100ms total
 | GPU Scheduling | Install NVIDIA operator, schedule GPU workloads |
 | KServe | Deploy InferenceService, canary rollout, switch to raw mode |
 | Seldon Core | Deploy inference graph with two model variants, A/B Experiment, and Alibi explainer |
+| BentoML | Build two-runner Bento (embedder + classifier), deploy to K8s with adaptive micro-batching, observe throughput/latency |
 
 ## Tool Comparison
 
