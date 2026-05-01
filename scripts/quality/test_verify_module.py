@@ -142,6 +142,87 @@ def test_anti_leak_catches_tbd_but_not_inside_code_fence() -> None:
     assert plain["forbidden_tokens"] == ["TBD"]
 
 
+def test_learning_outcomes_synonym_is_detected() -> None:
+    metrics = verify_module.structure_metrics(
+        """
+## What You'll Be Able to Do
+- Explain one outcome.
+- Configure another outcome.
+- Troubleshoot a third outcome.
+"""
+    )
+    assert metrics["has_learning_outcomes"] is True
+    assert metrics["learning_outcome_count"] == 3
+
+
+def test_quiz_topic_heading_is_detected() -> None:
+    metrics = verify_module.structure_metrics(
+        """
+## Quiz: Operational Scenarios
+<details>
+<summary>How should you respond?</summary>
+Answer.
+</details>
+"""
+    )
+    assert metrics["quiz_count"] == 1
+    assert metrics["quiz_with_details"] == 1
+
+
+def test_hands_on_topic_heading_is_detected() -> None:
+    metrics = verify_module.structure_metrics(
+        """
+## Hands-On: Build a RAG vs Fine-tuning Decision Engine CLI
+- [ ] Create the CLI scaffold.
+- [ ] Add the decision rules.
+- [ ] Test two scenarios.
+"""
+    )
+    assert metrics["hands_on_checkboxes"] == 3
+
+
+def test_common_mistakes_prefix_heading_is_detected() -> None:
+    metrics = verify_module.structure_metrics(
+        """
+## Common Mistakes and How to Avoid Them
+| Mistake | Fix |
+| --- | --- |
+| one | fix |
+| two | fix |
+| three | fix |
+| four | fix |
+| five | fix |
+| six | fix |
+"""
+    )
+    assert metrics["common_mistakes_rows"] == 6
+
+
+def test_further_reading_heading_is_detected_as_sources() -> None:
+    metrics = verify_module.sources_metrics(
+        """
+## Further Reading
+- https://example.com/source
+""",
+        skip_source_check=True,
+        max_workers=1,
+    )
+    assert metrics["count"] == 1
+
+
+def test_did_you_know_question_mark_heading_is_detected() -> None:
+    metrics = verify_module.structure_metrics(
+        """
+## Did You Know?
+- One fact.
+- Two facts.
+- Three facts.
+- Four facts.
+"""
+    )
+    assert metrics["did_you_know_count"] == 4
+
+
 def test_cli_all_revision_pending_writes_jsonl(tmp_path: Path, monkeypatch) -> None:
     docs = tmp_path / "src/content/docs"
     docs.mkdir(parents=True)

@@ -78,6 +78,21 @@ KUBECTL_COMMAND_RE = re.compile(
 )
 ALIAS_RE = re.compile(r"\balias\s+k=(?:kubectl|'kubectl'|\"kubectl\")\b", re.IGNORECASE)
 
+LEARNING_OUTCOME_HEADINGS = (
+    "Learning Outcomes",
+    "Learning Objectives",
+    "What You'll Be Able to Do",
+    "What You'll Learn",
+    "What You Will Learn",
+)
+DID_YOU_KNOW_HEADINGS = ("Did You Know", "Did You Know?")
+COMMON_MISTAKES_PREFIX_HEADINGS = ("Common Mistakes",)
+QUIZ_HEADINGS = ("Knowledge Check",)
+QUIZ_PREFIX_HEADINGS = ("Quiz",)
+HANDS_ON_HEADINGS = ("Lab", "Exercise", "Hands-On Practice", "Hands-On Practical Exercises")
+HANDS_ON_PREFIX_HEADINGS = ("Hands-On",)
+SOURCES_HEADINGS = ("Sources", "Further Reading", "References", "Resources")
+
 try:
     import regex as _regex  # type: ignore
 
@@ -180,7 +195,7 @@ def extract_body_paragraphs(text: str) -> list[str]:
 
         heading = re.match(r"^(#{1,6})\s+(.+?)\s*$", stripped)
         if heading and len(heading.group(1)) <= 2:
-            in_sources = bool(re.match(r"sources?|references?", heading.group(2), re.IGNORECASE))
+            in_sources = _heading_matches(heading.group(2), SOURCES_HEADINGS)
         if in_sources:
             kept.append("")
             continue
@@ -277,7 +292,7 @@ def density_metrics(text: str) -> dict[str, float | int]:
 
 
 def _sections(body: str) -> list[dict[str, object]]:
-    matches = _heading_matches(body)
+    matches = _markdown_heading_matches(body)
     sections: list[dict[str, object]] = []
     for idx, match in enumerate(matches):
         level = len(match.group(1))
@@ -298,7 +313,7 @@ def _sections(body: str) -> list[dict[str, object]]:
     return sections
 
 
-def _heading_matches(body: str) -> list[re.Match[str]]:
+def _markdown_heading_matches(body: str) -> list[re.Match[str]]:
     matches: list[re.Match[str]] = []
     in_fence = False
     offset = 0
@@ -315,10 +330,34 @@ def _heading_matches(body: str) -> list[re.Match[str]]:
     return [match for match in matches if match is not None]
 
 
+def _heading_title(line: str) -> str:
+    match = re.match(r"^\s*#{1,6}\s+(.+?)\s*$", line)
+    title = match.group(1) if match else line
+    return re.sub(r"\s+#+\s*$", "", title).strip()
+
+
+def _heading_matches(line: str, candidates: Iterable[str], prefix: bool = False) -> bool:
+    title = _heading_title(line).casefold()
+    for candidate in candidates:
+        expected = candidate.casefold()
+        if title == expected or title.startswith(f"{expected}:"):
+            return True
+        if prefix and (title.startswith(f"{expected} ") or title.startswith(f"{expected}:")):
+            return True
+    return False
+
+
 def _find_h2(body: str, pattern: str) -> dict[str, object] | None:
     regex = re.compile(pattern, re.IGNORECASE)
     for section in _sections(body):
         if section["level"] == 2 and regex.search(str(section["title"])):
+            return section
+    return None
+
+
+def _find_matching_h2(body: str, candidates: Iterable[str], prefix: bool = False) -> dict[str, object] | None:
+    for section in _sections(body):
+        if section["level"] == 2 and _heading_matches(str(section["title"]), candidates, prefix):
             return section
     return None
 
@@ -395,7 +434,7 @@ def _next_module_link(body: str) -> bool:
 
 def structure_metrics(text: str) -> dict[str, object]:
     _, body = _strip_frontmatter(text)
-    learning = _find_h2(body, r"^Learning Outcomes$")
+    learning = _find_matching_h2(body, LEARNING_OUTCOME_HEADINGS)
     why = next(
         (
             section
@@ -406,11 +445,13 @@ def structure_metrics(text: str) -> dict[str, object]:
         ),
         None,
     )
-    common = _find_h2(body, r"^Common Mistakes$")
-    quiz = _find_h2(body, r"^(Quiz|Knowledge Check)$")
-    hands = _find_h2(body, r"(Hands-On|Lab|Exercise)")
+    common = _find_matching_h2(body, COMMON_MISTAKES_PREFIX_HEADINGS, prefix=True)
+    quiz = _find_matching_h2(body, QUIZ_HEADINGS) or _find_matching_h2(body, QUIZ_PREFIX_HEADINGS, prefix=True)
+    hands = _find_matching_h2(body, HANDS_ON_HEADINGS) or _find_matching_h2(
+        body, HANDS_ON_PREFIX_HEADINGS, prefix=True
+    )
     quiz_items = _quiz_items(quiz)
-    did_section = _find_h2(body, r"^Did You Know\??$")
+    did_section = _find_matching_h2(body, DID_YOU_KNOW_HEADINGS)
     did_you_know_count = _count_bullets(did_section)
     if did_you_know_count == 0:
         did_you_know_count = sum(
@@ -456,6 +497,12 @@ def _extract_section_text(text: str, pattern: str) -> str:
     return str(section["content"]) if section else ""
 
 
+def _extract_matching_section_text(text: str, candidates: Iterable[str], prefix: bool = False) -> str:
+    _, body = _strip_frontmatter(text)
+    section = _find_matching_h2(body, candidates, prefix)
+    return str(section["content"]) if section else ""
+
+
 def extract_urls(section_text: str) -> list[str]:
     seen: dict[str, None] = {}
     for url in MD_LINK_RE.findall(section_text):
@@ -484,7 +531,7 @@ def _check_url(url: str) -> str:
 
 
 def sources_metrics(text: str, skip_source_check: bool, max_workers: int) -> dict[str, object]:
-    section = _extract_section_text(text, r"^(Sources?|References?)$")
+    section = _extract_matching_section_text(text, SOURCES_HEADINGS)
     urls = extract_urls(section)
     if skip_source_check:
         statuses: dict[str, int] = {"skipped": len(urls)}
@@ -571,7 +618,7 @@ def _token_match(outcome_tokens: list[str], target: str) -> bool:
 
 
 def _learning_outcomes(text: str) -> list[str]:
-    section_text = _extract_section_text(text, r"^Learning Outcomes$")
+    section_text = _extract_matching_section_text(text, LEARNING_OUTCOME_HEADINGS)
     outcomes = []
     for line in section_text.splitlines():
         match = re.match(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)(.+)", line)
@@ -587,8 +634,10 @@ def alignment_metrics(text: str) -> dict[str, object]:
     sections = _sections(body)
     section_targets = [str(section["title"]) for section in sections if section["level"] == 2]
     section_targets.extend(paragraphs)
-    quiz = _find_h2(body, r"^(Quiz|Knowledge Check)$")
-    hands = _find_h2(body, r"(Hands-On|Lab|Exercise)")
+    quiz = _find_matching_h2(body, QUIZ_HEADINGS) or _find_matching_h2(body, QUIZ_PREFIX_HEADINGS, prefix=True)
+    hands = _find_matching_h2(body, HANDS_ON_HEADINGS) or _find_matching_h2(
+        body, HANDS_ON_PREFIX_HEADINGS, prefix=True
+    )
     assessment_items = [
         (f"quiz_{idx}", f"{question} {block}")
         for idx, (question, block) in enumerate(_quiz_items(quiz), 1)
