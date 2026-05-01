@@ -8,29 +8,28 @@ slug: module-9.11-bare-metal-mlops
 
 ## Complexity: [COMPLEX]
 
-**Time to Complete**: 60-70 minutes
+**Time to Complete**: Plan for 60-70 minutes if you already know Kubernetes fundamentals, and reserve extra time if you want to run the production-realistic lab path.
 
-**Prerequisites**:
+**Prerequisites**: This capstone assumes you can read Kubernetes manifests, recognize common control-plane and workload failures, and connect storage, networking, GPU, and serving behavior into one operational picture.
 
 - Kubernetes basics with a kubeadm cluster or equivalent
 - Module 9.7: GPU Scheduling, because the GPU Operator and MIG appear throughout this module
 - At least one serving module: Module 9.8 KServe, Module 9.9 Seldon Core, or Module 9.10 BentoML
 - Comfort reading Kubernetes manifests, Helm values, and production troubleshooting output
 
-For command examples, configure the `kubectl` alias once:
+For command examples, configure the `kubectl` alias once so the later troubleshooting flow stays readable while still using standard Kubernetes commands underneath:
 
 ```bash
 alias k=kubectl
 ```
 
-From here on, commands use `k`.
-All Kubernetes examples target Kubernetes **1.35+**.
+From here on, commands use `k`, and all Kubernetes examples target Kubernetes **1.35+** so API behavior, resource names, and serving assumptions stay consistent across the module.
 
 ---
 
 ## Learning Outcomes
 
-After completing this module, you will be able to:
+After completing this module, you will be able to reason about a self-hosted ML platform as a connected system rather than a bag of individually installed tools:
 
 - **Design** a seven-layer bare-metal ML platform that replaces managed-cloud services with Kubernetes-native components.
 - **Evaluate** storage, networking, GPU, serving, registry, orchestration, and observability trade-offs for production ML workloads.
@@ -161,7 +160,10 @@ Bare metal does not remove platform complexity.
 It changes who pays the complexity bill.
 You choose bare metal when control, sovereignty, or scale economics matter more than managed convenience.
 
-**Worked example: choosing the serving mix**
+The architectural habit to build early is dependency mapping. A serving outage may look like a KServe problem while the real fault is a MinIO credential, a MetalLB announcement, a Cilium policy, or a GPU runtime mismatch. When each layer has a documented owner and a small set of health checks, incident response becomes a sequence of falsifiable tests instead of a debate about which tool is probably guilty.
+Those checks should live beside the platform runbooks and be rehearsed before production traffic and planned upgrades arrive.
+
+**Worked example: choosing the serving mix** The scenario below shows why a platform can support more than one serving path without becoming incoherent, provided each path has a clear workload boundary and shares the same registry and artifact contracts.
 
 A manufacturing company runs two ML families.
 Computer-vision defect detection uses Triton and needs GPU-aware canaries.
@@ -208,7 +210,7 @@ They are related but not substitutes.
 Use MinIO versioning to recover object-level mistakes.
 Use MLflow model versions and aliases to express model identity, lineage, and promotion state.
 
-A practical rule:
+A practical storage rule is to place each artifact where its access pattern and failure mode make sense, then document that rule before teams create their own exceptions under delivery pressure:
 
 - Put raw run artifacts, metrics exports, model binaries, and evaluation outputs in MinIO.
 - Put experiment metadata, model version records, aliases, and run lineage in MLflow PostgreSQL.
@@ -226,6 +228,8 @@ Backups must cover both metadata and objects.
 A Velero backup that captures only Kubernetes manifests is not enough if MinIO buckets contain your actual models.
 A MinIO bucket backup without PostgreSQL is also incomplete because the registry loses lineage and version state.
 For production, combine Velero for cluster resources, scheduled PostgreSQL backups, and cross-cluster MinIO replication for disaster recovery.
+
+Restore testing is where storage designs become honest. Practice restoring an MLflow run, its registered model version, the referenced artifact object, and the serving manifest into a clean namespace or secondary cluster. If those pieces cannot be reconnected without a tribal-memory checklist, the platform is not yet auditable. A good restore drill should prove both data recovery and operational interpretation, including which model version should receive traffic after recovery.
 
 MinIO can be installed as a standalone deployment for a lab, but the MinIO Operator is a better production base.
 The operator manages tenant resources, pools, certificates, and tenant-level isolation.
@@ -283,7 +287,7 @@ spec:
   requestAutoCert: false
 ```
 
-Apply the operator first, then apply the tenant:
+Apply the operator first, then apply the tenant, because the tenant custom resource depends on the operator controllers and CRDs being present before Kubernetes can reconcile storage pools:
 
 ```bash
 helm repo add minio-operator https://operator.min.io
@@ -422,7 +426,7 @@ data:
             "1g.10gb": 3
 ```
 
-Apply a label to choose the desired MIG layout for a node:
+Apply a label to choose the desired MIG layout for a node, then watch the state label because MIG reconfiguration changes real accelerator capacity and can disrupt workloads:
 
 ```bash
 k label node gpu-node-a nvidia.com/mig.config=balanced-inference --overwrite
@@ -455,6 +459,8 @@ Multiple GPU models in one cluster are normal.
 The platform may have A100 nodes for training, V100 nodes for batch inference, and L4 nodes for lower-cost online inference.
 Do not rely only on `nvidia.com/gpu: 1`.
 Use node labels such as `nvidia.com/gpu.product` to steer workloads to the right hardware.
+
+Admission control is the next maturity step after labels. Without it, a team can accidentally request a generic GPU and consume premium training hardware for a lightweight notebook or low-priority inference service. A validating policy can require approved GPU product selectors, namespace-specific quotas, and workload labels before pods reach the scheduler. That keeps placement discipline from depending on everyone remembering the same convention during a release.
 
 ```yaml
 apiVersion: batch/v1
@@ -500,7 +506,7 @@ Grafana turns them into questions your team can answer quickly:
 - Which training jobs reserve A100s but show near-zero utilization?
 - Which nodes show ECC or XID errors before workloads fail?
 
-Sample GPU dashboard panels:
+Sample GPU dashboard panels should tie device behavior back to pods, namespaces, and owners, because raw accelerator metrics are much less useful when nobody can identify the workload causing them:
 
 | Panel | PromQL Direction |
 |---|---|
@@ -522,7 +528,7 @@ Operationally, it is evidence.
 It is the system that answers "which model did we train, from which data, with which parameters, under which run, and why is this version serving traffic?"
 On bare metal, MLflow is a practical default because it separates experiment tracking, artifact storage, and model registry concepts while staying portable.
 
-The production layout is:
+The production layout separates state, credentials, and traffic paths so the tracking server can be rescheduled without losing lineage or forcing teams to rebuild training images:
 
 - MLflow tracking server as a Kubernetes deployment or Helm release.
 - PostgreSQL as the backend store.
@@ -654,7 +660,7 @@ Aim is the lightweight alternative.
 It is useful for teams that need fast experiment tracking and comparisons but do not need a full promotion workflow.
 Aim can be a good early-stage tool, but a platform serving production traffic usually needs a clearer registry and deployment handshake.
 
-The model promotion workflow should be explicit:
+The model promotion workflow should be explicit because the registry proves what was produced, while Git and the deployment controller prove what the platform intentionally serves:
 
 ```text
 Training job
@@ -919,7 +925,7 @@ At minimum, include namespace, pod, container, app, model name, model version, a
 For training jobs, include workflow name and step name.
 For inference, include serving runtime and `InferenceService` name.
 
-Useful Loki query pattern:
+A useful Loki query pattern starts with stable labels and then narrows to structured error text, which keeps incident response fast without requiring broad log searches across every workload:
 
 ```text
 {namespace="ml-serving", model_name="iris-bare-metal"} |= "error" | json
@@ -930,7 +936,7 @@ OpenTelemetry instrumentation in transformers and custom predictors lets you fol
 The best developer experience is inside Grafana:
 click a slow Prometheus exemplar, open the trace in Tempo, then jump to Loki logs for the same pod and request ID.
 
-Alert on symptoms users feel and resources operators can act on:
+Alert on symptoms users feel and resources operators can act on, then keep lower-level signals available for diagnosis rather than paging on every noisy internal fluctuation:
 
 - Inference p99 latency is above the service objective.
 - Model error rate spikes after a deployment.
@@ -1103,6 +1109,8 @@ Give platform engineers ownership of cluster-scoped serving runtimes, GPU operat
 Do not let every team define its own ingress and object storage credential pattern.
 That is how a platform becomes a collection of exceptions.
 
+Network design also needs a change-management habit. Adding a model endpoint is not just a YAML apply; it consumes an address, a certificate, a route, an authentication rule, and egress permissions to internal services. Review those changes together so a public endpoint cannot accidentally expose MLflow, bypass authentication, or use a broad MinIO credential. Bare metal gives you freedom from cloud load-balancer APIs, but it does not remove the need for careful edge governance.
+
 ---
 
 ## 8. End-to-End Request Traceability
@@ -1132,6 +1140,8 @@ At each hop, emit three kinds of data.
 Trace spans describe timing and parent-child relationships.
 Structured logs describe events with fields humans and machines can query.
 Metrics describe aggregate behavior over time.
+
+The traceability design should be part of the service contract, not an afterthought added during an outage. Platform teams can provide common libraries or sidecar-free instrumentation templates, but model teams still need to supply model names, versions, input-size summaries, and validation outcomes. The goal is a request record that is specific enough to debug and audit, yet careful enough to avoid storing sensitive payloads in observability systems.
 
 | Hop | Trace Span | Structured Log Fields | Metrics | Failure Modes |
 |---|---|---|---|---|
@@ -1240,7 +1250,7 @@ datasources:
           - container
 ```
 
-The operator workflow should feel like this:
+The operator workflow should feel evidence-driven, with each observability system contributing a different part of the explanation instead of forcing engineers to infer causality from one dashboard:
 
 1. Grafana alert fires because p99 latency breached the objective.
 2. The engineer opens the latency graph and clicks a slow exemplar.
@@ -1335,6 +1345,8 @@ The most important decision is not a tool choice.
 It is whether your team can operate the platform.
 Bare metal rewards disciplined teams with control and predictable cost.
 It punishes vague ownership.
+
+Use the framework as a review artifact before purchasing hardware or installing operators. Ask who patches each layer, who owns restore tests, who approves model promotion, who responds to GPU health alerts, and who changes network exposure. If those answers are unclear, managed cloud may still be the more responsible option even when bare metal looks cheaper on a spreadsheet. The platform decision is operational capacity first and component selection second.
 
 ---
 
@@ -1436,8 +1448,7 @@ You have two paths.
 The minimal path takes about 30-40 minutes and proves the integration pattern on one machine.
 The production-realistic path takes about 2-3 hours and uses real infrastructure decisions.
 
-Both paths follow the same six tasks.
-Choose the path that matches your hardware.
+Both paths follow the same six tasks, but they exercise different failure modes, so choose the path that matches your hardware and be honest about what the result proves.
 
 ### Path A: Minimal Lab
 
@@ -1454,7 +1465,7 @@ This is the path that exposes real driver, network, storage, and observability b
 
 ### Task 1: Cluster Foundation
 
-Minimal path:
+Minimal path: use the following kind configuration to create a small cluster where you can practice the platform wiring without claiming that GPU performance has been validated.
 
 ```yaml
 kind: Cluster
@@ -1478,7 +1489,7 @@ Do not treat fake resources as GPU validation.
 k label node baremetal-mlops-worker accelerator=fake-gpu
 ```
 
-Production path:
+Production path: initialize a kubeadm cluster only on infrastructure you control, then treat every subsequent component as part of the production dependency chain.
 
 ```bash
 sudo kubeadm init --pod-network-cidr=10.244.0.0/16
@@ -1487,8 +1498,7 @@ sudo cp /etc/kubernetes/admin.conf "$HOME/.kube/config"
 sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
 ```
 
-Join workers using the command printed by `kubeadm init`.
-Then install Cilium and MetalLB:
+Join workers using the command printed by `kubeadm init`, then install Cilium and MetalLB so pod networking, policy enforcement, and external service IP assignment exist before platform services depend on them:
 
 ```bash
 helm repo add cilium https://helm.cilium.io
@@ -1514,7 +1524,7 @@ Do not proceed to serving until basic pod networking and service DNS work.
 
 ### Task 2: Storage Layer
 
-Install MinIO Operator:
+Install MinIO Operator before creating buckets, because the operator owns the tenant lifecycle and gives the lab the same control shape you would use in production:
 
 ```bash
 helm repo add minio-operator https://operator.min.io
@@ -1536,13 +1546,13 @@ helm upgrade --install longhorn longhorn/longhorn \
   --create-namespace
 ```
 
-Create buckets:
+Create buckets after the tenant is ready, since MLflow, Argo Workflows, and KServe will all depend on predictable bucket names and endpoint behavior:
 
 ```bash
 k -n ml-storage port-forward svc/ml-artifacts-console 9001:9001
 ```
 
-Use the MinIO console to create:
+Use the MinIO console to create the shared buckets below, then record which bucket is for artifacts, datasets, and serving models so later manifests do not drift:
 
 - `mlflow-artifacts`
 - `training-datasets`
@@ -1558,14 +1568,14 @@ Record the internal MinIO endpoint because MLflow and Argo need it later.
 
 ### Task 3: Model Registry
 
-Create the MLflow namespace and credentials:
+Create the MLflow namespace and credentials before deployment, because the tracking server, training pods, and artifact clients need the same service discovery and secret boundaries:
 
 ```bash
 k create namespace ml-platform
 k create namespace ml-training
 ```
 
-Install PostgreSQL for the lab:
+Install PostgreSQL for the lab as the MLflow backend store, keeping registry metadata on block storage rather than inside the tracking container filesystem:
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -1578,14 +1588,13 @@ helm upgrade --install mlflow-postgresql bitnami/postgresql \
   --set primary.persistence.storageClass=longhorn
 ```
 
-Deploy MLflow using the values pattern in section four.
-Then expose the UI locally:
+Deploy MLflow using the values pattern in section four, then expose the UI locally so you can verify both the web service and its backend dependencies before submitting workflows:
 
 ```bash
 k -n ml-platform port-forward svc/mlflow-tracking 5000:5000
 ```
 
-Open `http://127.0.0.1:5000`.
+Open `http://127.0.0.1:5000` and confirm the interface loads before continuing, because a broken registry will make later training and serving failures harder to interpret.
 
 <details>
 <summary>Solution notes for Task 3</summary>
@@ -1597,7 +1606,7 @@ If run logging fails, inspect MinIO credentials, bucket existence, service DNS, 
 
 ### Task 4: Training Pipeline with Argo Workflows
 
-Install Argo Workflows:
+Install Argo Workflows after the registry and object storage are reachable, because the workflow controller will coordinate jobs that read credentials, write artifacts, and register models:
 
 ```bash
 helm repo add argo https://argoproj.github.io/argo-helm
@@ -1608,8 +1617,7 @@ helm upgrade --install argo-workflows argo/argo-workflows \
   --set server.authModes[0]=server
 ```
 
-Create a workflow service account with permissions in `ml-training`.
-Then submit the workflow from section five:
+Create a workflow service account with permissions in `ml-training`, then submit the workflow from section five and watch both Kubernetes events and Argo node status during the run:
 
 ```bash
 k apply -f iris-train-register-workflow.yaml
@@ -1617,7 +1625,7 @@ k get workflows -n ml-training
 k logs -n ml-training -l workflows.argoproj.io/workflow
 ```
 
-The workflow should:
+The workflow should prove the registry path end to end, so treat each expected result as a contract between training code, object storage, and MLflow metadata:
 
 - Train a small scikit-learn iris classifier.
 - Log parameters and metrics to MLflow.
@@ -1638,7 +1646,7 @@ Install KServe using the current project installation guide for your chosen mode
 For a compact lab, use the quick install path and local gateway.
 For production, integrate it with your ingress, certificates, and network policy.
 
-Create a namespace:
+Create a namespace for serving workloads so inference resources, network policies, runtime credentials, and observability labels have a clear ownership boundary:
 
 ```bash
 k create namespace ml-serving
@@ -1672,7 +1680,7 @@ spec:
           memory: 4Gi
 ```
 
-Test with curl:
+Test with curl only after the `InferenceService` reports ready, because otherwise you may confuse rollout, gateway, and model-loading problems in the same request:
 
 ```bash
 SERVICE_HOSTNAME=$(k get inferenceservice iris-bare-metal \
@@ -1696,7 +1704,7 @@ If curl fails but the pod is ready, check ingress host headers and gateway routi
 
 ### Task 6: Observe It All
 
-Install kube-prometheus-stack:
+Install kube-prometheus-stack before declaring the lab complete, since production readiness depends on seeing request behavior rather than merely receiving one successful prediction:
 
 ```bash
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -1706,20 +1714,19 @@ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheu
   --create-namespace
 ```
 
-Apply the KServe ServiceMonitor from section six.
-Open Prometheus:
+Apply the KServe ServiceMonitor from section six, then open Prometheus to verify that scraping works and that labels match the service you expect to observe:
 
 ```bash
 k -n monitoring port-forward svc/kube-prometheus-stack-prometheus 9090:9090
 ```
 
-Open Grafana:
+Open Grafana after Prometheus is scraping targets, because dashboards without live metrics can hide configuration mistakes behind empty panels:
 
 ```bash
 k -n monitoring port-forward svc/kube-prometheus-stack-grafana 3000:80
 ```
 
-Send repeated requests:
+Send repeated requests to create enough traffic for latency and request-rate panels to show useful patterns rather than isolated single-sample behavior:
 
 ```bash
 for i in $(seq 1 100); do
