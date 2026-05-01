@@ -48,9 +48,9 @@ const text = {
     progressCol: 'Progress',
     recentTitle: 'Recently shipped',
     currentTitle: 'Currently being reworked',
-    noRecent: 'No recent module changes were available in this build snapshot.',
+    noRecent: 'No recent module changes were available while generating this page.',
     noCurrent: 'No lessons are currently marked for rework.',
-    fallbackNote: 'Queue age is unavailable in this build snapshot, so these are shown in stable curriculum order.',
+    fallbackNote: "Scheduling dates aren't available in this build, so lessons are listed in curriculum order.",
     updated: 'Static snapshot generated at build time. No learner data is collected here.',
   },
   uk: {
@@ -71,9 +71,9 @@ const text = {
     progressCol: 'Прогрес',
     recentTitle: 'Нещодавно опубліковано',
     currentTitle: 'Зараз переробляється',
-    noRecent: 'У цьому знімку збірки немає доступних нещодавніх змін модулів.',
+    noRecent: 'Під час створення цієї сторінки не було доступних нещодавніх змін модулів.',
     noCurrent: 'Зараз жоден урок не позначений для переробки.',
-    fallbackNote: 'Вік черги недоступний у цьому знімку збірки, тому уроки показано у стабільному порядку програми.',
+    fallbackNote: 'Дати планування недоступні в цій збірці, тому уроки показано в порядку програми.',
     updated: 'Статичний знімок створено під час збірки. Дані учнів тут не збираються.',
   },
 }[locale];
@@ -81,16 +81,19 @@ const text = {
 const docs = await getCollection('docs');
 const moduleDocs: StatusEntry[] = docs
   .filter((entry) => isLearnerModule(entry.id))
-  .map((entry) => ({
-    id: entry.id,
-    title: cleanTitle(entry.data.title ?? titleFromId(entry.id)),
-    href: docHref(entry.id),
-    section: sectionLabel(entry.id),
-    sectionKey: sectionKey(entry.id),
-    revisionPending: entry.data.revision_pending === true,
-    qaPending: entry.data.qa_pending === true,
-    queuedAt: null,
-  }))
+  .map((entry) => {
+    const data = entry.data as typeof entry.data & { slug?: string };
+    return {
+      id: entry.id,
+      title: cleanTitle(entry.data.title ?? titleFromId(entry.id)),
+      href: docHref(data.slug ?? entry.id),
+      section: sectionLabel(entry.id),
+      sectionKey: sectionKey(entry.id),
+      revisionPending: entry.data.revision_pending === true,
+      qaPending: entry.data.qa_pending === true,
+      queuedAt: null,
+    };
+  })
   .sort((a, b) => a.id.localeCompare(b.id));
 
 const queueDates = loadQueuedDates(moduleDocs);
@@ -138,12 +141,25 @@ const hasQueueAges = current.some((entry) => entry.queuedAt);
 
 function isLearnerModule(id: string): boolean {
   if (id.startsWith('uk/')) return false;
+  const root = id.split('/')[0] ?? '';
+  const learnerRoots = new Set([
+    'ai',
+    'ai-history',
+    'ai-ml-engineering',
+    'cloud',
+    'k8s',
+    'linux',
+    'on-premises',
+    'platform',
+    'prerequisites',
+  ]);
+  if (!learnerRoots.has(root)) return false;
   const file = id.split('/').at(-1) ?? id;
-  return file.startsWith('module-') || id === 'cloud/hyperscaler-rosetta-stone';
+  return file !== 'index';
 }
 
-function docHref(id: string): string {
-  return `/${id}/`;
+function docHref(slug: string): string {
+  return `/${slug}/`;
 }
 
 function titleFromId(id: string): string {
@@ -200,6 +216,7 @@ function contentPathForId(id: string): string {
 
 function loadQueuedDates(entries: StatusEntry[]): Map<string, string> {
   const out = new Map<string, string>();
+  if (isShallowGitRepo()) return out;
   for (const entry of entries.filter((item) => item.revisionPending)) {
     try {
       const stdout = execFileSync(
@@ -222,6 +239,7 @@ function loadRecentChanges(entries: StatusEntry[]): RecentEntry[] {
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const seen = new Set<string>();
   const rows: RecentEntry[] = [];
+  if (isShallowGitRepo()) return recentFallback(byId);
   try {
     const stdout = execFileSync(
       'git',
@@ -253,10 +271,25 @@ function loadRecentChanges(entries: StatusEntry[]): RecentEntry[] {
     // Git metadata is optional in static hosting builds.
   }
   if (rows.length > 0) return rows;
+  return recentFallback(byId);
+}
+
+function recentFallback(byId: Map<string, StatusEntry>): RecentEntry[] {
   return recentFallbackIds.flatMap(([date, id]) => {
     const entry = byId.get(id);
     return entry ? [{ date, title: entry.title, href: entry.href }] : [];
   });
+}
+
+function isShallowGitRepo(): boolean {
+  try {
+    return execFileSync('git', ['rev-parse', '--is-shallow-repository'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim() === 'true';
+  } catch {
+    return true;
+  }
 }
 ---
 
