@@ -58,15 +58,15 @@ Without it, `type: LoadBalancer` commonly remains in `EXTERNAL-IP: <pending>`. T
 
 It can also advertise application Service addresses when paired with kube-vip's cloud provider. Those are separate use cases and should be designed separately. The second missing cloud primitive is the cross-region policy plane. In a cloud provider, cluster identity, service accounts, tags, IAM roles, and provider APIs often become the glue that decides who can deploy where.
 
-On-prem, you usually own that glue. Karmada supplies Kubernetes-native policy objects for fleet placement. Its `Cluster`, `PropagationPolicy`, `OverridePolicy`, and binding resources let a platform team express where workloads should land and how they should change per cluster. The third missing cloud primitive is the global control plane.
+On-prem, you usually own that glue, and Karmada supplies Kubernetes-native policy objects for fleet placement. Its `Cluster`, `PropagationPolicy`, `OverridePolicy`, and binding resources let a platform team express where workloads should land and how they should change per cluster. The third missing cloud primitive is the global control plane.
 
-GKE has a mature global networking and control-plane story around Google infrastructure. EKS can lean on AWS accounts, Route 53, ALB, NLB, IAM, and Global Accelerator patterns. An on-prem fleet has clusters, networks, and identities that are often assembled from different vendors and operational teams. Federation must therefore be explicit.
+GKE has a mature global networking and control-plane story around Google infrastructure. EKS can lean on AWS accounts, Route 53, ALB, NLB, IAM, and Global Accelerator patterns. An on-prem fleet has clusters, networks, and identities that are often assembled from different vendors and operational teams, so federation must therefore be explicit.
 
-It is not an afterthought. It is an architecture. There is also a cultural difference. Public-cloud clusters tend to have a clear provider boundary.
+It is not an afterthought; it is an architecture. There is also a cultural difference because public-cloud clusters tend to have a clear provider boundary.
 
 If a load balancer fails, the incident splits into provider state, controller state, and application state. On-prem, the same incident may involve Kubernetes operators, network engineers, firewall administrators, storage teams, and application owners. The platform must create shared language across those teams. This module uses three layers for that shared language.
 
-The first layer is VIP advertisement. The second layer is multi-cluster orchestration. The third layer is pod networking inside each cluster. Do not collapse those layers into one tool.
+The first layer is VIP advertisement, the second layer is multi-cluster orchestration, and the third layer is pod networking inside each cluster. Do not collapse those layers into one tool.
 
 That collapse is the beginning of most painful incidents. Pause and predict: what do you think happens if a team installs Karmada but leaves every `LoadBalancer` Service in `<pending>` on the member clusters? The answer is that Karmada may distribute the manifests correctly while users still cannot reach the applications.
 
@@ -76,15 +76,15 @@ Federation does not replace L4 reachability. It decides where objects go. Anothe
 
 ## 2. kube-vip Foundation
 
-kube-vip is the bottom layer in this design. It is not a fleet scheduler. It is not a GitOps controller. It is not a service mesh.
+kube-vip is the bottom layer in this design, and it is not a fleet scheduler, GitOps controller, or service mesh.
 
-It is a virtual IP and load-balancer implementation for Kubernetes environments that do not have a cloud provider assigning addresses for them. The core idea is simple. A VIP is an IP address that can move between nodes. Clients connect to the VIP rather than to a specific node.
+It is a virtual IP and load-balancer implementation for Kubernetes environments that do not have a cloud provider assigning addresses for them. The core idea is simple: a VIP is an IP address that can move between nodes, and clients connect to the VIP rather than to a specific node.
 
 If the node currently holding the VIP fails, another node takes ownership and advertises the new location. The details depend heavily on whether the network learns that location through ARP or BGP. In L2 mode, kube-vip uses ARP announcements. One kube-vip instance becomes leader for a VIP.
 
 That leader places the VIP on a node interface and sends gratuitous ARP messages so neighbors update their IP-to-MAC mapping. This is attractive for small subnets because the routers do not need BGP configuration. It also means the VIP can usually live only inside the broadcast domain where ARP works. L2 mode is operationally friendly until the broadcast domain becomes too large or too noisy.
 
-ARP flooding, stale ARP caches, switch security features, and virtual-switch behavior can all stretch failover time. Some environments limit gratuitous ARP updates. Others rate-limit them. When that happens, kube-vip may elect a new leader quickly while clients continue sending packets to the old MAC address.
+ARP flooding, stale ARP caches, switch security features, and virtual-switch behavior can all stretch failover time. Some environments limit or rate-limit gratuitous ARP updates, and when that happens, kube-vip may elect a new leader quickly while clients continue sending packets to the old MAC address.
 
 In BGP mode, kube-vip speaks to routers. Instead of telling nearby hosts "this IP is at this MAC," it tells network peers "this node can reach this VIP prefix." That makes BGP the better fit for routed data centers, multi-rack designs, and active-active site patterns. It also introduces router configuration, AS numbers, peer reachability, route filters, and BGP session health.
 
@@ -148,13 +148,13 @@ spec:
       name: kubeconfig
 ```
 
-The manifest shows the important shape rather than a universal copy-paste answer. `hostNetwork: true` allows the pod to manipulate the node network. The VIP address is explicit. The interface is explicit.
+The manifest shows the important shape rather than a universal copy-paste answer. `hostNetwork: true` allows the pod to manipulate the node network. The VIP address and interface are both explicit.
 
-The capability set is network-focused. The service feature is off here because this example is about the API server endpoint. For Service VIPs, deploy kube-vip as a DaemonSet after the cluster is ready and install the kube-vip cloud provider. The cloud provider assigns addresses.
+The capability set is network-focused, and the service feature is off here because this example is about the API server endpoint. For Service VIPs, deploy kube-vip as a DaemonSet after the cluster is ready and install the kube-vip cloud provider, which assigns addresses.
 
-The kube-vip DaemonSet advertises them. That split gives the Kubernetes Service controller a normal place to write status. A useful production runbook has three checks. First, check leader election.
+The kube-vip DaemonSet advertises them, and that split gives the Kubernetes Service controller a normal place to write status. A useful production runbook has three checks: first, check leader election.
 
-Second, check whether the VIP is present on exactly the expected node or advertised by the expected BGP speakers. Third, check whether upstream network state changed. Kubernetes events alone are not enough. You must inspect the network.
+Second, check whether the VIP is present on exactly the expected node or advertised by the expected BGP speakers. Third, check whether upstream network state changed, because Kubernetes events alone are not enough and you must inspect the network.
 
 Common kube-vip gotchas are predictable. ARP mode can suffer when switches suppress gratuitous ARP. Large L2 domains can make failover noisy. Split-brain can happen if two nodes believe they are leader for the same VIP.
 
@@ -670,13 +670,13 @@ Calico BGP is simulated at the cluster layer because a laptop kind environment d
 - `jq`
 - `curl`
 
-Create the `k` alias now:
+Create the `k` alias before you start the lab so the remaining commands match the examples exactly. Keeping the alias consistent avoids wasting time on command translation while you are comparing cluster contexts and watching objects move between layers.
 
 ```bash
 alias k=kubectl
 ```
 
-Create kubeconfig paths for the two clusters:
+Create explicit kubeconfig paths for the two clusters and keep the VIP ranges in environment variables. The lab uses separate files so you can switch between Cluster A, Cluster B, and the Karmada API server without overwriting your default kubeconfig.
 
 ```bash
 export KUBECONFIG_A="$HOME/.kube/kind-cluster-a"
@@ -687,7 +687,7 @@ export VIP_RANGE_B="172.18.255.220-172.18.255.230"
 
 ### Task 1: Bootstrap Two kind Clusters with Calico and kube-vip
 
-Create a kind configuration that disables the default CNI so Calico can be installed.
+Create a kind configuration that disables the default CNI so Calico can be installed deliberately. That choice makes the networking layer visible during the exercise, which is useful because kube-vip, Liqo, and Karmada all depend on clear cluster-network behavior.
 
 ```bash
 cat > /tmp/kind-calico-a.yaml <<'EOF'
@@ -716,7 +716,7 @@ kind create cluster --name cluster-a --config /tmp/kind-calico-a.yaml --kubeconf
 kind create cluster --name cluster-b --config /tmp/kind-calico-b.yaml --kubeconfig "$KUBECONFIG_B"
 ```
 
-Install Calico on both clusters.
+Install Calico on both clusters and wait for the node and controller rollouts to complete. The later federation steps are noisy to debug if the baseline CNI is still converging, so treat CNI readiness as a hard prerequisite.
 
 ```bash
 for kubeconfig in "$KUBECONFIG_A" "$KUBECONFIG_B"; do
@@ -726,7 +726,7 @@ for kubeconfig in "$KUBECONFIG_A" "$KUBECONFIG_B"; do
 done
 ```
 
-Install kube-vip cloud provider and kube-vip DaemonSet on each cluster.
+Install the kube-vip cloud provider and kube-vip DaemonSet on each cluster, then configure a distinct address range for each site. This keeps Service VIP allocation local to the member cluster and prevents the lab from hiding address ownership behind the federation layer.
 
 ```bash
 for kubeconfig in "$KUBECONFIG_A" "$KUBECONFIG_B"; do
@@ -761,7 +761,7 @@ docker run --rm ghcr.io/kube-vip/kube-vip:v0.8.9 manifest daemonset \
   | KUBECONFIG="$KUBECONFIG_B" k apply -f -
 ```
 
-Create a test Service in each cluster.
+Create a test Service in each cluster before introducing Karmada or Liqo. This proves that ordinary `LoadBalancer` Services receive VIPs locally, which is the baseline evidence you need before asking any multi-cluster tool to place or offload workloads.
 
 ```bash
 for kubeconfig in "$KUBECONFIG_A" "$KUBECONFIG_B"; do
@@ -787,7 +787,7 @@ The key result is that each cluster has a `LoadBalancer` Service with an assigne
 
 ### Task 2: Install Liqo and Peer Cluster A to Cluster B
 
-Install `liqoctl` if it is not already present.
+Install `liqoctl` if it is not already present, using the release archive that matches your workstation operating system and CPU architecture. The command block keeps the install path explicit because later troubleshooting depends on knowing which client version created the peering resources.
 
 ```bash
 if ! command -v liqoctl >/dev/null 2>&1; then
@@ -803,7 +803,7 @@ if ! command -v liqoctl >/dev/null 2>&1; then
 fi
 ```
 
-Install Liqo on both clusters.
+Install Liqo on both clusters and inspect the reported status from each context. A successful install on only one side is not enough, because the consumer and provider roles both need Liqo components before peering can create a usable virtual-node relationship.
 
 ```bash
 liqoctl install --kubeconfig "$KUBECONFIG_A" --context kind-cluster-a --skip-confirm
@@ -813,7 +813,7 @@ liqoctl info --kubeconfig "$KUBECONFIG_A" --context kind-cluster-a
 liqoctl info --kubeconfig "$KUBECONFIG_B" --context kind-cluster-b
 ```
 
-Peer Cluster A to Cluster B.
+Peer Cluster A to Cluster B using `NodePort` for the gateway Service in this kind-based lab. The gateway type is chosen for local Docker networking, not as a universal production recommendation, so translate it to your real network design before copying the pattern.
 
 ```bash
 liqoctl peer \
@@ -825,7 +825,7 @@ liqoctl peer \
   --skip-confirm
 ```
 
-Verify a virtual node appears in Cluster A.
+Verify that a virtual node appears in Cluster A after the peering completes. The virtual node is the user-visible proof that Cluster A can consume remote capacity from Cluster B, so do this check before testing namespace offloading.
 
 ```bash
 KUBECONFIG="$KUBECONFIG_A" k get nodes -o wide
@@ -846,7 +846,7 @@ The expected result is a Ready virtual node in Cluster A representing Cluster B.
 
 ### Task 3: Install Karmada and Join Both Clusters
 
-Install `karmadactl` if it is not already present.
+Install `karmadactl` if it is not already present, again choosing the binary that matches your local operating system and architecture. Karmada operations in the lab use this client for initialization, joining clusters, and applying cluster taints.
 
 ```bash
 if ! command -v karmadactl >/dev/null 2>&1; then
@@ -863,7 +863,7 @@ if ! command -v karmadactl >/dev/null 2>&1; then
 fi
 ```
 
-Initialize Karmada in Cluster A for the lab.
+Initialize Karmada in Cluster A for the lab so the first cluster hosts the federation control plane. This is convenient for a laptop exercise, but production designs should place the Karmada control plane according to availability, trust, and network reachability requirements.
 
 ```bash
 karmadactl init \
@@ -872,13 +872,13 @@ karmadactl init \
   --karmada-data "$HOME/.karmada-lab"
 ```
 
-Export the generated Karmada kubeconfig path.
+Export the generated Karmada kubeconfig path as a separate variable. From this point forward, commands against `KARMADA_KUBECONFIG` target the federation control plane, while commands against `KUBECONFIG_A` and `KUBECONFIG_B` target member clusters.
 
 ```bash
 export KARMADA_KUBECONFIG="$HOME/.karmada-lab/karmada-apiserver.config"
 ```
 
-Join both clusters in push mode for the minimal lab.
+Join both clusters in push mode for the minimal lab because the local Karmada control plane can reach both kind API servers. In a restricted network, this same step is where you would revisit push versus pull registration instead of forcing hub-initiated connectivity.
 
 ```bash
 karmadactl join kind-cluster-a \
@@ -892,7 +892,7 @@ karmadactl join kind-cluster-b \
   --cluster-context kind-cluster-b
 ```
 
-Verify clusters from the Karmada context.
+Verify the joined clusters from the Karmada context and read the conditions rather than checking only for object existence. A `Cluster` object can exist while readiness, API reachability, or credential problems still prevent reliable propagation.
 
 ```bash
 KUBECONFIG="$KARMADA_KUBECONFIG" k get clusters
@@ -914,7 +914,7 @@ Both clusters should appear as Karmada `Cluster` objects. The lab uses push mode
 
 ### Task 4: Propagate nginx Across Both Clusters
 
-Create the workload and Service in the Karmada API server.
+Create the workload and Service in the Karmada API server, not directly in either member cluster. This distinction matters because the next policy step selects resources from the hub API and asks Karmada to create the member-cluster copies.
 
 ```bash
 KUBECONFIG="$KARMADA_KUBECONFIG" k create namespace demo
@@ -929,7 +929,7 @@ KUBECONFIG="$KARMADA_KUBECONFIG" k -n demo expose deployment nginx \
   --type=LoadBalancer
 ```
 
-Apply a PropagationPolicy.
+Apply a `PropagationPolicy` that selects both the Deployment and Service and spreads them across the two member clusters. The policy is intentionally small, but it gives you a binding object that explains Karmada's placement decision.
 
 ```bash
 cat > /tmp/nginx-propagationpolicy.yaml <<'EOF'
@@ -973,7 +973,7 @@ EOF
 KUBECONFIG="$KARMADA_KUBECONFIG" k apply -f /tmp/nginx-propagationpolicy.yaml
 ```
 
-Verify member clusters and bindings.
+Verify both the Karmada binding and the member-cluster objects so you can see the full reconciliation path. The binding explains intent, while the member clusters show whether the propagated Deployment, pods, and Service VIPs became real runtime state.
 
 ```bash
 KUBECONFIG="$KARMADA_KUBECONFIG" k -n demo get propagationpolicy
@@ -999,7 +999,7 @@ The Deployment and Service should exist in both member clusters. The replica div
 
 ### Task 5: Simulate Cluster A Failure and Observe Karmada Failover
 
-For a lab-safe failure, mark Cluster A with a `NoSchedule` taint first.
+For a lab-safe failure, mark Cluster A with a `NoSchedule` taint first instead of immediately breaking the cluster. This lets you observe how Karmada reacts to scheduling pressure while keeping the environment recoverable for the remaining checks.
 
 ```bash
 karmadactl taint clusters kind-cluster-a \
@@ -1018,7 +1018,7 @@ karmadactl taint clusters kind-cluster-a \
   --overwrite
 ```
 
-Observe the binding and member clusters.
+Observe the binding and member clusters after the taint so you can distinguish policy effects from workload effects. The Karmada object should show the scheduling consequence, and the member clusters should show what actually changed at runtime.
 
 ```bash
 KUBECONFIG="$KARMADA_KUBECONFIG" k -n demo get resourcebinding -o yaml
@@ -1026,7 +1026,7 @@ KUBECONFIG="$KUBECONFIG_A" k -n demo get pods -o wide
 KUBECONFIG="$KUBECONFIG_B" k -n demo get pods -o wide
 ```
 
-Remove the taint after the test.
+Remove the taint after the test to return the fleet to its baseline placement behavior. Cleaning up the simulated failure is part of the exercise because stale cluster taints are a common cause of confusing follow-on symptoms.
 
 ```bash
 karmadactl taint clusters kind-cluster-a site-failure- \
@@ -1048,7 +1048,7 @@ The exact failover behavior depends on enabled Karmada feature gates and policy 
 
 ### Task 6: Enable Liqo Namespace Offloading for an Existing Namespace
 
-Create an application namespace in Cluster A.
+Create an application namespace in Cluster A for the Liqo offloading test. This namespace remains the developer-facing home for the workload even when eligible pods later run on remote capacity in Cluster B.
 
 ```bash
 KUBECONFIG="$KUBECONFIG_A" k create namespace burst
@@ -1060,7 +1060,7 @@ KUBECONFIG="$KUBECONFIG_A" k -n burst create deployment worker \
 KUBECONFIG="$KUBECONFIG_A" k -n burst rollout status deployment/worker --timeout=180s
 ```
 
-Enable offloading for the namespace.
+Enable offloading for the namespace so Liqo can extend it to the peered provider cluster. This is the point where the model shifts from Karmada's hub-driven propagation to scheduler-driven use of a virtual node.
 
 ```bash
 liqoctl offload namespace burst \
@@ -1070,7 +1070,7 @@ liqoctl offload namespace burst \
   --skip-confirm
 ```
 
-Scale the workload and observe scheduling.
+Scale the workload and observe scheduling from both clusters. Cluster A should show whether pods are assigned to the virtual node, while Cluster B shows the reflected or hosted workload state that proves remote execution is actually happening.
 
 ```bash
 KUBECONFIG="$KUBECONFIG_A" k -n burst scale deployment worker --replicas=6
