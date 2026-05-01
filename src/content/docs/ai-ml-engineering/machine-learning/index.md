@@ -39,7 +39,7 @@ This section is organized as a Tier-1 spine of twelve practitioner-essentials, f
 | 2.1 | [Class Imbalance & Cost-Sensitive Learning](module-2.1-class-imbalance-and-cost-sensitive-learning/) | Available |
 | 2.2 | [ML Interpretability + Failure Slicing](module-2.2-interpretability-and-failure-slicing/) | Available |
 | 2.3 | [Probabilistic & Bayesian ML with PyMC](module-2.3-probabilistic-and-bayesian-ml-with-pymc/) | Available |
-| 2.4 | Recommender Systems | Coming soon (Phase 3) |
+| 2.4 | [Recommender Systems](module-2.4-recommender-systems/) | Available |
 | 2.5 | Conformal Prediction & Uncertainty Quantification | Coming soon (Phase 3) |
 | 2.6 | Fairness & Bias Auditing | Coming soon (Phase 3) |
 | 2.7 | Causal Inference for ML Practitioners | Coming soon (Phase 3) |
