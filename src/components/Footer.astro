@@ -9,10 +9,12 @@ const p = isUk ? '/uk' : '';
 const tagline = isUk ? 'KubeDojo — Безкоштовна, всеосяжна хмарна освіта.' : 'KubeDojo — Free, comprehensive cloud native education.';
 const changelogLabel = isUk ? 'Журнал змін' : 'Changelog';
 const progressLabel = isUk ? 'Мій прогрес' : 'My Progress';
+const statusLabel = isUk ? 'Статус' : 'Status';
 ---
 <footer class="kd-footer">
   {tagline}
   <a href="https://github.com/kube-dojo/kube-dojo.github.io">GitHub</a> ·
+  <a href={`${p}/status/`}>{statusLabel}</a> ·
   <a href={`${p}/changelog/`}>{changelogLabel}</a> ·
   <a href={`${p}/progress/`}>{progressLabel}</a>
 </footer>
