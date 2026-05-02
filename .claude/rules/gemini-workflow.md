@@ -74,6 +74,13 @@ When Gemini is the designated cross-family reviewer:
 - Push back if suggestions duplicate existing content (Gemini sometimes misses what exists)
 - Always cross-reference suggestions against actual `docs/` directory
 
+**5. Deliberator (in `ab discuss` channels)**
+- For high-leverage decisions, Gemini participates in `ab discuss --with claude,codex,gemini` as one of three perspectives.
+- Argue from Gemini's strengths: pedagogical accuracy, source verification, content quality, gap analysis.
+- End each turn with `[AGREE]` / `[OPTION X]` / `[DEFER]` — see `.claude/rules/decision-card.md`.
+- Don't rubber-stamp. Empty `[AGREE]` votes pollute the deliberation; if no opinion, say `[DEFER]`.
+- Frame: distributed deliberation, NOT quorum. LLM priors correlate; the value is option-space + disagreement-surfacing, not democratic voting.
+
 ## Content Pipeline
 1. **Plan** with Gemini (gap analysis, module specs, structure)
 2. **Draft** — either Gemini drafts (needs expansion) or Claude writes directly (full quality)

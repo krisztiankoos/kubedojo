@@ -28,6 +28,14 @@ Full agent recipe: [`scripts/agent_onboarding.md`](scripts/agent_onboarding.md).
 - Batch direct tool calls in one message when possible (3 Greps > 3 agents).
 - Keep sessions long (`/continue`) — cache hits are ~95% within a session.
 
+## Multi-agent deliberation (`ab discuss`)
+
+For high-leverage decisions (architecture, threshold freezes, contested NEEDS CHANGES, strategic bets affecting 100+ modules), use `scripts/ab discuss <channel> --with claude,codex,gemini --max-rounds 3`. **Framing: distributed deliberation, not quorum** — LLM priors correlate, voting is theater. Surface disagreement + option space, don't pretend democracy.
+
+Convention: each agent ends its turn with `[AGREE]` / `[OPTION X]` / `[DEFER]`. On disagreement OR multi-option output, orchestrator (claude) emits a **Decision Card** (see `.claude/rules/decision-card.md`). Convergence → no card, just proceed.
+
+**Cold-start step**: scan `docs/decisions/pending/` before starting work — pending decisions go there when user is AFK.
+
 ## Project Overview
 
 **Website**: https://kube-dojo.github.io/ (Starlight/Astro)
