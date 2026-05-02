@@ -3,8 +3,12 @@ title: "Module 2.1: Linux Namespaces"
 slug: linux/foundations/container-primitives/module-2.1-namespaces
 sidebar:
   order: 2
+revision_pending: false
 ---
-> **Linux Foundations** | Complexity: `[MEDIUM]` | Time: 35-45 min
+
+# Module 2.1: Linux Namespaces
+
+This Linux Foundations module is a `[MEDIUM]` lesson designed for a 35-45 minute study session, with lab time focused on inspecting real namespace boundaries instead of memorizing container vocabulary.
 
 ## Prerequisites
 
@@ -16,19 +20,15 @@ Required preparation also includes [Module 1.2: Processes & systemd](/linux/foun
 
 A helpful but not mandatory prerequisite is basic networking vocabulary, especially loopback, virtual interfaces, routing tables, and the difference between binding a port inside a network stack and publishing a port on a host.
 
----
-
 ## Learning Outcomes
 
-After this module, you will be able to:
+After completing the module and lab, you should be able to use namespace evidence to diagnose container behavior, explain Kubernetes pod sharing choices, and choose safer debugging approaches under pressure.
 
 - **Debug** container isolation problems by comparing namespace identities in `/proc/<pid>/ns` and choosing which namespace boundary is relevant to the symptom.
 - **Create** isolated PID, mount, UTS, IPC, and network environments with `unshare`, `ip netns`, and `nsenter`, then verify the effect with Linux inspection commands.
 - **Compare** host, container, and Kubernetes pod namespace layouts so you can explain why some resources are shared while others remain private.
 - **Evaluate** when namespace sharing options such as `hostNetwork`, `hostPID`, shared process namespaces, or user namespaces improve an operation and when they weaken isolation.
 - **Design** a practical troubleshooting workflow for a minimal container image by entering selected namespaces from the host without changing the running workload.
-
----
 
 ## Why This Module Matters
 
@@ -39,8 +39,6 @@ Another engineer tries to help by running the same command on the node, but it s
 Namespaces are the kernel mechanism that makes this question precise. Containers are ordinary Linux processes with carefully selected namespace memberships, cgroups, capabilities, and filesystem setup. Kubernetes builds pods by deciding which of those views are shared between containers and which are separate. If you can inspect namespace boundaries directly, container behavior stops feeling magical and starts becoming debuggable.
 
 The senior-level skill is not memorizing the eight namespace names. The useful skill is mapping a symptom to the namespace that can explain it, entering that namespace without damaging the workload, and knowing which isolation guarantees still hold after a runtime or Kubernetes option changes the default layout. This module teaches that workflow from first principles.
-
----
 
 ## What Namespaces Change
 
@@ -102,8 +100,6 @@ The namespace types you will meet most often in container troubleshooting are su
 
 Namespaces are only one part of container isolation. Capabilities control which privileged operations a process can perform. Seccomp filters system calls. Linux Security Modules such as AppArmor or SELinux enforce policy. Cgroups limit and account for resource usage. You should think of namespaces as "what the process can see," not as a complete answer to "what the process can do."
 
----
-
 ## Inspecting Namespace Membership
 
 The fastest safe inspection technique is comparing namespace links for two processes. You do not need to enter the namespace, restart the container, or install tools in the image. You only need the host PID of the target process and permission to inspect `/proc`.
@@ -161,8 +157,6 @@ done
 
 This pattern also teaches the senior workflow: compare first, enter second. Entering a namespace is powerful, but it changes your perspective and can lead to accidental commands in the wrong context. A read-only comparison gives you a map before you step through any boundary.
 
----
-
 ## PID Namespaces: Process Trees and PID 1
 
 A PID namespace isolates process ID numbers and process visibility. The host can usually see processes in child PID namespaces, but a process inside a child namespace sees only processes in its own namespace and descendants. That asymmetric visibility is the source of many container debugging misunderstandings.
@@ -211,8 +205,6 @@ exit
 If you omit `--mount-proc`, many learners get confused because `ps` may still read the old `/proc` mount and appear to show host processes. That does not mean the PID namespace failed. It means your filesystem view still points tools at a `/proc` mount that does not match your new PID view. This is the first place where PID and mount namespaces interact.
 
 A senior debugger watches for this kind of cross-namespace mismatch. Tools are just processes reading files and making system calls. If the tool's mount namespace points at one `/proc` view while the process runs in another PID namespace, the output can mislead you. Good debugging means checking both the tool's namespace and the data source it reads.
-
----
 
 ## Network Namespaces: Interfaces, Routes, and Port Space
 
@@ -275,8 +267,6 @@ The answer is network namespace sharing. Containers in the same Kubernetes pod s
 
 The network namespace is also why host-level checks can be false reassurance. A successful `curl` from the node proves the node namespace has connectivity. It does not prove the target container namespace has the same route, DNS configuration, firewall behavior, or source address. When the symptom is network-specific, run the network inspection from the target namespace.
 
----
-
 ## Mount Namespaces: Filesystem Views Without Separate Kernels
 
 A mount namespace isolates the set of mount points a process sees. It does not magically copy every file, and it does not require a separate disk. Instead, it lets the kernel present a different mounted filesystem tree to different processes. Container runtimes combine mount namespaces with image layers, writable container layers, bind mounts, and special filesystems such as `/proc`.
@@ -330,8 +320,6 @@ findmnt -o TARGET,PROPAGATION /
 findmnt -o TARGET,PROPAGATION /tmp
 ```
 
----
-
 ## UTS and IPC Namespaces: Small Boundaries With Big Effects
 
 The UTS namespace isolates the hostname and domain name visible to a process. It is simple compared with network or mount namespaces, but it matters because many applications report host identity in logs, metrics, prompts, and cluster membership. A container can have a hostname that matches its pod name without changing the node hostname.
@@ -358,8 +346,6 @@ exit
 In Kubernetes, IPC sharing is a deliberate pod-level design choice. Containers in a pod may share IPC depending on runtime and pod configuration, while containers in separate pods should not. This can be useful for tightly coupled sidecars but risky if one container is less trusted than another. Shared memory is not just a performance feature; it is also a data exposure surface.
 
 A useful decision rule is to treat UTS and IPC as "small surface, sharp edge" namespaces. UTS rarely causes deep incidents by itself, but wrong host identity can confuse observability and clustering. IPC is invisible until an application depends on it, and then it can become either a required coupling mechanism or an unexpected security risk.
-
----
 
 ## User Namespaces: Root Inside Is Not Always Root Outside
 
@@ -407,8 +393,6 @@ User namespaces improve the blast-radius story, but they do not make every conta
 
 The operational trade-off is compatibility. Some workloads, volume permissions, device access patterns, and older tooling assume that container UID values match host UID values. Rootless designs may require explicit ownership planning for persistent volumes and build caches. The senior decision is not "always use user namespaces" but "use them where the permission model and operational tooling can support them."
 
----
-
 ## Cgroup and Time Namespaces: Less Visible, Still Relevant
 
 The cgroup namespace isolates the view of cgroup paths. It does not create resource limits by itself; cgroups do that. The namespace controls what a process sees as the root of its cgroup hierarchy. This matters when software reads `/proc/self/cgroup` or cgroup filesystem paths and assumes it understands its place on the host.
@@ -428,8 +412,6 @@ cat /proc/self/timens_offsets 2>/dev/null || true
 ```
 
 The senior takeaway is to avoid overfitting your mental model to the most famous namespaces. Network, PID, and mount boundaries explain many incidents, but cgroup, user, IPC, UTS, and time namespaces can still appear in edge cases. When a symptom involves identity, clocks, resource visibility, shared memory, or hostnames, inspect the corresponding namespace before assuming the runtime is broken.
-
----
 
 ## Worked Example: Debug a Minimal Container Without Installing Tools
 
@@ -475,8 +457,6 @@ This example also shows why `nsenter` is safer when used selectively. Entering e
 
 After the incident, translate the observation into a durable fix. Do not leave a workload depending on a manual namespace entry. A missing route belongs in the CNI or pod network configuration. A missing file belongs in a Kubernetes volume mount. A PID 1 signal problem belongs in the image entrypoint or pod spec. Namespace debugging should shorten the path to the real configuration change.
 
----
-
 ## Kubernetes Pod Namespace Layout
 
 Kubernetes uses namespaces to make a pod feel like one deployable unit while still running one or more containers. The most important default is that containers in the same pod share a network namespace. This is why they have the same pod IP and can communicate through `localhost`. It is also why two containers in the same pod cannot both bind the same TCP port on the same address.
@@ -505,6 +485,8 @@ flowchart TD
 ```
 
 The mount namespace story is different. Containers in a pod usually have separate root filesystems because each container comes from its own image. They share files only through volumes that Kubernetes mounts into both containers. This is why a logging sidecar cannot read an application file merely because it is in the same pod. Both containers need a shared volume mounted at agreed paths.
+
+The Kubernetes examples in this module target Kubernetes 1.35 and newer behavior unless a cluster distribution documents a different runtime default. If you adapt the manifests into a live lab, define the usual shell shortcut with `alias k=kubectl` first and use `k` for cluster commands, while keeping Linux namespace inspection commands as plain host commands.
 
 ```yaml
 apiVersion: v1
@@ -573,9 +555,21 @@ A careful reviewer asks what problem each host namespace option solves. Node net
 
 The safer design is usually to keep the shared pod network namespace and have the sidecar call `localhost:<admin-port>` inside the pod. `hostNetwork` is unnecessary for container-to-container communication within one pod because they already share the pod network namespace. Enabling host networking would expose the pod to node port conflicts and reduce isolation without solving a real namespace problem.
 
----
+## Patterns & Anti-Patterns
 
-## Debugging Patterns by Symptom
+The strongest namespace pattern is targeted inspection before intervention. Start with the symptom, identify the resource view involved, compare namespace links, and only then enter a namespace or change a pod specification. This works because namespace identity is objective evidence: two processes either share the same `net`, `mnt`, `pid`, `ipc`, `uts`, or `user` object, or they do not. The pattern scales well from a laptop lab to a production node because it avoids image changes and keeps the first diagnostic step read-only.
+
+A second reliable pattern is deliberate pod-level sharing. Kubernetes already shares the network namespace inside a pod, so sidecars that need to scrape `localhost` endpoints can usually stay inside normal pod networking. File sharing, process sharing, and host namespace access should be added explicitly when the workload needs them, with the pod spec documenting the reason. That approach keeps the pod understandable: shared network for tight cooperation, shared volumes for files, optional process sharing for diagnostics, and host namespaces only for trusted node agents.
+
+The third pattern is layered isolation. Namespaces answer what a process can see, while cgroups, capabilities, seccomp, and Linux Security Modules answer different parts of what the process can consume or do. A production design should not treat any one mechanism as the whole security story. User namespaces can reduce the meaning of container root, but a sensitive host bind mount or an excessive capability set can still turn a private view into a dangerous one.
+
+The common anti-pattern is using host namespace options as a shortcut when the team has not found the real boundary. `hostNetwork: true` can make a connection test pass by moving the pod into the node network namespace, but it also imports node port conflicts and exposes a wider surface. Mounting host paths to "just get the file" can bypass the mount namespace design that kept application data scoped. Entering every namespace with `nsenter --all` can be useful for a controlled debug shell, but it is a poor first move because it hides which boundary explained the symptom.
+
+Another anti-pattern is assuming that same-pod means same-everything. Same-pod containers share the pod IP and loopback, but they normally keep separate root filesystems and often separate process views. A sidecar that tails a file needs a volume, not a lecture about pod networking. A process inspector needs `shareProcessNamespace: true` or host PID visibility when justified, not a guess based on container names.
+
+The last anti-pattern is trusting tool output without checking the namespace behind the tool. `ps`, `ip`, `ss`, `findmnt`, and `hostname` all report the world visible to the process that runs them. If you run the command from the host, you get the host view. If you run the host binary through `nsenter -t "$PID" -n`, you get the target network view while still using host tooling. The difference is not cosmetic; it decides whether the evidence belongs to the failing workload.
+
+## Decision Framework
 
 Namespace debugging becomes faster when you classify the symptom first. A file problem is rarely solved by staring at routes. A port conflict is rarely explained by UID mapping. The table below is intentionally practical: it connects the observed failure to the first boundary worth checking.
 
@@ -593,8 +587,6 @@ A disciplined sequence prevents accidental changes. First, identify the target p
 
 This sequence is slower than guessing for the first five minutes and faster for the rest of the incident. It also produces evidence that another engineer can review. "The app has no default route inside its network namespace" is more actionable than "networking seems broken." "The sidecar has a different mount namespace and no shared volume at `/logs`" is more actionable than "the file disappeared."
 
----
-
 ## Did You Know?
 
 - **Namespaces existed before modern container platforms.** The mount namespace appeared years before Docker popularized containers, and later namespace types filled in process, network, user, cgroup, and time isolation needs.
@@ -605,11 +597,9 @@ This sequence is slower than guessing for the first five minutes and faster for 
 
 - **User namespaces change permission meaning.** UID `0` inside a namespace can map to an unprivileged UID outside, so "root in the container" and "root on the host" are not always the same identity.
 
----
-
 ## Common Mistakes
 
-| Mistake | Why it causes trouble | Better practice |
+| Mistake | Why It Happens | How to Fix It |
 |---------|----------------------|-----------------|
 | Treating namespaces as complete security isolation | Namespaces isolate views, but the kernel is still shared and other controls still matter | Combine namespaces with cgroups, capabilities, seccomp, and LSM policy |
 | Running host commands and assuming they reflect the container | The host shell may use different network, mount, PID, or user namespaces | Run inspections through `kubectl exec`, `crictl`, or `nsenter` against the target process |
@@ -620,99 +610,63 @@ This sequence is slower than guessing for the first five minutes and faster for 
 | Entering every namespace at once during debugging | A full namespace entry can hide which boundary mattered and increases accidental change risk | Enter the smallest namespace set needed for the symptom |
 | Leaving lab network namespaces or mounts behind | Persistent named namespaces and mounts can pollute later tests | Delete `ip netns` labs and unmount temporary filesystems after experiments |
 
----
-
 ## Quiz
 
-### Question 1
-
-Your team deploys a web container that normally shuts down cleanly on a developer laptop. In Kubernetes, rolling updates wait for the grace period and then kill the container. Inside the container, `ps` shows the application process as PID 1. What namespace-related behavior should you investigate, and what change would you recommend?
-
 <details>
-<summary>Show answer</summary>
+<summary>Your team deploys a web container that normally shuts down cleanly on a developer laptop. In Kubernetes, rolling updates wait for the grace period and then kill the container. Inside the container, `ps` shows the application process as PID 1. What namespace-related behavior should you investigate, and what change would you recommend?</summary>
 
 The process is running as PID 1 inside its PID namespace, so it has init-like responsibilities and special signal behavior. The investigation should check whether the application handles `SIGTERM` and reaps child processes correctly when it is PID 1. A practical fix is to add a minimal init such as `tini` or `dumb-init`, or to update the application entrypoint so it handles termination and children correctly. This recommendation aligns the Kubernetes shutdown path with Linux PID namespace behavior instead of simply increasing the grace period.
 
 </details>
 
-### Question 2
-
-A database listens on `127.0.0.1:5432` on a node. A container on that node tries to connect to `127.0.0.1:5432` and gets connection refused. A teammate says the node firewall must be blocking loopback traffic. What namespace concept should you apply before changing firewall rules?
-
 <details>
-<summary>Show answer</summary>
+<summary>A database listens on `127.0.0.1:5432` on a node. A container on that node tries to connect to `127.0.0.1:5432` and gets connection refused. A teammate says the node firewall must be blocking loopback traffic. What namespace concept should you apply before changing firewall rules?</summary>
 
 Apply the network namespace concept. `127.0.0.1` refers to loopback inside the caller's current network namespace, not to the physical node in every context. If the container is in its own network namespace, it is connecting to its own loopback interface, not the node's loopback listener. You should inspect the container's network namespace with `nsenter -t <pid> -n` or a container exec command, then choose a real reachable address, Service, host gateway pattern, or deliberate `hostNetwork` design if justified.
 
 </details>
 
-### Question 3
-
-An application container writes `/var/log/app/current.log`. A sidecar in the same pod tails `/var/log/app/current.log` but reports that the file does not exist. Both containers share the same pod IP. Which assumption is wrong, and how would you fix the pod design?
-
 <details>
-<summary>Show answer</summary>
+<summary>An application container writes `/var/log/app/current.log`. A sidecar in the same pod tails `/var/log/app/current.log` but reports that the file does not exist. Both containers share the same pod IP. Which assumption is wrong, and how would you fix the pod design?</summary>
 
 The wrong assumption is that same-pod containers automatically share their filesystem view. They share the pod network namespace, but they usually have separate mount namespaces and separate image filesystems. The fix is to define a Kubernetes volume, such as `emptyDir`, mount it into the application at the path where logs are written, and mount the same volume into the sidecar at the path it tails. That makes file sharing explicit instead of relying on network namespace sharing.
 
 </details>
 
-### Question 4
-
-A minimal production image has no `ip`, `ss`, `tcpdump`, package manager, or useful shell. The service cannot connect to an upstream endpoint, and rebuilding the image would take too long. How can you inspect the container's routes and sockets without modifying the image?
-
 <details>
-<summary>Show answer</summary>
+<summary>A minimal production image has no `ip`, `ss`, `tcpdump`, package manager, or useful shell. The service cannot connect to an upstream endpoint, and rebuilding the image would take too long. How can you inspect the container's routes and sockets without modifying the image?</summary>
 
 Find the host PID of the container's main process, then use `nsenter` to enter only its network namespace while running host-installed tools. For example, `sudo nsenter -t "$PID" -n ip route` and `sudo nsenter -t "$PID" -n ss -lntp` use the host binaries against the target network namespace. This preserves the running workload and avoids installing packages in the image. If the route table or socket state differs from the host, you have evidence that the issue is namespace-local.
 
 </details>
 
-### Question 5
-
-A security review finds that a compromised process is UID `0` inside a container. However, when it tries to read a host-mounted file owned by real host root, the kernel denies access. What should the reviewer inspect before concluding the denial is accidental?
-
 <details>
-<summary>Show answer</summary>
+<summary>A security review finds that a compromised process is UID `0` inside a container. However, when it tries to read a host-mounted file owned by real host root, the kernel denies access. What should the reviewer inspect before concluding the denial is accidental?</summary>
 
 The reviewer should inspect the container process's user namespace mapping, especially `/proc/<pid>/uid_map` and `/proc/<pid>/gid_map`. With user namespaces, UID `0` inside the container can map to an unprivileged host UID outside the container. Host filesystem permission checks use the mapped outside identity, so access to files owned by host root can be denied even though the process appears as root inside. The reviewer should also check capabilities and mount configuration before making a complete security judgment.
 
 </details>
 
-### Question 6
-
-A node-level monitoring agent needs to see host processes and network interfaces. An engineer suggests running it as a normal pod and mounting `/proc` from the host. Another engineer suggests enabling both `hostPID` and `hostNetwork`. How would you evaluate these options?
-
 <details>
-<summary>Show answer</summary>
+<summary>A node-level monitoring agent needs to see host processes and network interfaces. An engineer suggests running it as a normal pod and mounting `/proc` from the host. Another engineer suggests enabling both `hostPID` and `hostNetwork`. How would you evaluate these options?</summary>
 
 The requirement maps to PID and network namespace visibility, so `hostPID` and possibly `hostNetwork` may be justified for a node-level agent. Mounting host `/proc` alone can create a misleading or partial view if the process namespace and `/proc` mount do not match the tool's expectations. However, host namespace sharing weakens isolation and should be limited to trusted system agents with appropriate security controls. The evaluation should state the exact observations the agent needs, enable only the required host namespaces, and document the security trade-off.
 
 </details>
 
-### Question 7
-
-You run `unshare --pid bash` expecting the shell to become PID 1, but the process view does not look isolated. A teammate says PID namespaces are disabled on the machine. What should you check about the command before accepting that conclusion?
-
 <details>
-<summary>Show answer</summary>
+<summary>You run `unshare --pid bash` expecting the shell to become PID 1, but the process view does not look isolated. A teammate says PID namespaces are disabled on the machine. What should you check about the command before accepting that conclusion?</summary>
 
 Check whether the command used `--fork` and whether `/proc` was remounted for the new PID namespace. With `unshare --pid`, the new PID namespace applies to child processes, so `--fork` is needed for the shell to start inside it as the first process. Tools such as `ps` also read `/proc`, so `--mount-proc` is often needed to make the process listing match the new PID namespace. A better test is `sudo unshare --pid --fork --mount-proc bash`, followed by `ps -ef` and `echo $$`.
 
 </details>
 
-### Question 8
-
-A team enables `hostNetwork: true` on an application pod because it fixes a connection problem during a deadline. The next deployment fails because another pod on the same node already uses the required port. What namespace lesson should guide the rollback and permanent fix?
-
 <details>
-<summary>Show answer</summary>
+<summary>A team enables `hostNetwork: true` on an application pod because it fixes a connection problem during a deadline. The next deployment fails because another pod on the same node already uses the required port. What namespace lesson should guide the rollback and permanent fix?</summary>
 
 `hostNetwork: true` moved the pod into the node's network namespace, so the pod now shares the node's port space instead of getting an isolated pod network namespace. The port conflict is an expected consequence of removing network isolation. The rollback should restore normal pod networking if the application does not truly need host networking. The permanent fix should diagnose the original connection problem inside the pod network namespace, then correct DNS, routing, NetworkPolicy, Service configuration, or application target addresses.
 
 </details>
-
----
 
 ## Hands-On Exercise
 
@@ -745,7 +699,7 @@ for ns in mnt uts ipc pid net user cgroup; do
 done
 ```
 
-Success criteria for Part 1:
+#### Success Criteria for Part 1
 
 - [ ] You can identify where Linux exposes namespace membership for a process.
 - [ ] You can compare two processes and decide whether a namespace type is shared.
@@ -768,7 +722,7 @@ ls /proc | head
 exit
 ```
 
-Success criteria for Part 2:
+#### Success Criteria for Part 2
 
 - [ ] You created a PID namespace using `--pid --fork --mount-proc`.
 - [ ] You verified that the process view inside the namespace is smaller than the host view.
@@ -793,14 +747,14 @@ sudo ip netns exec kd-lab-net ip addr show lo
 sudo ip netns exec kd-lab-net ping -c 1 8.8.8.8
 ```
 
-Clean up the named namespace. Confirm it no longer appears in the list.
+Clean up the named namespace when the observation is complete, then confirm that it no longer appears in the list so a later lab does not inherit stale state from this experiment.
 
 ```bash
 sudo ip netns delete kd-lab-net
 ip netns list
 ```
 
-Success criteria for Part 3:
+#### Success Criteria for Part 3
 
 - [ ] You created and deleted a named network namespace.
 - [ ] You observed that a new network namespace does not automatically have an external route.
@@ -814,7 +768,7 @@ Create a mount namespace and mount a temporary filesystem. This demonstrates tha
 sudo unshare --mount bash
 ```
 
-Inside the namespace, create and inspect the mount. The file exists through this namespace's mount table.
+Inside the namespace, create and inspect the mount, then read the file through that mount table so the observation is tied to namespace visibility rather than only to a directory path.
 
 ```bash
 mkdir -p /tmp/kd-mnt-lab
@@ -832,7 +786,7 @@ findmnt /tmp/kd-mnt-lab || true
 cat /tmp/kd-mnt-lab/data.txt
 ```
 
-Success criteria for Part 4:
+#### Success Criteria for Part 4
 
 - [ ] You created a mount namespace and mounted a tmpfs inside it.
 - [ ] You observed that mount visibility depends on the mount namespace.
@@ -859,7 +813,7 @@ ipcs
 exit
 ```
 
-Success criteria for Part 5:
+#### Success Criteria for Part 5
 
 - [ ] You changed a hostname inside a UTS namespace without changing the host hostname.
 - [ ] You ran `ipcs` inside an IPC namespace.
@@ -877,7 +831,7 @@ Scenario C: An application runs as root inside a container but cannot write to a
 
 Scenario D: A minimal image has no network tools, but you need to inspect its route table during an incident.
 
-Success criteria for Part 6:
+#### Success Criteria for Part 6
 
 - [ ] Your plan names the first namespace type you would inspect.
 - [ ] Your plan includes one concrete Linux command or Kubernetes inspection step.
@@ -892,7 +846,18 @@ Success criteria for Part 6:
 - [ ] You explained at least one interaction between two namespace types.
 - [ ] You designed a targeted debugging plan for a realistic container symptom.
 
----
+## Sources
+
+- [Linux namespaces overview, man7.org](https://man7.org/linux/man-pages/man7/namespaces.7.html)
+- [Linux pid_namespaces documentation, man7.org](https://man7.org/linux/man-pages/man7/pid_namespaces.7.html)
+- [Linux network_namespaces documentation, man7.org](https://man7.org/linux/man-pages/man7/network_namespaces.7.html)
+- [Linux mount_namespaces documentation, man7.org](https://man7.org/linux/man-pages/man7/mount_namespaces.7.html)
+- [Linux user_namespaces documentation, man7.org](https://man7.org/linux/man-pages/man7/user_namespaces.7.html)
+- [Linux ipc_namespaces documentation, man7.org](https://man7.org/linux/man-pages/man7/ipc_namespaces.7.html)
+- [Linux uts_namespaces documentation, man7.org](https://man7.org/linux/man-pages/man7/uts_namespaces.7.html)
+- [Linux time_namespaces documentation, man7.org](https://man7.org/linux/man-pages/man7/time_namespaces.7.html)
+- [Kubernetes pod share process namespace task](https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/)
+- [Kubernetes pod host namespaces reference](https://kubernetes.io/docs/concepts/security/pod-security-standards/#host-namespaces)
 
 ## Next Module
 
