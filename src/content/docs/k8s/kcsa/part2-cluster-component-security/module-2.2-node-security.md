@@ -730,7 +730,7 @@ Success means the weak kubelet settings are removed from bootstrap templates or 
 - [containerd: CRI plugin configuration](https://github.com/containerd/containerd/blob/main/docs/cri/config.md)
 - [CRI-O: Configuration documentation](https://github.com/cri-o/cri-o/blob/main/docs/crio.conf.5.md)
 - [gVisor: Architecture guide](https://gvisor.dev/docs/architecture_guide/)
-- [Kata Containers: Architecture](https://katacontainers.io/docs/architecture/)
+- [Kata Containers: Architecture](https://github.com/kata-containers/kata-containers/blob/main/docs/design/architecture/README.md)
 - [AWS Bottlerocket documentation](https://bottlerocket.dev/en/os/latest/)
 - [Flatcar Container Linux documentation](https://www.flatcar.org/docs/latest/)
 - [Talos Linux documentation](https://www.talos.dev/latest/introduction/what-is-talos/)
