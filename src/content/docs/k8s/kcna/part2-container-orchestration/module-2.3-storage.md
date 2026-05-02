@@ -452,7 +452,7 @@ Because the StorageClass was configured with `reclaimPolicy: Delete`, deleting t
 - [Kubernetes CSI Developer Documentation](https://kubernetes-csi.github.io/docs/)
 - [Kubernetes CSI Drivers](https://kubernetes-csi.github.io/docs/drivers.html)
 - [AWS EC2: Amazon EBS Volume Limits](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/volume_limits.html)
-- [GitLab: GitLab.com Database Incident](https://about.gitlab.com/blog/2017/02/01/gitlab-dot-com-database-incident/)
+- [GitLab: GitLab.com Database Incident](https://about.gitlab.com/blog/gitlab-dot-com-database-incident/)
 
 ## Next Module
 
