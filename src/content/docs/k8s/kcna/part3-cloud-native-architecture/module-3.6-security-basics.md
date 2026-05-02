@@ -30,7 +30,7 @@ The same pattern appears in many Kubernetes incidents because clusters are built
 
 This module builds the mental model behind Kubernetes security rather than turning you into a CKS candidate in one lesson. You will practice reading a cluster design the way an operator reads a building plan: who can enter, what they can bring in, and how much damage they can cause once something goes wrong. The goal is not to memorize every field in every policy. The goal is to diagnose where a failure belongs, compare the available controls, and make a defensible first improvement before the system grows more complex.
 
-Most commands in later Kubernetes security work use `kubectl`, and this curriculum uses the common `k` alias after introducing it once. If you are following along in a local lab, define the alias in your shell before running any command that starts with `k`, because the alias is a convenience for the human operator and not a Kubernetes feature. The alias does not change authentication, authorization, or admission behavior; it only shortens your commands while you practice reading security decisions.
+This curriculum uses the `k` alias for `kubectl`. If following along in a lab, define it in your shell:
 
 ```bash
 alias k=kubectl
