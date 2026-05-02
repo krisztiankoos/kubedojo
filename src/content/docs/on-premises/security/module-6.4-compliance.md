@@ -1,28 +1,24 @@
 ---
-revision_pending: true
+revision_pending: false
 title: "Module 6.4: Compliance for Regulated Industries"
 slug: on-premises/security/module-6.4-compliance
 sidebar:
   order: 5
 ---
 
-> **Complexity**: `[ADVANCED]` | Time: 75 minutes
->
-> **Prerequisites**: [Physical Security & Air-Gapped Environments](../module-6.1-air-gapped/), [Hardware Security (HSM/TPM)](../module-6.2-hardware-security/), [Enterprise Identity](../module-6.3-enterprise-identity/)
+# Module 6.4: Compliance for Regulated Industries
 
----
+**Complexity**: `[ADVANCED]` | **Time**: 75 minutes | **Prerequisites**: [Physical Security & Air-Gapped Environments](../module-6.1-air-gapped/), [Hardware Security (HSM/TPM)](../module-6.2-hardware-security/), and [Enterprise Identity](../module-6.3-enterprise-identity/). These examples assume Kubernetes 1.35 or newer; when running Kubernetes commands, define `alias k=kubectl` once in your shell and then use `k` for CLI examples.
 
 ## What You'll Be Able to Do
 
-After completing this module, you will be able to:
+After completing this module, you will be able to connect regulatory language to concrete Kubernetes controls, gather evidence that proves those controls operated, and explain the operational tradeoffs to auditors and engineering leaders.
 
 1. **Design** a Kubernetes audit logging pipeline that captures API server access with tamper-evident long-term storage so a third-party auditor can reconstruct who did what to compliance-scoped resources.
 2. **Implement** policy-as-code controls with Kyverno (or OPA/Gatekeeper) that block non-compliant workloads at admission time and emit machine-readable PolicyReports usable as audit evidence.
 3. **Plan** an evidence-collection strategy that maps each technical control in your cluster to a specific clause in HIPAA, PCI DSS, SOC 2, or GDPR, including retention and chain-of-custody.
 4. **Debug** a failed audit scenario by tracing missing evidence back to either a missing control or a missing log path, and **evaluate** whether to fix the control, fix the logging, or do both.
 5. **Compare** the trade-offs between a single multi-tenant compliance cluster (one cluster, many regulatory regimes) and per-domain dedicated clusters, and justify a recommendation for a given organization.
-
----
 
 ## Why This Module Matters
 
@@ -35,9 +31,6 @@ The remediation took four months. The team had to design a comprehensive audit p
 > A restaurant can have a spotless kitchen and still fail a health inspection. If the temperature logs are not posted on the freezer, the handwashing signs are missing from the bathroom, and the food-safety certificates are not on file in the manager's binder, the inspector cannot give a passing grade no matter how clean the floors are. Compliance is not about being secure. It is about proving you are secure to someone who is professionally skeptical and will be making decisions on the basis of paper. Your Kubernetes cluster might be locked down to a fault, but without audit logs, documented policies, and an evidence-collection workflow, you will lose the audit even though you would not lose the pen test.
 
 The throughline of this module is that compliance work splits cleanly into three things: writing controls that *exist*, writing logs that *prove* the controls existed, and writing pipelines that *retain* those logs in a form an auditor will accept. We will build all three for the four regimes platform teams hit most often on-premises — HIPAA, SOC 2, PCI DSS, and GDPR/data-sovereignty — and you will leave with a working audit pipeline you can demonstrate end to end on a kind cluster.
-
----
-
 ## What You'll Learn
 
 - How HIPAA, SOC 2 Type II, PCI DSS v4.0, and GDPR data-sovereignty rules each map to specific Kubernetes controls (and which controls satisfy more than one regime at once).
@@ -47,7 +40,9 @@ The throughline of this module is that compliance work splits cleanly into three
 - How to use Kyverno PolicyReports to turn admission-control decisions into per-control evidence that can be filtered, exported, and handed directly to an assessor.
 - How to walk through a worked compliance failure end to end — from the auditor's question, to the missing evidence, to the configuration change that fixes it, to the verification that the fix actually works.
 
----
+Treat the module as an audit rehearsal, not as a catalogue of controls. Each technical choice has to answer three questions. What risk does the control reduce? What evidence proves the control operated during the audit window? What failure would make that evidence unreliable? The examples use Kubernetes 1.35 behavior and avoid cloud-only assumptions, because regulated on-premises platforms usually carry physical, identity, and locality constraints that managed clusters hide from the team.
+
+The working habit to build is translation. Auditors ask for "access to systems containing PHI," "segmentation of the CDE," or "restricted processing of personal data." Kubernetes answers with `RoleBinding` objects, audit events, NetworkPolicies, taints, admission decisions, and signed evidence bundles. Your job is to bridge those vocabularies without guessing. When the bridge is explicit, a skeptical reviewer can trace every claim from the framework clause to a cluster object and then to an immutable artifact.
 
 ## Mapping Regulatory Frameworks to Kubernetes Controls
 
@@ -79,7 +74,9 @@ Read that grid as a hint about leverage. Anything with an X in three columns is 
 
 The framework-to-control map is also how you defend against scope creep. When a sales engineer brings in a customer who wants ISO 27001 and FedRAMP added to next quarter's compliance roadmap, the question is not "how much new work is this?" The question is "which rows in the grid are already green, and which truly new rows do these standards add?" In most cases the answer is one or two truly new rows plus a great deal of paperwork. Estimating new compliance work as deltas against your existing control matrix, rather than as fresh greenfield projects, is one of the highest-leverage skills a platform lead can develop.
 
----
+A useful control matrix also makes ownership visible. RBAC evidence usually belongs to the identity team. NetworkPolicy evidence may belong to the platform team. Vulnerability evidence may come from security engineering, while physical access evidence comes from facilities. If those owners are not named before the audit, the platform team becomes the accidental collector for every missing artifact. That is how a technical audit turns into weeks of hallway archaeology.
+
+Pause and predict: if your cluster has excellent NetworkPolicies but no namespace labels, what happens when the auditor asks for "all HIPAA-scoped segmentation evidence"? You may have the control, but you do not have the filter that proves which workloads are in scope. The safest design is to make labels mandatory at namespace creation and to treat missing labels as a failed admission decision, not as a documentation cleanup task.
 
 ## HIPAA Physical and Administrative Controls
 
@@ -101,7 +98,9 @@ Inside the cluster, HIPAA enforcement starts with labelling. Every namespace tha
 
 Once the labels are in place, lock the namespace down with NetworkPolicies that default-deny both ingress and egress. Allowed ingress should be limited to other HIPAA-labeled namespaces and to specific API-gateway pods (matched by label, never by IP, because pod IPs are ephemeral). Egress should be limited to other HIPAA namespaces and to DNS on port 53 — full stop. Anything else, including outbound HTTPS to the public internet, has to be explicitly enumerated and justified during an audit. The default-deny posture is non-negotiable: an auditor will not accept "we have a policy that blocks malicious egress" if the underlying default is allow-all and the block is just a deny-list.
 
----
+HIPAA also forces you to connect cluster access to workstation and facility controls. If an engineer can administer PHI workloads only from a managed laptop, through VPN, with MFA, then the Kubernetes audit event is only one piece of the evidence chain. The companion evidence is the device posture record, the VPN session, and the identity-provider authentication log. A strong audit package links those records by username and timestamp, so the reviewer can reconstruct the path from a human at a workstation to an API request against a namespace.
+
+That linkage matters during incident response. A suspicious `pods/exec` event is not enough by itself. You need to know whether the engineer was on call, whether their laptop was compliant, whether the VPN session came from an expected region, and whether the namespace contained PHI. When those facts are joined automatically, the security team can decide quickly whether an event is routine support or a reportable privacy incident.
 
 ## SOC 2 on Premises
 
@@ -159,9 +158,6 @@ echo "Evidence: ${EVIDENCE_DIR} ($(du -sh ${EVIDENCE_DIR} | cut -f1))"
 ```
 
 The signing step at the bottom is what turns a folder of JSON exports into something auditors will accept as evidence. A folder of JSON files, by itself, is something any administrator could have generated five minutes ago. A folder of JSON files with a SHA-256 manifest signed by a key that lives in your HSM is something that can be verified to have existed on the date the signature claims, because changing any file would invalidate the manifest and replacing the manifest would require access to the signing key. That chain of custody is what an auditor needs to accept your evidence without insisting on independent verification.
-
----
-
 ## PCI DSS Scope Isolation
 
 PCI DSS requires strict isolation of the Cardholder Data Environment (CDE), which is the set of systems that store, process, or transmit primary account numbers. On Kubernetes, this means the namespaces handling payment-card data must be separated from everything else with such rigor that an auditor would conclude a compromise in any non-CDE namespace could not pivot to the CDE.
@@ -211,9 +207,6 @@ kubectl label nodes cde-node-{1,2,3} node-role.kubernetes.io/pci-cde=""
 ```
 
 A correctly configured payment workload deployment will declare a toleration for the `pci-dss=cde:NoSchedule` taint, a `requiredDuringSchedulingIgnoredDuringExecution` node affinity for `node-role.kubernetes.io/pci-cde`, a security context that runs as non-root, mounts a read-only root filesystem, drops all Linux capabilities, and refuses privilege escalation, and labels of `pci-scope: in-scope` on both the Deployment and the resulting Pod. The labels on both objects matter because audit queries against pods are simpler and faster than chasing owner-references back through ReplicaSets to Deployments, and the auditor will run those queries themselves during the assessment.
-
----
-
 ## Kubernetes Audit Policy Design
 
 The Kubernetes audit policy controls what the API server logs. A well-designed policy captures the events compliance frameworks actually care about while staying quiet on the high-volume internal traffic that generates noise without value. A bad policy either logs nothing useful or logs so much that the log pipeline buckles under its own weight; both failure modes will sink an audit.
@@ -325,7 +318,9 @@ Once the policy file exists, the API server has to be told to use it. On a kubea
 
 The audit policy file and the log directory both have to be mounted as volumes inside the API server static pod, otherwise the API server will start with logging silently disabled — the symptom is "no errors, no logs" which is the worst kind of failure because nothing alerts you to it. After making the change, restart the kubelet on the control-plane node and verify with `journalctl -u kubelet` that the API server pod restarted cleanly, then tail the audit log file to confirm events are being written.
 
----
+Before running this in production, write down the evidence question each rule is meant to answer. Secret reads answer "who accessed sensitive configuration." RBAC writes answer "who changed privileges." `pods/exec` events answer "who opened an interactive path into a workload." Health checks answer nothing useful, so they should not consume retention budget. This simple annotation exercise exposes rules that are too broad and rules that are missing.
+
+Which approach would you choose here and why: a small audit policy with a catch-all `Metadata` rule, or a long policy that tries to enumerate every regulated namespace by name? The catch-all usually wins because it is resilient to new namespaces. The named-list version looks precise, but it fails silently when a new `phi-claims` namespace appears and nobody updates the policy file. Compliance systems should fail closed when the environment changes.
 
 ## Tamper-Evident Audit Log Pipeline
 
@@ -397,7 +392,9 @@ Deploy Fluent Bit as a DaemonSet on the control-plane nodes and point its `tail`
 
 Two things are worth stressing about this configuration. First, OpenSearch should be on a *different* control plane than the cluster being audited — typically a dedicated logging cluster — so that an attacker who roots the audited cluster cannot delete the evidence from the same pane of glass they used to compromise it. Second, the MinIO bucket must have object lock enabled in compliance mode at bucket-creation time; you cannot retroactively turn on immutability, and an auditor who sees a "governance" mode bucket where the lock can be lifted by an admin will downgrade the control. Compliance mode means "no one, including the root user, can delete or modify these objects until the retention window expires" — which is exactly the property a regulator wants to see.
 
----
+The pipeline also needs negative evidence. It is not enough to prove that logs arrived. You must prove that silence would be detected. A simple control is an alert that compares expected event volume with observed volume for each control-plane node. Another is a heartbeat event written by the collector every minute. If the heartbeat stops, the absence of audit data becomes visible within the monitoring window, rather than appearing months later as an audit gap.
+
+Do not hide pipeline failures inside the same cluster being audited. If Fluent Bit cannot reach OpenSearch, the alert should land in an independent paging path, and the outage should create its own evidence record. That record may feel embarrassing, but it is useful. A documented, bounded outage with corrective action is a process signal. An unexplained hole in the audit archive is a finding.
 
 ## Data Sovereignty
 
@@ -414,9 +411,6 @@ Data sovereignty rules require that data remain within a specific geographic or 
 ### Kubernetes Configuration for Data Sovereignty
 
 The cluster-level enforcement point for data sovereignty is the admission controller. Use a ValidatingWebhookConfiguration or a Kyverno/OPA Gatekeeper policy to reject pods whose images come from unapproved registries — typically anything outside `registry.internal.corp` or your designated domestic mirror. All third-party container images have to be mirrored through the approved transfer process described in [Module 6.1](../module-6.1-air-gapped/), and the approval process should produce an artifact (a signed manifest or a CMDB entry) that the admission controller can verify before letting the image run. Without this enforcement, a single careless `image: docker.io/library/nginx` slipped past code review pulls bytes across a border the moment the pod is scheduled.
-
----
-
 ## Implementing Policy-as-Code for Compliance
 
 To enforce regulatory controls continuously rather than as a quarterly cleanup exercise, Kubernetes clusters rely on policy-as-code engines like Kyverno or OPA Gatekeeper. These tools install as admission controllers, which means they get to inspect every resource that arrives at the API server and either allow it, mutate it, or reject it before it is persisted to etcd. The compliance value is twofold: non-compliant resources never get created in the first place (which is a stronger control than detecting them after the fact), and every admission decision produces a structured, queryable record that becomes part of your audit evidence.
@@ -517,9 +511,6 @@ Pipe that into your monthly evidence-collection script and you have continuous c
 ### Operational Patterns for Rolling Out Policies
 
 Rolling a new policy from zero to enforce on a live cluster is where teams most often hurt themselves. The pattern that works is staged: first deploy with `validationFailureAction: Audit` and watch PolicyReports for a week to find existing violators. Fix or whitelist the violators. Then flip to `Enforce`. If you skip the audit phase and go straight to enforce, you will block a deployment from a critical service at three in the morning and the resulting incident will end any political support you had for the rest of your compliance program. The audit-then-enforce cycle is also evidence in itself — it shows the auditor that you operate compliance changes the same way you operate any other production change, which is exactly the maturity signal SOC 2 looks for.
-
----
-
 ## A Worked Compliance-Failure Walkthrough
 
 Reading about compliance is useful, but the skill that earns money is the ability to take an auditor's question, work backward to the missing evidence, identify the missing control, and produce a remediation that closes the gap permanently. The walkthrough below is the kind of scenario you will face in your first real audit. Read it as a model for how to think when an auditor lands an unfamiliar question.
@@ -597,9 +588,6 @@ The remediation is twofold: backfill what you can from the on-disk log file (usu
 ### What This Walkthrough Models
 
 The general shape of compliance debugging is: translate the auditor question into Kubernetes terms, verify the control that should have produced the evidence is configured correctly, query the evidence store, verify the query is complete, and disclose any gaps with their remediation. Every word of that sequence matters and skipping any of them is how teams fail audits they should have passed.
-
----
-
 ## Evidence Collection for Auditors
 
 Auditors think in controls, not in tools. They do not care that you use OpenSearch or Loki or Splunk; they care that you can produce evidence for control X over time period Y. The evidence-collection layer is the translation between your tooling and their language.
@@ -622,9 +610,6 @@ Auditors think in controls, not in tools. They do not care that you use OpenSear
 The pattern that scales is a single CronJob that runs monthly and produces a directory of artifacts organized by control area: access control (cluster-admin bindings, OIDC flags, recent role changes), encryption (etcd config snippet, HSM status output, LUKS device list), network segmentation (NetworkPolicy YAML for every namespace, plus a generated diagram of allowed flows), namespace inventory (every namespace with its compliance labels), and pod security (PSA enforcement levels per namespace). Package the directory as a timestamped, signed tarball and write it to the same WORM bucket that holds the audit logs. Run this on the same schedule every month, never by hand, because an auditor who sees evidence files all timestamped on the day before the audit will assume they were generated for the audit rather than collected during the period.
 
 The discipline that distinguishes a mature compliance program from a thrash-ridden one is that the evidence is always older than the audit. If an auditor asks for January's evidence in February and you have to scramble to generate it, you have already failed a process control even if the underlying technical control was in place. Build the CronJob early, alert on its failure, and let twelve months of green runs do the talking when the auditor arrives.
-
----
-
 ## Did You Know?
 
 - **HIPAA has no certification.** Unlike PCI DSS (which has the QSA assessor process) or SOC 2 (which produces a formal report from a CPA firm), HIPAA compliance is self-attested. The Office for Civil Rights only audits after a breach or complaint. This means many organizations believe they are HIPAA-compliant but have never been tested by a third party — and the test, when it eventually comes, is generally a breach investigation rather than a friendly assessor.
@@ -634,13 +619,10 @@ The discipline that distinguishes a mature compliance program from a thrash-ridd
 - **SOC 2 Type I vs Type II**: Type I is a point-in-time snapshot ("controls exist today"). Type II covers a defined period (usually twelve months) and proves controls were consistently operating across that period. Type II is far more valuable and is what enterprise customers typically require before signing. For Kubernetes, this is the difference between needing today's `kubectl get` output and needing twelve months of evidence with verifiable timestamps.
 
 - **The CLOUD Act (2018)** allows United States law enforcement to compel US-based providers to produce data regardless of where it is stored geographically. This is a primary driver for data sovereignty decisions for European, Canadian, and Australian customers. On-premises infrastructure operated by a non-US provider eliminates CLOUD Act exposure entirely, which is one of the most concrete commercial advantages of on-premises Kubernetes for B2B SaaS companies selling into regulated European markets.
-
----
-
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
+| Mistake | Why It Happens | How to Fix It |
+|---------|----------------|---------------|
 | Audit policy set to `None` for secrets | No evidence of who accessed secrets | Set `Metadata` level for secrets (not `RequestResponse`, which would log secret data) |
 | Audit logs stored only on the node | Root access = log tampering | Ship to WORM storage (MinIO with object lock) |
 | No retention policy for logs | Logs deleted before audit period ends | HIPAA: 6 years, SOC 2: Type II period + 1 year, PCI: 1 year online + 1 year archive |
@@ -649,9 +631,6 @@ The discipline that distinguishes a mature compliance program from a thrash-ridd
 | No evidence collection automation | Auditor asks for data, team scrambles for weeks | Monthly automated evidence-collection CronJob writing to WORM storage |
 | Missing data flow diagrams | Auditor cannot understand what data goes where | Maintain current data flow diagrams in architecture docs, regenerated quarterly |
 | Compliance labels missing on namespaces | Cannot query which namespaces are in-scope | Label all namespaces consistently: `compliance: hipaa`, `pci-scope: in-scope` |
-
----
-
 ## Quiz
 
 ### Question 1
@@ -814,9 +793,6 @@ The constraint is fundamentally about who can *touch* the data, and the options 
 
 The recommendation, in most cases, is Option A: a dedicated in-country cluster with in-country staffing and in-country evidence collection. Start with the smallest viable cluster and grow it; the operational overhead is real but the alternative is failing the audit, and the cost of a failed audit usually dwarfs the cost of a small dedicated cluster. Document the decision and the rejected alternatives explicitly so the next platform lead understands why the architecture looks the way it does.
 </details>
-
----
-
 ## Hands-On Exercise: Implement and Verify a Compliance Audit Policy
 
 **Task**: Design and deploy a compliance-grade audit policy on a kind cluster, generate the events an auditor would ask about, and verify your policy captured them with the correct level of detail. This exercise mirrors the worked walkthrough above on a cluster you control end to end.
@@ -887,6 +863,7 @@ The recommendation, in most cases, is Option A: a dedicated in-country cluster w
 3. **Generate audit events** that mirror what a real auditor would ask about:
 
    ```bash
+   alias k=kubectl
    k() { kubectl "$@"; }
    k create secret generic test-secret --from-literal=password=s3cret
    k get secret test-secret -o yaml
@@ -919,7 +896,16 @@ The recommendation, in most cases, is Option A: a dedicated in-country cluster w
    grep -c '/healthz' /tmp/audit/logs/audit.log
    ```
 
-5. **Stretch goal — install Kyverno and demonstrate a PolicyReport** for the `require-drop-all-capabilities` policy from the policy-as-code section. Apply a non-compliant pod, observe the rejection, apply a compliant pod, and `kubectl get policyreport -A` to confirm the pass appears in the report.
+5. **Stretch goal — install Kyverno and demonstrate a PolicyReport** for the `require-drop-all-capabilities` policy from the policy-as-code section. Apply a non-compliant pod, observe the rejection, apply a compliant pod, and `k get policyreport -A` to confirm the pass appears in the report.
+
+<details>
+<summary>Solution notes and expected evidence</summary>
+
+The secret read should create an audit event at `Metadata` level, which means the log proves access without copying the secret value into the evidence store. If you see a `responseObject` containing secret data, the policy is too verbose and must be fixed before the cluster handles regulated workloads. The `exec` event should show the `whoami` command in the request object, because interactive access is one of the highest-value audit trails during an investigation.
+
+For RBAC, expect create and delete events for `test-binding` at `RequestResponse` level. That detail lets an auditor reconstruct not only that privileges changed, but which role was granted and to whom. The `/healthz` check should return zero matches because health probes add volume without answering a compliance question. If Kyverno is installed for the stretch goal, the non-compliant pod should be rejected before scheduling and the compliant pod should contribute a passing entry to the PolicyReport.
+
+</details>
 
 ### Success Criteria
 
@@ -931,8 +917,6 @@ The recommendation, in most cases, is Option A: a dedicated in-country cluster w
 - [ ] All audit lines parseable with `jq` (no malformed JSON)
 - [ ] Stretch: non-compliant pod rejected at admission and a passing PolicyReport entry exists for the compliant pod
 
----
-
 ## Key Takeaways
 
 1. **Compliance is about evidence, not just security.** You must prove controls exist, were operating during the audit window, and were monitored for drift. A perfectly secure cluster with no evidence trail will fail an audit a less secure cluster with good evidence will pass.
@@ -942,7 +926,20 @@ The recommendation, in most cases, is Option A: a dedicated in-country cluster w
 5. **Automate evidence collection.** Monthly automated CronJobs that produce signed evidence bundles transform audit prep from a multi-week scramble into a one-day exercise of "hand the auditor the bucket." The discipline that distinguishes mature programs is that the evidence is always older than the audit.
 6. **Use policy-as-code to convert compliance from a quarterly project into a continuous control.** Kyverno PolicyReports are evidence that maps directly to assessor questions; once you have them, the audit conversation is about reading reports rather than running ad-hoc kubectl queries.
 
----
+## Sources
+
+- [Kubernetes audit logging](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/)
+- [Kubernetes audit policy reference](https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/)
+- [Kubernetes NetworkPolicy concepts](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+- [Kubernetes Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/)
+- [Kubernetes encrypting confidential data at rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
+- [Kyverno PolicyReports](https://kyverno.io/docs/policy-reports/)
+- [Kyverno validate rules](https://kyverno.io/docs/policy-types/cluster-policy/validate/)
+- [Fluent Bit S3 output plugin](https://docs.fluentbit.io/manual/pipeline/outputs/s3)
+- [MinIO object retention and object lock](https://min.io/docs/minio/linux/administration/object-management/object-retention.html)
+- [HIPAA Security Rule, 45 CFR Part 164 Subpart C](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C)
+- [PCI Security Standards Council document library](https://www.pcisecuritystandards.org/standards/)
+- [GDPR Regulation (EU) 2016/679 official text](https://eur-lex.europa.eu/eli/reg/2016/679/oj)
 
 ## Next Module
 
