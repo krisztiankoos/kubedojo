@@ -579,9 +579,9 @@ alias k=kubectl
 k create namespace obs-lab
 k -n obs-lab create deployment cart --image=nginx:1.25 --replicas=2
 k -n obs-lab expose deployment cart --port=80 --target-port=80
-k -n obs-lab label deployment cart app.kubernetes.io/name=cart app.kubernetes.io/version=1.25
+k -n obs-lab label deploy,rs,pod,svc -l app=cart app.kubernetes.io/name=cart app.kubernetes.io/version=1.25 --overwrite
 k -n obs-lab rollout restart deployment/cart
-k -n obs-lab get deploy,rs,pods,svc -l app=cart
+k -n obs-lab get deploy,rs,pods,svc -l app.kubernetes.io/name=cart
 k -n obs-lab describe deployment cart
 k -n obs-lab logs deploy/cart --tail=20
 k -n obs-lab get events --sort-by=.lastTimestamp | tail -20
