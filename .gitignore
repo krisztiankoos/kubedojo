@@ -110,3 +110,4 @@ docs/quality-progress.tsv.lock
 .worktrees/
 batch_state/
 logs/
+.envrc
