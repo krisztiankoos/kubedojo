@@ -8,9 +8,13 @@ sidebar:
 
 # Module 1.5: Pods
 
-This is a `[MEDIUM]` core resource module that takes about 45-55 minutes and assumes you have completed Modules 1.1-1.4, especially the API object and control-plane concepts.
+> **Complexity**: `[MEDIUM]` - Core resource concept
+>
+> **Time to Complete**: 45-55 minutes
+>
+> **Prerequisites**: Modules 1.1-1.4, especially API objects and control-plane concepts.
 
-## Learning Outcomes
+## What You'll Be Able to Do
 
 After completing this module, you will be able to connect Pod design choices to concrete debugging, rollout, and ownership decisions instead of treating Pods as anonymous containers.
 
@@ -63,7 +67,7 @@ A Pod is the smallest deployable and schedulable unit in Kubernetes, but that se
 └─────────────────────────────────────────────────────────────┘
 ```
 
-The apartment analogy from the original module is still useful because it separates a container's identity from the Pod's shared address. A container is like a person with its own job and habits, while a Pod is the apartment where those people live together. They share the same street address, they can talk across the room without going through the public lobby, and they may share a kitchen where files appear for everyone who is allowed to use it. That shared arrangement is powerful when the containers are tightly coupled, and it is costly when they should scale or fail independently.
+The apartment analogy is useful because it separates a container's identity from the Pod's shared address. A container is like a person with its own job and habits, while a Pod is the apartment where those people live together. They share the same street address, they can talk across the room without going through the public lobby, and they may share a kitchen where files appear for everyone who is allowed to use it. That shared arrangement is powerful when the containers are tightly coupled, and it is costly when they should scale or fail independently.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -271,7 +275,7 @@ The Pod network model is deliberately simpler than traditional host networking. 
 
 Storage follows the same "shared context, disposable Pod" pattern. A Pod can define volumes, and containers can mount those volumes at paths inside their filesystems. An `emptyDir` volume is created when the Pod is assigned to a node and removed when the Pod is removed from that node, making it useful for scratch space and same-Pod file exchange. Persistent storage uses PersistentVolumeClaims and storage classes, but the Pod still mounts the claim as a volume. The Pod is the place where storage is attached to a running replica, not the place where durable application ownership should be hidden.
 
-A small reference table helps keep the original container comparison precise while avoiding a false either-or mindset. Containers are runtime units, Pods are Kubernetes API units, and controllers are desired-state managers that create and replace Pods. When debugging, identify which level owns the symptom before changing anything. A container crash may need image or command fixes, a Pod scheduling failure may need resource or placement fixes, and a Deployment rollout issue may need template or strategy fixes.
+A small reference table helps keep the container comparison precise while avoiding a false either-or mindset. Containers are runtime units, Pods are Kubernetes API units, and controllers are desired-state managers that create and replace Pods. When debugging, identify which level owns the symptom before changing anything. A container crash may need image or command fixes, a Pod scheduling failure may need resource or placement fixes, and a Deployment rollout issue may need template or strategy fixes.
 
 | Concept | Scope | Shared Context | Operational Question |
 |---------|-------|----------------|----------------------|
@@ -280,7 +284,7 @@ A small reference table helps keep the original container comparison precise whi
 | Controller | Desired state over many Pods | Pod template and reconciliation loop | Why are the expected replicas not present or updated? |
 | Service | Stable access to selected Pods | Virtual IP or DNS name over endpoints | Why can or cannot clients reach healthy replicas? |
 
-The original module captured the beginner mistake table in a compact way, and those four distinctions remain protected because they are the minimum conceptual traps. In a mature cluster, the same misunderstandings show up in more expensive forms: dashboards that page on container status but ignore Pod readiness, scripts that call Pod IPs directly, and rollout plans that treat one replacement Pod as if it were the same machine returning to service. Keep the table close when diagnosing a beginner explanation or an incident narrative.
+The beginner mistake table is compact because these four distinctions are the minimum conceptual traps. In a mature cluster, the same misunderstandings show up in more expensive forms: dashboards that page on container status but ignore Pod readiness, scripts that call Pod IPs directly, and rollout plans that treat one replacement Pod as if it were the same machine returning to service. Keep the table close when diagnosing a beginner explanation or an incident narrative.
 
 | Mistake | Why It Hurts | Correct Understanding |
 |---------|--------------|----------------------|
@@ -351,7 +355,7 @@ The most useful question during lifecycle work is "who can make this state chang
 
 ## Pod Ownership: Direct Pods vs Deployments, Jobs, and DaemonSets
 
-The original rule of thumb is intentionally blunt: almost never create Pods directly for production services. Direct Pods are helpful for learning, troubleshooting, and short-lived experiments because they expose the raw object without controller machinery. Production workloads need desired-state ownership. A Deployment maintains a replicated stateless service, a Job manages finite work, a CronJob schedules repeated finite work, a DaemonSet runs one Pod per selected node, and a StatefulSet manages stateful replicas with stable identities. Those controllers all create Pods, but they answer different operational questions.
+The rule of thumb is intentionally blunt: almost never create Pods directly for production services. Direct Pods are helpful for learning, troubleshooting, and short-lived experiments because they expose the raw object without controller machinery. Production workloads need desired-state ownership. A Deployment maintains a replicated stateless service, a Job manages finite work, a CronJob schedules repeated finite work, a DaemonSet runs one Pod per selected node, and a StatefulSet manages stateful replicas with stable identities. Those controllers all create Pods, but they answer different operational questions.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -390,7 +394,7 @@ If you are unsure whether a Pod is directly created or controller-managed, inspe
 
 ```bash
 k get pod pod-demo -o yaml
-k get pod pod-demo -o jsonpath='{.metadata.ownerReferences}'
+k get pod pod-demo -o jsonpath='{.metadata.ownerReferences[0].kind}{"\n"}'
 ```
 
 ### Worked Example: Reading a Pod Like a Runbook
@@ -469,7 +473,7 @@ The second layer of the framework decides whether the Pod should contain one con
 | Cluster-level node agent | DaemonSet | Manually created Pod on selected nodes |
 | One-off data repair | Job with explicit completion behavior | Long-running Deployment that exits immediately |
 
-Apply the framework to the Redis example from the original quiz. If Redis is a real cache shared by multiple application replicas, it has its own lifecycle and should not be in the same Pod as the app. If each app replica needs a tiny disposable local cache that is valid only for that replica, a same-Pod helper might make sense. The technical difference is not "Redis is special"; the difference is whether the dependency is per-replica and disposable or shared and independently operated.
+Apply the framework to the Redis example in the quiz. If Redis is a real cache shared by multiple application replicas, it has its own lifecycle and should not be in the same Pod as the app. If each app replica needs a tiny disposable local cache that is valid only for that replica, a same-Pod helper might make sense. The technical difference is not "Redis is special"; the difference is whether the dependency is per-replica and disposable or shared and independently operated.
 
 The framework becomes more useful when you write the reason beside the YAML. A review comment such as "sidecar shares an `emptyDir` with the app so every replica ships its own local log file" is clear and testable. A comment such as "Redis is in the Pod because localhost is faster" is a warning because it optimizes one connection path while ignoring lifecycle and state. Good Kubernetes design records why a component shares the Pod boundary, why another component gets a Service boundary, and why a controller owns replacement behavior. Those reasons help future operators debug the system without rediscovering the design from scattered manifests.
 
@@ -578,6 +582,7 @@ You are finished when you can point to the Pod IP, node name, labels, owner refe
 - [Kubernetes documentation: Configure probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
 - [Kubernetes documentation: Resource management for Pods and containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
 - [Kubernetes documentation: Volumes](https://kubernetes.io/docs/concepts/storage/volumes/)
+- [GitLab: GitLab.com Database Incident](https://about.gitlab.com/blog/gitlab-dot-com-database-incident/)
 
 ## Next Module
 
