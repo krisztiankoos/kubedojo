@@ -2014,6 +2014,136 @@ def build_bridge_messages(
     }
 
 
+# ---- #388 dispatcher batch progress ----
+#
+# scripts/quality/dispatch_388_pilot.py writes a JSONL event log per batch
+# under logs/388_*.jsonl. Read-only roll-up: "complete" if pilot_done seen,
+# "errored" if tail is an *_error and idle >= 30 min, else "in_flight".
+
+_388_IDLE_ERROR_SECONDS = 30 * 60
+_388_COUNT_KINDS = (
+    "merged", "merge_held_nits", "merge_held", "module_skip",
+    "codex_error", "gemini_error", "worktree_error",
+)
+
+
+def _load_388_events(log_path: Path) -> list[dict[str, Any]]:
+    try:
+        text = log_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return []
+    out: list[dict[str, Any]] = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return out
+
+
+def _summarize_388_events(
+    events: list[dict[str, Any]], *, now_seconds: float | None = None
+) -> dict[str, Any]:
+    """Roll dispatch_388 events into a batch summary (event-derived fields only)."""
+    last_pilot_start_idx = max(
+        (i for i, e in enumerate(events) if e.get("event") == "pilot_start"),
+        default=-1,
+    )
+    events_to_summarize = events[last_pilot_start_idx:] if last_pilot_start_idx >= 0 else events
+
+    counts: dict[str, int] = {k: 0 for k in _388_COUNT_KINDS}
+    started_at = ended_at = last_event_at = None
+    last_event_kind = current_module = input_file = None
+    module_count = None
+    held_prs: list[dict[str, Any]] = []
+
+    for ev in events_to_summarize:
+        kind = ev.get("event")
+        ts = ev.get("ts")
+        if isinstance(ts, (int, float)):
+            last_event_at = ts
+            last_event_kind = kind
+        if kind == "pilot_start":
+            if started_at is None and isinstance(ts, (int, float)):
+                started_at = ts
+            if input_file is None and isinstance(ev.get("input"), str):
+                input_file = ev["input"]
+            if module_count is None and isinstance(ev.get("count"), int):
+                module_count = ev["count"]
+        elif kind == "pilot_done" and isinstance(ts, (int, float)):
+            ended_at = ts
+        elif kind == "module_start" and isinstance(ev.get("module"), str):
+            current_module = ev["module"]
+        elif kind in counts:
+            counts[kind] += 1
+        if kind in ("merge_held_nits", "merge_held"):
+            held_prs.append({
+                "pr": ev.get("pr"), "module": ev.get("module"),
+                "verdict": ev.get("verdict"),
+                "kind": "nits" if kind == "merge_held_nits" else "full",
+            })
+
+    if ended_at is not None:
+        state = "complete"
+    else:
+        now = now_seconds if now_seconds is not None else time.time()
+        idle_for = (now - last_event_at) if last_event_at is not None else None
+        if (last_event_kind in {"codex_error", "gemini_error", "worktree_error"}
+                and idle_for is not None and idle_for >= _388_IDLE_ERROR_SECONDS):
+            state = "errored"
+        else:
+            state = "in_flight"
+    return {
+        "input_file": input_file, "module_count": module_count,
+        "started_at": started_at, "ended_at": ended_at, "state": state,
+        "last_event_at": last_event_at,
+        "current_module": current_module if state == "in_flight" else None,
+        "counts": counts, "held_prs": held_prs,
+    }
+
+
+def _388_log_paths(repo_root: Path) -> list[Path]:
+    logs_dir = repo_root / "logs"
+    return sorted(logs_dir.glob("388_*.jsonl")) if logs_dir.is_dir() else []
+
+
+def _388_rel(repo_root: Path, log_path: Path) -> str:
+    try:
+        return str(log_path.resolve().relative_to(repo_root.resolve()))
+    except ValueError:
+        return str(log_path)
+
+
+def _list_388_batches(repo_root: Path) -> list[dict[str, Any]]:
+    batches: list[dict[str, Any]] = []
+    for log_path in _388_log_paths(repo_root):
+        summary = _summarize_388_events(_load_388_events(log_path))
+        summary.pop("held_prs", None)
+        summary["log_path"] = _388_rel(repo_root, log_path)
+        summary["log_stem"] = log_path.stem
+        batches.append(summary)
+    return batches
+
+
+def _load_388_batch(repo_root: Path, log_stem: str) -> dict[str, Any] | None:
+    target = next((p for p in _388_log_paths(repo_root) if p.stem == log_stem), None)
+    if target is None:
+        return None
+    events = _load_388_events(target)
+    summary = _summarize_388_events(events)
+    summary["log_path"] = _388_rel(repo_root, target)
+    summary["log_stem"] = target.stem
+    # Drop large excerpts from per-event timeline so /batch/{stem} stays small.
+    summary["events"] = [
+        {k: v for k, v in ev.items() if k not in {"response_excerpt", "review_excerpt"}}
+        for ev in events
+    ]
+    return summary
+
+
 # ---- quality scores ----
 
 
@@ -6726,6 +6856,14 @@ def build_api_schema() -> dict[str, Any]:
                 "query": ["target=4.0|5.0"],
             },
             {"path": "/api/citations/status", "desc": "Citation gate coverage and missing-source queue by track/module"},
+            {
+                "path": "/api/388/batches",
+                "desc": "List of #388 dispatcher batches parsed from logs/388_*.jsonl. Each entry has state (in_flight|complete|errored), counts, current_module, started_at/ended_at.",
+            },
+            {
+                "path": "/api/388/batch/{log_stem}",
+                "desc": "Single #388 batch detail (full event timeline + held_prs roll-up). Stem is the log filename without .jsonl, e.g. 388_day3_bucket1_2026-05-02.",
+            },
             {"path": "/api/cache/stats", "desc": "Response-cache introspection"},
         ],
     }
@@ -6928,6 +7066,17 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         return 200, build_quality_upgrade_plan(repo_root, target=target), "application/json; charset=utf-8"
     if path == "/api/citations/status":
         return 200, build_citation_status(repo_root), "application/json; charset=utf-8"
+    if path == "/api/388/batches":
+        batches = _list_388_batches(repo_root)
+        return 200, {"batches": batches, "count": len(batches)}, "application/json; charset=utf-8"
+    if path.startswith("/api/388/batch/"):
+        log_stem = unquote(path[len("/api/388/batch/"):]).strip("/")
+        if not log_stem or "/" in log_stem:
+            return 400, {"error": "invalid_log_stem"}, "application/json; charset=utf-8"
+        payload = _load_388_batch(repo_root, log_stem)
+        if payload is None:
+            return 404, {"error": "not_found", "log_stem": log_stem}, "application/json; charset=utf-8"
+        return 200, payload, "application/json; charset=utf-8"
     if path.startswith("/api/module/") and path.endswith("/lease"):
         raw_key = unquote(path[len("/api/module/") : -len("/lease")]).strip("/")
         if not raw_key:
