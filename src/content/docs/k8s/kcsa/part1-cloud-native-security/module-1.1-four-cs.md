@@ -373,7 +373,7 @@ A team receives an alert that a frontend Pod is making unexpected outbound conne
 
 **Solution step 1: Identify the entry signal without assuming the root cause.** The suspicious outbound traffic appears at runtime, but that does not prove the first failure is a Container-layer issue. The attacker may have entered through vulnerable Code, a vulnerable package in the Container image, or a misused credential. The investigation should preserve logs, compare the release diff, inspect dependency findings, and check whether requests reached an application endpoint before the traffic started.
 
-**Solution step 2: Map each concrete finding to the layer it belongs to.** The vulnerable application dependency or unsafe request handler is Code. The vulnerable base image packages and root user are Container. The missing NetworkPolicy is Cluster. The broad node role that can read an object bucket is Cloud. This mapping prevents the team from declaring victory after fixing only the dependency while leaving the egress and identity path open.
+**Solution step 2: Map each concrete finding to the layer it belongs to.** The vulnerable application dependency or unsafe request handler is Code. The vulnerable base image packages and root user are Container. The missing NetworkPolicy is Cluster. The broad node role that can read an object bucket is Cloud.
 
 **Solution step 3: Decide containment before permanent repair.** The fastest containment may be Cluster and Cloud controls: restrict egress from the namespace, remove broad bucket access from the node role, and rotate any credential that the Pod could have read. Then the team can rebuild the image with patched dependencies, run as non-root, and fix the application code path. Containment is not a substitute for repair, but repair without containment gives the attacker more time.
 
@@ -414,7 +414,7 @@ A team receives an alert that a frontend Pod is making unexpected outbound conne
 | Remove broad object bucket access from the node role | Cloud | The application may still be compromised and attempt lateral movement within the cluster. |
 | Add server-side input validation and authorization checks | Code | Runtime, cluster, and cloud blast-radius controls still need to limit future unknown vulnerabilities. |
 
-The example also shows why remediation order depends on incident phase. During active containment, you may prioritize egress restrictions and identity reduction because they reduce immediate movement while engineers prepare a patched release. During permanent repair, you must return to the entry point and fix the vulnerable application or dependency. During hardening, you convert the learning into admission policy, namespace defaults, release gates, and cloud identity standards. The same findings appear in all phases, but the reason for acting changes.
+The example also shows why remediation order depends on incident phase. During active containment, you may prioritize egress restrictions and identity reduction because they reduce immediate movement while engineers prepare a patched release. During permanent repair, you must return to the entry point and fix the vulnerable application or dependency. During hardening, you convert the learning into admission policy, namespace defaults, release gates, and cloud identity standards.
 
 ## Practical Classification Patterns
 
@@ -450,7 +450,7 @@ For example, a successful `k auth can-i` denial is good news for Kubernetes API 
 
 ## Patterns & Anti-Patterns
 
-The most reliable pattern is foundation-first design with incident-first verification. During design, start with Cloud identity and network boundaries, then define Cluster guardrails, then standardize Container runtime expectations, then verify Code-layer release practices. During verification, start from the symptom and trace outward through every layer that could contain or amplify the incident. This pattern works because it respects dependency during architecture while still responding quickly to the evidence that appears during operations.
+The most reliable pattern is foundation-first design with incident-first verification. During design, start with Cloud identity and network boundaries, then define Cluster guardrails, then standardize Container runtime expectations, then verify Code-layer release practices. During verification, start from the symptom and trace outward through every layer that could contain or amplify the incident.
 
 Another proven pattern is to separate risk classification from enforcement mechanism. A risky unsigned image is a Container artifact problem, but Kubernetes admission may be the enforcement point. A broad workload identity is a Cloud risk, but a Cluster egress policy may help limit metadata access. A vulnerable dependency is a Code or Container issue depending on where the component lives, but a release gate may be implemented in CI. Naming both sides helps teams avoid unproductive ownership arguments and produce fixes that actually land.
 
@@ -492,19 +492,19 @@ When choosing between candidate answers on an exam or in a design review, prefer
 1. **Your team deploys a payment API on a managed Kubernetes service. The Pod uses a patched distroless image and runs as non-root, but its service account can list Secrets in every namespace. During review, someone says the container is hardened, so the risk is low. How should you evaluate that claim using the 4 Cs model?**
    <details>
    <summary>Answer</summary>
-   The claim is incomplete because it points to Container-layer controls while the major finding is Cluster-layer authorization. A non-root distroless container reduces runtime damage after compromise, but it does not prevent the workload from using its Kubernetes service account token to list Secrets. The correct recommendation is to keep the Container hardening, narrow RBAC to the minimum namespace and resources needed, and verify with an authorization check such as `kubectl auth can-i` for the affected service account. This answer compares the layers instead of rejecting a true Container control.
+   The claim is incomplete because it points to Container-layer controls while the major finding is Cluster-layer authorization. A non-root distroless container reduces runtime damage after compromise, but it does not prevent the workload from using its Kubernetes service account token to list Secrets. The correct recommendation is to keep the Container hardening, narrow RBAC to the minimum namespace and resources needed, and verify with an authorization check such as `kubectl auth can-i` for the affected service account.
    </details>
 
 2. **A developer reports that an application can read a cloud object bucket even though no Kubernetes RoleBinding grants bucket access. The workload runs on a node group with a broad cloud IAM role. Which layer is the likely root problem, and what Cluster-layer control might still help contain it?**
    <details>
    <summary>Answer</summary>
-   The likely root problem is Cloud-layer identity because access to the object bucket comes from the cloud IAM role, not Kubernetes RBAC. A Cluster-layer control can still help if it prevents Pods from reaching the metadata endpoint or restricts egress paths, depending on the environment and network plugin. The durable fix is to narrow cloud IAM, prefer scoped workload identity, and ensure Pods cannot inherit broad node credentials unnecessarily. This separates the infrastructure responsibility from the Kubernetes containment option.
+   The likely root problem is Cloud-layer identity because access to the object bucket comes from the cloud IAM role, not Kubernetes RBAC. A Cluster-layer control can still help if it prevents Pods from reaching the metadata endpoint or restricts egress paths, depending on the environment and network plugin. The durable fix is to narrow cloud IAM, prefer scoped workload identity, and ensure Pods cannot inherit broad node credentials unnecessarily.
    </details>
 
 3. **A namespace has default-deny NetworkPolicies, tight RBAC, and encrypted Secrets, but a public endpoint has a broken authorization check that lets one customer read another customer's invoice. Which layer did the incident enter through, and why do the Cluster controls not fully solve it?**
    <details>
    <summary>Answer</summary>
-   The incident entered through the Code layer because the application failed to enforce the business authorization rule. Cluster controls are still valuable because they may prevent lateral movement or Secret theft after exploitation, but they cannot know which invoice belongs to which customer. The application must enforce tenant authorization server-side, add regression tests for the rule, and monitor access patterns that suggest abuse. The correct reasoning preserves the value of the Cluster controls without pretending they can encode application-specific data ownership.
+   The incident entered through the Code layer because the application failed to enforce the business authorization rule. Cluster controls are still valuable because they may prevent lateral movement or Secret theft after exploitation, but they cannot know which invoice belongs to which customer. The application must enforce tenant authorization server-side, add regression tests for the rule, and monitor access patterns that suggest abuse.
    </details>
 
 4. **A platform team proposes an admission policy that rejects Pods using unsigned images. Another engineer says image signing is a Container-layer topic and therefore admission policy is irrelevant. How would you resolve the disagreement?**
@@ -537,7 +537,7 @@ When choosing between candidate answers on an exam or in a design review, prefer
 
 ### Step 1: Classify each finding by layer
 
-Create a four-row map with Cloud, Cluster, Container, and Code. Put each finding in the row where the risk primarily belongs, and add a short reason. Do not classify by team ownership; classify by the boundary that fails. For example, the broad node IAM role belongs to Cloud even if the Kubernetes team owns the node group configuration. This first step is the foundation for the rest of the exercise because a wrong layer usually leads to a fix that sounds plausible but leaves the real boundary unchanged.
+Create a four-row map with Cloud, Cluster, Container, and Code. Put each finding in the row where the risk primarily belongs, and add a short reason. Do not classify by team ownership; classify by the boundary that fails. For example, the broad node IAM role belongs to Cloud even if the Kubernetes team owns the node group configuration.
 
 | Finding | Primary layer | Reason |
 |---|---|---|
@@ -553,7 +553,7 @@ Write the attack chain as a sequence rather than a list of unrelated findings. A
 
 ### Step 3: Choose immediate containment actions
 
-Pick two or three changes that reduce active risk quickly while the application team prepares a patched release. Good containment actions include narrowing the service account, applying temporary egress restrictions, removing broad cloud object-bucket access from the node role, and blocking risky deployment patterns with admission policy if your platform supports it. Explain why each action matches the layer it changes. If your team chooses only the application patch, mark that as useful but incomplete because the current compromised workload may still have time to move.
+Pick two or three changes that reduce active risk quickly while the application team prepares a patched release. Good containment actions include narrowing the service account, applying temporary egress restrictions, removing broad cloud object-bucket access from the node role, and blocking risky deployment patterns with admission policy if your platform supports it. Explain why each action matches the layer it changes.
 
 ### Step 4: Choose permanent remediation actions
 
@@ -561,7 +561,7 @@ Define durable fixes for all four layers. For Code, patch or replace the depende
 
 ### Step 5: Verify with evidence
 
-Use real checks where your environment supports them. The first command uses the full `kubectl` name; after that, the alias `k` means `kubectl`. Adapt the namespace, service account, and filenames to your lab cluster if you are practicing hands-on. Before running these checks, write down the result you expect and which layer each command can actually prove; that habit keeps you from overreading a successful command.
+Use real checks where your environment supports them. The first command uses the full `kubectl` name; after that, the alias `k` means `kubectl`. Adapt the namespace, service account, and filenames to your lab cluster if you are practicing hands-on.
 
 ```bash
 kubectl auth can-i list secrets --as=system:serviceaccount:payments:frontend -A
