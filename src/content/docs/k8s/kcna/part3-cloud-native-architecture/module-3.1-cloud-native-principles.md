@@ -61,13 +61,9 @@ The Cloud Native Computing Foundation definition names containers, service meshe
 └─────────────────────────────────────────────────────────────┘
 ```
 
-The diagram is deliberately explicit about a common exam trap: cloud native is not the same thing as running in a public cloud. A legacy application lifted onto a large virtual machine in a hyperscaler region may still be tightly coupled to one host, one filesystem path, and one manual recovery procedure. Meanwhile, an application running on an on-premises Kubernetes cluster can be cloud native if it is packaged, configured, scaled, observed, and replaced through the same principles.
-
 Think of cloud native as a contract between application and platform. The application promises to be portable, externally configurable, disposable, observable through standard streams and health signals, and tolerant of replacement. The platform promises to schedule it, restart it, scale it, connect it to backing services, enforce declared policy, and keep moving actual state toward desired state.
 
 A useful review question is: "What would happen if this Pod disappeared during a normal business hour?" If the answer is "the Deployment creates another Pod, traffic shifts away while readiness catches up, logs remain available, and durable data lives elsewhere," you are seeing cloud native behavior. If the answer is "someone must SSH to the node, recover files from local disk, and rerun a setup script from memory," the container is hiding a traditional operating model.
-
-Pause and predict: what do you think happens if a single-container monolith is moved into Kubernetes without changing where it stores uploads, how it reads configuration, or how it reports health? The scheduling layer becomes more modern, but the application still carries the same fragile assumptions. Kubernetes will reveal those assumptions quickly because rescheduling, restarting, and replacing Pods are ordinary cluster events.
 
 This distinction also explains why cloud native architecture is not automatically microservice architecture. A modular monolith that follows 12-factor practices, exposes useful health checks, writes logs to stdout, and treats its database as an attached resource may be more cloud native than a swarm of tiny services sharing one fragile database and requiring coordinated releases. The principle is to design for automation and resilience first, then split services when the split pays for itself.
 
@@ -149,7 +145,7 @@ The next six factors describe how a process participates in an automated platfor
 └─────────────────────────────────────────────────────────────┘
 ```
 
-The stateless process factor creates productive tension for beginners because real systems obviously store data. Stateless does not mean "no data exists." It means the running web or worker process does not depend on memory, local container files, or a specific node as the system of record. Databases, object storage, queues, and caches can absolutely be part of a cloud native system, but they are treated as backing services with explicit contracts, durability choices, and lifecycle management.
+Stateless does not mean "no data exists." It means the running web or worker process does not use memory, local container files, or a specific node as the system of record; durable state belongs in backing services with explicit lifecycle and recovery contracts.
 
 Factor 3 and Factor 4 often appear together during Kubernetes migrations. A legacy application may connect to `localhost:5432`, write uploads under `/app/uploads`, and log to `/var/log/app.log` because it was designed for one server. In Kubernetes, that design collides with Pod scheduling because localhost means the Pod itself, local files disappear with the container, and file logs are harder for cluster-level collectors to preserve.
 
@@ -284,10 +280,6 @@ A monolith is not automatically bad. Many successful systems begin as monoliths 
 └─────────────────────────────────────────────────────────────┘
 ```
 
-The diagram shows the attractive side of microservices: independent deployments, independent scaling, and smaller blast radius. If the payment service fails, the product catalog should still be able to serve browsing traffic, and the shipping service should not need to redeploy because the payment team changed a gateway integration. That independence is valuable when the business capability has different traffic, risk, and release pressure from the rest of the system.
-
-The diagram also hides costs that become real the moment the system runs in production. Service calls now cross a network, logs are spread across processes, data consistency becomes a design choice, and every team needs deployment, observability, security, and versioning discipline. A poorly chosen microservice boundary can make a simple feature require changes in five repositories and a carefully choreographed release.
-
 | Characteristic | Description |
 |----------------|-------------|
 | **Single responsibility** | Each service does one thing well |
@@ -297,7 +289,7 @@ The diagram also hides costs that become real the moment the system runs in prod
 | **Failure isolation** | One failure doesn't crash all |
 | **Team ownership** | Small teams own services |
 
-The phrase "each service owns its data" deserves special attention. It does not mean every service must run a database on day one, and it does not mean data modeling becomes easier. It means other services should not casually reach into private tables and make hidden coupling stronger than the API contract. Shared databases are tempting because they make early integration fast, but they often prevent independent deployment later.
+Use that table as a tradeoff check, not a scoring sheet. Microservices help when a capability needs independent ownership, scaling, deployment, or failure isolation; they hurt when the split adds network calls, data consistency work, tracing requirements, and coordinated releases without giving the team real independence.
 
 Stop and think: your company runs a monolithic e-commerce app, and a bug in the payment module crashes the entire process, including the shopping cart and product catalog. How would a microservices architecture change the blast radius of this failure? The payment flow might fail or degrade, but browsing and cart operations could remain available if the services, data paths, and user experience were designed to tolerate that partial outage.
 
@@ -539,8 +531,6 @@ For new systems, choose a modular monolith when the domain is still changing qui
 For existing systems, migrate risk in layers instead of trying to fix everything at once. You might first containerize the application, then externalize configuration, then move uploads to object storage, then add readiness and liveness probes, then split a high-change capability. Each layer should make the next failure easier to understand, not merely add another platform feature.
 
 Use the framework as a conversation tool with application teams. Instead of asking whether they are "cloud native," ask where the system stores durable data, how a new environment is configured, how they know an instance is ready, and what they do when a dependency is slow. Specific questions reduce defensiveness and expose concrete next steps. They also produce better architecture decisions than a generic demand to modernize.
-
-The framework is intentionally conservative for KCNA learners. It does not require you to design a global multi-region platform or choose every CNCF project. It asks whether a workload can be packaged, configured, observed, replaced, scaled, and recovered in ways Kubernetes understands. If you can evaluate those properties clearly, you can reason about more advanced platform patterns later without losing the fundamentals.
 
 ## Did You Know?
 
