@@ -1,0 +1,597 @@
+---
+import { getCollection } from 'astro:content';
+import { execFileSync } from 'node:child_process';
+
+type Locale = 'en' | 'uk';
+type StatusEntry = {
+  id: string;
+  title: string;
+  href: string;
+  section: string;
+  sectionKey: string;
+  revisionPending: boolean;
+  qaPending: boolean;
+  queuedAt: string | null;
+};
+
+type RecentEntry = {
+  date: string;
+  title: string;
+  href: string;
+};
+
+const { locale = 'en' } = Astro.props as { locale?: Locale };
+const recentFallbackIds = [
+  ['2026-05-01', 'ai-ml-engineering/reinforcement-learning/module-2.1-offline-rl-and-imitation-learning'],
+  ['2026-05-01', 'ai-ml-engineering/machine-learning/module-2.7-causal-inference-for-ml-practitioners'],
+  ['2026-05-01', 'ai-ml-engineering/machine-learning/module-2.6-fairness-and-bias-auditing'],
+  ['2026-05-01', 'ai-ml-engineering/machine-learning/module-2.5-conformal-prediction-and-uncertainty-quantification'],
+  ['2026-05-01', 'ai-ml-engineering/machine-learning/module-2.4-recommender-systems'],
+] as const;
+
+const text = {
+  en: {
+    eyebrow: 'KubeDojo status',
+    title: 'Quality pass progress',
+    intro:
+      'KubeDojo is being steadily refreshed. This page summarizes what learners need to know: how much of the curriculum is already through the current quality pass, what recently shipped, and which lessons are being reworked next.',
+    explainerTitle: 'What rework means',
+    explainer:
+      'A rework banner means a lesson is scheduled for a clearer explanation, stronger examples, or fresher practice material. The existing lesson remains available while that happens. A final-review banner means the rewrite is published but still waiting for one last independent read.',
+    complete: 'quality pass complete',
+    completeLabel: 'Complete',
+    reworkLabel: 'Being reworked',
+    reviewLabel: 'Final review',
+    sectionsTitle: 'Section summary',
+    sectionCol: 'Section',
+    doneCol: 'Complete',
+    progressCol: 'Progress',
+    recentTitle: 'Recently shipped',
+    currentTitle: 'Currently being reworked',
+    noRecent: 'No recent module changes were available while generating this page.',
+    noCurrent: 'No lessons are currently marked for rework.',
+    fallbackNote: "Scheduling dates aren't available in this build, so lessons are listed in curriculum order.",
+    updated: 'Static snapshot generated at build time. No learner data is collected here.',
+  },
+  uk: {
+    eyebrow: 'Статус KubeDojo',
+    title: 'Прогрес перевірки якості',
+    intro:
+      'KubeDojo поступово оновлюється. Ця сторінка показує головне для учнів: яка частина програми вже пройшла поточну перевірку якості, що нещодавно зʼявилося, і які уроки зараз переробляються.',
+    explainerTitle: 'Що означає переробка',
+    explainer:
+      'Банер переробки означає, що урок заплановано зробити зрозумілішим: кращі пояснення, сильніші приклади або свіжіші практичні завдання. Поточний урок залишається доступним. Банер фінальної перевірки означає, що оновлення вже опубліковане, але ще чекає останнього незалежного читання.',
+    complete: 'перевірку якості завершено',
+    completeLabel: 'Готово',
+    reworkLabel: 'Переробляється',
+    reviewLabel: 'Фінальна перевірка',
+    sectionsTitle: 'Підсумок за розділами',
+    sectionCol: 'Розділ',
+    doneCol: 'Готово',
+    progressCol: 'Прогрес',
+    recentTitle: 'Нещодавно опубліковано',
+    currentTitle: 'Зараз переробляється',
+    noRecent: 'Під час створення цієї сторінки не було доступних нещодавніх змін модулів.',
+    noCurrent: 'Зараз жоден урок не позначений для переробки.',
+    fallbackNote: 'Дати планування недоступні в цій збірці, тому уроки показано в порядку програми.',
+    updated: 'Статичний знімок створено під час збірки. Дані учнів тут не збираються.',
+  },
+}[locale];
+
+const docs = await getCollection('docs');
+const moduleDocs: StatusEntry[] = docs
+  .filter((entry) => isLearnerModule(entry.id))
+  .map((entry) => {
+    const data = entry.data as typeof entry.data & { slug?: string };
+    return {
+      id: entry.id,
+      title: cleanTitle(entry.data.title ?? titleFromId(entry.id)),
+      href: docHref(data.slug ?? entry.id),
+      section: sectionLabel(entry.id),
+      sectionKey: sectionKey(entry.id),
+      revisionPending: entry.data.revision_pending === true,
+      qaPending: entry.data.qa_pending === true,
+      queuedAt: null,
+    };
+  })
+  .sort((a, b) => a.id.localeCompare(b.id));
+
+const queueDates = loadQueuedDates(moduleDocs);
+for (const entry of moduleDocs) {
+  entry.queuedAt = queueDates.get(entry.id) ?? null;
+}
+
+const total = moduleDocs.length;
+const reworkCount = moduleDocs.filter((entry) => entry.revisionPending).length;
+const reviewCount = moduleDocs.filter((entry) => entry.qaPending).length;
+const completeCount = Math.max(0, total - reworkCount - reviewCount);
+const completePct = total > 0 ? Math.round((completeCount / total) * 100) : 0;
+
+const sectionMap = moduleDocs.reduce((acc, entry) => {
+  const row = acc.get(entry.sectionKey) ?? {
+    key: entry.sectionKey,
+    label: entry.section,
+    total: 0,
+    complete: 0,
+  };
+  row.total += 1;
+  if (!entry.revisionPending && !entry.qaPending) row.complete += 1;
+  acc.set(entry.sectionKey, row);
+  return acc;
+}, new Map<string, { key: string; label: string; total: number; complete: number }>());
+
+const sections = Array.from(sectionMap.values())
+  .sort((a, b) => a.label.localeCompare(b.label))
+  .map((row) => ({
+    ...row,
+    pct: row.total > 0 ? Math.round((row.complete / row.total) * 100) : 0,
+  }));
+
+const recent = loadRecentChanges(moduleDocs).slice(0, 8);
+const current = moduleDocs
+  .filter((entry) => entry.revisionPending)
+  .sort((a, b) => {
+    if (a.queuedAt && b.queuedAt) return a.queuedAt.localeCompare(b.queuedAt);
+    if (a.queuedAt) return -1;
+    if (b.queuedAt) return 1;
+    return a.id.localeCompare(b.id);
+  })
+  .slice(0, 5);
+const hasQueueAges = current.some((entry) => entry.queuedAt);
+
+function isLearnerModule(id: string): boolean {
+  if (id.startsWith('uk/')) return false;
+  const root = id.split('/')[0] ?? '';
+  const learnerRoots = new Set([
+    'ai',
+    'ai-history',
+    'ai-ml-engineering',
+    'cloud',
+    'k8s',
+    'linux',
+    'on-premises',
+    'platform',
+    'prerequisites',
+  ]);
+  if (!learnerRoots.has(root)) return false;
+  const file = id.split('/').at(-1) ?? id;
+  return file !== 'index';
+}
+
+function docHref(slug: string): string {
+  return `/${slug}/`;
+}
+
+function titleFromId(id: string): string {
+  const file = id.split('/').at(-1) ?? id;
+  return file
+    .replace(/^module-\d+(?:\.\d+)?-/, '')
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function cleanTitle(title: string): string {
+  return title.replace(/^Module\s+\d+(?:\.\d+)?:\s*/i, '').trim();
+}
+
+function sectionKey(id: string): string {
+  const parts = id.split('/');
+  if (parts[0] === 'k8s' && parts[1]) return `${parts[0]}/${parts[1]}`;
+  if (parts[0] === 'cloud' && parts[1]) return `${parts[0]}/${parts[1]}`;
+  if (parts[0] === 'ai-ml-engineering' && parts[1]) return `${parts[0]}/${parts[1]}`;
+  if (parts[0] === 'on-premises' && parts[1]) return `${parts[0]}/${parts[1]}`;
+  if (parts[0] === 'linux' && parts[1] && parts[2]) return `${parts[0]}/${parts[1]}/${parts[2]}`;
+  if (parts[0] === 'platform' && parts[1] && parts[2]) return `${parts[0]}/${parts[1]}/${parts[2]}`;
+  if (parts[0] === 'prerequisites' && parts[1]) return `${parts[0]}/${parts[1]}`;
+  return parts[0] ?? id;
+}
+
+function sectionLabel(id: string): string {
+  const key = sectionKey(id);
+  const overrides: Record<string, string> = {
+    'ai-ml-engineering': 'AI/ML Engineering',
+    cloud: 'Cloud',
+    'cloud/aws-essentials': 'Cloud / AWS Essentials',
+    'cloud/gcp-essentials': 'Cloud / GCP Essentials',
+    'cloud/azure-essentials': 'Cloud / Azure Essentials',
+    'cloud/eks-deep-dive': 'Cloud / EKS Deep Dive',
+    'cloud/gke-deep-dive': 'Cloud / GKE Deep Dive',
+    'cloud/aks-deep-dive': 'Cloud / AKS Deep Dive',
+    'k8s/cka': 'Kubernetes / CKA',
+    'k8s/ckad': 'Kubernetes / CKAD',
+    'k8s/cks': 'Kubernetes / CKS',
+    'k8s/kcna': 'Kubernetes / KCNA',
+    'k8s/kcsa': 'Kubernetes / KCSA',
+  };
+  if (overrides[key]) return overrides[key];
+  return key
+    .split('/')
+    .map((part) => part.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()))
+    .join(' / ');
+}
+
+function contentPathForId(id: string): string {
+  return `src/content/docs/${id}.md`;
+}
+
+function loadQueuedDates(entries: StatusEntry[]): Map<string, string> {
+  const out = new Map<string, string>();
+  if (isShallowGitRepo()) return out;
+  for (const entry of entries.filter((item) => item.revisionPending)) {
+    try {
+      const stdout = execFileSync(
+        'git',
+        ['blame', '--line-porcelain', '-L', '/^revision_pending:/,+1', contentPathForId(entry.id)],
+        { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+      );
+      const match = stdout.match(/^author-time (\d+)$/m);
+      if (!match) continue;
+      out.set(entry.id, new Date(Number(match[1]) * 1000).toISOString().slice(0, 10));
+    } catch {
+      // Git metadata is optional in static hosting builds.
+    }
+  }
+  return out;
+}
+
+function loadRecentChanges(entries: StatusEntry[]): RecentEntry[] {
+  const byPath = new Map(entries.map((entry) => [contentPathForId(entry.id), entry]));
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  const seen = new Set<string>();
+  const rows: RecentEntry[] = [];
+  if (isShallowGitRepo()) return recentFallback(byId);
+  try {
+    const stdout = execFileSync(
+      'git',
+      [
+        'log',
+        "--since=2 weeks ago",
+        '--date=short',
+        '--name-only',
+        "--pretty=format:commit|%ad|%s",
+        '--',
+        'src/content/docs/',
+      ],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
+    );
+    let date = '';
+    for (const rawLine of stdout.split('\n')) {
+      const line = rawLine.trim();
+      if (!line) continue;
+      if (line.startsWith('commit|')) {
+        date = line.split('|')[1] ?? '';
+        continue;
+      }
+      const entry = byPath.get(line);
+      if (!entry || seen.has(entry.id)) continue;
+      seen.add(entry.id);
+      rows.push({ date, title: entry.title, href: entry.href });
+    }
+  } catch {
+    // Git metadata is optional in static hosting builds.
+  }
+  if (rows.length > 0) return rows;
+  return recentFallback(byId);
+}
+
+function recentFallback(byId: Map<string, StatusEntry>): RecentEntry[] {
+  return recentFallbackIds.flatMap(([date, id]) => {
+    const entry = byId.get(id);
+    return entry ? [{ date, title: entry.title, href: entry.href }] : [];
+  });
+}
+
+function isShallowGitRepo(): boolean {
+  try {
+    return execFileSync('git', ['rev-parse', '--is-shallow-repository'], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim() === 'true';
+  } catch {
+    return true;
+  }
+}
+---
+
+<section class="kd-status">
+  <p class="kd-status-eyebrow">{text.eyebrow}</p>
+  <h1>{text.title}</h1>
+  <p class="kd-status-intro">{text.intro}</p>
+
+  <div class="kd-status-explainer">
+    <h2>{text.explainerTitle}</h2>
+    <p>{text.explainer}</p>
+  </div>
+
+  <div class="kd-status-overview" aria-label={text.title}>
+    <div class="kd-status-main-stat">
+      <span>{completePct}%</span>
+      <strong>{text.complete}</strong>
+    </div>
+    <div class="kd-status-progress" aria-label={`${completePct}% ${text.complete}`}>
+      <span style={`width: ${completePct}%`}></span>
+    </div>
+    <div class="kd-status-stats">
+      <div>
+        <strong>{completeCount}</strong>
+        <span>{text.completeLabel}</span>
+      </div>
+      <div>
+        <strong>{reworkCount}</strong>
+        <span>{text.reworkLabel}</span>
+      </div>
+      <div>
+        <strong>{reviewCount}</strong>
+        <span>{text.reviewLabel}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="kd-status-grid">
+    <section>
+      <h2>{text.recentTitle}</h2>
+      {
+        recent.length > 0 ? (
+          <ul class="kd-status-list">
+            {recent.map((item) => (
+              <li>
+                <time datetime={item.date}>{item.date}</time>
+                <a href={item.href}>{item.title}</a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="kd-status-muted">{text.noRecent}</p>
+        )
+      }
+    </section>
+
+    <section>
+      <h2>{text.currentTitle}</h2>
+      {
+        current.length > 0 ? (
+          <>
+            <ul class="kd-status-list">
+              {current.map((item) => (
+                <li>
+                  <time datetime={item.queuedAt ?? ''}>{item.queuedAt ?? '—'}</time>
+                  <a href={item.href}>{item.title}</a>
+                </li>
+              ))}
+            </ul>
+            {!hasQueueAges && <p class="kd-status-muted">{text.fallbackNote}</p>}
+          </>
+        ) : (
+          <p class="kd-status-muted">{text.noCurrent}</p>
+        )
+      }
+    </section>
+  </div>
+
+  <section>
+    <h2>{text.sectionsTitle}</h2>
+    <div class="kd-status-table-wrap">
+      <table class="kd-status-table">
+        <thead>
+          <tr>
+            <th>{text.sectionCol}</th>
+            <th>{text.doneCol}</th>
+            <th>{text.progressCol}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            sections.map((section) => (
+              <tr>
+                <td>{section.label}</td>
+                <td>
+                  {section.complete}/{section.total}
+                </td>
+                <td>
+                  <div class="kd-status-mini" aria-label={`${section.pct}%`}>
+                    <span style={`width: ${section.pct}%`}></span>
+                  </div>
+                </td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="kd-status-footnote">{text.updated}</p>
+</section>
+
+<style>
+  .kd-status {
+    max-width: 72rem;
+    margin: 0 auto;
+  }
+
+  .kd-status-eyebrow {
+    color: var(--sl-color-accent);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+  }
+
+  .kd-status h1 {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    margin: 0;
+  }
+
+  .kd-status h2 {
+    font-size: 1.25rem;
+    margin: 0 0 0.85rem;
+  }
+
+  .kd-status-intro {
+    color: var(--sl-color-gray-3);
+    font-size: 1.05rem;
+    max-width: 48rem;
+  }
+
+  .kd-status-explainer,
+  .kd-status-overview,
+  .kd-status-grid > section,
+  .kd-status-table-wrap {
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 8px;
+    padding: 1.25rem;
+    background: var(--sl-color-bg);
+  }
+
+  .kd-status-explainer {
+    margin: 1.5rem 0;
+  }
+
+  .kd-status-explainer p,
+  .kd-status-muted,
+  .kd-status-footnote {
+    color: var(--sl-color-gray-3);
+  }
+
+  .kd-status-overview {
+    margin-bottom: 1.5rem;
+  }
+
+  .kd-status-main-stat {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .kd-status-main-stat span {
+    color: var(--sl-color-accent);
+    font-family: var(--sl-font-mono);
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .kd-status-main-stat strong {
+    font-size: 1rem;
+  }
+
+  .kd-status-progress,
+  .kd-status-mini {
+    background: var(--sl-color-gray-6);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .kd-status-progress {
+    height: 12px;
+    margin: 1rem 0;
+  }
+
+  .kd-status-progress span,
+  .kd-status-mini span {
+    background: var(--sl-color-accent);
+    display: block;
+    height: 100%;
+  }
+
+  .kd-status-stats {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .kd-status-stats div {
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 8px;
+    padding: 0.9rem;
+  }
+
+  .kd-status-stats strong {
+    display: block;
+    font-family: var(--sl-font-mono);
+    font-size: 1.45rem;
+  }
+
+  .kd-status-stats span {
+    color: var(--sl-color-gray-3);
+    font-size: 0.85rem;
+  }
+
+  .kd-status-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 1.5rem;
+  }
+
+  .kd-status-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .kd-status-list li {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 6rem 1fr;
+    padding: 0.65rem 0;
+    border-top: 1px solid var(--sl-color-gray-6);
+  }
+
+  .kd-status-list li:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .kd-status-list time {
+    color: var(--sl-color-gray-3);
+    font-family: var(--sl-font-mono);
+    font-size: 0.8rem;
+  }
+
+  .kd-status-table-wrap {
+    overflow-x: auto;
+  }
+
+  .kd-status-table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  .kd-status-table th,
+  .kd-status-table td {
+    border-bottom: 1px solid var(--sl-color-gray-6);
+    padding: 0.65rem 0.5rem;
+    text-align: left;
+  }
+
+  .kd-status-table th {
+    color: var(--sl-color-gray-3);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+  }
+
+  .kd-status-mini {
+    height: 8px;
+    min-width: 8rem;
+  }
+
+  .kd-status-footnote {
+    font-size: 0.85rem;
+    margin-top: 1rem;
+  }
+
+  @media (max-width: 46rem) {
+    .kd-status-grid,
+    .kd-status-stats {
+      grid-template-columns: 1fr;
+    }
+
+    .kd-status-list li {
+      grid-template-columns: 1fr;
+      gap: 0.2rem;
+    }
+  }
+</style>
