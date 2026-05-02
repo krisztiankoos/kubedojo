@@ -163,6 +163,10 @@ For resources, track:
 | **S**aturation | Work queued/waiting |
 | **E**rrors | Error count |
 
+Kubernetes metrics usually arrive from more than one layer. The resource metrics pipeline can show recent CPU and memory usage for Pods and nodes, kube-state style metrics can describe object state such as desired replicas or Pod readiness, and application metrics should expose service behavior such as request rate, errors, duration, queue depth, and dependency failures. Treat those layers as complementary: platform metrics explain scheduling and runtime pressure, while application metrics explain whether users are harmed.
+
+In a Prometheus-style setup, scrape targets and labels need deliberate ownership. A ServiceMonitor, PodMonitor, or scrape annotation can make collection easy, but the metric names and labels still belong to the service team. Good Kubernetes labels such as namespace, service, version, route, method, and status help segment incidents; unbounded labels such as user ID, raw URL, session ID, and request ID belong in logs or traces instead of time-series storage.
+
 Logs are timestamped records of events, and they carry the details that metrics intentionally omit. A useful log line says which service emitted it, when it happened, what operation was attempted, which request or trace it belonged to, and which safe identifiers help connect it to other evidence. The difference between "payment failed" and a structured event with `service`, `level`, `trace_id`, `order_id`, and a sanitized error code is the difference between searching a haystack and querying a record.
 
 ```
@@ -214,6 +218,8 @@ Logs are timestamped records of events, and they carry the details that metrics 
 
 Kubernetes shapes logging practices in a specific way. Containers should generally write application logs to stdout and stderr, then a node-level or sidecar collector can move those logs to a backend such as Loki, Elasticsearch, or another system. That approach decouples application code from log shipping, but it also means teams must standardize fields before logs leave the Pod. If every service invents different names for request identifiers, logs become hard to correlate during exactly the moment when clarity matters most.
 
+The usual Kubernetes collection pattern is a node-level collector running as a DaemonSet, because it can read container log files for every Pod on that node and enrich records with namespace, Pod, container, and label metadata. A sidecar collector can still be useful when an application writes a legacy file format that must be transformed beside the workload, but it adds containers to every replica and couples log shipping to the Pod lifecycle. For KCNA-level reasoning, remember the default: write to stdout/stderr, collect at the node, enrich with Kubernetes metadata, and reserve sidecars for special cases.
+
 Traces follow requests across distributed systems by representing the total journey as a trace and each operation as a span. When a request enters an API gateway, calls an order service, reaches a payment service, and then queries a database, a trace can show which hop consumed time and which parent operation caused it. Tracing is most useful when context propagation works across every boundary, including HTTP, gRPC, messaging systems, background jobs, and service mesh proxies.
 
 ```
@@ -259,6 +265,8 @@ Traces follow requests across distributed systems by representing the total jour
 ```
 
 Trace terminology is simple, but the operational consequences are important. A trace ID should let you find the full request journey, while span IDs and parent span relationships preserve the shape of the work. Context propagation is the act of passing those identifiers onward so the next service can attach its work to the same trace. When propagation breaks, the system may still collect spans, but the request appears as disconnected fragments.
+
+In Kubernetes, tracing usually combines application instrumentation with a collector or backend. OpenTelemetry libraries can create spans inside the application, a service mesh can add network-level spans, and an OpenTelemetry Collector can run as a gateway Deployment, sidecar, or node agent depending on scale and control needs. The important design choice is not the collector shape by itself; it is whether trace context survives Pod-to-Pod calls, queue hops, retries, and background workers so logs and traces can describe one request instead of disconnected fragments.
 
 ### Trace Terminology
 
@@ -306,7 +314,7 @@ The best incident investigations move from broad symptoms to specific causes wit
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Consider the Black Friday outage pattern from the original lesson. During a massive holiday sale, the monitoring dashboard lit up red because order success rates dropped, which gave the team a clear metric symptom. They opened tracing and found requests stuck inside the `inventory-service` span, which narrowed the search from the whole platform to one dependency path. Then they queried logs by trace ID and found connection timeouts to a legacy database with a full connection pool.
+Consider a Black Friday outage pattern. During a massive holiday sale, the monitoring dashboard lit up red because order success rates dropped, which gave the team a clear metric symptom. They opened tracing and found requests stuck inside the `inventory-service` span, which narrowed the search from the whole platform to one dependency path. Then they queried logs by trace ID and found connection timeouts to a legacy database with a full connection pool.
 
 The reason that story matters is not the specific inventory database. The lesson is that each signal changed the search space. Metrics turned customer complaints into a measurable incident, traces prevented the team from investigating unrelated services, and logs revealed the concrete failure mode that could be mitigated. Without correlation, the same team might have stared at aggregate dashboards while restarting healthy components.
 
@@ -405,6 +413,19 @@ One practical habit is to annotate dashboards and traces with deployment changes
 
 Another habit is to distinguish readiness from true service quality. A readiness probe tells Kubernetes whether a Pod should receive traffic, but it may not cover every dependency or business path. A service can pass readiness while one important route fails. Observability closes that gap by measuring real request outcomes, dependency spans, and application-level errors. Readiness protects routing; observability protects reasoning.
 
+### Observability Maturity Levels
+
+Observability maturity is not a certificate; it is a way to evaluate what operations become possible. A team at a basic level can detect that something is down, but it may not know which users are affected or why. A mature team can connect symptoms to ownership, deployment context, traces, and safe logs quickly enough to choose a mitigation under pressure.
+
+| Level | Signals Available | What It Enables | Typical Gap |
+|-------|-------------------|-----------------|-------------|
+| 1. Basic monitoring | Uptime checks, CPU, memory, raw container logs | Detect total outages and obvious resource pressure | Partial failures and user journeys stay invisible |
+| 2. Service visibility | RED metrics, structured logs, Kubernetes events, rollout context | Scope impact by service, route, version, and namespace | Cross-service causality is still slow |
+| 3. Correlated observability | Trace propagation, trace IDs in logs, bounded labels, ownership metadata | Follow one request across services and hand off to the right team | Sampling, retention, and data sensitivity need governance |
+| 4. Learning system | Symptom alerts, error budgets, post-incident instrumentation fixes, cost reviews | Convert repeated unknown-unknowns into monitored known-unknowns | Tooling can drift unless owners maintain it |
+
+Use the levels as review questions. If a service has only node CPU and raw logs, it is not ready for subtle cloud native incidents even if the Pods are healthy. If a service has RED metrics but no trace context, the team can detect user harm but may still guess which dependency caused it. If a service has traces and logs but no retention and access policy, it may solve incidents while creating security and cost problems.
+
 ### From Incident Response to Learning
 
 The strongest observability programs feed post-incident learning back into instrumentation. After an incident, the team should ask which signal first detected the problem, which signal narrowed the search, which signal was missing, and which alert or dashboard created noise. Those answers are more useful than a generic demand for more monitoring. They point to concrete improvements such as adding trace IDs to error logs, bounding a metric label, or creating a symptom alert for a critical workflow.
@@ -451,7 +472,7 @@ Anti-patterns usually come from reasonable instincts taken too far. A team adds 
 | Broken trace context | Request paths appear as disconnected spans | Enforce propagation headers and test instrumentation in integration paths |
 | Raw payload logging | Sensitive data and noisy records enter the log backend | Log allowlisted fields, sanitize values, and apply retention by data class |
 
-The shorthand table below preserves the operational warnings from the original lesson. Read it as a compact checklist after you understand the tradeoffs behind each row, not as a replacement for the investigation discipline described above.
+The shorthand table below preserves the operational warnings as a compact checklist. Read it after you understand the tradeoffs behind each row, not as a replacement for the investigation discipline described above.
 
 | Mistake | Why It Hurts | Correct Understanding |
 |---------|--------------|----------------------|
@@ -550,6 +571,24 @@ In this exercise, you are the on-call engineer for a cloud-native e-commerce pla
 ### Setup
 
 Use a namespace, service name, and observability backend from your own lab environment if available. The examples assume an application namespace named `shop`, a frontend service, a cart service, and an inventory dependency, but the workflow works with any comparable multi-service application. Do not paste real tokens, customer data, or production payloads into a training document or shared chat while completing the exercise.
+
+If you do not have a demo microservice application, create a small practice target so you can still collect Kubernetes evidence. This does not create real distributed traces, but it gives you concrete Pods, Services, logs, labels, rollout events, and resource data to connect with the runbook decisions.
+
+```bash
+alias k=kubectl
+k create namespace obs-lab
+k -n obs-lab create deployment cart --image=nginx:1.25 --replicas=2
+k -n obs-lab expose deployment cart --port=80 --target-port=80
+k -n obs-lab label deployment cart app.kubernetes.io/name=cart app.kubernetes.io/version=1.25
+k -n obs-lab rollout restart deployment/cart
+k -n obs-lab get deploy,rs,pods,svc -l app=cart
+k -n obs-lab describe deployment cart
+k -n obs-lab logs deploy/cart --tail=20
+k -n obs-lab get events --sort-by=.lastTimestamp | tail -20
+k -n obs-lab top pods
+```
+
+If `k top pods` fails, note that the metrics API or metrics-server is unavailable in your lab and continue with the other evidence. That observation is itself useful: a cluster without resource metrics can still show object state and logs, but it cannot support USE-style resource triage from `kubectl` alone.
 
 ### Tasks
 
