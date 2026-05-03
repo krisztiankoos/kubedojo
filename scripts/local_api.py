@@ -1785,6 +1785,7 @@ def build_pipeline_stuck(
 
 _REVIEW_AUDIT_DIR = Path(".pipeline") / "reviews"
 _VALID_FACT_CHECK_STATUSES = {"verified", "unverified", "failed", "none"}
+_SAFE_REVIEW_FILENAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*(?:__[a-z0-9][a-z0-9._-]*)*\.md$")
 _LATEST_REVIEW_RE = re.compile(r"^## .*?— `REVIEW`.*?(?=^## |\Z)", re.MULTILINE | re.DOTALL)
 _FAILED_FACT_CHECK_RE = re.compile(r"^- \*\*FACT_CHECK\*\*:\s*(.+)$", re.MULTILINE)
 _UNVERIFIED_CLAIM_RE = re.compile(r"unverified:\s*(.+)", re.IGNORECASE)
@@ -1808,14 +1809,19 @@ def _safe_review_path_for_module_key(repo_root: Path, module_key: str) -> Path |
     normalized = _validate_module_key(repo_root, module_key)
     if normalized is None:
         return None
-    reviews_dir = (repo_root / _REVIEW_AUDIT_DIR).resolve()
+    try:
+        reviews_dir = (repo_root / _REVIEW_AUDIT_DIR).resolve()
+    except OSError:
+        return None
     filename = _module_key_to_review_filename(normalized)
     if "/" in filename or "\\" in filename:
+        return None
+    if not _SAFE_REVIEW_FILENAME_RE.fullmatch(filename):
         return None
     try:
         path = (reviews_dir / filename).resolve()
         path.relative_to(reviews_dir)
-    except (OSError, ValueError):
+    except (OSError, RuntimeError, ValueError):
         return None
     return path
 

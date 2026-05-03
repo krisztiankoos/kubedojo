@@ -16,10 +16,10 @@ Usage:
 """
 
 import argparse
-import re
 import subprocess
 import sys
 from pathlib import Path
+import re
 
 REPO_ROOT = Path(__file__).parent.parent
 DIST_DIR = REPO_ROOT / "dist"
@@ -344,7 +344,7 @@ def test_no_broken_builds():
     # Check that astro.config.mjs is valid (has required fields)
     config = read_file(REPO_ROOT / "astro.config.mjs")
     checks = [
-        ("Site URL configured", "kube-dojo.github.io" in config),
+        ("Site URL configured", re.search(r"https?://kube-dojo\.github\.io(?:/|\b)", config) is not None),
         ("i18n configured", "defaultLocale" in config and "locales" in config),
         ("Custom CSS configured", "customCss" in config),
         ("Hero override registered", "'./src/components/Hero.astro'" in config),
@@ -428,7 +428,7 @@ def main():
     print(f"{'=' * 50}")
 
     if failed > 0:
-        print(f"\nFailed tests:")
+        print("\nFailed tests:")
         for e in errors:
             print(e)
         sys.exit(1)

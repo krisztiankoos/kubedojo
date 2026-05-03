@@ -6,6 +6,18 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+_EMOJI_RANGES = (
+    (0x1F300, 0x1FAFF),  # symbols/pictographs & emoji blocks
+    (0x1F1E6, 0x1F1FF),  # regional indicator symbols
+    (0x2600, 0x27BF),    # misc symbols and dingbats
+)
+
+
+def _contains_emoji_char(char: str) -> bool:
+    codepoint = ord(char)
+    return any(start <= codepoint <= end for start, end in _EMOJI_RANGES)
+
+
 
 @dataclass
 class CheckResult:
@@ -112,7 +124,7 @@ def check_content_lines(content: str, path: Path | None = None) -> list[CheckRes
     # Remove code blocks
     body_no_code = re.sub(r"```[\s\S]*?```", "", body)
 
-    lines = [l for l in body_no_code.strip().split("\n") if l.strip()]
+    lines = [line for line in body_no_code.strip().split("\n") if line.strip()]
     count = len(lines)
 
     # Track-aware thresholds
@@ -149,11 +161,8 @@ def check_no_emojis(content: str) -> list[CheckResult]:
     # Strip code blocks first — checkmarks etc. inside code are fine
     content_no_code = re.sub(r"```[\s\S]*?```", "", content)
 
-    # Common emoji ranges (excludes technical symbols like ✓ ✗ → ←)
-    emoji_pattern = re.compile(
-        "[\U0001F300-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF]"
-    )
-    matches = emoji_pattern.findall(content_no_code)
+    # Common emoji-like ranges (covers broad pictograph ranges).
+    matches = [char for char in content_no_code if _contains_emoji_char(char)]
     passed = len(matches) == 0
     return [CheckResult("NO_EMOJI", passed,
                         f"Emojis found: {len(matches)}" if matches else

@@ -1,8 +1,19 @@
 // @ts-check
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+
+const projectRoot = fileURLToPath(new URL('.', import.meta.url));
+const ignoredDevWatchPaths = [
+  '.bridge',
+  '.cache',
+  '.pids',
+  '.pipeline',
+  '.worktrees',
+  'logs',
+].map((dir) => `${projectRoot}${dir}/**`);
 
 export default defineConfig({
   site: 'https://kube-dojo.github.io',
@@ -24,6 +35,11 @@ export default defineConfig({
     rehypePlugins: [rehypeKatex],
   },
   vite: {
+    server: {
+      watch: {
+        ignored: ignoredDevWatchPaths,
+      },
+    },
     build: {
       rollupOptions: {
         onwarn(warning, defaultWarn) {

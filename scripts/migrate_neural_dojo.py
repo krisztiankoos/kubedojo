@@ -55,19 +55,17 @@ PHASE_SLUGS = {
 }
 
 # Emoji stripping (kubedojo rule: no emojis in content)
-EMOJI_RE = re.compile(
-    "["
-    "\U0001F300-\U0001F9FF"  # symbols & pictographs
-    "\U0001F600-\U0001F64F"  # emoticons
-    "\U00002600-\U000027BF"  # misc symbols + dingbats
-    "\U0001F1E0-\U0001F1FF"  # flags
-    "\U00002700-\U000027BF"  # dingbats
-    "\U0001FA70-\U0001FAFF"  # symbols & pictographs ext-A
-    "\u2705"                 # check mark
-    "\u274C"                 # cross mark
-    "\u26A0"                 # warning
-    "]+"
+_EMOJI_RANGES = (
+    (0x1F300, 0x1FAFF),  # symbols/pictographs & emoji blocks
+    (0x1F1E6, 0x1F1FF),  # regional indicator symbols
+    (0x2600, 0x27BF),    # misc symbols and dingbats
 )
+
+
+def _contains_emoji_char(char: str) -> bool:
+    codepoint = ord(char)
+    return any(start <= codepoint <= end for start, end in _EMOJI_RANGES)
+
 
 
 def slugify(text: str) -> str:
@@ -80,7 +78,7 @@ def slugify(text: str) -> str:
 
 def strip_emojis(text: str) -> str:
     """Remove emoji characters from text."""
-    return EMOJI_RE.sub("", text)
+    return "".join(ch for ch in text if not _contains_emoji_char(ch))
 
 
 def extract_title(content: str) -> str | None:
