@@ -542,7 +542,7 @@ git checkout -b feat/nginx-deployment
 
 Create the Kubernetes manifests using two distinct, atomic commits with conventional commit messages. The namespace establishes the destination for later resources, and the Deployment consumes that namespace in a separate commit. Keeping those changes separate lets a reviewer verify the dependency order and revert one layer without rewriting the other.
 
-First, create the namespace manifest, because the Deployment should not be reviewed as though its target namespace appears from nowhere:
+Create the namespace manifest first. Keeping the namespace in its own file lets reviewers verify the target scope before they inspect workload settings that depend on it:
 
 ```yaml
 # namespace.yaml
@@ -552,14 +552,14 @@ metadata:
   name: web-tier
 ```
 
-Commit this file in isolation so the first atomic commit creates only the Kubernetes namespace prerequisite:
+Commit only the namespace prerequisite. This makes the first commit a small, reversible change with one clear purpose:
 
 ```bash
 git add namespace.yaml
 git commit -m "feat(k8s): add web-tier namespace"
 ```
 
-Next, create the deployment manifest, which should depend on the namespace but remain an independent review unit:
+Create the deployment manifest as a separate review unit. Its diff should show the workload, replica count, labels, and image without mixing in namespace setup:
 
 ```yaml
 # deployment.yaml
@@ -583,7 +583,7 @@ spec:
         image: nginx:1.27-alpine
 ```
 
-Commit this file in isolation so the second atomic commit introduces only the workload that will run inside the namespace:
+Commit only the workload. The second commit now tells reviewers exactly when application runtime configuration entered the branch:
 
 ```bash
 git add deployment.yaml
@@ -622,14 +622,14 @@ git push --force-with-lease origin feat/nginx-deployment
 
 In the real world, you would open a PR on GitHub. Here, you will simulate the repository maintainer reviewing and merging your code using a squash merge. A squash merge takes all commits from your feature branch, squashes them into a single new commit, and places it on the `main` branch, which keeps the main branch history concise while preserving review discussion in the pull request record.
 
-Checkout the `main` branch and merge the feature branch using the squash flag, which prepares the combined content without immediately creating the final integration commit:
+Checkout `main` and prepare a squash merge. The index will contain the combined branch result, but Git will not create the final integration commit yet:
 
 ```bash
 git checkout main
 git merge --squash feat/nginx-deployment
 ```
 
-At this point, Git has prepared the merge but has not created a commit, so checking status confirms exactly what will enter the squashed result:
+Check the prepared squashed result before committing. This is the maintainer's last local chance to confirm that only the reviewed namespace and Deployment files are staged:
 
 ```bash
 git status
@@ -637,7 +637,7 @@ git status
 
 Commit the squashed changes with a new conventional commit message that summarizes the entire PR rather than repeating the lower-level branch commits:
 
-```text
+```bash
 git commit -m "feat(web): introduce nginx deployment and namespace
 
 This adds the core web-tier namespace and the nginx deployment 
@@ -660,7 +660,7 @@ Now, delete your local feature branch to keep your workspace clean after the int
 git branch -d feat/nginx-deployment
 ```
 
-Finally, fetch from upstream and sync your origin to complete the triangle, proving that local main, upstream main, and fork main converge again:
+Fetch from upstream and sync your fork's `main`. The final rebase makes your fork reflect the accepted upstream history instead of leaving a stale local integration state:
 
 ```bash
 git fetch upstream
