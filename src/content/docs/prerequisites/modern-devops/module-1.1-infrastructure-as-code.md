@@ -6,15 +6,15 @@ sidebar:
   order: 2
 ---
 
-# Module 1.1: Infrastructure as Code
-
-> **Complexity**: `[MEDIUM]` - Foundational concept
+> **Complexity**: `[MEDIUM]` - Foundational concept.
 >
-> **Time to Complete**: 35-40 minutes
+> **Time to Complete**: 35-40 minutes.
 >
-> **Prerequisites**: Basic command line skills, Git basics, and enough YAML familiarity to read indentation
+> **Prerequisites**: Basic command line skills, Git basics, and enough YAML familiarity to read indentation.
 
-## Learning Outcomes
+---
+
+## What You'll Be Able to Do
 
 After this module, you will be able to:
 
