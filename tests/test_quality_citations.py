@@ -8,8 +8,10 @@ explicitly: only ``SUPPORTS`` keeps; ``PARTIAL``, ``NO``, ``FETCH_FAILED``,
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 
@@ -144,6 +146,18 @@ def _verdict_result(verdict: str, reasoning: str = "ok", excerpt: str = "") -> D
     )
 
 
+_URL_RE = re.compile(r"https?://[^\s)]+")
+
+
+def _contains_url_host(text: str, host: str) -> bool:
+    target = host.lower()
+    for item in _URL_RE.findall(text):
+        parsed = urlsplit(item)
+        if parsed.hostname and parsed.hostname.lower() == target:
+            return True
+    return False
+
+
 def test_verify_returns_supports_when_llm_says_supports() -> None:
     entry = SourceEntry(
         raw_line="- [T](https://example.com/)", url="https://example.com/", title="T", claim="a claim"
@@ -251,8 +265,8 @@ def test_rebuild_keeps_only_listed_urls() -> None:
     keep = [entries[0]]  # keep only the first
     new_text, dropped = citations.rebuild_section(text, start, end, keep)
     assert dropped is False
-    assert "kubernetes.io/docs" in new_text
-    assert "example.com/blog" not in new_text
+    assert _contains_url_host(new_text, "kubernetes.io")
+    assert not _contains_url_host(new_text, "example.com")
     assert "## Sources" in new_text
     assert "## Next Module" in new_text
 
@@ -345,7 +359,7 @@ def test_process_all_partial_drops_section(module_file: Path) -> None:
 def test_process_mixed_keeps_only_supports(module_file: Path) -> None:
     # First URL supports, second partial.
     def fake_verifier(prompt: str) -> DispatchResult:
-        if "kubernetes.io" in prompt:
+        if _contains_url_host(prompt, "kubernetes.io"):
             return _verdict_result("supports")
         return _verdict_result("partial")
 
@@ -358,8 +372,8 @@ def test_process_mixed_keeps_only_supports(module_file: Path) -> None:
     assert result.kept[0].entry.url == "https://kubernetes.io/docs/"
     assert len(result.removed) == 1
     assert result.removed[0].verdict == CitationVerdict.PARTIAL
-    assert "kubernetes.io" in result.new_text
-    assert "example.com/blog" not in result.new_text
+    assert _contains_url_host(result.new_text, "kubernetes.io")
+    assert not _contains_url_host(result.new_text, "example.com")
 
 
 def test_process_fetch_failure_treated_as_remove(module_file: Path) -> None:
