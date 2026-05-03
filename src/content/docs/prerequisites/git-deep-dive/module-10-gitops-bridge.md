@@ -8,11 +8,15 @@ sidebar:
   order: 10
 ---
 
-# Module 10: Bridge to GitOps — The Infrastructure Source
+> **Complexity**: `[MEDIUM]`.
+>
+> **Time to Complete**: 60 minutes.
+>
+> **Prerequisites**: Modules 1-9 of the Git Deep Dive, basic Kubernetes manifests, pull requests, semantic versioning, and enough command-line comfort to inspect YAML safely.
 
-**Complexity:** MEDIUM. **Time to complete:** 60 minutes. **Prerequisites:** Modules 1-9 of the Git Deep Dive, basic Kubernetes manifests, pull requests, semantic versioning, and enough command-line comfort to inspect YAML safely.
+---
 
-## Learning Outcomes
+## What You'll Be Able to Do
 
 - Design a multi-environment infrastructure repository structure using Kustomize overlays to eliminate configuration duplication.
 - Implement Git tag-based promotion workflows to transition configurations reliably from staging to production.
