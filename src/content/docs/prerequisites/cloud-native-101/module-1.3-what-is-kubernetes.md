@@ -200,7 +200,7 @@ metadata:
 spec:
   containers:
   - name: nginx
-    image: nginx:1.35
+    image: nginx:1.27
 ```
 
 A bare Pod is useful for learning, but it is rarely the production abstraction you want. If someone deletes a standalone Pod, there may be no higher-level object responsible for replacing it. That is why applications are commonly declared through a Deployment. The Deployment says how many replicas should exist and how updates should move from one version to another, while lower-level controllers create and maintain the matching pods.
@@ -223,7 +223,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.35
+        image: nginx:1.27
 ```
 
 The Deployment example is small, but it contains an important promise. If the desired replica count is three and one pod disappears, the controller creates another pod. If you update the template to a new image, the Deployment controller coordinates a rollout rather than asking you to stop all old pods and start all new pods manually. This is desired-state management applied to application operations.
@@ -500,7 +500,7 @@ Most clusters include namespaces such as `default`, `kube-system`, and `kube-pub
 - [ ] **Implement a simple Pod** and then predict what information Kubernetes stores about scheduling, image pulling, and container state.
 
 ```bash
-k run hello --image=nginx:1.35 --restart=Never
+k run hello --image=nginx:1.27 --restart=Never
 k get pods
 ```
 
@@ -556,8 +556,8 @@ The Pod should disappear and stay gone because you created a standalone Pod with
 - [Kubernetes Documentation: Using kubectl](https://kubernetes.io/docs/reference/kubectl/)
 - [Kubernetes Documentation: Production Environment](https://kubernetes.io/docs/setup/production-environment/)
 - [Amazon EKS Documentation: What is Amazon EKS?](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html)
-- [Google Kubernetes Engine Documentation: GKE Overview](https://cloud.google.com/kubernetes-engine/docs/concepts/kubernetes-engine-overview)
-- [Azure Kubernetes Service Documentation: What is AKS?](https://learn.microsoft.com/azure/aks/what-is-aks)
+- [Google Kubernetes Engine Documentation: GKE Overview](https://docs.cloud.google.com/kubernetes-engine/docs/concepts/kubernetes-engine-overview)
+- [Azure Kubernetes Service Documentation: What is AKS?](https://learn.microsoft.com/en-us/azure/aks/what-is-aks)
 
 ## Next Module
 
