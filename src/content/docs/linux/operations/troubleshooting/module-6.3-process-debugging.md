@@ -11,17 +11,14 @@ lab:
   difficulty: advanced
   environment: ubuntu
 ---
-# Module 6.3: Process Debugging
 
-> **Linux Troubleshooting** | Complexity: `[COMPLEX]` | Time: 30-35 min
+> **Complexity**: `[COMPLEX]`.
+>
+> **Time to Complete**: 30-35 minutes.
+>
+> **Prerequisites**: Module 1.2 Processes & Systemd, Module 6.2 Log Analysis, basic shell pipelines, file descriptors, signals, and system calls.
 
-## Prerequisites
-
-Before starting this module, you should be comfortable reading process lists, interpreting systemd service status, and following logs over time. Process debugging is where those skills become operational: instead of asking only what a program reported, you ask what the kernel can prove the program is doing.
-
-- **Required**: [Module 1.2: Processes & Systemd](/linux/foundations/system-essentials/module-1.2-processes-systemd/)
-- **Required**: [Module 6.2: Log Analysis](../module-6.2-log-analysis/)
-- **Helpful**: Basic shell pipelines, file descriptors, signals, and system calls
+---
 
 ## What You'll Be Able to Do
 
@@ -32,6 +29,14 @@ After this module, you will be able to:
 - **Evaluate** process states, file descriptors, limits, and kernel wait channels to separate CPU problems from I/O, lock, and lifecycle problems.
 - **Debug** containerized processes by identifying namespaces, entering the right process context with `nsenter`, and checking the same Linux primitives from inside that context.
 - **Design** a low-risk production debugging plan that gathers useful evidence while limiting performance impact and avoiding accidental data exposure.
+
+## Prerequisites
+
+Before starting this module, you should be comfortable reading process lists, interpreting systemd service status, and following logs over time. Process debugging is where those skills become operational: instead of asking only what a program reported, you ask what the kernel can prove the program is doing.
+
+- **Required**: [Module 1.2: Processes & Systemd](/linux/foundations/system-essentials/module-1.2-processes-systemd/)
+- **Required**: [Module 6.2: Log Analysis](../module-6.2-log-analysis/)
+- **Helpful**: Basic shell pipelines, file descriptors, signals, and system calls
 
 ## Why This Module Matters
 
@@ -49,7 +54,14 @@ A Linux process is not a mysterious black box once you know which boundary to in
 
 When a service is hung, the first question is not "which command should I run?" The better question is "what kind of waiting would explain this symptom?" Waiting on disk, waiting on a socket, waiting on a lock, sleeping on a timer, and spinning in user-space all look different if you check the right evidence. A disciplined debugger narrows the search before attaching a tracer.
 
-Think of the process as a witness with several interpreters. Logs are one interpreter, but they only repeat what the application decided to say. The scheduler can tell you whether the process is runnable, sleeping, stopped, or already dead. The descriptor table can tell you which files, sockets, pipes, and deleted inodes still matter. The system call stream can show the exact kernel request being made right now. Good debugging means interviewing those interpreters in an order that preserves evidence and avoids unnecessary disruption.
+Start with a snapshot that names the target and shows the kernel's current classification. These fields are enough to catch many wrong-PID, restarted-service, and blocked-wait mistakes before you attach a heavier tool.
+
+```bash
+PID="$(pgrep -n bash)"
+ps -o pid,ppid,lstart,stat,wchan:24,comm,args -p "$PID"
+readlink -f "/proc/$PID/exe"
+tr '\0' ' ' < "/proc/$PID/cmdline"; printf '\n'
+```
 
 ```text
 +------------------------------- Process Debugging Layers -------------------------------+
@@ -97,21 +109,36 @@ The same workflow applies whether the process is a local daemon, a shell command
 
 A good answer usually starts with `ps -o pid,ppid,stat,wchan,comm -p "$PID"` and then uses the result to decide what to inspect next. If the process is sleeping in a recognizable wait channel, you have a kernel-side clue. If it is constantly runnable and burning CPU, you need a different path, possibly sampling or profiling instead of descriptor inspection.
 
-This first decision also protects you from confirmation bias. If you already believe the network is broken, you may jump directly to packet capture and miss a process stuck on a local file lock. If you already believe memory pressure is the issue, you may inspect heap size while the process is blocked on a deleted log file that is filling a volume. A small baseline from `ps` and `/proc` is not busywork; it is how you keep the investigation honest when the incident channel is full of confident guesses.
+Use the wait channel to choose a filter. `do_epoll_wait` usually points toward socket or event-loop waiting, `futex_wait_queue` toward locks or runtime scheduling, and filesystem wait channels toward storage or mount health. The name is not a root cause, but it keeps the next command specific.
+
+```bash
+WCHAN="$(ps -o wchan= -p "$PID" | tr -d ' ')"
+case "$WCHAN" in
+  *epoll*) echo "Next: trace network/event activity briefly" ;;
+  *futex*) echo "Next: trace futex waits or inspect thread stacks" ;;
+  *nfs*|*ext4*|*xfs*|*blk*) echo "Next: inspect mounts, disk latency, and kernel logs" ;;
+  *) echo "Next: combine /proc descriptors with a narrow trace" ;;
+esac
+```
 
 ## Core Section 2: Use `/proc` as the Ground Truth Baseline
 
 The `/proc` filesystem is a live view of kernel process metadata. It is not an ordinary directory tree stored on disk; it is a virtual interface that lets you ask the kernel about processes, descriptors, memory maps, limits, environment variables, and namespace membership. That makes it the safest first stop for most investigations.
 
-Begin by identifying the exact process you are debugging. In incidents, operators often inspect the wrong worker because several commands share the same name or a supervisor has already restarted the service. Confirm the PID, parent PID, command line, and start time before interpreting deeper evidence.
-
-The word "baseline" matters here because `/proc` evidence is most useful when it is captured before you change anything. Restarting a service resets start time, closes descriptors, clears pending signals, and replaces the exact process you needed to understand. Even attaching a tracer can change timing. A short read-only baseline gives you a durable snapshot that can be shared with teammates, compared with later samples, and used to decide whether a mitigation removed the symptom or merely erased the evidence.
+Begin by identifying the exact process you are debugging. In incidents, operators often inspect the wrong worker because several commands share the same name or a supervisor has already restarted the service. Confirm the PID, parent PID, command line, and start time before interpreting deeper evidence, then save the small read-only snapshot before any restart closes descriptors or clears state.
 
 ```bash
 pgrep -a bash | head
 PID="$(pgrep bash | head -n 1)"
 printf 'Examining PID=%s\n' "$PID"
 ps -o pid,ppid,lstart,stat,wchan,comm,args -p "$PID"
+{
+  date -Is
+  ps -o pid,ppid,lstart,stat,wchan,comm,args -p "$PID"
+  readlink "/proc/$PID/exe"
+  ls -l "/proc/$PID/fd" | sed -n '1,20p'
+  grep -E 'State|Threads|VmRSS|VmSize|FDSize' "/proc/$PID/status"
+} > "/tmp/process-$PID-baseline.txt"
 ```
 
 The command line and executable symlink answer different questions. `/proc/$PID/cmdline` shows the arguments used to start the process, while `/proc/$PID/exe` points to the executable image that is still mapped by the process. If a deployment replaced or deleted the binary on disk, the symlink can show a deleted marker even while the old program continues running from its mapped image.
@@ -180,7 +207,15 @@ If the count is near the soft limit and most descriptors point to sockets, you p
 
 The answer is that unlinked files still consume disk blocks while any process holds an open descriptor to them. Directory entries are gone, but the underlying inode remains alive until the final descriptor closes. A restart works because it closes the descriptors, not because it repairs the filesystem.
 
-When you write an incident note from `/proc` evidence, separate observation from interpretation. "PID 18231 has 1,820 descriptors and a soft limit of 2,048" is an observation. "The process is leaking sockets" is an interpretation that requires descriptor classification and usually another sample over time. This distinction makes your recommendation stronger because teammates can verify the raw evidence even if they disagree about the cause. It also makes rollback decisions calmer because the team knows which fact would change the plan.
+For a leak suspicion, add a second sample instead of trusting a single count. A growing descriptor count plus repeated socket targets is different from a stable count near a legitimate high-water mark.
+
+```bash
+for i in 1 2 3; do
+  printf '%s fd_count=%s\n' "$(date +%H:%M:%S)" "$(ls "/proc/$PID/fd" | wc -l)"
+  lsof -p "$PID" -P -n 2>/dev/null | awk 'NR > 1 {print $5}' | sort | uniq -c | sort -nr | sed -n '1,8p'
+  sleep 10
+done
+```
 
 ## Core Section 3: Trace System Calls with `strace` Without Losing the Plot
 
@@ -251,13 +286,14 @@ timeout 5s strace -tt -T -e trace=file -p "$PID" 2>/tmp/live-file.trace || true
 sed -n '1,30p' /tmp/live-file.trace
 ```
 
-Some systems restrict tracing for security. If attaching fails with an operation-not-permitted error, check whether you have the same UID, sufficient privileges, and a compatible `ptrace_scope` setting. Do not disable security controls casually on shared hosts; capture what you can from `/proc` first and escalate with a clear reason if tracing is necessary.
-
-Privacy review is part of tracing, not an afterthought. System call arguments may include internal hostnames, filenames that reveal customer identifiers, command-line tokens, and enough request data to create a compliance problem if pasted into a public ticket. Prefer writing traces to a restricted file, collecting the minimum `-s` string length that answers the question, and summarizing the finding in plain language. The goal is to prove the mechanism, not to turn the incident record into an accidental data dump.
+Some systems restrict tracing for security. If attaching fails with an operation-not-permitted error, check whether you have the same UID, sufficient privileges, and a compatible `ptrace_scope` setting. Do not disable security controls casually on shared hosts; capture what you can from `/proc` first and escalate with a clear reason if tracing is necessary. When tracing is approved, write to a restricted file, keep strings short unless you need payload evidence, and prefer `-yy` only when file-descriptor paths are part of the question.
 
 ```bash
 cat /proc/sys/kernel/yama/ptrace_scope 2>/dev/null || true
 id
+umask 077
+timeout 5s strace -f -tt -T -s 80 -e trace=file -p "$PID" -o "/tmp/trace-$PID-file.txt" 2>/dev/null || true
+sed -n '1,30p' "/tmp/trace-$PID-file.txt"
 ```
 
 ## Core Section 4: Interpret Process States, Wait Channels, and Zombies
@@ -467,33 +503,109 @@ timeout 5s strace -f -tt -T -s 120 -e trace=file,network -p "$PID" -o /tmp/proce
 ls -l /tmp/process-debug.trace
 ```
 
-## Patterns & Anti-Patterns
+## Process Debugging Playbooks
 
-Process debugging works best when the team follows patterns that reduce uncertainty before applying force. The first pattern is evidence layering: begin with read-only process identity, state, limits, and descriptor evidence, then move to filtered tracing only when the cheap layer cannot answer the question. This pattern scales because different responders can collect the same baseline without disrupting the service, and the incident lead can compare snapshots across hosts or replicas before choosing a mitigation.
+Use these playbooks when the first baseline points to a specific failure class. Each one starts with read-only evidence and adds a narrow trace only when the read-only layer cannot answer the question.
 
-The second pattern is hypothesis-bound tracing. A trace should have a target sentence such as "prove which path returns `ENOENT`" or "prove whether the process is stuck in `connect` to the upstream API." That target determines `-e trace=file`, `-e trace=network`, `-e trace=process`, `-f`, timing flags, and the capture window. Teams that write the hypothesis before the command usually produce shorter traces, fewer privacy problems, and clearer handoffs to application owners.
+### Playbook: Event Loop or Socket Wait
 
-The third pattern is namespace-aware reproduction. In container and Kubernetes investigations, the host view can be a useful starting point, but it is not automatically the process view. A host route, resolver, mount table, or PID number may differ from the workload's namespace. Entering the relevant namespace before testing prevents false confidence and keeps the team from changing application configuration when the real difference is routing, DNS, or mounted state.
+If `wchan` shows an event wait such as `do_epoll_wait`, the process may be idle by design, starved of incoming work, or waiting on network events that never complete. Confirm open sockets and then trace network syscalls briefly.
 
-The fourth pattern is trend before limit change. Descriptor counts, thread counts, memory figures, and open deleted files should be sampled more than once when the system is stable enough to do so. A snapshot near a limit explains the immediate failure, but the trend explains whether the fix is capacity, cleanup, backpressure, or restart. This distinction matters because a limit increase can be either a responsible mitigation or a way to delay a larger incident.
+```bash
+PID="$(pgrep -n bash)"
+ps -o pid,stat,wchan:24,comm,args -p "$PID"
+lsof -a -p "$PID" -i -P -n 2>/dev/null | sed -n '1,30p'
+timeout 5s strace -f -tt -T -e trace=network -p "$PID" -o "/tmp/trace-$PID-network.txt" 2>/dev/null || true
+grep -E 'connect|accept|recvfrom|sendto|poll|epoll' "/tmp/trace-$PID-network.txt" | sed -n '1,40p'
+```
 
-The most damaging anti-pattern is force-first debugging. Repeatedly restarting, killing, or scaling a workload may restore a green dashboard while destroying the evidence needed to explain the failure. That habit trains the team to treat process incidents as mysteries that can only be cleared, not diagnosed. The better alternative is to capture a small baseline first, choose one reversible mitigation, and record which evidence changed afterward.
+Interpretation depends on direction. Repeated `connect` calls returning `ETIMEDOUT` or `ECONNREFUSED` point toward routing, policy, DNS, or the upstream service. A quiet trace while requests are supposed to be active can mean you attached to the wrong worker, the application is stuck before the network call, or the event loop has no work to process.
 
-Another anti-pattern is namespace blindness. A teammate tests from the host, sees success, and declares the container innocent even though the application lives in a different network or mount namespace. The safer alternative is to test from the process context whenever namespace boundaries are part of the system. This is not slower in practice; it prevents long detours through upstream services that were never part of the failing path.
+### Playbook: Futex Waits and Thread Stalls
 
-A final anti-pattern is evidence hoarding. Operators sometimes collect large traces, full environments, and wide `lsof` dumps because they fear missing something. That can expose secrets, slow production processes, and create so much data that no one reads it carefully. A better practice is to capture the minimum evidence that supports or falsifies the current theory, then expand only when the result is ambiguous.
+Futex-heavy traces often mean a thread is waiting on a lock, condition variable, runtime scheduler, or worker pool. That is application behavior expressed through a kernel primitive, so inspect all threads before blaming the kernel.
 
-## Decision Framework
+```bash
+PID="$(pgrep -n bash)"
+for task in /proc/"$PID"/task/*; do
+  TID="${task##*/}"
+  printf 'TID=%s ' "$TID"
+  ps -o stat,wchan:24,comm -p "$TID" --no-headers
+done | sed -n '1,40p'
 
-Use the symptom to choose the first low-risk question, then let the answer select the next tool. If the process is alive but not doing work, start with `ps` state, wait channel, parent, and command-line identity. If the state suggests ordinary sleep, inspect descriptors and limits before tracing; if it suggests uninterruptible sleep, investigate storage, filesystems, drivers, and kernel wait evidence. If the process is runnable and consuming CPU, process debugging may still identify descriptors or children, but profiling and application-level sampling often become the better next step.
+timeout 5s strace -f -tt -T -e trace=futex -p "$PID" -o "/tmp/trace-$PID-futex.txt" 2>/dev/null || true
+sed -n '1,40p' "/tmp/trace-$PID-futex.txt"
+```
 
-When the symptom involves files, configuration, disk space, or unmount failures, prefer `/proc/$PID/fd`, `/proc/$PID/limits`, and process-specific `lsof` before a trace. These tools answer what the process already has open and what the kernel will enforce. Move to `strace -e trace=file` when you need to observe a fresh attempt to open, stat, rename, or unlink a path. If the trace shows `ENOENT`, check paths and environment; if it shows `EACCES`, check permissions and security policy; if it succeeds, move the investigation above the kernel boundary.
+Long waits in a few worker threads are different from every thread waiting on the same lock. If all request-handling threads wait on one futex while a single thread is runnable, the next owner may need language-level stack dumps, runtime profiling, or application lock analysis rather than more Linux tracing.
 
-When the symptom involves network timeouts, begin by deciding whose network view matters. A host-level test is useful only if the process shares the host network namespace. For a containerized process, identify the host PID and enter the network namespace before testing routes, DNS, and connectivity. Use `lsof -i` or socket ownership tools to understand listeners and established connections, then use filtered network tracing briefly if you must prove whether the process attempts a connection at all.
+### Playbook: Memory Growth Without Clear CPU Pressure
 
-When the symptom involves children, wrappers, short-lived helpers, or zombies, inspect the process tree and use `strace -f` only when tracing is justified. A parent process may look healthy while the child that opens the missing file or contacts the upstream API exits immediately. A zombie tells you the child already exited and the parent failed to reap it, so the repair target is usually the parent or supervisor. This decision prevents wasted effort trying to kill a process body that no longer exists.
+Process memory debugging starts by separating virtual size from resident memory, swap, heap growth, mapped files, and thread count. `/proc` will not explain every allocator decision, but it prevents guesses based only on `top`.
 
-Finally, decide how much evidence is safe to share. A process baseline can usually be summarized directly in an incident ticket, while trace files and environment dumps require redaction and restricted storage. If the next action needs another team, provide the smallest reproducible claim: the PID, timestamp, state, descriptor evidence, trace filter, and the exact syscall or namespace observation that supports escalation. That kind of handoff lets the next owner continue the reasoning instead of starting over.
+```bash
+PID="$(pgrep -n bash)"
+grep -E 'VmSize|VmRSS|VmSwap|RssAnon|RssFile|Threads' "/proc/$PID/status"
+grep -E '\\[heap\\]|\\.so|deleted' "/proc/$PID/maps" | sed -n '1,30p'
+
+for i in 1 2 3; do
+  printf '%s ' "$(date +%H:%M:%S)"
+  grep -E 'VmRSS|RssAnon|Threads' "/proc/$PID/status" | tr '\n' ' '
+  printf '\n'
+  sleep 10
+done
+```
+
+If `RssAnon` grows while descriptor and thread counts are stable, hand off to allocator or runtime profiling. If memory growth appears with thread growth, inspect `/proc/$PID/task` and the application worker lifecycle. If mapped deleted files appear in `/proc/$PID/maps`, the process may still hold old libraries or files after a deployment.
+
+### Playbook: Kubernetes 1.35+ Workload Debugging
+
+Kubernetes adds API objects and container runtimes, but the kernel evidence still lives with the process. Define the `kubectl` alias once, find the pod, use an ephemeral container when the original image lacks tools, and then map the investigation back to Linux process primitives.
+
+```bash
+alias k=kubectl
+NS=default
+POD="$(k get pods -n "$NS" -o jsonpath='{.items[0].metadata.name}')"
+k describe pod "$POD" -n "$NS" | sed -n '1,80p'
+k debug -n "$NS" -it "$POD" --image=busybox:1.36 --target="$POD" -- sh
+```
+
+Inside the debug container, start with process identity and namespaces. If the pod shares a process namespace with the target container, `/proc` and `ps` can show the workload directly. If it does not, use the node/runtime workflow approved by your platform team to find the host PID, then enter only the namespace you need.
+
+```bash
+ps -o pid,ppid,stat,comm,args
+ls -l /proc/1/ns
+cat /proc/1/limits | sed -n '1,12p'
+ls -l /proc/1/fd | sed -n '1,20p'
+```
+
+Use host-level `nsenter` when you have the node PID and need the workload's network or mount view. That distinction matters because host DNS and routes can succeed while the container namespace fails.
+
+```bash
+TARGET_PID=12345
+sudo nsenter --target "$TARGET_PID" --net ip route
+sudo nsenter --target "$TARGET_PID" --net getent hosts kubernetes.default.svc
+sudo nsenter --target "$TARGET_PID" --mount ls -l /proc/1/root
+```
+
+### Playbook: Minimal Escalation Bundle
+
+When another team owns the next fix, send evidence that is specific enough to continue the investigation and small enough to review. A useful bundle includes the target PID, command line, start time, state, wait channel, descriptor count, relevant descriptor sample, limit comparison, trace filter, and the exact syscall or namespace observation.
+
+```bash
+PID="$(pgrep -n bash)"
+OUT="/tmp/process-$PID-escalation.txt"
+{
+  date -Is
+  ps -o pid,ppid,lstart,stat,wchan:24,comm,args -p "$PID"
+  grep -E 'State|Threads|VmRSS|VmSwap|FDSize' "/proc/$PID/status"
+  grep 'Max open files' "/proc/$PID/limits"
+  printf 'fd_count=%s\n' "$(ls "/proc/$PID/fd" | wc -l)"
+  ls -l "/proc/$PID/fd" | sed -n '1,30p'
+} > "$OUT"
+chmod 600 "$OUT"
+sed -n '1,80p' "$OUT"
+```
 
 ## Did You Know?
 
