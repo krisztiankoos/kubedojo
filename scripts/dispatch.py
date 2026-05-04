@@ -312,6 +312,13 @@ def dispatch_gemini(prompt: str, model: str | None = None,
     ``use_subscription`` selects the auth path: ``False`` → API key (default),
     ``True`` → strip keys and use OAuth. ``None`` defers to
     ``KUBEDOJO_GEMINI_SUBSCRIPTION`` (True if set, else False).
+
+    NOTE 2026-05-04: when ``GEMINI_API_KEY`` is set, ``dispatch_gemini_with_retry``
+    now intercepts before this function and routes via ``dispatch_gemini_rest``.
+    The ``use_subscription=False`` (API-key) branch here is therefore largely
+    dead code under the with-retry orchestrator — kept for direct-callers and
+    as a fallback when no API key is present. TODO: prune in a follow-up PR
+    once all programmatic callers are confirmed to go through ``with_retry``.
     """
     if model is None:
         model = GEMINI_REVIEW_MODEL if review else GEMINI_DEFAULT_MODEL
@@ -407,6 +414,14 @@ def dispatch_gemini_with_retry(prompt: str, model: str = GEMINI_DEFAULT_MODEL,
     base_delay = 30
     output = ""
     use_subscription = _FORCE_GEMINI_SUBSCRIPTION
+
+    # When review=True and the caller did not pass an explicit non-default
+    # model, promote to GEMINI_REVIEW_MODEL. dispatch_gemini_rest only does
+    # this swap when model is None, but this function defaults model to
+    # GEMINI_DEFAULT_MODEL — so without this branch, programmatic callers
+    # using `review=True` would silently get Flash on the REST path.
+    if review and model == GEMINI_DEFAULT_MODEL:
+        model = GEMINI_REVIEW_MODEL
 
     # Primary: REST API key path. Skip if MCP tools requested or no key in env.
     if not mcp and (os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")):
