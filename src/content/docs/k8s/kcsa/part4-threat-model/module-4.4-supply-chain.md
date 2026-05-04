@@ -162,8 +162,8 @@ CI/CD pipeline attacks sit in the middle of the chain, where attackers can turn 
 │  ├── Secret injection                                      │
 │  └── Configuration modification                            │
 │                                                             │
-│  REAL-WORLD: 2020 trusted-update backdoor                  │
-│  REAL-WORLD: 2021 CI bash-uploader tampering               │
+│  REAL-WORLD: Build pipeline compromise                     │
+│  REAL-WORLD: CI tool tampering                             │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
