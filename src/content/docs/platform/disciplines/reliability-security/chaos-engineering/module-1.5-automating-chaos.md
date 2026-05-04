@@ -1166,7 +1166,6 @@ Key takeaways:
 
 Return to the [Chaos Engineering README]() to review the complete discipline, explore further reading, and find links to related platform engineering tracks.
 
-<!-- incident-xref: facebook-2021-bgp -->
 ## Sources
 
-- [Understanding the October 2021 Facebook Outage](https://blog.cloudflare.com/october-2021-facebook-outage) — Useful incident analysis for the module's opening example and its network-configuration root cause. For the canonical treatment, see [Route 53 & DNS](../../../../cloud/aws-essentials/module-1.5-route53/).
+- [Understanding the October 2021 Facebook Outage](https://blog.cloudflare.com/october-2021-facebook-outage) <!-- incident-xref: facebook-2021-bgp --> — Useful incident analysis for the module's opening example and its network-configuration root cause. For the canonical treatment, see [Route 53 & DNS](../../../../cloud/aws-essentials/module-1.5-route53/).
