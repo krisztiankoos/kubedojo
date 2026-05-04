@@ -47,18 +47,27 @@ INCIDENTS: dict[str, list[str]] = {
     ],
     "Uber 2022 hardcoded credentials": [
         # Critical: \bUber\b — without word boundary "Uber" matches inside "kUBERnetes".
+        # Reverse pattern carries the SAME signal list as the forward pattern (Gemini review on
+        # PR #879 caught that "Lapsus breached Uber" or "MFA fatigue used against Uber" would
+        # have evaded detection in the original reverse-only-on-hardcoded form).
         r"\bUber\b.{0,400}(hardcoded|hard-coded|admin password|network share|PowerShell|Thycotic|MFA fatigue|2022.{0,40}breach|Lapsus)",
-        r"(hardcoded|hard-coded).{0,400}\bUber\b",
+        r"(hardcoded|hard-coded|admin password|network share|PowerShell|Thycotic|MFA fatigue|Lapsus).{0,400}\bUber\b",
     ],
     "Capital One 2019 breach": [
         r"Capital One.{0,200}(2019|WAF|SSRF|metadata|106 million|100 million)",
     ],
     "SolarWinds 2020": [
-        r"SolarWinds",
-        r"Orion.{0,40}(supply chain|build|update|compromise)",
+        # Tightened: bare "SolarWinds" matches modules that mention SolarWinds as a vendor in
+        # passing (e.g. as a comparison example, "tools like SolarWinds and Datadog"). Require an
+        # incident-specific signal.
+        r"SolarWinds.{0,200}(2020|Orion|supply chain|breach|compromise|Sunburst|backdoor|FireEye)",
+        r"(Orion|Sunburst|supply chain.{0,40}attack).{0,200}SolarWinds",
     ],
     "Codecov 2021 bash uploader": [
-        r"Codecov",
+        # Tightened: bare "Codecov" matches modules that reference Codecov as a tool ("upload
+        # coverage to Codecov"). Require an incident-specific signal.
+        r"Codecov.{0,200}(2021|bash uploader|breach|supply chain|compromise|environment variables|exfiltrat)",
+        r"(bash uploader|exfiltrat.{0,40}environment variables).{0,200}Codecov",
     ],
     "Log4Shell / CVE-2021-44228": [
         r"Log4Shell",
@@ -139,10 +148,14 @@ INCIDENTS: dict[str, list[str]] = {
         r"Argo CD.{0,80}(path traversal|2022|CVE)",
     ],
     "3CX 2023 supply chain": [
-        r"3CX",
+        # Tightened: 3CX is a product name; bare match risks future tutorial / comparison content.
+        r"3CX.{0,200}(2023|supply chain|breach|North Korea|Lazarus|Smooth Operator)",
+        r"(supply chain.{0,40}attack|Smooth Operator|North Korea).{0,200}3CX",
     ],
     "MOVEit 2023": [
-        r"MOVEit",
+        # Tightened: MOVEit is a Progress product; bare match flags any module discussing the tool.
+        r"MOVEit.{0,200}(2023|breach|Cl0p|exploit|CVE-2023|Progress)",
+        r"(Cl0p|CVE-2023-34362).{0,200}MOVEit",
     ],
     "Spring4Shell CVE-2022-22965": [
         r"Spring4Shell",

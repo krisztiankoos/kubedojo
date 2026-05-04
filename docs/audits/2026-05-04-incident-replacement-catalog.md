@@ -168,7 +168,7 @@ Pick the bucket that matches your module's core lesson. Choose any unclaimed inc
 
 - **What happened (≤60 words):** A bug in Travis CI allowed forked public repositories to read secret environment variables (API keys, tokens, passwords) from upstream repositories via pull requests. The vulnerability was active September 3–10, 2021. Travis CI patched it silently and issued no postmortem. CVE-2021-41077. Ethereum developers discovered it independently and disclosed publicly.
 - **Lesson it teaches:** CI secrets exposed to fork builds are exposed to any public contributor — environment variable scoping is a security boundary, not a convenience setting.
-- **Primary source:** https://www.theregister.com/2021/09/15/travis_ci_leak/ — verified YES 2026-05-04 via WebFetch
+- **Primary source:** https://nvd.nist.gov/vuln/detail/CVE-2021-41077 — verified YES 2026-05-04 via WebFetch (NVD description: "The activation process in Travis CI, for certain 2021-09-03 through 2021-09-10 builds, causes secret data to have unexpected sharing that is not specified by the customer-controlled .travis.yml file.")
 - **Suggested opener phrasing (≤80 words):** For seven days in September 2021, any developer who submitted a pull request to a public GitHub repository using Travis CI could read that repository's secret environment variables. API keys. Deploy tokens. Database passwords. Travis CI patched the issue on September 10 without notifying affected projects and published no postmortem. The Ethereum team, who discovered the bug independently, eventually forced a public disclosure. Ethereum's team lead noted: "No analysis, no security report, no postmortem."
 - **Notes / caveats:** Travis CI stated no evidence of exploitation but issued no forensics confirmation.
 

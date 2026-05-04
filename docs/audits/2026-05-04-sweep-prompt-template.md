@@ -52,6 +52,18 @@ Concretely:
   link the incident to the topic in one sentence, pick a different incident
   or use option (c) — concept-led WTMM.
 
+**HARD RULE — preserve paragraphs 2 and 3 of the existing WTMM section verbatim.**
+The "Why This Module Matters" section is typically 3 paragraphs. Paragraph 1 is the
+dramatic opener that needs to change. Paragraphs 2 and 3 are the topical bridge that
+connects the opener to the module's actual content; they were written by the original
+module author and must be preserved exactly. Apply minimal smoothing only if a single
+sentence is strictly necessary to connect the new opener to paragraph 2 — and only if
+the integrity of the original prose is otherwise destroyed. Never rewrite, paraphrase,
+or hallucinate paragraphs 2 or 3. If the existing paragraphs 2 and 3 themselves
+reference the OLD incident (rare), drop ONLY the sentences that name the old incident
+and stitch the surviving sentences together with a one-word transition. Document any
+such stitching in the PR description.
+
 ## Three options for each non-canonical occurrence
 
 For every file in the table below, choose ONE option per the canonicals doc:
