@@ -3743,6 +3743,15 @@ def _quality_board_classify(
         and (latest_verdict is None or latest_verdict == "approve")
     ):
         return "done"
+    # Ad-hoc-shipped modules: passed the structural rubric (score >= 4.0)
+    # and merged on main, but the pipeline state machine never recorded
+    # an independent-family review. Distinct from `needs_review` (which
+    # is mid-pipeline/awaiting-reviewer) so the operator can tell
+    # "shipped without review" apart from "review in flight". Same
+    # actionable category — needs cross-family review — but separates
+    # the bookkeeping debt from the active review queue.
+    if score_val >= 4.0 and not revision_pending and stage == "UNAUDITED":
+        return "shipped_unreviewed"
     # Anything left over (e.g. score 3.0–3.9 with no banner, no review,
     # no auto-approve, no FAILED) is a soft "needs_review" — surface it
     # so the operator sees it instead of silently hiding modules from
@@ -3755,14 +3764,22 @@ def build_quality_board(repo_root: Path) -> dict[str, Any]:
     revision banners, the post-review queue, and review verdicts.
 
     Status precedence (first match wins): ``in_flight`` >
-    ``both`` > ``needs_review`` > ``needs_rewrite`` > ``done``.
+    ``both`` > ``needs_review`` > ``shipped_unreviewed`` >
+    ``needs_rewrite`` > ``done``.
     See issue #389 for the contract.
+
+    ``shipped_unreviewed`` is for modules that passed the structural
+    rubric (score >= 4.0) and merged on main but have stage=UNAUDITED —
+    i.e. ad-hoc shipments the pipeline state machine never tracked.
+    Same actionable category as ``needs_review`` (cross-family review
+    pending) but separated so the operator can distinguish bookkeeping
+    debt from active in-flight reviews.
     """
     docs_root = repo_root / "src" / "content" / "docs"
     if not docs_root.exists():
         return {
             "generated_at": int(time.time()),
-            "totals": {"done": 0, "needs_rewrite": 0, "needs_review": 0, "both": 0, "in_flight": 0, "total": 0},
+            "totals": {"done": 0, "needs_rewrite": 0, "needs_review": 0, "shipped_unreviewed": 0, "both": 0, "in_flight": 0, "total": 0},
             "tracks": [],
             "modules": [],
         }
@@ -3791,7 +3808,7 @@ def build_quality_board(repo_root: Path) -> dict[str, Any]:
 
     modules: list[dict[str, Any]] = []
     track_buckets: dict[str, dict[str, Any]] = {}
-    totals = {"done": 0, "needs_rewrite": 0, "needs_review": 0, "both": 0, "in_flight": 0, "total": 0}
+    totals = {"done": 0, "needs_rewrite": 0, "needs_review": 0, "shipped_unreviewed": 0, "both": 0, "in_flight": 0, "total": 0}
     source_counts = {
         "quality_pipeline_records": len(states),
         "committed_full_review": sum(
@@ -3872,6 +3889,7 @@ def build_quality_board(repo_root: Path) -> dict[str, Any]:
                 "done": 0,
                 "needs_rewrite": 0,
                 "needs_review": 0,
+                "shipped_unreviewed": 0,
                 "both": 0,
                 "in_flight": 0,
                 "total": 0,
@@ -4738,6 +4756,7 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     .qb-done {{ background: var(--green); }}
     .qb-needs_rewrite {{ background: var(--red); }}
     .qb-needs_review {{ background: var(--amber); }}
+    .qb-shipped_unreviewed {{ background: #f97316; }}
     .qb-both {{ background: #c084fc; }}
     .qb-in_flight {{ background: var(--accent); }}
     .qb-legend {{
@@ -4848,6 +4867,7 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     .qb-chip.done {{ background: var(--green-muted); color: var(--green); }}
     .qb-chip.needs_rewrite {{ background: var(--red-muted); color: var(--red); }}
     .qb-chip.needs_review {{ background: var(--amber-muted); color: var(--amber); }}
+    .qb-chip.shipped_unreviewed {{ background: rgba(249,115,22,0.14); color: #f97316; }}
     .qb-chip.both {{ background: rgba(192,132,252,0.14); color: #c084fc; }}
     .qb-chip.in_flight {{ background: var(--accent-muted); color: var(--accent); }}
     .qb-detail {{
@@ -5768,11 +5788,12 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
       }}).join('');
     }}
 
-    const QB_STATUS = ['done', 'needs_rewrite', 'needs_review', 'both', 'in_flight'];
+    const QB_STATUS = ['done', 'needs_rewrite', 'needs_review', 'shipped_unreviewed', 'both', 'in_flight'];
     const QB_LABEL = {{
       done: 'Done',
       needs_rewrite: 'Rewrite',
       needs_review: 'Review',
+      shipped_unreviewed: 'Shipped (unreviewed)',
       both: 'Both',
       in_flight: 'In flight',
     }};
