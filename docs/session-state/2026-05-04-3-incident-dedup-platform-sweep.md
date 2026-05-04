@@ -57,6 +57,15 @@ Triple-recorded per protocol: catalog `[CLAIMED]` markers + `CANONICALS` dict in
 
 ```bash
 cd /Users/krisztiankoos/projects/kubedojo
+
+# 0. CANONICAL ORIENTATION (per CLAUDE.md "Agent Orientation") — hit the briefing API
+#    BEFORE reading STATUS.md or running git log. Returns full session state
+#    (branch + dirty summary, worktrees, services, recent commits, TODO, Blockers,
+#    actions triple) in ~0.7K tokens. Falls back to STATUS.md only if the API is down.
+curl -s http://127.0.0.1:8768/api/briefing/session?compact=1 | head -50
+# If the curl errors / 503s: API is down → start the local API or read STATUS.md directly.
+
+# Auth setup (needed for any gh-API follow-up below)
 unset GITHUB_TOKEN && export GH_TOKEN=$(grep -oE 'github_pat_[A-Za-z0-9_]+' .envrc | head -1)
 gh api user -q .login   # expect: krisztiankoos
 
