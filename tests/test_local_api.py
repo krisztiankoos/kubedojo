@@ -1679,6 +1679,29 @@ def test_reviews_index_and_single(tmp_path: Path) -> None:
     assert trunc["body_size"] == 1000
 
 
+def test_reviews_route_rejects_invalid_module_param(tmp_path: Path) -> None:
+    tmp_path.joinpath(".pipeline", "reviews").mkdir(parents=True)
+    status_code, payload, _ = local_api.route_request(
+        tmp_path,
+        "/api/reviews?module=../../etc/passwd",
+    )
+    assert status_code == 400
+    assert payload["error"] == "invalid_module_key"
+
+
+def test_safe_review_filename_validation() -> None:
+    assert local_api._is_safe_review_filename(
+        "prerequisites__zero-to-terminal__module-0.1-alpha.md"
+    ) is True
+    assert local_api._is_safe_review_filename("bad__name/with__slash.md") is False
+    assert local_api._is_safe_review_filename("bad__name_with__slash.md") is True
+    assert local_api._is_safe_review_filename("UPPER__x.md") is False
+    assert local_api._is_safe_review_filename("bad__name__") is False
+    assert (
+        local_api._is_safe_review_filename("0__0__0__0__0.md") is True
+    )
+
+
 def test_reviews_route_filter_module_state_diag_and_briefing_unverified(tmp_path: Path) -> None:
     module_key, _ = _setup_repo(tmp_path)
     _write(

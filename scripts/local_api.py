@@ -1785,7 +1785,24 @@ def build_pipeline_stuck(
 
 _REVIEW_AUDIT_DIR = Path(".pipeline") / "reviews"
 _VALID_FACT_CHECK_STATUSES = {"verified", "unverified", "failed", "none"}
-_SAFE_REVIEW_FILENAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*(?:__[a-z0-9][a-z0-9._-]*)*\.md$")
+
+def _is_safe_review_filename(filename: str) -> bool:
+    """Validate review filename format without using user-driven regexes."""
+    if "/" in filename or "\\" in filename:
+        return False
+    if not filename.endswith(".md") or filename == ".md":
+        return False
+    stem = filename[:-3]
+    for segment in stem.split("__"):
+        if not segment:
+            return False
+        if segment[0] not in "abcdefghijklmnopqrstuvwxyz0123456789":
+            return False
+        for ch in segment:
+            if ch in "abcdefghijklmnopqrstuvwxyz0123456789._-":
+                continue
+            return False
+    return True
 _LATEST_REVIEW_RE = re.compile(r"^## .*?— `REVIEW`.*?(?=^## |\Z)", re.MULTILINE | re.DOTALL)
 _FAILED_FACT_CHECK_RE = re.compile(r"^- \*\*FACT_CHECK\*\*:\s*(.+)$", re.MULTILINE)
 _UNVERIFIED_CLAIM_RE = re.compile(r"unverified:\s*(.+)", re.IGNORECASE)
@@ -1814,16 +1831,20 @@ def _safe_review_path_for_module_key(repo_root: Path, module_key: str) -> Path |
     except OSError:
         return None
     filename = _module_key_to_review_filename(normalized)
-    if "/" in filename or "\\" in filename:
+    if not _is_safe_review_filename(filename):
         return None
-    if not _SAFE_REVIEW_FILENAME_RE.fullmatch(filename):
+    if not reviews_dir.is_dir():
         return None
-    try:
-        path = (reviews_dir / filename).resolve()
-        path.relative_to(reviews_dir)
-    except (OSError, RuntimeError, ValueError):
-        return None
-    return path
+    for candidate in reviews_dir.glob("*.md"):
+        if candidate.name != filename:
+            continue
+        try:
+            path = candidate.resolve()
+            path.relative_to(reviews_dir)
+        except (OSError, RuntimeError, ValueError):
+            return None
+        return path
+    return None
 
 
 def _fact_check_summary(review_body: str) -> dict[str, Any]:
