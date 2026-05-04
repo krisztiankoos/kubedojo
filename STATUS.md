@@ -226,7 +226,7 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 
 ## Blockers
 
-(none — Day 2 pilot work ready to start. Verifier on main, audit-2026-05-02-v2.jsonl committed, all 6 fix-pass modules merged.)
+- **Codex out of weekly quota until ~11:00 2026-05-05** — all tiers (gpt-5.5, gpt-5.4-mini, gpt-5.3-codex-spark) unavailable. Spark currently finishing `codex/fix-local-api-codeql` (worktree preserved). During the window: Gemini OAuth is the sole cross-family reviewer; Claude can write *or* review (not the same PR); `ab discuss` runs 2-way with explicit note in any Decision Card. See memory `feedback_codex_offline_contingency.md` for the full operational rules and pre-window checklist.
 
 ## Key Decisions
 
