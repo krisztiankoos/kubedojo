@@ -187,6 +187,18 @@ Cost controls:
 - Do not let subagents read secrets, source `.envrc`, call `gh`, request reviews, or merge PRs.
 - Do not delegate the independent-family review requirement. Gemini review is still mandatory before merge.
 
+The same tiering applies to **cross-agent dispatches from outside an interactive Codex session** (e.g. when Claude orchestrates a headless Codex via `agent_runtime.runner.invoke`). Use `scripts/dispatch_smart.py --agent codex <task_class>` so the model is picked from the same task-class table as Codex's internal subagents:
+
+| task_class | claude                       | codex                  |
+|------------|------------------------------|------------------------|
+| `search`   | `claude-haiku-4-5-20251001`  | `gpt-5.4-mini`         |
+| `edit`     | `claude-sonnet-4-6`          | `gpt-5.3-codex-spark`  |
+| `draft`    | `claude-sonnet-4-6`          | `gpt-5.3-codex-spark`  |
+| `review`   | `claude-sonnet-4-6`          | `gpt-5.5`              |
+| `architect`| `claude-opus-4-7`            | `gpt-5.5`              |
+
+Cross-family review and architecture work stay on the top tier; routine search/edit/draft routes to mini/spark to preserve the main-tier counter for judgment work.
+
 ---
 
 ## Project Architecture
