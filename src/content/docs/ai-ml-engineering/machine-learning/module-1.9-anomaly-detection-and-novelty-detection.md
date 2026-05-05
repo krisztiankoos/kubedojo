@@ -2,9 +2,12 @@
 title: "Anomaly Detection & Novelty Detection"
 description: "Learn how to choose, fit, and evaluate anomaly and novelty detectors when you have no labels. This module covers IsolationForest, LocalOutlierFactor, OneClassSVM, and EllipticEnvelope, the contamination parameter, the anomaly/novelty distinction, and honest threshold calibration."
 slug: ai-ml-engineering/machine-learning/module-1.9-anomaly-detection-and-novelty-detection
+revision_pending: false
 sidebar:
   order: 9
 ---
+
+# Anomaly Detection & Novelty Detection
 
 > Track: AI/ML Engineering | Complexity: Intermediate | Time: 75-90 minutes
 > Prerequisites: [Module 1.1: Scikit-learn API & Pipelines](../module-1.1-scikit-learn-api-and-pipelines/), [Module 1.3: Model Evaluation, Validation, Leakage & Calibration](../module-1.3-model-evaluation-validation-leakage-and-calibration/), [Module 1.4: Feature Engineering & Preprocessing](../module-1.4-feature-engineering-and-preprocessing/), [Module 1.7: Naive Bayes, k-NN & SVMs](../module-1.7-naive-bayes-knn-and-svms/), and [Module 1.8: Unsupervised Learning: Clustering](../module-1.8-unsupervised-learning-clustering/).
@@ -66,36 +69,11 @@ Those questions are more valuable than memorizing any single default.
 
 ## Learning Outcomes
 
-- Choose an appropriate anomaly or novelty detector by matching score
-  geometry, scaling needs, and API behavior to the data and workflow,
-  using lessons from
-  [Module 1.1: Scikit-learn API & Pipelines](../module-1.1-scikit-learn-api-and-pipelines/)
-  and
-  [Module 1.8: Unsupervised Learning: Clustering](../module-1.8-unsupervised-learning-clustering/).
-- Diagnose whether poor detector behavior comes from representation,
-  thresholding, or mode confusion, with special attention to
-  preprocessing discipline from
-  [Module 1.4: Feature Engineering & Preprocessing](../module-1.4-feature-engineering-and-preprocessing/)
-  and scaling-sensitive methods from
-  [Module 1.7: Naive Bayes, k-NN & SVMs](../module-1.7-naive-bayes-knn-and-svms/).
-- Design an evaluation and threshold-calibration workflow that uses
-  ranking metrics, partial labels, and operating constraints instead of
-  wishful thinking, extending the practices from
-  [Module 1.3: Model Evaluation, Validation, Leakage & Calibration](../module-1.3-model-evaluation-validation-leakage-and-calibration/).
-- Evaluate tradeoffs among tree-based, density-based, kernel-based, and
-  covariance-based detectors, while connecting them to the model-family
-  intuitions from
-  [Module 1.5: Decision Trees & Random Forests](../module-1.5-decision-trees-and-random-forests/)
-  and
-  [Module 1.7: Naive Bayes, k-NN & SVMs](../module-1.7-naive-bayes-knn-and-svms/).
-- Justify when anomaly detection should be replaced by supervised
-  classification, clustering, monitoring, or future time-series methods,
-  linking back to
-  [Module 1.6: XGBoost & Gradient Boosting](../module-1.6-xgboost-gradient-boosting/),
-  [Module 1.8: Unsupervised Learning: Clustering](../module-1.8-unsupervised-learning-clustering/),
-  [Module 1.12: Time-Series Forecasting](../module-1.12-time-series-forecasting/),
-  and
-  [Module 1.10: ML Monitoring](../../mlops/module-1.10-ml-monitoring/).
+- Compare detector geometry by choosing between `IsolationForest`, LOF, `OneClassSVM`, and `EllipticEnvelope` for anomaly or novelty workflows.
+- Diagnose scaling and representation failures in LOF and `OneClassSVM` before treating detector scores as business truth.
+- Design threshold calibration with `score_samples`, partial-label evidence, precision at `k`, and review-capacity constraints.
+- Evaluate tree-based, density-based, kernel-based, and covariance-based detector tradeoffs before selecting a production baseline.
+- Justify replacing anomaly detection with supervised classification, clustering, monitoring, or time-series modeling when evidence points elsewhere.
 
 ## Why This Module Matters
 
@@ -1236,7 +1214,7 @@ distinct modeling and monitoring responsibilities.
 
 ## Common Mistakes
 
-| Mistake | Why it bites | Fix |
+| Mistake | Why It Happens | How to Fix It |
 | --- | --- | --- |
 | Treating anomaly detection as "classification without the positive class" | The model learns unusualness relative to assumptions, not the true decision boundary the business may care about | Ask first whether labels already support supervised classification |
 | Using novelty mode when the task is to flag outliers inside the training sample | The workflow and API semantics no longer match the job | Write the mode in plain English before coding and pick the estimator behavior accordingly |
@@ -1249,112 +1227,80 @@ distinct modeling and monitoring responsibilities.
 
 ## Quiz
 
-1. A team fits `LocalOutlierFactor(novelty=True)` on a carefully cleaned
-   baseline dataset, then evaluates model quality by calling `predict`
-   on that same training dataset and comparing the flagged points to
-   analyst intuition. What is wrong with this procedure?
-
-<details><summary>Answer</summary>
+<details><summary>1. A team fits `LocalOutlierFactor(novelty=True)` on a carefully cleaned baseline dataset, then evaluates model quality by calling `predict` on that same training dataset and comparing the flagged points to analyst intuition. What is wrong with this procedure?</summary>
 In novelty mode, LOF is meant to score new unseen data against a clean
 reference set. The documentation warns that using `predict` on the
-training data in this mode gives wrong results. If the goal is to find
-outliers within the fitted sample, anomaly mode with `novelty=False` is
-the right framing.
+training data in this mode gives wrong results because the neighborhood
+relations are not being used in the same way as anomaly-mode fitting.
+If the goal is to find outliers within the fitted sample, anomaly mode
+with `novelty=False` is the right framing.
 </details>
 
-2. A deployment sets `contamination=0.1` because "that is the library
-   default in some examples," but the true rate of actionable cases is
-   far below one percent and the human review queue is small. What
-   failure should the team expect first?
-
-<details><summary>Answer</summary>
+<details><summary>2. A deployment sets `contamination=0.1` because "that is the library default in some examples," but the true rate of actionable cases is far below one percent and the human review queue is small. What failure should the team expect first?</summary>
 The most immediate failure is review overload and alert fatigue. The
 model may still rank cases with some signal, but the threshold implied
 by ten percent contamination will generate far too many positives for
 the true event rate and review capacity. The fix is to separate scoring
-from threshold calibration and tune the cutoff on partial labels and
-operational constraints.
+from threshold calibration and tune the cutoff on partial-label evidence,
+precision at `k`, and operational constraints.
 </details>
 
-3. A practitioner wants to detect anomalous rows inside a static table
-   and also wants to score future incoming rows with the same LOF model.
-   They ask for one configuration that does both perfectly. What should
-   you tell them?
-
-<details><summary>Answer</summary>
+<details><summary>3. A practitioner wants to detect anomalous rows inside a static table and also wants to score future incoming rows with the same LOF model. They ask for one configuration that does both perfectly. What should you tell them?</summary>
 LOF has a real split between anomaly detection and novelty detection.
 The default anomaly mode is for identifying outliers in the training
-data itself. Novelty mode is for fitting on reference data and scoring
-new samples. Trying to use one fitted object as if those semantics were
-interchangeable is a category error. The team should define which job
-matters most or maintain distinct workflows.
+data itself, while novelty mode is for fitting on reference data and
+scoring new samples. Trying to use one fitted object as if those
+semantics were interchangeable is a category error. The team should
+define which job matters most or maintain distinct workflows.
 </details>
 
-4. A dataset contains a dense cluster of truly unusual observations that
-   are far from the training distribution but close to one another. Why
-   might `IsolationForest` fail to flag them as strongly as expected?
-
-<details><summary>Answer</summary>
-`IsolationForest` works by isolating points through random splits.
-Points that are easy to separate in few steps look more anomalous. A
-dense unusual cluster can be internally cohesive, so its members may not
-be isolated as quickly as scattered outliers. The cases may still be
-novel, but the detector family is emphasizing isolation rather than the
-specific semantic notion of abnormality.
+<details><summary>4. A dataset contains a dense cluster of truly unusual observations that are far from the training distribution but close to one another. Why might `IsolationForest` fail to flag them as strongly as expected?</summary>
+`IsolationForest` works by isolating points through random splits, so
+points that are easy to separate in few steps look more anomalous. A
+dense unusual cluster can be internally cohesive, which means its
+members may not be isolated as quickly as scattered outliers. The cases
+may still be novel in the business sense, but this tree-based detector
+family is emphasizing isolation geometry rather than semantic rarity.
 </details>
 
-5. A team fits `OneClassSVM` directly on raw features where one column
-   ranges from fractions and another ranges in the hundreds of
-   thousands. The detector behaves erratically. Why is that outcome not
-   surprising?
-
-<details><summary>Answer</summary>
+<details><summary>5. A team fits `OneClassSVM` directly on raw features where one column ranges from fractions and another ranges in the hundreds of thousands. The detector behaves erratically. Why is that outcome not surprising?</summary>
 `OneClassSVM` is a kernel method, so feature scaling strongly affects
 the geometry it sees. On raw features with wildly different units, the
 kernel similarity is dominated by large-scale columns and the learned
-boundary becomes more about unit magnitude than actual structure. A
-pipeline with scaling is usually necessary.
+boundary becomes more about unit magnitude than actual structure. This
+is a scaling and representation failure, not evidence that the detector
+has discovered trustworthy business truth. A pipeline with scaling is
+usually necessary.
 </details>
 
-6. Someone proposes `EllipticEnvelope` for a dataset that consists of
-   two ordinary but well-separated modes. They argue that robust
-   covariance will take care of the shape. Why should you push back?
-
-<details><summary>Answer</summary>
+<details><summary>6. Someone proposes `EllipticEnvelope` for a dataset that consists of two ordinary but well-separated modes. They argue that robust covariance will take care of the shape. Why should you push back?</summary>
 `EllipticEnvelope` assumes the normal region is well-described by a
 single elliptical Gaussian-style cloud. Two well-separated ordinary
-modes violate that assumption. The method may mischaracterize one mode
-or the region between them because a single ellipse is too crude. This
-is a segmentation or richer-geometry problem, not a robust-covariance
-shortcut.
+modes violate that covariance-based assumption. The method may
+mischaracterize one mode or the region between them because a single
+ellipse is too crude. This is a segmentation or richer-geometry problem,
+not a robust-covariance shortcut.
 </details>
 
-7. You have a table with about one million rows and mostly numeric
-   features. You need a first-pass detector that scales reasonably and
-   provides a baseline score quickly. Should you start with
-   `IsolationForest` or LOF, and why?
-
-<details><summary>Answer</summary>
+<details><summary>7. You have a table with about one million rows and mostly numeric features. You need a first-pass detector that scales reasonably and provides a baseline score quickly. Should you start with `IsolationForest` or LOF, and why?</summary>
 `IsolationForest` is the better first baseline for that scale in many
 cases. It is tree-based, does not depend as directly on distance
 calculations, and is usually friendlier on large tabular datasets than a
-nearest-neighbor method like LOF. LOF may still be valuable later if
-local-density anomalies are central, but it is not the obvious first
-pass for a million-row table.
+nearest-neighbor density method like LOF. LOF may still be valuable later
+if local-density anomalies are central, but it is not the obvious first
+pass for a million-row table. This is a detector-geometry tradeoff, not
+just a runtime preference.
 </details>
 
-8. A team already has several thousand verified labels for fraudulent
-   and non-fraudulent events, but they still want anomaly detection
-   because "rare things are anomalies." What is the more defensible
-   modeling path?
-
-<details><summary>Answer</summary>
+<details><summary>8. A team already has several thousand verified labels for fraudulent and non-fraudulent events, but they still want anomaly detection because "rare things are anomalies." What is the more defensible modeling path?</summary>
 If the labels are reliable and plentiful enough, supervised
 classification is the more direct tool because it learns the actual
 target distinction rather than a proxy notion of unusualness. Anomaly
 detection can still help as a side signal or discovery tool, but it
 should not displace a well-posed labeled classifier without a clear
-reason.
+reason. The same caution applies when the better framing is clustering,
+monitoring, or time-series modeling rather than point-level anomaly
+detection.
 </details>
 
 ## Hands-On Exercise
@@ -1387,6 +1333,9 @@ reason.
   Compare the score distributions or decision regions and explain which
   differences are genuine structure and which are likely scale artifacts.
 - [ ] Step 4: Compare partition agreement across detectors.
+  Compare tree-based `IsolationForest`, density-based LOF, kernel-based
+  `OneClassSVM`, and covariance-based `EllipticEnvelope` before choosing
+  a detector baseline.
   Convert each detector's predictions into a binary inlier/outlier
   vector and compute `adjusted_rand_score` or a Jaccard-style agreement
   summary between detector pairs.
@@ -1399,9 +1348,10 @@ reason.
   that budget is more realistic than blindly inheriting a contamination
   value.
 - [ ] Step 6: Write a short shipping memo.
-  State which detector you would deploy first, under what conditions you
-  would retire or replace it, and which failure mode you would treat as
-  a bug rather than a business-policy disagreement.
+  Choose an anomaly or novelty detector you would deploy first, state
+  under what conditions you would retire or replace it, and name which
+  failure mode you would treat as a bug rather than a business-policy
+  disagreement.
 - [ ] Completion check: confirm that every distance-based model saw
   scaled inputs, every reported binary flag can be traced back to a
   threshold policy, and every comparison between detectors mentions the
@@ -1412,6 +1362,19 @@ reason.
 - [ ] Completion check: confirm that you inspected continuous scores,
   not only hard labels, and that you used partial labels only in places
   where their selection bias was acknowledged.
+
+<details><summary>Suggested solution path</summary>
+Start with the synthetic dataset because it gives you a controlled place
+to separate known injected anomalies from merely awkward boundary cases.
+Fit `IsolationForest` first, then use LOF, `OneClassSVM`, and
+`EllipticEnvelope` as geometry contrasts rather than as a leaderboard.
+For distance-based detectors, make scaling part of the pipeline before
+you look at scores, because otherwise the comparison is mostly a test of
+feature units. Calibrate the final threshold from `score_samples` against
+a review budget and partial-label set, then write the memo in operational
+language so the detector choice, training mode, and threshold policy are
+all explicit.
+</details>
 
 ## Sources
 
