@@ -18,7 +18,7 @@ In 1972 the UK Science Research Council asked Cambridge mathematician Sir James 
 | Sir James Lighthill | 1924–1998 | Cambridge applied mathematician; commissioned outsider who wrote the 1972 survey that divided AI into categories A, B, and C. |
 | N. S. Sutherland | 1927–1998 | Sussex experimental psychologist and key respondent in the 1973 published symposium. |
 | Donald Michie | 1923–2007 | Edinburgh machine intelligence leader and key respondent in the 1973 symposium and BBC debate. |
-| R. M. Needham | 1931–2003 | Cambridge computer scientist and key respondent in the 1973 published symposium. |
+| R. M. Needham | 1935–2003 | Cambridge computer scientist and key respondent in the 1973 published symposium. |
 | H. C. Longuet-Higgins | 1923–2004 | Edinburgh theoretical psychologist; responded to the report, providing a middle voice between Sutherland and Michie. |
 | Terry Winograd | 1946– | Author of SHRDLU; cited by Lighthill as a remarkable table-top-world achievement that nonetheless illustrated the limits of narrow domain constraint. |
 

@@ -7,7 +7,7 @@ sidebar:
 ---
 
 :::tip[In one paragraph]
-Founded at MIT on July 1, 1963, under ARPA/ONR backing, Project MAC was not merely an AI laboratory. By building CTSS, then Multics and ITS, and equipping them with MACLISP, MATHLAB/MACSYMA, and PLANNER, the project turned computing from a batch chore into an interactive research environment. It did not solve intelligence; it changed the working conditions under which intelligence could be attempted.
+Founded at MIT on July 1, 1963, under ARPA/ONR backing, Project MAC was not merely an AI laboratory. By extending CTSS, then building Multics and ITS, and equipping them with MACLISP, MATHLAB/MACSYMA, and PLANNER, the project turned computing from a batch chore into an interactive research environment. It did not solve intelligence; it changed the working conditions under which intelligence could be attempted.
 :::
 
 <details>

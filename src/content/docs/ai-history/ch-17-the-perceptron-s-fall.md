@@ -18,7 +18,7 @@ The perceptron's fall was not one theorem killing neural networks. Frank Rosenbl
 | Frank Rosenblatt | — | Cornell Aeronautical Laboratory psychologist; originator of perceptron theory and director of the ONR/RADC-funded Mark I program. |
 | Marvin Minsky | — | MIT AI leader; co-author of *Perceptrons* (1969). Earlier neural-net researcher as well as symbolic-AI institution builder. |
 | Seymour Papert | — | Co-author of *Perceptrons*; later explicitly addressed whether he and Minsky had tried to "kill connectionism." |
-| Marvin Denicoff | — | ONR program officer; quoted by Olazaran on the funding scale gap between ONR support for Rosenblatt and ARPA's larger backing of symbolic AI. |
+| Marvin Denicoff | — | ONR Director of Information Sciences; quoted by Olazaran on the funding scale gap between ONR support for Rosenblatt and ARPA's larger backing of symbolic AI. |
 | Mikel Olazaran | — | Historian and sociologist whose 1996 *Social Studies of Science* analysis is a key later source on the controversy. |
 | Leon Bottou | — | Author of the 2017 MIT Press foreword to *Perceptrons*; key later commentator on the book's reception. |
 

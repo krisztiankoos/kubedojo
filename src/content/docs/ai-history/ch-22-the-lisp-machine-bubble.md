@@ -19,7 +19,7 @@ In the late 1970s, MIT's AI programmers had outgrown time-shared PDP-10s: large 
 | Jack Holloway | — | MIT Lisp Machine Group member; co-authored the CADR memo alongside Knight. |
 | David A. Moon | — | MIT Lisp Machine Group member; co-authored the CADR memo and the Lisp Machine Manual; key Symbolics figure. |
 | Daniel Weinreb | — | MIT Lisp Machine Group member; co-authored the Lisp Machine Manual with Moon. |
-| Guy L. Steele Jr. | 1952– | Co-authored the CADR memo; later co-authored "The Evolution of Lisp," the chapter's main historical synthesis. |
+| Guy L. Steele Jr. | 1954– | Co-authored the CADR memo; later co-authored "The Evolution of Lisp," the chapter's main historical synthesis. |
 | Richard P. Gabriel | — | Co-authored "The Evolution of Lisp" with Steele; the chapter's key source for commercialization, Common Lisp, and stock-hardware pressure. |
 
 </details>
