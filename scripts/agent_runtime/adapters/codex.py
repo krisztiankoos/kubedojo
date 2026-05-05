@@ -26,6 +26,7 @@ Issue: #1184
 """
 from __future__ import annotations
 
+import os
 import re
 import shutil
 import tempfile
@@ -170,15 +171,27 @@ class CodexAdapter:
         ) as output_fd:
             output_path = Path(output_fd.name)
 
-        cmd: list[str] = [
-            codex_bin,
+        # ``--search`` enables Codex's live web tool. It is a TOP-LEVEL
+        # codex flag (codex --search exec ...), not an exec subflag — putting
+        # it after ``exec`` silently drops it. Opt-in via env var so the book
+        # chapter dispatch path (which routes through this adapter) can verify
+        # cited URLs and version-specific facts at draft time, without
+        # changing behavior for callers that only need text reasoning.
+        # Mirrors the same env var honored by ``scripts/dispatch.py``
+        # ``dispatch_codex`` / ``dispatch_codex_patch`` (PR #888).
+        use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
+
+        cmd: list[str] = [codex_bin]
+        if use_search:
+            cmd.append("--search")
+        cmd.extend([
             "exec",
             "--skip-git-repo-check",
             "-C", str(cwd),
             "--color", "never",
             "-o", str(output_path),
             "-m", model or self.default_model,
-        ]
+        ])
         cmd.extend(self._mode_flags(mode))
         cmd.append("-")  # Read prompt from stdin.
 

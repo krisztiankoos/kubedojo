@@ -707,13 +707,30 @@ def dispatch_codex_review(prompt: str, model: str = CODEX_REVIEW_DEFAULT_MODEL,
 
 def dispatch_codex_patch(prompt: str, model: str = CODEX_PATCH_DEFAULT_MODEL,
                          timeout: int = 1200) -> tuple[bool, str]:
-    """Call Codex patch via `codex exec --sandbox read-only`.
+    """Call Codex patch via `codex exec`.
 
     Codex returns a JSON edit list. `patch_worker.py` applies the edits in
     Python (`apply_review_edits` → `_atomic_write_text`), so Codex itself
-    needs no write or exec capability.
+    needs no write capability — read-only sandbox is the right default.
+
+    Environment overrides (default off — preserves prior read-only / no-search
+    behavior for callers that don't need to verify cited URLs or version-gated
+    behavior while applying review edits):
+
+    - ``KUBEDOJO_CODEX_SEARCH=1`` enables ``--search`` (live web). Useful when
+      the review verdict cites URLs or version-specific facts the patcher
+      needs to confirm before rewriting prose around them.
+    - ``KUBEDOJO_CODEX_SANDBOX`` overrides the sandbox mode. Same valid values
+      and rationale as ``dispatch_codex``; default ``read-only`` is correct
+      for the patcher because edits are applied in Python downstream.
     """
-    cmd = [CODEX_CLI, "exec", "--skip-git-repo-check", "--sandbox", "read-only"]
+    sandbox = os.environ.get("KUBEDOJO_CODEX_SANDBOX", "read-only")
+    use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
+
+    cmd = [CODEX_CLI]
+    if use_search:
+        cmd.append("--search")
+    cmd.extend(["exec", "--skip-git-repo-check", "--sandbox", sandbox])
     if model:
         cmd.extend(["-m", model])
 
