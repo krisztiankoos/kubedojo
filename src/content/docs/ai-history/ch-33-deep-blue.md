@@ -51,7 +51,7 @@ timeline
 - **Ply** — One move by one player. A twelve-ply search looks six full move-pairs ahead. Deep Blue's non-extended search reached roughly twelve plies; forcing lines could be extended to about forty plies.
 - **Panic time** — Deep Blue's search-control rule for spending extra time when a candidate move looked worse at greater depth.
 - **Evaluation function** — The scoring formula that assigns a numerical value to a chess position. Deep Blue's evaluation function included hundreds of features (material, king safety, pawn structure, mobility, etc.) with weights adjustable from software — tuned by Joel Benjamin in the months before the rematch.
-- **Grandmaster-level performance** — Defined operationally in the Fredkin Prize framework as sustaining an Elo rating above 2500 across a statistically meaningful game set. Deep Blue's 1997 performance rating was approximately 2875 — higher than Kasparov's ~2815 over the six-game sample.
+- **Grandmaster-level performance** — Defined operationally in the Fredkin Intermediate Prize framework as sustaining a rating of 2650 or above across a meaningful tournament-game sample (the threshold Deep Thought met in 1988 across twenty-five consecutive USCF-rated games). Deep Blue's 1997 performance rating was approximately 2875 — higher than Kasparov's ~2815 over the six-game sample.
 
 </details>
 
