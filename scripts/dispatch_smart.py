@@ -1,40 +1,47 @@
-"""Smart-routing headless-Claude dispatcher.
+"""Smart-routing headless dispatcher (Claude or Codex).
 
-Single CLI for dispatching work to a headless Claude that picks an
+Single CLI for dispatching work to a headless agent that picks an
 appropriate model based on the task class — instead of always burning
-opus from the orchestrator session.
+the top-tier model from the orchestrator session.
 
-Why: the orchestrator runs on claude-opus-4-7. Doing search/scan or
-small edits inline burns weekly cap on opus when haiku/sonnet would do
-fine. This wrapper lets the orchestrator say "do this kind of work,
-pick the right Claude" without having to manually choose model + mode +
-worktree every time.
+Why: the orchestrator runs on claude-opus-4-7. Routine search/edit work
+shouldn't burn opus (or gpt-5.5) when a smaller model would do fine.
+This wrapper lets the orchestrator say "do this kind of work, pick the
+right model" without manually choosing model + mode + worktree every
+time. Mirrors the economical multi-agent policy in AGENTS.md (PR #870)
+so cross-agent dispatches follow the same tiering as Codex's internal
+subagents.
 
 Usage:
-    # Cheap search (haiku, read-only, no worktree)
+    # Cheap search (haiku, read-only) — default agent=claude
     .venv/bin/python scripts/dispatch_smart.py search \
-        "Find every place that imports agent_runtime.runner.invoke and
-         note the mode argument used in each."
+        "Find every place that imports agent_runtime.runner.invoke."
 
-    # Mid-tier edit (sonnet, workspace-write, in a worktree)
-    .venv/bin/python scripts/dispatch_smart.py edit \
-        --worktree .worktrees/claude-fix-issue-500 \
-        --new-branch claude/fix-issue-500 \
-        "Fix the off-by-one in scripts/foo.py:142, add a regression
-         test, run pytest, commit with message 'fix: ...'."
+    # Same task class, routed to codex (gpt-5.4-mini)
+    .venv/bin/python scripts/dispatch_smart.py search --agent codex \
+        "Find every place that imports agent_runtime.runner.invoke."
 
-    # Heavy architecture work (opus, workspace-write)
+    # Mid-tier edit — codex picks gpt-5.3-codex-spark (separate counter)
+    .venv/bin/python scripts/dispatch_smart.py edit --agent codex \
+        --worktree .worktrees/codex-fix-issue-500 \
+        --new-branch codex/fix-issue-500 \
+        "Fix the off-by-one in scripts/foo.py:142, add a regression test."
+
+    # Heavy work — judgment / integration (opus or gpt-5.5)
     .venv/bin/python scripts/dispatch_smart.py architect \
         --worktree .worktrees/claude-redesign-pipeline \
         --new-branch claude/redesign-pipeline \
         "Redesign the quality pipeline so phase ordering is data-driven."
 
-Task classes — model + default mode mapping:
+Task classes — model mapping per agent:
 
-    search    → claude-haiku-4-5-20251001  read-only       (cheap scan)
-    edit      → claude-sonnet-4-6          workspace-write (small change)
-    draft     → claude-sonnet-4-6          workspace-write (prose/content)
-    architect → claude-opus-4-7            workspace-write (deep reasoning)
+    class       claude                       codex
+    -------     -------------------------    ----------------------
+    search      claude-haiku-4-5-20251001    gpt-5.4-mini
+    edit        claude-sonnet-4-6            gpt-5.3-codex-spark
+    draft       claude-sonnet-4-6            gpt-5.3-codex-spark
+    review      claude-sonnet-4-6            gpt-5.5
+    architect   claude-opus-4-7              gpt-5.5
 
 Each dispatch is recorded to ``logs/smart_dispatch.jsonl`` for usage
 auditing. Reuse with --dry-run to print the chosen plan without firing.
@@ -53,9 +60,12 @@ REPO = Path("/Users/krisztiankoos/projects/kubedojo")
 LOG_PATH = REPO / "logs" / "smart_dispatch.jsonl"
 
 
+SUPPORTED_AGENTS = ("claude", "codex")
+
+
 @dataclass(frozen=True)
 class TaskClassConfig:
-    model: str
+    models: dict[str, str]  # agent -> model
     default_mode: str  # "read-only" | "workspace-write" | "danger"
     default_timeout_s: int
     description: str
@@ -63,25 +73,46 @@ class TaskClassConfig:
 
 TASK_CLASSES: dict[str, TaskClassConfig] = {
     "search": TaskClassConfig(
-        model="claude-haiku-4-5-20251001",
+        models={
+            "claude": "claude-haiku-4-5-20251001",
+            "codex": "gpt-5.4-mini",
+        },
         default_mode="read-only",
         default_timeout_s=600,
         description="cheap codebase scans, file lookups, factual Q&A",
     ),
     "edit": TaskClassConfig(
-        model="claude-sonnet-4-6",
+        models={
+            "claude": "claude-sonnet-4-6",
+            "codex": "gpt-5.3-codex-spark",
+        },
         default_mode="workspace-write",
         default_timeout_s=1800,
         description="small/medium code edits, single-file fixes",
     ),
     "draft": TaskClassConfig(
-        model="claude-sonnet-4-6",
+        models={
+            "claude": "claude-sonnet-4-6",
+            "codex": "gpt-5.3-codex-spark",
+        },
         default_mode="workspace-write",
         default_timeout_s=3600,
         description="prose/content drafting and expansion",
     ),
+    "review": TaskClassConfig(
+        models={
+            "claude": "claude-sonnet-4-6",
+            "codex": "gpt-5.5",
+        },
+        default_mode="read-only",
+        default_timeout_s=1800,
+        description="cross-family review of authored work (judgment)",
+    ),
     "architect": TaskClassConfig(
-        model="claude-opus-4-7",
+        models={
+            "claude": "claude-opus-4-7",
+            "codex": "gpt-5.5",
+        },
         default_mode="workspace-write",
         default_timeout_s=3600,
         description="deep reasoning, multi-file refactors, design",
@@ -89,8 +120,8 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
 }
 
 
-def make_task_id(task_class: str) -> str:
-    return f"smart-{task_class}-{int(time.time())}"
+def make_task_id(task_class: str, agent: str) -> str:
+    return f"smart-{agent}-{task_class}-{int(time.time())}"
 
 
 def ensure_worktree(worktree: Path, new_branch: str | None,
@@ -116,13 +147,13 @@ def append_log(entry: dict) -> None:
         fp.write(json.dumps(entry) + "\n")
 
 
-def fire(*, task_class: str, prompt: str, mode: str, model: str,
+def fire(*, agent: str, task_class: str, prompt: str, mode: str, model: str,
          worktree: Path | None, task_id: str, timeout_s: int) -> int:
     sys.path.insert(0, str(REPO / "scripts"))
     from agent_runtime.runner import invoke
 
-    print(f"[smart] task_class={task_class} model={model} mode={mode} "
-          f"timeout={timeout_s}s")
+    print(f"[smart] agent={agent} task_class={task_class} model={model} "
+          f"mode={mode} timeout={timeout_s}s")
     if worktree:
         print(f"[smart] cwd={worktree}")
     print(f"[smart] task_id={task_id}")
@@ -130,7 +161,7 @@ def fire(*, task_class: str, prompt: str, mode: str, model: str,
     started = time.time()
     try:
         result = invoke(
-            "claude",
+            agent,
             prompt,
             mode=mode,
             cwd=worktree,
@@ -154,6 +185,7 @@ def fire(*, task_class: str, prompt: str, mode: str, model: str,
         "ts": int(started),
         "elapsed_s": round(elapsed, 1),
         "task_id": task_id,
+        "agent": agent,
         "task_class": task_class,
         "model": model,
         "mode": mode,
@@ -178,13 +210,16 @@ def fire(*, task_class: str, prompt: str, mode: str, model: str,
 
 def main() -> int:
     p = argparse.ArgumentParser(
-        description="Dispatch a headless Claude with a task-class-based "
-                    "model choice (haiku/sonnet/opus).",
+        description="Dispatch a headless agent (Claude or Codex) with a "
+                    "task-class-based model choice. Mirrors the AGENTS.md "
+                    "economical multi-agent policy across agents.",
     )
     p.add_argument("task_class", choices=sorted(TASK_CLASSES),
                    help="Picks the model + default mode.")
     p.add_argument("prompt", nargs="?", default=None,
                    help="Prompt text. Pass `-` to read from stdin.")
+    p.add_argument("--agent", choices=SUPPORTED_AGENTS, default="claude",
+                   help="Which agent to dispatch (default: claude).")
     p.add_argument("--worktree",
                    help="Path to a git worktree under .worktrees/. "
                         "Required for write modes.")
@@ -196,7 +231,7 @@ def main() -> int:
                    help="Override task-class default mode.")
     p.add_argument("--model",
                    help="Override task-class default model "
-                        "(rarely needed — let the class pick).")
+                        "(rarely needed — let the class+agent pick).")
     p.add_argument("--timeout", type=int,
                    help="Override task-class default hard timeout (s).")
     p.add_argument("--task-id",
@@ -206,10 +241,10 @@ def main() -> int:
     args = p.parse_args()
 
     cfg = TASK_CLASSES[args.task_class]
-    model = args.model or cfg.model
+    model = args.model or cfg.models[args.agent]
     mode = args.mode or cfg.default_mode
     timeout_s = args.timeout or cfg.default_timeout_s
-    task_id = args.task_id or make_task_id(args.task_class)
+    task_id = args.task_id or make_task_id(args.task_class, args.agent)
 
     if args.prompt is None:
         sys.stderr.write("[smart] no prompt — pass as arg or `-` for stdin\n")
@@ -234,14 +269,15 @@ def main() -> int:
         return 2
 
     if args.dry_run:
-        print(f"[dry-run] task_class={args.task_class} model={model} "
-              f"mode={mode} timeout={timeout_s}s")
+        print(f"[dry-run] agent={args.agent} task_class={args.task_class} "
+              f"model={model} mode={mode} timeout={timeout_s}s")
         print(f"[dry-run] worktree={worktree or '(none — read-only)'}")
         print(f"[dry-run] task_id={task_id}")
         print(f"[dry-run] prompt_chars={len(prompt)}")
         return 0
 
     return fire(
+        agent=args.agent,
         task_class=args.task_class,
         prompt=prompt,
         mode=mode,
