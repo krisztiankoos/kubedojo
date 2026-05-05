@@ -488,7 +488,7 @@ def dispatch_gemini_with_retry(prompt: str, model: str = GEMINI_DEFAULT_MODEL,
 
 
 _CLAUDE_TEXT_ONLY_DISALLOWED = (
-    "Bash,Edit,Write,NotebookEdit,WebFetch,WebSearch,Skill,Agent,Task,ExitPlanMode"
+    "Bash,Edit,Write,NotebookEdit,Skill,Agent,Task,ExitPlanMode"
 )
 """Tool list passed to ``--disallowedTools`` when ``tools_disabled=True``.
 
@@ -504,6 +504,13 @@ delegated rewrites to a subagent that wrote to a separate context, then
 summarized in stdout (observed twice on
 ai-ai-building-module-1.2-models-apis-context-structured-output: 8 min
 of internal work, ~1 KB summary out, classic "the module above" prose).
+
+``WebFetch`` and ``WebSearch`` STAY ENABLED (removed from this list
+2026-05-05). Original blanket ban was collateral damage — it stopped
+agentic file mutation but also blinded the reviewer to fact errors
+(hallucinated CIS recs, fake kube-bench flags, dead Sources URLs).
+The v2 reviewer needs web access to do its job; without it, factual
+hallucinations from the writer pass through every cross-family review.
 
 Read-only tools (Read, Glob, Grep, TodoWrite) stay enabled —
 empirically Claude needs them to plan output without hanging. With ALL
@@ -596,11 +603,30 @@ def dispatch_codex(prompt: str, model: str = CODEX_DEFAULT_MODEL,
                    timeout: int = 900) -> tuple[bool, str]:
     """Call Codex CLI directly via `codex exec`. Returns (success, output).
 
-    Reads prompt from stdin, runs in read-only sandbox, skips git repo check.
+    Reads prompt from stdin, skips git repo check.
+
+    Environment overrides (default off — preserves prior read-only / no-search
+    behavior for callers that only need text reasoning):
+
+    - ``KUBEDOJO_CODEX_SEARCH=1`` enables ``--search`` (live web). Required for
+      writer dispatches that produce factual content (#388 module rewrites,
+      anything quoting CLI flags or version-specific behavior).
+    - ``KUBEDOJO_CODEX_SANDBOX`` overrides the sandbox mode. Valid values:
+      ``read-only`` (default), ``workspace-write``, ``danger-full-access``.
+      Use ``danger-full-access`` for dispatches that commit + push inside the
+      codex run (workspace-write blocks ``.git/worktrees/.../index.lock`` and
+      ``api.github.com``; see ``feedback_codex_danger_for_git_gh.md``).
+
     On rate-limit or quota errors, returns (False, stderr) so the caller can
     react (see run_module review branch, which degrades gracefully).
     """
-    cmd = [CODEX_CLI, "exec", "--skip-git-repo-check", "--sandbox", "read-only"]
+    sandbox = os.environ.get("KUBEDOJO_CODEX_SANDBOX", "read-only")
+    use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
+
+    cmd = [CODEX_CLI]
+    if use_search:
+        cmd.append("--search")
+    cmd.extend(["exec", "--skip-git-repo-check", "--sandbox", sandbox])
     # Allow caller to pin a model (e.g. "codex-gpt-5"); "codex" alone means default.
     if model and model != "codex":
         cmd.extend(["-m", model])
@@ -681,13 +707,30 @@ def dispatch_codex_review(prompt: str, model: str = CODEX_REVIEW_DEFAULT_MODEL,
 
 def dispatch_codex_patch(prompt: str, model: str = CODEX_PATCH_DEFAULT_MODEL,
                          timeout: int = 1200) -> tuple[bool, str]:
-    """Call Codex patch via `codex exec --sandbox read-only`.
+    """Call Codex patch via `codex exec`.
 
     Codex returns a JSON edit list. `patch_worker.py` applies the edits in
     Python (`apply_review_edits` → `_atomic_write_text`), so Codex itself
-    needs no write or exec capability.
+    needs no write capability — read-only sandbox is the right default.
+
+    Environment overrides (default off — preserves prior read-only / no-search
+    behavior for callers that don't need to verify cited URLs or version-gated
+    behavior while applying review edits):
+
+    - ``KUBEDOJO_CODEX_SEARCH=1`` enables ``--search`` (live web). Useful when
+      the review verdict cites URLs or version-specific facts the patcher
+      needs to confirm before rewriting prose around them.
+    - ``KUBEDOJO_CODEX_SANDBOX`` overrides the sandbox mode. Same valid values
+      and rationale as ``dispatch_codex``; default ``read-only`` is correct
+      for the patcher because edits are applied in Python downstream.
     """
-    cmd = [CODEX_CLI, "exec", "--skip-git-repo-check", "--sandbox", "read-only"]
+    sandbox = os.environ.get("KUBEDOJO_CODEX_SANDBOX", "read-only")
+    use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
+
+    cmd = [CODEX_CLI]
+    if use_search:
+        cmd.append("--search")
+    cmd.extend(["exec", "--skip-git-repo-check", "--sandbox", sandbox])
     if model:
         cmd.extend(["-m", model])
 
