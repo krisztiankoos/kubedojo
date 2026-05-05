@@ -153,16 +153,26 @@ def test_discuss_replies_create_delivered_reply_deliveries(mock_invoke, monkeypa
 
     mock_invoke.side_effect = _discuss_result
 
+    # Round 1 cannot short-circuit (round 1 is parallel fan-out, agents
+    # haven't seen each other's replies yet, so [AGREE] in round 1 means
+    # "I'm done with my answer" not cross-agent assent). Convergence
+    # requires ≥ round 2, so use --max-rounds 2 here. Pre-protocol-fix
+    # this test passed with --max-rounds 1; updated to match the round-1
+    # short-circuit block ported from learn-ukrainian commit 872d8376b0.
     exit_code = _run_cli(
-        ["discuss", "shared", "topic", "--with", "claude,codex", "--max-rounds", "1"]
+        ["discuss", "shared", "topic", "--with", "claude,codex", "--max-rounds", "2"]
     )
 
     assert exit_code == 0
     captured = capsys.readouterr()
-    assert "✅ converged at round 1" in captured.out
+    assert "✅ converged at round 2" in captured.out
 
+    # Each round produces N*(N-1) reply deliveries (each agent's reply is
+    # delivered to every OTHER agent). With 2 agents × 2 rounds = 4 deliveries.
     reply_deliveries = _reply_deliveries()
-    assert len(reply_deliveries) == 2
+    assert len(reply_deliveries) == 4
+    # Set collapses duplicates across rounds — still just 2 distinct
+    # (from, to, status) tuples for the 2-agent case.
     assert {
         (row["from_agent"], row["to_agent"], row["status"])
         for row in reply_deliveries
@@ -172,6 +182,49 @@ def test_discuss_replies_create_delivered_reply_deliveries(mock_invoke, monkeypa
     }
     assert all(row["delivered_at"] is not None for row in reply_deliveries)
     assert all(row["parent_id"] is not None for row in reply_deliveries)
+
+
+@patch("agent_runtime.runner.invoke")
+def test_discuss_max_rounds_one_clamps_to_two(mock_invoke, monkeypatch, capsys):
+    """`--max-rounds 1` is meaningless under the round-1-cannot-converge
+    invariant — round 1 would print "Forcing round 2" and then immediately
+    exit at the `round_idx == max_rounds` break. The CLI must clamp the
+    floor to 2 so the protocol actually runs round 2.
+
+    Caught by codex review of PR #889 (round-1 short-circuit port).
+    """
+    _channels.create_channel("shared")
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+
+    def _discuss_result(agent: str, *_args, **_kwargs) -> Result:
+        return Result(
+            ok=True,
+            agent=agent,
+            model="test-model",
+            mode="read-only",
+            response=f"{agent} discuss reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id=None,
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    exit_code = _run_cli(
+        ["discuss", "shared", "topic", "--with", "claude,codex", "--max-rounds", "1"]
+    )
+
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    # Clamp message must be visible.
+    assert "clamping --max-rounds 1 to 2" in captured.out
+    # Convergence must happen at round 2, not round 1.
+    assert "✅ converged at round 2" in captured.out
+    assert "✅ converged at round 1" not in captured.out
 
 
 def test_inbox_show_with_pending_and_failed(capsys):
