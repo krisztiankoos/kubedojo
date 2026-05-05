@@ -55,7 +55,7 @@ flowchart TD
     end
 ```
 
-This is the difference between hoping and engineering. Between luck and reliability.
+<!-- incident-xref: netflix-chaos-monkey --> The chaos-engineering reference in the diagram above is covered in detail in [the chaos engineering canonical](../../disciplines/reliability-security/chaos-engineering/module-1.1-chaos-principles/). This is the difference between hoping and engineering. Between luck and reliability.
 
 ---
 

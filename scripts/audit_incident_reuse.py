@@ -98,11 +98,18 @@ INCIDENTS: dict[str, list[str]] = {
         r"(rm[\s\-]rf|backup failed|replication lag|fatigued.{0,40}admin|database outage).{0,400}GitLab",
     ],
     "Cloudflare 2019 regex outage": [
-        r"Cloudflare.{0,200}(regex|2019|July|backtrack|catastrophic)",
+        # Tightened 2026-05-04 (sweep #4 review): bare "2019" / "July" signals matched
+        # Verizon BGP leak narratives that mention Cloudflare as one of the affected
+        # services. Require a WAF/regex/backtracking signal unique to the July 2019 incident.
+        r"Cloudflare.{0,200}(regex|catastrophic backtrack|WAF.{0,40}(rule|outage|deployed)|July 2,?\s*2019|July 2019)",
         r"(regex|catastrophic backtrack).{0,200}Cloudflare",
     ],
     "Cloudflare 2020 BGP / config": [
-        r"Cloudflare.{0,200}(BGP|2020|configuration push)",
+        # Tightened 2026-05-04 (sweep #4 review): bare "BGP" / "2020" / Cloudflare matched
+        # Facebook-2021-BGP citations and other unrelated Cloudflare-as-vendor mentions.
+        # Require an explicit Cloudflare-2020-BGP signal (year+BGP together, configuration push,
+        # backbone announcement, or July 17 2020 date).
+        r"Cloudflare.{0,200}(2020.{0,40}BGP|BGP.{0,40}2020|configuration push|July 17,?\s*2020|July 2020.{0,40}BGP|backbone announcement)",
     ],
     "Facebook 2021 BGP outage": [
         # Require Facebook + outage-specific phrasing (not just "Facebook" + "BGP" — too many
@@ -140,7 +147,11 @@ INCIDENTS: dict[str, list[str]] = {
         r"Code Spaces",
     ],
     "Target 2013 breach": [
-        r"Target.{0,80}(2013|breach|HVAC|40 million)",
+        # Tightened 2026-05-04 (sweep #4 review): bare "breach" alternative matched any
+        # SLA/SLO content about "internal target ... breaches" since "target" lowercase is
+        # a generic word for a goal/metric. Require Target-Corp-2013-specific signals:
+        # HVAC vendor, Fazio, 40 million cards, or year+incident verb.
+        r"Target.{0,200}(HVAC|40 million.{0,40}(card|customer)|Fazio|2013.{0,40}(breach|hack|attack|stolen)|stolen.{0,40}credit cards)",
     ],
     "ChaosDB 2021": [
         r"ChaosDB",
