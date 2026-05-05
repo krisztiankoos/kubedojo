@@ -17,7 +17,7 @@ LISP did not invent list processing — IPL had already given Logic Theorist and
 | John McCarthy | 1927–2011 | Author of the 1958 MIT AI Memo No. 1, the 1960 CACM paper, and most of the LISP 1.5 manual. Brought the Dartmouth naming agenda into MIT's symbolic-language design. |
 | Steve Russell | — | Early LISP implementer credited, with Daniel Edwards, in the LISP 1.5 manual's interpreter lineage. |
 | Daniel J. Edwards | — | Early interpreter implementer with Russell; LISP 1.5 manual co-author. |
-| Timothy P. Hart | — | LISP 1.5 manual co-author and compiler contributor. The macro mechanism is most associated with his line of work. |
+| Timothy P. Hart | — | LISP 1.5 manual co-author and compiler contributor. |
 | Michael I. Levin | — | LISP 1.5 manual co-author; prepared the manual for publication and authored Appendix B. |
 | Paul W. Abrahams | — | LISP 1.5 manual co-author. |
 

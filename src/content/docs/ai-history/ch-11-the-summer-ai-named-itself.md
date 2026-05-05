@@ -16,7 +16,7 @@ The 1956 Dartmouth Summer Research Project did not invent the ideas of artificia
 |---|---|---|
 | John McCarthy | 1927–2011 | Assistant professor of mathematics at Dartmouth in 1955–56. Lead drafter of the August 1955 funding proposal; institutionalized the term "Artificial Intelligence" through it. Hosted the conference at Dartmouth. |
 | Marvin Minsky | 1927–2016 | Junior Fellow at Harvard in Math and Neurology, soon moving to MIT. Co-organizer; wrote the proposal's "neural nets" section. One of three full-time attendees of the eight-week workshop. |
-| Nathaniel Rochester | 1919–2001 | Manager of the IBM 701 development team. Co-organizer; brought industrial computing weight and IBM access. The proposal's only direct industrial-research voice. |
+| Nathaniel Rochester | 1919–2001 | Chief architect of the IBM 701. Co-organizer; brought industrial computing weight and IBM access. The proposal's only direct industrial-research voice. |
 | Claude Shannon | 1916–2001 | Bell Labs; already famous for the 1948 information-theory paper. Co-organizer; gave the proposal the star name it needed to clear Rockefeller's review. Conference attendance partial. |
 | Ray Solomonoff | 1926–2009 | Independent researcher from the Technical Research Group, New York. Full-summer attendee whose contemporaneous handwritten notes are the chapter's most reliable record of what actually happened. |
 | Allen Newell & Herbert Simon | 1927–1992 / 1916–2001 | Newell at RAND; Simon at Carnegie Tech. Arrived partway through the summer with a working version of the Logic Theorist program — the only substantial running demonstration of the conference. |

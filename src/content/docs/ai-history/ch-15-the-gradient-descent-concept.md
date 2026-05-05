@@ -16,7 +16,7 @@ Gradient descent did not arrive in machine learning fully formed. It accumulated
 |---|---|---|
 | Augustin-Louis Cauchy | 1789–1857 | French mathematician. Presented the three-page note "Méthode générale pour la résolution des systèmes d'équations simultanées" to the Académie des Sciences on 18 October 1847. Promised a follow-up *Mémoire* with convergence proofs that never appeared. |
 | Herbert Robbins | 1915–2001 | American mathematical statistician at the University of North Carolina. Co-author of the September 1951 *Annals of Mathematical Statistics* paper "A Stochastic Approximation Method." |
-| Sutton Monro | 1920–1995 | Robbins's co-author. The 1951 paper proposed a recursive update procedure that drives a parameter toward the root of an unknown monotone function from noisy observations. |
+| Sutton Monro | 1919–1995 | Robbins's co-author. The 1951 paper proposed a recursive update procedure that drives a parameter toward the root of an unknown monotone function from noisy observations. |
 | Bernard Widrow | 1929– | Stanford EE professor; built the lunch-pail Adaline. Co-author of the August 1960 IRE WESCON paper "Adaptive Switching Circuits." |
 | Marcian E. "Ted" Hoff | 1937– | Widrow's doctoral student in 1960. Co-author on Adaline; later (out of scope here) co-designer of the Intel 4004. |
 | Seppo Linnainmaa | 1945– | Finnish computer scientist. His 1970 University of Helsinki master's thesis on cumulative rounding errors gave the first explicit, efficient reverse-mode chain-rule machinery for arbitrary computational graphs — without ever mentioning neural networks. |
@@ -117,7 +117,7 @@ They did not invent the gradient method, but they were the first to explicitly f
 :::note[Widrow-Hoff name the method]
 > "The method of searching that has proven most useful is the method of steepest descent. Vector adjustment changes are made in the direction of the gradient."
 
-Not later reconstruction. The 1960 paper names the search method in its own optimization vocabulary on the page (`WidrowHoff60`, p. 99).
+Not later reconstruction. The 1960 paper names the search method in its own optimization vocabulary on the page (`WidrowHoff60`, p. 98).
 :::
 
 The WESCON paper quantified the dynamics of this descent. The physical Adaline update rule reduced the error by a fixed fraction on each step. In their four-by-four input case, the per-pattern step shrank the error magnitude by a factor of exactly 1/17. Widrow and Hoff mathematically derived the time constant for this learning process; with a specific proportionality constant, the time constant $\tau$ equaled $n+1$ patterns. For the Adaline's sixteen input lines plus its level control, the hardware exhibited a measurable time constant of roughly 17 patterns, giving the physical machine predictable, exponential convergence dynamics.
