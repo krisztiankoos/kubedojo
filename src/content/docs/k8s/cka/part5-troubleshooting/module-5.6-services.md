@@ -52,10 +52,10 @@ By the end of this module, you'll be able to:
 
 ## Did You Know?
 
-- **Service IPs are virtual**: ClusterIP addresses don't exist on any interface - they're just rules in iptables/IPVS
-- **NodePort range**: Default is 30000-32767. You can change it with API server flag but rarely need to
-- **LoadBalancer includes NodePort**: LoadBalancer services automatically get a ClusterIP AND NodePort
-- **Headless services have no ClusterIP**: Setting `clusterIP: None` returns pod IPs directly in DNS
+- **Service IPs are virtual**: ClusterIP addresses are implemented by the Service proxy on each node rather than bound as a normal interface address
+- **NodePort range**: [Default is 30000-32767. You can change it with API server flag](https://kubernetes.io/docs/concepts/services-networking/service/) but rarely need to
+- **LoadBalancer usually includes NodePort**: By default, a LoadBalancer Service also allocates a ClusterIP and NodePort unless node port allocation is explicitly disabled
+- **Headless services have no ClusterIP**: Setting `clusterIP: None` [returns pod IPs directly in DNS](https://kubernetes.io/docs/concepts/services-networking/service/)
 
 ---
 
@@ -555,7 +555,7 @@ Your team needs to access a temporary debug dashboard. You expose the deployment
 <details>
 <summary>Answer</summary>
 
-A timeout when accessing a NodePort from outside the cluster, while internal access works, almost universally points to a network firewall or security group blocking the traffic. When you hit the NodePort from inside the cluster, the traffic stays within the internal software-defined network, bypassing external boundary restrictions. However, external traffic must pass through your cloud provider's security groups, network ACLs, or the node's host-level firewall (like ufw or iptables) before it even reaches kube-proxy. If you haven't explicitly whitelisted the specific NodePort range (or the exact port like 30080) in these external firewalls, the packets are silently dropped, resulting in a timeout rather than an immediate connection refusal.
+A timeout when accessing a NodePort from outside the cluster, while internal access works, often points to an external firewall, security group, or routing policy blocking the traffic. When you hit the NodePort from inside the cluster, the traffic stays within the internal software-defined network, bypassing external boundary restrictions. However, external traffic must pass through your cloud provider's security groups, network ACLs, or the node's host-level firewall (like ufw or iptables) before it even reaches kube-proxy. If you haven't explicitly whitelisted the specific NodePort range (or the exact port like 30080) in these external firewalls, the packets are silently dropped, resulting in a timeout rather than an immediate connection refusal.
 
 Check:
 - Node's iptables: `sudo iptables -L INPUT`
@@ -595,7 +595,7 @@ You've carefully written an Ingress resource routing `myapp.example.com` to your
 <details>
 <summary>Answer</summary>
 
-A 404 error from an Ingress endpoint means the traffic successfully reached an Ingress Controller, but the controller didn't know what to do with the request because it didn't find a matching routing rule. This most commonly happens because the `ingressClassName` specified in your Ingress resource doesn't match the class monitored by the running controller, causing the controller to completely ignore your resource. Another frequent cause is a mismatch in the `Host` header, where the domain name the client is requesting doesn't exactly match the `host` field defined in the Ingress rules. Finally, it could be a missing controller entirely, but a quick 404 usually implies a web server (like Nginx) is active but lacks the specific server block configuration.
+A 404 error from an Ingress endpoint often means the request reached a running controller, but no configured host/path rule matched it. This most commonly happens because the `ingressClassName` specified in your Ingress resource doesn't match the class monitored by the running controller, causing the controller to completely ignore your resource. Another frequent cause is a mismatch in the `Host` header, where the domain name the client is requesting doesn't exactly match the `host` field defined in the Ingress rules. Finally, it could be a missing controller entirely, but a quick 404 usually implies a web server (like Nginx) is active but lacks the specific server block configuration.
 
 ```bash
 # Check for ingress controller
@@ -632,7 +632,7 @@ You are auditing a cluster that recently experienced scaling issues, and you sus
 <details>
 <summary>Answer</summary>
 
-To confirm the operational mode of kube-proxy, you need to inspect its active configuration or startup logs, as this setting dictates how the daemon translates Service IPs into actual routing rules on each node. The most direct method is to examine the `kube-proxy` ConfigMap in the `kube-system` namespace, which serves as the source of truth for the daemonset configuration and will explicitly declare the mode. Alternatively, you can view the logs of any running kube-proxy pod, which will log a startup message indicating whether it is initializing in "iptables" or "ipvs" mode. Confirming this ensures you understand the underlying mechanism (sequential iptables chains vs. efficient IPVS hash tables) handling your cluster's internal load balancing.
+To confirm the operational mode of kube-proxy, you need to inspect its active configuration or startup logs, as this setting dictates how the daemon translates Service IPs into actual routing rules on each node. The most direct method is to examine the `kube-proxy` ConfigMap in the `kube-system` namespace, which serves as the source of truth for the daemonset configuration and will explicitly declare the mode. Alternatively, you can view the logs of any running kube-proxy pod, which will log a startup message indicating whether it is initializing in "iptables" or "ipvs" mode. Confirming this ensures you understand which proxy backend is handling Service routing in your cluster.
 
 ```bash
 # Check ConfigMap
@@ -853,3 +853,12 @@ curl -H "Host: <hostname>" http://<ingress-ip>
 ## Next Module
 
 Continue to [Module 5.7: Logging & Monitoring](../module-5.7-logging-monitoring/) to learn how to use logs and metrics for troubleshooting.
+
+## Sources
+
+- [Service](https://kubernetes.io/docs/concepts/services-networking/service/) — Backs Service types and behavior: ClusterIP, NodePort default range, LoadBalancer semantics, ExternalName, headless Services, selectors, DNS-based discovery, and readiness/endpoints relationships.
+- [DNS for Services and Pods](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/) — Backs cluster DNS behavior, service and pod DNS records, namespace-qualified lookups, headless-service DNS results, and the role of cluster DNS in service discovery troubleshooting.
+- [Debug Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/) — Backs service-level checks such as verifying Service existence, selector matching, EndpointSlice population, and the classic 'service has no endpoints' troubleshooting flow.
+- [Virtual IPs and Service Proxies](https://kubernetes.io/docs/reference/networking/virtual-ips/) — General lesson point for an illustrative rewrite.
+- [docs.aws.amazon.com: load balancing.html](https://docs.aws.amazon.com/eks/latest/best-practices/load-balancing.html) — The shared pool does not cover EKS specifics, but the official AWS EKS load-balancing docs directly describe this behavior.
+- [kubernetes.io: ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) — General lesson point for an illustrative rewrite.

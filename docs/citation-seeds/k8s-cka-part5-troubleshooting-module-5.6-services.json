@@ -1,0 +1,272 @@
+{
+  "module_key": "k8s/cka/part5-troubleshooting/module-5.6-services",
+  "module_path": "src/content/docs/k8s/cka/part5-troubleshooting/module-5.6-services.md",
+  "research_run_id": "2026-05-07T16:48:36+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/k8s-cka-part5-troubleshooting.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "ClusterIP is internal-only by default, NodePort exposes the Service on each node's IP at a static port, LoadBalancer exposes through an external load balancer, and ExternalName returns a DNS CNAME without proxying.",
+      "claim_class": "standard",
+      "span_hint": "section: 1.1 Service Types",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Service concept page defines the behaviors of ClusterIP, NodePort, LoadBalancer, and ExternalName."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "ClusterIP addresses are virtual and not bound as normal interface addresses.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S013"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Service IPs are virtual**: ClusterIP addresses don't exist on any interface - they're just rules in iptables/IPVS",
+      "suggested_rewrite": "**Service IPs are virtual**: ClusterIP addresses are implemented by the Service proxy on each node rather than bound as a normal interface address",
+      "lesson_point_url": null,
+      "rationale": "Upstream docs support the virtual-IP concept, but the iptables/IPVS-only wording is too narrow because kube-proxy also has nftables mode."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The default NodePort range is 30000-32767, and it can be changed with the API server's service-node-port-range setting.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 2",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Service docs explicitly document the default NodePort range and the API server flag used to change it."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "A LoadBalancer Service usually also allocates a ClusterIP and NodePort, unless node port allocation is explicitly disabled.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**LoadBalancer includes NodePort**: LoadBalancer services automatically get a ClusterIP AND NodePort",
+      "suggested_rewrite": "**LoadBalancer usually includes NodePort**: By default, a LoadBalancer Service also allocates a ClusterIP and NodePort unless node port allocation is explicitly disabled",
+      "lesson_point_url": null,
+      "rationale": "The absolute wording is no longer strictly correct because Kubernetes allows disabling node port allocation for LoadBalancer Services."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "A headless Service uses `clusterIP: None`, has no virtual ClusterIP, and DNS returns backend pod records directly.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 4",
+      "disposition": "supported",
+      "source_ids": [
+        "S012",
+        "S014"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Service and DNS docs cover headless Services and their DNS behavior."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "A Service has no endpoints when no Ready Pods match its selector, commonly because of selector or label mismatches or failing readiness.",
+      "claim_class": "standard",
+      "span_hint": "Quiz Q1 answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S003",
+        "S012"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared debug-service and Service docs cover selector matching, endpoint population, and readiness-gated backends."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "If a NodePort works from inside the cluster but times out externally, firewalling or upstream network controls are a common cause.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Quiz Q2 answer, first sentence",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S013"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A timeout when accessing a NodePort from outside the cluster, while internal access works, almost universally points to a network firewall or security group blocking the traffic.",
+      "suggested_rewrite": "A timeout when accessing a NodePort from outside the cluster, while internal access works, often points to an external firewall, security group, or routing policy blocking the traffic.",
+      "lesson_point_url": "https://kubernetes.io/docs/reference/networking/virtual-ips/",
+      "rationale": "Upstream docs support NodePort and firewall interaction, but the near-universal certainty and specific cloud-control wording are too strong."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "A `type: LoadBalancer` Service depends on an external load balancer implementation or cloud-provider integration; without that support the external address remains pending.",
+      "claim_class": "standard",
+      "span_hint": "Part 4.1 / Quiz Q3 answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Service docs explain that Kubernetes does not directly provide the load balancer implementation and relies on integrated infrastructure."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "In Amazon EKS, Kubernetes `Service` objects of type `LoadBalancer` can be reconciled into AWS Elastic Load Balancers by the AWS cloud provider or AWS Load Balancer Controller.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Quiz Q3 answer, sentence about EKS and AWS ELB/NLB",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://docs.aws.amazon.com/eks/latest/best-practices/load-balancing.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared pool does not cover EKS specifics, but the official AWS EKS load-balancing docs directly describe this behavior."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "On bare-metal clusters, MetalLB can provide `LoadBalancer` Services by allocating IPs from configured address pools.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Part 4.1 / Quiz Q3 answer, MetalLB sentence",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://metallb.io/concepts/index.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a real, useful claim, but the primary source is MetalLB's official docs on an off-allowlist domain."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "A 404 from an Ingress endpoint often means a running controller did not find a matching rule for the request.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Quiz Q4 answer, first sentence",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A 404 error from an Ingress endpoint means the traffic successfully reached an Ingress Controller, but the controller didn't know what to do with the request because it didn't find a matching routing rule.",
+      "suggested_rewrite": "A 404 error from an Ingress endpoint often means the request reached a running controller, but no configured host/path rule matched it.",
+      "lesson_point_url": "https://kubernetes.io/docs/concepts/services-networking/ingress/",
+      "rationale": "Ingress rule matching is documented, but exact 404 behavior is implementation-specific and should be stated more cautiously."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "An Ingress can fail to route because its `ingressClassName` does not match the active controller or because the request Host/path does not match the Ingress rules.",
+      "claim_class": "standard",
+      "span_hint": "Part 5.2 / Quiz Q4 answer",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/services-networking/ingress/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The section pool has no Ingress source, and the official Ingress docs directly cover class selection and host/path rule matching."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Service `port` is the port clients use on the Service, while `targetPort` is the port kube-proxy forwards to on backend Pods.",
+      "claim_class": "standard",
+      "span_hint": "Part 2.4 / Quiz Q5 answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Service docs define `port` and `targetPort` semantics directly."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "On Linux, kube-proxy supports `iptables`, `ipvs`, and `nftables`, and the config API documents `iptables` as the default when mode is unspecified.",
+      "claim_class": "standard",
+      "span_hint": "Part 6.1 / Quiz Q6 answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S013"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/config-api/kube-proxy-config.v1alpha1/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared pool covers kube-proxy modes, and the official config API page covers the default mode detail."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "IPVS should not be presented as the generally 'more performant' or categorically superior kube-proxy mode for troubleshooting guidance.",
+      "claim_class": "benchmark",
+      "span_hint": "Quiz Q6 answer, final sentence",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S013"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Confirming this ensures you understand the underlying mechanism (sequential iptables chains vs. efficient IPVS hash tables) handling your cluster's internal load balancing.",
+      "suggested_rewrite": "Confirming this ensures you understand which proxy backend is handling Service routing in your cluster.",
+      "lesson_point_url": null,
+      "rationale": "Current upstream docs describe nftables as the recommended replacement for IPVS and do not support this strong comparative framing."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/",
+      "title": "Debug Services",
+      "tier": "standards",
+      "why_relevant": "Canonical troubleshooting flow for selectors, endpoints, and service reachability."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/services-networking/service/",
+      "title": "Service",
+      "tier": "standards",
+      "why_relevant": "Authoritative reference for Service types, headless Services, traffic policies, and port mapping."
+    },
+    {
+      "url": "https://kubernetes.io/docs/reference/networking/virtual-ips/",
+      "title": "Virtual IPs and Service Proxies",
+      "tier": "standards",
+      "why_relevant": "Explains how kube-proxy implements Service virtual IPs and how proxy modes behave."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/services-networking/ingress/",
+      "title": "Ingress",
+      "tier": "standards",
+      "why_relevant": "Covers ingressClassName, host/path matching, and pathType semantics referenced in the troubleshooting section."
+    }
+  ],
+  "notes": "No claim entries were created for tables, quiz prompts, or code blocks. The shared section pool did not include Ingress or EKS/MetalLB sources, so those claims use one new allowlisted URL and one off-allowlist expansion proposal.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
