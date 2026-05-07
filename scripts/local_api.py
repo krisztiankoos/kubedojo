@@ -7242,113 +7242,6 @@ def build_api_schema() -> dict[str, Any]:
     }
 
 
-# ─────────────────────────────────────────────────────────────────────────
-# Channels deliberation UI — /channels HTML + /api/channels JSON
-# ─────────────────────────────────────────────────────────────────────────
-
-def _bridge_db_path(repo_root: Path) -> Path:
-    return repo_root / ".mcp" / "servers" / "message-broker" / "messages.db"
-
-
-def _bridge_db_conn(repo_root: Path):
-    """Open a read-optimised SQLite connection to the bridge DB, or None."""
-    db_path = _bridge_db_path(repo_root)
-    if not db_path.exists():
-        return None
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA busy_timeout=1000")
-    return conn
-
-
-def build_channels_api(repo_root: Path) -> dict[str, Any]:
-    """List channels with thread summaries from the bridge DB."""
-    conn = _bridge_db_conn(repo_root)
-    if conn is None:
-        return {"channels": []}
-    try:
-        rows = conn.execute(
-            """
-            SELECT channel, thread_id,
-                   COUNT(*) AS event_count,
-                   MIN(created_at) AS first_ts,
-                   MAX(created_at) AS last_ts,
-                   GROUP_CONCAT(DISTINCT from_agent) AS agents_csv
-            FROM channel_messages
-            GROUP BY channel, thread_id
-            ORDER BY last_ts DESC
-            """
-        ).fetchall()
-    finally:
-        conn.close()
-
-    by_channel: dict[str, list[dict[str, Any]]] = {}
-    for row in rows:
-        agents = sorted({a for a in (row["agents_csv"] or "").split(",") if a})
-        by_channel.setdefault(row["channel"], []).append({
-            "thread_id": row["thread_id"],
-            "event_count": row["event_count"],
-            "agents": agents,
-            "first_ts": row["first_ts"],
-            "last_ts": row["last_ts"],
-        })
-    return {
-        "channels": [
-            {"channel": ch, "threads": threads}
-            for ch, threads in by_channel.items()
-        ]
-    }
-
-
-def build_channel_events_api(
-    repo_root: Path, thread_id: str, since_event_id: int
-) -> dict[str, Any]:
-    """Return channel_events for one thread, paginated after since_event_id."""
-    conn = _bridge_db_conn(repo_root)
-    if conn is None:
-        return {"thread_id": thread_id, "events": [], "next_since_event_id": 0}
-    try:
-        rows = conn.execute(
-            """
-            SELECT event_id, thread_id, event, payload_json, ts
-            FROM channel_events
-            WHERE thread_id = ? AND event_id > ?
-            ORDER BY event_id ASC LIMIT 100
-            """,
-            (thread_id, since_event_id),
-        ).fetchall()
-        events: list[dict[str, Any]] = []
-        max_eid = since_event_id
-        for row in rows:
-            payload = json.loads(row["payload_json"]) if row["payload_json"] else {}
-            eid = int(row["event_id"])
-            max_eid = max(max_eid, eid)
-            ev: dict[str, Any] = {
-                "event_id": eid,
-                "event": row["event"],
-                "ts": row["ts"],
-                "thread_id": row["thread_id"],
-                **payload,
-            }
-            if row["event"] == "reply_complete" and payload.get("agent"):
-                msg = conn.execute(
-                    """
-                    SELECT body, from_model FROM channel_messages
-                    WHERE thread_id = ? AND from_agent = ? AND created_at <= ?
-                    ORDER BY created_at DESC LIMIT 1
-                    """,
-                    (thread_id, payload["agent"], row["ts"]),
-                ).fetchone()
-                if msg:
-                    ev["body"] = msg["body"]
-                    ev["model"] = msg["from_model"] or ""
-            events.append(ev)
-    finally:
-        conn.close()
-    return {"thread_id": thread_id, "events": events, "next_since_event_id": max_eid}
-
-
 def render_channels_index_html() -> str:
     return """<!doctype html>
 <html lang="en">
@@ -7521,15 +7414,6 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     if path.startswith("/channels/"):
         raw_tid = unquote(path[len("/channels/"):]).strip("/")
         return 200, render_channel_thread_html(raw_tid), "text/html; charset=utf-8"
-    if path == "/api/channels":
-        return 200, build_channels_api(repo_root), "application/json; charset=utf-8"
-    if path.startswith("/api/channel/") and path.endswith("/events"):
-        raw_tid = unquote(path[len("/api/channel/"):-len("/events")]).strip("/")
-        try:
-            since_eid = int(query.get("since_event_id", ["0"])[0])
-        except (TypeError, ValueError):
-            since_eid = 0
-        return 200, build_channel_events_api(repo_root, raw_tid, since_eid), "application/json; charset=utf-8"
     if path == "/healthz":
         return 200, {"ok": True}, "application/json; charset=utf-8"
     if path == "/api/status/summary":
