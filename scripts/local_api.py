@@ -7242,6 +7242,273 @@ def build_api_schema() -> dict[str, Any]:
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────
+# Channels deliberation UI — /channels HTML + /api/channels JSON
+# ─────────────────────────────────────────────────────────────────────────
+
+def _bridge_db_path(repo_root: Path) -> Path:
+    return repo_root / ".mcp" / "servers" / "message-broker" / "messages.db"
+
+
+def _bridge_db_conn(repo_root: Path):
+    """Open a read-optimised SQLite connection to the bridge DB, or None."""
+    db_path = _bridge_db_path(repo_root)
+    if not db_path.exists():
+        return None
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=1000")
+    return conn
+
+
+def build_channels_api(repo_root: Path) -> dict[str, Any]:
+    """List channels with thread summaries from the bridge DB."""
+    conn = _bridge_db_conn(repo_root)
+    if conn is None:
+        return {"channels": []}
+    try:
+        rows = conn.execute(
+            """
+            SELECT channel, thread_id,
+                   COUNT(*) AS event_count,
+                   MIN(created_at) AS first_ts,
+                   MAX(created_at) AS last_ts,
+                   GROUP_CONCAT(DISTINCT from_agent) AS agents_csv
+            FROM channel_messages
+            GROUP BY channel, thread_id
+            ORDER BY last_ts DESC
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+
+    by_channel: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        agents = sorted({a for a in (row["agents_csv"] or "").split(",") if a})
+        by_channel.setdefault(row["channel"], []).append({
+            "thread_id": row["thread_id"],
+            "event_count": row["event_count"],
+            "agents": agents,
+            "first_ts": row["first_ts"],
+            "last_ts": row["last_ts"],
+        })
+    return {
+        "channels": [
+            {"channel": ch, "threads": threads}
+            for ch, threads in by_channel.items()
+        ]
+    }
+
+
+def build_channel_events_api(
+    repo_root: Path, thread_id: str, since_event_id: int
+) -> dict[str, Any]:
+    """Return channel_events for one thread, paginated after since_event_id."""
+    conn = _bridge_db_conn(repo_root)
+    if conn is None:
+        return {"thread_id": thread_id, "events": [], "next_since_event_id": 0}
+    try:
+        rows = conn.execute(
+            """
+            SELECT event_id, thread_id, event, payload_json, ts
+            FROM channel_events
+            WHERE thread_id = ? AND event_id > ?
+            ORDER BY event_id ASC LIMIT 100
+            """,
+            (thread_id, since_event_id),
+        ).fetchall()
+        events: list[dict[str, Any]] = []
+        max_eid = since_event_id
+        for row in rows:
+            payload = json.loads(row["payload_json"]) if row["payload_json"] else {}
+            eid = int(row["event_id"])
+            max_eid = max(max_eid, eid)
+            ev: dict[str, Any] = {
+                "event_id": eid,
+                "event": row["event"],
+                "ts": row["ts"],
+                "thread_id": row["thread_id"],
+                **payload,
+            }
+            if row["event"] == "reply_complete" and payload.get("agent"):
+                msg = conn.execute(
+                    """
+                    SELECT body, from_model FROM channel_messages
+                    WHERE thread_id = ? AND from_agent = ? AND created_at <= ?
+                    ORDER BY created_at DESC LIMIT 1
+                    """,
+                    (thread_id, payload["agent"], row["ts"]),
+                ).fetchone()
+                if msg:
+                    ev["body"] = msg["body"]
+                    ev["model"] = msg["from_model"] or ""
+            events.append(ev)
+    finally:
+        conn.close()
+    return {"thread_id": thread_id, "events": events, "next_since_event_id": max_eid}
+
+
+def render_channels_index_html() -> str:
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Deliberations</title>
+  <style>
+    :root{--bg:#0a0f1a;--surface-0:#111827;--surface-1:#1a2332;--surface-2:#1f2b3d;--text:#e5e7eb;--text-dim:#6b7280;--accent:#38bdf8;--green:#4ade80;--border:rgba(255,255,255,0.06);--radius:12px;--radius-sm:8px}
+    *{box-sizing:border-box;margin:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+    .hdr{background:linear-gradient(180deg,rgba(17,24,39,.95),rgba(10,15,26,.98));border-bottom:1px solid var(--border);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}
+    .hdr h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
+    .hdr p{font-size:12px;color:var(--text-dim);margin-top:2px}
+    .btn{background:var(--surface-1);color:var(--text);border:1px solid var(--border);padding:6px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
+    .btn:hover{background:var(--surface-2)}
+    .main{max-width:1200px;margin:0 auto;padding:24px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+    a.card{background:var(--surface-0);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-decoration:none;color:var(--text);display:block;transition:border-color .15s,background .15s}
+    a.card:hover{border-color:var(--accent);background:var(--surface-1)}
+    .card-ch{font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:6px}
+    .card-tid{font-size:12px;color:var(--text-dim);font-family:monospace;margin-bottom:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+    .bc{background:rgba(56,189,248,.1);color:#38bdf8}.bcl{background:rgba(56,189,248,.15);color:#38bdf8}
+    .bco{background:rgba(74,222,128,.15);color:#4ade80}.bg{background:rgba(167,139,250,.15);color:#a78bfa}
+    .bu{background:rgba(251,191,36,.15);color:#fbbf24}
+    .card-ts{font-size:11px;color:var(--text-dim);margin-top:8px}
+    .empty{text-align:center;color:var(--text-dim);padding:60px 0;font-size:14px}
+    .dot{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .status{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-dim)}
+  </style>
+</head>
+<body>
+<div class="hdr">
+  <div><h1>Agent Deliberations</h1><p>ab discuss live transcripts &#8212; claude / codex / gemini</p></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="status"><span class="dot"></span>&nbsp;<span id="st">Loading&#8230;</span></span>
+    <button class="btn" onclick="load()">Refresh</button>
+  </div>
+</div>
+<div class="main"><div id="grid" class="grid"></div></div>
+<script>
+const BADGE = {claude:"bcl",codex:"bco",gemini:"bg",user:"bu"};
+function timeAgo(iso){if(!iso)return"";const d=Math.floor((Date.now()-new Date(iso))/1000);if(d<60)return d+"s ago";if(d<3600)return Math.floor(d/60)+"m ago";if(d<86400)return Math.floor(d/3600)+"h ago";return Math.floor(d/86400)+"d ago";}
+function agentBadge(a){const c=BADGE[a]||"bc";return`<span class="badge ${c}">${a}</span>`;}
+function render(data){
+  const channels=data.channels||[];
+  const total=channels.reduce((n,c)=>n+c.threads.length,0);
+  document.getElementById("st").textContent=total+" thread"+(total===1?"":"s");
+  if(!total){document.getElementById("grid").innerHTML='<p class="empty">No deliberation threads yet.<br>Start one with <code>ab discuss &lt;channel&gt;</code>.</p>';return;}
+  const cards=channels.flatMap(c=>c.threads.map(t=>{
+    const agents=(t.agents||[]).map(agentBadge).join("");
+    return`<a class="card" href="/channels/${encodeURIComponent(t.thread_id)}"><div class="card-ch">${c.channel}</div><div class="card-tid" title="${t.thread_id}">${t.thread_id}</div><div class="card-meta"><span class="badge bc">${t.event_count} events</span>${agents}</div><div class="card-ts">last activity: ${timeAgo(t.last_ts)}</div></a>`;
+  }));
+  document.getElementById("grid").innerHTML=cards.join("");
+}
+function load(){fetch("/api/channels").then(r=>r.json()).then(render).catch(()=>{document.getElementById("st").textContent="API unavailable";});}
+load();setInterval(load,30000);
+</script>
+</body></html>"""
+
+
+def render_channel_thread_html(thread_id: str) -> str:
+    import json as _json
+    tid_js = _json.dumps(thread_id)
+    tid_short = thread_id[:20] + ("…" if len(thread_id) > 20 else "")
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Thread {tid_short}</title>
+  <style>
+    :root{{--bg:#0a0f1a;--surface-0:#111827;--surface-1:#1a2332;--surface-2:#1f2b3d;--text:#e5e7eb;--text-dim:#6b7280;--border:rgba(255,255,255,0.06);--radius-sm:8px}}
+    *{{box-sizing:border-box;margin:0}}
+    body{{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}}
+    .hdr{{background:linear-gradient(180deg,rgba(17,24,39,.95),rgba(10,15,26,.98));border-bottom:1px solid var(--border);padding:16px 24px;position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}}
+    .hdr-row{{display:flex;align-items:center;gap:12px;flex-wrap:wrap}}
+    .back{{color:#38bdf8;text-decoration:none;font-size:13px}}.back:hover{{text-decoration:underline}}
+    .tid{{font-size:13px;font-weight:600;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px;color:#e5e7eb}}
+    .meta{{font-size:11px;color:var(--text-dim);margin-top:4px}}
+    .feed{{max-width:860px;margin:24px auto;padding:0 24px 80px}}
+    .bubble{{margin-bottom:16px;max-width:720px}}
+    .bubble.claude{{border-left:3px solid #38bdf8}}.bubble.codex{{border-left:3px solid #4ade80}}
+    .bubble.gemini{{border-left:3px solid #a78bfa}}.bubble.user{{border-left:3px solid #fbbf24}}
+    .bi{{background:var(--surface-0);border:1px solid var(--border);border-left:none;border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 16px}}
+    .bm{{font-size:11px;color:var(--text-dim);margin-bottom:6px;display:flex;align-items:center;gap:8px}}
+    .an{{font-weight:700}}.an.claude{{color:#38bdf8}}.an.codex{{color:#4ade80}}.an.gemini{{color:#a78bfa}}.an.user{{color:#fbbf24}}
+    .mt{{background:var(--surface-2);padding:1px 6px;border-radius:4px;font-size:10px;font-family:monospace}}
+    .bb{{font-size:13px;white-space:pre-wrap;word-break:break-word}}
+    .vote-agree{{background:rgba(74,222,128,.2);color:#4ade80;padding:1px 6px;border-radius:4px;font-weight:700}}
+    .vote-option{{background:rgba(56,189,248,.2);color:#38bdf8;padding:1px 6px;border-radius:4px;font-weight:700}}
+    .vote-defer{{background:rgba(156,163,175,.2);color:#9ca3af;padding:1px 6px;border-radius:4px;font-weight:700}}
+    .hb{{font-size:11px;color:var(--text-dim);padding:3px 0 6px 16px}}
+    .pill{{display:inline-flex;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500}}
+    .p-ok{{background:rgba(74,222,128,.1);color:#4ade80}}.p-fail{{background:rgba(248,113,113,.1);color:#f87171}}.p-info{{background:rgba(56,189,248,.1);color:#38bdf8}}
+    .empty{{text-align:center;color:var(--text-dim);padding:60px 0;font-size:14px}}
+  </style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-row"><a class="back" href="/channels">&larr; Channels</a><div class="tid" title="{thread_id}">{thread_id}</div></div>
+  <div class="meta"><span id="ec">0 events</span> &middot; <span id="lu">connecting&#8230;</span></div>
+</div>
+<div class="feed" id="feed"><div class="empty" id="emp">Waiting for events&#8230;</div></div>
+<script>
+const TID={tid_js};
+let sinceId=0,atBottom=true,hbEl=null,hbN=0,totalEvents=0;
+const feed=document.getElementById("feed");
+feed.addEventListener("scroll",()=>{{atBottom=(feed.scrollHeight-feed.scrollTop-feed.clientHeight)<40;}});
+function esc(s){{return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}}
+function timeAgo(iso){{if(!iso)return"";const d=Math.floor((Date.now()-new Date(iso))/1000);if(d<60)return d+"s ago";if(d<3600)return Math.floor(d/60)+"m ago";return Math.floor(d/3600)+"h ago";}}
+function hiliteVotes(t){{return t.replace(/\\[(AGREE)\\]/g,'<span class="vote-agree">[$1]</span>').replace(/\\[(OPTION [A-Z0-9]+)\\]/g,'<span class="vote-option">[$1]</span>').replace(/\\[(DEFER)\\]/g,'<span class="vote-defer">[$1]</span>');}}
+function pill(cls,html){{return`<div style="padding:2px 0 6px 16px"><span class="pill ${{cls}}">${{html}}</span></div>`;}}
+function renderEv(ev){{
+  const e=ev.event;
+  if(e==="heartbeat"){{
+    if(!hbEl){{hbEl=document.createElement("div");hbEl.className="hb";hbN=0;feed.appendChild(hbEl);}}
+    hbN++;hbEl.textContent="(♥ "+hbN+" heartbeat"+(hbN>1?"s":"")+" elapsed="+(ev.elapsed_s||"?")+"s)";
+    return;
+  }}
+  hbEl=null;
+  const el=document.createElement("div");
+  if(e==="delivery_delivered"){{el.innerHTML=pill("p-ok","&#10003; delivered "+esc(ev.delivery_id||""));}}
+  else if(e==="delivery_failed"){{el.innerHTML=pill("p-fail","&#10007; failed "+esc(ev.error_kind||""));}}
+  else if(e==="model_cascade"){{el.innerHTML=pill("p-info","cascade "+esc(ev.from||"")+" &rarr; "+esc(ev.to||""));}}
+  else if(e==="reply_started"){{el.innerHTML=pill("p-info","&#8635; "+esc(ev.agent||"?")+" started");}}
+  else if(e==="reply_complete"){{
+    const a=ev.agent||"unknown";
+    const ac=["claude","codex","gemini","user"].includes(a)?a:"";
+    const body=ev.body?hiliteVotes(esc(ev.body)):'<em style="color:var(--text-dim)">no body</em>';
+    el.className="bubble "+ac;
+    el.innerHTML=`<div class="bi"><div class="bm"><span class="an ${{ac}}">${{esc(a)}}</span>${{ev.model?`<span class="mt">${{esc(ev.model)}}</span>`:""}}
+      <span>${{esc((ev.ts||"").slice(0,19).replace("T"," "))}}</span></div><div class="bb">${{body}}</div></div>`;
+  }} else {{return;}}
+  feed.appendChild(el);
+}}
+function poll(){{
+  fetch("/api/channel/"+encodeURIComponent(TID)+"/events?since_event_id="+sinceId)
+    .then(r=>r.json()).then(data=>{{
+      const evs=data.events||[];
+      if(evs.length){{
+        const emp=document.getElementById("emp");if(emp)emp.remove();
+        evs.forEach(renderEv);
+        sinceId=data.next_since_event_id||sinceId;
+        totalEvents+=evs.length;
+        document.getElementById("ec").textContent=totalEvents+" event"+(totalEvents===1?"":"s");
+        document.getElementById("lu").textContent="updated "+timeAgo(evs[evs.length-1].ts);
+        if(atBottom)feed.scrollTop=feed.scrollHeight;
+      }}
+    }}).catch(()=>{{document.getElementById("lu").textContent="API unavailable";}});
+  setTimeout(poll,2000);
+}}
+poll();
+</script>
+</body></html>"""
+
+
 def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     parsed = urlsplit(raw_path)
     path = parsed.path.rstrip("/") or "/"
@@ -7249,6 +7516,20 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
 
     if path in {"/", "/dashboard", "/quality-board"}:
         return 200, render_dashboard_html(), "text/html; charset=utf-8"
+    if path == "/channels":
+        return 200, render_channels_index_html(), "text/html; charset=utf-8"
+    if path.startswith("/channels/"):
+        raw_tid = unquote(path[len("/channels/"):]).strip("/")
+        return 200, render_channel_thread_html(raw_tid), "text/html; charset=utf-8"
+    if path == "/api/channels":
+        return 200, build_channels_api(repo_root), "application/json; charset=utf-8"
+    if path.startswith("/api/channel/") and path.endswith("/events"):
+        raw_tid = unquote(path[len("/api/channel/"):-len("/events")]).strip("/")
+        try:
+            since_eid = int(query.get("since_event_id", ["0"])[0])
+        except (TypeError, ValueError):
+            since_eid = 0
+        return 200, build_channel_events_api(repo_root, raw_tid, since_eid), "application/json; charset=utf-8"
     if path == "/healthz":
         return 200, {"ok": True}, "application/json; charset=utf-8"
     if path == "/api/status/summary":
