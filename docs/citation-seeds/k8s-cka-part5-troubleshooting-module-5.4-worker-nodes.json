@@ -1,0 +1,370 @@
+{
+  "module_key": "k8s/cka/part5-troubleshooting/module-5.4-worker-nodes",
+  "module_path": "src/content/docs/k8s/cka/part5-troubleshooting/module-5.4-worker-nodes.md",
+  "research_run_id": "2026-05-07T16:25:02+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/k8s-cka-part5-troubleshooting.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening 2018 retailer outage anecdote attributes a global outage to a DaemonSet logging-daemon memory leak that drove worker nodes into MemoryPressure.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In 2018, a major online retailer experienced a catastrophic global outage during their peak holiday sales event. The root cause was not a complex network intrusion, a massive denial-of-service attack, or database corruption. Instead, it was a simple, subtle memory leak in a third-party logging daemon deployed as a DaemonSet across all their worker nodes. As the daemon quietly consumed system memory over several days, individual worker nodes sequentially exhausted their physical capacities. Each node independently hit `MemoryPressure`, abruptly stopped accepting new pods, and began aggressively evicting existing production workloads to protect its own kernel integrity.",
+      "suggested_rewrite": "A node-level memory leak in a DaemonSet or other host-wide agent can exhaust memory across multiple worker nodes, trigger `MemoryPressure`, block new scheduling, and force pod evictions.",
+      "lesson_point_url": null,
+      "rationale": "This is a precise real-world incident narrative with named timing and failure mechanics but no attributable primary source."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The opening anecdote further claims the outage lasted six hours and cost an estimated $15 million in lost revenue.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Because the underlying issue was not immediately diagnosed or properly isolated by the operations team, the Kubernetes scheduler desperately scrambled to place the newly evicted pods onto the remaining \"healthy\" nodes. This cascading failure created a massive \"thundering herd\" effect across the infrastructure. The surviving worker nodes were instantaneously overwhelmed by the flood of rescheduled pods, causing them to rapidly run out of memory as well. Within minutes, the entire e-commerce platform collapsed, resulting in six hours of downtime and an estimated $15 million in lost revenue. This incident underscores a brutal truth in distributed systems: a localized node failure, if left unchecked and improperly managed, can quickly metastasize into a global cluster outage.",
+      "suggested_rewrite": "If the underlying issue is not diagnosed or isolated quickly, evicted pods can be rescheduled onto the remaining nodes and overload them in turn, turning a local failure into a cluster-wide outage.",
+      "lesson_point_url": null,
+      "rationale": "The downtime and revenue figures are fake-precise incident details without a citable source and must be collapsed to the operational lesson."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The module says kubelet heartbeats occur every 10 seconds and a node becomes Unknown after 40 seconds without a heartbeat.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?, bullet 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **10-second heartbeats**: The kubelet reports its node status to the API server every 10 seconds. If 40 seconds pass without a heartbeat, the node is marked `Unknown`.",
+      "suggested_rewrite": "- **Node heartbeats**: By default, the kubelet updates node liveness frequently, and the node controller marks a node `Unknown` once the node-monitor grace period expires.",
+      "lesson_point_url": null,
+      "rationale": "Current Kubernetes docs support frequent heartbeats and a 50-second default grace period, not the module's 40-second figure."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Kubernetes automatically adds 300-second tolerations for not-ready and unreachable nodes, so pods remain bound for about five minutes before eviction begins.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?, bullet 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The taints and tolerations documentation directly states the default `tolerationSeconds=300` behavior for these node-failure taints."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The module says DiskPressure is triggered when the root filesystem drops below 15% available space.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?, bullet 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **15 percent disk threshold**: The kubelet automatically triggers `DiskPressure` and begins garbage collecting unused container images when the node's root filesystem drops below 15% available space.",
+      "suggested_rewrite": "- **Disk pressure defaults**: On Linux nodes, disk-related eviction thresholds can raise `DiskPressure`, and the kubelet may reclaim disk by garbage collecting dead containers or unused images depending on which filesystem is under pressure.",
+      "lesson_point_url": null,
+      "rationale": "The current defaults distinguish `nodefs.available<10%` from `imagefs.available<15%`, so the module's single 15% root-filesystem claim is inaccurate."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The module asserts a historically common Kubernetes PID limit configuration of 32768 and frames 65536 as the relevant default limit.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?, bullet 4",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **65536 PID limit**: In many default Linux distributions configured for Kubernetes, the `pid_max` limit is historically set to 32768, which can easily be exhausted by rogue microservices, causing `PIDPressure`.",
+      "suggested_rewrite": "- **PID pressure**: PID exhaustion can trigger `PIDPressure`, so check the node's actual `pid_max` instead of assuming a universal distro default.",
+      "lesson_point_url": null,
+      "rationale": "The distro-default `pid_max` claim is environment-specific and unsourced, while the general PIDPressure lesson is salvageable."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Default node liveness settings include a 5-second node-monitor period, a 50-second node-monitor grace period, and Unknown status after the grace period elapses.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 1, paragraph 4",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/architecture/nodes/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared pool covers the 50-second `node-monitor-grace-period`, and the Nodes concept page directly documents the 5-second monitoring period."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "By default, the node controller waits 5 minutes after marking a node Unknown before submitting the first eviction request for pods on that node.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 1, paragraph 4",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/architecture/nodes/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Nodes concept page directly documents the default 5-minute wait before the first eviction request for unreachable nodes."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Kubernetes uses `node.kubernetes.io/not-ready` and `node.kubernetes.io/unreachable` taints plus default 300-second tolerations to control scheduling and eviction after node failure.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 2, paragraphs 1-2",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared pool covers taint mapping from node conditions, and the taints page directly documents the default 300-second tolerations."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "In Kubernetes 1.29, taint-based eviction moved to a separate `taint-eviction-controller`, and operators can disable it with `--controllers=-taint-eviction-controller`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 2, paragraph 3",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/blog/2023/12/19/kubernetes-1-29-taint-eviction-controller/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes 1.29 blog post directly documents the controller split and the disable flag."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Default node-eviction throttles are `node-eviction-rate=0.1`, `secondary-node-eviction-rate=0.01`, `unhealthy-zone-threshold=0.55`, and `large-cluster-size-threshold=50`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 2, paragraph 4",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/architecture/nodes/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Nodes concept page directly lists these default eviction-rate and unhealthy-zone threshold values."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "kubeadm-generated client certificates expire after 1 year by default.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 3, certificate expiration paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared kubeadm certificate-management source directly states the 1-year default client-certificate validity."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "The kubelet polls cAdvisor for resource-usage statistics and maps eviction signals to node pressure conditions.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4, paragraph 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared node-pressure eviction source directly documents both cAdvisor polling and mapping of eviction signals to pressure conditions."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "The module gives incorrect hard-eviction defaults by stating `memory.available<100Mi || <5%` and `imagefs.available<15% || imagefs.inodesFree<5%`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4, paragraph 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Default hard node-pressure eviction thresholds include `memory.available<100Mi || <5%`, `nodefs.available<10%`, `nodefs.inodesFree<5%`, and `imagefs.available<15% || imagefs.inodesFree<5%`.",
+      "suggested_rewrite": "Default hard node-pressure eviction thresholds cover low available memory plus low `nodefs`, `imagefs`, and inode capacity.",
+      "lesson_point_url": null,
+      "rationale": "The upstream defaults do not use the module's `|| <5%` phrasing for memory or the combined `imagefs` expression."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "Node-pressure evictions are enforced by the kubelet and do not respect PodDisruptionBudgets or a pod's `terminationGracePeriodSeconds` under hard thresholds.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4, paragraph 3",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared node-pressure eviction source directly states that kubelet-driven pressure evictions ignore PDBs and hard-threshold evictions use a 0-second grace period."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "The `eviction-pressure-transition-period` defaults to 5 minutes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4, paragraph 4",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared node-pressure eviction source directly documents the default 5-minute transition period."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "The module says that, as of Kubernetes v1.35, custom thresholds for `containerfs.available` are not supported.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4, paragraph 4",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Note that as of Kubernetes v1.35, custom thresholds for the `containerfs.available` hard eviction threshold are not supported. Operators must rely on the default configurations or focus their custom thresholds on `nodefs` and `imagefs`.",
+      "suggested_rewrite": "Custom overrides for `containerfs` eviction thresholds are not supported, so tune `nodefs` and `imagefs` thresholds instead.",
+      "lesson_point_url": null,
+      "rationale": "The restriction is real, but the module's version-specific phrasing should be flattened to a versionless operational statement."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "The module oversimplifies eviction ordering by saying kubelet starts with `BestEffort` pods.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 4, numbered list after YAML",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "3. The kubelet begins evicting existing pods to reclaim resources, starting with `BestEffort` pods.",
+      "suggested_rewrite": "3. The kubelet begins evicting lower-priority pods to reclaim resources, with `BestEffort` and overcommitted `Burstable` pods typically most at risk.",
+      "lesson_point_url": null,
+      "rationale": "Upstream eviction ordering is more nuanced than a simple BestEffort-first rule."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "Graceful node shutdown is beta on Linux from v1.21 and on Windows from v1.34; by default `shutdownGracePeriod` and `shutdownGracePeriodCriticalPods` are zero, and detected shutdown marks the node NotReady.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 6, paragraph 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/cluster-administration/node-shutdown/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The node-shutdown documentation directly covers feature states, zero defaults, and the NotReady behavior on detected shutdown."
+    },
+    {
+      "claim_id": "C020",
+      "claim_text": "The module says pod-priority-aware graceful shutdown was introduced as alpha in v1.24 and became beta in v1.35.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 6, paragraph 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "This priority-aware mechanism is a versioned feature path; it was introduced as alpha in v1.24 and has graduated to beta in v1.35, offering refined control over shutdown sequencing.",
+      "suggested_rewrite": "This priority-aware mechanism is a versioned feature path that has progressed from alpha to beta over recent Kubernetes releases, offering refined control over shutdown sequencing.",
+      "lesson_point_url": null,
+      "rationale": "The stated version timeline does not match current upstream feature-history documentation."
+    },
+    {
+      "claim_id": "C021",
+      "claim_text": "For non-graceful shutdown, `node.kubernetes.io/out-of-service` can force pod deletion and immediate volume detachment, and force-detach-on-timeout behavior can be disabled.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 6, paragraph 4",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/cluster-administration/node-shutdown/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The node-shutdown documentation directly describes out-of-service taints and the configurable force-detach-on-timeout behavior."
+    },
+    {
+      "claim_id": "C022",
+      "claim_text": "`kubectl drain` marks a node unschedulable, evicts workloads while waiting for graceful termination, requires `--ignore-daemonsets` when DaemonSet pods exist, and `--delete-emptydir-data` acknowledges loss of `emptyDir` data.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Part 6, paragraph before drain commands",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_drain/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The `kubectl drain` reference directly documents each of these command behaviors and flags."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/reference/node/node-status/",
+      "title": "Node Status",
+      "tier": "standards",
+      "why_relevant": "Defines node conditions, heartbeats, and Ready/Unknown semantics used throughout worker-node diagnosis."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/",
+      "title": "Node-pressure Eviction",
+      "tier": "standards",
+      "why_relevant": "Covers eviction thresholds, pressure conditions, eviction ordering, and kubelet behavior under resource exhaustion."
+    },
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/",
+      "title": "Debugging Kubernetes nodes with crictl",
+      "tier": "standards",
+      "why_relevant": "Shows how to inspect containers and pods directly through the CRI when kubelet or the API server is unhealthy."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/cluster-administration/node-shutdown/",
+      "title": "Node Shutdowns",
+      "tier": "standards",
+      "why_relevant": "Explains graceful and non-graceful node shutdown behavior, out-of-service taints, and recovery implications."
+    }
+  ],
+  "notes": "Quiz prompts and answers, code blocks, Mermaid diagrams, tables, and exercise steps were intentionally excluded per task rules. Several repeated timing claims reappear in quiz answer blocks but were not seeded for that reason.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
