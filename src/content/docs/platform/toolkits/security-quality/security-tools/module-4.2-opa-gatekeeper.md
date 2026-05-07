@@ -9,7 +9,7 @@ sidebar:
 
 ## Overview
 
-"Trust but verify" doesn't work in Kubernetes—you need "deny by default, allow explicitly." This module covers Open Policy Agent (OPA) and Gatekeeper for policy-as-code admission control, ensuring every resource that enters your cluster meets your security and compliance requirements.
+"Trust but verify" doesn't work in Kubernetes—you need "deny by default, allow explicitly." This module covers Open Policy Agent (OPA) and Gatekeeper for policy-as-code admission control, helping you enforce security and compliance requirements on the Kubernetes resources your policies match.
 
 **What You'll Learn**:
 - OPA and Rego policy language basics
@@ -38,7 +38,7 @@ After completing this module, you will be able to:
 
 Without admission control, anyone with `kubectl create` permissions can deploy anything—privileged containers, images from untrusted registries, pods without resource limits. Gatekeeper acts as your cluster's bouncer, checking every resource against your policies before allowing it in.
 
-> 💡 **Did You Know?** Open Policy Agent was created by Styra and donated to CNCF in 2018. It's now used beyond Kubernetes—in Terraform, Envoy, Kafka, and even CI/CD pipelines. Learning OPA/Rego is an investment that pays off across the entire cloud-native stack.
+> 💡 **Did You Know?** Open Policy Agent was created by Styra and [donated to CNCF in 2018](https://www.cncf.io/projects/open-policy-agent-opa/). It's now used beyond Kubernetes—in Terraform, Envoy, Kafka, and even CI/CD pipelines. Learning OPA/Rego is an investment that pays off across the entire cloud-native stack.
 
 ---
 
@@ -82,7 +82,7 @@ Developer kubectl apply ──▶ API Server ──▶ Gatekeeper ──▶ etcd
 
 ### What is OPA?
 
-OPA is a general-purpose policy engine. You give it:
+OPA is a [general-purpose policy engine](https://raw.githubusercontent.com/open-policy-agent/opa/main/README.md). You give it:
 1. **Data** - JSON representing current state
 2. **Query** - What you want to know
 3. **Policy** - Rules written in Rego
@@ -163,7 +163,7 @@ starts_with_allowed_registry(image) if {
 | **contains** | `set contains msg if {...}` | Add to set when condition true |
 | **default** | `default allow := false` | Default value if rule undefined |
 
-> 💡 **Did You Know?** Rego is named after the Lego brick factory in Billund, Denmark. The creators wanted policies to "snap together" like Lego bricks. The language was designed specifically for policy—it's declarative, making it easier to audit than imperative code.
+> 💡 **Did You Know?** Rego is OPA's declarative policy language, designed for policy evaluation over structured data.
 
 ---
 
@@ -385,7 +385,7 @@ spec:
       }
 ```
 
-> 💡 **Did You Know?** Gatekeeper includes a library of pre-built policies called the [Gatekeeper Library](https://open-policy-agent.github.io/gatekeeper-library/). There are 50+ ready-to-use ConstraintTemplates covering Pod Security Standards, general security, and Kubernetes best practices.
+> 💡 **Did You Know?** Gatekeeper includes the [Gatekeeper Library](https://open-policy-agent.github.io/gatekeeper-library/), a collection of reusable policies and examples for common Kubernetes security and policy patterns.
 
 ---
 
@@ -531,7 +531,7 @@ spec:
       value: true
 ```
 
-> 💡 **Did You Know?** Gatekeeper's mutation feature was one of its most requested additions. Before mutation, teams had to use separate tools like Kyverno or custom webhooks to add default values. Now you can both validate AND mutate with a single tool—enforce that pods run as non-root, and automatically add the setting if developers forget.
+> 💡 **Did You Know?** Gatekeeper supports mutation alongside validation, so you can enforce settings like `runAsNonRoot` and also assign defaults when matching resources omit them.
 
 ---
 
@@ -568,12 +568,12 @@ opa eval --data policy.rego --input input.json "data.k8srequiredlabels.violation
 
 ## War Story: The Policy That Cried Wolf
 
-*A platform team deployed strict container registry policies on Monday. By Wednesday, they'd received 500+ Slack messages asking for exceptions.*
+*A platform team that deploys strict container registry policies without auditing current image usage can quickly trigger a large wave of exception requests.*
 
 **What went wrong**: They blocked everything except `gcr.io/company-project/`, but:
-- Helm charts pulled from `ghcr.io`
-- Logging agents used `docker.io/fluent/`
-- Monitoring needed `quay.io/prometheus/`
+- Some Helm charts may pull images from registries outside your initial allowlist.
+- Operational add-ons may depend on images from registries outside your initial allowlist.
+- Monitoring components may also depend on registries you did not initially account for.
 
 **The fix**:
 1. Audit existing images BEFORE deploying policies
@@ -735,3 +735,11 @@ Continue to [Module 4.3: Falco](../module-4.3-falco/) to learn runtime security 
 ---
 
 *"Security is not a feature you add—it's a constraint you enforce. Gatekeeper makes that constraint automatic."*
+
+## Sources
+
+- [cncf.io: open policy agent opa](https://www.cncf.io/projects/open-policy-agent-opa/) — The CNCF project page gives the acceptance date for OPA directly.
+- [raw.githubusercontent.com: README.md](https://raw.githubusercontent.com/open-policy-agent/opa/main/README.md) — The upstream README states that OPA is a general-purpose policy engine and explains its query-based evaluation model.
+- [Kubernetes Admission Controllers](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/) — Explains where admission control fits in the API request path and why it matters for policy enforcement.
+- [Gatekeeper Repository](https://github.com/open-policy-agent/gatekeeper) — Provides the upstream overview of Gatekeeper features such as constraints, mutation support, audit, and policy library integration.
+- [OPA Repository](https://github.com/open-policy-agent/opa) — Provides the upstream overview of OPA as a general-purpose policy engine and links to its core integrations and language resources.
