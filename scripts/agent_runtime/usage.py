@@ -30,6 +30,14 @@ limited call. The window was reduced from 5h to 15min on 2026-04-10
 after a transient 429 false-locked the quota for 5 hours on real
 builds; see ``_RATE_LIMIT_WINDOW_S`` for the full story.
 
+Record schema note:
+    session_mode: one of ``"new"``, ``"resume"``, ``"none"``, describing how
+    resume inputs/outputs were handled for this call:
+
+    - ``new``: session_id was None on input and output session_id is non-None
+    - ``resume``: non-None input and non-None output session_id
+    - ``none``: any other combination (including dropped input sessions)
+
 Issue: #1184. Supersedes standalone #1183.
 """
 from __future__ import annotations

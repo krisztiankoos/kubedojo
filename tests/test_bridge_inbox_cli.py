@@ -227,6 +227,255 @@ def test_discuss_max_rounds_one_clamps_to_two(mock_invoke, monkeypatch, capsys):
     assert "✅ converged at round 1" not in captured.out
 
 
+@patch("agent_runtime.runner.invoke")
+def test_discuss_claude_round1_round2_session_resume(mock_invoke, monkeypatch, capsys):
+    _channels.create_channel("discuss-resume")
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    ids = iter(range(1, 1000))
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        lambda: f"discuss-resume-{next(ids):04d}",
+    )
+
+    seen_session_ids: list[str | None] = []
+
+    def _discuss_result(agent: str, *_, **kwargs) -> Result:
+        seen_session_ids.append(kwargs.get("session_id"))
+        return Result(
+            ok=True,
+            agent=agent,
+            model="test-model",
+            mode="read-only",
+            response="claude reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id="uuid-1",
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    exit_code = _run_cli(
+        ["discuss", "discuss-resume", "topic", "--with", "claude", "--max-rounds", "2"]
+    )
+
+    assert exit_code == 0
+    assert seen_session_ids == [None, "uuid-1"]
+    assert (
+        _db.get_session("discuss:discuss-resume-0001")["claude_session_id"] == "uuid-1"
+    )
+
+
+@patch("agent_runtime.runner.invoke")
+def test_discuss_cannot_resume_codex_even_with_stale_row(mock_invoke, monkeypatch):
+    _channels.create_channel("discuss-codex")
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    ids = iter(range(1, 1000))
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        lambda: f"discuss-codex-{next(ids):04d}",
+    )
+    _db.set_session("discuss:discuss-codex-0001", codex_session_id="codex-uuid")
+
+    def _discuss_result(agent: str, *_, **kwargs) -> Result:
+        return Result(
+            ok=True,
+            agent=agent,
+            model="test-model",
+            mode="danger",
+            response="codex reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id=None,
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    exit_code = _run_cli(
+        ["discuss", "discuss-codex", "topic", "--with", "codex", "--max-rounds", "2"]
+    )
+
+    assert exit_code == 0
+    assert all(call.kwargs["session_id"] is None for call in mock_invoke.call_args_list)
+
+
+@patch("agent_runtime.runner.invoke")
+def test_discuss_resume_rejects_missing_session(mock_invoke, monkeypatch, capsys):
+    _channels.create_channel("resume-missing")
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    ids = iter(["pre-tier2-thread", "pre-tier2-reply"])
+    monkeypatch.setattr(_channels, "_new_id", lambda: next(ids))
+    _channels.post(
+        "resume-missing",
+        "user",
+        "starting point",
+        to_agents=["claude"],
+        auto_snapshot=False,
+    )
+
+    exit_code = _run_cli(
+        [
+            "discuss",
+            "resume-missing",
+            "topic",
+            "--with",
+            "claude",
+            "--resume-thread",
+            "pre-tier2-thread",
+            "--max-rounds",
+            "2",
+        ]
+    )
+
+    assert exit_code == 1
+    assert "no resumable session" in capsys.readouterr().err
+    assert mock_invoke.call_count == 0
+
+
+@patch("agent_runtime.runner.invoke")
+def test_discuss_resume_rejects_codex_only_session(mock_invoke, monkeypatch, capsys):
+    _channels.create_channel("resume-codex-only")
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    ids = iter(["codex-only-thread", "codex-only-thread-reply"])
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        lambda: next(ids),
+    )
+    _channels.post(
+        "resume-codex-only",
+        "user",
+        "starting point",
+        to_agents=["claude"],
+        auto_snapshot=False,
+    )
+
+    _db.set_session("discuss:codex-only-thread", codex_session_id="corrupt-codex-uuid")
+
+    exit_code = _run_cli(
+        [
+            "discuss",
+            "resume-codex-only",
+            "topic",
+            "--with",
+            "claude",
+            "--resume-thread",
+            "codex-only-thread",
+            "--max-rounds",
+            "2",
+        ]
+    )
+
+    assert exit_code == 1
+    assert "no resumable session" in capsys.readouterr().err
+    assert mock_invoke.call_count == 0
+
+
+@patch("agent_runtime.runner.invoke")
+def test_discuss_resume_reuses_thread_and_trace(mock_invoke, monkeypatch, capsys):
+    _channels.create_channel("resume-threaded")
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    ids = iter(
+        [
+            "resumable-thread",
+            "resumable-reply",
+            "resumable-round1",
+            "resumable-round2",
+            "resumable-round3",
+            "resumable-round4",
+        ]
+    )
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        lambda: next(ids),
+    )
+    _channels.post(
+        "resume-threaded",
+        "user",
+        "starting point",
+        to_agents=["claude"],
+        auto_snapshot=False,
+    )
+    _db.set_session("discuss:resumable-thread", claude_session_id="claude-uuid")
+
+    seen_session_ids: list[str | None] = []
+
+    def _discuss_result(agent: str, *_, **kwargs) -> Result:
+        seen_session_ids.append(kwargs.get("session_id"))
+        return Result(
+            ok=True,
+            agent=agent,
+            model="test-model",
+            mode="read-only",
+            response="claude reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id="next-uuid",
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    exit_code = _run_cli(
+        [
+            "discuss",
+            "resume-threaded",
+            "topic",
+            "--with",
+            "claude",
+            "--resume-thread",
+            "resumable-thread",
+            "--max-rounds",
+            "2",
+        ]
+    )
+
+    assert exit_code == 0
+    assert seen_session_ids[0] == "claude-uuid"
+    captured = capsys.readouterr()
+    assert "resuming thread resumable-th" in captured.out
+    thread = _channels.read("resume-threaded", thread_id="resumable-thread")
+    assert all(msg["thread_id"] == "resumable-thread" for msg in thread)
+    assert mock_invoke.call_args_list[0].kwargs["task_id"].startswith(
+        "discuss-resumabl-r1-claude"
+    )
+
+
+@patch("agent_runtime.runner.invoke")
+def test_discuss_resume_rejects_typo_thread_id(mock_invoke, capsys):
+    _channels.create_channel("resume-typo")
+    exit_code = _run_cli(
+        [
+            "discuss",
+            "resume-typo",
+            "topic",
+            "--with",
+            "claude",
+            "--resume-thread",
+            "typo-thread",
+            "--max-rounds",
+            "2",
+        ]
+    )
+
+    assert exit_code == 1
+    assert mock_invoke.call_count == 0
+    assert "not found in channel" in capsys.readouterr().err
+
+
 def test_inbox_show_with_pending_and_failed(capsys):
     _channels.create_channel("topic")
     first = _channels.post("topic", "user", "first pending", to_agents=["claude"], auto_snapshot=False)
