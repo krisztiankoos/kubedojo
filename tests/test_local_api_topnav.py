@@ -32,7 +32,7 @@ def _has_channels_nav(html: str) -> bool:
 
 
 def test_new_skeleton_routes_return_topnav(tmp_path: Path) -> None:
-    for path in ["/operator", "/quality", "/quality-board", "/pipeline", "/activity", "/health"]:
+    for path in ["/operator", "/quality", "/pipeline", "/activity", "/health"]:
         html = _route(tmp_path, path)
         assert _has_channels_nav(html)
         assert "This page is part of the L0-L6 local-API UI split." in html
@@ -47,3 +47,9 @@ def test_channels_pages_keep_topnav(tmp_path: Path) -> None:
     for path in ["/channels", "/channels/thread-123"]:
         html = _route(tmp_path, path)
         assert _has_channels_nav(html)
+
+
+def test_quality_board_legacy_route_still_serves_dashboard(tmp_path: Path) -> None:
+    html = _route(tmp_path, "/quality-board")
+    assert len(html) > 50000
+    assert 'id="quality-board"' in html or 'id="op-now"' in html

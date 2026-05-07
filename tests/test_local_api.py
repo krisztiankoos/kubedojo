@@ -2581,7 +2581,7 @@ def test_quality_scores_live_repo_no_citations_force_critical() -> None:
     assert "ai/foundations/module-1.1-what-is-ai.md" in by_path
     # Spot-check: a module we know lacks a Sources section is critical
     # with 'no citations' leading the primary_issue.
-    sample = "CKA 2.8: Scheduler & Pod Lifecycle Theory"
+    sample = "CKA 0.1: Cluster Setup"
     if sample in by_module:  # guard: title may drift
         entry = by_module[sample]
         assert entry["severity"] == "critical"

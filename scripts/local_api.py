@@ -4369,8 +4369,11 @@ def build_delivery_status(repo_root: Path) -> dict[str, Any]:
 
 
 _TOP_NAV_CSS = """
+    :root {
+      --topnav-h: 45px;
+    }
     .topnav {
-      position: sticky; top: 0; z-index: 50;
+      position: sticky; top: 0; z-index: 60; min-height: var(--topnav-h);
       display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
       padding: 12px 24px; background: rgba(17,24,39,0.84);
       border-bottom: 1px solid var(--border); backdrop-filter: blur(8px);
@@ -4490,7 +4493,7 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
       border-bottom: 1px solid var(--border);
       padding: 20px 0;
       position: sticky;
-      top: 0;
+      top: var(--topnav-h, 45px);
       z-index: 50;
       backdrop-filter: blur(12px);
     }}
@@ -7329,7 +7332,7 @@ def render_channels_index_html() -> str:
     *{box-sizing:border-box;margin:0}
     body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
 """ + _TOP_NAV_CSS + """
-    .hdr{background:linear-gradient(180deg,rgba(17,24,39,.95),rgba(10,15,26,.98));border-bottom:1px solid var(--border);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}
+    .hdr{background:linear-gradient(180deg,rgba(17,24,39,.95),rgba(10,15,26,.98));border-bottom:1px solid var(--border);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:var(--topnav-h, 45px);z-index:50;backdrop-filter:blur(12px)}
     .hdr h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
     .hdr p{font-size:12px;color:var(--text-dim);margin-top:2px}
     .btn{background:var(--surface-1);color:var(--text);border:1px solid var(--border);padding:6px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
@@ -7402,7 +7405,7 @@ def render_channel_thread_html(thread_id: str) -> str:
     *{{box-sizing:border-box;margin:0}}
     body{{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}}
 {_TOP_NAV_CSS}
-    .hdr{{background:linear-gradient(180deg,rgba(17,24,39,.95),rgba(10,15,26,.98));border-bottom:1px solid var(--border);padding:16px 24px;position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}}
+    .hdr{{background:linear-gradient(180deg,rgba(17,24,39,.95),rgba(10,15,26,.98));border-bottom:1px solid var(--border);padding:16px 24px;position:sticky;top:var(--topnav-h, 45px);z-index:50;backdrop-filter:blur(12px)}}
     .hdr-row{{display:flex;align-items:center;gap:12px;flex-wrap:wrap}}
     .back{{color:#38bdf8;text-decoration:none;font-size:13px}}.back:hover{{text-decoration:underline}}
     .tid{{font-size:13px;font-weight:600;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px;color:#e5e7eb}}
@@ -7490,11 +7493,11 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     path = parsed.path.rstrip("/") or "/"
     query = parse_qs(parsed.query)
 
-    if path in {"/", "/dashboard"}:
+    if path in {"/", "/dashboard", "/quality-board"}:
         return 200, render_dashboard_html(), "text/html; charset=utf-8"
     if path == "/operator":
         return 200, _render_skeleton_page("Operator", 974), "text/html; charset=utf-8"
-    if path in {"/quality", "/quality-board"}:
+    if path == "/quality":
         return 200, _render_skeleton_page("Quality", 975), "text/html; charset=utf-8"
     if path == "/pipeline":
         return 200, _render_skeleton_page("Pipeline", 976), "text/html; charset=utf-8"
