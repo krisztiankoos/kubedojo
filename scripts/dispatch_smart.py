@@ -287,7 +287,8 @@ def main() -> int:
     if args.dry_run:
         print(f"[dry-run] agent={args.agent} task_class={args.task_class} "
               f"model={model} mode={mode} timeout={timeout_s}s")
-        print(f"[dry-run] worktree={worktree or '(none — read-only)'}")
+        _wt_label = worktree or f"(none — {mode})"
+        print(f"[dry-run] worktree={_wt_label}")
         print(f"[dry-run] task_id={task_id}")
         print(f"[dry-run] prompt_chars={len(prompt)}")
         return 0

@@ -627,28 +627,37 @@ def dispatch_codex(prompt: str, model: str = CODEX_DEFAULT_MODEL,
 
     Reads prompt from stdin, skips git repo check.
 
-    Environment overrides (default off — preserves prior read-only / no-search
-    behavior for callers that only need text reasoning):
+    Environment overrides:
 
     - ``KUBEDOJO_CODEX_SEARCH=1`` enables ``--search`` (live web). Required for
       writer dispatches that produce factual content (#388 module rewrites,
       anything quoting CLI flags or version-specific behavior).
     - ``KUBEDOJO_CODEX_SANDBOX`` overrides the sandbox mode. Valid values:
-      ``read-only`` (default), ``workspace-write``, ``danger-full-access``.
-      Use ``danger-full-access`` for dispatches that commit + push inside the
-      codex run (workspace-write blocks ``.git/worktrees/.../index.lock`` and
+      ``danger`` (default), ``workspace-write``. ``read-only`` is forbidden —
+      it starves Codex of network/filesystem (rc=-9 stale-rollout salvage,
+      three failures 2026-05-07). Use ``workspace-write`` only for callers
+      that explicitly need ``--full-auto`` without full danger access
+      (workspace-write blocks ``.git/worktrees/.../index.lock`` and
       ``api.github.com``; see ``feedback_codex_danger_for_git_gh.md``).
 
     On rate-limit or quota errors, returns (False, stderr) so the caller can
     react (see run_module review branch, which degrades gracefully).
     """
-    sandbox = os.environ.get("KUBEDOJO_CODEX_SANDBOX", "read-only")
+    sandbox = os.environ.get("KUBEDOJO_CODEX_SANDBOX", "danger")
+    if sandbox == "read-only":
+        raise ValueError(
+            "KUBEDOJO_CODEX_SANDBOX=read-only is forbidden for codex; "
+            "use workspace-write or danger (default)."
+        )
     use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
 
     cmd = [CODEX_CLI]
     if use_search:
         cmd.append("--search")
-    cmd.extend(["exec", "--skip-git-repo-check", "--sandbox", sandbox])
+    if sandbox == "workspace-write":
+        cmd.extend(["exec", "--skip-git-repo-check", "--full-auto"])
+    else:
+        cmd.extend(["exec", "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox"])
     # Allow caller to pin a model (e.g. "codex-gpt-5"); "codex" alone means default.
     if model and model != "codex":
         cmd.extend(["-m", model])
