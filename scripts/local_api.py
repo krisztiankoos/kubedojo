@@ -4444,6 +4444,276 @@ def _render_skeleton_page(title: str, issue_number: int) -> str:
 </body></html>"""
 
 
+_OPERATOR_PAGE_CSS = """
+    :root { --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --surface-2:#1f2b3d; --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280; --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12); --green:#4ade80; --green-muted:rgba(74,222,128,0.12); --amber:#fbbf24; --amber-muted:rgba(251,191,36,0.10); --red:#f87171; --red-muted:rgba(248,113,113,0.10); --border:rgba(255,255,255,0.06); --border-subtle:rgba(255,255,255,0.03); --radius:12px; --radius-sm:8px; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; -webkit-font-smoothing:antialiased; }
+    .main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 40px; }
+    .page-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
+    .page-title { margin:0; font-size:26px; letter-spacing:0; }
+    .page-sub { margin-top:4px; color:var(--text-secondary); font-size:13px; }
+    .page-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .status-pill { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; background:var(--green-muted); color:var(--green); font-size:12px; font-weight:600; }
+    .dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
+    .last-updated { font-size:11px; color:var(--text-dim); }
+    .refresh-btn { display:flex; align-items:center; gap:6px; border:1px solid var(--border); background:var(--surface-1); color:var(--text); border-radius:var(--radius-sm); padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer; }
+    .refresh-btn:hover { background:var(--surface-2); }
+    .panel { background:var(--surface-0); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 12px 34px rgba(0,0,0,0.18); }
+    .panel-header { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border); }
+    .panel-title { display:flex; align-items:center; gap:10px; font-weight:700; }
+    .panel-icon { width:24px; height:24px; border-radius:var(--radius-sm); display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; background:var(--accent-muted); color:var(--accent); }
+    .panel-badge { padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:var(--accent-muted); color:var(--accent); }
+    .op-hero { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:14px 18px 18px; border-bottom:1px solid var(--border-subtle); }
+    .op-hero-block { min-width:0; }
+    .op-hero-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-dim); margin-bottom:6px; }
+    .op-hero-list { font-size:13px; color:var(--text-secondary); list-style:none; margin:0; padding:0; }
+    .op-hero-list li { padding:4px 0; border-bottom:1px dashed var(--border-subtle); }
+    .op-hero-list li:last-child { border-bottom:0; }
+    .op-hero-list .alert { color:var(--amber); }
+    .op-hero-list .blocker { color:var(--red); }
+    .op-hero-empty { color:var(--text-dim); font-style:italic; font-size:12px; }
+    .op-cols { display:grid; grid-template-columns:repeat(3, 1fr); gap:0; }
+    .op-col { border-right:1px solid var(--border-subtle); padding:14px 18px; min-height:140px; }
+    .op-col:last-child { border-right:0; }
+    .op-col-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin:0 0 10px; }
+    .op-col-title.now { color:var(--accent); }
+    .op-col-title.blocked { color:var(--red); }
+    .op-col-title.next { color:var(--green); }
+    .op-col-list { list-style:none; margin:0; padding:0; font-size:13px; }
+    .op-col-list li { padding:6px 0; border-bottom:1px solid var(--border-subtle); color:var(--text-secondary); word-break:break-word; }
+    .op-col-list li:last-child { border-bottom:0; }
+    .op-col-list a { color:var(--accent); text-decoration:none; font-family:'SF Mono','Fira Code','Cascadia Code',ui-monospace,monospace; font-size:11px; }
+    .op-col-list a:hover { text-decoration:underline; }
+    @media (max-width: 900px) {
+      .page-head { flex-direction:column; }
+      .page-actions { justify-content:flex-start; }
+      .op-hero, .op-cols { grid-template-columns:1fr; }
+      .op-col { border-right:0; border-bottom:1px solid var(--border-subtle); }
+      .op-col:last-child { border-bottom:0; }
+    }
+"""
+
+
+_OPERATOR_SUMMARY_CSS = """
+    .op-summary-card {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr)) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .op-summary-card:hover { background: rgba(255,255,255,0.02); }
+    .op-summary-stat { min-width: 0; }
+    .op-summary-value {
+      display: block;
+      font-size: 24px;
+      line-height: 1;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .op-summary-label {
+      display: block;
+      margin-top: 4px;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .op-summary-link { color: var(--accent); font-size: 13px; font-weight: 700; white-space: nowrap; }
+    @media (max-width: 640px) {
+      .op-summary-card { grid-template-columns: 1fr; }
+      .op-summary-link { justify-self: start; }
+    }
+"""
+
+
+_OPERATOR_PAGE_JS = """
+    const $ = (sel) => document.querySelector(sel);
+
+    async function fetchJson(url) {
+      const r = await fetch(url);
+      if (!r.ok) return { error: `HTTP ${r.status}`, url };
+      return r.json();
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = String(s ?? '');
+      return d.innerHTML;
+    }
+
+    function actionRows(briefing) {
+      if (Array.isArray(briefing?.action_rows) && briefing.action_rows.length) {
+        return briefing.action_rows;
+      }
+      const bag = [];
+      for (const bucket of ['active', 'blocked', 'next']) {
+        for (const label of (briefing?.actions?.[bucket] || [])) {
+          bag.push({bucket, label, module_key: null, phase: null, reason: null, endpoint: null});
+        }
+      }
+      return bag;
+    }
+
+    function renderOperator(briefing) {
+      const alerts = briefing?.alerts || [];
+      const focus = briefing?.focus || [];
+      const blockers = briefing?.blockers || [];
+      const alertItems = [
+        ...blockers.map(s => `<li class="blocker">${esc(s)}</li>`),
+        ...alerts.map(s => `<li class="alert">${esc(s)}</li>`),
+      ];
+      const focusItems = focus.map(s => `<li>${esc(s)}</li>`);
+      $('#op-hero').innerHTML = `
+        <div class="op-hero-block">
+          <div class="op-hero-title">Alerts &amp; Blockers</div>
+          ${alertItems.length ? `<ul class="op-hero-list">${alertItems.join('')}</ul>` : '<div class="op-hero-empty">None</div>'}
+        </div>
+        <div class="op-hero-block">
+          <div class="op-hero-title">Focus</div>
+          ${focusItems.length ? `<ul class="op-hero-list">${focusItems.join('')}</ul>` : '<div class="op-hero-empty">None</div>'}
+        </div>`;
+
+      const rowsSrc = actionRows(briefing);
+      const renderRow = (r) => {
+        const label = esc(r.label || '');
+        const link = r.endpoint
+          ? ` <a href="${esc(r.endpoint)}" title="${esc(r.endpoint)}" target="_blank" rel="noopener">[drill]</a>`
+          : '';
+        return `<li>${label}${link}</li>`;
+      };
+      const renderCol = (bucket) => {
+        const rows = rowsSrc.filter(r => r.bucket === bucket);
+        return rows.length ? rows.map(renderRow).join('') : '<li class="op-hero-empty">Nothing here</li>';
+      };
+
+      $('#op-now').innerHTML = renderCol('active');
+      $('#op-blocked').innerHTML = renderCol('blocked');
+      $('#op-next').innerHTML = renderCol('next');
+
+      const counts = {active: 0, blocked: 0, next: 0};
+      for (const r of rowsSrc) {
+        if (counts[r.bucket] !== undefined) counts[r.bucket]++;
+      }
+      const total = counts.active + counts.blocked + counts.next;
+      const badge = $('#op-badge');
+      badge.textContent = total ? `${total} items` : 'Idle';
+      if (counts.blocked) {
+        badge.style.background = 'var(--red-muted)';
+        badge.style.color = 'var(--red)';
+      } else if (total) {
+        badge.style.background = 'var(--accent-muted)';
+        badge.style.color = 'var(--accent)';
+      } else {
+        badge.style.background = 'var(--green-muted)';
+        badge.style.color = 'var(--green)';
+      }
+    }
+
+    let refreshing = false;
+    async function refresh() {
+      if (refreshing) return;
+      refreshing = true;
+      const btn = $('#refresh');
+      btn.classList.add('loading');
+      try {
+        const briefing = await fetchJson('/api/briefing/session?compact=1');
+        if (briefing.error) throw new Error(briefing.error);
+        renderOperator(briefing);
+        $('#last-updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+        const pill = $('#conn-status');
+        pill.innerHTML = '<span class="dot"></span> Connected';
+        pill.style.background = 'var(--green-muted)';
+        pill.style.color = 'var(--green)';
+      } catch (err) {
+        const pill = $('#conn-status');
+        pill.innerHTML = '<span class="dot"></span> Error';
+        pill.style.background = 'var(--red-muted)';
+        pill.style.color = 'var(--red)';
+        console.error('Operator refresh failed:', err);
+      } finally {
+        refreshing = false;
+        btn.classList.remove('loading');
+      }
+    }
+
+    $('#refresh').addEventListener('click', refresh);
+    refresh();
+    setInterval(refresh, 60000);
+"""
+
+
+def render_operator_page_html() -> str:
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Operator - KubeDojo Local Monitor</title>
+  <style>
+{_TOP_NAV_CSS}
+{_OPERATOR_PAGE_CSS}
+  </style>
+</head>
+<body>
+  {_render_top_nav("operator")}
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Operator</h1>
+        <div class="page-sub">Triage view for active work, blockers, and next actions.</div>
+      </div>
+      <div class="page-actions">
+        <span class="status-pill" id="conn-status"><span class="dot"></span> Connected</span>
+        <span class="last-updated" id="last-updated"></span>
+        <button class="refresh-btn" id="refresh">Refresh</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-icon">O</span>
+          Operator Triage
+        </div>
+        <span class="panel-badge" id="op-badge">&nbsp;</span>
+      </div>
+      <div class="op-hero" id="op-hero">
+        <div class="op-hero-block">
+          <div class="op-hero-title">Alerts</div>
+          <div class="op-hero-empty">Loading&hellip;</div>
+        </div>
+        <div class="op-hero-block">
+          <div class="op-hero-title">Focus</div>
+          <div class="op-hero-empty">Loading&hellip;</div>
+        </div>
+      </div>
+      <div class="op-cols">
+        <div class="op-col">
+          <h4 class="op-col-title now">Now</h4>
+          <ul class="op-col-list" id="op-now"><li class="op-hero-empty">Loading&hellip;</li></ul>
+        </div>
+        <div class="op-col">
+          <h4 class="op-col-title blocked">Blocked</h4>
+          <ul class="op-col-list" id="op-blocked"><li class="op-hero-empty">Loading&hellip;</li></ul>
+        </div>
+        <div class="op-col">
+          <h4 class="op-col-title next">Next</h4>
+          <ul class="op-col-list" id="op-next"><li class="op-hero-empty">Loading&hellip;</li></ul>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script>
+{_OPERATOR_PAGE_JS}
+  </script>
+</body>
+</html>"""
+
+
 def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     return f"""<!doctype html>
 <html lang="en">
@@ -4882,63 +5152,7 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
       .header-inner {{ padding: 0 16px; flex-wrap: wrap; }}
     }}
 
-    /* ---- Phase D: Operator panel ---- */
-    .op-hero {{
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      padding: 14px 18px 18px;
-      border-bottom: 1px solid var(--border-subtle);
-    }}
-    .op-hero-block {{ min-width: 0; }}
-    .op-hero-title {{
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 6px;
-    }}
-    .op-hero-list {{
-      font-size: 13px; color: var(--text-secondary);
-      list-style: none; margin: 0; padding: 0;
-    }}
-    .op-hero-list li {{
-      padding: 4px 0;
-      border-bottom: 1px dashed var(--border-subtle);
-    }}
-    .op-hero-list li:last-child {{ border-bottom: 0; }}
-    .op-hero-list .alert {{ color: var(--amber); }}
-    .op-hero-list .blocker {{ color: var(--red); }}
-    .op-hero-empty {{ color: var(--text-dim); font-style: italic; font-size: 12px; }}
-
-    .op-cols {{
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 0;
-    }}
-    .op-col {{
-      border-right: 1px solid var(--border-subtle);
-      padding: 14px 18px;
-      min-height: 140px;
-    }}
-    .op-col:last-child {{ border-right: 0; }}
-    .op-col-title {{
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; margin: 0 0 10px 0;
-    }}
-    .op-col-title.now {{ color: var(--accent); }}
-    .op-col-title.blocked {{ color: var(--red); }}
-    .op-col-title.next {{ color: var(--green); }}
-    .op-col-list {{ list-style: none; margin: 0; padding: 0; font-size: 13px; }}
-    .op-col-list li {{
-      padding: 6px 0;
-      border-bottom: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      word-break: break-word;
-    }}
-    .op-col-list li:last-child {{ border-bottom: 0; }}
-    .op-col-list a {{
-      color: var(--accent); text-decoration: none;
-      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
-      font-size: 11px;
-    }}
-    .op-col-list a:hover {{ text-decoration: underline; }}
+{_OPERATOR_SUMMARY_CSS}
 
     /* Section readiness grid */
     .readiness-wrap {{ padding: 4px 0 0 0; }}
@@ -5179,12 +5393,6 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     }}
     .activity-text {{ color: var(--text-secondary); word-break: break-word; min-width: 0; }}
     .activity-text .mod {{ color: var(--accent); }}
-    @media (max-width: 900px) {{
-      .op-hero {{ grid-template-columns: 1fr; }}
-      .op-cols {{ grid-template-columns: 1fr; }}
-      .op-col {{ border-right: 0; border-bottom: 1px solid var(--border-subtle); }}
-      .op-col:last-child {{ border-bottom: 0; }}
-    }}
   </style>
 </head>
 <body>
@@ -5229,30 +5437,17 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
             </div>
             <span class="panel-badge" id="op-badge" style="background:var(--accent-muted);color:var(--accent);">&nbsp;</span>
           </div>
-          <div class="op-hero" id="op-hero">
-            <div class="op-hero-block">
-              <div class="op-hero-title">Alerts</div>
-              <div class="op-hero-empty">Loading&hellip;</div>
-            </div>
-            <div class="op-hero-block">
-              <div class="op-hero-title">Focus</div>
-              <div class="op-hero-empty">Loading&hellip;</div>
-            </div>
-          </div>
-          <div class="op-cols">
-            <div class="op-col">
-              <h4 class="op-col-title now">Now</h4>
-              <ul class="op-col-list" id="op-now"><li class="op-hero-empty">Loading&hellip;</li></ul>
-            </div>
-            <div class="op-col">
-              <h4 class="op-col-title blocked">Blocked</h4>
-              <ul class="op-col-list" id="op-blocked"><li class="op-hero-empty">Loading&hellip;</li></ul>
-            </div>
-            <div class="op-col">
-              <h4 class="op-col-title next">Next</h4>
-              <ul class="op-col-list" id="op-next"><li class="op-hero-empty">Loading&hellip;</li></ul>
-            </div>
-          </div>
+          <a class="op-summary-card" href="/operator">
+            <span class="op-summary-stat">
+              <span class="op-summary-value" id="op-active-count">0</span>
+              <span class="op-summary-label">Active</span>
+            </span>
+            <span class="op-summary-stat">
+              <span class="op-summary-value" id="op-blocked-count">0</span>
+              <span class="op-summary-label">Blocked</span>
+            </span>
+            <span class="op-summary-link">View &rarr;</span>
+          </a>
         </div>
       </div>
 
@@ -5917,38 +6112,9 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
         </li>`).join('')}}</ul>` : '<div class="empty-state">No review audit files</div>';
     }}
 
-    // ---- Phase D: Operator / Readiness / Activity ----
+    // ---- Operator summary / Readiness / Activity ----
 
     function renderOperator(briefing) {{
-      const alerts = briefing?.alerts || [];
-      const focus = briefing?.focus || [];
-      const blockers = briefing?.blockers || [];
-
-      // Hero: alerts + focus (blockers appended to alerts visually).
-      const alertItems = [
-        ...blockers.map(s => `<li class="blocker">${{esc(s)}}</li>`),
-        ...alerts.map(s => `<li class="alert">${{esc(s)}}</li>`),
-      ];
-      const focusItems = focus.map(s => `<li>${{esc(s)}}</li>`);
-      $('#op-hero').innerHTML = `
-        <div class="op-hero-block">
-          <div class="op-hero-title">Alerts &amp; Blockers</div>
-          ${{alertItems.length
-            ? `<ul class="op-hero-list">${{alertItems.join('')}}</ul>`
-            : '<div class="op-hero-empty">None</div>'}}
-        </div>
-        <div class="op-hero-block">
-          <div class="op-hero-title">Focus</div>
-          ${{focusItems.length
-            ? `<ul class="op-hero-list">${{focusItems.join('')}}</ul>`
-            : '<div class="op-hero-empty">None</div>'}}
-        </div>`;
-
-      // Prefer the structured ``action_rows[]`` — each row carries its
-      // own bucket + endpoint + reason, so we don't have to reverse-
-      // parse the display string. Fall back to the ``actions.active`` /
-      // ``actions.blocked`` / ``actions.next`` string arrays for older
-      // briefings that don't have the new field.
       const rowsSrc = Array.isArray(briefing?.action_rows) && briefing.action_rows.length
         ? briefing.action_rows
         : (() => {{
@@ -5961,29 +6127,13 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
             return bag;
           }})();
 
-      const renderRow = (r) => {{
-        const label = esc(r.label || '');
-        const link = r.endpoint
-          ? ` <a href="${{esc(r.endpoint)}}" title="${{esc(r.endpoint)}}" target="_blank" rel="noopener">[drill]</a>`
-          : '';
-        return `<li>${{label}}${{link}}</li>`;
-      }};
-      const renderCol = (bucket) => {{
-        const rows = rowsSrc.filter(r => r.bucket === bucket);
-        return rows.length
-          ? rows.map(renderRow).join('')
-          : '<li class="op-hero-empty">Nothing here</li>';
-      }};
-
-      $('#op-now').innerHTML = renderCol('active');
-      $('#op-blocked').innerHTML = renderCol('blocked');
-      $('#op-next').innerHTML = renderCol('next');
-
       const counts = {{active: 0, blocked: 0, next: 0}};
       for (const r of rowsSrc) {{
         if (counts[r.bucket] !== undefined) counts[r.bucket]++;
       }}
       const total = counts.active + counts.blocked + counts.next;
+      $('#op-active-count').textContent = counts.active;
+      $('#op-blocked-count').textContent = counts.blocked;
       const badge = $('#op-badge');
       badge.textContent = total ? `${{total}} items` : 'Idle';
       if (counts.blocked) {{
@@ -7496,7 +7646,7 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     if path in {"/", "/dashboard", "/quality-board"}:
         return 200, render_dashboard_html(), "text/html; charset=utf-8"
     if path == "/operator":
-        return 200, _render_skeleton_page("Operator", 974), "text/html; charset=utf-8"
+        return 200, render_operator_page_html(), "text/html; charset=utf-8"
     if path == "/quality":
         return 200, _render_skeleton_page("Quality", 975), "text/html; charset=utf-8"
     if path == "/pipeline":
