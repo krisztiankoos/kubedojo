@@ -46,7 +46,7 @@ This module shows you how error budgets work and how to use them to make better 
 
 > **Stop and think**: If your product manager asks for 100% uptime, what are the actual engineering and business costs of trying to achieve that goal?
 
-An error budget is the inverse of your SLO — the amount of unreliability you're allowed.
+[An error budget is the inverse of your SLO](https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring) — the amount of unreliability you're allowed.
 
 ```
 Error Budget = 100% - SLO Target
@@ -75,7 +75,7 @@ Error budgets reframe the conversation:
 | "Zero failures is the goal" | "We're supposed to have some failures" |
 | Endless debates | Data-driven decisions |
 
-**Key insight**: If you never exhaust your error budget, your SLO is too loose. If you always exhaust it, your SLO is too tight.
+**Key insight**: If you almost never exhaust your error budget, your SLO is probably too loose. If you routinely exhaust it, your SLO is probably too tight.
 
 ---
 
@@ -285,11 +285,11 @@ The question isn't "avoid spending budget" — it's "spend budget wisely."
 
 > **Pause and predict**: How might an 'error budget loan' affect the engineering team's workload in the following month?
 
-1. **Netflix's "Error Budget" approach is slightly different** — they focus on "disengagement" (when users leave due to problems) rather than pure availability, because some errors matter more than others.
+1. **Some teams use user-centric SLIs** - for example, they may track abandonment, playback failures, or other outcomes that matter more directly to users than raw availability alone.
 
-2. **Google resets error budgets monthly** for most services, but some critical services use rolling windows (last 30 days) for smoother budget consumption curves.
+2. **Teams choose budget windows deliberately** - calendar-aligned windows simplify planning, while rolling windows smooth out one-day spikes and keep recent user impact visible.
 
-3. **Some teams have "error budget loans"** — you can "borrow" from next period's budget for critical launches, but you have to "pay it back" with extra reliability work.
+3. **Some organizations define exception processes** - a critical launch may require explicit approval, tighter monitoring, and follow-up reliability work if it proceeds under elevated risk.
 
 4. **Error budgets fundamentally changed the Dev vs Ops dynamic** at Google. Before error budgets, operations could always say "no" to releases. After, developers could say "we have budget" and release without permission—as long as they owned the consequences when budget ran out.
 
@@ -297,7 +297,7 @@ The question isn't "avoid spending budget" — it's "spend budget wisely."
 
 ## War Story: The Budget That Saved the Launch
 
-A retail company I worked with had a Black Friday problem:
+A team preparing for a major traffic event can use error-budget analysis to decide whether a risky launch should proceed:
 
 **The Situation:**
 - Major new feature ready for Black Friday
@@ -316,7 +316,7 @@ Analysis:
 ```
 Current budget: 40% remaining
 Days until Black Friday: 10
-Historical: Black Friday alone usually consumes 20%
+Historical: major traffic spikes can consume a significant share of the remaining budget
 
 If feature causes 10% budget spend:
   Pre-Black Friday: 40% - 10% = 30%
@@ -336,7 +336,7 @@ If feature causes 20% budget spend:
 4. If budget impact > 5%, defer to December
 
 **The Result:**
-- Canary showed 3% budget impact
+- The canary showed acceptable budget impact
 - Full rollout proceeded
 - Black Friday successful
 - No SLO violation
@@ -542,7 +542,7 @@ A misconfigured Kubernetes deployment just caused a major incident that consumed
 <details>
 <summary>Show Answer</summary>
 
-The sudden drop to 15% remaining budget immediately shifts your service from a 'Healthy' state into a 'Critical' or 'Caution' state, triggering predefined policy responses. First, your team should restrict any upcoming feature releases and shift engineering focus toward reliability and technical debt to prevent further burn. Second, you must conduct a blameless postmortem to understand how the misconfiguration bypassed your CI/CD checks and implement automated safeguards against a recurrence. Finally, leadership must be notified of the budget state and the subsequent feature freeze, ensuring that everyone understands the data-driven rationale for pausing feature work until the budget recovers.
+The sudden drop to 15% remaining budget would typically shift your service from a 'Healthy' state into a 'Critical' or 'Caution' state, triggering predefined policy responses. First, your team should restrict any upcoming feature releases and shift engineering focus toward reliability and technical debt to prevent further burn. Second, you must conduct a blameless postmortem to understand how the misconfiguration bypassed your CI/CD checks and implement automated safeguards against a recurrence. Finally, leadership must be notified of the budget state and the subsequent feature freeze, ensuring that everyone understands the data-driven rationale for pausing feature work until the budget recovers.
 
 </details>
 
@@ -667,4 +667,10 @@ Continue to [Module 1.4: Toil and Automation](../module-1.4-toil-automation/) to
 
 ---
 
-*"Error budgets are the currency that lets us take appropriate risks."* — Google SRE Book
+*Error budgets create a shared way to reason about reliability risk.*
+
+## Sources
+
+- [cloud.google.com: slo monitoring](https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring) — The Google Cloud service-monitoring concepts page explicitly defines the error budget as starting at 1 minus the SLO and explains how it is consumed.
+- [Prometheus Alerting Rules](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) — Useful for implementing error-budget and burn-rate policy thresholds as actionable alerts.
+- [Prometheus Recording Rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) — Shows how to precompute the time series commonly used in SLO dashboards and error-budget calculations.
