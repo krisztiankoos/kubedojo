@@ -1,0 +1,106 @@
+{
+  "module_key": "platform/disciplines/core-platform/sre/module-1.7-capacity-planning",
+  "module_path": "src/content/docs/platform/disciplines/core-platform/sre/module-1.7-capacity-planning.md",
+  "research_run_id": "2026-05-07T20:54:13+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/platform-disciplines-core-platform-sre.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Many teams target sustained utilization around 60-70% for latency-sensitive services and use higher targets only for batch or interruptible workloads.",
+      "claim_class": "benchmark",
+      "span_hint": "section: The Utilization Sweet Spot",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "This is why many teams target sustained utilization around 60-70% for latency-sensitive services and use higher targets only for batch or interruptible workloads.",
+      "suggested_rewrite": "This is why many teams keep explicit headroom for latency-sensitive services and use tighter utilization targets only after testing how their workloads behave near saturation.",
+      "lesson_point_url": "https://en.wikipedia.org/wiki/Queueing_theory",
+      "rationale": "The exact 60-70% number is a workload-specific rule of thumb, but the underlying queueing principle about keeping headroom near saturation is sound."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "In Kubernetes, the Horizontal Pod Autoscaler can scale workloads on CPU, memory, and custom metrics using the `autoscaling/v2` API, and `behavior` settings such as stabilization windows affect scaling behavior.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Reactive Autoscaling",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes HPA documentation directly covers `autoscaling/v2`, custom metrics, multiple metrics, and configurable scaling behavior including stabilization windows."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Kubernetes scheduling is based on resource requests, while CPU limits are enforced by throttling and memory limits by reactive OOM handling.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Right-Sizing and Resource Requests",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes resource-management docs directly describe request-based scheduling plus CPU-throttling and memory-limit enforcement behavior."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Netflix has publicly discussed pre-scaling and resilience preparation around major release events because popular premieres can create demand that is both predictable in timing and uncertain in magnitude.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know item 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Netflix has publicly discussed pre-scaling and resilience preparation around major release events because popular premieres can create demand that is both predictable in timing and uncertain in magnitude.",
+      "suggested_rewrite": "Large streaming services sometimes prepare extra capacity and resilience measures ahead of major releases because demand can be predictable in timing but uncertain in magnitude.",
+      "lesson_point_url": null,
+      "rationale": "The named-company anecdote needs a citable primary source; without one, the sentence should keep only the general operational lesson."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "In many cloud environments, the slowest capacity change is not adding pods; it is raising managed-service limits, database throughput, network quotas, or third-party vendor capacity.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know item 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In many cloud environments, the slowest capacity change is not adding pods; it is raising managed-service limits, database throughput, network quotas, or third-party vendor capacity.",
+      "suggested_rewrite": "In many environments, raising managed-service limits, database throughput, network quotas, or third-party vendor capacity can take longer than scaling application pods.",
+      "lesson_point_url": null,
+      "rationale": "The comparative 'slowest' claim is too broad to support authoritatively across providers, but the lead-time lesson remains valid without the superlative."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "title": "Kubernetes Docs: Resource Management for Pods and Containers",
+      "tier": "standards",
+      "why_relevant": "Primary source for requests, limits, scheduler placement, and runtime enforcement behaviors that shape capacity planning in Kubernetes."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/",
+      "title": "Kubernetes Docs: Horizontal Pod Autoscaling",
+      "tier": "standards",
+      "why_relevant": "Explains HPA control-loop behavior, custom metrics, and stabilization settings used in reactive scaling strategies."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/",
+      "title": "Kubernetes Docs: Node Autoscaling",
+      "tier": "standards",
+      "why_relevant": "Covers how node provisioning and consolidation interact with workload scaling and cluster-level capacity buffers."
+    }
+  ],
+  "notes": "No seed entries were created for worked examples, quiz material, exercise scenarios, tables, or code blocks because they read as pedagogical constructs rather than real-world assertions to source inline. Did You Know items 2 and 4 were treated as general operational heuristics rather than citation-mandated dated or vendor-specific claims.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

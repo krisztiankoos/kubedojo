@@ -227,7 +227,7 @@ Capacity measurement should use golden signals and resource signals together. La
 
 ### The Utilization Sweet Spot
 
-Sustained utilization near 100% is not efficient when the service has latency SLOs. As utilization rises, each new request is more likely to wait behind existing work. Queueing theory explains the shape: the system may look stable for a while, then latency accelerates rapidly near saturation. This is why many teams target sustained utilization around 60-70% for latency-sensitive services and use higher targets only for batch or interruptible workloads.
+Sustained utilization near 100% is usually not efficient when the service has latency SLOs. As utilization rises, each new request is more likely to wait behind existing work. Queueing theory explains the shape: the system may look stable for a while, then latency accelerates rapidly near saturation. This is why many teams keep explicit headroom for latency-sensitive services and use tighter utilization targets only after testing how their workloads behave near saturation.
 
 ```mermaid
 xychart-beta
@@ -395,7 +395,7 @@ scaling_schedule:
 
 ### Reactive Autoscaling
 
-Reactive autoscaling responds to measured demand. In Kubernetes 1.35+, the Horizontal Pod Autoscaler can scale workloads based on CPU, memory, or custom metrics through the autoscaling API. The example below uses CPU because it is common and easy to understand, but production teams often add request rate, queue depth, or business metrics when CPU is not the actual bottleneck.
+Reactive autoscaling responds to measured demand. In Kubernetes 1.35+, [the Horizontal Pod Autoscaler can scale workloads based on CPU, memory, or custom metrics through the autoscaling API](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/). The example below uses CPU because it is common and easy to understand, but production teams often add request rate, queue depth, or business metrics when CPU is not the actual bottleneck.
 
 ```yaml
 apiVersion: autoscaling/v2
@@ -574,7 +574,7 @@ The curve is steep because the last increments of reliability require redundancy
 
 ### Right-Sizing and Resource Requests
 
-In Kubernetes, capacity planning must include resource requests and limits because the scheduler uses requests to place pods. If requests are too high, nodes appear full while real utilization is low. If requests are too low, the cluster overcommits and pods fight under load. Limits add another layer: CPU limits can throttle latency-sensitive services, while missing memory limits can let one pod pressure a node.
+In Kubernetes, capacity planning must include resource requests and limits because [the scheduler uses requests to place pods](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/). If requests are too high, nodes appear full while real utilization is low. If requests are too low, the cluster overcommits and pods fight under load. Limits add another layer: CPU limits can throttle latency-sensitive services, while missing memory limits can let one pod pressure a node.
 
 | Signal | Likely Meaning | Action |
 |--------|----------------|--------|
@@ -665,11 +665,11 @@ If autoscaler is at max replicas:
 
 ## Did You Know?
 
-1. Netflix has publicly discussed pre-scaling and resilience preparation around major release events because popular premieres can create demand that is both predictable in timing and uncertain in magnitude.
+1. Large streaming services sometimes prepare extra capacity and resilience measures ahead of major releases because demand can be predictable in timing but uncertain in magnitude.
 
 2. The thundering herd problem can turn a recovery into a second outage when many clients retry at once, so capacity planning often includes retry budgets, jitter, backoff, and load shedding.
 
-3. In many cloud environments, the slowest capacity change is not adding pods; it is raising managed-service limits, database throughput, network quotas, or third-party vendor capacity.
+3. In many environments, raising managed-service limits, database throughput, network quotas, or third-party vendor capacity can take longer than scaling application pods.
 
 4. Queue depth is often a better early warning than CPU for worker systems because it shows that arrivals are exceeding completions before every worker is visibly saturated.
 
@@ -916,3 +916,10 @@ The senior habit is to plan for behavior, not components. More replicas, bigger 
 ## Next Module
 
 Continue with [Platform Engineering Discipline](/platform/disciplines/core-platform/platform-engineering/) to learn how SRE practices become reusable internal platforms for many teams.
+
+## Sources
+
+- [en.wikipedia.org: Queueing theory](https://en.wikipedia.org/wiki/Queueing_theory) — General lesson point for an illustrative rewrite.
+- [Kubernetes Docs: Horizontal Pod Autoscaling](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/) — Primary source for reactive workload scaling in Kubernetes, including the HPA control loop, metric targets, scaling behavior, stabilization windows, and limits of resource-utilization-based autoscaling.
+- [Kubernetes Docs: Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — Primary source for Kubernetes compute-resource requests and limits, pod/container resource accounting, and the implementation details that underpin capacity models and scheduling assumptions in cluster-based systems.
+- [Kubernetes Docs: Node Autoscaling](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/) — Covers how node provisioning and consolidation interact with workload scaling and cluster-level capacity buffers.
