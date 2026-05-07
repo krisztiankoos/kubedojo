@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 
@@ -71,56 +73,271 @@ def test_dispatch_smart_codex_forces_danger_mode():
     )
 
 
-def test_dispatch_codex_rejects_read_only_sandbox():
-    """dispatch_codex() raises ValueError when KUBEDOJO_CODEX_SANDBOX=read-only.
-
-    Confirms the main write-path guard added in round-2 of PR #981.
-    """
-    import importlib
-    import os
-
+def _load_dispatch() -> object:
     import importlib.util
     spec = importlib.util.spec_from_file_location("dispatch", SCRIPTS_DIR / "dispatch.py")
     dispatch = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(dispatch)  # type: ignore[union-attr]
+    return dispatch
+
+
+def _load_dispatch_smart() -> object:
+    import importlib
+    import sys
+
+    if str(SCRIPTS_DIR) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS_DIR))
+    return importlib.import_module("dispatch_smart")
+
+
+def _load_codex_adapter():
+    import importlib
+    import sys
+
+    # Import via package path so codex.py's sibling-relative imports resolve.
+    sys.path.insert(0, str(REPO_ROOT))
+    mod = importlib.import_module("agent_runtime.adapters.codex")
+    return mod
+
+
+def _capture_cmd(dispatch_fn, *args, **kwargs) -> list[str]:
+    """Call dispatch_fn, intercept _run_with_process_group, return captured cmd."""
+    dispatch = _load_dispatch()
+
+    captured_cmd: list[str] = []
+
+    def fake_run(cmd, *_args, **_kwargs):
+        captured_cmd.extend(cmd)
+        raise FileNotFoundError("no codex cli in test")
+
+    dispatch._run_with_process_group = fake_run  # type: ignore[attr-defined]
+    fn = getattr(dispatch, dispatch_fn)
+    fn(*args, **kwargs)
+    return captured_cmd
+
+
+def _codex_invocation_cmd(search_env: str | None) -> list[str]:
+    import os
+
+    adapter_module = _load_codex_adapter()
+    adapter = adapter_module.CodexAdapter()
+
+    old = os.environ.get("KUBEDOJO_CODEX_SEARCH")
+    try:
+        if search_env is None:
+            os.environ.pop("KUBEDOJO_CODEX_SEARCH", None)
+        else:
+            os.environ["KUBEDOJO_CODEX_SEARCH"] = search_env
+        return adapter.build_invocation(
+            prompt="x",
+            mode="danger",
+            cwd=REPO_ROOT,
+            model=None,
+            task_id=None,
+            session_id=None,
+            tool_config=None,
+        ).cmd
+    finally:
+        if old is None:
+            os.environ.pop("KUBEDOJO_CODEX_SEARCH", None)
+        else:
+            os.environ["KUBEDOJO_CODEX_SEARCH"] = old
+
+
+def test_codex_adapter_rejects_workspace_write_mode():
+    """runner.invoke('codex', ..., mode='workspace-write') must raise ValueError.
+
+    CodexAdapter.supported_modes now only contains 'danger'. workspace-write
+    blocks .git/worktrees index.lock and api.github.com — danger is required.
+    """
+    from agent_runtime.runner import invoke
+
+    with pytest.raises(ValueError, match="does not support mode"):
+        invoke(
+            "codex",
+            "x",
+            mode="workspace-write",
+            cwd=None,
+            model=None,
+            task_id=None,
+        )
+
+
+def test_dispatch_codex_sandbox_env_ignored():
+    """KUBEDOJO_CODEX_SANDBOX env var is now ignored; cmd is always danger.
+
+    The env override was removed in this PR — the var no longer affects
+    command construction. Verify the flag is still danger even when the
+    env var is set to workspace-write.
+    """
+    import os
     env_backup = os.environ.get("KUBEDOJO_CODEX_SANDBOX")
     try:
-        os.environ["KUBEDOJO_CODEX_SANDBOX"] = "read-only"
-        spec.loader.exec_module(dispatch)
-        with pytest.raises(ValueError, match="read-only is forbidden"):
-            dispatch.dispatch_codex("test prompt")
+        os.environ["KUBEDOJO_CODEX_SANDBOX"] = "workspace-write"
+        cmd = _capture_cmd("dispatch_codex", "test prompt")
     finally:
         if env_backup is None:
             os.environ.pop("KUBEDOJO_CODEX_SANDBOX", None)
         else:
             os.environ["KUBEDOJO_CODEX_SANDBOX"] = env_backup
 
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd, (
+        f"Expected danger flag even with KUBEDOJO_CODEX_SANDBOX=workspace-write, got: {cmd}"
+    )
+    assert "--full-auto" not in cmd, (
+        f"--full-auto must not appear when env var is ignored, got: {cmd}"
+    )
+
 
 def test_dispatch_codex_default_is_danger():
-    """dispatch_codex() builds a --dangerously-bypass-approvals-and-sandbox command by default.
+    """dispatch_codex() builds a --dangerously-bypass-approvals-and-sandbox command.
 
-    Verifies the guard added in round-2: no KUBEDOJO_CODEX_SANDBOX set means danger.
-    Uses monkeypatching so no real subprocess is spawned.
+    Env var is gone; the flag is unconditional.
     """
+    import os
+    os.environ.pop("KUBEDOJO_CODEX_SANDBOX", None)
+    cmd = _capture_cmd("dispatch_codex", "test prompt")
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd, (
+        f"Expected danger flag in cmd but got: {cmd}"
+    )
+    assert "--sandbox" not in cmd, (
+        f"--sandbox should not appear in danger-mode cmd, got: {cmd}"
+    )
+
+
+def test_codex_adapter_respects_search_env_off():
+    """CodexAdapter includes --search only when env var is set to 1."""
+    assert "--search" not in _codex_invocation_cmd(None), (
+        f"Expected --search OFF when KUBEDOJO_CODEX_SEARCH is unset: "
+        f"{_codex_invocation_cmd(None)}"
+    )
+    assert "--search" not in _codex_invocation_cmd("0"), (
+        f"Expected --search OFF when KUBEDOJO_CODEX_SEARCH=0: "
+        f"{_codex_invocation_cmd('0')}"
+    )
+
+
+def test_codex_adapter_respects_search_env_on():
+    """CodexAdapter includes --search when KUBEDOJO_CODEX_SEARCH=1."""
+    assert "--search" in _codex_invocation_cmd("1"), (
+        f"Expected --search when KUBEDOJO_CODEX_SEARCH=1: {_codex_invocation_cmd('1')}"
+    )
+
+
+def test_dispatch_smart_codex_sets_search_for_draft():
+    """dispatch_smart sets search ON for draft class dispatches."""
+    dispatch_smart = _load_dispatch_smart()
+
+    observed: dict[str, str] = {}
+
+    def fake_invoke(*_args, **_kwargs):
+        import os
+
+        observed["search"] = os.environ.get("KUBEDOJO_CODEX_SEARCH", "")
+        return SimpleNamespace(
+            ok=True,
+            response="ok",
+            session_id=None,
+            stderr_excerpt="",
+        )
+
+    with patch("agent_runtime.runner.invoke", side_effect=fake_invoke):
+        dispatch_smart.fire(
+            agent="codex",
+            task_class="draft",
+            prompt="x",
+            mode="danger",
+            model="gpt-5.4-mini",
+            worktree=None,
+            task_id="t1",
+            timeout_s=1,
+        )
+    assert observed["search"] == "1"
+
+
+def test_dispatch_smart_codex_clears_search_for_review():
+    """dispatch_smart sets search OFF for review class dispatches."""
+    dispatch_smart = _load_dispatch_smart()
+
+    observed: dict[str, str] = {}
+
+    def fake_invoke(*_args, **_kwargs):
+        import os
+
+        observed["search"] = os.environ.get("KUBEDOJO_CODEX_SEARCH", "")
+        return SimpleNamespace(
+            ok=True,
+            response="ok",
+            session_id=None,
+            stderr_excerpt="",
+        )
+
+    with patch("agent_runtime.runner.invoke", side_effect=fake_invoke):
+        dispatch_smart.fire(
+            agent="codex",
+            task_class="review",
+            prompt="x",
+            mode="read-only",
+            model="gpt-5.5",
+            worktree=None,
+            task_id="t2",
+            timeout_s=1,
+        )
+    assert observed["search"] == "0"
+
+
+def test_dispatch_codex_includes_search():
+    """dispatch_codex() includes --search and danger mode flags."""
+    cmd = _capture_cmd("dispatch_codex", "test prompt")
+    assert "--search" in cmd, f"Expected --search in dispatch_codex cmd: {cmd}"
+    assert cmd[1] == "--search", f"Expected top-level --search in cmd: {cmd}"
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd, (
+        f"Expected danger flag in dispatch_codex cmd: {cmd}"
+    )
+
+
+def test_dispatch_codex_review_no_search():
+    """dispatch_codex_review() keeps --search off."""
+    cmd = _capture_cmd("dispatch_codex_review", "test prompt")
+    assert "--search" not in cmd, f"Expected no --search in review cmd: {cmd}"
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd, (
+        f"Expected danger flag in review cmd: {cmd}"
+    )
+
+
+def test_dispatch_codex_patch_includes_search():
+    """dispatch_codex_patch() includes --search and danger mode flags."""
+    cmd = _capture_cmd("dispatch_codex_patch", "test prompt")
+    assert "--search" in cmd, f"Expected --search in patch cmd: {cmd}"
+    assert cmd[1] == "--search", f"Expected top-level --search in patch cmd: {cmd}"
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd, (
+        f"Expected danger flag in patch cmd: {cmd}"
+    )
+
+
+def test_codex_bridge_runtime_mode_always_danger():
+    """_codex_bridge_runtime_mode() returns 'danger' regardless of CODEX_BRIDGE_MODE env."""
     import importlib.util
     import os
 
-    os.environ.pop("KUBEDOJO_CODEX_SANDBOX", None)
-    spec = importlib.util.spec_from_file_location("dispatch", SCRIPTS_DIR / "dispatch.py")
-    dispatch = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(dispatch)
-
-    captured_cmd: list = []
-
-    def fake_run(cmd, *args, **kwargs):
-        captured_cmd.extend(cmd)
-        raise FileNotFoundError("no codex cli in test")
-
-    dispatch._run_with_process_group = fake_run
-    ok, _ = dispatch.dispatch_codex("test prompt")
-    assert not ok
-    assert "--dangerously-bypass-approvals-and-sandbox" in captured_cmd, (
-        f"Expected danger flag in cmd but got: {captured_cmd}"
+    spec = importlib.util.spec_from_file_location(
+        "ai_agent_bridge._codex",
+        SCRIPTS_DIR / "ai_agent_bridge" / "_codex.py",
     )
-    assert "--sandbox" not in captured_cmd, (
-        f"--sandbox should not appear in danger-mode cmd, got: {captured_cmd}"
-    )
+    # Module imports from agent_runtime — guard against import errors in test env.
+    try:
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    except (ImportError, ModuleNotFoundError):
+        pytest.skip("ai_agent_bridge deps not available in this test env")
+
+    for env_val in ("workspace-write", "safe", "full-auto", "danger", None):
+        if env_val is None:
+            os.environ.pop("CODEX_BRIDGE_MODE", None)
+        else:
+            os.environ["CODEX_BRIDGE_MODE"] = env_val
+        result = mod._codex_bridge_runtime_mode()  # type: ignore[attr-defined]
+        assert result == "danger", (
+            f"Expected 'danger' for CODEX_BRIDGE_MODE={env_val!r}, got {result!r}"
+        )
+    os.environ.pop("CODEX_BRIDGE_MODE", None)

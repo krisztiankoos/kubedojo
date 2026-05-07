@@ -270,7 +270,6 @@ class ReviewWorker:
             self._deep_prompt(module_text, module_path),
             expected_checks=set(DEEP_CHECK_IDS),
             model=active_review_model,
-            use_search=True,
         )
         aggregated_checks.extend(deep_result["checks"])
         if deep_result["feedback"]:
@@ -300,7 +299,6 @@ class ReviewWorker:
         *,
         expected_checks: set[str],
         model: str,
-        use_search: bool = False,
     ) -> tuple[dict[str, Any], int, float, str]:
         last_error: Exception | None = None
         calls_used = 0
@@ -315,7 +313,7 @@ class ReviewWorker:
             max_attempts = 2 if candidate_index == 0 else 1
             for attempt in range(max_attempts):
                 ok, output = self.dispatch_fn(
-                    prompt, model=candidate_model, timeout=900, use_search=use_search
+                    prompt, model=candidate_model, timeout=900
                 )
                 calls_used += 1
                 actual_usd += self._estimated_cost_for_model(candidate_model)

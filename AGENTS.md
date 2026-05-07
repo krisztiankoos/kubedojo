@@ -140,12 +140,7 @@ If your diff includes these, you staged too aggressively. Re-stage with explicit
 
 ### 9. ALWAYS use `scripts/ab` for Codex-from-bridge invocations
 
-The wrapper at `scripts/ab` defaults `CODEX_BRIDGE_MODE=workspace-write` (guarded by `scripts/ops/smoketest_ab_workspace_write.sh`). Override only when you know you need it:
-
-- `CODEX_BRIDGE_MODE=safe scripts/ab ...` — read-only
-- `CODEX_BRIDGE_MODE=danger scripts/ab ...` — full network + FS (for `gh`, pip installs, opening PRs)
-
-For a task that requires opening a PR, **you need `danger` mode** — `workspace-write` blocks network.
+The wrapper at `scripts/ab` pins `CODEX_BRIDGE_MODE=danger` unconditionally (guarded by `scripts/ops/smoketest_ab_codex_danger.sh`). Codex always runs in danger mode — read-only and workspace-write both starve it of network/filesystem (rc=-9 stale-rollout salvage). Any env var override is clobbered with a stderr warning.
 
 ### 10. NEVER merge a PR without an independent-family review
 

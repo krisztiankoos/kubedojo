@@ -351,7 +351,8 @@ def dispatch_writer(prompt: str, writer_model: str) -> tuple[bool, str]:
         return dispatch_gemini_with_retry(prompt, model=writer_model, timeout=900)
     if writer_model.startswith("gpt-") or writer_model == "codex":
         cmd = [
-            "codex", "exec", "--skip-git-repo-check", "--sandbox", "read-only",
+            "codex", "--search", "exec", "--skip-git-repo-check",
+            "--dangerously-bypass-approvals-and-sandbox",
             "-m", writer_model, prompt,
         ]
         try:
@@ -390,7 +391,8 @@ def dispatch_factcheck(module_text: str, module_key: str, topic_label: str) -> t
         module_text=module_text,
     )
     cmd = [
-        "codex", "exec", "--skip-git-repo-check", "--sandbox", "read-only",
+        "codex", "--search", "exec", "--skip-git-repo-check",
+        "--dangerously-bypass-approvals-and-sandbox",
         "-m", FACT_CHECKER, prompt,
     ]
     try:

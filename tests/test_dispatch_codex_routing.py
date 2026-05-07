@@ -14,12 +14,8 @@ def _completed_process(cmd: list[str], *, stdout: str = "ok", stderr: str = ""):
     return subprocess.CompletedProcess(cmd, 0, stdout=stdout, stderr=stderr)
 
 
-def test_dispatch_codex_review_defaults_to_no_search_and_danger_sandbox():
-    """Review defaults to no --search; sandbox is always danger (not read-only).
-
-    read-only starved Codex of network/filesystem and caused rc=-9 stale-rollout
-    salvage — three failures in a single session 2026-05-07.
-    """
+def test_dispatch_codex_review_no_search():
+    """dispatch_codex_review() runs in danger mode without --search."""
     with patch(
         "dispatch._run_with_process_group",
         return_value=_completed_process(["codex"]),
@@ -37,36 +33,8 @@ def test_dispatch_codex_review_defaults_to_no_search_and_danger_sandbox():
     assert "read-only" not in cmd
 
 
-def test_dispatch_codex_review_enables_search_when_requested():
-    """FACT_CHECK deep reviews opt in via use_search=True; sandbox still danger."""
-    with patch(
-        "dispatch._run_with_process_group",
-        return_value=_completed_process(["codex"]),
-    ) as run_mock, patch("dispatch._log"):
-        ok, output = dispatch_codex_review(
-            "review prompt",
-            model="gpt-5.3-codex-spark",
-            timeout=123,
-            use_search=True,
-        )
-
-    assert ok is True
-    assert output == "ok"
-    cmd = run_mock.call_args.args[0]
-    assert Path(cmd[0]).name == "codex"
-    assert "--search" in cmd
-    assert cmd.index("--search") < cmd.index("exec")
-    assert "--dangerously-bypass-approvals-and-sandbox" in cmd
-    assert "--sandbox" not in cmd
-    assert "read-only" not in cmd
-
-
-def test_dispatch_codex_patch_runs_danger_sandbox():
-    """Patch runs in danger mode — Codex needs network to verify facts even as patcher.
-
-    read-only starved Codex of network/filesystem and caused rc=-9 stale-rollout
-    salvage — three failures in a single session 2026-05-07.
-    """
+def test_dispatch_codex_patch_includes_search():
+    """dispatch_codex_patch() runs in danger mode with --search."""
     with patch(
         "dispatch._run_with_process_group",
         return_value=_completed_process(["codex"]),
@@ -77,8 +45,8 @@ def test_dispatch_codex_patch_runs_danger_sandbox():
     assert output == "ok"
     cmd = run_mock.call_args.args[0]
     assert Path(cmd[0]).name == "codex"
-    assert cmd[1] == "exec"
+    assert "--search" in cmd
+    assert cmd.index("--search") < cmd.index("exec")
     assert "--dangerously-bypass-approvals-and-sandbox" in cmd
     assert "--sandbox" not in cmd
     assert "read-only" not in cmd
-    assert "--search" not in cmd

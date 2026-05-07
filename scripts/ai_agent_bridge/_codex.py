@@ -7,6 +7,7 @@ consistent with the runtime's resume_policy="never" for Codex.
 
 import json
 import os
+import sys
 
 from agent_runtime import runner as agent_runner
 from agent_runtime.errors import (
@@ -21,40 +22,27 @@ from ._db import get_db, set_session
 from ._messaging import acknowledge, send_message
 from ._prompts import build_codex_prompt
 
-_CODEX_MODES = {"safe", "workspace-write", "full-auto", "danger"}
-
-
 def _codex_bridge_mode() -> str:
     """Resolve Codex sandbox mode for ai_agent_bridge calls.
 
-    Default is now "danger" — read-only starved Codex of network/filesystem
-    and caused rc=-9 stale-rollout salvage (three failures 2026-05-07).
+    Always returns "danger" — workspace-write and read-only both starve Codex
+    of network/filesystem. CODEX_BRIDGE_MODE env var is ignored; callers that
+    set it will see a warning on stderr.
     """
-    requested = (
-        os.environ.get("CODEX_BRIDGE_MODE")
-        or os.environ.get("CODEX_CLI_MODE")
-        or "danger"
-    ).strip().lower()
-    if requested in _CODEX_MODES:
-        return "workspace-write" if requested == "full-auto" else requested
-    print(f"⚠️  Invalid CODEX_BRIDGE_MODE='{requested}' — falling back to danger")
+    env_val = os.environ.get("CODEX_BRIDGE_MODE") or os.environ.get("CODEX_CLI_MODE")
+    if env_val and env_val.strip().lower() != "danger":
+        print(
+            f"WARNING: CODEX_BRIDGE_MODE='{env_val}' is ignored — "
+            "Codex always runs in danger mode. Remove the env var.",
+            flush=True,
+            file=sys.stderr,
+        )
     return "danger"
 
 
 def _codex_bridge_runtime_mode() -> str:
-    """Translate CODEX_BRIDGE_MODE env var to runtime vocabulary.
-
-    Runtime uses {workspace-write, danger}. read-only is forbidden —
-    CodexAdapter.supported_modes no longer includes it.
-    Bridge legacy uses {safe, workspace-write, full-auto, danger}.
-    "safe" maps to "danger" (read-only is gone; danger is the new baseline).
-    """
-    legacy = _codex_bridge_mode()
-    if legacy == "danger":
-        return "danger"
-    if legacy == "workspace-write":
-        return "workspace-write"
-    return "danger"  # "safe" → "danger" (read-only removed from adapter)
+    """Return the runtime mode for Codex bridge calls — always "danger"."""
+    return _codex_bridge_mode()
 
 
 def ask_codex(content: str, task_id: str | None = None, msg_type: str = "query",

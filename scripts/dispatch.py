@@ -623,41 +623,16 @@ def dispatch_claude(prompt: str, model: str = CLAUDE_DEFAULT_MODEL,
 
 def dispatch_codex(prompt: str, model: str = CODEX_DEFAULT_MODEL,
                    timeout: int = 900) -> tuple[bool, str]:
-    """Call Codex CLI directly via `codex exec`. Returns (success, output).
+    """Call Codex CLI directly via `codex exec` with `--search`.
 
-    Reads prompt from stdin, skips git repo check.
-
-    Environment overrides:
-
-    - ``KUBEDOJO_CODEX_SEARCH=1`` enables ``--search`` (live web). Required for
-      writer dispatches that produce factual content (#388 module rewrites,
-      anything quoting CLI flags or version-specific behavior).
-    - ``KUBEDOJO_CODEX_SANDBOX`` overrides the sandbox mode. Valid values:
-      ``danger`` (default), ``workspace-write``. ``read-only`` is forbidden —
-      it starves Codex of network/filesystem (rc=-9 stale-rollout salvage,
-      three failures 2026-05-07). Use ``workspace-write`` only for callers
-      that explicitly need ``--full-auto`` without full danger access
-      (workspace-write blocks ``.git/worktrees/.../index.lock`` and
-      ``api.github.com``; see ``feedback_codex_danger_for_git_gh.md``).
+    Always runs in danger mode with --search enabled — writer pipeline
+    default behavior for codex dispatch helpers.
 
     On rate-limit or quota errors, returns (False, stderr) so the caller can
     react (see run_module review branch, which degrades gracefully).
     """
-    sandbox = os.environ.get("KUBEDOJO_CODEX_SANDBOX", "danger")
-    if sandbox == "read-only":
-        raise ValueError(
-            "KUBEDOJO_CODEX_SANDBOX=read-only is forbidden for codex; "
-            "use workspace-write or danger (default)."
-        )
-    use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
-
-    cmd = [CODEX_CLI]
-    if use_search:
-        cmd.append("--search")
-    if sandbox == "workspace-write":
-        cmd.extend(["exec", "--skip-git-repo-check", "--full-auto"])
-    else:
-        cmd.extend(["exec", "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox"])
+    cmd = [CODEX_CLI, "--search", "exec", "--skip-git-repo-check",
+           "--dangerously-bypass-approvals-and-sandbox"]
     # Allow caller to pin a model (e.g. "codex-gpt-5"); "codex" alone means default.
     if model and model != "codex":
         cmd.extend(["-m", model])
@@ -693,21 +668,14 @@ def dispatch_codex(prompt: str, model: str = CODEX_DEFAULT_MODEL,
 
 
 def dispatch_codex_review(prompt: str, model: str = CODEX_REVIEW_DEFAULT_MODEL,
-                          timeout: int = 900, use_search: bool = False) -> tuple[bool, str]:
+                          timeout: int = 900) -> tuple[bool, str]:
     """Call Codex review via `codex exec --dangerously-bypass-approvals-and-sandbox`.
 
-    Danger mode is mandatory — read-only starved Codex of network/filesystem
-    and caused rc=-9 stale-rollout salvage (unrelated JSON, three failures
-    2026-05-07).
-
-    ``use_search`` enables `--search` only for checks that need live web
-    verification (FACT_CHECK in the deep-review batch). Simple checks do
-    not need search and paying for it on every call wastes latency/budget.
+    Always runs in danger mode. Search is intentionally off for this reviewer
+    path to preserve the original load-bearing reviewer default.
     """
-    cmd = [CODEX_CLI]
-    if use_search:
-        cmd.append("--search")
-    cmd.extend(["exec", "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox"])
+    cmd = [CODEX_CLI, "exec", "--skip-git-repo-check",
+           "--dangerously-bypass-approvals-and-sandbox"]
     if model and model != "codex":
         cmd.extend(["-m", model])
 
@@ -744,32 +712,11 @@ def dispatch_codex_patch(prompt: str, model: str = CODEX_PATCH_DEFAULT_MODEL,
                          timeout: int = 1200) -> tuple[bool, str]:
     """Call Codex patch via `codex exec --dangerously-bypass-approvals-and-sandbox`.
 
-    Danger mode is mandatory — read-only starved Codex of network/filesystem
-    and caused rc=-9 stale-rollout salvage. Even patch-mode Codex needs live
-    web to verify cited URLs and version-specific facts.
-
-    Environment overrides:
-
-    - ``KUBEDOJO_CODEX_SEARCH=1`` enables ``--search`` (live web). Useful when
-      the review verdict cites URLs or version-specific facts the patcher
-      needs to confirm before rewriting prose around them.
-    - ``KUBEDOJO_CODEX_SANDBOX=workspace-write`` switches to ``--full-auto``
-      for callers that need filesystem writes but not full network bypass.
-      Any other value (including the former default ``read-only``) falls back
-      to danger.
+    Always runs in danger mode with --search enabled for post-review
+    edit/fix-up behavior.
     """
-    sandbox = os.environ.get("KUBEDOJO_CODEX_SANDBOX", "danger")
-    use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
-
-    sandbox_flags = (
-        ["--full-auto"] if sandbox == "workspace-write"
-        else ["--dangerously-bypass-approvals-and-sandbox"]
-    )
-
-    cmd = [CODEX_CLI]
-    if use_search:
-        cmd.append("--search")
-    cmd.extend(["exec", "--skip-git-repo-check"] + sandbox_flags)
+    cmd = [CODEX_CLI, "--search", "exec", "--skip-git-repo-check",
+           "--dangerously-bypass-approvals-and-sandbox"]
     if model:
         cmd.extend(["-m", model])
 
@@ -1037,8 +984,9 @@ def main():
                     help=f"Codex model (default: {CODEX_DEFAULT_MODEL!r}; pass 'codex' to use CLI default)")
     xp.add_argument("--no-tools", dest="tools_disabled", action="store_true",
                     help="Accepted for symmetry with --no-tools on claude. Codex already runs "
-                         "with --sandbox read-only so the flag is a no-op (file writes are blocked "
-                         "via the sandbox; pure-text output is the natural mode).")
+                         "in --dangerously-bypass-approvals-and-sandbox (no override). Use "
+                         "`KUBEDOJO_CODEX_SEARCH=1` for live web support when needed (default off); "
+                         "dispatch_smart sets it per task class.")
     xp.add_argument("--timeout", type=int, default=900, help="Timeout in seconds (default: 900)")
 
     # logs
