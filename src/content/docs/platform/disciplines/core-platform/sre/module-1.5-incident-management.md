@@ -97,7 +97,7 @@ mindmap
 
 | Severity | Error Budget Impact | Response |
 |----------|---------------------|----------|
-| SEV-1 | Consuming >100x normal rate | Everyone engaged immediately |
+| SEV-1 | Consuming >100x normal rate | Core responders engaged immediately |
 | SEV-2 | Consuming 10-100x normal rate | On-call + escalations |
 | SEV-3 | Consuming 2-10x normal rate | On-call investigates |
 | SEV-4 | Normal to 2x normal rate | Track, fix when possible |
@@ -111,7 +111,7 @@ A common mistake is making everything SEV-1. This causes:
 - Desensitization to real emergencies
 - Resource exhaustion
 
-Be honest about severity. Most incidents are SEV-3 or SEV-4.
+Be honest about severity. Many incidents turn out to be lower-severity issues rather than true SEV-1 emergencies.
 
 ---
 
@@ -228,7 +228,7 @@ Quick assessment:
 - What's the severity?
 - Who needs to be involved?
 
-**Goal**: Correct severity classification within 5 minutes.
+**Goal**: Classify severity quickly enough to involve the right responders and escalation path.
 
 ### Phase 3: Response
 
@@ -259,7 +259,7 @@ Post-incident improvement:
 - Action items identified
 - Process improvements made
 
-**Goal**: Never have the same incident twice.
+**Goal**: Avoid having the same incident twice.
 
 ---
 
@@ -282,8 +282,8 @@ graph TD
 ### Sustainable On-Call
 
 **Do:**
-- Maximum 1 week on-call stretches
-- Minimum 2 people in rotation
+- Keep on-call stretches short enough to avoid chronic fatigue
+- Have enough people in the rotation that one person is not carrying on-call alone
 - Compensate for on-call (time off, pay)
 - Clear escalation paths
 - Runbooks for common issues
@@ -312,11 +312,11 @@ Bad alerts are:
 
 | Metric | Good Target | Why It Matters |
 |--------|-------------|----------------|
-| Pages per on-call week | < 5 | More = burnout |
-| False positive rate | < 20% | Higher = fatigue |
-| Time to acknowledge | < 5 min | Faster = faster response |
-| Incidents requiring escalation | < 20% | Higher = skill gaps |
-| On-call satisfaction | > 3/5 | Lower = retention risk |
+| Pages per on-call week | Track the trend over time | Sustained page volume drives fatigue and burnout |
+| False positive rate | Keep it low enough that responders trust alerts | Higher rates train people to ignore pages |
+| Time to acknowledge | Minutes, not tens of minutes | Faster acknowledgment usually shortens response |
+| Incidents requiring escalation | Track and review by team maturity | Frequent escalation can reveal coverage or skill gaps |
+| On-call satisfaction | Track regularly with your team | Sustained dissatisfaction is a retention risk |
 
 ---
 
@@ -326,19 +326,19 @@ Bad alerts are:
 
 2. **The best incident responders often do less, not more**. They focus on coordination and decision-making rather than trying to personally fix everything.
 
-3. **"All hands" incidents often have worse outcomes** than properly staffed responses. Too many people creates confusion and duplicated effort.
+3. Large, unstructured response groups can create confusion and duplicated effort, so major incidents still need clear role assignment.
 
-4. **PagerDuty's annual "State of On-Call" report** consistently shows that engineers at high-performing organizations get paged less frequently but handle more complex issues—because they've automated away the simple stuff and have better tooling for the hard stuff.
+4. High-performing organizations often reduce low-value pages by automating routine issues and improving their tooling, leaving responders to focus on the harder problems.
 
 ---
 
-## War Story: The Incident That Went Right
+## Example: A Well-Run Incident Response
 
-A company I worked with had a major outage:
+Consider a representative outage pattern:
 
 **The Incident:**
-- 2:30 AM: Total site down
-- Cause: Database corruption from failed migration
+- Early morning: the site goes fully down
+- Cause: a failed migration corrupts critical database state
 
 **What Made It Go Well:**
 
@@ -352,13 +352,13 @@ SME: Migration author (paged)
 
 **Structured communication:**
 ```
-2:35 AM: IC opens incident channel
-2:40 AM: Comms posts to status page: "Investigating issues"
-2:50 AM: Tech Lead: "Identified - database corruption"
-3:00 AM: Comms updates status page with ETA
-3:30 AM: Database restored from backup
-3:45 AM: Site back online
-4:00 AM: IC declares incident resolved
+Shortly after detection: IC opens incident channel
+Soon after: Comms posts an initial status-page update
+After initial investigation: Tech Lead identifies database corruption
+Once the team has a plan: Comms updates the status page with an ETA
+After the restore decision: the database is recovered from backup
+Recovery follows soon after: the site comes back online
+After stability checks: the IC declares the incident resolved
 ```
 
 **What the IC did well:**
@@ -370,13 +370,13 @@ SME: Migration author (paged)
 - Kept Comms informed for status updates
 
 **The result:**
-- 75 minutes total downtime
+- Downtime lasts a little over an hour
 - Clear communication throughout
 - No blame, just focus
 - Excellent postmortem material
 
 **Compare to previous incidents:**
-- Similar issue 6 months earlier: 4 hours of chaos
+- A comparable earlier incident had taken much longer and felt far less coordinated
 - No roles, everyone debugging same thing
 - Customers in dark, leadership angry
 
@@ -859,3 +859,9 @@ Continue to [Module 1.6: Postmortems and Learning](../module-1.6-postmortems/) t
 ---
 
 *"Every great outage tells a story. Make sure you're listening."* — Unknown
+
+## Sources
+
+- [NIST SP 800-61 Rev. 3](https://csrc.nist.gov/pubs/sp/800/61/r3/final) — Authoritative guidance on incident-response preparation, coordination, response, and post-incident improvement.
+- [Prometheus Alerting Rules](https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/) — Useful for designing actionable alerts and understanding pending versus firing behavior in real incident-response systems.
+- [Visual Guide to Incident Metrics](https://about.gitlab.com/blog/visualizing-incident-management-metrics/) — Practical reference for incident timelines and core metrics such as detection, response, mitigation, and recovery.
