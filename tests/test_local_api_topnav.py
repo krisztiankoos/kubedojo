@@ -32,10 +32,27 @@ def _has_channels_nav(html: str) -> bool:
 
 
 def test_new_skeleton_routes_return_topnav(tmp_path: Path) -> None:
-    for path in ["/operator", "/quality", "/pipeline", "/activity", "/health"]:
+    for path in ["/quality", "/pipeline", "/activity", "/health"]:
         html = _route(tmp_path, path)
         assert _has_channels_nav(html)
         assert "This page is part of the L0-L6 local-API UI split." in html
+
+
+def test_operator_route_returns_real_page(tmp_path: Path) -> None:
+    html = _route(tmp_path, "/operator")
+    assert len(html) > 5000
+    assert 'id="op-now"' in html
+    assert '<a class="navlink active" href="/operator"' in html
+
+
+def test_dashboard_drops_op_hero_columns(tmp_path: Path) -> None:
+    html = _route(tmp_path, "/")
+    assert 'id="op-now"' not in html
+
+
+def test_dashboard_summary_links_to_operator(tmp_path: Path) -> None:
+    html = _route(tmp_path, "/")
+    assert 'href="/operator"' in html
 
 
 def test_home_page_links_to_channels(tmp_path: Path) -> None:
@@ -52,4 +69,4 @@ def test_channels_pages_keep_topnav(tmp_path: Path) -> None:
 def test_quality_board_legacy_route_still_serves_dashboard(tmp_path: Path) -> None:
     html = _route(tmp_path, "/quality-board")
     assert len(html) > 50000
-    assert 'id="quality-board"' in html or 'id="op-now"' in html
+    assert 'id="quality-board"' in html
