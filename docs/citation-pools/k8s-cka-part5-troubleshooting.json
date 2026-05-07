@@ -1,0 +1,213 @@
+{
+  "section": "k8s/cka/part5-troubleshooting",
+  "modules": [
+    "k8s/cka/part5-troubleshooting/module-5.1-methodology",
+    "k8s/cka/part5-troubleshooting/module-5.2-application-failures",
+    "k8s/cka/part5-troubleshooting/module-5.3-control-plane",
+    "k8s/cka/part5-troubleshooting/module-5.4-worker-nodes",
+    "k8s/cka/part5-troubleshooting/module-5.5-networking",
+    "k8s/cka/part5-troubleshooting/module-5.6-services",
+    "k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring"
+  ],
+  "generated_at": "2026-05-07T15:27:01+00:00",
+  "batch_count": 2,
+  "fallback_used": false,
+  "sources": [
+    {
+      "source_id": "S001",
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+      "title": "Pod Lifecycle",
+      "tier": "standards",
+      "scope_notes": "Backs pod phases, container states, restart behavior, CrashLoopBackOff semantics, init-container sequencing, readiness-related lifecycle concepts, and general pod-state troubleshooting vocabulary.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.1-methodology",
+        "k8s/cka/part5-troubleshooting/module-5.2-application-failures"
+      ]
+    },
+    {
+      "source_id": "S002",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/",
+      "title": "Debug Running Pods",
+      "tier": "standards",
+      "scope_notes": "Backs use of describe, logs, events, exec, and YAML inspection to diagnose pod startup, scheduling, and runtime failures.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.1-methodology",
+        "k8s/cka/part5-troubleshooting/module-5.2-application-failures",
+        "k8s/cka/part5-troubleshooting/module-5.5-networking",
+        "k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring"
+      ]
+    },
+    {
+      "source_id": "S003",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/",
+      "title": "Debug Services",
+      "tier": "standards",
+      "scope_notes": "Backs service-level checks such as verifying Service existence, selector matching, EndpointSlice population, and the classic 'service has no endpoints' troubleshooting flow.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.1-methodology",
+        "k8s/cka/part5-troubleshooting/module-5.2-application-failures",
+        "k8s/cka/part5-troubleshooting/module-5.5-networking",
+        "k8s/cka/part5-troubleshooting/module-5.6-services"
+      ]
+    },
+    {
+      "source_id": "S004",
+      "url": "https://kubernetes.io/docs/reference/node/node-status",
+      "title": "Node Status",
+      "tier": "standards",
+      "scope_notes": "Backs node conditions, Ready/NotReady/Unknown meanings, heartbeats, Lease objects, and node-level status fields exposed through the API.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.1-methodology",
+        "k8s/cka/part5-troubleshooting/module-5.4-worker-nodes"
+      ]
+    },
+    {
+      "source_id": "S005",
+      "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/",
+      "title": "Node-pressure Eviction",
+      "tier": "standards",
+      "scope_notes": "Backs kubelet eviction behavior under memory, disk, inode, and PID pressure, including eviction signals and threshold-driven remediation concepts.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.4-worker-nodes"
+      ]
+    },
+    {
+      "source_id": "S006",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/",
+      "title": "Troubleshooting Clusters",
+      "tier": "standards",
+      "scope_notes": "Backs cluster-wide troubleshooting workflow, basic node and control-plane investigation, log locations, and example failure modes when nodes or control-plane components are down.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.1-methodology",
+        "k8s/cka/part5-troubleshooting/module-5.3-control-plane",
+        "k8s/cka/part5-troubleshooting/module-5.4-worker-nodes"
+      ]
+    },
+    {
+      "source_id": "S007",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/",
+      "title": "Debugging Kubernetes nodes with crictl",
+      "tier": "standards",
+      "scope_notes": "Backs direct CRI-level inspection of pods, containers, images, and logs on a node when kubelet/API-level access is insufficient or the API server is unavailable.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.3-control-plane",
+        "k8s/cka/part5-troubleshooting/module-5.4-worker-nodes"
+      ]
+    },
+    {
+      "source_id": "S008",
+      "url": "https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/",
+      "title": "kubeadm Implementation Details",
+      "tier": "standards",
+      "scope_notes": "Backs kubeadm-managed control-plane layout, especially static pod manifest paths under /etc/kubernetes/manifests, host networking defaults, and local etcd static-pod behavior.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.3-control-plane"
+      ]
+    },
+    {
+      "source_id": "S009",
+      "url": "https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/",
+      "title": "Certificate Management with kubeadm",
+      "tier": "standards",
+      "scope_notes": "Backs kubeadm certificate defaults, certificate validity periods, expiry inspection, and renewal workflows relevant to control-plane certificate-expiration incidents.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.3-control-plane"
+      ]
+    },
+    {
+      "source_id": "S010",
+      "url": "https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/",
+      "title": "Operating etcd clusters for Kubernetes",
+      "tier": "standards",
+      "scope_notes": "Backs etcd’s role as the Kubernetes backing store, odd-member quorum guidance, backup and restore expectations, security considerations, and operational failure implications for the control plane.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.3-control-plane"
+      ]
+    },
+    {
+      "source_id": "S011",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/",
+      "title": "Services, Load Balancing, and Networking",
+      "tier": "standards",
+      "scope_notes": "Backs the Kubernetes network model: pod IPs, pod-to-pod reachability expectations, Service abstractions, EndpointSlice involvement, and high-level networking architecture used in troubleshooting workflows.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.5-networking",
+        "k8s/cka/part5-troubleshooting/module-5.6-services"
+      ]
+    },
+    {
+      "source_id": "S012",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/service/",
+      "title": "Service",
+      "tier": "standards",
+      "scope_notes": "Backs Service types and behavior: ClusterIP, NodePort default range, LoadBalancer semantics, ExternalName, headless Services, selectors, DNS-based discovery, and readiness/endpoints relationships.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.5-networking",
+        "k8s/cka/part5-troubleshooting/module-5.6-services"
+      ]
+    },
+    {
+      "source_id": "S013",
+      "url": "https://kubernetes.io/docs/reference/networking/virtual-ips/",
+      "title": "Virtual IPs and Service Proxies",
+      "tier": "standards",
+      "scope_notes": "Backs claims that Service IPs are virtual, kube-proxy programs packet-handling rules, and documents kube-proxy backend modes including IPVS deprecation and nftables/iptables behavior.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.5-networking",
+        "k8s/cka/part5-troubleshooting/module-5.6-services"
+      ]
+    },
+    {
+      "source_id": "S014",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/",
+      "title": "DNS for Services and Pods",
+      "tier": "standards",
+      "scope_notes": "Backs cluster DNS behavior, service and pod DNS records, namespace-qualified lookups, headless-service DNS results, and the role of cluster DNS in service discovery troubleshooting.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.5-networking",
+        "k8s/cka/part5-troubleshooting/module-5.6-services"
+      ]
+    },
+    {
+      "source_id": "S015",
+      "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/",
+      "title": "Network Policies",
+      "tier": "standards",
+      "scope_notes": "Backs NetworkPolicy semantics, ingress/egress controls, additive policy behavior, pod/namespace/IPBlock selectors, and the requirement for a network plugin that enforces NetworkPolicy.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.5-networking"
+      ]
+    },
+    {
+      "source_id": "S016",
+      "url": "https://kubernetes.io/docs/concepts/cluster-administration/logging/",
+      "title": "Logging Architecture",
+      "tier": "standards",
+      "scope_notes": "Backs stdout/stderr logging expectations, node log-file locations, kubelet-managed log handling/rotation context, and sidecar-based logging patterns for file-writing applications.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring"
+      ]
+    },
+    {
+      "source_id": "S017",
+      "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/",
+      "title": "kubectl logs",
+      "tier": "standards",
+      "scope_notes": "Backs exact kubectl logs behavior and flags such as container selection, follow mode, timestamps, tail, since, previous logs, and all-containers retrieval.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring"
+      ]
+    },
+    {
+      "source_id": "S018",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/",
+      "title": "Resource metrics pipeline",
+      "tier": "standards",
+      "scope_notes": "Backs how kubectl top depends on Metrics API / metrics-server, how resource metrics flow from kubelet through metrics-server to the API server, and the scope of CPU/memory metrics available for pods and nodes.",
+      "relevant_modules": [
+        "k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring"
+      ]
+    }
+  ],
+  "rejected_urls": []
+}
