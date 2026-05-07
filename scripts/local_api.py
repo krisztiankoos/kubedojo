@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import html
 import json
 import os
 import shutil
@@ -4574,6 +4575,95 @@ _QUALITY_SUMMARY_CSS = """
 """
 
 
+_PIPELINE_SUMMARY_CSS = """
+    .pipeline-summary-card {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(110px, 1fr)) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .pipeline-summary-card:hover { background: rgba(255,255,255,0.02); }
+    .pipeline-summary-value {
+      display: block;
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .pipeline-summary-label {
+      display: block;
+      margin-top: 4px;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .pipeline-summary-link { color: var(--accent); font-size: 13px; font-weight: 700; white-space: nowrap; }
+    @media (max-width: 760px) {
+      .pipeline-summary-card { grid-template-columns: 1fr 1fr; }
+      .pipeline-summary-link { justify-self: start; }
+    }
+"""
+
+
+_PIPELINE_PAGE_CSS = """
+    :root { --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --surface-2:#1f2b3d; --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280; --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12); --teal:#2dd4bf; --teal-muted:rgba(45,212,191,0.12); --green:#4ade80; --green-muted:rgba(74,222,128,0.12); --amber:#fbbf24; --amber-muted:rgba(251,191,36,0.10); --red:#f87171; --red-muted:rgba(248,113,113,0.10); --border:rgba(255,255,255,0.06); --border-subtle:rgba(255,255,255,0.03); --radius:12px; --radius-sm:8px; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5; }
+    .mono { font-family:'SF Mono','Fira Code','Cascadia Code',ui-monospace,monospace; }
+    .main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 40px; }
+    .page-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
+    .page-title { margin:0; font-size:26px; letter-spacing:0; }
+    .page-sub { margin-top:4px; color:var(--text-secondary); font-size:13px; }
+    .panel { background:var(--surface-0); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:16px; }
+    .panel-header { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border); }
+    .panel-title { display:flex; align-items:center; gap:10px; font-weight:700; }
+    .panel-icon { width:24px; height:24px; border-radius:var(--radius-sm); display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
+    .panel-badge { padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:var(--accent-muted); color:var(--accent); }
+    .panel-body, .panel-body-flush { padding:0; }
+    .empty-state { padding:24px; text-align:center; color:var(--text-dim); font-size:13px; }
+    .queue-summary { padding:14px 18px; border-bottom:1px solid var(--border); display:grid; grid-template-columns:repeat(4,1fr); gap:0; text-align:center; }
+    .queue-stat { border-right:1px solid var(--border-subtle); padding:2px 8px; }
+    .queue-stat:last-child { border-right:0; }
+    .queue-stat-val { font-size:20px; font-weight:700; letter-spacing:0; line-height:1; }
+    .queue-stat-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-dim); margin-top:6px; }
+    .queue-per-track { padding:0; }
+    .qpt-row { display:grid; grid-template-columns:1fr auto; padding:8px 18px; border-bottom:1px solid var(--border-subtle); font-size:12px; align-items:center; gap:12px; }
+    .qpt-name { color:var(--text-secondary); }
+    .qpt-status { font-size:11px; color:var(--text-dim); text-align:right; }
+    .qpt-status .pill { display:inline-block; padding:1px 7px; border-radius:10px; font-size:10px; font-weight:600; margin-left:4px; }
+    .qpt-status .pill.w { background:var(--accent-muted); color:var(--accent); }
+    .qpt-status .pill.r { background:var(--amber-muted); color:var(--amber); }
+    .qpt-status .pill.p { background:var(--teal-muted); color:var(--teal); }
+    .qpt-status .pill.d { background:var(--red-muted); color:var(--red); }
+    .qpt-top { padding:12px 18px; border-top:1px solid var(--border); background:rgba(0,0,0,0.12); }
+    .qpt-top-title { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-dim); margin-bottom:8px; }
+    .qpt-top-list { margin:0; padding:0; list-style:none; }
+    .qpt-top-list li { padding:3px 0; font-size:12px; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .qpt-top-kind { display:inline-block; width:14px; font-weight:700; font-size:10px; text-transform:uppercase; }
+    .qpt-top-kind.w { color:var(--accent); } .qpt-top-kind.r { color:var(--amber); } .qpt-top-kind.p { color:var(--teal); } .qpt-top-kind.d { color:var(--red); }
+    .autopilot-grid { padding:14px 18px; display:grid; grid-template-columns:repeat(4,minmax(120px,1fr)); gap:10px; }
+    .autopilot-kv { border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-1); padding:8px 10px; min-width:0; }
+    .autopilot-label { color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.04em; }
+    .autopilot-value { margin-top:3px; color:var(--text); font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .event-list { list-style:none; margin:0; padding:0; max-height:360px; overflow:auto; }
+    .event-list li { display:grid; grid-template-columns:70px 1fr 130px; gap:10px; padding:8px 18px; border-bottom:1px solid var(--border-subtle); font-size:12px; align-items:center; }
+    .event-kind { color:var(--teal); font-weight:700; }
+    .event-module { color:var(--text-secondary); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .event-time { color:var(--text-dim); text-align:right; }
+    @media (max-width: 760px) {
+      .page-head { flex-direction:column; }
+      .queue-summary, .autopilot-grid { grid-template-columns:1fr 1fr; }
+      .event-list li { grid-template-columns:1fr; gap:4px; }
+      .event-time { text-align:left; }
+    }
+"""
+
+
 _QUALITY_BOARD_PAGE_CSS = """
     :root { --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --surface-2:#1f2b3d; --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280; --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12); --teal:#2dd4bf; --teal-muted:rgba(45,212,191,0.12); --green:#4ade80; --green-muted:rgba(74,222,128,0.12); --amber:#fbbf24; --amber-muted:rgba(251,191,36,0.10); --red:#f87171; --red-muted:rgba(248,113,113,0.10); --border:rgba(255,255,255,0.06); --border-subtle:rgba(255,255,255,0.03); --radius:12px; --radius-sm:8px; --radius-xs:6px; }
     *, *::before, *::after { box-sizing: border-box; }
@@ -5028,6 +5118,180 @@ _OPERATOR_PAGE_JS = """
 """
 
 
+_PIPELINE_PANEL_JS = r"""
+    const TRACK_LABEL = {
+      'prerequisites': 'Prerequisites',
+      'linux': 'Linux',
+      'k8s': 'Kubernetes',
+      'cloud': 'Cloud',
+      'platform': 'Platform Engineering',
+      'on-premises': 'On-Premises',
+      'ai-ml-engineering': 'AI/ML Engineering',
+      'other': 'Other',
+    };
+
+    function shortenKey(key) {
+      return String(key || '').replace(/^src\/content\/docs\//, '').replace(/\.md$/, '');
+    }
+
+    function renderPipelinePanel(bodyId, badgeId, data, label) {
+      const el = $(bodyId);
+      const badge = $(badgeId);
+      if (!data || data.error) {
+        badge.textContent = 'Unknown';
+        badge.style.background = 'var(--amber-muted)';
+        badge.style.color = 'var(--amber)';
+        el.innerHTML = `<div class="empty-state">${data?.error ? esc(data.error) : 'No data'}</div>`;
+        return;
+      }
+      const counts = data.counts || {};
+      const totalPending = (counts.pending_write || 0) + (counts.pending_review || 0) + (counts.pending_patch || 0);
+      const dead = counts.dead_letter || 0;
+      if (totalPending === 0 && dead === 0) {
+        badge.textContent = 'Idle';
+        badge.style.background = 'var(--green-muted)';
+        badge.style.color = 'var(--green)';
+      } else {
+        const parts = [];
+        if (totalPending) parts.push(`${totalPending} pending`);
+        if (dead) parts.push(`${dead} dead`);
+        badge.textContent = parts.join(' · ');
+        badge.style.background = dead ? 'var(--red-muted)' : 'var(--amber-muted)';
+        badge.style.color = dead ? 'var(--red)' : 'var(--amber)';
+      }
+
+      const done = counts.done ?? 0;
+      const tracked = done + totalPending + dead + (counts.in_progress ?? 0);
+      const conv = tracked > 0 ? (done / tracked * 100) : (data.convergence_rate ?? 0);
+      let html = `
+        <div class="queue-summary">
+          <div class="queue-stat"><div class="queue-stat-val">${done}</div><div class="queue-stat-label">Done</div></div>
+          <div class="queue-stat"><div class="queue-stat-val">${totalPending}</div><div class="queue-stat-label">Pending</div></div>
+          <div class="queue-stat"><div class="queue-stat-val">${dead}</div><div class="queue-stat-label">Dead</div></div>
+          <div class="queue-stat"><div class="queue-stat-val">${conv.toFixed(1)}%</div><div class="queue-stat-label">Converged</div></div>
+        </div>`;
+
+      const perTrack = data.per_track || [];
+      const active = perTrack.filter(t => {
+        const c = t.counts || {};
+        return (c.pending_write || 0) + (c.pending_review || 0) + (c.pending_patch || 0) + (c.dead_letter || 0) > 0;
+      });
+      html += '<div class="queue-per-track">';
+      if (active.length === 0) {
+        html += `<div class="empty-state">All tracks idle</div>`;
+      } else {
+        for (const t of active) {
+          const c = t.counts || {};
+          const bits = [];
+          if (c.pending_write) bits.push(`<span class="pill w">${c.pending_write}W</span>`);
+          if (c.pending_review) bits.push(`<span class="pill r">${c.pending_review}R</span>`);
+          if (c.pending_patch) bits.push(`<span class="pill p">${c.pending_patch}P</span>`);
+          if (c.dead_letter) bits.push(`<span class="pill d">${c.dead_letter}D</span>`);
+          html += `<div class="qpt-row">
+            <span class="qpt-name">${esc(TRACK_LABEL[t.slug] || t.slug)}</span>
+            <span class="qpt-status">${bits.join(' ')}</span>
+          </div>`;
+        }
+      }
+      html += '</div>';
+
+      const topItems = [];
+      for (const t of perTrack) {
+        if (!t.modules) continue;
+        for (const kind of ['dead_letter', 'pending_review', 'pending_write', 'pending_patch']) {
+          for (const m of (t.modules[kind] || [])) {
+            topItems.push({kind, path: m});
+          }
+        }
+      }
+      const kindLabel = {dead_letter: 'D', pending_review: 'R', pending_write: 'W', pending_patch: 'P'};
+      if (topItems.length > 0) {
+        const shown = topItems.slice(0, 6);
+        html += `<div class="qpt-top">
+          <div class="qpt-top-title">Top items (${shown.length} of ${topItems.length})</div>
+          <ul class="qpt-top-list mono">
+            ${shown.map(i => `<li><span class="qpt-top-kind ${kindLabel[i.kind].toLowerCase()}">${kindLabel[i.kind]}</span> ${esc(shortenKey(i.path))}</li>`).join('')}
+          </ul>
+        </div>`;
+      }
+
+      el.innerHTML = html;
+    }
+"""
+
+
+def _fmt_duration(seconds: float | int | None) -> str:
+    if seconds is None or seconds < 0:
+        return "n/a"
+    s = int(seconds)
+    if s < 60:
+        return f"{s}s"
+    minutes = s // 60
+    if minutes < 60:
+        return f"{minutes}m"
+    hours = minutes // 60
+    if hours < 48:
+        return f"{hours}h {minutes % 60}m"
+    days = hours // 24
+    return f"{days}d {hours % 24}h"
+
+
+def _load_autopilot_v3_health(repo_root: Path, *, now_seconds: float | None = None) -> dict[str, Any]:
+    heartbeat_path = repo_root / ".pipeline" / "v3" / "autopilot" / "heartbeat.json"
+    now = time.time() if now_seconds is None else now_seconds
+    if not heartbeat_path.exists():
+        return {"exists": False, "up": False, "status": "Missing", "path": str(heartbeat_path)}
+    try:
+        data = json.loads(heartbeat_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return {"exists": True, "up": False, "status": "Unreadable", "error": f"{type(exc).__name__}: {exc}"}
+    ts = data.get("ts")
+    age = now - float(ts) if isinstance(ts, int | float) else None
+    up = age is not None and age <= 90
+    return {
+        "exists": True,
+        "up": up,
+        "status": "Up" if up else "Stale",
+        "age_seconds": age,
+        "pid": data.get("pid"),
+        "uptime_seconds": data.get("uptime_s"),
+        "path": str(heartbeat_path),
+    }
+
+
+def _autopilot_v3_badge(health: dict[str, Any]) -> str:
+    return "Up" if health.get("up") else str(health.get("status") or "Down")
+
+
+def _render_autopilot_v3_panel(repo_root: Path) -> str:
+    health = _load_autopilot_v3_health(repo_root)
+    up = bool(health.get("up"))
+    badge_tone = "green" if up else "amber"
+    status = html.escape(_autopilot_v3_badge(health))
+    age = _fmt_duration(health.get("age_seconds"))
+    uptime = _fmt_duration(health.get("uptime_seconds"))
+    pid = html.escape(str(health.get("pid") or "n/a"))
+    path = html.escape(str(health.get("path") or "n/a"))
+    if health.get("error"):
+        path = html.escape(str(health["error"]))
+    return f"""
+      <div class="panel" id="autopilot-v3-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon" style="background:var(--teal-muted);color:var(--teal);">A</span>
+            Autopilot v3 Health
+          </div>
+          <span class="panel-badge" id="autopilot-v3-badge" style="background:var(--{badge_tone}-muted);color:var(--{badge_tone});">{status}</span>
+        </div>
+        <div class="autopilot-grid" id="autopilot-v3-body">
+          <div class="autopilot-kv"><div class="autopilot-label">Heartbeat age</div><div class="autopilot-value">{age}</div></div>
+          <div class="autopilot-kv"><div class="autopilot-label">PID</div><div class="autopilot-value mono">{pid}</div></div>
+          <div class="autopilot-kv"><div class="autopilot-label">Uptime</div><div class="autopilot-value">{uptime}</div></div>
+          <div class="autopilot-kv"><div class="autopilot-label">Source</div><div class="autopilot-value mono" title="{path}">{path}</div></div>
+        </div>
+      </div>"""
+
+
 def _find_quality_board_module(repo_root: Path, module_key: str) -> dict[str, Any] | None:
     board = build_quality_board(repo_root)
     rel = module_key[:-3] if module_key.endswith(".md") else module_key
@@ -5296,7 +5560,125 @@ def render_operator_page_html() -> str:
 </html>"""
 
 
-def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
+def render_pipeline_page_html(repo_root: Path, *, tail: int = 30) -> str:
+    tail = max(1, min(int(tail), 2000))
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pipeline - KubeDojo Local Monitor</title>
+  <style>
+{_TOP_NAV_CSS}
+{_PIPELINE_PAGE_CSS}
+  </style>
+</head>
+<body>
+  {_render_top_nav("pipeline")}
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Pipeline</h1>
+        <div class="page-sub">V2 queue state, autopilot v3 liveness, and recent pipeline events.</div>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">P</span>
+          V2 Pipeline
+        </div>
+        <span class="panel-badge" id="v2-badge"></span>
+      </div>
+      <div class="panel-body-flush" id="v2-body"><div class="empty-state">Loading&hellip;</div></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">E</span>
+          Recent pipeline events
+        </div>
+        <span class="panel-badge" id="pipeline-events-badge">tail {tail}</span>
+      </div>
+      <div class="panel-body-flush" id="pipeline-events"><div class="empty-state">Loading&hellip;</div></div>
+    </section>
+
+    {_render_autopilot_v3_panel(repo_root)}
+  </main>
+  <script>
+    const $ = (sel) => document.querySelector(sel);
+    const EVENT_TAIL = {tail};
+
+    async function fetchJson(url) {{
+      const r = await fetch(url);
+      if (!r.ok) return {{ error: `HTTP ${{r.status}}`, url }};
+      return r.json();
+    }}
+
+    function esc(s) {{
+      const d = document.createElement('div');
+      d.textContent = String(s ?? '');
+      return d.innerHTML;
+    }}
+
+{_PIPELINE_PANEL_JS}
+
+    function formatRelTime(epoch, nowEpoch) {{
+      if (!epoch) return 'n/a';
+      const dt = Math.max(0, nowEpoch - epoch);
+      if (dt < 60) return `${{dt}}s`;
+      if (dt < 3600) return `${{Math.floor(dt / 60)}}m`;
+      if (dt < 86400) return `${{Math.floor(dt / 3600)}}h`;
+      return `${{Math.floor(dt / 86400)}}d`;
+    }}
+
+    function renderPipelineEvents(data) {{
+      const el = $('#pipeline-events');
+      const badge = $('#pipeline-events-badge');
+      if (!data || data.error) {{
+        badge.textContent = 'Unknown';
+        el.innerHTML = `<div class="empty-state">${{esc(data?.error || 'No data')}}</div>`;
+        return;
+      }}
+      const events = (data.events || []).slice(0, EVENT_TAIL);
+      badge.textContent = `${{events.length}} shown`;
+      if (events.length === 0) {{
+        el.innerHTML = '<div class="empty-state">No recent pipeline events</div>';
+        return;
+      }}
+      const now = Math.floor(Date.now() / 1000);
+      el.innerHTML = `<ul class="event-list">${{events.map(ev => `
+        <li>
+          <span class="event-kind mono">${{esc(ev.type || ev.kind || 'event')}}</span>
+          <span class="event-module mono">${{esc(shortenKey(ev.module_key || ''))}}</span>
+          <span class="event-time">${{formatRelTime(ev.at, now)}} ago</span>
+        </li>`).join('')}}</ul>`;
+    }}
+
+    async function loadPipelinePage() {{
+      const [v2Status, events] = await Promise.all([
+        fetchJson('/api/pipeline/v2/status'),
+        fetchJson(`/api/pipeline/v2/events?limit=${{EVENT_TAIL}}`),
+      ]);
+      renderPipelinePanel('#v2-body', '#v2-badge', v2Status, 'V2 Pipeline');
+      renderPipelineEvents(events);
+    }}
+
+    loadPipelinePage().catch(err => {{
+      $('#v2-body').innerHTML = '<div class="empty-state">Pipeline data unavailable</div>';
+      $('#pipeline-events').innerHTML = '<div class="empty-state">No recent pipeline events</div>';
+      console.error('Pipeline page load failed:', err);
+    }});
+  </script>
+</body>
+</html>"""
+
+
+def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
+    autopilot = _load_autopilot_v3_health(repo_root)
+    autopilot_label = html.escape(_autopilot_v3_badge(autopilot))
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -5736,6 +6118,7 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
 
 {_OPERATOR_SUMMARY_CSS}
 {_QUALITY_SUMMARY_CSS}
+{_PIPELINE_SUMMARY_CSS}
 
     /* Section readiness grid */
     .readiness-wrap {{ padding: 4px 0 0 0; }}
@@ -5923,6 +6306,37 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
         <div class="panel">
           <div class="panel-header">
             <div class="panel-title">
+              <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">P</span>
+              Pipeline
+            </div>
+            <span class="panel-badge" id="pipeline-summary-badge" style="background:var(--accent-muted);color:var(--accent);">&nbsp;</span>
+          </div>
+          <a class="pipeline-summary-card" href="/pipeline">
+            <span>
+              <span class="pipeline-summary-value" id="pipeline-queue-depth">0</span>
+              <span class="pipeline-summary-label">Queue depth</span>
+            </span>
+            <span>
+              <span class="pipeline-summary-value" id="pipeline-inflight">0</span>
+              <span class="pipeline-summary-label">In flight</span>
+            </span>
+            <span>
+              <span class="pipeline-summary-value" id="pipeline-dead">0</span>
+              <span class="pipeline-summary-label">Dead-letter</span>
+            </span>
+            <span>
+              <span class="pipeline-summary-value">{autopilot_label}</span>
+              <span class="pipeline-summary-label">Autopilot</span>
+            </span>
+            <span class="pipeline-summary-link">View pipeline &rarr;</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="section-full">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
               <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">A</span>
               Activity (last 24 h)
             </div>
@@ -5975,17 +6389,6 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
             <div class="svc-grid" id="services"></div>
           </div>
         </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">P</span>
-            V2 Pipeline
-          </div>
-          <span class="panel-badge" id="v2-badge"></span>
-        </div>
-        <div class="panel-body-flush" id="v2-body"></div>
       </div>
 
       <div class="panel">
@@ -6214,20 +6617,7 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
       }}).join('');
     }}
 
-    const TRACK_LABEL = {{
-      'prerequisites': 'Prerequisites',
-      'linux': 'Linux',
-      'k8s': 'Kubernetes',
-      'cloud': 'Cloud',
-      'platform': 'Platform Engineering',
-      'on-premises': 'On-Premises',
-      'ai-ml-engineering': 'AI/ML Engineering',
-      'other': 'Other',
-    }};
-
-    function shortenKey(key) {{
-      return String(key || '').replace(/^src\\/content\\/docs\\//, '').replace(/\\.md$/, '');
-    }}
+{_PIPELINE_PANEL_JS}
 
     function renderSiteTracks(summary, v2, t2Queue) {{
       const tracks = summary.tracks || [];
@@ -6257,90 +6647,6 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
       }};
 
       $('#tracks-body').innerHTML = tracks.map(rowFor).join('');
-    }}
-
-    function renderPipelinePanel(bodyId, badgeId, data, label) {{
-      const el = $(bodyId);
-      const badge = $(badgeId);
-      if (!data || data.error) {{
-        badge.textContent = 'Unknown';
-        badge.style.background = 'var(--amber-muted)';
-        badge.style.color = 'var(--amber)';
-        el.innerHTML = `<div class="empty-state">${{data?.error ? esc(data.error) : 'No data'}}</div>`;
-        return;
-      }}
-      const counts = data.counts || {{}};
-      const totalPending = (counts.pending_write || 0) + (counts.pending_review || 0) + (counts.pending_patch || 0);
-      const dead = counts.dead_letter || 0;
-      if (totalPending === 0 && dead === 0) {{
-        badge.textContent = 'Idle';
-        badge.style.background = 'var(--green-muted)';
-        badge.style.color = 'var(--green)';
-      }} else {{
-        const parts = [];
-        if (totalPending) parts.push(`${{totalPending}} pending`);
-        if (dead) parts.push(`${{dead}} dead`);
-        badge.textContent = parts.join(' · ');
-        badge.style.background = dead ? 'var(--red-muted)' : 'var(--amber-muted)';
-        badge.style.color = dead ? 'var(--red)' : 'var(--amber)';
-      }}
-
-      const done = counts.done ?? 0;
-      const tracked = done + totalPending + dead + (counts.in_progress ?? 0);
-      const conv = tracked > 0 ? (done / tracked * 100) : (data.convergence_rate ?? 0);
-      let html = `
-        <div class="queue-summary">
-          <div class="queue-stat"><div class="queue-stat-val">${{done}}</div><div class="queue-stat-label">Done</div></div>
-          <div class="queue-stat"><div class="queue-stat-val">${{totalPending}}</div><div class="queue-stat-label">Pending</div></div>
-          <div class="queue-stat"><div class="queue-stat-val">${{dead}}</div><div class="queue-stat-label">Dead</div></div>
-          <div class="queue-stat"><div class="queue-stat-val">${{conv.toFixed(1)}}%</div><div class="queue-stat-label">Converged</div></div>
-        </div>`;
-
-      const perTrack = data.per_track || [];
-      const active = perTrack.filter(t => {{
-        const c = t.counts || {{}};
-        return (c.pending_write || 0) + (c.pending_review || 0) + (c.pending_patch || 0) + (c.dead_letter || 0) > 0;
-      }});
-      html += '<div class="queue-per-track">';
-      if (active.length === 0) {{
-        html += `<div class="empty-state">All tracks idle</div>`;
-      }} else {{
-        for (const t of active) {{
-          const c = t.counts || {{}};
-          const bits = [];
-          if (c.pending_write) bits.push(`<span class="pill w">${{c.pending_write}}W</span>`);
-          if (c.pending_review) bits.push(`<span class="pill r">${{c.pending_review}}R</span>`);
-          if (c.pending_patch) bits.push(`<span class="pill p">${{c.pending_patch}}P</span>`);
-          if (c.dead_letter) bits.push(`<span class="pill d">${{c.dead_letter}}D</span>`);
-          html += `<div class="qpt-row">
-            <span class="qpt-name">${{esc(TRACK_LABEL[t.slug] || t.slug)}}</span>
-            <span class="qpt-status">${{bits.join(' ')}}</span>
-          </div>`;
-        }}
-      }}
-      html += '</div>';
-
-      const topItems = [];
-      for (const t of perTrack) {{
-        if (!t.modules) continue;
-        for (const kind of ['dead_letter', 'pending_review', 'pending_write', 'pending_patch']) {{
-          for (const m of (t.modules[kind] || [])) {{
-            topItems.push({{kind, path: m}});
-          }}
-        }}
-      }}
-      const kindLabel = {{dead_letter: 'D', pending_review: 'R', pending_write: 'W', pending_patch: 'P'}};
-      if (topItems.length > 0) {{
-        const shown = topItems.slice(0, 6);
-        html += `<div class="qpt-top">
-          <div class="qpt-top-title">Top items (${{shown.length}} of ${{topItems.length}})</div>
-          <ul class="qpt-top-list mono">
-            ${{shown.map(i => `<li><span class="qpt-top-kind ${{kindLabel[i.kind].toLowerCase()}}">${{kindLabel[i.kind]}}</span> ${{esc(shortenKey(i.path))}}</li>`).join('')}}
-          </ul>
-        </div>`;
-      }}
-
-      el.innerHTML = html;
     }}
 
     function renderWorktree(data) {{
@@ -6668,6 +6974,26 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
       badge.style.color = outstanding ? 'var(--amber)' : 'var(--green)';
     }}
 
+    function renderPipelineSummary(data) {{
+      const badge = $('#pipeline-summary-badge');
+      if (!data || data.error) {{
+        badge.textContent = 'Unknown';
+        badge.style.background = 'var(--amber-muted)';
+        badge.style.color = 'var(--amber)';
+        return;
+      }}
+      const counts = data.counts || {{}};
+      const queueDepth = (counts.pending_write || 0) + (counts.pending_review || 0) + (counts.pending_patch || 0);
+      const inflight = counts.in_progress || 0;
+      const dead = counts.dead_letter || 0;
+      $('#pipeline-queue-depth').textContent = queueDepth;
+      $('#pipeline-inflight').textContent = inflight;
+      $('#pipeline-dead').textContent = dead;
+      badge.textContent = queueDepth || inflight || dead ? `${{queueDepth}} queued · ${{inflight}} active · ${{dead}} dead` : 'Idle';
+      badge.style.background = dead ? 'var(--red-muted)' : (queueDepth || inflight ? 'var(--amber-muted)' : 'var(--green-muted)');
+      badge.style.color = dead ? 'var(--red)' : (queueDepth || inflight ? 'var(--amber)' : 'var(--green)');
+    }}
+
     function formatRelTime(epoch, nowEpoch) {{
       const dt = Math.max(0, nowEpoch - epoch);
       if (dt < 60) return `${{dt}}s`;
@@ -6882,11 +7208,11 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
         renderOperator(briefing);
         renderReadiness(readiness);
         renderQualitySummary(qualityBoard);
+        renderPipelineSummary(v2Status);
         renderActivity(activity);
         renderMetrics(summary, worktree, feedback, t2Queue);
         renderServices(services);
         renderSiteTracks(summary, v2Status, t2Queue);
-        renderPipelinePanel('#v2-body', '#v2-badge', v2Status, 'V2 Pipeline');
         renderPipelinePanel('#trans-body', '#trans-badge', t2Queue, 'Translation V2');
         renderWorktree(worktree);
         renderMissing(missing);
@@ -7657,6 +7983,7 @@ def build_api_schema() -> dict[str, Any]:
         "endpoints": [
             {"path": "/", "desc": "HTML dashboard", "content_type": "text/html"},
             {"path": "/quality", "desc": "Full-quality board and per-module summary table", "content_type": "text/html"},
+            {"path": "/pipeline", "desc": "Pipeline v2 queue, recent events, and autopilot v3 health", "content_type": "text/html"},
             {"path": "/healthz", "desc": "Liveness probe"},
             {"path": "/api/schema", "desc": "This document"},
             {
@@ -7956,7 +8283,7 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     query = parse_qs(parsed.query)
 
     if path in {"/", "/dashboard"}:
-        return 200, render_dashboard_html(), "text/html; charset=utf-8"
+        return 200, render_dashboard_html(repo_root), "text/html; charset=utf-8"
     if path == "/operator":
         return 200, render_operator_page_html(), "text/html; charset=utf-8"
     if path == "/quality":
@@ -7972,7 +8299,11 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     if path == "/quality-board":
         return 301, "/quality", "text/plain; charset=utf-8"
     if path == "/pipeline":
-        return 200, _render_skeleton_page("Pipeline", 976), "text/html; charset=utf-8"
+        try:
+            tail = int(query.get("tail", ["30"])[0])
+        except (TypeError, ValueError):
+            tail = 30
+        return 200, render_pipeline_page_html(repo_root, tail=tail), "text/html; charset=utf-8"
     if path == "/activity":
         return 200, _render_skeleton_page("Activity", 977), "text/html; charset=utf-8"
     if path == "/health":
