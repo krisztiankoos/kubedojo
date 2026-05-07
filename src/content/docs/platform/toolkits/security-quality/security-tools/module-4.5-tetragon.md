@@ -29,11 +29,11 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-Traditional runtime security tools like Falco detect threats by watching syscalls from userspace and alerting after the fact. By the time you see the alert, the malicious command has already executed. You're always one step behind the attacker.
+Traditional runtime security tools like [Falco detect threats by watching syscalls from userspace and alerting after the fact](https://github.com/falcosecurity/falco). By the time you see the alert, the malicious command has already executed. You're often one step behind the attacker.
 
 **Tetragon changes the game by operating inside the kernel.**
 
-Using eBPF, Tetragon can observe and **enforce** security policies at the kernel level. It doesn't just detect the cryptominer starting—it can kill the process before the first instruction executes. It doesn't just log the data exfiltration—it can block the network connection at the packet level.
+[Using eBPF, Tetragon can observe and **enforce** security policies at the kernel level](https://github.com/cilium/tetragon). It doesn't just detect a malicious process starting; it can enforce policy during the kernel operation itself. It doesn't just log suspicious egress; it can enforce policy on matching network-related operations.
 
 > "With Falco, you detect the attack and respond. With Tetragon, you prevent the attack from happening."
 
@@ -43,9 +43,9 @@ Using eBPF, Tetragon can observe and **enforce** security policies at the kernel
 
 - Tetragon can **kill a process mid-syscall**, before the syscall completes
 - A single Tetragon policy can block entire attack chains—from binary execution to network exfiltration
-- Tetragon sees **inside encrypted connections** when you're blocking at the syscall level
-- Tetragon is maintained by Isovalent, the company behind Cilium and Hubble
-- The name comes from a geometric shape—representing the structured, precise nature of eBPF programs
+- Tetragon can enforce policy before an encrypted connection leaves the process, based on kernel-level context such as the operation and workload identity.
+- Tetragon is part of the Cilium ecosystem.
+- Tetragon is designed for structured, precise eBPF-based security enforcement.
 - Tetragon can enforce security without ever touching the application—no sidecars, no code changes
 
 ---
@@ -93,7 +93,7 @@ Using eBPF, Tetragon can observe and **enforce** security policies at the kernel
 |--------|-------|----------|
 | **Detection Location** | Userspace | Kernel (eBPF) |
 | **Response Capability** | Alert only | Alert + Block + Kill |
-| **Latency** | ~milliseconds | ~microseconds |
+| **Latency** | Higher due to userspace event handling | Lower because enforcement happens in-kernel |
 | **Attack Prevention** | After the fact | In real-time |
 | **Enforcement** | External (needs separate tools) | Built-in |
 | **Process Context** | Available | Rich (file descriptors, arguments, environment) |
@@ -430,8 +430,8 @@ spec:
 | `Signal` | Send specific signal | Custom process control |
 | `Override` | Override syscall return value | Fake "permission denied" |
 | `NotifyEnforcer` | Send event to userspace | Alerting without blocking |
-| `UnfollowFd` | Stop tracking file descriptor | Performance optimization |
-| `CopyFd` | Copy FD for analysis | Forensics |
+| `UnfollowFd` | Deprecated / version-specific action | Check the current TracingPolicy API before use |
+| `CopyFd` | Deprecated / version-specific action | Check the current TracingPolicy API before use |
 
 ### Override Example: Fake Permission Denied
 
@@ -517,17 +517,17 @@ helm upgrade tetragon cilium/tetragon -n kube-system \
 
 ## War Story: The Zero-Second Response
 
-A financial services company was running a multi-tenant Kubernetes platform. They had Falco deployed and felt secure—until a red team exercise showed a terrifying gap.
+A team running a multi-tenant Kubernetes platform can discover during testing that alert-only runtime detection leaves a response gap.
 
 **The Attack Scenario**:
 1. Attacker compromises a web application pod
 2. Downloads and executes a cryptocurrency miner
 3. Falco detects and alerts
 4. Security team responds in 15 minutes
-5. **By then, the miner has run for 15 minutes**
+5. **By then, the miner may already have been running long enough to consume resources and generate cost**
 
 **The Problem**:
-- Falco's alert arrived in 200ms after execution
+- Falco's alert arrived only after execution had already begun
 - But "after execution" means the damage is done
 - 15 minutes of crypto mining = noticeable cloud bill
 - More critically: 15 minutes to exfiltrate data
@@ -570,7 +570,7 @@ spec:
 ```
 
 **The Results**:
-- Red team attempts to download malware: **Process killed in 0.003ms**
+- Red team attempts to download malware: **Process is terminated before the policy-violating action completes**
 - Miner never executes
 - Alert still fires for investigation
 - Zero impact from the attack
@@ -585,11 +585,11 @@ spec:
 | Mistake | Problem | Solution |
 |---------|---------|----------|
 | Too broad policies | Kill legitimate processes | Test in audit mode first, narrow selectors |
-| Missing namespace filters | Block host system processes | Always include `matchNamespaces` |
+Usually include `matchNamespaces`
 | Not testing policies | Production breakage | Test in staging with `NotifyEnforcer` only |
 | Blocking curl/wget globally | Break init containers, health checks | Whitelist specific pods/namespaces |
 | Ignoring policy order | Unexpected behavior | Policies are independent, design carefully |
-| Not monitoring events | Miss attacks despite policies | Always collect and analyze Tetragon events |
+Usually collect and analyze Tetragon events
 
 ---
 
@@ -884,13 +884,13 @@ Kprobes are eBPF programs attached to kernel functions. When the function is cal
 
 1. **Tetragon operates in the kernel** - blocks attacks before they complete
 2. **TracingPolicy is the core abstraction** - Kubernetes-native security rules
-3. **Sigkill stops processes immediately** - zero-second response time
+3. **Sigkill stops processes almost immediately** - near-instant response time
 4. **Override fakes errors** - stealth defense without revealing monitoring
 5. **Namespace filters are essential** - scope policies to specific workloads
 6. **Use with Falco, not instead of** - prevention + detection = defense in depth
 7. **Test policies carefully** - too broad = production breakage
 8. **Export events for analysis** - blocking is half the story
-9. **Low overhead** - eBPF is production-safe
+9. **Operational overhead must be validated** - eBPF-based enforcement can be efficient, but real impact depends on kernel, policy design, and workload mix
 10. **Kernel-level visibility** - sees what applications can't hide
 
 ---
@@ -907,3 +907,8 @@ Kprobes are eBPF programs attached to kernel functions. When the function is cal
 ## Next Module
 
 Continue to [Module 4.6: KubeArmor](../module-4.6-kubearmor/) to learn about runtime security policies with least-privilege enforcement.
+
+## Sources
+
+- [github.com: tetragon](https://github.com/cilium/tetragon) — The upstream repository README directly describes Tetragon as eBPF-based runtime enforcement and lists process, syscall, and I/O activity with Kubernetes awareness.
+- [github.com: falco](https://github.com/falcosecurity/falco) — The upstream Falco README directly states that Falco detects and alerts on abnormal behavior and observes syscall-related events.
