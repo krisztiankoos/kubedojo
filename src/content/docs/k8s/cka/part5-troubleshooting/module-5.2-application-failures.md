@@ -53,10 +53,10 @@ By the end of this module, you'll be able to:
 
 ## Did You Know?
 
-- **CrashLoopBackOff has exponential backoff**: It starts at 10s, then 20s, 40s, up to 5 minutes between restart attempts.
-- **Init containers run first**: If init containers fail, main containers never start - many people forget to check them.
-- **ImagePullBackOff vs ErrImagePull**: ErrImagePull is the first failure, ImagePullBackOff is after multiple retries.
-- **OOMKilled doesn't always mean a memory leak**: It can simply mean your `limits` are set lower than the application's baseline startup requirement.
+- **[CrashLoopBackOff has exponential backoff](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)**: It starts at 10s, then 20s, 40s, up to 5 minutes between restart attempts.
+- **[Init containers run first](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)**: If init containers fail, main containers never start - many people forget to check them.
+- **Image pull failure statuses**: Kubernetes commonly surfaces image pull problems as `ErrImagePull` and/or `ImagePullBackOff`, depending on when you inspect the pod.
+- **OOMKilled doesn't always mean a memory leak**: It can simply mean [your `limits` are set lower than the application's baseline startup requirement](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/).
 
 ---
 
@@ -352,8 +352,8 @@ k create secret docker-registry dockerhub \
 > **Pause and predict**: What exact pod status would you expect if a referenced Secret does not exist in the namespace?
 
 **Symptoms**:
-- Pod status shows `CreateContainerConfigError` or is stuck in `ContainerCreating`
-- Events show "configmap not found" or "secret not found"
+- Pod status may show a container-creation failure or remain stuck creating the container
+- Events report that the referenced ConfigMap or Secret could not be found
 
 **Diagnosis**:
 ```bash
@@ -384,7 +384,7 @@ k create secret generic <name> --from-file=credentials.json
 ### 4.2 Incorrect ConfigMap/Secret Keys
 
 **Symptoms**:
-- Container starts but app fails
+- Depending on how the configuration is consumed, the Pod may fail to start or the container may start and the application may fail at runtime
 - Logs show "file not found" or "key not found"
 
 **Diagnosis**:
@@ -427,7 +427,7 @@ k get pod <pod> -o yaml | grep -A 5 valueFrom
 
 ### 5.1 Stuck Deployments
 
-> **Stop and think**: If `kubectl rollout status` hangs indefinitely, what object should you describe next to find the actual pod creation errors?
+> **Stop and think**: If `kubectl rollout status` hangs indefinitely, [what object should you describe next to find the actual pod creation errors?](https://kubernetes.io/docs/tasks/run-application/update-deployment-rolling/)
 
 **Symptoms**:
 - `k rollout status deployment/<name>` hangs
@@ -593,7 +593,7 @@ livenessProbe:
 | Wrong resource units | Unexpected OOM or throttling | Use correct units: Mi, Gi, m |
 | Liveness probe too aggressive | Healthy containers killed | Increase timeouts and failure threshold |
 | Forgetting imagePullSecrets | Private images fail | Add secrets at ServiceAccount or pod level |
-| Using `restartPolicy: Never` for Deployments | Pods won't restart on failure | Deployments require `Always`. Use Jobs for run-once tasks. |
+| Using `restartPolicy: Never` for Deployments | Pods won't restart on failure | [Deployments require `Always`.](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) [Use Jobs for run-once tasks.](https://kubernetes.io/docs/concepts/workloads/controllers/job/) |
 | Overlooking namespace | "Pod not found" errors | Always add `-n <namespace>` or set default namespace context |
 
 ---
@@ -649,7 +649,7 @@ By design, Kubernetes executes init containers sequentially before any app conta
 <details>
 <summary>Answer</summary>
 Executing `kubectl rollout undo deployment/<name>` is the quickest and safest fix. 
-Executing this command will immediately revert the deployment to its previous stable revision. This scales the old ReplicaSet back up to full capacity and terminates the failing pods in the new ReplicaSet, restoring service availability rapidly. Once the system is stable, you can investigate the root cause of the CrashLoopBackOff in the failed revision without impacting production traffic.
+Executing this command will start reverting the deployment to its previous stable revision. This scales the old ReplicaSet back up to full capacity and terminates the failing pods in the new ReplicaSet, restoring service availability rapidly. Once the system is stable, you can investigate the root cause of the CrashLoopBackOff in the failed revision without impacting production traffic.
 </details>
 
 ### Q7: Readiness vs Liveness
@@ -911,3 +911,16 @@ k get pod <pod> -o yaml | grep -A 15 readinessProbe
 ## Next Module
 
 Continue to [Module 5.3: Control Plane Failures](../module-5.3-control-plane/) to learn how to troubleshoot API server, scheduler, controller manager, and etcd issues.
+
+## Sources
+
+- [Pod Lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) — Backs pod phases, container states, restart behavior, CrashLoopBackOff semantics, init-container sequencing, readiness-related lifecycle concepts, and general pod-state troubleshooting vocabulary.
+- [kubernetes.io: init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) — The official Init Containers concept page states that init containers run before app containers, sequentially, and gate app-container startup.
+- [kubernetes.io: assign memory resource](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/) — The official memory-resource task shows a container being OOMKilled because its memory use exceeds the configured limit, which supports the operational point.
+- [kubectl logs](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/) — Backs exact kubectl logs behavior and flags such as container selection, follow mode, timestamps, tail, since, previous logs, and all-containers retrieval.
+- [kubernetes.io: deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) — The Deployment concept documentation explicitly states that only `restartPolicy: Always` is allowed in a Deployment pod template.
+- [kubernetes.io: job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) — The Job concept documentation explicitly defines Jobs as one-off tasks that run to completion.
+- [kubernetes.io: update deployment rolling](https://kubernetes.io/docs/tasks/run-application/update-deployment-rolling/) — The rolling-update task says stalled rollouts usually indicate new Pods are failing to start and recommends checking Deployment conditions and events.
+- [Debug Running Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/) — Covers the core troubleshooting workflow for describe, logs, events, exec, and pod inspection.
+- [Images](https://kubernetes.io/docs/concepts/containers/images/) — Documents image pull policy, private-registry authentication context, and ImagePullBackOff behavior.
+- [Liveness, Readiness, and Startup Probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) — Provides the authoritative semantics behind probe-triggered restarts, readiness gating, and startup protection.

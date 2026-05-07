@@ -1,0 +1,198 @@
+{
+  "module_key": "k8s/cka/part5-troubleshooting/module-5.2-application-failures",
+  "module_path": "src/content/docs/k8s/cka/part5-troubleshooting/module-5.2-application-failures.md",
+  "research_run_id": "2026-05-07T15:51:54+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/k8s-cka-part5-troubleshooting.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "CrashLoopBackOff restart delays use exponential backoff starting at 10 seconds, cap at 300 seconds, and reset after about 10 minutes of successful runtime.",
+      "claim_class": "statistic",
+      "span_hint": "line 56",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes Pod Lifecycle documentation directly describes the exponential restart backoff, 300-second cap, and 10-minute reset window."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Init containers run before app containers, in sequence, and the main containers do not start until init containers succeed.",
+      "claim_class": "standard",
+      "span_hint": "line 57",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/pods/init-containers/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official Init Containers concept page states that init containers run before app containers, sequentially, and gate app-container startup."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "ErrImagePull is always the first visible failure and ImagePullBackOff only appears after multiple retries.",
+      "claim_class": "standard",
+      "span_hint": "line 58",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **ImagePullBackOff vs ErrImagePull**: ErrImagePull is the first failure, ImagePullBackOff is after multiple retries.",
+      "suggested_rewrite": "- **Image pull failure statuses**: Kubernetes commonly surfaces image pull problems as `ErrImagePull` and/or `ImagePullBackOff`, depending on when you inspect the pod.",
+      "lesson_point_url": null,
+      "rationale": "The exact first-then-after-multiple-retries sequence was not cleanly supported by an allowlisted primary source, while the broader status relationship is safe and accurate."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "OOMKilled can reflect a memory limit set below an application's baseline startup usage, not only a memory leak.",
+      "claim_class": "standard",
+      "span_hint": "line 59",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official memory-resource task shows a container being OOMKilled because its memory use exceeds the configured limit, which supports the operational point."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "`kubectl logs --previous` retrieves logs from the previous instance of a container and is a key step for diagnosing crash loops.",
+      "claim_class": "standard",
+      "span_hint": "line 213",
+      "disposition": "supported",
+      "source_ids": [
+        "S017"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The kubectl logs reference explicitly documents `--previous` as printing logs for the previous container instance."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "A missing ConfigMap or Secret specifically shows up as `CreateContainerConfigError` or `ContainerCreating`.",
+      "claim_class": "standard",
+      "span_hint": "line 355",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- Pod status shows `CreateContainerConfigError` or is stuck in `ContainerCreating`",
+      "suggested_rewrite": "- Pod status may show a container-creation failure or remain stuck creating the container",
+      "lesson_point_url": null,
+      "rationale": "Official docs support that missing required ConfigMaps or Secrets prevent startup, but this exact status-string pairing was not directly documented on an allowlisted primary source."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "For missing ConfigMaps or Secrets, events literally say \"configmap not found\" or \"secret not found\".",
+      "claim_class": "standard",
+      "span_hint": "line 356",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- Events show \"configmap not found\" or \"secret not found\"",
+      "suggested_rewrite": "- Events report that the referenced ConfigMap or Secret could not be found",
+      "lesson_point_url": null,
+      "rationale": "The kubelet does report pod Events for missing required Secrets and ConfigMaps, but the exact quoted event wording was not directly backed by the reviewed primary docs."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Incorrect ConfigMap or Secret keys usually mean the container starts and then the application fails at runtime.",
+      "claim_class": "standard",
+      "span_hint": "line 387",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- Container starts but app fails",
+      "suggested_rewrite": "- Depending on how the configuration is consumed, the Pod may fail to start or the container may start and the application may fail at runtime",
+      "lesson_point_url": null,
+      "rationale": "Official docs say missing non-optional key references can prevent Pod startup, so the original symptom statement was too absolute."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Deployments only allow `.spec.template.spec.restartPolicy` to be `Always`.",
+      "claim_class": "standard",
+      "span_hint": "line 596",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Deployment concept documentation explicitly states that only `restartPolicy: Always` is allowed in a Deployment pod template."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Jobs represent one-off tasks that run to completion and are the standard controller for batch or run-once work.",
+      "claim_class": "standard",
+      "span_hint": "line 596",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Job concept documentation explicitly defines Jobs as one-off tasks that run to completion."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "A stalled Deployment rollout usually means the new Pods are failing to start, and `kubectl describe deployment` helps expose that condition.",
+      "claim_class": "standard",
+      "span_hint": "section: 5.1 Stuck Deployments",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/tasks/run-application/update-deployment-rolling/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The rolling-update task says stalled rollouts usually indicate new Pods are failing to start and recommends checking Deployment conditions and events."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/",
+      "title": "Debug Running Pods",
+      "tier": "standards",
+      "why_relevant": "Covers the core troubleshooting workflow for describe, logs, events, exec, and pod inspection."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+      "title": "Pod Lifecycle",
+      "tier": "standards",
+      "why_relevant": "Explains container states, restart policy, CrashLoopBackOff behavior, and readiness-related lifecycle concepts."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/containers/images/",
+      "title": "Images",
+      "tier": "standards",
+      "why_relevant": "Documents image pull policy, private-registry authentication context, and ImagePullBackOff behavior."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/",
+      "title": "Liveness, Readiness, and Startup Probes",
+      "tier": "standards",
+      "why_relevant": "Provides the authoritative semantics behind probe-triggered restarts, readiness gating, and startup protection."
+    }
+  ],
+  "notes": "Excluded diagrams, code blocks, and quiz prompts per instructions; rewrite dispositions are concentrated on exact status-string and event-message wording where the broader troubleshooting lesson is solid but the literal phrasing was not directly backed by the reviewed primary sources.",
+  "_schema_issues": [
+    "claim[8]:needs_allowlist_expansion_but_url_is_already_allowlisted"
+  ],
+  "rejected_urls": []
+}
