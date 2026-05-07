@@ -9,7 +9,7 @@
 Issue #983 converged on three tiers:
 
 - **Tier 1 (today):** cold subprocess + cold prompt cache per round of `ab discuss`. Full Anthropic prompt-cache miss every time.
-- **Tier 2 (ships separately):** switch `_handle_discuss` to `entrypoint="bridge"` + reuse the existing `sessions` table via `discuss:{correlation_id}` key + per-agent gate. Claude-only resume in practice; Gemini stores a bridge-side id but drops it at the CLI adapter, and Codex stays fresh.
+- **Tier 2 (ships separately):** switch `_handle_discuss` to `entrypoint="bridge"` + reuse the existing `sessions` table via `discuss:{correlation_id}` key + per-agent gate. Claude-only resume in practice; Gemini receives a `session_id` but the CLI adapter drops it and `parse_response` returns `None`, so nothing is persisted; Codex stays fresh.
 - **Tier 3 (this ADR):** API-daemon listeners with claim/lease/keepalive — true active-active continuity.
 
 The corrections from deliberation are part of the decision:
