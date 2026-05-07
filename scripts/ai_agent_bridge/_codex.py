@@ -25,30 +25,36 @@ _CODEX_MODES = {"safe", "workspace-write", "full-auto", "danger"}
 
 
 def _codex_bridge_mode() -> str:
-    """Resolve Codex sandbox mode for ai_agent_bridge calls."""
+    """Resolve Codex sandbox mode for ai_agent_bridge calls.
+
+    Default is now "danger" — read-only starved Codex of network/filesystem
+    and caused rc=-9 stale-rollout salvage (three failures 2026-05-07).
+    """
     requested = (
         os.environ.get("CODEX_BRIDGE_MODE")
         or os.environ.get("CODEX_CLI_MODE")
-        or "safe"
+        or "danger"
     ).strip().lower()
     if requested in _CODEX_MODES:
         return "workspace-write" if requested == "full-auto" else requested
-    print(f"⚠️  Invalid CODEX_BRIDGE_MODE='{requested}' — falling back to safe")
-    return "safe"
+    print(f"⚠️  Invalid CODEX_BRIDGE_MODE='{requested}' — falling back to danger")
+    return "danger"
 
 
 def _codex_bridge_runtime_mode() -> str:
     """Translate CODEX_BRIDGE_MODE env var to runtime vocabulary.
 
-    Runtime uses {read-only, workspace-write, danger}.
+    Runtime uses {workspace-write, danger}. read-only is forbidden —
+    CodexAdapter.supported_modes no longer includes it.
     Bridge legacy uses {safe, workspace-write, full-auto, danger}.
+    "safe" maps to "danger" (read-only is gone; danger is the new baseline).
     """
     legacy = _codex_bridge_mode()
     if legacy == "danger":
         return "danger"
     if legacy == "workspace-write":
         return "workspace-write"
-    return "read-only"  # "safe" → "read-only"
+    return "danger"  # "safe" → "danger" (read-only removed from adapter)
 
 
 def ask_codex(content: str, task_id: str | None = None, msg_type: str = "query",

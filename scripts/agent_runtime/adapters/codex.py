@@ -11,7 +11,9 @@ Key design points:
   the registry AND defensively ignores ``session_id`` even if passed.
   Belt + suspenders against the cross-worktree contamination footgun that
   Codex flagged in his own consultation (msg #28506).
-- **All three modes supported:** read-only, workspace-write, danger.
+- **Two modes supported:** workspace-write, danger. read-only is
+  forbidden — Codex needs network + filesystem to fact-check; read-only
+  starves it (rc=-9, stale-rollout salvage). See PR #<this-PR>.
   Mode → flag mapping matches ``_codex.py::_codex_bridge_flags`` and
   ``dispatch.py::_codex_dispatch_flags``.
 - **Output file always used.** ``codex exec -o <tmpfile>`` writes the final
@@ -115,7 +117,7 @@ class CodexAdapter:
 
     name: str = "codex"
     default_model: str = "gpt-5.4"
-    supported_modes: frozenset[str] = frozenset({"read-only", "workspace-write", "danger"})
+    supported_modes: frozenset[str] = frozenset({"workspace-write", "danger"})
 
     def build_invocation(
         self,
@@ -663,10 +665,17 @@ class CodexAdapter:
 
         Matches the mapping in _codex.py::_codex_bridge_flags and
         dispatch.py::_codex_dispatch_flags for consistency during migration.
+
+        read-only is not in supported_modes — the runner validates before
+        we get here, but raise explicitly as defense in depth.
         """
         if mode == "danger":
             return ["--dangerously-bypass-approvals-and-sandbox"]
         if mode == "workspace-write":
             return ["--full-auto"]
-        # "read-only" default
-        return ["-s", "read-only"]
+        raise ValueError(
+            f"CodexAdapter: mode {mode!r} is not supported. "
+            "Codex requires danger or workspace-write — read-only starves "
+            "it of network/filesystem and produces garbage output. "
+            f"Supported: {sorted(CodexAdapter.supported_modes)}"
+        )

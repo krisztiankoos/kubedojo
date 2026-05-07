@@ -246,6 +246,21 @@ def main() -> int:
     timeout_s = args.timeout or cfg.default_timeout_s
     task_id = args.task_id or make_task_id(args.task_class, args.agent)
 
+    # Codex always runs in danger mode — read-only starves it of network/
+    # filesystem and produces garbage (rc=-9 stale-rollout salvage). Three
+    # failures in a single session 2026-05-07. This override fires before
+    # the worktree validation below so that the worktree requirement still
+    # applies to all non-dry-run codex dispatches.
+    if args.agent == "codex" and mode != "danger":
+        if args.mode is not None and args.mode != "danger":
+            p.error(
+                f"--agent codex always runs in danger mode (you passed "
+                f"--mode {args.mode!r}). Codex needs network + filesystem "
+                f"to fact-check; read-only/workspace-write break it. "
+                f"Drop --mode to use the default."
+            )
+        mode = "danger"
+
     if args.prompt is None:
         sys.stderr.write("[smart] no prompt — pass as arg or `-` for stdin\n")
         return 2
@@ -254,7 +269,7 @@ def main() -> int:
         sys.stderr.write("[smart] prompt is empty\n")
         return 2
 
-    if mode == "danger" and not args.worktree:
+    if mode == "danger" and not args.worktree and not args.dry_run:
         p.error("--mode danger requires --worktree (no override)")
 
     worktree: Path | None = None
@@ -262,7 +277,7 @@ def main() -> int:
         worktree = Path(args.worktree)
         if not worktree.is_absolute():
             worktree = REPO / worktree
-    elif mode != "read-only":
+    elif mode != "read-only" and not args.dry_run:
         sys.stderr.write(
             f"[smart] mode={mode} requires --worktree to avoid trampling "
             "the main checkout\n"
@@ -272,7 +287,8 @@ def main() -> int:
     if args.dry_run:
         print(f"[dry-run] agent={args.agent} task_class={args.task_class} "
               f"model={model} mode={mode} timeout={timeout_s}s")
-        print(f"[dry-run] worktree={worktree or '(none — read-only)'}")
+        _wt_label = worktree or f"(none — {mode})"
+        print(f"[dry-run] worktree={_wt_label}")
         print(f"[dry-run] task_id={task_id}")
         print(f"[dry-run] prompt_chars={len(prompt)}")
         return 0

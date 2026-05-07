@@ -44,6 +44,7 @@ from typing import Any
 
 from . import _channels
 from ._channels_watch import watch_channel_events
+from ._config import REPO_ROOT
 
 # ── argparse registration ────────────────────────────────────────────
 
@@ -960,11 +961,21 @@ def _handle_discuss(args) -> int:
         row in a 4-round discussion would collide on the same task_id
         and the dashboard couldn't tell them apart.
         """
+        # Codex.supported_modes drops read-only (PR #981 — codex always
+        # runs in danger mode; read-only starves codex of network/spawn
+        # and produces garbage). Other agents stay read-only because they
+        # only generate text + post back via the bridge — no fs/network
+        # writes needed. Codex's cwd anchors at REPO_ROOT (danger mode
+        # requires cwd; the discussion participant doesn't actually write
+        # files, so any in-repo path satisfies the runner's invariant).
+        agent_mode = "danger" if agent_name == "codex" else "read-only"
+        agent_cwd = REPO_ROOT if agent_mode == "danger" else None
         try:
             result = runtime_invoke(
                 agent_name,
                 prompt_text,
-                mode="read-only",
+                mode=agent_mode,
+                cwd=agent_cwd,
                 task_id=f"discuss-{correlation_id[:8]}-r{round_idx}-{agent_name}",
                 entrypoint="delegate",
                 hard_timeout=900,
