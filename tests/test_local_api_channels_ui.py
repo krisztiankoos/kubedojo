@@ -34,3 +34,16 @@ def test_channel_thread_returns_html_with_thread_id(tmp_path: Path) -> None:
     assert "text/html" in content_type
     assert "abc123" in body
     assert "/api/channel/" in body
+
+
+def test_channel_thread_xss_escaping(tmp_path: Path) -> None:
+    # URL-encoded <script>alert(1)</script> as thread_id
+    status, body, _ = local_api.route_request(
+        tmp_path, "/channels/%3Cscript%3Ealert(1)%3C%2Fscript%3E"
+    )
+    assert status == 200
+    assert "&lt;script&gt;" in body
+    # Any line containing the raw tag must only be the JS const TID= declaration
+    raw_tag = "<script>alert(1)</script>"
+    bad_lines = [l for l in body.splitlines() if raw_tag in l and "const TID=" not in l]
+    assert bad_lines == [], f"Raw XSS payload found outside JS const: {bad_lines}"

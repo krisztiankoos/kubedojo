@@ -7287,8 +7287,9 @@ def render_channels_index_html() -> str:
 <div class="main"><div id="grid" class="grid"></div></div>
 <script>
 const BADGE = {claude:"bcl",codex:"bco",gemini:"bg",user:"bu"};
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function timeAgo(iso){if(!iso)return"";const d=Math.floor((Date.now()-new Date(iso))/1000);if(d<60)return d+"s ago";if(d<3600)return Math.floor(d/60)+"m ago";if(d<86400)return Math.floor(d/3600)+"h ago";return Math.floor(d/86400)+"d ago";}
-function agentBadge(a){const c=BADGE[a]||"bc";return`<span class="badge ${c}">${a}</span>`;}
+function agentBadge(a){const c=BADGE[a]||"bc";return`<span class="badge ${c}">${esc(a)}</span>`;}
 function render(data){
   const channels=data.channels||[];
   const total=channels.reduce((n,c)=>n+c.threads.length,0);
@@ -7296,7 +7297,7 @@ function render(data){
   if(!total){document.getElementById("grid").innerHTML='<p class="empty">No deliberation threads yet.<br>Start one with <code>ab discuss &lt;channel&gt;</code>.</p>';return;}
   const cards=channels.flatMap(c=>c.threads.map(t=>{
     const agents=(t.agents||[]).map(agentBadge).join("");
-    return`<a class="card" href="/channels/${encodeURIComponent(t.thread_id)}"><div class="card-ch">${c.channel}</div><div class="card-tid" title="${t.thread_id}">${t.thread_id}</div><div class="card-meta"><span class="badge bc">${t.event_count} events</span>${agents}</div><div class="card-ts">last activity: ${timeAgo(t.last_ts)}</div></a>`;
+    return`<a class="card" href="/channels/${encodeURIComponent(t.thread_id)}"><div class="card-ch">${esc(c.channel)}</div><div class="card-tid" title="${esc(t.thread_id)}">${esc(t.thread_id)}</div><div class="card-meta"><span class="badge bc">${esc(t.event_count)} events</span>${agents}</div><div class="card-ts">last activity: ${timeAgo(t.last_ts)}</div></a>`;
   }));
   document.getElementById("grid").innerHTML=cards.join("");
 }
@@ -7308,14 +7309,17 @@ load();setInterval(load,30000);
 
 def render_channel_thread_html(thread_id: str) -> str:
     import json as _json
+    import html as _html
     tid_js = _json.dumps(thread_id)
     tid_short = thread_id[:20] + ("…" if len(thread_id) > 20 else "")
+    escaped_tid = _html.escape(thread_id, quote=True)
+    escaped_tid_short = _html.escape(tid_short, quote=True)
     return f"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Thread {tid_short}</title>
+  <title>Thread {escaped_tid_short}</title>
   <style>
     :root{{--bg:#0a0f1a;--surface-0:#111827;--surface-1:#1a2332;--surface-2:#1f2b3d;--text:#e5e7eb;--text-dim:#6b7280;--border:rgba(255,255,255,0.06);--radius-sm:8px}}
     *{{box-sizing:border-box;margin:0}}
@@ -7345,7 +7349,7 @@ def render_channel_thread_html(thread_id: str) -> str:
 </head>
 <body>
 <div class="hdr">
-  <div class="hdr-row"><a class="back" href="/channels">&larr; Channels</a><div class="tid" title="{thread_id}">{thread_id}</div></div>
+  <div class="hdr-row"><a class="back" href="/channels">&larr; Channels</a><div class="tid" title="{escaped_tid}">{escaped_tid}</div></div>
   <div class="meta"><span id="ec">0 events</span> &middot; <span id="lu">connecting&#8230;</span></div>
 </div>
 <div class="feed" id="feed"><div class="empty" id="emp">Waiting for events&#8230;</div></div>
