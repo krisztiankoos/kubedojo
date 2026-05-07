@@ -282,8 +282,18 @@ def get_db():
 
 def get_session(task_id: str) -> dict:
     """Get session IDs for a task."""
+    empty = {
+        "claude": None,
+        "gemini": None,
+        "codex": None,
+    }
     if not task_id:
-        return {"claude": None, "gemini": None, "codex": None}
+        return {
+            **empty,
+            "claude_session_id": None,
+            "gemini_session_id": None,
+            "codex_session_id": None,
+        }
 
     conn = get_db()
     cursor = conn.cursor()
@@ -295,8 +305,20 @@ def get_session(task_id: str) -> dict:
     conn.close()
 
     if row:
-        return {"claude": row[0], "gemini": row[1], "codex": row[2]}
-    return {"claude": None, "gemini": None, "codex": None}
+        return {
+            "claude": row[0],
+            "gemini": row[1],
+            "codex": row[2],
+            "claude_session_id": row[0],
+            "gemini_session_id": row[1],
+            "codex_session_id": row[2],
+        }
+    return {
+        **empty,
+        "claude_session_id": None,
+        "gemini_session_id": None,
+        "codex_session_id": None,
+    }
 
 
 def _session_column(agent: str) -> str:
@@ -311,29 +333,65 @@ def _session_column(agent: str) -> str:
     return columns[agent]
 
 
-def set_session(task_id: str, agent: str, session_id: str):
-    """Set session ID for an agent on a task."""
+def set_session(
+    task_id: str,
+    agent: str | None = None,
+    session_id: str | None = None,
+    *,
+    claude_session_id: str | None = None,
+    gemini_session_id: str | None = None,
+    codex_session_id: str | None = None,
+):
+    """Set session IDs for one or more agents on a task."""
     if not task_id:
         return
 
     conn = get_db()
     cursor = conn.cursor()
     timestamp = datetime.now(UTC).isoformat()
-    column = _session_column(agent)
+    updates: dict[str, str] = {}
+
+    if agent is not None:
+        if session_id is None:
+            return
+        updates[_session_column(agent)] = session_id
+
+    legacy_aliases = {
+        "claude_session_id": claude_session_id,
+        "gemini_session_id": gemini_session_id,
+        "codex_session_id": codex_session_id,
+    }
+    for column, value in legacy_aliases.items():
+        if value is not None:
+            updates[column] = value
+
+    if not updates:
+        return
 
     # Upsert session
     cursor.execute("SELECT task_id FROM sessions WHERE task_id = ?", (task_id,))
     if cursor.fetchone():
         cursor.execute(
-            f"UPDATE sessions SET {column} = ?, updated_at = ? WHERE task_id = ?",
-            (session_id, timestamp, task_id),
+            (
+                "UPDATE sessions "
+                f"SET {', '.join(f'{column} = ?' for column in updates)}, updated_at = ? "
+                "WHERE task_id = ?"
+            ),
+            (*updates.values(), timestamp, task_id),
         )
     else:
+        columns = ", ".join(["task_id", *updates.keys(), "created_at", "updated_at"])
+        placeholders = ", ".join(["?"] * (len(updates) + 3))
         cursor.execute(
-            f"INSERT INTO sessions (task_id, {column}, created_at, updated_at) VALUES (?, ?, ?, ?)",
-            (task_id, session_id, timestamp, timestamp),
+            f"INSERT INTO sessions ({columns}) VALUES ({placeholders})",
+            [task_id, *updates.values(), timestamp, timestamp],
         )
 
     conn.commit()
     conn.close()
-    print(f"📌 Stored {agent} session: {session_id[:8]}... for task {task_id}")
+    # Legacy-compatible log hook for manual operations.
+    if updates:
+        first_agent = next(iter(updates))
+        first_value = next(iter(updates.values()))
+        if first_value:
+            print(f"📌 Stored {first_agent} session: {first_value[:8]}... for task {task_id}")

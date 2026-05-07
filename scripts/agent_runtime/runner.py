@@ -184,6 +184,7 @@ def _build_usage_record(
     task_id: str | None,
     cwd: Path,
     session_id: str | None,
+    session_id_out: str | None = None,
     duration_s: float,
     input_chars: int,
     output_chars: int,
@@ -200,6 +201,13 @@ def _build_usage_record(
     safe_cwd = str(cwd)[-250:] if cwd else ""
     safe_task_id = task_id[:100] if task_id else None
     safe_session_id = session_id[:100] if session_id else None
+    session_mode = "none"
+    if session_id is None and session_id_out is not None:
+        session_mode = "new"
+    elif session_id is not None and session_id_out is not None:
+        session_mode = "resume"
+    elif session_id is not None and session_id_out is None:
+        session_mode = "none"
 
     return {
         "ts": datetime.now(UTC).isoformat(),
@@ -210,6 +218,7 @@ def _build_usage_record(
         "model": model,
         "mode": mode,
         "session_id": safe_session_id,
+        "session_mode": session_mode,
         "duration_s": round(duration_s, 2),
         "input_chars": input_chars,
         "output_chars": output_chars,
@@ -326,6 +335,7 @@ def invoke(
             task_id=task_id,
             cwd=effective_cwd,
             session_id=session_id,
+            session_id_out=session_id,
             duration_s=0.0,
             input_chars=len(prompt),
             output_chars=0,
@@ -396,6 +406,7 @@ def invoke(
                 task_id=task_id,
                 cwd=effective_cwd,
                 session_id=session_id,
+                session_id_out=session_id,
                 duration_s=time.monotonic() - start_time,
                 input_chars=len(prompt),
                 output_chars=0,
@@ -563,6 +574,7 @@ def invoke(
                 task_id=task_id,
                 cwd=effective_cwd,
                 session_id=session_id,
+                session_id_out=parse.session_id,
                 duration_s=duration_s,
                 input_chars=len(prompt),
                 output_chars=len(stdout_text),
@@ -607,6 +619,7 @@ def invoke(
             task_id=task_id,
             cwd=effective_cwd,
             session_id=session_id,
+            session_id_out=parse.session_id,
             duration_s=duration_s,
             input_chars=len(prompt),
             output_chars=len(parse.response),

@@ -870,6 +870,7 @@ def _handle_discuss(args) -> int:
             RateLimitedError,
         )
         from agent_runtime.runner import invoke as runtime_invoke
+        from ._db import get_session as _get_session, set_session as _set_session
     except ImportError as e:
         print(f"❌ agent_runtime unavailable: {e}", file=sys.stderr)
         print(
@@ -944,6 +945,7 @@ def _handle_discuss(args) -> int:
 
     root_id = root["message_id"]
     correlation_id = root["thread_id"]  # one correlation per discussion
+    task_key = f"discuss:{correlation_id}"
     print(
         f"📢 discuss #{args.channel} (max {max_rounds} round{'s' if max_rounds > 1 else ''}, "
         f"{len(with_agents)} participants)"
@@ -970,6 +972,15 @@ def _handle_discuss(args) -> int:
         # files, so any in-repo path satisfies the runner's invariant).
         agent_mode = "danger" if agent_name == "codex" else "read-only"
         agent_cwd = REPO_ROOT if agent_mode == "danger" else None
+        stored_session = _get_session(task_key)
+        if agent_name == "claude":
+            session_id = stored_session.get("claude_session_id")
+        elif agent_name == "gemini":
+            session_id = stored_session.get("gemini_session_id")
+        else:
+            # Codex is intentionally never resumable under registry policy;
+            # never read stale codex rows even if present.
+            session_id = None
         try:
             result = runtime_invoke(
                 agent_name,
@@ -977,7 +988,8 @@ def _handle_discuss(args) -> int:
                 mode=agent_mode,
                 cwd=agent_cwd,
                 task_id=f"discuss-{correlation_id[:8]}-r{round_idx}-{agent_name}",
-                entrypoint="delegate",
+                session_id=session_id,
+                entrypoint="bridge",
                 hard_timeout=900,
             )
         except RateLimitedError as exc:
@@ -998,6 +1010,10 @@ def _handle_discuss(args) -> int:
                 f"[failed: {result.stderr_excerpt or 'no response'}]",
                 False,
             )
+
+        if result.ok and result.session_id and agent_name == "claude":
+            _set_session(task_key, claude_session_id=result.session_id)
+
         return (agent_name, result.response.strip(), True)
 
     completed_rounds = 0
