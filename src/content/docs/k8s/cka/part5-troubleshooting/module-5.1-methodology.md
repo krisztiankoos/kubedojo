@@ -39,13 +39,13 @@ A platform engineer named Mira is on call when a rollout begins failing during a
 
 Kubernetes troubleshooting rewards disciplined curiosity more than command memorization. The cluster is constantly reconciling desired state into actual state, so every failure leaves clues in different places: scheduler events, kubelet events, container logs, endpoint objects, node conditions, controller status, and sometimes the raw object spec. The operator's job is to read those clues in the right order, form a small hypothesis, test it, and change only the thing that evidence supports.
 
-This matters on the CKA because troubleshooting is a large exam domain and the time pressure is real. It matters even more in production because the first five minutes of an incident often determine whether the team learns quickly or scatters into disconnected guesses. A repeatable method gives you a calm path through noisy symptoms, and it lets another engineer follow your reasoning after the fix.
+This matters on the CKA because [troubleshooting is a large exam domain and the time pressure is real](https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/). It matters even more in production because the first five minutes of an incident often determine whether the team learns quickly or scatters into disconnected guesses. A repeatable method gives you a calm path through noisy symptoms, and it lets another engineer follow your reasoning after the fix.
 
 > **The Emergency Room Analogy**
 >
 > A strong emergency-room physician does not start with surgery because a patient says "it hurts." They stabilize, observe symptoms, check vital signs, order targeted tests, decide which system is failing, and only then treat. Kubernetes troubleshooting works the same way. You start with the visible symptom, gather low-risk evidence, isolate the failing layer, then apply the smallest fix that addresses the diagnosed cause.
 
-Before the commands begin, set the common alias used throughout the module. The CKA environment often permits aliases, and this module uses `k` as shorthand after defining it once here. If your environment does not persist shell aliases, run the full `kubectl` command instead.
+Before the commands begin, set the common alias used throughout the module. This module uses `k` as shorthand after defining it once here. If your environment does not persist shell aliases, run the full `kubectl` command instead.
 
 ```bash
 alias k=kubectl
@@ -140,7 +140,7 @@ Isolation means reducing the search space without yet claiming root cause. Kuber
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The layer model prevents wasted commands. If a pod is still `Pending`, there is no useful container log because the container has not started. If a service has no endpoints, testing DNS first may prove only that DNS resolves the service name, not that the service can send traffic anywhere. If the API server is intermittently unreachable, editing deployment YAML may be irrelevant because the control plane itself may be the first failure.
+The layer model prevents wasted commands. If a pod is still `Pending`, inspect `describe` and Events first because the application container may not have started yet, so logs may be absent or not yet useful. If a service has no endpoints, testing DNS first may prove only that DNS resolves the service name, not that the service can send traffic anywhere. If the API server is intermittently unreachable, editing deployment YAML may be irrelevant because the control plane itself may be the first failure.
 
 | Failure Layer | Typical Evidence | Commands That Usually Help |
 |---|---|---|
@@ -195,7 +195,7 @@ k get endpointslices -n prod -l kubernetes.io/service-name=backend
 k exec -n prod deploy/frontend -- wget -qO- http://backend:8080/healthz
 ```
 
-Validation also includes checking that the fix did not create a new failure. A pod that restarts successfully but loses its endpoints because readiness now fails is not fixed. A service that starts routing traffic after you loosen a selector may now route to unrelated pods. Always validate the path that users or dependent workloads actually use.
+Validation also includes checking that the fix did not create a new failure. A pod that restarts successfully but loses its endpoints because readiness now fails is not fixed. A service that starts routing traffic after you loosen a selector may now route to unrelated pods. Validate the path that users or dependent workloads actually use whenever you can.
 
 ---
 
@@ -229,7 +229,7 @@ This map is not a replacement for evidence. It is a shortcut for choosing the ne
 
 ### 2.1 Control Plane Components and Their Failure Shapes
 
-Control plane failures usually affect many workloads or make the cluster stop reconciling. If the API server is down, nearly every kubectl command fails. If the scheduler is down, existing pods may keep running but new pods stay unscheduled. If the controller manager is down, deployments, replica sets, jobs, and endpoint updates may stop moving toward desired state.
+Control plane failures usually affect many workloads or make the cluster stop reconciling. [If the API server is down, nearly every kubectl command fails. If the scheduler is down, existing pods may keep running but new pods stay unscheduled. If the controller manager is down, deployments, replica sets, jobs, and endpoint updates may stop moving toward desired state.](https://kubernetes.io/docs/concepts/overview/components/)
 
 | Component | What It Owns | Failure Shape | Useful First Evidence |
 |---|---|---|---|
@@ -243,7 +243,7 @@ A control plane component can fail silently from the perspective of one applicat
 
 ### 2.2 Node Components and Their Failure Shapes
 
-Node-level failures often present as pods failing only on one node or as pods entering states that depend on kubelet work. The kubelet turns scheduled pods into running containers, mounts volumes, reports status, and executes probes. The container runtime pulls images and starts containers. The CNI plugin wires pod networking. kube-proxy or an eBPF replacement implements service routing depending on cluster configuration.
+Node-level failures often present as pods failing only on one node or as pods entering states that depend on kubelet work. [The kubelet turns scheduled pods into running containers, mounts volumes, reports status, and executes probes. The container runtime pulls images and starts containers. The CNI plugin wires pod networking. kube-proxy or an eBPF replacement implements service routing depending on cluster configuration.](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
 
 | Component | What It Owns | Failure Shape | Useful First Evidence |
 |---|---|---|---|
@@ -314,7 +314,7 @@ The `-o wide` flag is valuable because it adds placement information, pod IPs, a
 
 ### 3.2 Describe Before Logs
 
-`describe` is usually the best second command because it includes Kubernetes' own explanation of recent failures. It shows events, selected node, volumes, container state, last termination state, readiness, restart count, and probe messages. Logs can explain a running process, but they cannot explain why the process never started.
+`describe` is usually the best second command because it includes Kubernetes' own explanation of recent failures. [It shows events, selected node, volumes, container state, last termination state, readiness, restart count, and probe messages.](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/) Logs can explain a running process, but they cannot explain why the process never started.
 
 ```bash
 k describe pod <pod-name> -n <namespace>
@@ -350,7 +350,7 @@ A strong operator reads `describe` from both top and bottom. The top tells you t
 
 ### 3.3 Logs and Previous Logs
 
-Logs answer what the container process wrote to stdout and stderr. For a pod that has restarted, current logs may show only the new container instance, which can hide the actual crash. Use `--previous` when the restart count is greater than zero or when the Events section says the container terminated.
+Logs answer what the container process wrote to stdout and stderr. For a pod that has restarted, [current logs may show only the new container instance, which can hide the actual crash. Use `--previous` when the restart count is greater than zero or when the Events section says the container terminated.](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/)
 
 ```bash
 k logs <pod-name> -n <namespace>
@@ -382,7 +382,7 @@ YAML is also where you catch subtle mismatch problems. A service selector of `ap
 
 ### 3.5 Events as Time-Ordered Evidence
 
-Kubernetes Events are short-lived signals emitted by controllers and node agents. They are not a full logging system, but they are often the best immediate evidence for scheduling, image pull, mount, and probe failures. Sort them by timestamp when the namespace has many objects.
+[Kubernetes Events are short-lived signals emitted by controllers and node agents. They are not a full logging system](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/), but they are often the best immediate evidence for scheduling, image pull, mount, and probe failures. Sort them by timestamp when the namespace has many objects.
 
 ```bash
 k get events -n <namespace> --sort-by='.lastTimestamp'
@@ -403,11 +403,11 @@ k exec -n <namespace> netcheck -- wget -qO- http://<service-name>:<port>/healthz
 k delete pod netcheck -n <namespace>
 ```
 
-If your cluster image lacks `wget` or `nslookup`, choose a debug image available in the environment. In restricted exam environments, BusyBox is commonly enough for DNS and simple HTTP checks. The important habit is matching the source and destination path instead of testing from a place that bypasses the failure.
+If your cluster image lacks `wget` or `nslookup`, choose a debug image available in the environment. In a restricted environment, a minimal debug image is often enough for DNS and simple HTTP checks. The important habit is matching the source and destination path instead of testing from a place that bypasses the failure.
 
 ### 3.7 Node and Control Plane Checks
 
-Node checks become appropriate when evidence points below the pod spec. A pod stuck in `ContainerCreating` with repeated runtime errors, many pods failing on one node, or a node marked `NotReady` all justify moving to node-level evidence. On kubeadm-style exam clusters, control plane components often run as static pods in `kube-system`, while kubelet runs as a system service on the node.
+Node checks become appropriate when evidence points below the pod spec. A pod stuck in `ContainerCreating` with repeated runtime errors, many pods failing on one node, or a node marked `NotReady` all justify moving to node-level evidence. On kubeadm-style exam clusters, [control plane components often run as static pods in `kube-system`](https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/), while kubelet runs as a system service on the node.
 
 ```bash
 k describe node <node-name>
@@ -424,7 +424,7 @@ Do not begin with SSH simply because it feels powerful. SSH is appropriate when 
 
 ## Part 4: Reading Pod Status Without Being Fooled
 
-Pod status is a useful signal, but it is not a complete health verdict. `Running` means at least one container is running or has run, not that the application is ready to serve traffic. `Pending` may mean the scheduler has not placed the pod, but it can also include time before images and volumes are prepared. You must connect phase, conditions, container state, restart count, and events.
+[Pod status is a useful signal, but it is not a complete health verdict. `Running` means at least one container is running or has run, not that the application is ready to serve traffic. `Pending` may mean the scheduler has not placed the pod, but it can also include time before images and volumes are prepared.](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) You must connect phase, conditions, container state, restart count, and events.
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -458,7 +458,7 @@ Pod status is a useful signal, but it is not a complete health verdict. `Running
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-A pod can have phase `Running` while condition `Ready=False`. This happens when the container process is alive but readiness probes fail, a sidecar is not ready, or the application is not listening on the expected port. Services normally route only to ready endpoints, so `Running` pods can still receive no traffic.
+A pod can have phase `Running` while condition `Ready=False`. This happens when the container process is alive but readiness probes fail, a sidecar is not ready, or the application is not listening on the expected port. [Services normally route only to ready endpoints, so `Running` pods can still receive no traffic](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/).
 
 ### 4.1 Common Pod States and Their First Useful Check
 
@@ -591,7 +591,7 @@ Workload troubleshooting often expands into service, network, or storage because
 
 ### 5.1 Service Path Debugging
 
-Service debugging starts by separating name resolution from endpoint selection and port routing. DNS can resolve a service name even when the service has no endpoints. Endpoints can exist while the service targets the wrong port. The application can listen on one port while the service `targetPort` points to another.
+Service debugging starts by separating name resolution from endpoint selection and port routing. [DNS can resolve a service name even when the service has no endpoints. Endpoints can exist while the service targets the wrong port. The application can listen on one port while the service `targetPort` points to another.](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/)
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -647,7 +647,7 @@ Do not confuse DNS failure with HTTP failure. `nslookup` only proves name resolu
 
 ### 5.3 NetworkPolicy Triage
 
-NetworkPolicy failures are policy and label problems first, packet problems second. A policy selects pods, then defines allowed ingress or egress. If a pod is selected by a restrictive policy and no rule allows the traffic, traffic is denied even when services, endpoints, and DNS are otherwise correct.
+NetworkPolicy failures are policy and label problems first, packet problems second. [A policy selects pods, then defines allowed ingress or egress.](https://kubernetes.io/docs/concepts/services-networking/network-policies/) If a pod is selected by a restrictive policy and no rule allows the traffic, traffic is denied even when services, endpoints, and DNS are otherwise correct.
 
 ```bash
 k get networkpolicy -n <namespace>
@@ -671,7 +671,7 @@ k describe pod <pod-name> -n <namespace>
 k -n kube-system get pods | grep -i csi
 ```
 
-The key distinction is bind versus mount. A PVC stuck `Pending` usually means it cannot bind to a PV or dynamic provisioning failed. A pod stuck with `FailedMount` may mean the PVC is bound but the node cannot attach or mount the volume. Those are different layers and require different evidence.
+The key distinction is bind versus mount. [A PVC stuck `Pending` usually means it cannot bind to a PV or dynamic provisioning failed. A pod stuck with `FailedMount` may mean the PVC is bound but the node cannot attach or mount the volume. Those are different layers and require different evidence.](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/)
 
 | Storage Symptom | Likely Layer | Evidence to Inspect | Common Repair Direction |
 |---|---|---|---|
@@ -1228,3 +1228,19 @@ After cleanup, write a brief troubleshooting note for yourself. It should includ
 ## Next Module
 
 Continue to [Module 5.2: Application Failures](../module-5.2-application-failures/) to learn how to troubleshoot pods, deployments, probes, configuration errors, and application-level failures in more depth.
+
+## Sources
+
+- [training.linuxfoundation.org: certified kubernetes administrator cka](https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/) — The Linux Foundation CKA page explicitly lists Troubleshooting at 30% and states the exam is a 2-hour performance-based test.
+- [Pod Lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) — Backs pod phases, container states, restart behavior, CrashLoopBackOff semantics, init-container sequencing, readiness-related lifecycle concepts, and general pod-state troubleshooting vocabulary.
+- [Debug Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/) — Backs service-level checks such as verifying Service existence, selector matching, EndpointSlice population, and the classic 'service has no endpoints' troubleshooting flow.
+- [Service](https://kubernetes.io/docs/concepts/services-networking/service/) — Backs Service types and behavior: ClusterIP, NodePort default range, LoadBalancer semantics, ExternalName, headless Services, selectors, DNS-based discovery, and readiness/endpoints relationships.
+- [kubernetes.io: components](https://kubernetes.io/docs/concepts/overview/components/) — The Kubernetes components overview defines the API server, scheduler, and controller manager responsibilities directly.
+- [Services, Load Balancing, and Networking](https://kubernetes.io/docs/concepts/services-networking/) — Backs the Kubernetes network model: pod IPs, pod-to-pod reachability expectations, Service abstractions, EndpointSlice involvement, and high-level networking architecture used in troubleshooting workflows.
+- [Debug Running Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/) — Backs use of describe, logs, events, exec, and YAML inspection to diagnose pod startup, scheduling, and runtime failures.
+- [kubectl logs](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/) — Backs exact kubectl logs behavior and flags such as container selection, follow mode, timestamps, tail, since, previous logs, and all-containers retrieval.
+- [Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/) — Backs stdout/stderr logging expectations, node log-file locations, kubelet-managed log handling/rotation context, and sidecar-based logging patterns for file-writing applications.
+- [kubeadm Implementation Details](https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/) — Backs kubeadm-managed control-plane layout, especially static pod manifest paths under /etc/kubernetes/manifests, host networking defaults, and local etcd static-pod behavior.
+- [DNS for Services and Pods](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/) — Backs cluster DNS behavior, service and pod DNS records, namespace-qualified lookups, headless-service DNS results, and the role of cluster DNS in service discovery troubleshooting.
+- [Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) — Backs NetworkPolicy semantics, ingress/egress controls, additive policy behavior, pod/namespace/IPBlock selectors, and the requirement for a network plugin that enforces NetworkPolicy.
+- [Kubernetes API Health Endpoints](https://kubernetes.io/docs/reference/using-api/health-checks/) — Useful for the module’s control-plane triage guidance, especially /readyz and verbose health checks.

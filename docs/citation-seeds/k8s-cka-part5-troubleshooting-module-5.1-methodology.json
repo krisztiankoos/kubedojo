@@ -1,0 +1,268 @@
+{
+  "module_key": "k8s/cka/part5-troubleshooting/module-5.1-methodology",
+  "module_path": "src/content/docs/k8s/cka/part5-troubleshooting/module-5.1-methodology.md",
+  "research_run_id": "2026-05-07T15:34:32+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/k8s-cka-part5-troubleshooting.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The CKA exam allocates 30% of its domains to troubleshooting, and candidates have 2 hours to complete the performance-based tasks.",
+      "claim_class": "standard",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Linux Foundation CKA page explicitly lists Troubleshooting at 30% and states the exam is a 2-hour performance-based test."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The module states that the CKA environment often permits shell aliases.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The CKA environment often permits aliases, and this module uses `k` as shorthand after defining it once here.",
+      "suggested_rewrite": "This module uses `k` as shorthand after defining it once here.",
+      "lesson_point_url": null,
+      "rationale": "No allowlisted official exam source in scope here confirms alias support as a stable property of the exam environment."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The module says a Pending pod has no useful container logs because the container has not started.",
+      "claim_class": "standard",
+      "span_hint": "section: 1.3 Isolate by Layer, Not by Guess",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "If a pod is still `Pending`, there is no useful container log because the container has not started.",
+      "suggested_rewrite": "If a pod is still `Pending`, inspect `describe` and Events first because the application container may not have started yet, so logs may be absent or not yet useful.",
+      "lesson_point_url": null,
+      "rationale": "Pending includes multiple pre-start stages, so the absolute no-logs statement is broader than the upstream lifecycle semantics even though the troubleshooting advice is directionally correct."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "A pod can be Running but still excluded from Service traffic until readiness succeeds and endpoints are published.",
+      "claim_class": "standard",
+      "span_hint": "section: 1.4 Inspect Evidence in an Order That Matches the Lifecycle",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S003",
+        "S012"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The pod lifecycle and Service docs distinguish phase from readiness, and the service debugging docs show endpoint publication as a separate step."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "If the API server is down most kubectl operations fail, if the scheduler is down new pods stay unscheduled, and if the controller manager is down controllers stop reconciling desired state.",
+      "claim_class": "standard",
+      "span_hint": "section: 2.1 Control Plane Components and Their Failure Shapes",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/overview/components/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes components overview defines the API server, scheduler, and controller manager responsibilities directly."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The kubelet manages containers and probes for a running Pod, pod networking is provided by the pod network implementation, and Service proxying can be handled by kube-proxy or by the network implementation depending on cluster configuration.",
+      "claim_class": "standard",
+      "span_hint": "section: 2.2 Node Components and Their Failure Shapes",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S011"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The pod lifecycle and networking docs explicitly assign kubelet probe management and explain that pod networking and service proxying may be implemented by the network stack rather than kube-proxy alone."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "kubectl describe is high-value early evidence because it surfaces scheduling, volume, image, container-state, condition, and event information that logs alone do not provide.",
+      "claim_class": "standard",
+      "span_hint": "section: 3.2 Describe Before Logs",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The debug-running-pod guide uses describe output and Events to diagnose startup and scheduling failures before process-level logs."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "When a container has restarted, current logs may miss the actual crash and kubectl logs --previous is needed; multi-container pods also require explicit container selection.",
+      "claim_class": "standard",
+      "span_hint": "section: 3.3 Logs and Previous Logs",
+      "disposition": "supported",
+      "source_ids": [
+        "S017",
+        "S016"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The kubectl logs reference documents --previous, and the logging architecture docs explain previous-instance retrieval and container selection."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Kubernetes Events are short-lived, best-effort signals rather than durable logging records.",
+      "claim_class": "standard",
+      "span_hint": "section: 3.5 Events as Time-Ordered Evidence",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/glossary/?all=true",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The glossary states that Events have limited retention and should be treated as informative supplemental data, while the debug guide shows their operational role."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "On kubeadm-managed clusters, control-plane components are written as static pod manifests under /etc/kubernetes/manifests, run in kube-system, and local etcd is also managed as a static pod.",
+      "claim_class": "standard",
+      "span_hint": "section: 3.7 Node and Control Plane Checks",
+      "disposition": "supported",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The kubeadm implementation details page explicitly documents the static manifest path, kube-system placement, and local etcd static pod behavior."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Pod phase is only a high-level summary: Pending includes scheduling and setup time, Running does not mean fully healthy, and Unknown typically reflects node communication problems.",
+      "claim_class": "standard",
+      "span_hint": "section: Part 4: Reading Pod Status Without Being Fooled",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The pod lifecycle docs define phase semantics and explicitly warn that phase is not a comprehensive health verdict."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "DNS resolution of a Service name only proves name-to-virtual-IP lookup; successful routing also depends on selector-produced endpoints and correct targetPort mapping to the backend listener.",
+      "claim_class": "standard",
+      "span_hint": "section: 5.1 Service Path Debugging",
+      "disposition": "supported",
+      "source_ids": [
+        "S003",
+        "S012",
+        "S014"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The DNS, Service, and debug-service docs separately document service DNS, selector-to-EndpointSlice behavior, and targetPort mapping."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "NetworkPolicy works by selecting pods and then allowing only the ingress or egress traffic matched by its rules; applicable policies combine additively.",
+      "claim_class": "standard",
+      "span_hint": "section: 5.3 NetworkPolicy Triage",
+      "disposition": "supported",
+      "source_ids": [
+        "S015"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The NetworkPolicy docs explicitly describe pod selection, allow rules, and additive policy behavior."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "A pod that depends on persistent storage can be blocked either before PVC/PV binding or later during attach and mount, so PVC Pending and pod FailedMount point to different storage layers.",
+      "claim_class": "standard",
+      "span_hint": "section: 5.4 Storage Triage",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/storage/persistent-volumes/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Persistent volume docs explain claim and volume binding phases, while pod-level debugging evidence is where mount failures surface."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "The module states that BusyBox is commonly sufficient for DNS and simple HTTP checks in restricted exam environments.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 3.6 In-Pod Network and DNS Tests",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In restricted exam environments, BusyBox is commonly enough for DNS and simple HTTP checks.",
+      "suggested_rewrite": "In a restricted environment, a minimal debug image is often enough for DNS and simple HTTP checks.",
+      "lesson_point_url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/",
+      "rationale": "The operational lesson is to test DNS and HTTP from inside the cluster; the specific BusyBox-in-exam-environment claim is too environment-specific for the current allowlisted source set."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/",
+      "title": "Debug Running Pods",
+      "tier": "standards",
+      "why_relevant": "Best primary reference for describe, Events, logs, and pod-level inspection order."
+    },
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/",
+      "title": "Debug Services",
+      "tier": "standards",
+      "why_relevant": "Covers the practical service-debug path from DNS to EndpointSlices to backend pod checks."
+    },
+    {
+      "url": "https://kubernetes.io/docs/reference/using-api/health-checks/",
+      "title": "Kubernetes API Health Endpoints",
+      "tier": "standards",
+      "why_relevant": "Useful for the module’s control-plane triage guidance, especially /readyz and verbose health checks."
+    }
+  ],
+  "notes": "Ignored analogies, diagrams, code blocks, quiz prompts/answers, and exercise manifests per schema; this seed only captures prose claims that materially affect factual understanding or exam-specific assertions.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
