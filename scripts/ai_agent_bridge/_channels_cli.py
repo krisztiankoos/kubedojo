@@ -270,6 +270,16 @@ def register_channel_commands(subparsers: Any) -> None:
         "--max-rounds", type=int, default=2,
         help="Maximum discussion rounds (default: 2, cap: 4)",
     )
+    discuss_parser.add_argument(
+        "--resume-thread",
+        metavar="THREAD_ID",
+        default=None,
+        help=(
+            "Attach this discussion to an existing thread instead of starting a new one. "
+            "Reuses persisted session_id rows from the sessions table; rejects threads with "
+            "no resumable session (codex-only or pre-Tier-2 threads have no trace)."
+        ),
+    )
 
 
 # ── dispatch ──────────────────────────────────────────────────────────
@@ -930,28 +940,82 @@ def _handle_discuss(args) -> int:
         print("❌ empty discussion topic", file=sys.stderr)
         return 1
 
-    # ── post the root question ────────────────────────────────────
-    try:
-        root = _channels.post(
-            args.channel,
-            "user",
-            body,
-            to_agents=with_agents,
-            auto_snapshot=True,
+    # ── establish discussion thread correlation ──────────────────
+    task_key = None
+    if args.resume_thread:
+        task_key = f"discuss:{args.resume_thread}"
+        stored = _get_session(task_key)
+        has_trace = stored and (
+            stored.get("claude_session_id") or stored.get("gemini_session_id")
         )
-    except ValueError as e:
-        print(f"❌ post failed: {e}", file=sys.stderr)
-        return 1
+        if not has_trace:
+            print(
+                f"❌ no resumable session for thread {args.resume_thread} — nothing to resume "
+                f"(thread may not exist, may have only had codex participants, or may pre-date "
+                f"Tier-2 session storage)",
+                file=sys.stderr,
+            )
+            return 1
+        if not _channels.thread_exists(args.channel, args.resume_thread):
+            print(
+                f"❌ thread {args.resume_thread} does not exist in channel '{args.channel}'",
+                file=sys.stderr,
+            )
+            return 1
 
-    root_id = root["message_id"]
-    correlation_id = root["thread_id"]  # one correlation per discussion
-    task_key = f"discuss:{correlation_id}"
-    print(
-        f"📢 discuss #{args.channel} (max {max_rounds} round{'s' if max_rounds > 1 else ''}, "
-        f"{len(with_agents)} participants)"
-    )
-    print(f"   root message: {root_id[:12]} / thread {correlation_id[:12]}")
-    print()
+        correlation_id = args.resume_thread
+        thread_messages = _channels.read(args.channel, thread_id=correlation_id)
+        if not thread_messages:
+            print(
+                f"❌ thread {args.resume_thread} does not exist in channel '{args.channel}'",
+                file=sys.stderr,
+            )
+            return 1
+
+        try:
+            continuation = _channels.post(
+                args.channel,
+                "user",
+                body,
+                to_agents=with_agents,
+                parent_id=thread_messages[0]["message_id"],
+                auto_snapshot=True,
+            )
+        except ValueError as e:
+            print(f"❌ post failed: {e}", file=sys.stderr)
+            return 1
+
+        root_id = continuation["message_id"]
+        print(
+            f"discuss #{args.channel} resuming thread {correlation_id[:12]} "
+            f"(max {max_rounds} round{'s' if max_rounds > 1 else ''}, "
+            f"{len(with_agents)} participants)"
+        )
+        print(f"   continuation message: {root_id[:12]} / thread {correlation_id[:12]}")
+        print()
+    else:
+        # ── post the root question ───────────────────────────────
+        try:
+            root = _channels.post(
+                args.channel,
+                "user",
+                body,
+                to_agents=with_agents,
+                auto_snapshot=True,
+            )
+        except ValueError as e:
+            print(f"❌ post failed: {e}", file=sys.stderr)
+            return 1
+
+        root_id = root["message_id"]
+        correlation_id = root["thread_id"]  # one correlation per discussion
+        task_key = f"discuss:{correlation_id}"
+        print(
+            f"📢 discuss #{args.channel} (max {max_rounds} round{'s' if max_rounds > 1 else ''}, "
+            f"{len(with_agents)} participants)"
+        )
+        print(f"   root message: {root_id[:12]} / thread {correlation_id[:12]}")
+        print()
 
     def _invoke_one(
         agent_name: str, prompt_text: str, round_idx: int

@@ -907,6 +907,24 @@ def read(
         conn.close()
 
 
+def thread_exists(channel: str, thread_id: str) -> bool:
+    """Return whether a thread exists in a channel."""
+    conn = get_db()
+    try:
+        row = conn.execute(
+            """
+            SELECT 1
+            FROM channel_messages
+            WHERE channel = ? AND thread_id = ?
+            LIMIT 1
+            """,
+            (channel, thread_id),
+        ).fetchone()
+        return row is not None
+    finally:
+        conn.close()
+
+
 def _row_to_message(row) -> dict[str, Any]:
     """Convert a ``sqlite3.Row`` to a message dict (dict-style access)."""
     return {
