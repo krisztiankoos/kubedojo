@@ -1,0 +1,135 @@
+{
+  "section": "platform/toolkits/security-quality/security-tools",
+  "modules": [
+    "platform/toolkits/security-quality/security-tools/module-4.1-vault-eso",
+    "platform/toolkits/security-quality/security-tools/module-4.2-opa-gatekeeper",
+    "platform/toolkits/security-quality/security-tools/module-4.3-falco",
+    "platform/toolkits/security-quality/security-tools/module-4.4-supply-chain",
+    "platform/toolkits/security-quality/security-tools/module-4.5-tetragon",
+    "platform/toolkits/security-quality/security-tools/module-4.6-kubearmor",
+    "platform/toolkits/security-quality/security-tools/module-4.7-kyverno",
+    "platform/toolkits/security-quality/security-tools/module-4.8-spiffe-spire"
+  ],
+  "generated_at": "2026-05-07T13:13:10+00:00",
+  "batch_count": 2,
+  "fallback_used": false,
+  "sources": [
+    {
+      "source_id": "S001",
+      "url": "https://developer.hashicorp.com/vault/docs/about-vault/how-vault-works",
+      "title": "Vault: How Vault Works",
+      "tier": "vendor",
+      "scope_notes": "Broad primary source for Vault architecture, seal/unseal and auto-unseal concepts, auth methods, policies, audit logging, secrets engines, leases, and centralized secret management claims.",
+      "relevant_modules": [
+        "platform/toolkits/security-quality/security-tools/module-4.1-vault-eso"
+      ]
+    },
+    {
+      "source_id": "S002",
+      "url": "https://developer.hashicorp.com/vault/docs/auth/kubernetes",
+      "title": "Vault: Kubernetes Auth Method",
+      "tier": "vendor",
+      "scope_notes": "Supports claims about authenticating Kubernetes workloads to Vault with service account tokens, reviewer JWT patterns, roles, and Kubernetes-specific auth configuration details.",
+      "relevant_modules": [
+        "platform/toolkits/security-quality/security-tools/module-4.1-vault-eso"
+      ]
+    },
+    {
+      "source_id": "S003",
+      "url": "https://developer.hashicorp.com/vault/docs/secrets/databases",
+      "title": "Vault: Database Secrets Engine",
+      "tier": "vendor",
+      "scope_notes": "Supports dynamic database credential generation, leasing, revocation, rotation, and auditability claims for Vault-based secret delivery to workloads.",
+      "relevant_modules": [
+        "platform/toolkits/security-quality/security-tools/module-4.1-vault-eso"
+      ]
+    },
+    {
+      "source_id": "S004",
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/",
+      "title": "Kubernetes Admission Controllers",
+      "tier": "standards",
+      "scope_notes": "Backs Kubernetes admission-path claims for policy engines: admission occurs after authentication/authorization and before persistence, which is the architectural basis for Kyverno validation and mutation behavior.",
+      "relevant_modules": [
+        "platform/toolkits/security-quality/security-tools/module-4.7-kyverno"
+      ]
+    }
+  ],
+  "rejected_urls": [
+    {
+      "url": "https://external-secrets.io/latest/provider/hashicorp-vault/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://www.openpolicyagent.org/docs/kubernetes",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://falco.org/docs/concepts/event-sources/kernel/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://docs.sigstore.dev/quickstart/quickstart-cosign/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://slsa.dev/spec/v1.2/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://trivy.dev/docs/latest/target/container_image/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://kyverno.io/docs/policy-types/cluster-policy/verify-images/overview/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://tetragon.io/docs/concepts/tracing-policy/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://tetragon.io/docs/getting-started/enforcement/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://docs.kubearmor.io/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://docs.kubearmor.io/kubearmor/documentation/default_posture",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://main.kyverno.io/docs/introduction/how-kyverno-works/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://kyverno.io/docs/policy-types/overview/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://spiffe.io/docs/latest/spiffe-specs/spiffe-id/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://spiffe.io/docs/latest/spire-about/spire-concepts/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    }
+  ]
+}
