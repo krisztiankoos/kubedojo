@@ -4592,6 +4592,7 @@ _QUALITY_BOARD_PAGE_CSS = """
     .panel-title { display:flex; align-items:center; gap:10px; font-weight:700; }
     .panel-icon { width:24px; height:24px; border-radius:var(--radius-sm); display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; background:var(--accent-muted); color:var(--accent); }
     .panel-badge { padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:var(--accent-muted); color:var(--accent); }
+    .panel-body { padding: 16px 18px; }
 
     .qb-wrap { padding: 14px 18px 18px; }
     .qb-stack { display: flex; height: 14px; overflow: hidden; border-radius: 999px; background: var(--surface-1); border: 1px solid var(--border); margin-bottom: 12px; }
@@ -4722,7 +4723,7 @@ _QUALITY_BOARD_PAGE_JS = r"""
       in_flight: 'In flight',
     };
     let qualityBoardData = null;
-    let qualityBoardSelected = window.QUALITY_INITIAL_SLUG || null;
+    let qualityBoardSelected = null;
 
     function qbSegs(counts, total, mini = false) {
       const denom = Math.max(1, total || 0);
@@ -5038,8 +5039,7 @@ def _find_quality_board_module(repo_root: Path, module_key: str) -> dict[str, An
     return None
 
 
-def render_quality_board_page_html(*, initial_module_slug: str | None = None) -> str:
-    initial_slug_json = json.dumps(initial_module_slug or "")
+def render_quality_board_page_html() -> str:
     return f"""<!doctype html>
 <html lang=\"en\">
 <head>
@@ -5077,7 +5077,6 @@ def render_quality_board_page_html(*, initial_module_slug: str | None = None) ->
   </div>
 </main>
 <script>
-window.QUALITY_INITIAL_SLUG = {initial_slug_json};
 {_QUALITY_BOARD_PAGE_JS}
 </script>
 </body>
@@ -5123,8 +5122,13 @@ def render_quality_module_page_html(repo_root: Path, module_key: str) -> str | N
     state = build_module_state(repo_root, module_key)
     rel = module_key[:-3] if module_key.endswith('.md') else module_key
     diagnostics = state.get("diagnostics") if isinstance(state.get("diagnostics"), list) else []
-    module_state = state.get("orchestration", {}).get("v2", {}).get("latest_job") or {}
-    translation_state = state.get("orchestration", {}).get("translation_v2", {}).get("latest_job") or {}
+    orchestration = state.get("orchestration") if isinstance(state.get("orchestration"), dict) else {}
+    v2_orchestration = orchestration.get("v2") if isinstance(orchestration.get("v2"), dict) else {}
+    translation_orchestration = (
+        orchestration.get("translation_v2") if isinstance(orchestration.get("translation_v2"), dict) else {}
+    )
+    module_state = v2_orchestration.get("latest_job") or {}
+    translation_state = translation_orchestration.get("latest_job") or {}
 
     def _cls(item: Any) -> str:
         return str(item.get("severity")) if isinstance(item, dict) else ""
