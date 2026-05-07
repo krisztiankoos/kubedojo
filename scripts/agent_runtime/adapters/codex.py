@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import re
 import shutil
+import os
 import tempfile
 from pathlib import Path
 
@@ -171,11 +172,14 @@ class CodexAdapter:
         ) as output_fd:
             output_path = Path(output_fd.name)
 
-        # ``--search`` enables Codex's live web tool; always on so Codex can
-        # fact-check URLs and verify version-specific facts at draft time.
-        # TOP-LEVEL flag (codex --search exec ...) — putting it after ``exec``
-        # silently drops it.
-        cmd: list[str] = [codex_bin, "--search"]
+        # --search enables Codex's live web tool. Top-level flag, not an
+        # exec subflag. Driven by KUBEDOJO_CODEX_SEARCH so dispatch_smart
+        # can set it per task class.
+        # Default OFF: callers that need web grounding must opt in.
+        use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
+        cmd: list[str] = [codex_bin]
+        if use_search:
+            cmd.append("--search")
         cmd.extend([
             "exec",
             "--skip-git-repo-check",

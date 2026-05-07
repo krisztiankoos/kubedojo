@@ -49,6 +49,7 @@ auditing. Reuse with --dry-run to print the chosen plan without firing.
 from __future__ import annotations
 
 import argparse
+import os
 import json
 import subprocess
 import sys
@@ -69,6 +70,7 @@ class TaskClassConfig:
     default_mode: str  # "read-only" | "workspace-write" | "danger"
     default_timeout_s: int
     description: str
+    codex_search: bool = False  # opt-in per class
 
 
 TASK_CLASSES: dict[str, TaskClassConfig] = {
@@ -80,6 +82,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         default_mode="read-only",
         default_timeout_s=600,
         description="cheap codebase scans, file lookups, factual Q&A",
+        codex_search=False,
     ),
     "edit": TaskClassConfig(
         models={
@@ -89,6 +92,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         default_mode="workspace-write",
         default_timeout_s=1800,
         description="small/medium code edits, single-file fixes",
+        codex_search=False,
     ),
     "draft": TaskClassConfig(
         models={
@@ -98,6 +102,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         default_mode="workspace-write",
         default_timeout_s=3600,
         description="prose/content drafting and expansion",
+        codex_search=True,
     ),
     "review": TaskClassConfig(
         models={
@@ -107,6 +112,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         default_mode="read-only",
         default_timeout_s=1800,
         description="cross-family review of authored work (judgment)",
+        codex_search=False,
     ),
     "architect": TaskClassConfig(
         models={
@@ -116,6 +122,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         default_mode="workspace-write",
         default_timeout_s=3600,
         description="deep reasoning, multi-file refactors, design",
+        codex_search=True,
     ),
 }
 
@@ -160,6 +167,10 @@ def fire(*, agent: str, task_class: str, prompt: str, mode: str, model: str,
 
     started = time.time()
     try:
+        previous_search = os.environ.get("KUBEDOJO_CODEX_SEARCH")
+        if agent == "codex":
+            cfg = TASK_CLASSES[task_class]
+            os.environ["KUBEDOJO_CODEX_SEARCH"] = "1" if cfg.codex_search else "0"
         result = invoke(
             agent,
             prompt,
@@ -179,6 +190,12 @@ def fire(*, agent: str, task_class: str, prompt: str, mode: str, model: str,
         response = ""
         session_id = None
         stderr_excerpt = f"{type(exc).__name__}: {exc}"
+    finally:
+        if agent == "codex":
+            if previous_search is None:
+                os.environ.pop("KUBEDOJO_CODEX_SEARCH", None)
+            else:
+                os.environ["KUBEDOJO_CODEX_SEARCH"] = previous_search
 
     elapsed = time.time() - started
     append_log({

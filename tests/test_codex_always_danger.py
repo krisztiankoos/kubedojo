@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 
@@ -79,6 +81,25 @@ def _load_dispatch() -> object:
     return dispatch
 
 
+def _load_dispatch_smart() -> object:
+    import importlib
+    import sys
+
+    if str(SCRIPTS_DIR) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS_DIR))
+    return importlib.import_module("dispatch_smart")
+
+
+def _load_codex_adapter():
+    import importlib
+    import sys
+
+    # Import via package path so codex.py's sibling-relative imports resolve.
+    sys.path.insert(0, str(REPO_ROOT))
+    mod = importlib.import_module("agent_runtime.adapters.codex")
+    return mod
+
+
 def _capture_cmd(dispatch_fn, *args, **kwargs) -> list[str]:
     """Call dispatch_fn, intercept _run_with_process_group, return captured cmd."""
     dispatch = _load_dispatch()
@@ -93,6 +114,34 @@ def _capture_cmd(dispatch_fn, *args, **kwargs) -> list[str]:
     fn = getattr(dispatch, dispatch_fn)
     fn(*args, **kwargs)
     return captured_cmd
+
+
+def _codex_invocation_cmd(search_env: str | None) -> list[str]:
+    import os
+
+    adapter_module = _load_codex_adapter()
+    adapter = adapter_module.CodexAdapter()
+
+    old = os.environ.get("KUBEDOJO_CODEX_SEARCH")
+    try:
+        if search_env is None:
+            os.environ.pop("KUBEDOJO_CODEX_SEARCH", None)
+        else:
+            os.environ["KUBEDOJO_CODEX_SEARCH"] = search_env
+        return adapter.build_invocation(
+            prompt="x",
+            mode="danger",
+            cwd=REPO_ROOT,
+            model=None,
+            task_id=None,
+            session_id=None,
+            tool_config=None,
+        ).cmd
+    finally:
+        if old is None:
+            os.environ.pop("KUBEDOJO_CODEX_SEARCH", None)
+        else:
+            os.environ["KUBEDOJO_CODEX_SEARCH"] = old
 
 
 def test_codex_adapter_rejects_workspace_write_mode():
@@ -156,38 +205,113 @@ def test_dispatch_codex_default_is_danger():
     )
 
 
-def test_dispatch_codex_always_includes_search():
-    """dispatch_codex() always includes --search regardless of KUBEDOJO_CODEX_SEARCH env."""
-    import os
-    for val in ("0", "1", None):
-        if val is None:
-            os.environ.pop("KUBEDOJO_CODEX_SEARCH", None)
-        else:
-            os.environ["KUBEDOJO_CODEX_SEARCH"] = val
-        cmd = _capture_cmd("dispatch_codex", "test prompt")
-        assert "--search" in cmd, (
-            f"Expected --search in cmd (KUBEDOJO_CODEX_SEARCH={val!r}), got: {cmd}"
-        )
-    os.environ.pop("KUBEDOJO_CODEX_SEARCH", None)
-
-
-def test_dispatch_codex_review_always_includes_search():
-    """dispatch_codex_review() always includes --search (no use_search arg anymore)."""
-    cmd = _capture_cmd("dispatch_codex_review", "test prompt")
-    assert "--search" in cmd, f"Expected --search in review cmd, got: {cmd}"
-    assert "--dangerously-bypass-approvals-and-sandbox" in cmd, (
-        f"Expected danger flag in review cmd, got: {cmd}"
+def test_codex_adapter_respects_search_env_off():
+    """CodexAdapter includes --search only when env var is set to 1."""
+    assert "--search" not in _codex_invocation_cmd(None), (
+        f"Expected --search OFF when KUBEDOJO_CODEX_SEARCH is unset: "
+        f"{_codex_invocation_cmd(None)}"
+    )
+    assert "--search" not in _codex_invocation_cmd("0"), (
+        f"Expected --search OFF when KUBEDOJO_CODEX_SEARCH=0: "
+        f"{_codex_invocation_cmd('0')}"
     )
 
 
-def test_dispatch_codex_patch_always_includes_search():
-    """dispatch_codex_patch() always includes --search regardless of KUBEDOJO_CODEX_SEARCH env."""
-    import os
-    os.environ.pop("KUBEDOJO_CODEX_SEARCH", None)
-    cmd = _capture_cmd("dispatch_codex_patch", "test prompt")
-    assert "--search" in cmd, f"Expected --search in patch cmd, got: {cmd}"
+def test_codex_adapter_respects_search_env_on():
+    """CodexAdapter includes --search when KUBEDOJO_CODEX_SEARCH=1."""
+    assert "--search" in _codex_invocation_cmd("1"), (
+        f"Expected --search when KUBEDOJO_CODEX_SEARCH=1: {_codex_invocation_cmd('1')}"
+    )
+
+
+def test_dispatch_smart_codex_sets_search_for_draft():
+    """dispatch_smart sets search ON for draft class dispatches."""
+    dispatch_smart = _load_dispatch_smart()
+
+    observed: dict[str, str] = {}
+
+    def fake_invoke(*_args, **_kwargs):
+        import os
+
+        observed["search"] = os.environ.get("KUBEDOJO_CODEX_SEARCH", "")
+        return SimpleNamespace(
+            ok=True,
+            response="ok",
+            session_id=None,
+            stderr_excerpt="",
+        )
+
+    with patch("agent_runtime.runner.invoke", side_effect=fake_invoke):
+        dispatch_smart.fire(
+            agent="codex",
+            task_class="draft",
+            prompt="x",
+            mode="danger",
+            model="gpt-5.4-mini",
+            worktree=None,
+            task_id="t1",
+            timeout_s=1,
+        )
+    assert observed["search"] == "1"
+
+
+def test_dispatch_smart_codex_clears_search_for_review():
+    """dispatch_smart sets search OFF for review class dispatches."""
+    dispatch_smart = _load_dispatch_smart()
+
+    observed: dict[str, str] = {}
+
+    def fake_invoke(*_args, **_kwargs):
+        import os
+
+        observed["search"] = os.environ.get("KUBEDOJO_CODEX_SEARCH", "")
+        return SimpleNamespace(
+            ok=True,
+            response="ok",
+            session_id=None,
+            stderr_excerpt="",
+        )
+
+    with patch("agent_runtime.runner.invoke", side_effect=fake_invoke):
+        dispatch_smart.fire(
+            agent="codex",
+            task_class="review",
+            prompt="x",
+            mode="read-only",
+            model="gpt-5.5",
+            worktree=None,
+            task_id="t2",
+            timeout_s=1,
+        )
+    assert observed["search"] == "0"
+
+
+def test_dispatch_codex_includes_search():
+    """dispatch_codex() includes --search and danger mode flags."""
+    cmd = _capture_cmd("dispatch_codex", "test prompt")
+    assert "--search" in cmd, f"Expected --search in dispatch_codex cmd: {cmd}"
+    assert cmd[1] == "--search", f"Expected top-level --search in cmd: {cmd}"
     assert "--dangerously-bypass-approvals-and-sandbox" in cmd, (
-        f"Expected danger flag in patch cmd, got: {cmd}"
+        f"Expected danger flag in dispatch_codex cmd: {cmd}"
+    )
+
+
+def test_dispatch_codex_review_no_search():
+    """dispatch_codex_review() keeps --search off."""
+    cmd = _capture_cmd("dispatch_codex_review", "test prompt")
+    assert "--search" not in cmd, f"Expected no --search in review cmd: {cmd}"
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd, (
+        f"Expected danger flag in review cmd: {cmd}"
+    )
+
+
+def test_dispatch_codex_patch_includes_search():
+    """dispatch_codex_patch() includes --search and danger mode flags."""
+    cmd = _capture_cmd("dispatch_codex_patch", "test prompt")
+    assert "--search" in cmd, f"Expected --search in patch cmd: {cmd}"
+    assert cmd[1] == "--search", f"Expected top-level --search in patch cmd: {cmd}"
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd, (
+        f"Expected danger flag in patch cmd: {cmd}"
     )
 
 

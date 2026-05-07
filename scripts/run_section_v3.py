@@ -71,7 +71,11 @@ def _git_clean() -> tuple[bool, str]:
 def _codex_auth_live(timeout_s: int = 25) -> bool:
     try:
         result = subprocess.run(
-            ["codex", "exec", "--full-auto", "--skip-git-repo-check"],
+            [
+                "codex", "--search", "exec", "--full-auto",
+                "--skip-git-repo-check",
+                "--dangerously-bypass-approvals-and-sandbox",
+            ],
             input='return the JSON {"ok":true}',
             capture_output=True,
             text=True,

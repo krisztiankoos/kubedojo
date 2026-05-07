@@ -599,8 +599,10 @@ def write_one(state: dict[str, Any], args: argparse.Namespace) -> None:
             with log.open("w", encoding="utf-8") as fh:
                 result = subprocess.run(cmd, input=prompt, stdout=fh, stderr=subprocess.STDOUT, text=True, timeout=args.timeout, cwd=str(REPO_ROOT))
         else:
+            # Writer pipeline path: keep search + danger mode for live-corroborated module edits.
             cmd = [
-                "codex", "exec",
+                "codex", "--search", "exec", "--skip-git-repo-check",
+                "--dangerously-bypass-approvals-and-sandbox",
                 "-m", args.writer,
                 "-c", f'model_reasoning_effort="{args.reasoning}"',
                 prompt,
@@ -661,8 +663,8 @@ def _extract_module_markdown(raw: str) -> str | None:
     for i, line in enumerate(lines):
         if line.strip() == "---":
             # Check the next 3 lines for "title:" or "revision_pending:"
-            next_lines = [l.strip() for l in lines[i+1:i+4]]
-            if any(l.startswith("title:") or l.startswith("revision_pending:") for l in next_lines):
+            next_lines = [next_line.strip() for next_line in lines[i+1:i+4]]
+            if any(next_line.startswith("title:") or next_line.startswith("revision_pending:") for next_line in next_lines):
                 start = i
                 break
     if start < 0:

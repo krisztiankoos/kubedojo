@@ -254,9 +254,9 @@ def dispatch_writer(candidate: dict, prompt: str, timeout: int = 900) -> tuple[b
     model = candidate["name"]
     if family == "codex":
         cmd = [
-            "codex", "exec",
+            "codex", "--search", "exec",
             "--skip-git-repo-check",
-            "--sandbox", "read-only",
+            "--dangerously-bypass-approvals-and-sandbox",
             "-m", model,
             prompt,
         ]
@@ -305,9 +305,9 @@ def dispatch_fact_checker(section_text: str, section_topic_label: str) -> tuple[
         section_topic_label=section_topic_label,
     )
     cmd = [
-        "codex", "exec",
+        "codex", "--search", "exec",
         "--skip-git-repo-check",
-        "--sandbox", "read-only",
+        "--dangerously-bypass-approvals-and-sandbox",
         "-m", FACT_CHECKER,
         prompt,
     ]

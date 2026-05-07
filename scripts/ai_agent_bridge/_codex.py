@@ -7,6 +7,7 @@ consistent with the runtime's resume_policy="never" for Codex.
 
 import json
 import os
+import sys
 
 from agent_runtime import runner as agent_runner
 from agent_runtime.errors import (
@@ -34,6 +35,7 @@ def _codex_bridge_mode() -> str:
             f"WARNING: CODEX_BRIDGE_MODE='{env_val}' is ignored — "
             "Codex always runs in danger mode. Remove the env var.",
             flush=True,
+            file=sys.stderr,
         )
     return "danger"
 

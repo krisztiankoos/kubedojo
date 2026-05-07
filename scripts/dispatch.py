@@ -623,10 +623,10 @@ def dispatch_claude(prompt: str, model: str = CLAUDE_DEFAULT_MODEL,
 
 def dispatch_codex(prompt: str, model: str = CODEX_DEFAULT_MODEL,
                    timeout: int = 900) -> tuple[bool, str]:
-    """Call Codex CLI directly via `codex exec`. Returns (success, output).
+    """Call Codex CLI directly via `codex exec` with `--search`.
 
-    Always runs in danger mode with --search enabled — Codex needs network +
-    filesystem to fact-check and the live web tool to verify cited facts.
+    Always runs in danger mode with --search enabled — writer pipeline
+    default behavior for codex dispatch helpers.
 
     On rate-limit or quota errors, returns (False, stderr) so the caller can
     react (see run_module review branch, which degrades gracefully).
@@ -671,10 +671,10 @@ def dispatch_codex_review(prompt: str, model: str = CODEX_REVIEW_DEFAULT_MODEL,
                           timeout: int = 900) -> tuple[bool, str]:
     """Call Codex review via `codex exec --dangerously-bypass-approvals-and-sandbox`.
 
-    Always runs in danger mode with --search enabled — Codex needs network +
-    filesystem to fact-check and the live web tool to verify cited facts.
+    Always runs in danger mode. Search is intentionally off for this reviewer
+    path to preserve the original load-bearing reviewer default.
     """
-    cmd = [CODEX_CLI, "--search", "exec", "--skip-git-repo-check",
+    cmd = [CODEX_CLI, "exec", "--skip-git-repo-check",
            "--dangerously-bypass-approvals-and-sandbox"]
     if model and model != "codex":
         cmd.extend(["-m", model])
@@ -712,8 +712,8 @@ def dispatch_codex_patch(prompt: str, model: str = CODEX_PATCH_DEFAULT_MODEL,
                          timeout: int = 1200) -> tuple[bool, str]:
     """Call Codex patch via `codex exec --dangerously-bypass-approvals-and-sandbox`.
 
-    Always runs in danger mode with --search enabled — Codex needs network +
-    filesystem to fact-check and the live web tool to verify cited facts.
+    Always runs in danger mode with --search enabled for post-review
+    edit/fix-up behavior.
     """
     cmd = [CODEX_CLI, "--search", "exec", "--skip-git-repo-check",
            "--dangerously-bypass-approvals-and-sandbox"]
@@ -984,8 +984,9 @@ def main():
                     help=f"Codex model (default: {CODEX_DEFAULT_MODEL!r}; pass 'codex' to use CLI default)")
     xp.add_argument("--no-tools", dest="tools_disabled", action="store_true",
                     help="Accepted for symmetry with --no-tools on claude. Codex already runs "
-                         "with --sandbox read-only so the flag is a no-op (file writes are blocked "
-                         "via the sandbox; pure-text output is the natural mode).")
+                         "in --dangerously-bypass-approvals-and-sandbox (no override). Use "
+                         "`KUBEDOJO_CODEX_SEARCH=1` for live web support when needed (default off); "
+                         "dispatch_smart sets it per task class.")
     xp.add_argument("--timeout", type=int, default=900, help="Timeout in seconds (default: 900)")
 
     # logs
