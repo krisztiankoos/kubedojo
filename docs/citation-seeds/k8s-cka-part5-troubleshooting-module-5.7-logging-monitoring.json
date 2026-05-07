@@ -1,0 +1,290 @@
+{
+  "module_key": "k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring",
+  "module_path": "src/content/docs/k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring.md",
+  "research_run_id": "2026-05-07T17:02:03+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/k8s-cka-part5-troubleshooting.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Kubernetes captures what containers write to stdout and stderr.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S016"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared logging architecture page directly states that container runtimes handle stdout and stderr and that this is the standard container logging path."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Events are regular Kubernetes objects stored in etcd, with a 1-hour default TTL.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The pool covers that Kubernetes objects are stored in etcd, and the kube-apiserver reference directly documents the default `--event-ttl` of 1 hour."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Metrics Server is not installed by default, and `kubectl top` therefore requires it to be running.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Metrics Server is not installed by default**: kubectl top requires Metrics Server to be running",
+      "suggested_rewrite": "Many clusters require Metrics Server to be installed and healthy before `kubectl top` works.",
+      "lesson_point_url": null,
+      "rationale": "The dependency on the Metrics API is citable, but the blanket 'not installed by default' claim is distribution-specific and too absolute."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "The kubelet rotates container logs based on configured size and file-count settings.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S016"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared logging architecture page explicitly documents kubelet log rotation and its size and file-count settings."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "If an application writes to a file instead of stdout/stderr, Kubernetes will not capture those logs automatically; a sidecar can stream the file to its own stdout.",
+      "claim_class": "standard",
+      "span_hint": "section: 1.5 Sidecar-Based Logging",
+      "disposition": "supported",
+      "source_ids": [
+        "S016"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared logging page directly documents streaming sidecar containers for file-writing applications."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "`kubectl logs --previous` retrieves logs from the most recently terminated container instance and is essential for CrashLoopBackOff diagnosis because default logs show the current instance.",
+      "claim_class": "standard",
+      "span_hint": "section: Quiz Q1 answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S017"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The pool covers CrashLoopBackOff lifecycle context and the exact `kubectl logs --previous` behavior."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Kubernetes events are transient objects with a default retention of one hour, so a 48-hour-old job may no longer have visible Events.",
+      "claim_class": "standard",
+      "span_hint": "section: Quiz Q2 answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The etcd pool source plus the kube-apiserver `--event-ttl` default together directly support the retention explanation."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "After the one-hour window expires, the Kubernetes garbage collector automatically deletes Events to prevent etcd from filling up.",
+      "claim_class": "standard",
+      "span_hint": "section: Quiz Q2 answer",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "After the one-hour window expires, the Kubernetes garbage collector automatically deletes them to prevent etcd from running out of storage space.",
+      "suggested_rewrite": "After that retention period expires, those Event objects are no longer kept available through the Events API.",
+      "lesson_point_url": null,
+      "rationale": "The retention window is documented, but this specific garbage-collector mechanism and justification are not."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Long-term event preservation requires a dedicated event-shipping tool such as eventrouter or a fluentd plugin.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Quiz Q2 answer",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "To preserve events for long-term analysis, you must export them to an external logging system or observability platform using a dedicated event-shipping tool (like eventrouter or a fluentd plugin) before they expire.",
+      "suggested_rewrite": "To preserve events for longer-term analysis, ship them to an external observability system before they expire.",
+      "lesson_point_url": null,
+      "rationale": "The general preservation advice is sound, but the named tool examples are unnecessary specifics without a strong primary source here."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "`kubectl top` depends on the `metrics.k8s.io` API, typically served by Metrics Server, which pulls CPU and memory usage from each node's kubelet.",
+      "claim_class": "standard",
+      "span_hint": "section: Quiz Q3 answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S018"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The resource metrics pipeline page directly describes the kubelet-to-metrics-server-to-API-server flow used by `kubectl top`."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "`kubectl logs <pod> --all-containers=true` fetches logs from every container in the Pod, which is useful for correlating activity across a main container and sidecars.",
+      "claim_class": "standard",
+      "span_hint": "section: Quiz Q4 answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S017"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The `kubectl logs` reference directly documents the `--all-containers` flag."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Without a container name on a multi-container Pod, `kubectl logs` will either prompt for a container or pick the first one in the Pod spec.",
+      "claim_class": "standard",
+      "span_hint": "section: Quiz Q4 answer",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "By default, if you run `kubectl logs` against a multi-container pod without specifying a container, Kubernetes will either prompt you to specify one or just pick the first one listed in the pod spec.",
+      "suggested_rewrite": "In a multi-container Pod, be explicit with `-c` or `--all-containers=true` when you need the right log stream.",
+      "lesson_point_url": null,
+      "rationale": "Current Kubernetes docs emphasize explicit container selection and default-container annotation behavior rather than this simplified prompt-or-first-container description."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Direct node-side container logs are found under `/var/log/containers/` with filenames matching `<pod>_<namespace>_<container>-<id>.log`.",
+      "claim_class": "standard",
+      "span_hint": "section: Quiz Q5 answer",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "You can view the logs directly by navigating to the `/var/log/containers/` directory on the worker node. Inside this directory, you will find log files named using the pattern `<pod-name>_<namespace>_<container-name>-<container-id>.log`.",
+      "suggested_rewrite": "You can inspect the container's node-local log files directly on the worker node; the exact paths and filenames depend on the runtime and node configuration.",
+      "lesson_point_url": null,
+      "rationale": "The official docs clearly support node-local pod log inspection, but not this exact Linux path-and-pattern wording as a universal rule."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Those `/var/log/containers/` files are symlinks to runtime log files, and kubelet manages the symlinks and log rotation.",
+      "claim_class": "standard",
+      "span_hint": "section: Quiz Q5 answer",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "These files are actually symbolic links that point to the actual log files generated by the container runtime (such as containerd or CRI-O). The kubelet is responsible for managing these symlinks and also handles the log rotation based on its configured maximum size and file count limits, ensuring the node's disk does not fill up.",
+      "suggested_rewrite": "The kubelet is responsible for container-log rotation and for managing the node-side logging directory structure.",
+      "lesson_point_url": null,
+      "rationale": "The kubelet rotation part is documented, but the symlink mechanics and exact division of responsibilities are over-specific here."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "A Pod in `Pending` has not yet started running its containers, so `kubectl logs` is the wrong first diagnostic step; `kubectl describe pod` or Events show scheduling and startup blockers.",
+      "claim_class": "standard",
+      "span_hint": "section: Quiz Q6 answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Pod lifecycle page defines `Pending`, and the debugging guide supports using describe/events to investigate why a Pod has not started."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "`--rm` automatically deletes the temporary debug Pod when you exit, and `--restart=Never` creates a bare Pod instead of a Deployment.",
+      "claim_class": "standard",
+      "span_hint": "section: 6.3 Debugging with Temporary Pods",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Always use `--rm` to automatically delete the pod when you exit, and `--restart=Never` to create a bare Pod instead of a Deployment.",
+      "suggested_rewrite": "Use `--rm` to delete the temporary Pod after the attached session exits, and `--restart=Never` so the debug container is not restarted after it exits.",
+      "lesson_point_url": null,
+      "rationale": "The `--rm` and restart-policy behavior are documented, but the 'instead of a Deployment' explanation is outdated for modern `kubectl run`."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "Troubleshooting accounts for 30% of the CKA exam weight.",
+      "claim_class": "statistic",
+      "span_hint": "section: Part 5 Summary",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.cncf.io/certification/cka/%C2%A0",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The CNCF CKA exam page directly lists Troubleshooting at 30% of the exam domain weighting."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/concepts/cluster-administration/logging/",
+      "title": "Logging Architecture",
+      "tier": "standards",
+      "why_relevant": "This is the primary upstream reference for stdout/stderr logging, sidecar log streaming, node log locations, and kubelet rotation behavior."
+    },
+    {
+      "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/",
+      "title": "kubectl logs",
+      "tier": "standards",
+      "why_relevant": "This reference covers the exact CLI flags used throughout the module, including `--previous`, `-c`, `--all-containers`, `--since`, and `--timestamps`."
+    },
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/",
+      "title": "Resource Metrics Pipeline",
+      "tier": "standards",
+      "why_relevant": "This explains how kubelet, Metrics Server, and the Metrics API work together to power `kubectl top`."
+    }
+  ],
+  "notes": "Claims inside code fences, ASCII diagrams, tables, and quiz prompts were omitted unless the surrounding prose or answer text made the factual statement load-bearing.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

@@ -52,7 +52,7 @@ By the end of this module, you'll be able to:
 
 ## Did You Know?
 
-- **Logs go to stdout/stderr**: Kubernetes captures whatever containers write to stdout and stderr - that's the only logging "magic"
+- **Logs go to stdout/stderr**: Kubernetes captures whatever containers write to stdout and stderr - that's the main logging "magic"
 - **Events are stored in etcd**: Events are regular Kubernetes objects with a 1-hour default TTL
 - **Metrics Server is not installed by default**: kubectl top requires Metrics Server to be running
 - **Log rotation is kubelet's job**: kubelet rotates container logs based on size and count settings
@@ -882,3 +882,9 @@ With 30% of the CKA exam weight, troubleshooting is critical. Practice the drill
 ## Next Steps
 
 Continue to [Part 6: Mock Exams](/k8s/cka/part6-mock-exams/) to test your knowledge with realistic exam scenarios.
+
+## Sources
+
+- [Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/) — This is the primary upstream reference for stdout/stderr logging, sidecar log streaming, node log locations, and kubelet rotation behavior.
+- [kubectl logs](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/) — This reference covers the exact CLI flags used throughout the module, including `--previous`, `-c`, `--all-containers`, `--since`, and `--timestamps`.
+- [Resource Metrics Pipeline](https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/) — This explains how kubelet, Metrics Server, and the Metrics API work together to power `kubectl top`.
