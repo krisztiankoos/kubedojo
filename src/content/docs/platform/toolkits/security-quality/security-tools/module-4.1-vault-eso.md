@@ -607,7 +607,7 @@ helm install reloader stakater/reloader -n kube-system
 | Long refresh intervals | Secrets out of sync for hours | Use 5-15m for critical secrets |
 | No audit logging | Can't track who accessed what | Enable Vault audit device |
 | Single Vault token for all apps | Blast radius too large | Per-app policies and tokens |
-| Forgetting to rotate root creds | Vault DB admin password never changes | Use `vault write -force database/rotate-root/mydb` |
+| Forgetting to rotate root creds | Vault DB admin password may stay unchanged unless you rotate it | Use `vault write -force database/rotate-root/mydb` |
 | Not versioning KV secrets | Can't rollback bad changes | Use KV v2, check versions |
 
 ---
@@ -796,3 +796,9 @@ Continue to [Module 4.2: OPA & Gatekeeper](../module-4.2-opa-gatekeeper/) to lea
 ---
 
 *"The only secure secret is the one that doesn't exist. For everything else, there's Vault."*
+
+## Sources
+
+- [Vault: How Vault Works](https://developer.hashicorp.com/vault/docs/about-vault/how-vault-works) — Best primary source for Vault architecture, auth, policies, audit logging, seals, and secret engines.
+- [Vault: Kubernetes Auth Method](https://developer.hashicorp.com/vault/docs/auth/kubernetes) — Directly relevant to configuring Vault authentication for Kubernetes workloads.
+- [External Secrets Operator](https://github.com/external-secrets/external-secrets) — Canonical upstream overview for how ESO syncs third-party secret backends into Kubernetes Secrets.

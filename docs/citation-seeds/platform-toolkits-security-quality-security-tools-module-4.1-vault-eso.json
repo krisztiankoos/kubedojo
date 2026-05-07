@@ -1,0 +1,236 @@
+{
+  "module_key": "platform/toolkits/security-quality/security-tools/module-4.1-vault-eso",
+  "module_path": "src/content/docs/platform/toolkits/security-quality/security-tools/module-4.1-vault-eso.md",
+  "research_run_id": "2026-05-07T13:18:01+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/platform-toolkits-security-quality-security-tools.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Hardcoded secrets in source control create significant security risk and are a core reason to centralize secrets management.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Overview",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OWASP explicitly discusses hardcoded plaintext secrets in source code and the need to centralize storage, provisioning, auditing, rotation, and management."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Vault supports auto-unseal, Kubernetes authentication, and dynamic database secrets for Kubernetes workloads.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: What You'll Be Able to Do",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S002",
+        "S003"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared pool directly covers auto-unseal concepts, Kubernetes auth, and the database secrets engine's dynamic credential workflow."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "External Secrets Operator syncs secrets from external systems such as Vault into Kubernetes Secrets.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Overview | section: External Secrets Operator / Why ESO?",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/external-secrets/external-secrets",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official repository README says ESO reads information from third-party services and automatically injects the values into Kubernetes Secrets."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Credential discovery appears in every production breach post-mortem.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Every production breach post-mortem includes \"we found credentials in...\" somewhere.",
+      "suggested_rewrite": "Credential exposure shows up repeatedly in security incident response and breach remediation work.",
+      "lesson_point_url": null,
+      "rationale": "This is an absolute real-world incident claim with no attributable source and should be rewritten to a general, truthful lesson."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Vault provides centralized secret management with credential rotation, audit logging, and restricted access controls.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared Vault architecture source directly describes centralized secret management, credential rotation, audit logging, and authn/authz-based restricted access."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "HashiCorp Vault was open-sourced in 2015.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters | Did You Know",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.hashicorp.com/blog/vault-announcement",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "HashiCorp's original Vault announcement is dated April 28, 2015 and documents the public open-source release."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Vault now manages secrets for most Fortune 500 companies.",
+      "claim_class": "statistic",
+      "span_hint": "section: Why This Module Matters | Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "and now manages secrets for most Fortune 500 companies.",
+      "suggested_rewrite": "and is widely used for enterprise secrets management.",
+      "lesson_point_url": null,
+      "rationale": "This is a quantified adoption claim with no directly supporting primary source in the module's source set."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Vault's \"secrets as a service\" philosophy fundamentally changed how organizations think about credential management.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters | Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Its design philosophy of \"secrets as a service\" fundamentally changed how organizations think about credential management.",
+      "suggested_rewrite": "Vault popularized a centralized, service-oriented approach to secrets management.",
+      "lesson_point_url": null,
+      "rationale": "This is a broad historical impact claim that is not directly measurable or sourced here."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Vault's database secrets engine is a distinctive capability.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Secrets Engines Deep Dive | Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Dynamic database secrets are Vault's killer feature.",
+      "suggested_rewrite": "Vault's database secrets engine issues dynamic credentials.",
+      "lesson_point_url": null,
+      "rationale": "The original wording is a superlative without a benchmark; the rewrite keeps the factual product capability."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Vault can issue unique, expiring database credentials to services and improve compromise attribution.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Secrets Engines Deep Dive | Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared database secrets engine source explicitly says Vault generates dynamic credentials, uses leases, and makes auditing easier because each service has unique credentials."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "ESO supports many secret backends, and applications can keep consuming Kubernetes Secrets while the backing provider configuration changes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: External Secrets Operator | Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "ESO supports 20+ secret providers including AWS Secrets Manager, GCP Secret Manager, Azure Key Vault, and even 1Password. You can migrate between cloud providers without changing your application code—just update the SecretStore.",
+      "suggested_rewrite": "ESO supports multiple secret backends, so applications can continue consuming Kubernetes Secrets while you change the backing provider configuration.",
+      "lesson_point_url": null,
+      "rationale": "The exact provider count and migration guarantee are too specific for the available source set, but the general interoperability lesson is sound."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Stakater Reloader watches Secrets and ConfigMaps and triggers workload rollouts when they change.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Handling Rotation in Applications | Did You Know",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/stakater/Reloader",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official Reloader README directly states that it watches Secrets and ConfigMaps and automatically triggers workload rollouts when they are updated."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "A specific team migrated 200+ Secrets over a weekend and half its applications were down by Monday morning.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story: The Great Secret Migration",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "*A team migrated 200+ Kubernetes Secrets to Vault+ESO over a weekend. Monday morning, half the apps were down.*",
+      "suggested_rewrite": "*Teams migrating many Kubernetes Secrets to Vault and ESO can cause outages if they cut over before verifying every sync.*",
+      "lesson_point_url": null,
+      "rationale": "This is an unsourced anecdote with fake-precise operational details and must be rewritten to a general lesson."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "That outage happened because old Kubernetes Secrets were deleted before ESO sync verification and several ExternalSecrets had bad remoteRef paths.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story: The Great Secret Migration | What went wrong",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "They deleted the old Kubernetes Secrets before verifying ESO had synced successfully. Several ExternalSecrets had typos in the `remoteRef.key` paths.",
+      "suggested_rewrite": "A common cutover failure is deleting the old Kubernetes Secrets before confirming that every ExternalSecret has synced from the intended Vault path.",
+      "lesson_point_url": null,
+      "rationale": "These are still unsourced incident-specific details from the same anecdote and should be collapsed into a general operational warning."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://developer.hashicorp.com/vault/docs/about-vault/how-vault-works",
+      "title": "Vault: How Vault Works",
+      "tier": "vendor",
+      "why_relevant": "Best primary source for Vault architecture, auth, policies, audit logging, seals, and secret engines."
+    },
+    {
+      "url": "https://developer.hashicorp.com/vault/docs/auth/kubernetes",
+      "title": "Vault: Kubernetes Auth Method",
+      "tier": "vendor",
+      "why_relevant": "Directly relevant to configuring Vault authentication for Kubernetes workloads."
+    },
+    {
+      "url": "https://github.com/external-secrets/external-secrets",
+      "title": "External Secrets Operator",
+      "tier": "upstream",
+      "why_relevant": "Canonical upstream overview for how ESO syncs third-party secret backends into Kubernetes Secrets."
+    }
+  ],
+  "notes": "Code blocks, tables, quiz content, and exercise steps were intentionally excluded per the schema rules; only prose claims needing inline citation were seeded.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
