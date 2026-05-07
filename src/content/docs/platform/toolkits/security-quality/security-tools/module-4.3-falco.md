@@ -695,3 +695,9 @@ Continue to [Module 4.4: Supply Chain Security](../module-4.4-supply-chain/) to 
 ---
 
 *"Trust nothing. Verify everything. Monitor constantly. That's runtime security."*
+
+## Sources
+
+- [Falco Core Repository](https://github.com/falcosecurity/falco) — Primary upstream overview of Falco's runtime-security model, syscall monitoring, and project structure.
+- [Falco Helm Chart README](https://github.com/falcosecurity/charts/blob/master/charts/falco/README.md) — Best allowlisted source for current installation patterns, driver selection, custom rules, and Falcosidekick integration.
+- [Falcosidekick Repository](https://github.com/falcosecurity/falcosidekick) — Documents supported outputs and routing targets for sending Falco alerts into response and observability systems.
