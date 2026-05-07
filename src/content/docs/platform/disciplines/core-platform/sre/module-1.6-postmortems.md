@@ -33,7 +33,7 @@ What happens next determines whether you're truly learning or just fighting the 
 
 **Without postmortems**: Incidents repeat. Knowledge stays in people's heads. Teams blame each other. Nothing improves.
 
-**With postmortems**: Every incident makes the system stronger. Lessons are documented. Teams learn together. The same incident never happens twice.
+**With postmortems**: Every incident makes the system stronger. Lessons are documented. Teams learn together. The same incident is much less likely to happen twice.
 
 This module teaches you how to conduct blameless postmortems that turn failures into fuel for improvement.
 
@@ -59,13 +59,13 @@ A postmortem is a structured analysis of an incident after it's resolved.
 
 | Trigger | Postmortem? |
 |---------|-------------|
-| SEV-1 incident | Always |
-| SEV-2 incident | Always |
+| SEV-1 incident | Almost always |
+| SEV-2 incident | Usually |
 | SEV-3 incident | If caused by interesting failure mode |
 | Near miss | Often (we got lucky) |
 | Recurring issue | Yes (why does this keep happening?) |
 | Customer escalation | Usually |
-| Data loss | Always |
+| Data loss | Almost always |
 
 The threshold should be low enough to capture learning, high enough to not overwhelm the team.
 
@@ -528,7 +528,7 @@ Learnings should spread:
 |---------|---------|----------|
 | Blame individuals | People hide, problems repeat | Focus on systems |
 | One root cause | Oversimplifies, misses factors | Multiple contributing factors |
-| Skip when busy | Never learn, same incidents | Make postmortems mandatory |
+| Skip when busy | Learn less, same incidents repeat | Make postmortems mandatory |
 | Vague actions | Nothing actually changes | Specific, measurable actions |
 | No follow-up | Actions never complete | Weekly tracking |
 | Only share internally | Organization doesn't learn | Broad publication |
@@ -691,3 +691,9 @@ Continue to [Module 1.7: Capacity Planning](../module-1.7-capacity-planning/) to
 ---
 
 *"We are not the sum of our accidents. We are the sum of what we learn from them."* — Unknown
+
+## Sources
+
+- [Cloudflare Post Mortem Archive](https://blog.cloudflare.com/tag/post-mortem/) — Public examples of incident writeups, timelines, and remediation follow-through.
+- [Google Cloud Incident Report](https://status.cloud.google.com/incidents/ow5i3PPK96RduMcb1SsW) — Shows a public incident report with summary, root cause, and prevention steps.
+- [Postmortem Templates](https://github.com/dastergon/postmortem-templates) — Useful reference set for structuring postmortems, action items, and review sections.
