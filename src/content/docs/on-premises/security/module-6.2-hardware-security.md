@@ -25,9 +25,9 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-In 2021, a fintech company running Kubernetes on-premises stored their etcd encryption key in a Kubernetes Secret. That Secret was base64-encoded (not encrypted) and backed up nightly to an NFS share. A contractor with read access to the NFS share decoded the Secret, extracted the etcd encryption key, and used it to decrypt a backup of etcd -- which contained every Secret in the cluster: database passwords, API keys, TLS certificates, and service account tokens for 340 microservices. The breach was not detected for 11 weeks.
+A common failure mode in self-managed Kubernetes is storing the etcd encryption key alongside the data it protects or in broadly accessible backup systems; if an attacker obtains both, etcd backups can expose every Secret in the cluster.
 
-The root cause was not a Kubernetes vulnerability. It was a key management failure. The encryption key that protected everything was itself unprotected. On AWS, you would use KMS -- a hardware-backed key service where the master key never leaves the HSM. On-premises, you need the same capability, but you must build it yourself using Hardware Security Modules (HSMs) and Trusted Platform Modules (TPMs). These are not optional luxuries for regulated environments -- they are the foundation that makes all other encryption meaningful.
+The root cause was not a Kubernetes vulnerability. It was a key management failure. The encryption key that protected everything was itself unprotected. On AWS, you would use KMS -- a [hardware-backed key service where the master key is generally kept within the HSM boundary](https://docs.aws.amazon.com/kms/latest/developerguide/data-protection.html). On-premises, you need the same capability, but you must build it yourself using Hardware Security Modules (HSMs) and Trusted Platform Modules (TPMs). These are not optional luxuries for regulated environments -- they are the foundation that makes all other encryption meaningful.
 
 > **The Vault Door Analogy**
 >
@@ -78,18 +78,18 @@ classDiagram
 
 | Form Factor | Example | Throughput | Cost | Use Case |
 |-------------|---------|------------|------|----------|
-| Network appliance | Thales Luna, Entrust nShield | 10,000+ ops/sec | $20K-$100K | Enterprise PKI, payment processing |
-| PCIe card | Thales Luna PCIe, Utimaco | 5,000+ ops/sec | $5K-$30K | Single server, Vault backend |
-| USB token | YubiHSM 2 | 50 ops/sec | $650 | Small deployments, dev/test |
+| Network appliance | Enterprise HSM appliances | High throughput | High cost | Enterprise PKI, payment processing |
+| PCIe card | PCIe HSMs | Moderate to high throughput | Lower cost than network appliances | Single server, Vault backend |
+| USB token | USB HSMs | Lower throughput | Much lower cost | Small deployments, dev/test |
 | Cloud HSM | AWS CloudHSM, Azure Cloud HSM, Google Cloud HSM | Varies | Varies | Hybrid environments |
 
-For hybrid deployments using cloud providers as a trust anchor, verify current validation limits: AWS CloudHSM `hsm2m.medium` is FIPS 140-3 Level 3 certified (the legacy `hsm1.medium` was archived to historical status January 4, 2026). Note that while AWS CloudHSM charges per HSM per hour, third-party sources conflict on the exact rate, so verify directly at aws.amazon.com/cloudhsm/pricing/. Azure's modern offering is Azure Cloud HSM, utilizing Marvell LiquidSecurity HSMs validated to FIPS 140-3 Level 3, which succeeds the legacy Azure Dedicated HSM. Google Cloud HSM is backed by FIPS 140-2 Level 3 validated hardware.
+For hybrid deployments using cloud providers as a trust anchor, verify current validation limits: [AWS CloudHSM `hsm2m.medium` is FIPS 140-3 Level 3 certified (the legacy `hsm1.medium` was archived to historical status January 4, 2026)](https://docs.aws.amazon.com/cloudhsm/latest/userguide/fips-validation.html). Note that while AWS CloudHSM charges per HSM per hour, third-party sources conflict on the exact rate, so verify directly at aws.amazon.com/cloudhsm/pricing/. Azure's modern offering is Azure Cloud HSM, utilizing [Marvell LiquidSecurity HSMs validated to FIPS 140-3 Level 3](https://learn.microsoft.com/en-us/azure/cloud-hsm/service-limits), [which succeeds the legacy Azure Dedicated HSM](https://learn.microsoft.com/en-us/azure/dedicated-hsm/overview). [Google Cloud HSM is backed by FIPS 140-2 Level 3 validated hardware](https://docs.cloud.google.com/kms/docs/hsm).
 
 ---
 
 ## TPM for Measured Boot
 
-Measured boot uses the TPM to create a chain of trust from firmware to the running OS. Each stage measures (hashes) the next stage before executing it, storing the measurement in TPM Platform Configuration Registers (PCRs). TPM 2.0 is standardized as ISO/IEC 11889:2015, with the TCG PC Client Platform Profile mandating SHA-1 and SHA-256 PCR banks, each containing 24 registers (PCR 0–23).
+Measured boot uses the TPM to create a chain of trust from firmware to the running OS. Each stage measures (hashes) the next stage before executing it, storing the measurement in TPM Platform Configuration Registers (PCRs). [TPM 2.0 is standardized as ISO/IEC 11889:2015](https://www.iso.org/standard/66510.html), with the TCG PC Client Platform Profile mandating SHA-1 and SHA-256 PCR banks, each containing 24 registers (PCR 0–23).
 
 ```mermaid
 flowchart LR
@@ -116,7 +116,7 @@ flowchart LR
 
 ### Verifying TPM and Measured Boot on Kubernetes Nodes
 
-These commands check whether TPM 2.0 hardware is present and read the Platform Configuration Registers that store the hash chain from boot. Linux TPM 2.0 driver support stabilized from kernel 4.9, with the `/dev/tpmrm0` resource-manager interface available from kernel 4.12. *(Note: The current version of the underlying `tpm2-tss` library cannot be confirmed via standard search results and must be checked directly on the GitHub releases page. Additionally, while secondary sources claim kernel 6.10 enabled `CONFIG_TCG_TPM2_HMAC` by default for TPM 2.0 session encryption, this remains unverified against primary kernel.org changelogs.)*
+These commands check whether TPM 2.0 hardware is present and read the Platform Configuration Registers that store the hash chain from boot. Modern Linux distributions commonly expose TPM device nodes such as `/dev/tpm0` and often `/dev/tpmrm0`; verify exact kernel and user-space package details against your distribution documentation and upstream release notes.
 
 ```bash
 # Check if TPM 2.0 is available
@@ -171,7 +171,7 @@ machine:
 
 ## HashiCorp Vault with HSM Backend (PKCS#11)
 
-Vault is the standard secrets manager for Kubernetes. In cloud environments, Vault uses cloud KMS for auto-unseal. On-premises, you replace cloud KMS with an HSM via the PKCS#11 interface. PKCS#11 Specification v3.1 is the current OASIS Standard, with v3.2 published as a Committee Specification in November 2025. Note that HashiCorp Vault PKCS#11 HSM auto-unseal requires Vault Enterprise; the open-source community Vault does not support it (though the OpenBao fork recently added support).
+Vault is the standard secrets manager for Kubernetes. In cloud environments, Vault uses cloud KMS for auto-unseal. On-premises, you replace cloud KMS with an HSM via the PKCS#11 interface. [PKCS#11 Specification v3.1 is the current OASIS Standard, with v3.2 published as a Committee Specification in November 2025](https://docs.oasis-open.org/pkcs11/pkcs11-spec/v3.1/os/pkcs11-spec-v3.1-os.html). Note that [HashiCorp Vault PKCS#11 HSM auto-unseal requires Vault Enterprise](https://developer.hashicorp.com/vault/docs/configuration/seal/pkcs11); the open-source community Vault does not support it (though the OpenBao fork recently added support).
 
 ### Architecture
 
@@ -199,7 +199,7 @@ flowchart LR
 
 ### Configure Vault with HSM Auto-Unseal
 
-The following Vault configuration uses PKCS#11 to communicate with an HSM for automatic unsealing. The `seal "pkcs11"` stanza replaces cloud KMS -- the master key never leaves the HSM boundary.
+The following Vault configuration uses PKCS#11 to communicate with an HSM for automatic unsealing. The `seal "pkcs11"` stanza replaces cloud KMS -- the master key is protected by the HSM instead of being stored in plaintext outside the hardware boundary.
 
 ```hcl
 # vault-config.hcl
@@ -241,7 +241,7 @@ Deploy Vault as a 3-replica StatefulSet using the Vault Helm chart. Key configur
 
 ### Using YubiHSM 2 for Smaller Deployments
 
-For clusters where a $50,000 network HSM is overkill, the YubiHSM 2 ($650) provides FIPS 140-2 Level 3 security in a USB form factor. Install the YubiHSM connector on the Vault node, generate an RSA key via `yubihsm-shell`, and configure Vault's seal stanza to use the YubiHSM PKCS#11 library (`yubihsm_pkcs11.so`). The configuration is identical to the network HSM case -- only the `lib` path changes.
+For smaller deployments, a USB HSM such as YubiHSM 2 can provide hardware-backed key storage at far lower cost than a network appliance, but you should verify current certifications and pricing directly with the vendor. Install the YubiHSM connector on the Vault node, generate an RSA key via `yubihsm-shell`, and configure Vault's seal stanza to use the YubiHSM PKCS#11 library (`yubihsm_pkcs11.so`). The configuration is identical to the network HSM case -- only the `lib` path changes.
 
 ---
 
@@ -341,25 +341,25 @@ flowchart TB
     end
 ```
 
-*The modified kernel produces a different hash in PCR[8]. The LUKS key was sealed to the original PCR[8] value. The TPM will not release the key. The disk stays encrypted. The node fails to boot. An alert is generated.*
+*A modified kernel produces a different PCR value than the one the key was sealed to, so the TPM does not release the key, the disk stays encrypted, and the node fails to boot until an operator intervenes.*
 
 ### Remote Node Attestation
 
 While LUKS auto-unlock protects data at rest, it does not prevent a booted (but later compromised) node from joining the Kubernetes cluster. To verify bare-metal server integrity before or during cluster admission, you must implement remote node attestation using the TPM:
 
-- **Keylime**: A CNCF project providing scalable remote boot attestation and runtime integrity measurement using TPM hardware. (Note: Keylime entered CNCF as a Sandbox project in September 2020; its current 2026 maturity level should be verified directly on the CNCF project page).
-- **SPIRE (SPIFFE)**: Includes a built-in `tpm_devid` node attestor for TPM 2.0 + DevID certificate-based node attestation. The community `bloomberg/spire-tpm-plugin` also provides agent and server plugins enabling TPM 2.0 node attestation via TPM credential activation.
-- **Cloud integration**: For hybrid clusters using managed control planes like AKS, Trusted Launch integrates a vTPM (TPM 2.0 compliant) for remote attestation of AKS node VMs, ensuring secure boot across environments.
+- **Keylime**: [A CNCF project providing scalable remote boot attestation and runtime integrity measurement using TPM hardware. (Note: Keylime entered CNCF as a Sandbox project in September 2020; its current 2026 maturity level should be verified directly on the CNCF project page)](https://www.cncf.io/projects/keylime/).
+- **SPIRE (SPIFFE)**: [Includes a built-in `tpm_devid` node attestor for TPM 2.0 + DevID certificate-based node attestation](https://github.com/spiffe/spire/blob/main/doc/spire_agent.md). [The community `bloomberg/spire-tpm-plugin` also provides agent and server plugins enabling TPM 2.0 node attestation via TPM credential activation](https://github.com/bloomberg/spire-tpm-plugin).
+- **Cloud integration**: For hybrid clusters using managed control planes like AKS, [Trusted Launch integrates a vTPM (TPM 2.0 compliant) for remote attestation of AKS node VMs](https://learn.microsoft.com/en-us/azure/aks/use-trusted-launch), ensuring secure boot across environments.
 
 ---
 
 ## Did You Know?
 
-- **FIPS 140-3 replaced FIPS 140-2 in 2019** but transition was delayed. FIPS 140-2 module certificates are moved to the CMVP historical list on September 21, 2026; after that date all new federal procurements require FIPS 140-3. The new standard adds physical security testing against fault injection attacks.
-- **cert-manager** csi-driver v0.12.0 was released in February 2026, but native HSM/PKCS#11 key storage is still not implemented in the standard cert-manager CA issuer. Backing CA keys with an HSM remains an open architectural challenge in standard Kubernetes deployments.
+- **FIPS 140-3 replaced FIPS 140-2 in 2019** but transition was delayed. [FIPS 140-2 module certificates are moved to the CMVP historical list on September 21, 2026](https://csrc.nist.gov/Projects/cryptographic-module-validation-program/FAQs); FIPS 140-3 introduces updated non-invasive security requirements, and NIST CMVP transition and procurement guidance should be checked directly for the exact compliance implications in your environment.
+- **cert-manager** standard issuer workflows do not provide first-class native HSM/PKCS#11-backed CA key storage, so HSM-backed CA designs still require additional components or custom integration choices.
 - **The current TCG TPM 2.0 Library Specification** (version 185) was published in March 2026. The TCG continues to publish independent revisions to adapt to modern security contexts, while the ISO standard remains anchored to the ISO/IEC 11889:2015 edition. Features introduced in intermediate revisions (like 1.59's Authentication Countdown Timer) enhance recovery in compromised states.
-- **The Shamir's Secret Sharing scheme** used by Vault's default seal was invented by Adi Shamir in 1979 -- the same Shamir as in RSA (Rivest-Shamir-Adleman). With HSM auto-unseal, Shamir shares are replaced by a single HSM-protected key, eliminating the "key ceremony" problem of gathering multiple keyholders.
-- **TPM 2.0 was mandated by Microsoft for Windows 11**, which dramatically accelerated TPM adoption in server hardware. Before 2021, many server vendors shipped TPM as a $50 add-on module. Now it is a non-negotiable standard on virtually all enterprise servers.
+- **The Shamir's Secret Sharing scheme** used by Vault's default seal was invented by Adi Shamir in 1979 -- [the same Shamir as in RSA (Rivest-Shamir-Adleman)](https://spectrum.ieee.org/amp/the-future-of-cybersecurity-is-the-quantum-random-number-generator-2650277204). With HSM auto-unseal, Shamir shares are replaced by a single HSM-protected key, eliminating the "key ceremony" problem of gathering multiple keyholders.
+- **[TPM 2.0 was mandated by Microsoft for Windows 11](https://learn.microsoft.com/en-us/windows/whats-new/windows-11-requirements)**, which dramatically accelerated TPM adoption in server hardware. Before Windows 11, TPM deployment on server and PC hardware was less uniform; today, TPM 2.0 support is far more common and is often treated as a baseline security feature.
 
 ---
 
@@ -407,7 +407,7 @@ Scenario: Your organization is migrating from AWS to on-premises. The security t
 <summary>Answer</summary>
 
 **Architecture: Kubernetes KMS v2 Provider with Vault + HSM.**
-To satisfy this requirement, you must configure the Kubernetes API server to use the KMS v2 provider pointing to a Vault instance backed by an HSM. When a Secret is created, the API server sends the data encryption key (DEK) to Vault's Transit secrets engine via the KMS plugin. Vault encrypts this DEK using its internal key encryption key (KEK), which is itself securely wrapped by the HSM via the PKCS#11 interface. Because the master key resides permanently within the HSM's hardware boundary and never enters the Kubernetes control plane or Vault's memory, this architecture fulfills the strict security mandate while maintaining automatic encryption of etcd Secrets. This setup effectively mirrors cloud-native KMS behavior while retaining complete on-premises data sovereignty.
+To satisfy this requirement, you must configure the Kubernetes API server to use the KMS v2 provider pointing to a Vault instance backed by an HSM. When a Secret is created, the API server sends the data encryption key (DEK) to Vault's Transit secrets engine via the KMS plugin. Vault encrypts this DEK using its internal key encryption key (KEK), which is itself securely wrapped by the HSM via the PKCS#11 interface. Because the master key is hardware-protected by the HSM and is not exposed directly to the Kubernetes control plane, this architecture fulfills the strict security mandate while maintaining automatic encryption of etcd Secrets. This setup effectively mirrors cloud-native KMS behavior while retaining complete on-premises data sovereignty.
 </details>
 
 ### Question 4
@@ -517,3 +517,22 @@ SoftHSM is purely a software implementation of the PKCS#11 interface that stores
 ## Next Module
 
 Continue to [Module 6.3: Enterprise Identity (AD/LDAP/OIDC)](../module-6.3-enterprise-identity/) to learn how to integrate Kubernetes authentication with your organization's existing identity systems.
+
+## Sources
+
+- [docs.aws.amazon.com: data protection.html](https://docs.aws.amazon.com/kms/latest/developerguide/data-protection.html) — AWS KMS documentation directly states that KMS key material is protected by HSMs and plaintext key material never leaves the HSM boundary.
+- [docs.aws.amazon.com: fips validation.html](https://docs.aws.amazon.com/cloudhsm/latest/userguide/fips-validation.html) — AWS CloudHSM compliance documentation directly covers the hsm1.medium historical date and the current FIPS validation state.
+- [learn.microsoft.com: overview](https://learn.microsoft.com/en-us/azure/dedicated-hsm/overview) — Microsoft Learn explicitly describes Azure Cloud HSM as the successor to Azure Dedicated HSM.
+- [learn.microsoft.com: service limits](https://learn.microsoft.com/en-us/azure/cloud-hsm/service-limits) — Microsoft Learn service-limits documentation directly names the Marvell LiquidSecurity hardware and its FIPS validation level.
+- [docs.cloud.google.com: hsm](https://docs.cloud.google.com/kms/docs/hsm) — Google Cloud documentation directly states that Cloud HSM uses FIPS 140-2 Level 3 certified HSMs.
+- [iso.org: 66510.html](https://www.iso.org/standard/66510.html) — The ISO page directly identifies ISO/IEC 11889-1:2015 as the TPM architecture standard.
+- [PKCS #11 Specification Version 3.1](https://docs.oasis-open.org/pkcs11/pkcs11-spec/v3.1/os/pkcs11-spec-v3.1-os.html) — Normative API specification for HSM/token interaction; supports terminology and integration claims around PKCS#11-backed key storage and cryptographic operations.
+- [developer.hashicorp.com: pkcs11](https://developer.hashicorp.com/vault/docs/configuration/seal/pkcs11) — HashiCorp's PKCS#11 seal configuration page explicitly states that auto-unseal and seal wrapping for PKCS#11 require Vault Enterprise.
+- [cncf.io: keylime](https://www.cncf.io/projects/keylime/) — The CNCF project page directly states Keylime's Sandbox acceptance date and describes its TPM-based attestation purpose.
+- [github.com: spire agent.md](https://github.com/spiffe/spire/blob/main/doc/spire_agent.md) — SPIRE's official GitHub configuration reference lists `tpm_devid` as a built-in node attestor.
+- [github.com: spire tpm plugin](https://github.com/bloomberg/spire-tpm-plugin) — The repository README directly describes TPM credential activation as the attestation mechanism.
+- [learn.microsoft.com: use trusted launch](https://learn.microsoft.com/en-us/azure/aks/use-trusted-launch) — Microsoft Learn directly states that Trusted Launch provides a TPM 2.0-compliant vTPM and measured-boot-based attestation.
+- [csrc.nist.gov: FAQs](https://csrc.nist.gov/Projects/cryptographic-module-validation-program/FAQs) — The CMVP FAQ directly gives the active-list deadline and the switch to FIPS 140-3-only active validations.
+- [spectrum.ieee.org: the future of cybersecurity is the quantum random number generator 2650277204](https://spectrum.ieee.org/amp/the-future-of-cybersecurity-is-the-quantum-random-number-generator-2650277204) — The IEEE Spectrum article explicitly identifies RSA as named for Rivest, Shamir, and Adleman.
+- [learn.microsoft.com: windows 11 requirements](https://learn.microsoft.com/en-us/windows/whats-new/windows-11-requirements) — Microsoft's Windows 11 requirements page directly lists TPM version 2.0 as a minimum hardware requirement.
+- [Encrypting Confidential Data at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/) — Authoritative Kubernetes guidance for etcd encryption at rest and KMS provider integration points.
