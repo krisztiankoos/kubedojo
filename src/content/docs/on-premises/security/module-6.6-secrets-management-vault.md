@@ -365,7 +365,7 @@ kubectl get secret myapp-k8s-secret -o jsonpath='{.data.DB_PASS}' | base64 --dec
 ## Practitioner Gotchas
 
 ### 1. Raft Quorum Loss During Upgrades
-**The Problem:** Operators perform a rolling restart or Helm upgrade of a 3-node Vault cluster too quickly. If node A is restarting and node B is cordoned, quorum is lost, and the cluster immediately drops read/write traffic.
+**The Problem:** Operators perform a rolling restart or Helm upgrade of a 3-node Vault cluster too quickly. If node A is restarting and node B is cordoned, quorum is lost, and the cluster stops serving read/write traffic until quorum is restored.
 **The Fix:** Always verify `vault operator raft list-peers` confirms node A has fully rejoined and caught up on the Raft index before restarting node B. Use PodDisruptionBudgets (PDB) with `maxUnavailable: 1` to enforce this at the Kubernetes scheduler level.
 
 ### 2. JWT Audience Mismatches
@@ -427,7 +427,7 @@ C) Vault observes that the secret's lease has expired (or was explicitly revoked
 D) The credentials remain active in the database, but Vault dynamically blacklists the terminated Pod's IP address in the `pg_hba.conf` file.
 
 *Correct Answer: C*
-Why? Vault's dynamic secrets engine does not just issue passwords; it actively manages the lifecycle of the credentials in the target system using leases. When the application requests credentials, Vault connects to PostgreSQL and issues a `CREATE ROLE` command. Vault then tracks the time-to-live (TTL) of that lease. When the lease expires naturally, or if the client/orchestrator explicitly revokes the lease upon Pod termination, Vault automatically connects back to PostgreSQL and executes a `DROP ROLE` command. This ensures the credentials instantly cease to exist, effectively closing the access window without requiring manual cleanup scripts.
+Why? Vault's dynamic secrets engine does not just issue passwords; it actively manages the lifecycle of the credentials in the target system using leases. When the application requests credentials, Vault connects to PostgreSQL and issues a `CREATE ROLE` command. Vault then tracks the time-to-live (TTL) of that lease. When the lease expires naturally, or if the client/orchestrator explicitly revokes the lease upon Pod termination, Vault automatically connects back to PostgreSQL and executes a `DROP ROLE` command. This ensures the credentials no longer exist once Vault revokes the lease, effectively closing the access window without requiring manual cleanup scripts.
 
 ---
 
@@ -437,3 +437,9 @@ Why? Vault's dynamic secrets engine does not just issue passwords; it actively m
 *   [External Secrets Operator Documentation](https://external-secrets.io/)
 *   [Kubernetes Documentation: Encrypting Secret Data at Rest (KMS v2)](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)
 *   [Vault Integrated Storage (Raft) Reference](https://developer.hashicorp.com/vault/docs/internals/integrated-storage)
+
+## Sources
+
+- [Kubernetes: Encrypting Confidential Data at Rest](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/) — Primary reference for etcd encryption, provider choices, and when KMS v2 is appropriate.
+- [Vault Kubernetes Auth Method](https://developer.hashicorp.com/vault/docs/auth/kubernetes) — Primary guide for TokenReview-based auth, short-lived ServiceAccount tokens, and audience/issuer considerations.
+- [Vault Integrated Storage (Raft)](https://developer.hashicorp.com/vault/docs/concepts/integrated-storage) — Primary reference for Raft quorum, failure tolerance, node catch-up, and operational HA behavior.
