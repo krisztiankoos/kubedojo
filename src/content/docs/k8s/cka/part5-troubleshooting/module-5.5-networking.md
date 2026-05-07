@@ -31,7 +31,7 @@ After this module, you will be able to:
 
 ## Why This Module Matters
 
-Networking issues are among the most challenging to troubleshoot because they can occur at multiple layers - pod network, service network, DNS, CNI, or external connectivity. A systematic approach is essential. On the CKA exam, network troubleshooting questions are common and often worth high points.
+Networking issues are among the most challenging to troubleshoot because they can occur at multiple layers - pod network, service network, DNS, CNI, or external connectivity. A systematic approach is essential. [On the CKA exam, network troubleshooting questions are common and often worth high points.](https://www.cncf.io/training/certification/cka/)
 
 > **The Highway System Analogy**
 >
@@ -52,10 +52,10 @@ By the end of this module, you'll be able to:
 
 ## Did You Know?
 
-- **Every pod gets an IP**: Unlike Docker, Kubernetes pods have their own IP addresses - no port mapping needed
-- **DNS queries go to CoreDNS**: All cluster DNS resolution goes through CoreDNS pods in kube-system
-- **NetworkPolicies are additive**: If any policy allows traffic, it's allowed - but having ANY policy creates default deny
-- **Services use kube-proxy**: Service IPs are virtual - kube-proxy programs iptables/nftables rules (IPVS is deprecated in v1.35) to route traffic
+- **Every pod gets an IP**: Unlike Docker, [Kubernetes pods have their own IP addresses - no port mapping needed](https://kubernetes.io/docs/concepts/services-networking/)
+- **DNS queries go to CoreDNS**: In default Kubernetes setups, cluster DNS queries usually go to the `kube-dns` Service, which is commonly backed by CoreDNS pods in `kube-system`
+- **NetworkPolicies are additive**: [If any policy allows traffic, it's allowed](https://kubernetes.io/docs/concepts/services-networking/network-policies/) - but a pod is only isolated for ingress or egress when an applicable policy covers that direction
+- **Services use kube-proxy**: [Service IPs are virtual - kube-proxy programs iptables/nftables rules (IPVS is deprecated in v1.35) to route traffic](https://kubernetes.io/docs/reference/networking/virtual-ips/)
 
 ---
 
@@ -551,7 +551,7 @@ You are tasked with securing a namespace and apply a NetworkPolicy with `podSele
 <details>
 <summary>Answer</summary>
 
-**Egress remains completely unrestricted.** A NetworkPolicy only affects the specific types of traffic that are explicitly listed in the `policyTypes` field of the specification. Because you only specified ingress rules and the implicit or explicit `policyTypes` list only covers `Ingress`, outbound traffic is not evaluated by this policy at all. However, if you were to add `Egress` to the `policyTypes` array but still provide no egress rules, the default deny behavior would activate, and all outbound traffic would be immediately blocked.
+**Egress remains completely unrestricted.** A NetworkPolicy only affects the specific types of traffic that are explicitly listed in the `policyTypes` field of the specification. Because you only specified ingress rules and the implicit or explicit `policyTypes` list only covers `Ingress`, outbound traffic is not evaluated by this policy at all. However, if you were to add `Egress` to the `policyTypes` array but still provide no egress rules, the default deny behavior would activate, and outbound traffic from the selected pods would generally be blocked.
 
 </details>
 
@@ -777,3 +777,12 @@ k get endpoints <service>              # Endpoints
 ## Next Module
 
 Continue to [Module 5.6: Service Troubleshooting](../module-5.6-services/) for a deeper dive into Service, Ingress, and LoadBalancer troubleshooting.
+
+## Sources
+
+- [cncf.io: cka](https://www.cncf.io/training/certification/cka/) — The official CNCF CKA page lists Services & Networking at 20% and Troubleshooting at 30% of the exam.
+- [Services, Load Balancing, and Networking](https://kubernetes.io/docs/concepts/services-networking/) — Backs the Kubernetes network model: pod IPs, pod-to-pod reachability expectations, Service abstractions, EndpointSlice involvement, and high-level networking architecture used in troubleshooting workflows.
+- [Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) — Backs NetworkPolicy semantics, ingress/egress controls, additive policy behavior, pod/namespace/IPBlock selectors, and the requirement for a network plugin that enforces NetworkPolicy.
+- [Virtual IPs and Service Proxies](https://kubernetes.io/docs/reference/networking/virtual-ips/) — Backs claims that Service IPs are virtual, kube-proxy programs packet-handling rules, and documents kube-proxy backend modes including IPVS deprecation and nftables/iptables behavior.
+- [Debug Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/) — Walks through the canonical endpoint, selector, and service-port troubleshooting flow used throughout this module.
+- [DNS for Services and Pods](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/) — Explains Kubernetes DNS names, search paths, and service-discovery behavior that underpins the DNS checks in this module.

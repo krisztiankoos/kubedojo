@@ -1,0 +1,122 @@
+{
+  "module_key": "k8s/cka/part5-troubleshooting/module-5.5-networking",
+  "module_path": "src/content/docs/k8s/cka/part5-troubleshooting/module-5.5-networking.md",
+  "research_run_id": "2026-05-07T16:40:22+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/k8s-cka-part5-troubleshooting.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The CKA blueprint gives significant weight to Services & Networking and Troubleshooting.",
+      "claim_class": "statistic",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.cncf.io/training/certification/cka/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official CNCF CKA page lists Services & Networking at 20% and Troubleshooting at 30% of the exam."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Each pod gets its own unique cluster-wide IP address, so Kubernetes does not rely on host port mapping for pod-to-pod reachability.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes network model says each pod gets a unique cluster-wide IP and pods communicate directly without NAT."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The module states that all cluster DNS resolution always goes through CoreDNS pods in kube-system.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "All cluster DNS resolution goes through CoreDNS pods in kube-system",
+      "suggested_rewrite": "In default Kubernetes setups, cluster DNS queries usually go to the `kube-dns` Service, which is commonly backed by CoreDNS pods in `kube-system`",
+      "lesson_point_url": null,
+      "rationale": "Upstream docs describe the common CoreDNS-backed `kube-dns` pattern, but not an absolute universal rule for every cluster."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "NetworkPolicies are additive: if any applicable policy allows traffic, that traffic is allowed.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S015"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream NetworkPolicy docs explicitly state that policies do not conflict and are additive."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The module says that having any NetworkPolicy automatically creates default deny behavior.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "having ANY policy creates default deny",
+      "suggested_rewrite": "a pod is only isolated for ingress or egress when an applicable policy covers that direction",
+      "lesson_point_url": null,
+      "rationale": "Isolation is direction-specific and only applies when a policy selects the pod and covers that traffic direction."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Service IPs are virtual, kube-proxy programs packet-handling rules for them, and kube-proxy IPVS mode is deprecated in Kubernetes v1.35.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S013"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream virtual IPs reference documents Service VIP behavior, kube-proxy rule programming, and IPVS deprecation in v1.35."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/",
+      "title": "Debug Services",
+      "tier": "standards",
+      "why_relevant": "Walks through the canonical endpoint, selector, and service-port troubleshooting flow used throughout this module."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/",
+      "title": "DNS for Services and Pods",
+      "tier": "standards",
+      "why_relevant": "Explains Kubernetes DNS names, search paths, and service-discovery behavior that underpins the DNS checks in this module."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/",
+      "title": "Network Policies",
+      "tier": "standards",
+      "why_relevant": "Defines additive policy semantics and ingress/egress isolation rules needed to reason about default-deny behavior correctly."
+    }
+  ],
+  "notes": "Excluded diagrams, code blocks, tables, quiz content, and hands-on exercise steps per pipeline rules; seeded only prose/callout claims that need inline support or correction.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
