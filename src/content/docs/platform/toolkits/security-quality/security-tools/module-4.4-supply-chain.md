@@ -27,9 +27,9 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-A platform team can harden every Kubernetes cluster and still deploy compromised software if the build pipeline is trusted blindly. The SolarWinds supply-chain compromise <!-- incident-xref: solarwinds-2020 --> showed that a signed artifact is only trustworthy when the path that created it is also controlled, observable, and independently verifiable. For the canonical case study, see [CI/CD Pipelines](../../../../prerequisites/modern-devops/module-1.3-cicd-pipelines/).
+A platform team can harden every Kubernetes cluster and still deploy compromised software if the build pipeline is trusted blindly. The [SolarWinds supply-chain compromise](https://www.cisa.gov/news-events/alerts/2021/01/07/supply-chain-compromise) <!-- incident-xref: solarwinds-2020 --> showed that a signed artifact is only trustworthy when the path that created it is also controlled, observable, and independently verifiable. For the canonical case study, see [CI/CD Pipelines](../../../../prerequisites/modern-devops/module-1.3-cicd-pipelines/).
 
-A second class of failures comes from dependencies rather than build systems. Log4Shell <!-- incident-xref: log4shell --> showed how one vulnerable library can create emergency work across thousands of teams that never wrote a line of logging framework code. For the canonical Log4Shell case study, see [DevSecOps Supply Chain Security](../../../disciplines/reliability-security/devsecops/module-4.4-supply-chain-security/).
+A second class of failures comes from dependencies rather than build systems. Log4Shell <!-- incident-xref: log4shell --> showed how one vulnerable library can create emergency work across many downstream teams that never directly authored the affected dependency. For the canonical Log4Shell case study, see [DevSecOps Supply Chain Security](../../../disciplines/reliability-security/devsecops/module-4.4-supply-chain-security/).
 
 Supply chain security is the discipline of replacing vague trust with evidence. You are not trying to make developers memorize a separate security ceremony for every release. You are designing a path where normal delivery produces verifiable artifacts: images identified by digest, signatures tied to real identities, SBOMs attached to the artifact, vulnerability results stored with the build, provenance that explains how the artifact was produced, and admission policies that reject deployments when that evidence is missing or inconsistent.
 
@@ -85,7 +85,7 @@ The important design move is to connect these stages without pretending that one
 
 ## 2. Establish Artifact Identity with Digests and Signatures
 
-Before you sign anything, make sure you know exactly what the artifact is. In OCI registries, an image digest identifies the content-addressed manifest, while a tag is a movable label. This is why senior teams usually build with a commit tag for traceability, push the image, read back the digest from the registry, and use that digest for signing, attestation, promotion, and deployment.
+Before you sign anything, make sure you know exactly what the artifact is. In OCI registries, [an image digest identifies the content-addressed manifest](https://github.com/opencontainers/image-spec/blob/main/manifest.md), while a tag is a movable label. This is why senior teams usually build with a commit tag for traceability, push the image, read back the digest from the registry, and use that digest for signing, attestation, promotion, and deployment.
 
 ```text
 TAG VERSUS DIGEST
@@ -103,7 +103,7 @@ Policy consequence:
   release notes and dashboards may display the tag for human readability
 ```
 
-Cosign is the most common command-line tool for signing and verifying OCI artifacts in the Sigstore ecosystem. Sigstore is not one tool; it is a set of services and formats that make software signing easier to adopt. Cosign signs and verifies artifacts, Fulcio issues short-lived certificates for keyless signing, and Rekor records signature metadata in a transparency log so that signatures can be audited later.
+Cosign is a widely used command-line tool for signing and verifying OCI artifacts in the Sigstore ecosystem. Sigstore is not one tool; it is a set of services and formats that make software signing easier to adopt. [Cosign signs and verifies artifacts](https://github.com/sigstore/cosign), [Fulcio issues short-lived certificates for keyless signing](https://github.com/sigstore/fulcio), and [Rekor records signature metadata in a transparency log](https://github.com/sigstore/rekor) so that signatures can be audited later.
 
 ```text
 SIGSTORE ECOSYSTEM
@@ -190,7 +190,7 @@ SBOM FORMATS
 +------------------------------------------------------------------+
 ```
 
-Syft is a common tool for generating SBOMs from container images, filesystems, and directories. Trivy can generate SBOMs too, and it can scan images, filesystems, configuration files, and existing SBOMs. The right choice is less about brand preference and more about where the evidence enters your workflow. If your registry stores CycloneDX attestations and your risk platform consumes CycloneDX, generate CycloneDX consistently. If your legal team depends on SPDX, make sure the SPDX file is produced and retained.
+[Syft is a common tool for generating SBOMs from container images, filesystems, and directories](https://github.com/anchore/syft). [Trivy can generate SBOMs too, and it can scan images, filesystems, configuration files, and existing SBOMs](https://github.com/aquasecurity/trivy). The right choice is less about brand preference and more about where the evidence enters your workflow. If your registry stores CycloneDX attestations and your risk platform consumes CycloneDX, generate CycloneDX consistently. If your legal team depends on SPDX, make sure the SPDX file is produced and retained.
 
 ```bash
 # Install common tools on macOS when Homebrew is available.
@@ -329,7 +329,7 @@ spec:
 
 A policy like this is a starting point, not a finished operating model. You still need to test how it behaves with init containers, ephemeral containers, CronJobs, Helm releases, and rollbacks. You also need to decide whether emergency break-glass deployments are allowed and how they are audited. A production-ready exception process is not a loophole; it is a controlled path for rare cases where availability risk temporarily exceeds supply chain risk.
 
-Ratify and Gatekeeper provide another common pattern: an external verifier checks artifact metadata, and Gatekeeper constraints enforce the result. This is useful when you want admission control to verify multiple artifact types or when your organization already standardizes on Open Policy Agent and Gatekeeper. The trade-off is extra moving parts, so the platform team must own observability for verifier latency, registry reachability, and policy failure modes.
+[Ratify and Gatekeeper provide another common pattern: an external verifier checks artifact metadata](https://github.com/notaryproject/ratify), and [Gatekeeper constraints enforce the result](https://github.com/open-policy-agent/gatekeeper). This is useful when you want admission control to verify multiple artifact types or when your organization already standardizes on Open Policy Agent and Gatekeeper. The trade-off is extra moving parts, so the platform team must own observability for verifier latency, registry reachability, and policy failure modes.
 
 ```yaml
 apiVersion: config.ratify.deislabs.io/v1beta1
@@ -576,7 +576,7 @@ The safest common default is to allow the registry to retain the pushed image fo
 
 Supply chain security becomes real when something goes wrong. A vulnerability may appear after deployment, a CI workflow may be modified incorrectly, a signing identity may change, or a registry may replicate an image before scanning completes. The platform should make these cases visible and actionable. That means evidence must be queryable, policy failures must explain themselves, and exceptions must be tracked as engineering decisions rather than private conversations.
 
-Provenance records describe how an artifact was built, including source repository, commit, workflow, builder identity, and build parameters. SLSA provides a maturity framework for reasoning about build provenance and build platform hardening, while in-toto provides a way to describe and verify supply chain steps. These frameworks are not replacements for SBOMs or signatures. They answer a different question: not merely what is inside the artifact or who signed it, but how the artifact came to exist.
+Provenance records describe how an artifact was built, including source repository, commit, workflow, builder identity, and build parameters. [SLSA provides a maturity framework for reasoning about build provenance and build platform hardening](https://github.com/slsa-framework/slsa), while [in-toto provides a way to describe and verify supply chain steps](https://github.com/in-toto/in-toto). These frameworks are not replacements for SBOMs or signatures. They answer a different question: not merely what is inside the artifact or who signed it, but how the artifact came to exist.
 
 ```text
 EVIDENCE RELATIONSHIP
@@ -917,3 +917,18 @@ Answer these in a short design note after the commands work. Which step would fa
 ## Next Module
 
 Continue to [Networking Toolkit](/platform/toolkits/infrastructure-networking/networking/) to learn how Kubernetes networking, service mesh patterns, and Cilium policies extend platform security from artifact trust into runtime traffic control.
+
+## Sources
+
+- [cisa.gov: supply chain compromise](https://www.cisa.gov/news-events/alerts/2021/01/07/supply-chain-compromise) — This is a named real-world incident and CISA directly documents the SolarWinds Orion supply-chain compromise.
+- [github.com: manifest.md](https://github.com/opencontainers/image-spec/blob/main/manifest.md) — The OCI image manifest specification directly describes content-addressable image manifests and their role in artifact identity.
+- [github.com: cosign](https://github.com/sigstore/cosign) — The Cosign primary project page directly describes OCI artifact signing/verification and keyless operation with Fulcio and Rekor.
+- [github.com: fulcio](https://github.com/sigstore/fulcio) — The Fulcio project README explicitly states that it issues short-lived certificates for code signing tied to OIDC identities.
+- [github.com: rekor](https://github.com/sigstore/rekor) — The Rekor project README directly describes Rekor as a transparency log for software supply-chain metadata.
+- [github.com: specification](https://github.com/CycloneDX/specification) — The CycloneDX specification repository directly states OWASP stewardship and lists the standard media types and encodings.
+- [github.com: syft](https://github.com/anchore/syft) — The Syft project README directly documents SBOM generation from container images and filesystem-style sources.
+- [github.com: trivy](https://github.com/aquasecurity/trivy) — The Trivy project README directly lists its supported scan targets and scanners, including SBOM-related capabilities.
+- [github.com: ratify](https://github.com/notaryproject/ratify) — The Ratify project README directly describes Ratify as a verification engine that admits only artifacts complying with policy.
+- [github.com: gatekeeper](https://github.com/open-policy-agent/gatekeeper) — The Gatekeeper README directly lists constraints, audit functionality, and external data support.
+- [github.com: slsa](https://github.com/slsa-framework/slsa) — The SLSA framework repository directly defines SLSA as a software supply-chain security framework.
+- [github.com: in toto](https://github.com/in-toto/in-toto) — The in-toto project README directly explains the framework's step verification and functionary authorization model.
