@@ -72,7 +72,7 @@ def _codex_auth_live(timeout_s: int = 25) -> bool:
     try:
         result = subprocess.run(
             [
-                "codex", "--search", "exec", "--full-auto",
+                "codex", "--search", "exec",
                 "--skip-git-repo-check",
                 "--dangerously-bypass-approvals-and-sandbox",
             ],
