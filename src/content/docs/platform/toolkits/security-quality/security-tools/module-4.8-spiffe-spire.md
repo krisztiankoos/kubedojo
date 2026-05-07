@@ -27,11 +27,11 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-At 2 AM, a platform team discovered that a forgotten debug pod in a staging namespace had become the first step in a lateral movement incident. The pod used the same ServiceAccount as a legitimate internal tool, and several internal APIs accepted any valid in-cluster token as proof that the caller was allowed. The attacker did not need to break TLS, steal a database password, or exploit the Kubernetes API server. They only needed one weakly governed workload identity and a network path to services that treated "inside the cluster" as a security boundary.
+A poorly governed workload identity can become the first step in lateral movement. If internal APIs accept any valid in-cluster token as sufficient proof of authorization, an attacker who compromises one workload may reach other services without breaking TLS or stealing separate secrets.
 
 The post-incident review exposed a subtle but common platform failure. Kubernetes ServiceAccount tokens identified a Kubernetes subject, but they did not prove that a specific workload process was the intended caller of a specific service. Certificates existed in the environment too, but they were issued manually, rotated inconsistently, and tied to DNS names instead of workload intent. The team could encrypt traffic, but it could not confidently answer the more important question: "Which workload is this, and should this workload be allowed to make this request?"
 
-SPIFFE and SPIRE solve that problem by making workload identity cryptographic, short-lived, and automatically issued after attestation. SPIFFE defines the identity standard, including SPIFFE IDs and SVIDs. SPIRE implements the runtime system that attests nodes and workloads, issues identities, rotates credentials, and exposes them through a local Workload API. The result is not just "TLS with nicer certificates." It is a platform primitive that lets services authorize based on workload identity rather than network location, static secrets, or overloaded Kubernetes ServiceAccounts.
+SPIFFE and SPIRE solve that problem by making workload identity cryptographic, short-lived, and automatically issued after attestation. [SPIFFE defines the identity standard, including SPIFFE IDs and SVIDs. SPIRE implements the runtime system that attests nodes and workloads, issues identities, rotates credentials, and exposes them through a local Workload API.](https://github.com/spiffe/spiffe/blob/main/README.md) The result is not just "TLS with nicer certificates." It is a platform primitive that lets services authorize based on workload identity rather than network location, static secrets, or overloaded Kubernetes ServiceAccounts.
 
 This module teaches SPIFFE/SPIRE as a practical platform engineering tool, not as a glossary of identity terms. You will start with the identity model, then build the architecture, register workloads, inspect issued certificates, reason through mTLS authorization, and debug common failure modes. By the end, you should be able to decide whether SPIRE belongs in an environment, describe the operational cost it introduces, and explain how it changes the blast radius of a compromised workload.
 
@@ -49,7 +49,7 @@ SPIFFE narrows the problem to workload identity. A workload is a running piece o
 
 The SPIFFE identity model has four core pieces. The SPIFFE ID names the workload. The SVID proves that identity cryptographically. The trust domain defines who is allowed to issue those identities. The Workload API gives a workload a local, secretless way to obtain its identity. When these pieces fit together, developers do not distribute private keys, platform teams do not hand-write certificate renewal scripts, and services do not need to trust every pod in a namespace equally.
 
-A SPIFFE ID is a URI with a trust domain and path. The trust domain is the authority that issues and signs identities, while the path is an operator-defined naming scheme for workloads. In Kubernetes, a common path includes namespace and ServiceAccount because those attributes are stable, meaningful, and already governed by platform policy.
+[A SPIFFE ID is a URI with a trust domain and path. The trust domain is the authority that issues and signs identities, while the path is an operator-defined naming scheme for workloads.](https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md) In Kubernetes, a common path includes namespace and ServiceAccount because those attributes are stable, meaningful, and already governed by platform policy.
 
 ```text
 SPIFFE ID SHAPE
@@ -73,7 +73,7 @@ The path is flexible, but flexibility is not a license to invent a confusing tax
 
 > **Pause and predict:** If every workload in the `payments` namespace receives `spiffe://example.org/ns/payments`, what happens when only the `payment-api` should be allowed to call the card vault but a batch export job runs in the same namespace? Write down the authorization rule you would have to create, then compare it with a rule that uses separate ServiceAccount-level identities.
 
-An SVID, or SPIFFE Verifiable Identity Document, is the cryptographic proof that a workload owns a SPIFFE ID. SPIFFE supports two major SVID forms. X.509-SVIDs are certificates with the SPIFFE ID encoded as a URI Subject Alternative Name, and they are the natural fit for mTLS. JWT-SVIDs are signed tokens with the SPIFFE ID as the subject, and they are useful for request-level authentication when TLS is terminated by an intermediary or when a downstream service expects bearer-token style verification.
+An SVID, or SPIFFE Verifiable Identity Document, is the cryptographic proof that a workload owns a SPIFFE ID. [SPIFFE supports two major SVID forms. X.509-SVIDs are certificates with the SPIFFE ID encoded as a URI Subject Alternative Name, and they are the natural fit for mTLS. JWT-SVIDs are signed tokens with the SPIFFE ID as the subject, and they are useful for request-level authentication when TLS is terminated by an intermediary or when a downstream service expects bearer-token style verification.](https://github.com/spiffe/spiffe/blob/main/standards/JWT-SVID.md)
 
 | SVID Type | Format | Strong Fit | Watch Out For |
 |---|---|---|---|
@@ -83,7 +83,7 @@ An SVID, or SPIFFE Verifiable Identity Document, is the cryptographic proof that
 
 The trust domain is the administrative root of identity. A SPIRE Server or SPIRE Server cluster signs identities for a trust domain, and workloads trust identities from that domain by trusting its bundle. Federation allows one trust domain to trust another, but that trust must be explicit. This distinction matters because multi-cluster identity can be designed as one shared trust domain, separate trust domains with federation, or separate domains with no runtime trust between them.
 
-The Workload API is the mechanism that keeps private keys out of deployment manifests. A workload connects to a Unix domain socket exposed by the SPIRE Agent on the same node. The workload does not pass a password. Instead, the Agent inspects local process and container metadata, checks whether that caller matches a registration entry, and returns the correct SVID and trust bundle. This is why SPIRE is more than a certificate issuer: the local attestation path is part of the security model.
+The Workload API is the mechanism that keeps private keys out of deployment manifests. [A workload connects to a Unix domain socket exposed by the SPIRE Agent on the same node. The workload does not pass a password. Instead, the Agent inspects local process and container metadata, checks whether that caller matches a registration entry, and returns the correct SVID and trust bundle.](https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Workload_API.md) This is why SPIRE is more than a certificate issuer: the local attestation path is part of the security model.
 
 ```text
 SPIFFE IDENTITY MODEL
@@ -132,9 +132,9 @@ Notice the direction of trust in this model. The workload does not tell SPIRE "I
 
 SPIRE has two main runtime components: the Server and the Agent. The Server is the signing and policy authority for a trust domain. The Agent runs close to workloads, normally as a DaemonSet on Kubernetes nodes, and handles local attestation. The separation matters because the Server should remain protected and highly available, while the Agent must be present wherever workloads need identities.
 
-The SPIRE Server stores registration entries, signs SVIDs, manages bundles, and authenticates Agents through node attestation. In Kubernetes, node attestation commonly uses projected ServiceAccount tokens so the Server can verify that an Agent belongs to the expected cluster and ServiceAccount. Once attested, the Agent gets its own identity and can request workload SVIDs on behalf of processes running on its node.
+The SPIRE Server stores registration entries, signs SVIDs, manages bundles, and authenticates Agents through node attestation. [In Kubernetes, node attestation commonly uses projected ServiceAccount tokens so the Server can verify that an Agent belongs to the expected cluster and ServiceAccount.](https://github.com/spiffe/spire/blob/main/doc/plugin_server_nodeattestor_k8s_psat.md) Once attested, the Agent gets its own identity and can request workload SVIDs on behalf of processes running on its node.
 
-The SPIRE Agent exposes the Workload API as a Unix domain socket. When a workload connects, the Agent determines which process owns that socket connection and derives selectors from the process, pod, namespace, ServiceAccount, labels, and container runtime metadata. The Agent then asks whether the selector set matches a registered entry. If there is a match, the Agent returns an SVID for the SPIFFE ID declared in that entry.
+The SPIRE Agent exposes the Workload API as a Unix domain socket. [When a workload connects, the Agent determines which process owns that socket connection and derives selectors from the process, pod, namespace, ServiceAccount, labels, and container runtime metadata.](https://github.com/spiffe/spire/blob/main/doc/plugin_agent_workloadattestor_k8s.md) The Agent then asks whether the selector set matches a registered entry. If there is a match, the Agent returns an SVID for the SPIFFE ID declared in that entry.
 
 ```text
 REQUEST PATH FOR A WORKLOAD SVID
@@ -185,7 +185,7 @@ This separation is a strength, not a weakness. It lets the platform team standar
 
 ## 3. Deploying SPIRE on Kubernetes
 
-A production SPIRE deployment deserves careful design, but a lab cluster is the best way to understand the moving pieces. The goal of the first deployment is to create a trust domain, run the SPIRE Server, run an Agent on each node, and expose the Workload API socket to selected pods through the SPIFFE CSI driver. Once those pieces are healthy, the rest of the module can focus on registration and verification.
+A production SPIRE deployment deserves careful design, but a lab cluster is the best way to understand the moving pieces. [The goal of the first deployment is to create a trust domain, run the SPIRE Server, run an Agent on each node, and expose the Workload API socket to selected pods through the SPIFFE CSI driver.](https://github.com/spiffe/spiffe-csi/blob/main/README.md) Once those pieces are healthy, the rest of the module can focus on registration and verification.
 
 The commands below use `kubectl` explicitly. Many platform teams alias `kubectl` to `k` for speed, but this module keeps the full command in the teaching path so the resource being controlled remains obvious. In your own shell, `alias k=kubectl` is fine after you understand what each command is doing.
 
@@ -330,7 +330,7 @@ kubectl wait --for=condition=ready pod \
 kubectl describe pod -n payments -l app=api-server
 ```
 
-Fetch the X.509-SVID from inside the workload. This command asks the local Agent through the mounted socket to issue the SVID associated with the process. The `-write /tmp/` flag writes certificate material for inspection in the lab; production applications should normally use SPIFFE libraries that keep credentials in memory and handle rotation.
+Fetch the X.509-SVID from inside the workload. [This command asks the local Agent through the mounted socket to issue the SVID associated with the process.](https://github.com/spiffe/spire/blob/main/doc/spire_agent.md) The `-write /tmp/` flag writes certificate material for inspection in the lab; production applications should normally use SPIFFE libraries that keep credentials in memory and handle rotation.
 
 ```bash
 kubectl exec -n payments deploy/api-server -- \
@@ -418,7 +418,7 @@ ZERO-CONFIG mTLS FLOW WITH EXPLICIT AUTHORIZATION
   └──────────────────────────────┘                └──────────────────────────────┘
 ```
 
-The authorization step is where senior platform design shows up. If a server only checks that the certificate chains to the trust bundle, any valid workload in the trust domain may connect. That may still be better than unauthenticated plaintext, but it is not least privilege. A safer service checks both certificate validity and expected peer identity.
+The authorization step is where senior platform design shows up. If a server only checks that the certificate chains to the trust bundle, any valid workload in the trust domain may connect. That may still be better than unauthenticated plaintext, but it is not least privilege. [A safer service checks both certificate validity and expected peer identity.](https://istio.io/latest/docs/ops/best-practices/security/)
 
 The following Go example shows the shape of a SPIFFE-aware mTLS server. It creates an X.509 source from the Workload API socket, uses that source for the server certificate and trust bundle, and authorizes exactly one expected client identity. The code is intentionally small because the point of SPIFFE is to move certificate issuance and rotation out of application business logic.
 
@@ -474,9 +474,9 @@ func main() {
 }
 ```
 
-This example does not name a certificate file or CA file. The source receives the SVID and bundle from SPIRE, and the TLS configuration uses the allowed SPIFFE ID as the authorization rule. Rotation is handled underneath the application because the source updates as SPIRE rotates credentials.
+This example does not name a certificate file or CA file. [The source receives the SVID and bundle from SPIRE, and the TLS configuration uses the allowed SPIFFE ID as the authorization rule. Rotation is handled underneath the application because the source updates as SPIRE rotates credentials.](https://github.com/spiffe/go-spiffe/blob/main/README.md)
 
-For services that cannot use SPIFFE libraries directly, a service mesh or sidecar proxy may terminate mTLS and enforce identity-based policy. This can be a good migration path because it avoids changing application code. The trade-off is that the proxy becomes part of the trust and authorization path, so platform teams must govern sidecar injection, policy distribution, and the handoff between proxy-authenticated identity and application-level decisions.
+[For services that cannot use SPIFFE libraries directly, a service mesh or sidecar proxy may terminate mTLS and enforce identity-based policy. This can be a good migration path because it avoids changing application code.](https://istio.io/latest/docs/overview/what-is-istio/) The trade-off is that the proxy becomes part of the trust and authorization path, so platform teams must govern sidecar injection, policy distribution, and the handoff between proxy-authenticated identity and application-level decisions.
 
 ```yaml
 apiVersion: v1
@@ -497,7 +497,7 @@ The ConfigMap above is not a complete policy engine, but it illustrates a key de
 
 ## 6. Choosing SPIFFE/SPIRE Among Other Identity Tools
 
-SPIFFE/SPIRE overlaps with several tools learners may already know, so the comparison must be precise. Kubernetes ServiceAccount tokens are excellent for authenticating to the Kubernetes API and for some in-cluster token-based patterns. cert-manager is excellent for certificate lifecycle automation. Service meshes are excellent for traffic management, mTLS, telemetry, and policy at the proxy layer. SPIFFE/SPIRE focuses on portable workload identity and attested credential issuance.
+SPIFFE/SPIRE overlaps with several tools learners may already know, so the comparison must be precise. Kubernetes ServiceAccount tokens are excellent for authenticating to the Kubernetes API and for some in-cluster token-based patterns. [cert-manager is excellent for certificate lifecycle automation.](https://github.com/cert-manager/cert-manager) Service meshes are excellent for traffic management, mTLS, telemetry, and policy at the proxy layer. SPIFFE/SPIRE focuses on portable workload identity and attested credential issuance.
 
 | Feature | Kubernetes ServiceAccount Tokens | SPIFFE/SPIRE | Service Mesh Identity | cert-manager |
 |---|---|---|---|---|
@@ -509,7 +509,7 @@ SPIFFE/SPIRE overlaps with several tools learners may already know, so the compa
 | Operational cost | Low if already using Kubernetes defaults | Medium to high because identity infrastructure must be operated carefully | Medium to high because the mesh becomes runtime infrastructure | Medium because issuers, renewals, and consumers need governance |
 | When it fits | Workloads need to call the Kubernetes API | Workloads need portable cryptographic identity and least-privilege peer auth | Platform already standardizes service-to-service traffic through a mesh | Teams need certificate automation but not a full workload identity system |
 
-A practical decision starts with the resource being protected. If a pod needs to call the Kubernetes API, a bounded ServiceAccount token is usually the right primitive. If two services need to mutually authenticate and authorize each other across clusters or runtimes, SPIFFE is a stronger fit. If the organization already runs a service mesh and wants identity enforced without application changes, the mesh identity layer may be enough, and SPIRE may still serve as a pluggable authority behind it.
+A practical decision starts with the resource being protected. [If a pod needs to call the Kubernetes API, a bounded ServiceAccount token is usually the right primitive.](https://kubernetes.io/docs/concepts/security/service-accounts) If two services need to mutually authenticate and authorize each other across clusters or runtimes, SPIFFE is a stronger fit. If the organization already runs a service mesh and wants identity enforced without application changes, the mesh identity layer may be enough, and SPIRE may still serve as a pluggable authority behind it.
 
 The senior-level question is not "which tool is best?" but "which identity claim is authoritative for this decision?" A DNS certificate can prove control of a name, but it may not prove the workload's deployment intent. A ServiceAccount token can prove Kubernetes assigned a ServiceAccount, but it may not separate multiple services sharing that account. A SPIFFE ID can prove an attested workload identity, but only if selectors and trust domains were designed carefully.
 
@@ -587,9 +587,9 @@ A production rollout should therefore begin with naming and policy design, not w
 ## Did You Know?
 
 - **SPIFFE separates naming from implementation**: The SPIFFE standard defines workload identity concepts, while SPIRE is one implementation that issues and rotates SVIDs for those identities.
-- **X.509-SVIDs use URI SANs**: A peer should verify the certificate chain and then authorize the SPIFFE ID from the URI Subject Alternative Name, not rely on a common name.
+- **X.509-SVIDs use URI SANs**: [A peer should verify the certificate chain and then authorize the SPIFFE ID from the URI Subject Alternative Name, not rely on a common name.](https://github.com/spiffe/spiffe/blob/main/standards/X509-SVID.md)
 - **The Workload API is intentionally local**: Workloads receive identity through a Unix domain socket exposed by the node-local Agent, which lets the Agent inspect local process metadata.
-- **SPIRE can support heterogeneous platforms**: The same identity model can cover Kubernetes pods, VMs, and other runtimes when appropriate node and workload attestors are configured.
+- **SPIRE can support heterogeneous platforms**: [The same identity model can cover Kubernetes pods, VMs, and other runtimes when appropriate node and workload attestors are configured.](https://github.com/spiffe/spire)
 
 ---
 
@@ -1033,3 +1033,21 @@ Final success criteria for the full exercise:
 ## Next Module
 
 Return to the [Security Tools README](/platform/toolkits/security-quality/security-tools/) to review the rest of the security toolkit, or continue to the [Networking Toolkit](/platform/toolkits/infrastructure-networking/networking/) for service mesh, Cilium, and identity-aware traffic patterns.
+
+## Sources
+
+- [kubernetes.io: service accounts](https://kubernetes.io/docs/concepts/security/service-accounts) — The Kubernetes ServiceAccount documentation directly explains that Pods use ServiceAccount JWTs to authenticate to the API server.
+- [github.com: README.md](https://github.com/spiffe/spiffe/blob/main/README.md) — The SPIFFE project README directly describes the standard components and SPIRE's role as the runtime implementation.
+- [github.com: SPIFFE ID.md](https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md) — The SPIFFE ID standard defines the URI structure and explicitly treats path meaning and Kubernetes naming examples as operator conventions.
+- [github.com: JWT SVID.md](https://github.com/spiffe/spiffe/blob/main/standards/JWT-SVID.md) — The JWT-SVID standard directly states that the `sub` claim is the SPIFFE ID, and the paired X.509 encoding is a standard SPIFFE concept described in the spec set.
+- [github.com: SPIFFE Workload API.md](https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Workload_API.md) — The Workload API specification explicitly describes caller identification without direct client auth and defines the X.509-SVID and JWT-SVID profiles.
+- [github.com: plugin server nodeattestor k8s psat.md](https://github.com/spiffe/spire/blob/main/doc/plugin_server_nodeattestor_k8s_psat.md) — The SPIRE `k8s_psat` server plugin documentation directly describes projected ServiceAccount token validation via TokenReview.
+- [github.com: plugin agent workloadattestor k8s.md](https://github.com/spiffe/spire/blob/main/doc/plugin_agent_workloadattestor_k8s.md) — The SPIRE Kubernetes workload attestor documentation enumerates the selector types and explains how they are derived.
+- [github.com: README.md](https://github.com/spiffe/spiffe-csi/blob/main/README.md) — The SPIFFE CSI driver README directly explains socket injection into Pods and the security motivation for avoiding workload `hostPath` mounts.
+- [github.com: spire agent.md](https://github.com/spiffe/spire/blob/main/doc/spire_agent.md) — The SPIRE Agent command reference directly documents `api fetch x509` and its relevant flags.
+- [github.com: X509 SVID.md](https://github.com/spiffe/spiffe/blob/main/standards/X509-SVID.md) — The X.509-SVID specification explicitly defines the URI SAN encoding and the one-URI-SAN validation rule.
+- [istio.io: security](https://istio.io/latest/docs/ops/best-practices/security/) — Istio's security best-practices page directly states that mTLS provides authentication, not authorization, and recommends authorization policies.
+- [github.com: README.md](https://github.com/spiffe/go-spiffe/blob/main/README.md) — The `go-spiffe` README directly describes mTLS support and streamed updates of X.509-SVIDs and bundles from the Workload API.
+- [istio.io: what is istio](https://istio.io/latest/docs/overview/what-is-istio/) — Istio's overview page directly lists secure service-to-service communication, authorization, observability, and traffic management without app rewrites.
+- [github.com: cert manager](https://github.com/cert-manager/cert-manager) — The cert-manager project README directly states that it simplifies obtaining, renewing, and using certificates in Kubernetes.
+- [github.com: spire](https://github.com/spiffe/spire) — The SPIRE repository README directly says SPIRE establishes trust across a wide variety of hosting platforms.
