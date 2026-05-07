@@ -1,0 +1,146 @@
+{
+  "module_key": "platform/disciplines/core-platform/sre/module-1.2-slos",
+  "module_path": "src/content/docs/platform/disciplines/core-platform/sre/module-1.2-slos.md",
+  "research_run_id": "2026-05-07T20:08:43+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/platform-disciplines-core-platform-sre.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "An SLO consists of an SLI, a goal, and an evaluation period; an SLI is a good-service to total-service measurement of one aspect of service quality.",
+      "claim_class": "standard",
+      "span_hint": "section: The SLI, SLO, and SLA Hierarchy",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://cloud.google.com/monitoring/api/ref_v3/rest/v3/services.serviceLevelObjectives",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Google Cloud's SLO API reference directly defines both ServiceLevelObjective and ServiceLevelIndicator in these terms."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "An SLA is an external agreement with consequences such as credits, refunds, support obligations, or other legal terms if the objective is missed.",
+      "claim_class": "standard",
+      "span_hint": "section: The SLI, SLO, and SLA Hierarchy",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://cloud.google.com/operations/sla",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Google Cloud Observability SLA page directly describes an SLA-backed SLO and eligibility for financial credits when the commitment is missed."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Prometheus counters are monotonically increasing, and the PromQL `rate()` function converts counter history over a window into a per-second average increase.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Worked Example: From Raw Metrics to Final SLO Output, opening paragraphs",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://prometheus.io/docs/tutorials/understanding_metric_types/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Prometheus tutorial page defines counters and explains that `rate()` computes how fast a counter is increasing per second."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Prometheus recording rules precompute frequently used expressions into new time series so dashboards and alerts can reuse stable SLI series.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Implementing SLOs in Kubernetes, paragraph beginning 'A common pattern is to emit HTTP request counters'",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared Prometheus recording-rules source is the primary reference for precomputing expressions into reusable series."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Multi-window burn-rate alerting pairs short and long windows, and the exact 14.4x and 6x thresholds shown for a 99.9% SLO come from Google SRE guidance.",
+      "claim_class": "standard",
+      "span_hint": "section: Implementing SLOs in Kubernetes, subsection on multi-window burn-rate alerts and the CheckoutFastBurn/CheckoutSlowBurn examples",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://sre.google/workbook/alerting-on-slos/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The exact paired-window burn-rate recommendations are real and directly documented, but the primary source is on `sre.google`, which is outside the current allowlist."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Google's SRE practice popularized error budgets as a way to balance reliability work and release velocity.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, item 1",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://sre.google/sre-book/embracing-risk/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a real historical claim with a strong primary source on `sre.google`, but that host is not on the current allowlist."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The four DORA metrics are deployment frequency, lead time for changes, change failure rate, and time to restore service/mean time to recovery.",
+      "claim_class": "standard",
+      "span_hint": "section: DORA Metrics and SLOs, opening paragraphs and table",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://cloud.google.com/blog/products/devops-sre/another-way-to-gauge-your-devops-performance-according-to-dora",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Google Cloud DORA article enumerates the four metrics and explicitly equates Time to Restore Service with MTTR."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "A request-based SLO weights high-traffic periods by counting good requests over total requests, which often maps user impact better than pure clock-time uptime windows.",
+      "claim_class": "standard",
+      "span_hint": "section: SLO Math and Error Budgets, paragraph beginning 'The request-based view is often more precise than the time-based view' and Did You Know item 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Google Cloud's service-monitoring concepts page explains that request-based SLOs measure the percentage of work done properly over the compliance period regardless of load distribution."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://cloud.google.com/monitoring/api/ref_v3/rest/v3/services.serviceLevelObjectives",
+      "title": "Cloud Monitoring Service-Level Objectives API Reference",
+      "tier": "vendor",
+      "why_relevant": "Primary reference for SLI/SLO structure, request-based versus windows-based SLIs, and latency or availability criteria."
+    },
+    {
+      "url": "https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/",
+      "title": "Prometheus Recording Rules",
+      "tier": "upstream",
+      "why_relevant": "Explains how to precompute reusable SLI series for dashboards and alerting."
+    },
+    {
+      "url": "https://cloud.google.com/blog/products/devops-sre/another-way-to-gauge-your-devops-performance-according-to-dora",
+      "title": "Google Cloud DORA Metrics in Practice",
+      "tier": "vendor",
+      "why_relevant": "Useful companion for the module's DORA section because it defines the four metrics and ties them to SLO-driven operations."
+    }
+  ],
+  "notes": "Quiz prompts, hands-on exercise instructions, and arithmetic derived entirely inside the worked examples were excluded from the seed because they are pedagogical or internally calculated rather than external factual assertions needing citation.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

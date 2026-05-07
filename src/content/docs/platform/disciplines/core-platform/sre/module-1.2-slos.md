@@ -44,9 +44,9 @@ The most common SLO mistake is treating three related terms as interchangeable. 
 
 An **SLI**, or Service Level Indicator, is a measurement of service behavior. It should come from real observations rather than intention. For an HTTP API, an SLI might be the ratio of successful requests to total requests, the 95th percentile latency for a specific route, or the percentage of responses that contain complete product data.
 
-An **SLO**, or Service Level Objective, is an internal target for an SLI over a defined window. It is the team’s statement of “good enough” reliability. For example, a team might target 99.9% successful checkout requests over 30 days, or 95% of search requests under 250 milliseconds over seven days.
+[An **SLO**, or Service Level Objective, is an internal target for an SLI over a defined window.](https://cloud.google.com/monitoring/api/ref_v3/rest/v3/services.serviceLevelObjectives) It is the team’s statement of “good enough” reliability. For example, a team might target 99.9% successful checkout requests over 30 days, or 95% of search requests under 250 milliseconds over seven days.
 
-An **SLA**, or Service Level Agreement, is an external contract with consequences. It may include credits, refunds, support obligations, or legal terms. SLAs are usually less strict than SLOs because the internal target should provide warning before the external promise is at risk.
+[An **SLA**, or Service Level Agreement, is an external contract with consequences. It may include credits, refunds, support obligations, or legal terms.](https://cloud.google.com/operations/sla) SLAs are usually less strict than SLOs because the internal target should provide warning before the external promise is at risk.
 
 The hierarchy matters because each layer has a different audience. Engineers use SLIs to observe reality, teams use SLOs to make operational decisions, and customers or legal teams use SLAs to define contractual obligations. If those layers are inverted, the organization can violate promises before internal systems even say anything is wrong.
 
@@ -174,7 +174,7 @@ SLO math is the bridge between reliability goals and operational decisions. The 
 
 For an availability SLO, the budget is simply one minus the target. A 99.9% SLO allows 0.1% of measured events to be bad. Over a fixed time window, that can be expressed as minutes of downtime, failed requests, missed jobs, stale responses, or any other unit that matches the SLI.
 
-The request-based view is often more precise than the time-based view. If an API receives most of its traffic during business hours, ten minutes of failure at peak time hurts more users than ten minutes at midnight. Request-based SLOs naturally weight failure by traffic, which often aligns better with user impact.
+The request-based view is often more precise than the time-based view. If an API receives most of its traffic during business hours, ten minutes of failure at peak time hurts more users than ten minutes at midnight. [Request-based SLOs naturally weight failure by traffic, which often aligns better with user impact.](https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring)
 
 | SLO Target | Allowed Error Rate | Approximate Downtime per 30 Days | Failed Requests per 1,000,000 |
 |---|---:|---:|---:|
@@ -236,7 +236,7 @@ Composite SLI:
 
 Before implementing recording rules, walk through the calculation with small numbers. This makes the Prometheus queries easier to trust because every aggregation has a visible purpose. The example below uses request counters from a Kubernetes service called `checkout-api` running behind an ingress controller.
 
-Assume the service exposes a counter named `http_requests_total` with labels for `service`, `route`, and `status`. Prometheus stores the counter as an increasing value. The `rate()` function converts counter growth into requests per second over a time window, which is what you need for ratios.
+Assume the service exposes a counter named `http_requests_total` with labels for `service`, `route`, and `status`. [Prometheus stores the counter as an increasing value. The `rate()` function converts counter growth into requests per second over a time window](https://prometheus.io/docs/tutorials/understanding_metric_types/), which is what you need for ratios.
 
 Here is a simplified five-minute snapshot for the checkout route. The numbers are already converted from counter deltas into request counts for teaching clarity. In Prometheus you would normally use rates, but the ratio logic is the same.
 
@@ -339,7 +339,7 @@ This worked example is intentionally small, but the sequence is the same in prod
 
 In Kubernetes, SLO implementation usually combines application metrics, Prometheus recording rules, alerting rules, and a dashboard. Kubernetes itself does not know whether users are happy. It knows about Pods, Services, Deployments, and health probes. You need service-level instrumentation to connect cluster behavior to user outcomes.
 
-A common pattern is to emit HTTP request counters and duration histograms from the application, scrape them with Prometheus, and write recording rules that turn raw labels into stable SLI series. Stable recording rules are important because dashboards and alerts should not repeat complex queries everywhere. When the SLI definition changes, you update the rule once.
+A common pattern is to emit HTTP request counters and duration histograms from the application, scrape them with Prometheus, and [write recording rules that turn raw labels into stable SLI series](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/). Stable recording rules are important because dashboards and alerts should not repeat complex queries everywhere. When the SLI definition changes, you update the rule once.
 
 The example below assumes the application exports `http_requests_total` and `http_request_duration_seconds_bucket`. The service label identifies the workload, the route label identifies the user journey, and the status label separates success from failure. Your actual label names may differ, but the structure should be similar.
 
@@ -610,7 +610,7 @@ This policy should be negotiated with product leadership before an incident. Oth
 
 SLOs measure reliability from the user’s perspective, while DORA metrics measure software delivery performance. They answer different questions, but together they describe whether a team can move quickly without repeatedly harming users. A team with high deployment frequency and healthy SLOs is in a very different place from a team that deploys often by burning reliability budget.
 
-The four DORA metrics are deployment frequency, lead time for changes, change failure rate, and mean time to recovery. These metrics reveal how effectively the delivery system moves change into production and recovers from failure. SLOs reveal whether that delivery system is preserving the service experience users need.
+[The four DORA metrics are deployment frequency, lead time for changes, change failure rate, and mean time to recovery.](https://cloud.google.com/blog/products/devops-sre/another-way-to-gauge-your-devops-performance-according-to-dora) These metrics reveal how effectively the delivery system moves change into production and recovers from failure. SLOs reveal whether that delivery system is preserving the service experience users need.
 
 | DORA Metric | What It Measures | How SLOs Connect |
 |---|---|---|
@@ -967,3 +967,12 @@ Before considering your SLO complete, review it as if you are the on-call engine
 ## Next Module
 
 Continue to [Module 1.3: Error Budgets](../module-1.3-error-budgets/) to learn how teams use SLO budget state to balance reliability work, deployment risk, and product delivery.
+
+## Sources
+
+- [cloud.google.com: services.serviceLevelObjectives](https://cloud.google.com/monitoring/api/ref_v3/rest/v3/services.serviceLevelObjectives) — Google Cloud's SLO API reference directly defines both ServiceLevelObjective and ServiceLevelIndicator in these terms.
+- [cloud.google.com: sla](https://cloud.google.com/operations/sla) — The Google Cloud Observability SLA page directly describes an SLA-backed SLO and eligibility for financial credits when the commitment is missed.
+- [prometheus.io: understanding metric types](https://prometheus.io/docs/tutorials/understanding_metric_types/) — The Prometheus tutorial page defines counters and explains that `rate()` computes how fast a counter is increasing per second.
+- [Prometheus Documentation: Defining Recording Rules](https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/) — Upstream source for Prometheus recording rule syntax, rule groups, evaluation behavior, and how precomputed series support dashboards and SLO math in Kubernetes-friendly monitoring setups.
+- [cloud.google.com: another way to gauge your devops performance according to dora](https://cloud.google.com/blog/products/devops-sre/another-way-to-gauge-your-devops-performance-according-to-dora) — The Google Cloud DORA article enumerates the four metrics and explicitly equates Time to Restore Service with MTTR.
+- [cloud.google.com: slo monitoring](https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring) — Google Cloud's service-monitoring concepts page explains that request-based SLOs measure the percentage of work done properly over the compliance period regardless of load distribution.
