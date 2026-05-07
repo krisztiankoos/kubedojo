@@ -2053,6 +2053,161 @@ def build_bridge_messages(
     }
 
 
+def _build_channel_threads_index(
+    repo_root: Path,
+    *,
+    list_channels_fn,
+) -> dict[str, Any]:
+    """Build thread rollups for deliberation channels from ``channel_events``."""
+    db_path = _resolve_bridge_db_path(repo_root)
+    channels_raw = list_channels_fn()
+
+    channels: dict[str, dict[str, Any]] = {
+        channel["name"]: {
+            "name": channel["name"],
+            "created_at": channel.get("created_at"),
+            "threads": [],
+        }
+        for channel in channels_raw
+        if isinstance(channel, dict)
+    }
+
+    thread_rows = _query_sqlite_rows(
+        db_path,
+        """
+        SELECT
+          cm.channel AS channel,
+          ce.thread_id AS thread_id,
+          MIN(ce.ts) AS first_event_ts,
+          MAX(ce.ts) AS last_event_ts,
+          COUNT(ce.event_id) AS event_count
+        FROM channel_events ce
+        INNER JOIN channel_messages cm
+          ON cm.thread_id = ce.thread_id
+        GROUP BY cm.channel, ce.thread_id
+        ORDER BY cm.channel, ce.thread_id
+        """,
+    )
+
+    if thread_rows:
+        for row in thread_rows:
+            channel = row.get("channel")
+            if not isinstance(channel, str):
+                continue
+
+            thread_id = row.get("thread_id")
+            if not isinstance(thread_id, str):
+                continue
+
+            thread_entry = {
+                "thread_id": thread_id,
+                "first_event_ts": row.get("first_event_ts"),
+                "last_event_ts": row.get("last_event_ts"),
+                "event_count": int(row.get("event_count") or 0),
+                "agents": [
+                    agent_row["agent"]
+                    for agent_row in _query_sqlite_rows(
+                        db_path,
+                        """
+                        SELECT DISTINCT json_extract(payload_json, '$.agent') AS agent
+                        FROM channel_events
+                        WHERE thread_id = ?
+                          AND event = 'reply_started'
+                          AND json_extract(payload_json, '$.agent') IS NOT NULL
+                        ORDER BY agent ASC
+                        """,
+                        (thread_id,),
+                    )
+                    if isinstance(agent_row.get("agent"), str)
+                ],
+            }
+
+            entry = channels.setdefault(channel, {"name": channel, "created_at": None, "threads": []})
+            entry["threads"].append(thread_entry)
+
+        return {"channels": list(channels.values())}
+
+    # TODO: per-channel grouping when channels↔threads link is added
+    fallback_threads = _query_sqlite_rows(
+        db_path,
+        """
+        SELECT
+          thread_id,
+          MIN(ts) AS first_event_ts,
+          MAX(ts) AS last_event_ts,
+          COUNT(event_id) AS event_count
+        FROM channel_events
+        GROUP BY thread_id
+        ORDER BY thread_id
+        """,
+    )
+    if not fallback_threads:
+        return {"channels": list(channels.values())}
+
+    threads: list[dict[str, Any]] = []
+    for row in fallback_threads:
+        thread_id = row.get("thread_id")
+        if not isinstance(thread_id, str):
+            continue
+        threads.append({
+            "thread_id": thread_id,
+            "first_event_ts": row.get("first_event_ts"),
+            "last_event_ts": row.get("last_event_ts"),
+            "event_count": int(row.get("event_count") or 0),
+            "agents": [
+                agent_row["agent"]
+                for agent_row in _query_sqlite_rows(
+                    db_path,
+                    """
+                    SELECT DISTINCT json_extract(payload_json, '$.agent') AS agent
+                    FROM channel_events
+                    WHERE thread_id = ?
+                      AND event = 'reply_started'
+                      AND json_extract(payload_json, '$.agent') IS NOT NULL
+                    ORDER BY agent ASC
+                    """,
+                    (thread_id,),
+                )
+                if isinstance(agent_row.get("agent"), str)
+            ],
+        })
+
+    return {
+        "channels": [
+            {
+                "name": "all-threads",
+                "created_at": None,
+                "threads": threads,
+            }
+        ]
+    }
+
+
+def _build_channel_events_payload(
+    thread_id: str,
+    read_channel_events_fn,
+    since_event_id: int = 0,
+) -> dict[str, Any]:
+    events_raw = read_channel_events_fn(thread_id, after_event_id=since_event_id)
+    events: list[dict[str, Any]] = []
+    next_since_event_id = since_event_id
+
+    for event in events_raw:
+        event_id = int(event.get("_event_id", 0))
+        payload = dict(event)
+        payload.pop("_event_id", None)
+        payload.pop("thread_id", None)
+        payload["event_id"] = event_id
+        events.append(payload)
+        next_since_event_id = max(next_since_event_id, event_id)
+
+    return {
+        "thread_id": thread_id,
+        "events": events,
+        "next_since_event_id": next_since_event_id,
+    }
+
+
 # ---- #388 dispatcher batch progress ----
 #
 # scripts/quality/dispatch_388_pilot.py writes a JSONL event log per batch
@@ -7057,6 +7212,12 @@ def build_api_schema() -> dict[str, Any]:
                 "desc": ".bridge/messages.db tail",
                 "query": ["since=<ISO-8601>", "limit=... (max 500)"],
             },
+            {"path": "/api/channels", "desc": "List deliberation channels with thread event rollups"},
+            {
+                "path": "/api/channel/{thread_id}/events",
+                "desc": "Channel thread event timeline",
+                "query": ["since_event_id=..."],
+            },
             {"path": "/api/quality/scores", "desc": "Live heuristic rubric scores from current English module files"},
             {
                 "path": "/api/quality/board",
@@ -7368,6 +7529,35 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         except (TypeError, ValueError):
             limit = 100
         return 200, build_bridge_messages(repo_root, since, limit), "application/json; charset=utf-8"
+    if path == "/api/channels":
+        from ai_agent_bridge._channels import list_channels
+        return (
+            200,
+            _build_channel_threads_index(repo_root, list_channels_fn=list_channels),
+            "application/json; charset=utf-8",
+        )
+    if path.startswith("/api/channel/") and path.endswith("/events"):
+        raw_thread_id = path[len("/api/channel/") : -len("/events")]
+        thread_id = unquote(raw_thread_id).strip("/")
+        if not thread_id:
+            return 400, {"error": "missing_thread_id"}, "application/json; charset=utf-8"
+        try:
+            since_raw = query.get("since_event_id", ["0"])[0]
+            if since_raw is None:
+                raise TypeError
+            since_event_id = int(since_raw)
+        except (TypeError, ValueError):
+            return 400, {"error": "invalid_since_event_id"}, "application/json; charset=utf-8"
+        from ai_agent_bridge._channels_watch import read_channel_events
+        return (
+            200,
+            _build_channel_events_payload(
+                thread_id,
+                read_channel_events_fn=read_channel_events,
+                since_event_id=since_event_id,
+            ),
+            "application/json; charset=utf-8",
+        )
     if path == "/api/quality/scores":
         return 200, build_quality_scores(repo_root), "application/json; charset=utf-8"
     if path == "/api/quality/board":
