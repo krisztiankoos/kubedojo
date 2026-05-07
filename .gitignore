@@ -30,6 +30,7 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+.venv
 .venv/
 site/
 .mcp/servers/message-broker/
@@ -59,6 +60,7 @@ clusterctl
 talosctl
 demo-cluster.yaml
 test_script.sh
+.venv
 .venv/
 *.staging.md
 .pids/
