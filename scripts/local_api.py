@@ -7297,7 +7297,7 @@ function render(data){
   if(!total){document.getElementById("grid").innerHTML='<p class="empty">No deliberation threads yet.<br>Start one with <code>ab discuss &lt;channel&gt;</code>.</p>';return;}
   const cards=channels.flatMap(c=>c.threads.map(t=>{
     const agents=(t.agents||[]).map(agentBadge).join("");
-    return`<a class="card" href="/channels/${encodeURIComponent(t.thread_id)}"><div class="card-ch">${esc(c.channel)}</div><div class="card-tid" title="${esc(t.thread_id)}">${esc(t.thread_id)}</div><div class="card-meta"><span class="badge bc">${esc(t.event_count)} events</span>${agents}</div><div class="card-ts">last activity: ${timeAgo(t.last_ts)}</div></a>`;
+    return`<a class="card" href="/channels/${encodeURIComponent(t.thread_id)}"><div class="card-ch">${esc(c.name)}</div><div class="card-tid" title="${esc(t.thread_id)}">${esc(t.thread_id)}</div><div class="card-meta"><span class="badge bc">${esc(t.event_count)} events</span>${agents}</div><div class="card-ts">last activity: ${timeAgo(t.last_event_ts)}</div></a>`;
   }));
   document.getElementById("grid").innerHTML=cards.join("");
 }
