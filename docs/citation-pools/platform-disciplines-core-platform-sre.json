@@ -1,0 +1,131 @@
+{
+  "section": "platform/disciplines/core-platform/sre",
+  "modules": [
+    "platform/disciplines/core-platform/sre/module-1.1-what-is-sre",
+    "platform/disciplines/core-platform/sre/module-1.2-slos",
+    "platform/disciplines/core-platform/sre/module-1.3-error-budgets",
+    "platform/disciplines/core-platform/sre/module-1.4-toil-automation",
+    "platform/disciplines/core-platform/sre/module-1.5-incident-management",
+    "platform/disciplines/core-platform/sre/module-1.6-postmortems",
+    "platform/disciplines/core-platform/sre/module-1.7-capacity-planning"
+  ],
+  "generated_at": "2026-05-07T19:55:04+00:00",
+  "batch_count": 2,
+  "fallback_used": false,
+  "sources": [
+    {
+      "source_id": "S001",
+      "url": "https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/",
+      "title": "Prometheus Documentation: Defining Recording Rules",
+      "tier": "upstream",
+      "scope_notes": "Upstream source for Prometheus recording rule syntax, rule groups, evaluation behavior, and how precomputed series support dashboards and SLO math in Kubernetes-friendly monitoring setups.",
+      "relevant_modules": [
+        "platform/disciplines/core-platform/sre/module-1.2-slos",
+        "platform/disciplines/core-platform/sre/module-1.3-error-budgets"
+      ]
+    },
+    {
+      "source_id": "S002",
+      "url": "https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/",
+      "title": "Prometheus Documentation: Alerting Rules",
+      "tier": "upstream",
+      "scope_notes": "Upstream source for Prometheus alert rule syntax, pending and firing states, labels and annotations, and operational details needed to back concrete Prometheus-based SLO alert implementation examples.",
+      "relevant_modules": [
+        "platform/disciplines/core-platform/sre/module-1.2-slos",
+        "platform/disciplines/core-platform/sre/module-1.3-error-budgets"
+      ]
+    },
+    {
+      "source_id": "S003",
+      "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+      "title": "Kubernetes Docs: Resource Management for Pods and Containers",
+      "tier": "standards",
+      "scope_notes": "Primary source for Kubernetes compute-resource requests and limits, pod/container resource accounting, and the implementation details that underpin capacity models and scheduling assumptions in cluster-based systems.",
+      "relevant_modules": [
+        "platform/disciplines/core-platform/sre/module-1.7-capacity-planning"
+      ]
+    },
+    {
+      "source_id": "S004",
+      "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/",
+      "title": "Kubernetes Docs: Horizontal Pod Autoscaling",
+      "tier": "standards",
+      "scope_notes": "Primary source for reactive workload scaling in Kubernetes, including the HPA control loop, metric targets, scaling behavior, stabilization windows, and limits of resource-utilization-based autoscaling.",
+      "relevant_modules": [
+        "platform/disciplines/core-platform/sre/module-1.7-capacity-planning"
+      ]
+    },
+    {
+      "source_id": "S005",
+      "url": "https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/",
+      "title": "Kubernetes Docs: Node Autoscaling",
+      "tier": "standards",
+      "scope_notes": "Primary source for cluster-level capacity provisioning and consolidation, pod schedulability constraints, node cost-efficiency, and how node autoscaling combines with workload autoscaling in production capacity planning.",
+      "relevant_modules": [
+        "platform/disciplines/core-platform/sre/module-1.7-capacity-planning"
+      ]
+    }
+  ],
+  "rejected_urls": [
+    {
+      "url": "https://sre.google/sre-book/introduction/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://sre.google/sre-book/service-level-objectives/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://sre.google/sre-book/embracing-risk/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://sre.google/workbook/alerting-on-slos/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://sre.google/sre-book/monitoring-distributed-systems/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://sre.google/sre-book/eliminating-toil/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://sre.google/sre-book/automation-at-google/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://training.fema.gov/emiweb/is/icsresource/assets/ics_training_reference_guide.pdf",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://sre.google/sre-book/managing-incidents/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://sre.google/sre-book/postmortem-culture/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://sre.google/sre-book/service-level-objectives/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://sre.google/sre-book/addressing-cascading-failures/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    }
+  ]
+}
