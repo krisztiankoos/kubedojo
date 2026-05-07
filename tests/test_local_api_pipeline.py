@@ -33,11 +33,13 @@ def test_pipeline_route_returns_real_page(tmp_path: Path) -> None:
     assert 'id="autopilot-v3-body"' in html
     assert 'id="autopilot-v3-badge"' in html
     assert '<a class="navlink active" href="/pipeline"' in html
+    assert 'href="/channels"' in html
 
 
 def test_dashboard_drops_v2_pipeline_panel(tmp_path: Path) -> None:
     html = _route(tmp_path, "/")
     assert 'id="v2-body"' not in html
+    assert 'id="v2-badge"' not in html
 
 
 def test_dashboard_keeps_pipeline_summary_link(tmp_path: Path) -> None:
