@@ -33,7 +33,7 @@ You're drowning in repetitive work. Every day:
 - Run the same diagnostic commands (again)
 - Provision resources manually (again)
 
-This work keeps the lights on, but it's eating your time. You never get to the projects that would make things better.
+This work keeps the lights on, but it's eating your time. You rarely get to the projects that would make things better.
 
 **This is toil.** And SRE has a systematic approach to eliminating it.
 
@@ -45,7 +45,7 @@ This module teaches you to identify toil, measure it, and eliminate it through a
 
 > **Stop and think**: Think about the most annoying task you performed this week. Did it require you to make a creative decision, or were you just acting as a human script runner? If it's the latter, you were performing toil.
 
-Toil is work that:
+[Toil is work that:](https://cloud.google.com/blog/products/management-tools/identifying-and-tracking-toil-using-sre-principles)
 - **Manual**: Requires human hands
 - **Repetitive**: Done over and over
 - **Automatable**: Could be done by machines
@@ -104,7 +104,7 @@ Not all operational work is toil:
 
 Google's SRE teams have a hard rule:
 
-> **No more than 50% of SRE time should be spent on toil.**
+> **[No more than 50% of SRE time should be spent on toil.](https://cloud.google.com/blog/products/management-tools/identifying-and-tracking-toil-using-sre-principles)**
 
 The other 50%+ goes to engineering projects that:
 - Reduce future toil
@@ -124,8 +124,8 @@ If your team's toil exceeds 50%, something must change:
 
 1. **Automate aggressively**: Invest in eliminating top toil sources
 2. **Push back on service**: Service may need reliability improvements
-3. **Increase staffing**: More people until automation catches up
-4. **Transfer service**: Hand back to developers if too toil-heavy
+3. **Create temporary capacity**: Free time for the team to reduce operational load and automation debt
+4. **Rebalance ownership**: Revisit service ownership if the current arrangement is unsustainably toil-heavy
 
 The 50% rule is a **forcing function** that ensures SRE remains an engineering discipline.
 
@@ -305,13 +305,13 @@ quadrantChart
 
 ## Did You Know?
 
-1. **Google targets under 2 minutes of toil per on-call incident**. If remediation takes longer, it's a sign automation is needed.
+1. **If incident remediation repeatedly requires manual steps**, that's a sign more automation is likely needed.
 
-2. **The term "toil" was deliberately chosen** by Google SREs because it implies unpleasant, grinding work — not all operational work, just the tedious kind.
+2. **In Google SRE writing, "toil" refers to repetitive operational work**, not all operational work.
 
-3. **Some teams measure "toil velocity"** — how fast toil is increasing. A positive toil velocity is a warning sign that the system is outgrowing its automation.
+3. **Teams often track toil trends over time**. An upward trend is a warning sign that current automation is not keeping up.
 
-4. **XKCD's "Is It Worth the Time?" chart** (xkcd.com/1205) became a cult classic among SREs for calculating automation ROI. The comic shows exactly how much time you can spend automating a task based on how often you do it and how much time it saves—printed on countless office walls.
+4. **XKCD's "Is It Worth the Time?" chart** offers a back-of-the-envelope way to think about automation ROI.
 
 ---
 
@@ -320,9 +320,9 @@ quadrantChart
 A team I worked with had a toil problem:
 
 **The Situation:**
-- 6-person SRE team
-- 2 critical services
-- Toil consuming 80% of time
+- A small SRE team
+- Multiple critical services
+- Most of the team's time consumed by toil
 - No time for improvements
 - Team morale: terrible
 
@@ -335,23 +335,23 @@ A team I worked with had a toil problem:
 | User provisioning | 20 | 14% |
 | Log investigation | 15 | 10% |
 | Certificate mgmt | 8 | 5% |
-| Total toil | 118/145 | 81% |
+| Total toil | Most team time | High |
 
 **The 90-Day Plan:**
 
 Week 1-4: Automate deploys
 - Built CI/CD pipeline
-- Savings: 35 hours/week
+- Significant weekly time savings
 
 Week 5-8: Auto-remediation
 - Kubernetes for self-healing
 - Auto-scaling policies
-- Savings: 25 hours/week
+- Significant weekly time savings
 
 Week 9-12: Self-service
 - User provisioning portal
 - Self-service log access
-- Savings: 30 hours/week
+- Significant weekly time savings
 
 **The Result:**
 ```
@@ -655,4 +655,10 @@ Continue to [Module 1.5: Incident Management](../module-1.5-incident-management/
 
 ---
 
-*"If a human is required to take action because of an alert, that's usually a bug."* — Google SRE Proverb
+*"Alerts should be actionable, and routine manual intervention is a sign the system or alerting design needs improvement."*
+
+## Sources
+
+- [cloud.google.com: identifying and tracking toil using sre principles](https://cloud.google.com/blog/products/management-tools/identifying-and-tracking-toil-using-sre-principles) — The Google Cloud blog reproduces the SRE Book definition and its key characteristics directly.
+- [Meeting Reliability Challenges with SRE Principles](https://cloud.google.com/blog/products/management-tools/meeting-reliability-challenges-with-sre-principles) — Connects toil reduction to broader SRE reliability practice and operational load management.
+- [Kubernetes Self-Healing](https://kubernetes.io/docs/concepts/architecture/self-healing/) — Useful background for the module's automation and self-healing examples in Kubernetes environments.
