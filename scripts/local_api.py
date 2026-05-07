@@ -4530,6 +4530,388 @@ _OPERATOR_SUMMARY_CSS = """
 """
 
 
+_QUALITY_SUMMARY_CSS = """
+    .quality-summary-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px;
+      text-decoration: none;
+      color: var(--text);
+      min-height: 76px;
+    }
+    .quality-summary-card:hover { background: rgba(255,255,255,0.02); }
+    .quality-summary-main { min-width: 0; }
+    .quality-summary-title {
+      display: block;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .quality-summary-counts {
+      display: block;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .quality-summary-link {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    @media (max-width: 640px) {
+      .quality-summary-card { grid-template-columns: 1fr; }
+      .quality-summary-link { justify-self: start; }
+    }
+"""
+
+
+_QUALITY_BOARD_PAGE_CSS = """
+    :root { --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --surface-2:#1f2b3d; --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280; --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12); --teal:#2dd4bf; --teal-muted:rgba(45,212,191,0.12); --green:#4ade80; --green-muted:rgba(74,222,128,0.12); --amber:#fbbf24; --amber-muted:rgba(251,191,36,0.10); --red:#f87171; --red-muted:rgba(248,113,113,0.10); --border:rgba(255,255,255,0.06); --border-subtle:rgba(255,255,255,0.03); --radius:12px; --radius-sm:8px; --radius-xs:6px; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5; }
+    .main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 40px; }
+    .page-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
+    .page-title { margin:0; font-size:26px; letter-spacing:0; }
+    .page-sub { margin-top:4px; color:var(--text-secondary); font-size:13px; }
+    .page-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .status-pill { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; font-size:12px; font-weight:600; background:var(--green-muted); color:var(--green); }
+    .dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
+    .refresh-btn { display:flex; align-items:center; gap:6px; border:1px solid var(--border); background:var(--surface-1); color:var(--text); border-radius:var(--radius-sm); padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer; }
+    .refresh-btn:hover { background:var(--surface-2); }
+    .panel { background:var(--surface-0); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    .panel-header { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border); }
+    .panel-title { display:flex; align-items:center; gap:10px; font-weight:700; }
+    .panel-icon { width:24px; height:24px; border-radius:var(--radius-sm); display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; background:var(--accent-muted); color:var(--accent); }
+    .panel-badge { padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:var(--accent-muted); color:var(--accent); }
+    .panel-body { padding: 16px 18px; }
+
+    .qb-wrap { padding: 14px 18px 18px; }
+    .qb-stack { display: flex; height: 14px; overflow: hidden; border-radius: 999px; background: var(--surface-1); border: 1px solid var(--border); margin-bottom: 12px; }
+    .qb-seg { min-width: 2px; height: 100%; }
+    .qb-done { background: var(--green); }
+    .qb-needs_rewrite { background: var(--red); }
+    .qb-needs_review { background: var(--amber); }
+    .qb-shipped_unreviewed { background: #f97316; }
+    .qb-both { background: #c084fc; }
+    .qb-in_flight { background: var(--accent); }
+    .qb-legend {
+      display: flex; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 14px;
+      font-size: 11px; color: var(--text-secondary);
+    }
+    .qb-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .qb-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+    .qb-tracks { display: grid; grid-template-columns: repeat(auto-fill,minmax(210px,1fr)); gap: 8px; margin-bottom: 14px; }
+    .qb-track {
+      background: var(--surface-1); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 8px 10px; min-width: 0;
+    }
+    .qb-track-head { display:flex; justify-content:space-between; gap:8px; margin-bottom: 7px; font-size: 12px; }
+    .qb-track-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .qb-track-total { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+    .qb-mini { display:flex; height: 5px; overflow: hidden; border-radius: 999px; background: var(--border); margin-bottom: 7px; }
+    .qb-track-counts {
+      display: flex; gap: 7px; flex-wrap: wrap; font-size: 10px;
+      color: var(--text-dim); font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
+    }
+    .qb-tools {
+      display: grid; grid-template-columns: minmax(180px, 1fr) 170px 170px;
+      gap: 8px; margin-bottom: 10px;
+    }
+    .qb-input, .qb-select {
+      width: 100%; background: var(--surface-1); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; font-size: 12px; outline: none;
+    }
+    .qb-input:focus, .qb-select:focus { border-color: rgba(56,189,248,0.55); }
+    .qb-table-wrap { max-height: 430px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+    .qb-table { width: 100%; border-collapse: collapse; }
+    .qb-table th {
+      position: sticky; top: 0; z-index: 1; background: var(--surface-1); color: var(--text-dim);
+      text-align: left; padding: 8px 10px; font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.04em; border-bottom: 1px solid var(--border);
+    }
+    .qb-table td { padding: 7px 10px; font-size: 12px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); }
+    .qb-table tr:last-child td { border-bottom: 0; }
+    .qb-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .qb-module { color: var(--text); font-weight: 500; }
+    .qb-path { color: var(--text-dim); font-size: 11px; }
+    .qb-num { text-align: right; font-variant-numeric: tabular-nums; }
+    .qb-chip {
+      display: inline-block; padding: 2px 7px; border-radius: 999px; font-size: 10px;
+      font-weight: 700; text-transform: uppercase; white-space: nowrap;
+    }
+    .qb-chip.done { background: var(--green-muted); color: var(--green); }
+    .qb-chip.needs_rewrite { background: var(--red-muted); color: var(--red); }
+    .qb-chip.needs_review { background: var(--amber-muted); color: var(--amber); }
+    .qb-chip.shipped_unreviewed { background: rgba(249,115,22,0.14); color: #f97316; }
+    .qb-chip.both { background: rgba(192,132,252,0.14); color: #c084fc; }
+    .qb-chip.in_flight { background: var(--accent-muted); color: var(--accent); }
+    .qb-module-link { color: var(--accent); text-decoration: none; font-size: 11px; }
+    .qb-module-link:hover { text-decoration: underline; }
+    .qb-detail {
+      margin-top: 10px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1.2fr repeat(5, auto);
+      gap: 10px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .qb-detail-title { font-weight: 600; color: var(--text); min-width: 0; }
+    .qb-detail-kv { color: var(--text-dim); font-size: 11px; white-space: nowrap; }
+    .qb-detail-kv strong { color: var(--text-secondary); font-weight: 600; }
+    .empty-state { padding: 24px; text-align: center; color: var(--text-dim); font-size: 13px; }
+    .module-detail-summary {
+      padding: 12px 18px; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:10px; border-top:1px solid var(--border);
+    }
+    .module-kv {
+      display:grid; gap:3px;
+      border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-1); padding: 8px 10px;
+    }
+    .module-kv-label { color:var(--text-dim); font-size:11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .module-kv-value { color:var(--text); font-size:13px; font-weight:600; }
+    .module-kv a { color: var(--accent); text-decoration: none; }
+    .module-kv a:hover { text-decoration: underline; }
+    .gate-list { margin: 0; padding: 0 0 0 16px; }
+    .gate-list li { font-size: 12px; color: var(--text-secondary); padding: 3px 0; }
+    .gate-list li.critical { color: #f87171; }
+    .gate-list li.warn { color: #fbbf24; }
+    .gate-list li.info { color: #2dd4bf; }
+    .back-link { color: var(--text-dim); text-decoration:none; font-size:13px; }
+    .back-link:hover { color: var(--accent); }
+    @media (max-width: 900px) {
+      .qb-tools { grid-template-columns: 1fr; }
+      .qb-detail { grid-template-columns: 1fr 1fr; }
+      .module-detail-summary { grid-template-columns: 1fr; }
+      .page-head { flex-direction: column; }
+      .page-actions { justify-content: flex-start; }
+    }
+"""
+
+_QUALITY_BOARD_PAGE_JS = r"""
+    const $ = (sel) => document.querySelector(sel);
+
+    async function fetchJson(url) {
+      const r = await fetch(url);
+      if (!r.ok) return { error: `HTTP ${r.status}`, url };
+      return r.json();
+    }
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = String(s ?? '');
+      return d.innerHTML;
+    }
+
+    const QB_STATUS = ['done', 'needs_rewrite', 'needs_review', 'shipped_unreviewed', 'both', 'in_flight'];
+    const QB_LABEL = {
+      done: 'Done',
+      needs_rewrite: 'Rewrite',
+      needs_review: 'Review',
+      shipped_unreviewed: 'Shipped (unreviewed)',
+      both: 'Both',
+      in_flight: 'In flight',
+    };
+    let qualityBoardData = null;
+    let qualityBoardSelected = null;
+
+    function qbSegs(counts, total, mini = false) {
+      const denom = Math.max(1, total || 0);
+      return QB_STATUS.map(status => {
+        const n = counts?.[status] || 0;
+        if (!n) return '';
+        const pct = Math.max(mini ? 1.5 : 0.5, n / denom * 100);
+        return `<div class="qb-seg qb-${status}" title="${QB_LABEL[status]}: ${n}" style="width:${pct}%"></div>`;
+      }).join('');
+    }
+
+    function qbChip(status) {
+      return `<span class="qb-chip ${esc(status)}">${QB_LABEL[status] || status}</span>`;
+    }
+
+    function renderQualityBoardDetail(module) {
+      const el = $('#qb-detail');
+      if (!el) return;
+      if (!module) {
+        el.innerHTML = '<div class="qb-detail-title">No module selected</div>';
+        return;
+      }
+      el.innerHTML = `
+        <div>
+          <div class="qb-detail-title">${esc(module.title || module.module_key || module.path)}</div>
+          <div class="qb-path mono">${esc(module.path || module.slug)}</div>
+        </div>
+        <div class="qb-detail-kv">Status<br><strong>${QB_LABEL[module.status] || module.status}</strong></div>
+        <div class="qb-detail-kv">Score<br><strong>${module.score == null ? 'n/a' : Number(module.score).toFixed(1)}</strong></div>
+        <div class="qb-detail-kv">Banner<br><strong>${module.revision_pending ? 'pending' : 'clear'}</strong></div>
+        <div class="qb-detail-kv">Stage<br><strong>${esc(module.stage || 'none')}</strong></div>
+        <div class="qb-detail-kv">Review<br><strong>${esc(module.latest_review_verdict || (module.auto_approved ? 'auto' : 'none'))}</strong></div>
+        <div class="qb-detail-kv">Queue<br><strong>${module.in_post_review_queue ? 'yes' : 'no'}</strong></div>`;
+    }
+
+    function encodeQualityPath(relPath) {
+      return String(relPath || '')
+        .replace(/\\.md$/i, '')
+        .split('/')
+        .map(encodeURIComponent)
+        .join('/');
+    }
+
+    function renderQualityBoardTable() {
+      if (!qualityBoardData) return;
+      const modules = qualityBoardData.modules || [];
+      const q = ($('#qb-search')?.value || '').trim().toLowerCase();
+      const track = $('#qb-track')?.value || '';
+      const status = $('#qb-status')?.value || '';
+      const statusRank = Object.fromEntries(QB_STATUS.map((s, i) => [s, i]));
+
+      const rows = modules
+        .filter(m => !track || m.track === track)
+        .filter(m => !status || m.status === status)
+        .filter(m => {
+          if (!q) return true;
+          return String(m.title || '').toLowerCase().includes(q)
+            || String(m.module_key || '').toLowerCase().includes(q)
+            || String(m.path || '').toLowerCase().includes(q)
+            || String(m.slug || '').toLowerCase().includes(q);
+        })
+        .sort((a, b) => (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99)
+          || String(a.track).localeCompare(String(b.track))
+          || String(a.title || a.path).localeCompare(String(b.title || b.path)));
+
+      $('#qb-count').textContent = `${rows.length} shown`;
+      const selected = rows.find(m => m.slug === qualityBoardSelected) || rows[0] || null;
+      qualityBoardSelected = selected?.slug || null;
+      const body = rows.map(m => {
+        const detailPath = encodeQualityPath(m.path || `${m.slug}.md`);
+        return `<tr data-slug="${esc(m.slug)}" class="${m.slug === qualityBoardSelected ? 'selected' : ''}">
+          <td>${qbChip(m.status)}</td>
+          <td>
+            <div class="qb-module"><a class="qb-module-link" href="/quality/${detailPath}">${esc(m.title || m.module_key)}</a></div>
+            <div class="qb-path mono">${esc(m.path)}</div>
+          </td>
+          <td>${esc(m.track || '')}</td>
+          <td class="mono">${esc(m.stage || 'none')}</td>
+          <td class="qb-num">${m.score == null ? '' : Number(m.score).toFixed(1)}</td>
+        </tr>`;
+      }).join('');
+      $('#qb-table-body').innerHTML = body || '<tr><td colspan="5" class="empty-state">No modules match filters</td></tr>';
+      for (const tr of document.querySelectorAll('#qb-table-body tr[data-slug]')) {
+        tr.addEventListener('click', () => {
+          qualityBoardSelected = tr.dataset.slug;
+          const picked = modules.find(m => m.slug === qualityBoardSelected);
+          renderQualityBoardTable();
+          renderQualityBoardDetail(picked);
+        });
+      }
+      renderQualityBoardDetail(selected);
+    }
+
+    function renderQualityBoard(data) {
+      const el = $('#quality-board');
+      const badge = $('#qb-badge');
+
+      if (!data || data.error) {
+        el.innerHTML = `<div class="empty-state">${esc(data?.error || 'No data')}</div>`;
+        badge.textContent = 'Unknown';
+        return;
+      }
+
+      qualityBoardData = data;
+      const totals = data.totals || {};
+      const total = totals.total || 0;
+      const needs = (totals.needs_rewrite || 0) + (totals.needs_review || 0) + (totals.shipped_unreviewed || 0) + (totals.both || 0);
+      badge.textContent = `${totals.done || 0} / ${total} done · ${needs} left`;
+      badge.style.background = needs ? 'var(--amber-muted)' : 'var(--green-muted)';
+      badge.style.color = needs ? 'var(--amber)' : 'var(--green)';
+
+      const tracks = data.tracks || [];
+      const trackOptions = tracks
+        .map(t => `<option value="${esc(t.track)}">${esc(t.track)} (${t.total || t.totals?.total || 0})</option>`)
+        .join('');
+
+      const legend = QB_STATUS.map(s => {
+        const n = totals[s] || 0;
+        return `<span><i class="qb-dot qb-${s}"></i>${QB_LABEL[s]} <strong>${n}</strong></span>`;
+      }).join('');
+
+      const trackCards = tracks.map(t => {
+        const c = t.totals || t;
+        const tTotal = c.total || 0;
+        const counts = QB_STATUS.map(s => c[s] ? `<span>${QB_LABEL[s]}:${c[s]}</span>` : '').filter(Boolean).join('');
+        return `<div class="qb-track">
+          <div class="qb-track-head">
+            <span class="qb-track-name">${esc(t.track)}</span>
+            <span class="qb-track-total">${c.done || 0}/${tTotal}</span>
+          </div>
+          <div class="qb-mini">${qbSegs(c, tTotal, true)}</div>
+          <div class="qb-track-counts">${counts || '<span>empty</span>'}</div>
+        </div>`;
+      }).join('');
+
+      el.innerHTML = `
+        <div class="qb-wrap">
+          <div class="qb-stack">${qbSegs(totals, total)}</div>
+          <div class="qb-legend">${legend}</div>
+          <div class="qb-tracks">${trackCards || '<div class="empty-state">No tracks</div>'}</div>
+          <div class="qb-tools">
+            <input class="qb-input" id="qb-search" type="search" placeholder="Search modules">
+            <select class="qb-select" id="qb-track"><option value="">All tracks</option>${trackOptions}</select>
+            <select class="qb-select" id="qb-status">
+              <option value="">All statuses</option>
+              ${QB_STATUS.map(s => `<option value="${s}">${QB_LABEL[s]}</option>`).join('')}
+            </select>
+          </div>
+          <div class="qb-table-wrap">
+            <table class="qb-table">
+              <thead><tr><th>Status</th><th>Module</th><th>Track</th><th>Stage</th><th class="qb-num">Score</th></tr></thead>
+              <tbody id="qb-table-body"></tbody>
+            </table>
+          </div>
+          <div class="qb-detail" id="qb-detail"></div>
+          <div class="mono qb-path" id="qb-count" style="margin-top:8px"></div>
+        </div>`;
+
+      $('#qb-search').addEventListener('input', renderQualityBoardTable);
+      $('#qb-track').addEventListener('change', renderQualityBoardTable);
+      $('#qb-status').addEventListener('change', renderQualityBoardTable);
+      renderQualityBoardTable();
+    }
+
+    let refreshing = false;
+    async function refresh() {
+      if (refreshing) return;
+      refreshing = true;
+      const btn = $('#refresh');
+      btn.classList.add('loading');
+      try {
+        const board = await fetchJson('/api/quality/board');
+        renderQualityBoard(board);
+        $('#last-updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
+      } catch (err) {
+        console.error('Quality board refresh failed:', err);
+      } finally {
+        refreshing = false;
+        btn.classList.remove('loading');
+      }
+    }
+
+    $('#refresh').addEventListener('click', refresh);
+    refresh();
+    setInterval(refresh, 60000);
+"""
+
+
 _OPERATOR_PAGE_JS = """
     const $ = (sel) => document.querySelector(sel);
 
@@ -4644,6 +5026,206 @@ _OPERATOR_PAGE_JS = """
     refresh();
     setInterval(refresh, 60000);
 """
+
+
+def _find_quality_board_module(repo_root: Path, module_key: str) -> dict[str, Any] | None:
+    board = build_quality_board(repo_root)
+    rel = module_key[:-3] if module_key.endswith(".md") else module_key
+    rel_file = f"{rel}.md"
+    slug = _quality_board_slug_for_path(rel)
+    for item in board.get("modules", []):
+        if item.get("path") == rel_file or item.get("slug") == slug or item.get("module_key") == module_key:
+            return item
+    return None
+
+
+def render_quality_board_page_html() -> str:
+    return f"""<!doctype html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"utf-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+  <title>Quality Board - KubeDojo Local Monitor</title>
+  <style>
+{_TOP_NAV_CSS}
+{_QUALITY_BOARD_PAGE_CSS}
+  </style>
+</head>
+<body>
+ {_render_top_nav("quality")}
+<main class=\"main\">
+  <div class=\"page-head\">
+    <div>
+      <h1 class=\"page-title\">Quality Board</h1>
+      <div class=\"page-sub\">Module review health, score bands, and gates.</div>
+    </div>
+    <div class=\"page-actions\">
+      <span class=\"status-pill\" id=\"conn-status\"><span class=\"dot\"></span> Connected</span>
+      <span class=\"status-pill\" id=\"last-updated\"></span>
+      <button class=\"refresh-btn\" id=\"refresh\">Refresh</button>
+    </div>
+  </div>
+
+  <div class=\"panel\">
+    <div class=\"panel-header\">
+      <div class=\"panel-title\">
+        <span class=\"panel-icon\" style=\"background:var(--accent-muted);color:var(--accent);\">Q</span>
+        Board</div>
+      <span class=\"panel-badge\" id=\"qb-badge\" style=\"background:var(--accent-muted);color:var(--accent);\">&nbsp;</span>
+    </div>
+    <div class=\"panel-body-flush\" id=\"quality-board\"><div class=\"empty-state\">Loading&hellip;</div></div>
+  </div>
+</main>
+<script>
+{_QUALITY_BOARD_PAGE_JS}
+</script>
+</body>
+</html>"""
+
+
+def render_quality_module_not_found_page_html(module_key: str) -> str:
+    safe_key = module_key.replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+    return f"""<!doctype html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"utf-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+  <title>Quality Module Not Found - KubeDojo Local Monitor</title>
+  <style>
+    :root {{ --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280; --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12); --green-muted:rgba(74,222,128,0.12); --border:rgba(255,255,255,0.06); --radius-sm:8px; --radius:12px; }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; }}
+{_TOP_NAV_CSS}
+    .main {{ max-width: 920px; margin:0 auto; padding: 24px; }}
+    .panel {{ background:var(--surface-0); border:1px solid var(--border); border-radius:var(--radius); padding: 18px; }}
+    .panel a {{ color:var(--accent); }}
+  </style>
+</head>
+<body>
+{_render_top_nav("quality")}
+<main class=\"main\">
+  <div class=\"panel\">
+    <h1>Quality module not found</h1>
+    <p>Could not locate quality data for <code>{safe_key}</code>.</p>
+    <p><a href=\"/quality\">← Back to Quality Board</a></p>
+  </div>
+</main>
+</body>
+</html>"""
+
+
+def render_quality_module_page_html(repo_root: Path, module_key: str) -> str | None:
+    module = _find_quality_board_module(repo_root, module_key)
+    if module is None:
+        return None
+
+    state = build_module_state(repo_root, module_key)
+    rel = module_key[:-3] if module_key.endswith('.md') else module_key
+    diagnostics = state.get("diagnostics") if isinstance(state.get("diagnostics"), list) else []
+    orchestration = state.get("orchestration") if isinstance(state.get("orchestration"), dict) else {}
+    v2_orchestration = orchestration.get("v2") if isinstance(orchestration.get("v2"), dict) else {}
+    translation_orchestration = (
+        orchestration.get("translation_v2") if isinstance(orchestration.get("translation_v2"), dict) else {}
+    )
+    module_state = v2_orchestration.get("latest_job") or {}
+    translation_state = translation_orchestration.get("latest_job") or {}
+
+    def _cls(item: Any) -> str:
+        return str(item.get("severity")) if isinstance(item, dict) else ""
+
+    def _text(item: Any) -> str:
+        if not isinstance(item, dict):
+            return ""
+        parts = [
+            str(item.get("summary") or ""),
+            str(item.get("source") or ""),
+            str(item.get("next_action") or ""),
+        ]
+        return " · ".join(part for part in parts if part)
+
+    def _relative_path(raw_path: Any) -> str:
+        if not raw_path:
+            return ""
+        try:
+            return Path(raw_path).resolve().relative_to(repo_root).as_posix()
+        except (OSError, ValueError):
+            return str(raw_path)
+
+    gate_items = []
+    for item in diagnostics:
+        if not isinstance(item, dict):
+            continue
+        s = _text(item)
+        if not s:
+            continue
+        gate_items.append(f"<li class=\"{_cls(item)}\">{s}</li>")
+
+    title = str(module.get("title") or "Unknown module").replace("<", "&lt;").replace(">", "&gt;")
+    tracks = str(module.get("track") or "")
+    status = str(module.get("status") or "unknown")
+    score = module.get("score")
+    score_text = f"{float(score):.1f}" if isinstance(score, int | float) else "n/a"
+    english_path = _relative_path(state.get("english_path"))
+    ukrainian_path = _relative_path(state.get("ukrainian_path"))
+    source_links = (
+        f'<a href="/{english_path}">english</a> / <a href="/{ukrainian_path}">ukrainian</a>'
+        if english_path and ukrainian_path
+        else (
+            f'<a href="/{english_path}">english</a>'
+            if english_path
+            else "<span class=\"dim\">not synced</span>"
+        )
+    )
+
+    return f"""<!doctype html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"utf-8\">
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+  <title>Quality · {title} - KubeDojo Local Monitor</title>
+  <style>
+{_TOP_NAV_CSS}
+{_QUALITY_BOARD_PAGE_CSS}
+  </style>
+</head>
+<body>
+{_render_top_nav("quality")}
+<main class=\"main\">
+  <div class=\"page-head\">
+    <div>
+      <h1 class=\"page-title\">{title}</h1>
+      <div class=\"page-sub\">{tracks} · {state.get('module_key', rel)}</div>
+    </div>
+    <div class=\"page-actions\"><a href=\"/quality\" class=\"back-link\">← Quality Board</a></div>
+  </div>
+
+  <section class=\"panel\">
+    <div class=\"panel-header\">
+      <div class=\"panel-title\">Quality summary</div>
+      <span class=\"panel-badge\">{status}</span>
+    </div>
+    <div class=\"module-detail-summary\">
+      <div class=\"module-kv\"><span class=\"module-kv-label\">Score</span><span class=\"module-kv-value\">{score_text}</span></div>
+      <div class=\"module-kv\"><span class=\"module-kv-label\">Revision banner</span><span class=\"module-kv-value\">{"pending" if module.get("revision_pending") else "clear"}</span></div>
+      <div class=\"module-kv\"><span class=\"module-kv-label\">Stage</span><span class=\"module-kv-value\">{module.get("stage", "none")}</span></div>
+      <div class=\"module-kv\"><span class=\"module-kv-label\">Review</span><span class=\"module-kv-value\">{module.get("latest_review_verdict") or "none"}</span></div>
+      <div class=\"module-kv\"><span class=\"module-kv-label\">Post-review queue</span><span class=\"module-kv-value\">{"yes" if module.get("in_post_review_queue") else "no"}</span></div>
+      <div class=\"module-kv\"><span class=\"module-kv-label\">V2 pipeline</span><span class=\"module-kv-value\">{module_state.get("phase", "none") or "n/a"} · {module_state.get("queue_state", "n/a")}</span></div>
+      <div class=\"module-kv\"><span class=\"module-kv-label\">Translation V2</span><span class=\"module-kv-value\">{translation_state.get("phase", "none") or "n/a"} · {translation_state.get("queue_state", "n/a")}</span></div>
+      <div class=\"module-kv\"><span class=\"module-kv-label\">API</span><span class=\"module-kv-value\"><a href=\"/api/module/{rel}/state\">module state</a> · <a href=\"/api/module/{rel}/orchestration/latest\">orchestration</a></span></div>
+      <div class=\"module-kv\"><span class=\"module-kv-label\">Source</span><span class=\"module-kv-value\">{source_links}</span></div>
+    </div>
+  </section>
+
+  <section class=\"panel\" style=\"margin-top:18px;\">
+    <div class=\"panel-header\"><div class=\"panel-title\">Gates</div></div>
+    <div class=\"panel-body\">
+      <ul class=\"gate-list\">{''.join(gate_items) or '<li>No active gates</li>'}</ul>
+    </div>
+  </section>
+</main>
+</body>
+</html>"""
 
 
 def render_operator_page_html() -> str:
@@ -5153,6 +5735,7 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     }}
 
 {_OPERATOR_SUMMARY_CSS}
+{_QUALITY_SUMMARY_CSS}
 
     /* Section readiness grid */
     .readiness-wrap {{ padding: 4px 0 0 0; }}
@@ -5215,155 +5798,6 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     .readiness-section-counts .dead {{ color: var(--red); }}
     .readiness-section-counts .inflight {{ color: var(--amber); }}
     .readiness-section-counts .cleared {{ color: var(--green); }}
-
-    /* Quality Board */
-    .qb-wrap {{ padding: 14px 18px 18px; }}
-    .qb-stack {{
-      display: flex;
-      height: 14px;
-      overflow: hidden;
-      border-radius: 999px;
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      margin-bottom: 12px;
-    }}
-    .qb-seg {{ min-width: 2px; height: 100%; }}
-    .qb-done {{ background: var(--green); }}
-    .qb-needs_rewrite {{ background: var(--red); }}
-    .qb-needs_review {{ background: var(--amber); }}
-    .qb-shipped_unreviewed {{ background: #f97316; }}
-    .qb-both {{ background: #c084fc; }}
-    .qb-in_flight {{ background: var(--accent); }}
-    .qb-legend {{
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px 12px;
-      margin-bottom: 14px;
-      font-size: 11px;
-      color: var(--text-secondary);
-    }}
-    .qb-legend span {{ display: inline-flex; align-items: center; gap: 5px; }}
-    .qb-dot {{ width: 8px; height: 8px; border-radius: 2px; display: inline-block; }}
-    .qb-tracks {{
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-      gap: 8px;
-      margin-bottom: 14px;
-    }}
-    .qb-track {{
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 8px 10px;
-      min-width: 0;
-    }}
-    .qb-track-head {{
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 7px;
-      font-size: 12px;
-    }}
-    .qb-track-name {{ font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
-    .qb-track-total {{ color: var(--text-dim); font-variant-numeric: tabular-nums; }}
-    .qb-mini {{
-      display: flex;
-      height: 5px;
-      overflow: hidden;
-      border-radius: 999px;
-      background: var(--border);
-      margin-bottom: 7px;
-    }}
-    .qb-track-counts {{
-      display: flex;
-      gap: 7px;
-      flex-wrap: wrap;
-      font-size: 10px;
-      color: var(--text-dim);
-      font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
-    }}
-    .qb-tools {{
-      display: grid;
-      grid-template-columns: minmax(180px, 1fr) 170px 170px;
-      gap: 8px;
-      margin-bottom: 10px;
-    }}
-    .qb-input, .qb-select {{
-      width: 100%;
-      background: var(--surface-1);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 8px 10px;
-      font-size: 12px;
-      outline: none;
-    }}
-    .qb-input:focus, .qb-select:focus {{ border-color: rgba(56,189,248,0.55); }}
-    .qb-table-wrap {{
-      max-height: 330px;
-      overflow: auto;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-    }}
-    .qb-table {{ width: 100%; border-collapse: collapse; }}
-    .qb-table th {{
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      background: var(--surface-1);
-      color: var(--text-dim);
-      text-align: left;
-      padding: 8px 10px;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      border-bottom: 1px solid var(--border);
-    }}
-    .qb-table td {{
-      padding: 7px 10px;
-      font-size: 12px;
-      border-bottom: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-    }}
-    .qb-table tr:last-child td {{ border-bottom: 0; }}
-    .qb-table tr:hover td {{ background: rgba(255,255,255,0.02); }}
-    .qb-module {{ color: var(--text); font-weight: 500; }}
-    .qb-path {{ color: var(--text-dim); font-size: 11px; }}
-    .qb-num {{ text-align: right; font-variant-numeric: tabular-nums; }}
-    .qb-chip {{
-      display: inline-block;
-      padding: 2px 7px;
-      border-radius: 999px;
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }}
-    .qb-chip.done {{ background: var(--green-muted); color: var(--green); }}
-    .qb-chip.needs_rewrite {{ background: var(--red-muted); color: var(--red); }}
-    .qb-chip.needs_review {{ background: var(--amber-muted); color: var(--amber); }}
-    .qb-chip.shipped_unreviewed {{ background: rgba(249,115,22,0.14); color: #f97316; }}
-    .qb-chip.both {{ background: rgba(192,132,252,0.14); color: #c084fc; }}
-    .qb-chip.in_flight {{ background: var(--accent-muted); color: var(--accent); }}
-    .qb-detail {{
-      margin-top: 10px;
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 10px;
-      display: grid;
-      grid-template-columns: 1.2fr repeat(5, auto);
-      gap: 10px;
-      align-items: center;
-      font-size: 12px;
-    }}
-    .qb-detail-title {{ font-weight: 600; color: var(--text); min-width: 0; }}
-    .qb-detail-kv {{ color: var(--text-dim); font-size: 11px; white-space: nowrap; }}
-    .qb-detail-kv strong {{ color: var(--text-secondary); font-weight: 600; }}
-    @media (max-width: 900px) {{
-      .qb-tools {{ grid-template-columns: 1fr; }}
-      .qb-detail {{ grid-template-columns: 1fr 1fr; }}
-    }}
 
     /* Activity feed */
     .activity-feed {{
@@ -5471,13 +5905,17 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
           <div class="panel-header">
             <div class="panel-title">
               <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">Q</span>
-              Quality Board
+              Quality
             </div>
-            <span class="panel-badge" id="qb-badge" style="background:var(--accent-muted);color:var(--accent);">&nbsp;</span>
+            <span class="panel-badge" id="quality-summary-badge" style="background:var(--accent-muted);color:var(--accent);">&nbsp;</span>
           </div>
-          <div class="panel-body-flush" id="quality-board">
-            <div class="empty-state">Loading&hellip;</div>
-          </div>
+          <a class="quality-summary-card" href="/quality">
+            <span class="quality-summary-main">
+              <span class="quality-summary-title">Aggregate quality</span>
+              <span class="quality-summary-counts" id="quality-summary-counts">Loading&hellip;</span>
+            </span>
+            <span class="quality-summary-link">View full board &rarr;</span>
+          </a>
         </div>
       </div>
 
@@ -6200,160 +6638,34 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
       }}).join('');
     }}
 
-    const QB_STATUS = ['done', 'needs_rewrite', 'needs_review', 'shipped_unreviewed', 'both', 'in_flight'];
-    const QB_LABEL = {{
-      done: 'Done',
-      needs_rewrite: 'Rewrite',
-      needs_review: 'Review',
-      shipped_unreviewed: 'Shipped (unreviewed)',
-      both: 'Both',
-      in_flight: 'In flight',
-    }};
-    let qualityBoardData = null;
-    let qualityBoardSelected = null;
-
-    function qbSegs(counts, total, mini=false) {{
-      const denom = Math.max(1, total || 0);
-      return QB_STATUS.map(status => {{
-        const n = counts?.[status] || 0;
-        if (!n) return '';
-        const pct = Math.max(mini ? 1.5 : 0.5, n / denom * 100);
-        return `<div class="qb-seg qb-${{status}}" title="${{QB_LABEL[status]}}: ${{n}}" style="width:${{pct}}%"></div>`;
-      }}).join('');
-    }}
-
-    function qbChip(status) {{
-      return `<span class="qb-chip ${{esc(status)}}">${{QB_LABEL[status] || status}}</span>`;
-    }}
-
-    function renderQualityBoardDetail(module) {{
-      const el = $('#qb-detail');
-      if (!el) return;
-      if (!module) {{
-        el.innerHTML = '<div class="qb-detail-title">No module selected</div>';
+    function renderQualitySummary(data) {{
+      const counts = $('#quality-summary-counts');
+      const badge = $('#quality-summary-badge');
+      if (!counts || !badge) {{
         return;
       }}
-      el.innerHTML = `
-        <div>
-          <div class="qb-detail-title">${{esc(module.title || module.module_key || module.path)}}</div>
-          <div class="qb-path mono">${{esc(module.path || module.slug)}}</div>
-        </div>
-        <div class="qb-detail-kv">Status<br><strong>${{QB_LABEL[module.status] || module.status}}</strong></div>
-        <div class="qb-detail-kv">Score<br><strong>${{module.score == null ? 'n/a' : Number(module.score).toFixed(1)}}</strong></div>
-        <div class="qb-detail-kv">Banner<br><strong>${{module.revision_pending ? 'pending' : 'clear'}}</strong></div>
-        <div class="qb-detail-kv">Stage<br><strong>${{esc(module.stage || 'none')}}</strong></div>
-        <div class="qb-detail-kv">Review<br><strong>${{esc(module.latest_review_verdict || (module.auto_approved ? 'auto' : 'none'))}}</strong></div>
-        <div class="qb-detail-kv">Queue<br><strong>${{module.in_post_review_queue ? 'yes' : 'no'}}</strong></div>`;
-    }}
 
-    function renderQualityBoardTable() {{
-      if (!qualityBoardData) return;
-      const modules = qualityBoardData.modules || [];
-      const q = ($('#qb-search')?.value || '').trim().toLowerCase();
-      const track = $('#qb-track')?.value || '';
-      const status = $('#qb-status')?.value || '';
-      const statusRank = Object.fromEntries(QB_STATUS.map((s, i) => [s, i]));
-      const rows = modules
-        .filter(m => !track || m.track === track)
-        .filter(m => !status || m.status === status)
-        .filter(m => {{
-          if (!q) return true;
-          return String(m.title || '').toLowerCase().includes(q)
-            || String(m.module_key || '').toLowerCase().includes(q)
-            || String(m.path || '').toLowerCase().includes(q)
-            || String(m.slug || '').toLowerCase().includes(q);
-        }})
-        .sort((a, b) => (statusRank[a.status] ?? 99) - (statusRank[b.status] ?? 99)
-          || String(a.track).localeCompare(String(b.track))
-          || String(a.title || a.path).localeCompare(String(b.title || b.path)));
-
-      $('#qb-count').textContent = `${{rows.length}} shown`;
-      const selected = rows.find(m => m.slug === qualityBoardSelected) || rows[0] || null;
-      qualityBoardSelected = selected?.slug || null;
-      $('#qb-table-body').innerHTML = rows.map(m => `
-        <tr data-slug="${{esc(m.slug)}}" class="${{m.slug === qualityBoardSelected ? 'selected' : ''}}">
-          <td>${{qbChip(m.status)}}</td>
-          <td>
-            <div class="qb-module">${{esc(m.title || m.module_key)}}</div>
-            <div class="qb-path mono">${{esc(m.path)}}</div>
-          </td>
-          <td>${{esc(m.track || '')}}</td>
-          <td class="mono">${{esc(m.stage || 'none')}}</td>
-          <td class="qb-num">${{m.score == null ? '' : Number(m.score).toFixed(1)}}</td>
-        </tr>`).join('');
-      for (const tr of document.querySelectorAll('#qb-table-body tr')) {{
-        tr.addEventListener('click', () => {{
-          qualityBoardSelected = tr.dataset.slug;
-          const picked = modules.find(m => m.slug === qualityBoardSelected);
-          renderQualityBoardTable();
-          renderQualityBoardDetail(picked);
-        }});
-      }}
-      renderQualityBoardDetail(selected);
-    }}
-
-    function renderQualityBoard(data) {{
-      const el = $('#quality-board');
-      const badge = $('#qb-badge');
       if (!data || data.error) {{
-        el.innerHTML = `<div class="empty-state">${{esc(data?.error || 'No data')}}</div>`;
-        badge.textContent = 'Unknown';
+        counts.textContent = 'No quality data';
+        badge.textContent = 'Unavailable';
+        badge.style.background = 'var(--red-muted)';
+        badge.style.color = 'var(--red)';
         return;
       }}
-      qualityBoardData = data;
+
       const totals = data.totals || {{}};
+      const done = totals.done || 0;
+      const needsRewrite = totals.needs_rewrite || 0;
+      const needsReview = totals.needs_review || 0;
+      const shippedUnreviewed = totals.shipped_unreviewed || 0;
+      const both = totals.both || 0;
       const total = totals.total || 0;
-      const needs = (totals.needs_rewrite || 0) + (totals.needs_review || 0) + (totals.shipped_unreviewed || 0) + (totals.both || 0);
-      badge.textContent = `${{totals.done || 0}} / ${{total}} done · ${{needs}} left`;
-      badge.style.background = needs ? 'var(--amber-muted)' : 'var(--green-muted)';
-      badge.style.color = needs ? 'var(--amber)' : 'var(--green)';
+      const outstanding = needsRewrite + needsReview + shippedUnreviewed + both;
 
-      const tracks = data.tracks || [];
-      const trackOptions = tracks.map(t => `<option value="${{esc(t.track)}}">${{esc(t.track)}} (${{t.total || t.totals?.total || 0}})</option>`).join('');
-      const legend = QB_STATUS.map(s => {{
-        const n = totals[s] || 0;
-        return `<span><i class="qb-dot qb-${{s}}"></i>${{QB_LABEL[s]}} <strong>${{n}}</strong></span>`;
-      }}).join('');
-      const trackCards = tracks.map(t => {{
-        const c = t.totals || t;
-        const tTotal = c.total || 0;
-        const counts = QB_STATUS.map(s => c[s] ? `<span>${{QB_LABEL[s]}}:${{c[s]}}</span>` : '').filter(Boolean).join('');
-        return `<div class="qb-track">
-          <div class="qb-track-head">
-            <span class="qb-track-name">${{esc(t.track)}}</span>
-            <span class="qb-track-total">${{c.done || 0}}/${{tTotal}}</span>
-          </div>
-          <div class="qb-mini">${{qbSegs(c, tTotal, true)}}</div>
-          <div class="qb-track-counts">${{counts || '<span>empty</span>'}}</div>
-        </div>`;
-      }}).join('');
-
-      el.innerHTML = `
-        <div class="qb-wrap">
-          <div class="qb-stack">${{qbSegs(totals, total)}}</div>
-          <div class="qb-legend">${{legend}}</div>
-          <div class="qb-tracks">${{trackCards || '<div class="empty-state">No tracks</div>'}}</div>
-          <div class="qb-tools">
-            <input class="qb-input" id="qb-search" type="search" placeholder="Search modules">
-            <select class="qb-select" id="qb-track"><option value="">All tracks</option>${{trackOptions}}</select>
-            <select class="qb-select" id="qb-status">
-              <option value="">All statuses</option>
-              ${{QB_STATUS.map(s => `<option value="${{s}}">${{QB_LABEL[s]}}</option>`).join('')}}
-            </select>
-          </div>
-          <div class="qb-table-wrap">
-            <table class="qb-table">
-              <thead><tr><th>Status</th><th>Module</th><th>Track</th><th>Stage</th><th class="qb-num">Score</th></tr></thead>
-              <tbody id="qb-table-body"></tbody>
-            </table>
-          </div>
-          <div class="qb-detail" id="qb-detail"></div>
-          <div class="qb-path mono" id="qb-count" style="margin-top:8px"></div>
-        </div>`;
-      $('#qb-search').addEventListener('input', renderQualityBoardTable);
-      $('#qb-track').addEventListener('change', renderQualityBoardTable);
-      $('#qb-status').addEventListener('change', renderQualityBoardTable);
-      renderQualityBoardTable();
+      counts.textContent = `done=${{done}} / needs_rewrite=${{needsRewrite}} / needs_review=${{needsReview}} / shipped_unreviewed=${{shippedUnreviewed}}${{both ? ` / both=${{both}}` : ''}}`;
+      badge.textContent = `${{done}} / ${{total}} done`;
+      badge.style.background = outstanding ? 'var(--amber-muted)' : 'var(--green-muted)';
+      badge.style.color = outstanding ? 'var(--amber)' : 'var(--green)';
     }}
 
     function formatRelTime(epoch, nowEpoch) {{
@@ -6569,7 +6881,7 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
         const t2Queue = transStatus.queue || transStatus;
         renderOperator(briefing);
         renderReadiness(readiness);
-        renderQualityBoard(qualityBoard);
+        renderQualitySummary(qualityBoard);
         renderActivity(activity);
         renderMetrics(summary, worktree, feedback, t2Queue);
         renderServices(services);
@@ -7344,7 +7656,7 @@ def build_api_schema() -> dict[str, Any]:
         },
         "endpoints": [
             {"path": "/", "desc": "HTML dashboard", "content_type": "text/html"},
-            {"path": "/quality-board", "desc": "HTML dashboard focused on the Quality Board panel", "content_type": "text/html"},
+            {"path": "/quality", "desc": "Full-quality board and per-module summary table", "content_type": "text/html"},
             {"path": "/healthz", "desc": "Liveness probe"},
             {"path": "/api/schema", "desc": "This document"},
             {
@@ -7643,12 +7955,22 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     path = parsed.path.rstrip("/") or "/"
     query = parse_qs(parsed.query)
 
-    if path in {"/", "/dashboard", "/quality-board"}:
+    if path in {"/", "/dashboard"}:
         return 200, render_dashboard_html(), "text/html; charset=utf-8"
     if path == "/operator":
         return 200, render_operator_page_html(), "text/html; charset=utf-8"
     if path == "/quality":
-        return 200, _render_skeleton_page("Quality", 975), "text/html; charset=utf-8"
+        return 200, render_quality_board_page_html(), "text/html; charset=utf-8"
+    if path.startswith("/quality/"):
+        module_key = _validate_module_key(repo_root, unquote(path[len("/quality/"):]).strip("/"))
+        if not module_key:
+            return 400, {"error": "invalid_module_key"}, "application/json; charset=utf-8"
+        html = render_quality_module_page_html(repo_root, module_key)
+        if html is None:
+            return 404, render_quality_module_not_found_page_html(module_key), "text/html; charset=utf-8"
+        return 200, html, "text/html; charset=utf-8"
+    if path == "/quality-board":
+        return 301, "/quality", "text/plain; charset=utf-8"
     if path == "/pipeline":
         return 200, _render_skeleton_page("Pipeline", 976), "text/html; charset=utf-8"
     if path == "/activity":
@@ -8225,12 +8547,23 @@ def make_handler(repo_root: Path) -> type[BaseHTTPRequestHandler]:
                     self.end_headers()
                     return
 
+            location = None
+            if 300 <= status_code < 400:
+                try:
+                    decoded_body = body.decode("utf-8", errors="replace").strip()
+                except (AttributeError, UnicodeDecodeError):
+                    decoded_body = ""
+                if decoded_body.startswith("/"):
+                    location = decoded_body
+
             try:
                 content_type = _safe_header_value(content_type)
                 etag = _safe_etag_header_value(etag)
                 self.send_response(status_code)
                 self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(len(body)))
+                if location is not None:
+                    self.send_header("Location", location)
                 if 200 <= status_code < 300:
                     self.send_header("ETag", etag)
                 self.end_headers()
