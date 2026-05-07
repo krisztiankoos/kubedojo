@@ -312,6 +312,15 @@ def test_discuss_cannot_resume_codex_even_with_stale_row(mock_invoke, monkeypatc
 def test_discuss_resume_rejects_missing_session(mock_invoke, monkeypatch, capsys):
     _channels.create_channel("resume-missing")
     monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    ids = iter(["pre-tier2-thread", "pre-tier2-reply"])
+    monkeypatch.setattr(_channels, "_new_id", lambda: next(ids))
+    _channels.post(
+        "resume-missing",
+        "user",
+        "starting point",
+        to_agents=["claude"],
+        auto_snapshot=False,
+    )
 
     exit_code = _run_cli(
         [
@@ -321,7 +330,7 @@ def test_discuss_resume_rejects_missing_session(mock_invoke, monkeypatch, capsys
             "--with",
             "claude",
             "--resume-thread",
-            "nonexistent-thread-id",
+            "pre-tier2-thread",
             "--max-rounds",
             "2",
         ]
@@ -367,7 +376,7 @@ def test_discuss_resume_rejects_codex_only_session(mock_invoke, monkeypatch, cap
     )
 
     assert exit_code == 1
-    assert "nothing to resume" in capsys.readouterr().err
+    assert "no resumable session" in capsys.readouterr().err
     assert mock_invoke.call_count == 0
 
 
@@ -464,7 +473,7 @@ def test_discuss_resume_rejects_typo_thread_id(mock_invoke, capsys):
 
     assert exit_code == 1
     assert mock_invoke.call_count == 0
-    assert "no resumable session" in capsys.readouterr().err
+    assert "not found in channel" in capsys.readouterr().err
 
 
 def test_inbox_show_with_pending_and_failed(capsys):

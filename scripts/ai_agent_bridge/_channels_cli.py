@@ -943,6 +943,12 @@ def _handle_discuss(args) -> int:
     # ── establish discussion thread correlation ──────────────────
     task_key = None
     if args.resume_thread:
+        if not _channels.thread_exists(args.channel, args.resume_thread):
+            print(
+                f"❌ thread {args.resume_thread!r} not found in channel '{args.channel}'",
+                file=sys.stderr,
+            )
+            return 1
         task_key = f"discuss:{args.resume_thread}"
         stored = _get_session(task_key)
         has_trace = stored and (
@@ -950,27 +956,15 @@ def _handle_discuss(args) -> int:
         )
         if not has_trace:
             print(
-                f"❌ no resumable session for thread {args.resume_thread} — nothing to resume "
-                f"(thread may not exist, may have only had codex participants, or may pre-date "
-                f"Tier-2 session storage)",
-                file=sys.stderr,
-            )
-            return 1
-        if not _channels.thread_exists(args.channel, args.resume_thread):
-            print(
-                f"❌ thread {args.resume_thread} does not exist in channel '{args.channel}'",
+                f"❌ thread {args.resume_thread} has no resumable session — only "
+                f"claude/gemini traces qualify (codex resume_policy='never'), "
+                f"and pre-Tier-2 threads have no stored session",
                 file=sys.stderr,
             )
             return 1
 
         correlation_id = args.resume_thread
         thread_messages = _channels.read(args.channel, thread_id=correlation_id)
-        if not thread_messages:
-            print(
-                f"❌ thread {args.resume_thread} does not exist in channel '{args.channel}'",
-                file=sys.stderr,
-            )
-            return 1
 
         try:
             continuation = _channels.post(
