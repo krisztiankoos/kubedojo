@@ -501,11 +501,58 @@ def test_route_request_serves_dashboard_and_issue_watch(tmp_path: Path) -> None:
     assert status_code == 200
     assert content_type.startswith("text/html")
     assert "KubeDojo Local Monitor" in html
+    assert "quality-summary-counts" in html
+    assert "id=\"quality-summary-badge\"" in html
+    assert "id=\"quality-board\"" not in html
+    assert "qb-search" not in html
 
     status_code, payload, content_type = local_api.route_request(repo_root, "/api/issue-watch/248")
     assert status_code == 200
     assert content_type.startswith("application/json")
     assert payload["comments_count"] == 1
+
+
+def test_route_request_serves_quality_board_and_module_detail(tmp_path: Path) -> None:
+    module_key, _en_path = _setup_repo(tmp_path)
+    repo_root = tmp_path
+    status_code, html, content_type = local_api.route_request(repo_root, "/quality")
+    assert status_code == 200
+    assert content_type.startswith("text/html")
+    assert "Quality Board" in html
+    assert "<title>Quality Board - KubeDojo Local Monitor</title>" in html
+
+    status_code, html, content_type = local_api.route_request(
+        repo_root, f"/quality/{module_key}"
+    )
+    assert status_code == 200
+    assert content_type.startswith("text/html")
+    assert "Quality summary" in html
+    assert "← Quality Board" in html
+
+
+def test_quality_board_redirect_points_to_quality(tmp_path: Path) -> None:
+    repo_root = tmp_path
+    _init_repo(repo_root)
+
+    import http.client
+    from threading import Thread
+
+    handler_cls = local_api.make_handler(repo_root)
+    server = local_api.ThreadingHTTPServer(("127.0.0.1", 0), handler_cls)
+    port = server.server_address[1]
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        conn_http = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
+        conn_http.request("GET", "/quality-board")
+        resp = conn_http.getresponse()
+        body = resp.read().decode("utf-8")
+        assert resp.status == 301
+        assert resp.getheader("Location") == "/quality"
+        assert body.strip() == "/quality"
+    finally:
+        server.shutdown()
+        server.server_close()
 
 
 def test_module_endpoints_reject_path_traversal(tmp_path: Path) -> None:
