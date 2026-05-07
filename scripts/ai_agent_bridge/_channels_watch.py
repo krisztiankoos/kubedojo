@@ -11,6 +11,7 @@ from typing import Any, TextIO
 from ._db import get_db
 
 VALID_CHANNEL_EVENTS = (
+    "message_posted",
     "reply_started",
     "heartbeat",
     "model_cascade",
@@ -124,14 +125,18 @@ def emit_reply_complete(
     *,
     agent: str,
     chars: int,
+    body: str | None = None,
 ) -> None:
+    payload: dict[str, Any] = {
+        "agent": agent,
+        "chars": chars,
+    }
+    if body is not None:
+        payload["body"] = body
     append_channel_event(
         "reply_complete",
         thread_id=thread_id,
-        payload={
-            "agent": agent,
-            "chars": chars,
-        },
+        payload=payload,
     )
 
 

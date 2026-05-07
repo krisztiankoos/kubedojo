@@ -14,13 +14,20 @@ REPO_ROOT = Path(
     os.environ.get("AB_REPO_ROOT", str(Path(__file__).parent.parent.parent))
 )
 
-# Database path (same as MCP server uses)
-DB_PATH = Path(
-    os.environ.get(
-        "AB_DB_PATH",
-        str(REPO_ROOT / ".mcp" / "servers" / "message-broker" / "messages.db"),
-    )
-)
+def _resolve_db_path() -> Path:
+    explicit = os.environ.get("AB_DB_PATH")
+    if explicit:
+        return Path(explicit)
+
+    bridge_path = REPO_ROOT / ".bridge" / "messages.db"
+    mcp_path = REPO_ROOT / ".mcp" / "servers" / "message-broker" / "messages.db"
+    for path in (bridge_path, mcp_path):
+        if path.exists():
+            return path
+    return bridge_path
+
+
+DB_PATH = _resolve_db_path()
 PID_DIR = Path(
     os.environ.get(
         "AB_PID_DIR",
