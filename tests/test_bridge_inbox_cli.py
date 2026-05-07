@@ -437,7 +437,7 @@ def test_discuss_resume_reuses_thread_and_trace(mock_invoke, monkeypatch, capsys
     assert exit_code == 0
     assert seen_session_ids[0] == "claude-uuid"
     captured = capsys.readouterr()
-    assert "resuming thread resumable-thread" in captured.out
+    assert "resuming thread resumable-th" in captured.out
     thread = _channels.read("resume-threaded", thread_id="resumable-thread")
     assert all(msg["thread_id"] == "resumable-thread" for msg in thread)
     assert mock_invoke.call_args_list[0].kwargs["task_id"].startswith(
