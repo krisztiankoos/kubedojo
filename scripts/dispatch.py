@@ -685,7 +685,11 @@ def dispatch_codex(prompt: str, model: str = CODEX_DEFAULT_MODEL,
 
 def dispatch_codex_review(prompt: str, model: str = CODEX_REVIEW_DEFAULT_MODEL,
                           timeout: int = 900, use_search: bool = False) -> tuple[bool, str]:
-    """Call Codex review via `codex exec --sandbox read-only`.
+    """Call Codex review via `codex exec --dangerously-bypass-approvals-and-sandbox`.
+
+    Danger mode is mandatory — read-only starved Codex of network/filesystem
+    and caused rc=-9 stale-rollout salvage (unrelated JSON, three failures
+    2026-05-07).
 
     ``use_search`` enables `--search` only for checks that need live web
     verification (FACT_CHECK in the deep-review batch). Simple checks do
@@ -694,7 +698,7 @@ def dispatch_codex_review(prompt: str, model: str = CODEX_REVIEW_DEFAULT_MODEL,
     cmd = [CODEX_CLI]
     if use_search:
         cmd.append("--search")
-    cmd.extend(["exec", "--skip-git-repo-check", "--sandbox", "read-only"])
+    cmd.extend(["exec", "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox"])
     if model and model != "codex":
         cmd.extend(["-m", model])
 
@@ -729,30 +733,34 @@ def dispatch_codex_review(prompt: str, model: str = CODEX_REVIEW_DEFAULT_MODEL,
 
 def dispatch_codex_patch(prompt: str, model: str = CODEX_PATCH_DEFAULT_MODEL,
                          timeout: int = 1200) -> tuple[bool, str]:
-    """Call Codex patch via `codex exec`.
+    """Call Codex patch via `codex exec --dangerously-bypass-approvals-and-sandbox`.
 
-    Codex returns a JSON edit list. `patch_worker.py` applies the edits in
-    Python (`apply_review_edits` → `_atomic_write_text`), so Codex itself
-    needs no write capability — read-only sandbox is the right default.
+    Danger mode is mandatory — read-only starved Codex of network/filesystem
+    and caused rc=-9 stale-rollout salvage. Even patch-mode Codex needs live
+    web to verify cited URLs and version-specific facts.
 
-    Environment overrides (default off — preserves prior read-only / no-search
-    behavior for callers that don't need to verify cited URLs or version-gated
-    behavior while applying review edits):
+    Environment overrides:
 
     - ``KUBEDOJO_CODEX_SEARCH=1`` enables ``--search`` (live web). Useful when
       the review verdict cites URLs or version-specific facts the patcher
       needs to confirm before rewriting prose around them.
-    - ``KUBEDOJO_CODEX_SANDBOX`` overrides the sandbox mode. Same valid values
-      and rationale as ``dispatch_codex``; default ``read-only`` is correct
-      for the patcher because edits are applied in Python downstream.
+    - ``KUBEDOJO_CODEX_SANDBOX=workspace-write`` switches to ``--full-auto``
+      for callers that need filesystem writes but not full network bypass.
+      Any other value (including the former default ``read-only``) falls back
+      to danger.
     """
-    sandbox = os.environ.get("KUBEDOJO_CODEX_SANDBOX", "read-only")
+    sandbox = os.environ.get("KUBEDOJO_CODEX_SANDBOX", "danger")
     use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
+
+    sandbox_flags = (
+        ["--full-auto"] if sandbox == "workspace-write"
+        else ["--dangerously-bypass-approvals-and-sandbox"]
+    )
 
     cmd = [CODEX_CLI]
     if use_search:
         cmd.append("--search")
-    cmd.extend(["exec", "--skip-git-repo-check", "--sandbox", sandbox])
+    cmd.extend(["exec", "--skip-git-repo-check"] + sandbox_flags)
     if model:
         cmd.extend(["-m", model])
 

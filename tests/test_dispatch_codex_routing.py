@@ -14,8 +14,12 @@ def _completed_process(cmd: list[str], *, stdout: str = "ok", stderr: str = ""):
     return subprocess.CompletedProcess(cmd, 0, stdout=stdout, stderr=stderr)
 
 
-def test_dispatch_codex_review_defaults_to_no_search_and_read_only():
-    """Review defaults to no --search; sandbox always read-only."""
+def test_dispatch_codex_review_defaults_to_no_search_and_danger_sandbox():
+    """Review defaults to no --search; sandbox is always danger (not read-only).
+
+    read-only starved Codex of network/filesystem and caused rc=-9 stale-rollout
+    salvage — three failures in a single session 2026-05-07.
+    """
     with patch(
         "dispatch._run_with_process_group",
         return_value=_completed_process(["codex"]),
@@ -28,13 +32,13 @@ def test_dispatch_codex_review_defaults_to_no_search_and_read_only():
     assert Path(cmd[0]).name == "codex"
     assert "--search" not in cmd
     assert "exec" in cmd
-    assert "--sandbox" in cmd
-    assert "read-only" in cmd
-    assert "--dangerously-bypass-approvals-and-sandbox" not in cmd
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd
+    assert "--sandbox" not in cmd
+    assert "read-only" not in cmd
 
 
 def test_dispatch_codex_review_enables_search_when_requested():
-    """FACT_CHECK deep reviews opt in via use_search=True."""
+    """FACT_CHECK deep reviews opt in via use_search=True; sandbox still danger."""
     with patch(
         "dispatch._run_with_process_group",
         return_value=_completed_process(["codex"]),
@@ -52,12 +56,17 @@ def test_dispatch_codex_review_enables_search_when_requested():
     assert Path(cmd[0]).name == "codex"
     assert "--search" in cmd
     assert cmd.index("--search") < cmd.index("exec")
-    assert "--sandbox" in cmd
-    assert "read-only" in cmd
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd
+    assert "--sandbox" not in cmd
+    assert "read-only" not in cmd
 
 
-def test_dispatch_codex_patch_runs_read_only_sandbox():
-    """Patch applies edits via Python; Codex needs no write/exec privilege."""
+def test_dispatch_codex_patch_runs_danger_sandbox():
+    """Patch runs in danger mode — Codex needs network to verify facts even as patcher.
+
+    read-only starved Codex of network/filesystem and caused rc=-9 stale-rollout
+    salvage — three failures in a single session 2026-05-07.
+    """
     with patch(
         "dispatch._run_with_process_group",
         return_value=_completed_process(["codex"]),
@@ -69,7 +78,7 @@ def test_dispatch_codex_patch_runs_read_only_sandbox():
     cmd = run_mock.call_args.args[0]
     assert Path(cmd[0]).name == "codex"
     assert cmd[1] == "exec"
-    assert "--sandbox" in cmd
-    assert "read-only" in cmd
-    assert "--dangerously-bypass-approvals-and-sandbox" not in cmd
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd
+    assert "--sandbox" not in cmd
+    assert "read-only" not in cmd
     assert "--search" not in cmd
