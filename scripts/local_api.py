@@ -4368,6 +4368,82 @@ def build_delivery_status(repo_root: Path) -> dict[str, Any]:
     }
 
 
+_TOP_NAV_CSS = """
+    :root {
+      --topnav-h: 45px;
+    }
+    .topnav {
+      position: sticky; top: 0; z-index: 60; min-height: var(--topnav-h);
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 12px 24px; background: rgba(17,24,39,0.84);
+      border-bottom: 1px solid var(--border); backdrop-filter: blur(8px);
+    }
+    .topnav a { text-decoration: none; }
+    .topnav .brand {
+      color: var(--text); font-weight: 800; margin-right: 8px;
+      letter-spacing: 0; font-size: 14px;
+    }
+    .topnav .navlink {
+      color: var(--text-secondary, #9ca3af); padding: 5px 10px;
+      border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;
+    }
+    .topnav .navlink:hover {
+      color: var(--text); background: var(--surface-1);
+    }
+    .topnav .navlink.active {
+      color: var(--accent); background: var(--accent-muted, rgba(56,189,248,0.12)); font-weight: 700;
+    }
+"""
+
+
+def _render_top_nav(active: str) -> str:
+    links = [
+        ("operator", "/operator", "Operator"),
+        ("quality", "/quality", "Quality"),
+        ("pipeline", "/pipeline", "Pipeline"),
+        ("activity", "/activity", "Activity"),
+        ("channels", "/channels", "Channels"),
+        ("health", "/health", "Health"),
+    ]
+    rendered_links = "\n  ".join(
+        f'<a class="navlink{" active" if key == active else ""}" href="{href}">{label}</a>'
+        for key, href, label in links
+    )
+    return f"""<nav class="topnav" role="navigation" aria-label="Local-API sections">
+  <a class="brand" href="/">KubeDojo Local Monitor</a>
+  {rendered_links}
+</nav>"""
+
+
+def _render_skeleton_page(title: str, issue_number: int) -> str:
+    active = title.lower()
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{title} - KubeDojo Local Monitor</title>
+  <style>
+    :root {{ --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --surface-2:#1f2b3d; --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280; --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12); --border:rgba(255,255,255,0.06); --radius-sm:8px; }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; -webkit-font-smoothing:antialiased; }}
+{_TOP_NAV_CSS}
+    .placeholder {{ max-width: 860px; margin: 0 auto; padding: 48px 24px; }}
+    .placeholder h1 {{ margin: 0 0 12px; font-size: 28px; letter-spacing: 0; }}
+    .placeholder p {{ color: var(--text-secondary); max-width: 720px; }}
+    .placeholder a {{ color: var(--accent); }}
+  </style>
+</head>
+<body>
+{_render_top_nav(active)}
+<main class="placeholder">
+  <h1>{title}</h1>
+  <p>This page is part of the L0-L6 local-API UI split. Detail content lands in <a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/{issue_number}">#{issue_number}</a>.</p>
+  <p><a href="/">&larr; Home</a></p>
+</main>
+</body></html>"""
+
+
 def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     return f"""<!doctype html>
 <html lang="en">
@@ -4410,13 +4486,14 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
       line-height: 1.5;
     }}
     .mono {{ font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace; }}
+{_TOP_NAV_CSS}
 
     .header {{
       background: linear-gradient(180deg, rgba(17,24,39,0.95) 0%, rgba(10,15,26,0.98) 100%);
       border-bottom: 1px solid var(--border);
       padding: 20px 0;
       position: sticky;
-      top: 0;
+      top: var(--topnav-h, 45px);
       z-index: 50;
       backdrop-filter: blur(12px);
     }}
@@ -5111,6 +5188,7 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
   </style>
 </head>
 <body>
+  {_render_top_nav("home")}
   <header class="header">
     <div class="header-inner">
       <div class="header-left">
@@ -7253,7 +7331,8 @@ def render_channels_index_html() -> str:
     :root{--bg:#0a0f1a;--surface-0:#111827;--surface-1:#1a2332;--surface-2:#1f2b3d;--text:#e5e7eb;--text-dim:#6b7280;--accent:#38bdf8;--green:#4ade80;--border:rgba(255,255,255,0.06);--radius:12px;--radius-sm:8px}
     *{box-sizing:border-box;margin:0}
     body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
-    .hdr{background:linear-gradient(180deg,rgba(17,24,39,.95),rgba(10,15,26,.98));border-bottom:1px solid var(--border);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}
+""" + _TOP_NAV_CSS + """
+    .hdr{background:linear-gradient(180deg,rgba(17,24,39,.95),rgba(10,15,26,.98));border-bottom:1px solid var(--border);padding:20px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:var(--topnav-h, 45px);z-index:50;backdrop-filter:blur(12px)}
     .hdr h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
     .hdr p{font-size:12px;color:var(--text-dim);margin-top:2px}
     .btn{background:var(--surface-1);color:var(--text);border:1px solid var(--border);padding:6px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
@@ -7277,6 +7356,7 @@ def render_channels_index_html() -> str:
   </style>
 </head>
 <body>
+""" + _render_top_nav("channels") + """
 <div class="hdr">
   <div><h1>Agent Deliberations</h1><p>ab discuss live transcripts &#8212; claude / codex / gemini</p></div>
   <div style="display:flex;align-items:center;gap:12px">
@@ -7324,7 +7404,8 @@ def render_channel_thread_html(thread_id: str) -> str:
     :root{{--bg:#0a0f1a;--surface-0:#111827;--surface-1:#1a2332;--surface-2:#1f2b3d;--text:#e5e7eb;--text-dim:#6b7280;--border:rgba(255,255,255,0.06);--radius-sm:8px}}
     *{{box-sizing:border-box;margin:0}}
     body{{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}}
-    .hdr{{background:linear-gradient(180deg,rgba(17,24,39,.95),rgba(10,15,26,.98));border-bottom:1px solid var(--border);padding:16px 24px;position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}}
+{_TOP_NAV_CSS}
+    .hdr{{background:linear-gradient(180deg,rgba(17,24,39,.95),rgba(10,15,26,.98));border-bottom:1px solid var(--border);padding:16px 24px;position:sticky;top:var(--topnav-h, 45px);z-index:50;backdrop-filter:blur(12px)}}
     .hdr-row{{display:flex;align-items:center;gap:12px;flex-wrap:wrap}}
     .back{{color:#38bdf8;text-decoration:none;font-size:13px}}.back:hover{{text-decoration:underline}}
     .tid{{font-size:13px;font-weight:600;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px;color:#e5e7eb}}
@@ -7348,6 +7429,7 @@ def render_channel_thread_html(thread_id: str) -> str:
   </style>
 </head>
 <body>
+{_render_top_nav("channels")}
 <div class="hdr">
   <div class="hdr-row"><a class="back" href="/channels">&larr; Channels</a><div class="tid" title="{escaped_tid}">{escaped_tid}</div></div>
   <div class="meta"><span id="ec">0 events</span> &middot; <span id="lu">connecting&#8230;</span></div>
@@ -7413,6 +7495,16 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
 
     if path in {"/", "/dashboard", "/quality-board"}:
         return 200, render_dashboard_html(), "text/html; charset=utf-8"
+    if path == "/operator":
+        return 200, _render_skeleton_page("Operator", 974), "text/html; charset=utf-8"
+    if path == "/quality":
+        return 200, _render_skeleton_page("Quality", 975), "text/html; charset=utf-8"
+    if path == "/pipeline":
+        return 200, _render_skeleton_page("Pipeline", 976), "text/html; charset=utf-8"
+    if path == "/activity":
+        return 200, _render_skeleton_page("Activity", 977), "text/html; charset=utf-8"
+    if path == "/health":
+        return 200, _render_skeleton_page("Health", 978), "text/html; charset=utf-8"
     if path == "/channels":
         return 200, render_channels_index_html(), "text/html; charset=utf-8"
     if path.startswith("/channels/"):
