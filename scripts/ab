@@ -7,13 +7,14 @@ export AB_WAKE_DIR="${AB_REPO_ROOT}/.agent/wake"
 export AB_PIPELINE_ENV_KEY="KUBEDOJO_PIPELINE"
 export PYTHONPATH="${AB_REPO_ROOT}/scripts:${PYTHONPATH}"
 
-# Default CODEX_BRIDGE_MODE to danger — Codex needs network + filesystem to
-# fact-check. read-only starved it (rc=-9 stale-rollout salvage, three failures
-# 2026-05-07). workspace-write blocks .git/worktrees index.lock and api.github.com.
-# Override with: CODEX_BRIDGE_MODE=workspace-write scripts/ab ... (if you want
-# full-auto without full sandbox bypass), or CODEX_BRIDGE_MODE=safe for legacy
-# read-only (unsupported — will error in the adapter, kept for explicit override).
-: "${CODEX_BRIDGE_MODE:=danger}"
+# Codex always runs in danger mode — read-only and workspace-write both starve
+# it of network/filesystem. No override possible at this layer; if a caller
+# really needs different behavior they must change the adapter contract.
+if [ -n "${CODEX_BRIDGE_MODE:-}" ] && [ "${CODEX_BRIDGE_MODE}" != "danger" ]; then
+  printf 'WARNING: CODEX_BRIDGE_MODE=%s overridden to danger — Codex requires network+FS\n' \
+    "${CODEX_BRIDGE_MODE}" >&2
+fi
+CODEX_BRIDGE_MODE=danger
 export CODEX_BRIDGE_MODE
 
 exec python3 -m ai_agent_bridge "$@"

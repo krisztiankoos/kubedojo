@@ -11,11 +11,10 @@ Key design points:
   the registry AND defensively ignores ``session_id`` even if passed.
   Belt + suspenders against the cross-worktree contamination footgun that
   Codex flagged in his own consultation (msg #28506).
-- **Two modes supported:** workspace-write, danger. read-only is
-  forbidden — Codex needs network + filesystem to fact-check; read-only
-  starves it (rc=-9, stale-rollout salvage). See PR #<this-PR>.
-  Mode → flag mapping matches ``_codex.py::_codex_bridge_flags`` and
-  ``dispatch.py::_codex_dispatch_flags``.
+- **One mode: danger only.** read-only and workspace-write are forbidden —
+  Codex needs network + filesystem to fact-check and to use the live web
+  tool. See PR #981 (mode=danger mandatory) and this PR (workspace-write
+  escape hatch removed).
 - **Output file always used.** ``codex exec -o <tmpfile>`` writes the final
   agent message to a file; we read it in ``parse_response``. The file path
   goes into ``liveness_signal_paths`` so the runner's mtime poller catches
@@ -28,7 +27,6 @@ Issue: #1184
 """
 from __future__ import annotations
 
-import os
 import re
 import shutil
 import tempfile
@@ -117,7 +115,7 @@ class CodexAdapter:
 
     name: str = "codex"
     default_model: str = "gpt-5.4"
-    supported_modes: frozenset[str] = frozenset({"workspace-write", "danger"})
+    supported_modes: frozenset[str] = frozenset({"danger"})
 
     def build_invocation(
         self,
@@ -173,19 +171,11 @@ class CodexAdapter:
         ) as output_fd:
             output_path = Path(output_fd.name)
 
-        # ``--search`` enables Codex's live web tool. It is a TOP-LEVEL
-        # codex flag (codex --search exec ...), not an exec subflag — putting
-        # it after ``exec`` silently drops it. Opt-in via env var so the book
-        # chapter dispatch path (which routes through this adapter) can verify
-        # cited URLs and version-specific facts at draft time, without
-        # changing behavior for callers that only need text reasoning.
-        # Mirrors the same env var honored by ``scripts/dispatch.py``
-        # ``dispatch_codex`` / ``dispatch_codex_patch`` (PR #888).
-        use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
-
-        cmd: list[str] = [codex_bin]
-        if use_search:
-            cmd.append("--search")
+        # ``--search`` enables Codex's live web tool; always on so Codex can
+        # fact-check URLs and verify version-specific facts at draft time.
+        # TOP-LEVEL flag (codex --search exec ...) — putting it after ``exec``
+        # silently drops it.
+        cmd: list[str] = [codex_bin, "--search"]
         cmd.extend([
             "exec",
             "--skip-git-repo-check",
@@ -661,21 +651,11 @@ class CodexAdapter:
 
     @staticmethod
     def _mode_flags(mode: str) -> list[str]:
-        """Map runtime mode → codex exec sandbox flags.
-
-        Matches the mapping in _codex.py::_codex_bridge_flags and
-        dispatch.py::_codex_dispatch_flags for consistency during migration.
-
-        read-only is not in supported_modes — the runner validates before
-        we get here, but raise explicitly as defense in depth.
-        """
+        """Map runtime mode → codex exec sandbox flags."""
         if mode == "danger":
             return ["--dangerously-bypass-approvals-and-sandbox"]
-        if mode == "workspace-write":
-            return ["--full-auto"]
         raise ValueError(
             f"CodexAdapter: mode {mode!r} is not supported. "
-            "Codex requires danger or workspace-write — read-only starves "
-            "it of network/filesystem and produces garbage output. "
+            "Codex always runs in danger mode (sandbox bypass + live web). "
             f"Supported: {sorted(CodexAdapter.supported_modes)}"
         )

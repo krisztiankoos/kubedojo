@@ -277,7 +277,7 @@ def fire_dispatch(*, worktree: Path, prompt: str, task_id: str,
     result = invoke(
         agent,
         prompt,
-        mode="workspace-write",
+        mode="danger",
         cwd=worktree,
         model=model,
         task_id=task_id,
