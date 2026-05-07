@@ -530,12 +530,4 @@ Progress (per user per scenario)
 
 ## 13. Design PoC Pages
 
-Interactive HTML mockups for demo purposes:
-
-| Page | File | Description |
-|------|------|-------------|
-| Landing | `poc-labs-landing.html` | Hero, track cards, how it works, featured labs |
-| Catalog | `poc-labs-catalog.html` | Browse/filter labs by cert, sidebar navigation |
-| Session | `poc-labs-session.html` | Split-pane terminal + instructions (core UX) |
-| Dashboard | `poc-labs-dashboard.html` | User progress, streaks, achievements |
-| Admin | `poc-labs-admin.html` | Ops monitoring, sessions, infra, costs |
+Interactive HTML mockups were archived under `archive/2026-05-08-root-cleanup/lab-pocs/` as cleanup candidates. They covered the landing, catalog, session, dashboard, admin, and Killercoda-flavored demo pages.

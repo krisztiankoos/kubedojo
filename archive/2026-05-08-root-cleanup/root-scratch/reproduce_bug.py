@@ -1,5 +1,4 @@
 import re
-import sys
 
 # Ported from scripts/checks/ukrainian.py (with the diff applied)
 RUSSICISMS = {"самий": "найкращий"}

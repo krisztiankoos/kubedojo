@@ -1,5 +1,3 @@
-import re
-
 module_content = """---
 title: "Module 14.7: RKE2 - Enterprise Hardened Kubernetes"
 slug: platform/toolkits/infrastructure-networking/k8s-distributions/module-14.7-rke2
