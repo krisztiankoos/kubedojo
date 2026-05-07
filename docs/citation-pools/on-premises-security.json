@@ -1,0 +1,194 @@
+{
+  "section": "on-premises/security",
+  "modules": [
+    "on-premises/security/module-6.1-air-gapped",
+    "on-premises/security/module-6.2-hardware-security",
+    "on-premises/security/module-6.3-enterprise-identity",
+    "on-premises/security/module-6.4-compliance",
+    "on-premises/security/module-6.5-workload-identity-spiffe",
+    "on-premises/security/module-6.6-secrets-management-vault",
+    "on-premises/security/module-6.7-policy-as-code",
+    "on-premises/security/module-6.8-zero-trust-architecture"
+  ],
+  "generated_at": "2026-05-07T17:19:36+00:00",
+  "batch_count": 2,
+  "fallback_used": false,
+  "sources": [
+    {
+      "source_id": "S001",
+      "url": "https://csrc.nist.gov/Pubs/sp/800/53/r5/upd1/Final",
+      "title": "NIST SP 800-53 Rev. 5",
+      "tier": "standards",
+      "scope_notes": "Broad control catalog for physical security, media protection, identification and authentication, audit and accountability, system integrity, and evidence-oriented compliance mappings.",
+      "relevant_modules": [
+        "on-premises/security/module-6.1-air-gapped",
+        "on-premises/security/module-6.2-hardware-security",
+        "on-premises/security/module-6.3-enterprise-identity",
+        "on-premises/security/module-6.4-compliance"
+      ]
+    },
+    {
+      "source_id": "S002",
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/authentication/",
+      "title": "Kubernetes Authentication",
+      "tier": "standards",
+      "scope_notes": "Authoritative source for Kubernetes human authentication models, lack of native normal-user objects, x509 vs token-based auth, OIDC integration, and structured authenticator configuration concepts.",
+      "relevant_modules": [
+        "on-premises/security/module-6.3-enterprise-identity",
+        "on-premises/security/module-6.4-compliance"
+      ]
+    },
+    {
+      "source_id": "S003",
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/",
+      "title": "Kubernetes Auditing",
+      "tier": "standards",
+      "scope_notes": "Covers audit event lifecycle, policy design, stages, backends, and the fields needed to answer who/what/when/from-where questions for compliance evidence.",
+      "relevant_modules": [
+        "on-premises/security/module-6.3-enterprise-identity",
+        "on-premises/security/module-6.4-compliance"
+      ]
+    },
+    {
+      "source_id": "S004",
+      "url": "https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/",
+      "title": "Kubernetes Encrypting Confidential Data at Rest",
+      "tier": "standards",
+      "scope_notes": "Supports claims about etcd/API data at-rest encryption, KMS providers, why external key management is preferable to local raw keys, and operational caveats of encryption configuration.",
+      "relevant_modules": [
+        "on-premises/security/module-6.2-hardware-security",
+        "on-premises/security/module-6.4-compliance",
+        "on-premises/security/module-6.6-secrets-management-vault"
+      ]
+    },
+    {
+      "source_id": "S005",
+      "url": "https://docs.oasis-open.org/pkcs11/pkcs11-spec/v3.1/os/pkcs11-spec-v3.1-os.html",
+      "title": "PKCS #11 Specification Version 3.1",
+      "tier": "standards",
+      "scope_notes": "Normative API specification for HSM/token interaction; supports terminology and integration claims around PKCS#11-backed key storage and cryptographic operations.",
+      "relevant_modules": [
+        "on-premises/security/module-6.2-hardware-security"
+      ]
+    },
+    {
+      "source_id": "S006",
+      "url": "https://csrc.nist.gov/pubs/sp/800/207/final",
+      "title": "NIST SP 800-207 Zero Trust Architecture",
+      "tier": "standards",
+      "scope_notes": "Authoritative definition of zero trust, assume-breach posture, identity-centric access, and resource-focused protection; useful for architectural claims tying workload identity and segmentation to zero-trust outcomes.",
+      "relevant_modules": [
+        "on-premises/security/module-6.5-workload-identity-spiffe",
+        "on-premises/security/module-6.7-policy-as-code",
+        "on-premises/security/module-6.8-zero-trust-architecture"
+      ]
+    },
+    {
+      "source_id": "S007",
+      "url": "https://developer.hashicorp.com/vault/docs/concepts/integrated-storage",
+      "title": "Vault Integrated Storage",
+      "tier": "vendor",
+      "scope_notes": "Primary Vault source for integrated storage (Raft), cluster membership, HA behavior, sealing/unsealing implications, and storage architecture trade-offs on bare metal.",
+      "relevant_modules": [
+        "on-premises/security/module-6.6-secrets-management-vault"
+      ]
+    },
+    {
+      "source_id": "S008",
+      "url": "https://developer.hashicorp.com/vault/docs/auth/kubernetes",
+      "title": "Vault Kubernetes Auth Method",
+      "tier": "vendor",
+      "scope_notes": "Official Vault guidance for Kubernetes auth, TokenReview, service account JWT handling, BoundServiceAccountTokenVolume changes, and role binding patterns.",
+      "relevant_modules": [
+        "on-premises/security/module-6.6-secrets-management-vault"
+      ]
+    },
+    {
+      "source_id": "S009",
+      "url": "https://kubernetes.io/docs/concepts/cluster-administration/admission-webhooks-good-practices/",
+      "title": "Kubernetes Admission Webhook Good Practices",
+      "tier": "standards",
+      "scope_notes": "Authoritative operational guidance for webhook availability, latency, namespace scoping, match conditions, fail-open design, and deadlock-avoidance patterns.",
+      "relevant_modules": [
+        "on-premises/security/module-6.7-policy-as-code"
+      ]
+    },
+    {
+      "source_id": "S010",
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy",
+      "title": "Kubernetes Validating Admission Policy",
+      "tier": "standards",
+      "scope_notes": "Primary source for native CEL-based validating admission, policy/binding resources, validation actions, failure behavior, and matchConditions semantics.",
+      "relevant_modules": [
+        "on-premises/security/module-6.7-policy-as-code"
+      ]
+    },
+    {
+      "source_id": "S011",
+      "url": "https://kubernetes.io/docs/concepts/security/pod-security-admission/",
+      "title": "Kubernetes Pod Security Admission",
+      "tier": "standards",
+      "scope_notes": "Official source for PSA feature state, namespace labels, and the privileged/baseline/restricted levels that replaced PodSecurityPolicy-era workflows.",
+      "relevant_modules": [
+        "on-premises/security/module-6.7-policy-as-code"
+      ]
+    }
+  ],
+  "rejected_urls": [
+    {
+      "url": "https://trustedcomputinggroup.org/resource/tpm-library-specification/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://goharbor.io/docs/edge/install-config/download-installer/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://goharbor.io/docs/main/administration/configuring-replication/create-replication-rules/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://goharbor.io/docs/2.9.0/working-with-projects/project-configuration/implementing-content-trust/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://kyverno.io/docs/policy-reports/background/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://www.whitehouse.gov/wp-content/uploads/2022/01/M-22-09.pdf",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://spiffe.io/docs/latest/spiffe-specs/spiffe-id/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://spiffe.io/docs/latest/deploying/configuring/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://docs.cilium.io/en/stable/network/kubernetes/policy/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://falco.org/docs/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    },
+    {
+      "url": "https://tetragon.io/docs/overview/",
+      "reason": "off_allowlist",
+      "at_step": "section_source_discovery"
+    }
+  ]
+}
