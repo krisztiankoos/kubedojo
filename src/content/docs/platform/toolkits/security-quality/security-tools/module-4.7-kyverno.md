@@ -1043,3 +1043,10 @@ Write a namespaced `Policy` for a namespace called `development` that adds `envi
 ## Next Module
 
 Continue to the [Security Tools README](./) to review the rest of the security toolkit modules and choose the next control to practice.
+
+## Sources
+
+- [Kubernetes Admission Controllers](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/) — Canonical reference for where admission policy runs in the API request path.
+- [Kyverno README](https://raw.githubusercontent.com/kyverno/kyverno/main/README.md) — Primary upstream overview of Kyverno's core capabilities and positioning.
+- [Kyverno ClusterPolicy CRD](https://raw.githubusercontent.com/kyverno/kyverno/main/config/crds/kyverno/kyverno.io_clusterpolicies.yaml) — Schema-level source for policy settings such as admission, background scanning, and rule types.
+- [Kubernetes Images](https://kubernetes.io/docs/concepts/containers/images/) — Authoritative source for mutable tags, immutable digests, and production guidance around `:latest`.
