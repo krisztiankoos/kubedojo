@@ -25,9 +25,9 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-A defense contractor running classified workloads on Kubernetes learned the hardest possible lesson in 2022. Their "air-gapped" cluster was not truly disconnected -- a junior engineer had plugged in a USB WiFi adapter to download a container image he needed for testing. The adapter associated with a nearby guest network. An automated scanner on that guest network found the adapter within 40 minutes and began probing. The incident triggered a full security audit, a 90-day remediation, and $2.3 million in costs -- not from a breach (there was none) but from the investigation, re-accreditation, and mandatory hardware replacement.
+Teams operating high-assurance Kubernetes environments have repeatedly learned that an "air gap" fails the moment engineers improvise an unapproved network path for convenience. Even when no breach occurs, the resulting audit, revalidation, and hardware review can be expensive and disruptive.
 
-The real cost was organizational: the program lost its Authority to Operate (ATO) for 4 months. Every workload on that cluster was frozen. Downstream teams lost access to CI/CD pipelines. The root cause was not malice -- it was a process failure. Nobody had documented how to get new container images into the air-gapped environment, so engineers improvised. The contractor then spent 6 months building a proper image pipeline with Harbor, a transfer workstation, and an approval workflow. What should have been designed on day one became a $3 million afterthought.
+The larger lesson is organizational: if there is no documented process for getting images and updates into a disconnected environment, engineers will improvise under pressure. Designing the transfer workstation, approval flow, and registry process up front is far cheaper than rebuilding it after an isolation failure.
 
 > **The Submarine Analogy**
 >
@@ -115,7 +115,7 @@ BIOS Settings for Air-Gapped Kubernetes Nodes:
 
 ## Air-Gapped Kubernetes Architecture
 
-A truly air-gapped cluster has zero network connectivity to the internet or any untrusted network. All software enters through a controlled transfer process.
+[A truly air-gapped cluster has zero network connectivity to the internet or any untrusted network.](https://csrc.nist.gov/glossary/term/air_gap) All software enters through a controlled transfer process.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -157,7 +157,7 @@ A truly air-gapped cluster has zero network connectivity to the internet or any 
 
 ## Setting Up Harbor as a Local Registry
 
-Harbor is the standard choice for air-gapped container registries. It provides image scanning, replication, RBAC, and content trust.
+Harbor is a common choice for air-gapped container registries because it combines registry management with security and access-control workflows.
 
 ### Install Harbor (Air-Gapped Side)
 
@@ -244,7 +244,7 @@ sha256sum *.tar > SHA256SUMS
 
 ### Import Images on the Air-Gapped Side
 
-After physical transfer, the first step is always integrity verification. Only after confirming checksums should you push images to the internal Harbor registry, retagging them to match the internal registry naming convention.
+After physical transfer, the first step is usually integrity verification. Only after confirming checksums should you push images to the internal Harbor registry, retagging them to match the internal registry naming convention.
 
 ```bash
 # Verify checksums after transfer
@@ -409,13 +409,13 @@ Trivy cannot fetch vulnerability data in an air-gapped environment. Include the 
 
 ## Did You Know?
 
-- **The US Nuclear Regulatory Commission requires a hardware data diode** (not a software firewall) for any network carrying safety system data. A data diode is a fiber optic link with the receive fiber physically cut on one side -- making reverse communication a physics impossibility, not a software configuration.
+- **High-assurance environments often use hardware-enforced one-way links** when they need stronger assurance than a software firewall can provide. A data diode is designed to permit data flow in only one direction.
 
-- **Kubernetes v1.24 removed dockershim**, which was a problem for many air-gapped environments that had built their image pipelines around `docker save/docker load`. The migration to containerd required updating transfer scripts to use `ctr` or `skopeo` instead.
+- [**Kubernetes v1.24 removed dockershim**](https://kubernetes.io/docs/setup/production-environment/container-runtimes/), which forced teams that depended on Docker-specific runtime workflows to revisit their tooling during migration.
 
-- **Harbor's "robot accounts"** were designed specifically for automated image mirroring in air-gapped environments. Unlike user accounts, robot accounts have no password expiry and can be scoped to specific repositories -- perfect for import scripts.
+- **Harbor robot accounts** are useful for automated image imports because they provide non-user-scoped credentials with scoped permissions, and administrators can set an expiration policy that fits the workflow.
 
-- **The largest known air-gapped Kubernetes deployment** is believed to be in the US Department of Defense, running Platform One (a CNCF-based DevSecOps platform) across multiple classification levels. Each security domain has its own independent cluster with no cross-domain container image sharing.
+- Large defense and government platforms often solve air-gapped operations by running separate clusters for separate security domains rather than sharing images directly across trust boundaries.
 
 ---
 
@@ -462,7 +462,7 @@ Your air-gapped cluster runs Harbor for container images. A critical CVE is publ
 
 9. **Verify**: Confirm all pods are running the patched image: `kubectl get pods -o jsonpath='{.items[*].spec.containers[*].image}'`.
 
-The entire process typically takes 4-8 hours for a critical CVE in a well-run air-gapped environment.
+The entire process is slow enough that teams should define an emergency patch path before they need it.
 </details>
 
 ### Question 2
@@ -479,7 +479,7 @@ What is the difference between a data diode and a firewall, and why do classifie
 
 1. **Assurance level**: A firewall rule can be changed by anyone with admin access. A data diode requires physical hardware modification to reverse.
 
-2. **Certification**: Government security frameworks (e.g., NIAP Common Criteria) certify data diodes to higher assurance levels than firewalls.
+2. **Certification**: Classified and safety-critical environments often prefer hardware-enforced one-way controls when they need higher assurance than a configurable firewall can provide.
 
 3. **Insider threat**: A compromised admin can reconfigure a firewall. They cannot make data flow backward through a physically one-way connection.
 
@@ -520,17 +520,17 @@ Why is it insufficient to "just block outbound traffic with a firewall" instead 
 
 **A firewall-based "air gap" has several failure modes that a true air gap does not:**
 
-1. **Misconfiguration risk**: A single incorrect rule (e.g., `allow any any` added during troubleshooting and never removed) breaks the entire isolation. Studies show that 95% of firewall breaches are due to misconfiguration, not exploit.
+1. **Misconfiguration risk**: A single incorrect rule (e.g., `allow any any` added during troubleshooting and not removed) can break the intended isolation. Firewall-only isolation depends heavily on configuration quality, so a single troubleshooting rule change can break the intended boundary.
 
 2. **Bidirectional path exists**: Even if outbound is blocked, the physical network connection still exists. An attacker inside the network could potentially exploit the firewall itself (firmware vulnerabilities, management interface exploits) to open a path.
 
-3. **DNS and timing channels**: Sophisticated attackers can exfiltrate data through DNS query patterns, ICMP timing, or even TCP sequence number modulation -- traffic that may pass through "block outbound" rules if DNS is allowed.
+3. **Residual communication paths**: If the network connection still exists, teams must still reason about allowed protocols, unintended channels, and device behavior in a way that a true air gap avoids.
 
 4. **Software updates**: Firewalls need patches. A vulnerability in the firewall software (e.g., CVE-2023-27997 in FortiGate) could allow an attacker to bypass all rules.
 
 5. **Administrative access**: Anyone with firewall admin credentials can change the rules. In a true air gap, there are no rules to change because there is no connection.
 
-6. **Regulatory non-compliance**: Frameworks like NIST SP 800-82 (industrial control systems) and CNSSI 1253 (national security systems) distinguish between "network isolation" and "air gap." A firewall-based approach may not meet the air-gap requirement for certification.
+6. **Regulatory fit**: Whether a firewall-only design is acceptable depends on the specific accreditation or regulatory framework being applied; teams should verify that requirement explicitly.
 
 A true air gap provides defense through physics (no wire, no fiber). A firewall provides defense through configuration (which can be wrong).
 </details>
@@ -596,8 +596,8 @@ You manage an air-gapped Kubernetes cluster. A new version of CoreDNS needs to b
 ## Key Takeaways
 
 1. **Physical security is non-negotiable** -- disable unused ports, lock racks, control IPMI access
-2. **Air-gapped means air-gapped** -- firewalls are not air gaps; there must be no physical connection
-3. **Harbor is the standard** for air-gapped registries with offline Trivy scanning
+2. **Air-gapped means air-gapped** -- [firewalls are not air gaps; there must be no physical connection](https://csrc.nist.gov/glossary/term/air_gap)
+3. **Harbor is a common choice** for air-gapped registries with offline vulnerability scanning
 4. **The transfer process is the hardest part** -- design it before you need it, with checksums and two-person integrity
 5. **GitOps works air-gapped** -- use Gitea/GitLab locally with Flux pointing to internal Git
 
@@ -606,3 +606,12 @@ You manage an air-gapped Kubernetes cluster. A new version of CoreDNS needs to b
 ## Next Module
 
 Continue to [Module 6.2: Hardware Security (HSM/TPM)](../module-6.2-hardware-security/) to learn how hardware security modules and TPM protect your on-premises cluster's cryptographic keys and boot integrity.
+
+## Sources
+
+- [csrc.nist.gov: air gap](https://csrc.nist.gov/glossary/term/air_gap) — NIST's glossary cites the CNSSI/RFC definition of an air gap as no physical connection and no automated logical connection.
+- [kubernetes.io: container runtimes](https://kubernetes.io/docs/setup/production-environment/container-runtimes/) — Current Kubernetes docs explicitly state that dockershim was removed as of release 1.24.
+- [csrc.nist.gov: data diode](https://csrc.nist.gov/glossary/term/data_diode) — NIST's glossary defines a data diode as a device that allows data to travel only in one direction.
+- [nvd.nist.gov: CVE 2023 27997](https://nvd.nist.gov/vuln/detail/CVE-2023-27997) — The NVD entry directly documents CVE-2023-27997 as a FortiOS/FortiProxy SSL-VPN remote-code-execution vulnerability.
+- [NIST SP 800-53 Rev. 5](https://csrc.nist.gov/Pubs/sp/800/53/r5/upd1/Final) — Useful for grounding physical security, media handling, access control, and audit-control language in a primary control catalog.
+- [Kubernetes Auditing](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/) — Relevant for the module's access-logging and evidence expectations in high-assurance or regulated environments.
