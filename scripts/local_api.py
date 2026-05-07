@@ -6112,7 +6112,7 @@ def render_dashboard_html(*, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
         </li>`).join('')}}</ul>` : '<div class="empty-state">No review audit files</div>';
     }}
 
-    // ---- Phase D: Operator / Readiness / Activity ----
+    // ---- Operator summary / Readiness / Activity ----
 
     function renderOperator(briefing) {{
       const rowsSrc = Array.isArray(briefing?.action_rows) && briefing.action_rows.length

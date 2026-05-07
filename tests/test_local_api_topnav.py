@@ -52,7 +52,8 @@ def test_dashboard_drops_op_hero_columns(tmp_path: Path) -> None:
 
 def test_dashboard_summary_links_to_operator(tmp_path: Path) -> None:
     html = _route(tmp_path, "/")
-    assert 'href="/operator"' in html
+    assert 'class="op-summary-card"' in html
+    assert 'class="op-summary-link"' in html
 
 
 def test_home_page_links_to_channels(tmp_path: Path) -> None:
