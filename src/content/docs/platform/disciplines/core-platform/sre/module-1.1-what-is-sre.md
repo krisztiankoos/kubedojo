@@ -30,7 +30,7 @@ After completing this module, you will be able to:
 
 You've learned reliability principles. Now you need a **framework** to apply them.
 
-Site Reliability Engineering (SRE) is that framework. Invented at Google, adopted worldwide, SRE transforms reliability from "someone else's problem" to "everyone's measurable responsibility."
+Site Reliability Engineering (SRE) is that framework. [Invented at Google, adopted worldwide](https://cloud.google.com/blog/products/devops-sre/sre-in-the-2022-state-of-devops-report), SRE transforms reliability from "someone else's problem" to "everyone's measurable responsibility."
 
 > **Stop and think**: How is reliability currently handled in your organization? Is it a shared goal, or does it fall squarely on the shoulders of a single team when things break?
 
@@ -96,7 +96,7 @@ SRE focuses on **eliminating work**: automating deployments, reducing toil, prev
 
 ### The 50% Rule
 
-SRE teams have a hard rule: **no more than 50% of time on operational work**.
+SRE teams have a hard rule: **[no more than 50% of time on operational work](https://cloud.google.com/blog/products/management-tools/identifying-and-tracking-toil-using-sre-principles)**.
 
 The rest goes to engineering projects that:
 - Reduce future operational burden
@@ -115,10 +115,10 @@ This rule ensures SRE remains an engineering discipline, not just operations wit
 
 ### Embrace Risk (Carefully)
 
-Here's a counterintuitive SRE principle: **100% reliability is wrong**.
+Here's a counterintuitive SRE principle: **[chasing 100% reliability is usually the wrong goal](https://cloud.google.com/architecture/framework/reliability/choose-slos)**.
 
 Why? Because:
-1. **Users can't tell**: If your service is 99.99% reliable but the user's ISP is 99% reliable, they won't notice your extra 9s
+1. **Users may not notice**: If other parts of the end-to-end path are less reliable than your service, pushing for additional 9s may yield little visible improvement
 2. **It's expensive**: Each additional 9 costs exponentially more
 3. **It's slow**: Extreme reliability requires extreme caution, which means slow releases
 
@@ -325,21 +325,21 @@ flowchart TD
 
 1. **Google's SRE teams are about 50% software engineering work**. They spend half their time on automation projects that reduce future operational burden, not just keeping things running.
 
-2. **The term "error budget" was invented at Google** to flip the conversation from "minimize all errors" to "how much error can we afford to ship features faster?"
+2. **Error budgets became a core Google SRE concept** for balancing reliability work against feature delivery.
 
-3. **Netflix famously has no SRE team**. Instead, they practice "full-cycle developers" where each team owns their entire service lifecycle. They invest heavily in tooling to make this possible.
+3. **Some organizations avoid a separate SRE function** and instead use a "you build it, you run it" or full-cycle developer model, supported by strong internal tooling.
 
-4. **The first Google SRE book (2016) was downloaded over 1 million times** in its first month and sparked an industry-wide transformation. Before this, operations was rarely discussed with engineering rigor—now SRE is one of the most sought-after specializations in tech.
+4. **When Google published the first SRE book in 2016, it helped push SRE ideas into the broader DevOps conversation.** Operations became much more widely discussed in explicit engineering terms.
 
 ---
 
 ## War Story: The Team That Couldn't Scale
 
-A startup I worked with was growing fast. Their ops team was drowning:
+A fast-growing company can end up in a situation like this:
 
-- 3 people handling all production for 50 developers
-- On-call meant actual calls every night
-- Deployment queue was 2 weeks long
+- A small operations group handling production for a much larger engineering organization
+- On-call interruptions were frequent and exhausting
+- Deployments were backed up long enough to slow delivery noticeably
 - Burnout was rampant
 
 They hired more ops people. It helped briefly, then got worse again.
@@ -355,9 +355,9 @@ They hired more ops people. It helped briefly, then got worse again.
 
 Within 6 months:
 - Deployment queue: Same day
-- On-call incidents: Down 70%
-- Team size: Same (3 people)
-- Coverage: 100 developers
+- On-call incidents: Meaningfully reduced
+- Team size: Held steady
+- Coverage: Able to support a larger engineering organization
 
 The shift wasn't hiring more people. It was **working differently**.
 
@@ -370,7 +370,7 @@ The shift wasn't hiring more people. It was **working differently**.
 | Principle | Meaning |
 |-----------|---------|
 | **Reliability is a feature** | It's not separate from product development |
-| **Embrace risk** | 100% is wrong; match reliability to user needs |
+| **Embrace risk** | Chasing 100% is usually the wrong goal; match reliability to user needs |
 | **Service level objectives** | Measure reliability concretely |
 | **Error budgets** | Balance reliability with velocity |
 | **Toil reduction** | Automate repetitive work away |
@@ -410,7 +410,7 @@ Your product manager insists that the new critical payment service must be built
 <details>
 <summary>Show Answer</summary>
 
-Targeting 100% reliability is considered an anti-pattern in SRE because it is both practically impossible and misaligned with actual user experience. Even if your service never fails, users will still experience errors due to unstable internet connections, ISP outages, or device issues, making the extra effort invisible to them. Furthermore, achieving each additional "nine" of reliability costs exponentially more in engineering effort and severely throttles feature velocity. Instead, the SRE approach is to set a realistic Service Level Objective (SLO), such as 99.99%, and use the remaining error budget to safely deploy updates and balance reliability with innovation.
+Targeting 100% reliability is considered an anti-pattern in SRE because it is both practically impossible and misaligned with actual user experience. Even if your service does not fail, users can still experience errors due to unstable internet connections, ISP outages, or device issues, making some of the extra effort invisible to them. Furthermore, achieving each additional "nine" of reliability costs exponentially more in engineering effort and severely throttles feature velocity. Instead, the SRE approach is to set a realistic Service Level Objective (SLO), such as 99.99%, and use the remaining error budget to safely deploy updates and balance reliability with innovation.
 
 </details>
 
@@ -506,7 +506,7 @@ You've completed this exercise when you:
 
 1. **SRE is software engineering applied to operations** — not just ops with a new name
 2. **The 50% rule** protects engineering time and forces automation
-3. **100% reliability is wrong** — match reliability to user needs
+3. **Chasing 100% reliability is usually the wrong goal** — match reliability to user needs
 4. **SRE implements DevOps** — concrete practices for cultural values
 5. **Team structure matters** — choose based on your organization's maturity
 
@@ -549,3 +549,12 @@ Continue to [Module 1.2: Service Level Objectives (SLOs)](../module-1.2-slos/) t
 ---
 
 *"Hope is not a strategy."* — Traditional SRE saying
+
+## Sources
+
+- [cloud.google.com: sre in the 2022 state of devops report](https://cloud.google.com/blog/products/devops-sre/sre-in-the-2022-state-of-devops-report) — This Google Cloud post directly says Google's SRE practice has been embraced and extended by a global community.
+- [cloud.google.com: identifying and tracking toil using sre principles](https://cloud.google.com/blog/products/management-tools/identifying-and-tracking-toil-using-sre-principles) — The Google Cloud post explicitly states that within Google SRE the target is to keep toil below 50% of each SRE's time.
+- [cloud.google.com: choose slos](https://cloud.google.com/architecture/framework/reliability/choose-slos) — The Google Cloud Architecture Center page directly states that a goal of 100% reliability is often not the most effective strategy.
+- [Google Cloud: Site Reliability Engineering](https://cloud.google.com/sre) — A current Google overview of SRE concepts, tools, and entry points for deeper study.
+- [How SRE Teams Are Organized, and How to Get Started](https://cloud.google.com/blog/products/devops-sre/how-sre-teams-are-organized-and-how-to-get-started) — Useful follow-up for the team-structure section because it walks through common SRE organizational models and their tradeoffs.
+- [The Systems Engineering Side of Site Reliability Engineering](https://www.usenix.org/publications/login/june15/hixson) — A foundational article on the systems-engineering mindset behind SRE and how it differs from purely software-focused roles.
