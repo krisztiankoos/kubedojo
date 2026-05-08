@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>#388 CKA Part 1 — Batch Report (2026-05-08)</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #161b22;
+    --panel-2: #1c232c;
+    --border: #30363d;
+    --fg: #e6edf3;
+    --fg-dim: #8b949e;
+    --green: #3fb950;
+    --green-bg: #0f2c1a;
+    --yellow: #d29922;
+    --yellow-bg: #2d2206;
+    --red: #f85149;
+    --red-bg: #2d0e0e;
+    --blue: #58a6ff;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.5; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: var(--mono); font-size: 0.92em; }
+  code.inline { background: var(--panel-2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.hero { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  header.hero h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.01em; }
+  header.hero .sub { color: var(--fg-dim); font-size: 14px; }
+  header.hero .meta { font-size: 13px; color: var(--fg-dim); text-align: right; line-height: 1.7; }
+  header.hero .meta b { color: var(--fg); font-weight: 600; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .kpi .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi .value { font-size: 26px; font-weight: 600; }
+  .kpi .value.ok { color: var(--green); }
+  .kpi .value.warn { color: var(--yellow); }
+  .kpi .value.fail { color: var(--red); }
+  .kpi .sub { color: var(--fg-dim); font-size: 12px; margin-top: 4px; }
+
+  h2 { font-size: 18px; margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); letter-spacing: -0.005em; }
+
+  table.modules { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  table.modules th, table.modules td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  table.modules th { background: var(--panel-2); color: var(--fg-dim); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.modules tr:last-child td { border-bottom: 0; }
+  table.modules td.module { font-weight: 600; }
+  table.modules td.module .sub { display: block; color: var(--fg-dim); font-weight: 400; font-size: 12px; margin-top: 2px; }
+
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; border: 1px solid; white-space: nowrap; }
+  .pill.ok { color: var(--green); background: var(--green-bg); border-color: rgba(63,185,80,0.4); }
+  .pill.warn { color: var(--yellow); background: var(--yellow-bg); border-color: rgba(210,153,34,0.4); }
+  .pill.fail { color: var(--red); background: var(--red-bg); border-color: rgba(248,81,73,0.4); }
+  .pill.neutral { color: var(--fg-dim); background: var(--panel-2); border-color: var(--border); }
+
+  .metrics { font-family: var(--mono); font-size: 11px; color: var(--fg-dim); }
+  .metrics b { color: var(--fg); font-weight: 600; }
+
+  .sha { font-family: var(--mono); font-size: 11px; background: var(--panel-2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
+
+  /* Timeline */
+  .timeline { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .timeline ol { list-style: none; padding: 0; margin: 0; position: relative; }
+  .timeline ol::before { content: ""; position: absolute; left: 11px; top: 6px; bottom: 6px; width: 2px; background: var(--border); }
+  .timeline li { position: relative; padding: 6px 0 6px 32px; font-size: 13px; }
+  .timeline li::before { content: ""; position: absolute; left: 4px; top: 13px; width: 12px; height: 12px; border-radius: 50%; background: var(--panel); border: 2px solid var(--border); }
+  .timeline li.ok::before { border-color: var(--green); background: var(--green-bg); }
+  .timeline li.warn::before { border-color: var(--yellow); background: var(--yellow-bg); }
+  .timeline li.fail::before { border-color: var(--red); background: var(--red-bg); }
+  .timeline li .ts { color: var(--fg-dim); font-family: var(--mono); font-size: 11px; margin-right: 8px; }
+  .timeline li .what { color: var(--fg); }
+  .timeline li .detail { color: var(--fg-dim); font-size: 12px; margin-left: 4px; }
+
+  /* Two-column lessons block */
+  .lessons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .lesson { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+  .lesson h3 { margin: 0 0 8px; font-size: 14px; color: var(--fg); }
+  .lesson ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--fg); }
+  .lesson li { margin-bottom: 6px; }
+  .lesson li b { font-weight: 600; }
+
+  /* Verdict mini-bar */
+  .verdict-bar { display: flex; height: 32px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 6px; font-size: 11px; font-weight: 600; }
+  .verdict-bar > div { display: flex; align-items: center; justify-content: center; color: #0e1116; }
+  .verdict-bar .b-ok { background: var(--green); }
+  .verdict-bar .b-warn { background: var(--yellow); }
+  .verdict-bar .b-fail { background: var(--red); }
+  .verdict-bar-legend { font-size: 11px; color: var(--fg-dim); }
+
+  footer.report-footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  @media (max-width: 720px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .lessons { grid-template-columns: 1fr; }
+    table.modules td, table.modules th { font-size: 12px; padding: 8px 10px; }
+    header.hero .meta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <h1>#388 — CKA Part 1 (Cluster Architecture) Batch Report</h1>
+    <div class="sub">5 rubric-critical modules rewritten through the codex&nbsp;→&nbsp;gemini cross-family pipeline.</div>
+  </div>
+  <div class="meta">
+    <div><b>Date:</b> 2026-05-08 → 2026-05-09</div>
+    <div><b>Pipeline:</b> <code class="inline">dispatch_388_pilot.py</code></div>
+    <div><b>Writer:</b> codex&nbsp;gpt-5.5&nbsp;<i>(danger,&nbsp;--search)</i></div>
+    <div><b>Reviewer:</b> gemini&nbsp;(round-1+2)</div>
+    <div><b>Total wall-clock:</b> ~67&nbsp;min</div>
+  </div>
+</header>
+
+<section>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Modules merged</div>
+      <div class="value ok">5 / 5</div>
+      <div class="sub">All landed on <code class="inline">main</code></div>
+    </div>
+    <div class="kpi">
+      <div class="label">First-pass APPROVE</div>
+      <div class="value ok">3 / 5</div>
+      <div class="sub">1.1 · 1.2 · 1.5</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Held for fix-up</div>
+      <div class="value warn">1 / 5</div>
+      <div class="sub">1.3 — bitnami URL bug</div>
+    </div>
+    <div class="kpi">
+      <div class="label">APPROVE_WITH_NITS</div>
+      <div class="value warn">1 / 5</div>
+      <div class="sub">1.4 — meta-nit, no fix needed</div>
+    </div>
+  </div>
+
+  <div class="verdict-bar" title="Verdict distribution across the 5 modules">
+    <div class="b-ok"  style="flex: 3;">3 × APPROVE</div>
+    <div class="b-warn" style="flex: 1;">1 × NITS</div>
+    <div class="b-fail" style="flex: 1;">1 × NEEDS CHANGES → APPROVE (round-2)</div>
+  </div>
+  <div class="verdict-bar-legend">All 5 modules ultimately landed on <code class="inline">main</code>; the 1 NEEDS CHANGES required a single focused fix-up dispatch.</div>
+</section>
+
+<h2>Per-module status</h2>
+
+<table class="modules">
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>PR</th>
+      <th>Verifier (T0 gates)</th>
+      <th>Protected assets</th>
+      <th>Round-1 verdict</th>
+      <th>Outcome</th>
+      <th>Squash SHA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="module">CKA 1.1 — Control Plane Deep-Dive
+        <span class="sub">module-1.1-control-plane.md · +293 / −217</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1016" target="_blank">#1016</a></td>
+      <td class="metrics">tier <b>T0</b> · body_words <b>5044</b> · mean_wpp <b>71.0</b> · median <b>78</b> · short <b>7.0%</b> · max_run <b>2</b></td>
+      <td class="metrics">code 35→<b>36</b> · ascii 1→<b>1</b> · tables 4→<b>7</b></td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">e98cae33</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 1.2 — Extension Interfaces (CNI/CSI/CRI)
+        <span class="sub">module-1.2-extension-interfaces.md · +276 / −160</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1017" target="_blank">#1017</a></td>
+      <td class="metrics">tier <b>T0</b> · body_words <b>5007</b> · mean_wpp <b>77.0</b> · median <b>89</b> · short <b>3.1%</b> · max_run <b>2</b></td>
+      <td class="metrics">code 29→<b>29</b> · ascii 1→<b>1</b> · tables 7→<b>10</b></td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">901c407a</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 1.3 — Helm
+        <span class="sub">module-1.3-helm.md · +324 / −110 + fix-up</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1018" target="_blank">#1018</a></td>
+      <td class="metrics">tier <b>T0</b> · body_words <b>5018</b> · mean_wpp <b>65.2</b> · median <b>66</b> · short <b>1.3%</b> · max_run <b>1</b></td>
+      <td class="metrics">code 22→<b>26</b> · mermaid 1→<b>1</b> · tables 2→<b>5</b></td>
+      <td><span class="pill fail">NEEDS CHANGES</span></td>
+      <td><span class="pill warn">Fix-up → APPROVE → Merged</span></td>
+      <td><code class="sha">ddbcacfa</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 1.4 — Kustomize
+        <span class="sub">module-1.4-kustomize.md · +67 / −6</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1019" target="_blank">#1019</a></td>
+      <td class="metrics">tier <b>T0</b> · body_words <b>5086</b> · mean_wpp <b>52.4</b> · median <b>52</b> · short <b>8.2%</b> · max_run <b>2</b></td>
+      <td class="metrics">code 68→<b>68</b> · ascii 4→<b>4</b> · tables 5→<b>5</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Orchestrator-merged (meta-nit only)</span></td>
+      <td><code class="sha">83a2c6e5</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 1.5 — CRDs &amp; Operators
+        <span class="sub">module-1.5-crds-operators.md · +319 / −205</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1020" target="_blank">#1020</a></td>
+      <td class="metrics">tier <b>T0</b> · body_words <b>5705</b> · mean_wpp <b>65.6</b> · median <b>68</b> · short <b>3.4%</b> · max_run <b>2</b></td>
+      <td class="metrics">code 40→<b>40</b></td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">5f251357</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Timeline</h2>
+
+<div class="timeline">
+<ol>
+  <li class="ok"><span class="ts">22:30:36Z</span><span class="what"><b>pilot_start</b></span><span class="detail">5 modules queued · input <code class="inline">scripts/quality/cka-part1-2026-05-08.txt</code></span></li>
+  <li class="ok"><span class="ts">22:51:24Z</span><span class="what"><b>1.1 merged</b> as PR #1016</span><span class="detail">elapsed ≈ 21 min · APPROVE first pass</span></li>
+  <li class="ok"><span class="ts">23:07:36Z</span><span class="what"><b>1.2 merged</b> as PR #1017</span><span class="detail">elapsed ≈ 16 min · APPROVE first pass</span></li>
+  <li class="fail"><span class="ts">23:21:05Z</span><span class="what"><b>1.3 HELD</b> on PR #1018</span><span class="detail">gemini flagged <code class="inline">helm repo add bitnami https://github.com/bitnami/charts</code> — that's the GitHub source-browse URL, not a Helm chart-index endpoint with <code class="inline">index.yaml</code>.</span></li>
+  <li class="warn"><span class="ts">23:27:28Z</span><span class="what"><b>1.4 HELD as APPROVE_WITH_NITS</b> on PR #1019</span><span class="detail">gemini noted "structurally obvious" expansion pattern but explicitly said the prose teaches — informational nit, no defect.</span></li>
+  <li class="ok"><span class="ts">23:37:46Z</span><span class="what"><b>1.5 merged</b> as PR #1020</span><span class="detail">elapsed ≈ 10 min · APPROVE first pass · pilot_done</span></li>
+  <li class="ok"><span class="ts">23:38:00Z</span><span class="what">orchestrator merged 1.4</span><span class="detail">nit was meta-observation, no actionable fix</span></li>
+  <li class="warn"><span class="ts">23:42:00Z</span><span class="what">codex fix-up on 1.3</span><span class="detail">replaced URL → <code class="inline">https://charts.bitnami.com/bitnami</code> · added OCI-migration prose · restored <code class="inline">Why | Fix</code> table headers · verifier T0</span></li>
+  <li class="ok"><span class="ts">23:48:00Z</span><span class="what">gemini round-2 on 1.3</span><span class="detail">explicitly instructed to <code class="inline">gh pr diff 1018</code> and curl-verify (per round-2-approvals memory rule); returned <span class="pill ok">APPROVE</span>.</span></li>
+  <li class="ok"><span class="ts">23:54:00Z</span><span class="what"><b>1.3 merged</b> as PR #1018</span><span class="detail">batch complete, 5 / 5 on main.</span></li>
+</ol>
+</div>
+
+<h2>Lessons &amp; process notes</h2>
+
+<div class="lessons">
+  <div class="lesson">
+    <h3>What worked</h3>
+    <ul>
+      <li><b>Sequential per item.</b> One codex at a time avoids the silent-fail mode where concurrent codex dispatches drop stdout.</li>
+      <li><b>Cross-family review caught a real bug.</b> The bitnami URL would have shipped runnable-broken code to learners. Gemini caught it on the diff. Without the cross-family gate, this lands.</li>
+      <li><b>APPROVE_WITH_NITS held, not auto-merged.</b> The recent fix (post day3-388 ab-discuss) preserved the distinction from APPROVE. The 1.4 case correctly stopped at the orchestrator for triage.</li>
+      <li><b>Round-2 prompt explicitly forced diff-reading.</b> Per <code class="inline">feedback_gemini_hallucinates_round2_approvals.md</code> — gemini round-2 was told to curl-verify, not approve from description. That's the only reason this round-2 is trustworthy.</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>What to carry forward</h3>
+    <ul>
+      <li><b>Bitnami URL hazard.</b> Any K8s module with <code class="inline">helm repo add bitnami</code> needs the chart-index URL <code class="inline">https://charts.bitnami.com/bitnami</code> (or OCI form), not <code class="inline">github.com/bitnami/charts</code>. Worth a one-line verifier check.</li>
+      <li><b>Fix-up dispatch pattern.</b> Reuse the existing worktree, focused prompt with quoted reviewer feedback, force-fix only the flagged delta. Took ~3 min vs. a full re-rewrite.</li>
+      <li><b>Codex push verification.</b> Verified <code class="inline">git ls-remote origin &lt;branch&gt;</code> after fix-up per <code class="inline">feedback_codex_push_silent_failure.md</code>. The push reached origin; this should be table stakes for any codex dispatch that pushes.</li>
+      <li><b>HTML-first artifacts.</b> This report itself is the first artifact under the new HTML-default policy (per Thariq's article 2026-05-08). Replaces what would otherwise have been an unread session-state markdown table.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Next bucket</h2>
+<div class="lesson">
+  <p style="margin: 0; font-size: 13px;">
+    With Part 1 cleared, the marathon advances to the next critical-count bucket. From the briefing API:
+  </p>
+  <ul style="font-size: 13px; margin: 8px 0 0 0;">
+    <li><b>Platform Disciplines</b> — 71 critical modules</li>
+    <li><b>Toolkits</b> — 52</li>
+    <li><b>Foundations</b> — 31</li>
+    <li><b>CKS</b> — 29</li>
+    <li><b>CKAD</b> — 23</li>
+    <li><b>CKA-remaining</b> (parts 2–6) — 12</li>
+    <li><b>On-Premises</b> — ~30</li>
+  </ul>
+  <p style="margin: 12px 0 0; font-size: 13px; color: var(--fg-dim);">
+    Recommended next: finish CKA before moving wider — Part 2 (workloads &amp; scheduling) is the natural continuation, only ~12 modules away from clearing the entire CKA section.
+  </p>
+</div>
+
+<footer class="report-footer">
+  <div>Generated 2026-05-09 · KubeDojo orchestrator · log: <code class="inline">logs/388_cka_part1_2026-05-08.jsonl</code></div>
+  <div>HTML-first artifact &mdash; per <code class="inline">feedback_html_over_markdown_for_artifacts.md</code></div>
+</footer>
+
+</div>
+</body>
+</html>

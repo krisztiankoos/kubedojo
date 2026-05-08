@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<!--
+================================================================
+COLD-START ORIENTATION (for any agent reading this raw)
+================================================================
+This is an HTML session handoff. Two read paths:
+  (A) Read this comment block + the <h1> + the .cold-start banner div
+      below — together they give you full orientation in <50 lines.
+  (B) Render to clean markdown via lightpanda for the full narrative:
+        python3 -m http.server 8989 --bind 127.0.0.1 &
+        lightpanda fetch --dump markdown \
+          http://127.0.0.1:8989/docs/session-state/2026-05-09-cka-part1-and-html-migration-pivot.html
+      (lightpanda does NOT support file:// — http:// is required.)
+
+# TL;DR
+
+- **Marathon:** CKA Part 1 cluster-architecture cleared end-to-end —
+  5 PRs merged: #1016 #1017 #1018 #1019 #1020 (squash SHAs e98cae33,
+  901c407a, ddbcacfa, 83a2c6e5, 5f251357). 1 fix-up cycle on 1.3
+  (bitnami URL bug).
+
+- **Pivot mid-session:** adopted HTML-first artifact policy per Thariq
+  @trq212 article (Anthropic Claude Code team, 2026-05-08). User
+  validated with "now I have much better overview what is happening."
+
+- **HTML migration tooling state at autonomous-chain launch (~01:30Z):**
+  PR #1021 merged (Phase 5 prereq — .html handoffs legalized).
+  Lightpanda verified as canonical agent render path. Memory saved
+  as reference_lightpanda_html_rendering.md.
+  Dispatch #2 IN FLIGHT: feat/html-design-system-and-plan-update —
+  builds docs/migrations/html-first/_design-system.html + folds the
+  ab discuss outcomes into docs/migrations/html-first/plan.html.
+  Dispatch #3 QUEUED: /artifacts route in scripts/local_api.py.
+
+- **Marathon QUEUED for tonight:** CKA Part 2-6 (12 modules across
+  parts 2-6 of CKA). Input file built at launch:
+  scripts/quality/cka-part2-2026-05-09.txt. Pipeline:
+  scripts/quality/dispatch_388_pilot.py. Log:
+  logs/388_cka_part2_2026-05-09.jsonl.
+
+# Recovery if orchestrator died mid-overnight
+
+1. curl http://127.0.0.1:8768/api/briefing/session?compact=1
+2. git log origin/main -20 + gh pr list --state open
+3. If marathon batch is incomplete, resume with:
+     .venv/bin/python scripts/quality/dispatch_388_pilot.py \
+       --input scripts/quality/cka-part2-2026-05-09.txt \
+       --log logs/388_cka_part2_2026-05-09.jsonl
+   (the script is idempotent — modules already merged are skipped
+   because their PRs are already on main.)
+4. HTML migration in-flight branches: chore/html-handoff-prereq
+   (already merged), feat/html-design-system-and-plan-update,
+   and any /artifacts branch.
+
+# Convention for future .html handoffs
+
+Always include a comment block like this one at the TOP, before the
+<head> styling. Cold-start agents reading raw HTML hit it first.
+
+================================================================
+RESUME QUEUE — verbatim, execute in order
+(picked up mid-chain after user /clear at ~01:50Z 2026-05-09)
+================================================================
+
+CURRENT STATE AT CLEAR:
+  - PR #1021 (.html handoffs prereq) — MERGED (commit 70130274)
+  - PR #1022 (_design-system.html + plan.html) — MERGED (commit 7d477a31)
+  - PR #1023 (/artifacts route in scripts/local_api.py) — IN FLIGHT
+    Branch: feat/local-api-artifacts-route
+    Worktree: .worktrees/codex-html-artifacts-route
+    Dispatch log: logs/html-artifacts-route-dispatch.log
+    Codex task ID: html-artifacts-route
+
+STEP 1 — check /artifacts dispatch status
+  tail -60 logs/html-artifacts-route-dispatch.log
+  Expect: "OK: True" + a PR URL on the last line.
+  If still running, poll: gh pr list --state open --search "feat/local-api-artifacts-route"
+  If failed, debug from log; do NOT re-dispatch blindly.
+
+STEP 2 — gemini cross-family review on PR #1023 via lightpanda
+  Reuse the prompt pattern from logs/pr-1022-review.log.
+  Key instructions in the prompt:
+    - Use lightpanda to render the new index page: lightpanda
+      fetch --dump markdown http://127.0.0.1:8768/artifacts
+      (after starting the API briefly to test)
+    - Verify path-traversal protection (404 on ../etc/passwd)
+    - Verify operator panel got the Artifacts link
+    - End with VERDICT: APPROVE | APPROVE WITH NITS | NEEDS CHANGES
+
+STEP 3 — on APPROVE: merge + cleanup
+  gh pr merge <PR#> --squash
+  git worktree remove .worktrees/codex-html-artifacts-route
+  git branch -D feat/local-api-artifacts-route
+  git fetch origin --prune
+
+STEP 4 — onboarding (3 small actions)
+  4a. Open single GH tracking issue:
+      gh issue create --title "HTML-first artifact migration — phase tracking" \
+        --body "[checkboxes for Phase 1 DONE, 2 PR explainers, 3 autopsies+audits, 4 dispatch briefs, 5 handoffs UNBLOCKED]"
+  4b. Post ab message:
+      scripts/ab post html-migration-strategy "Tooling live: _design-system.html + plan.html on main; /artifacts route at http://127.0.0.1:8768/artifacts; lightpanda is canonical HTML render path. See docs/migrations/html-first/plan.html for phase status."
+  4c. Add pointer to CLAUDE.md (small dispatch — codex 1-line edit):
+      Under "Project Overview" or similar, add:
+        "HTML-first artifact policy: see docs/migrations/html-first/plan.html — orchestrator artifacts default to HTML; STATUS/CLAUDE/rules/memory stay Markdown."
+
+STEP 5 — build marathon input file (CKA Part 2-6, ~12 modules)
+  ls src/content/docs/k8s/cka/part{2,3,4,5,6}-*/module-*.md \
+    > scripts/quality/cka-part2-2026-05-09.txt
+  Verify: wc -l scripts/quality/cka-part2-2026-05-09.txt  (expect ~12-15)
+
+STEP 6 — launch marathon batch (background)
+  source ./.envrc && unset GITHUB_TOKEN
+  export KUBEDOJO_CODEX_SEARCH=1
+  mkdir -p logs
+  .venv/bin/python scripts/quality/dispatch_388_pilot.py \
+    --input scripts/quality/cka-part2-2026-05-09.txt \
+    --log logs/388_cka_part2_2026-05-09.jsonl \
+    > logs/388_cka_part2_2026-05-09.console.log 2>&1 &
+
+STEP 7 — Monitor (tight filter, only emit on holds/errors/completion)
+  tail -F logs/388_cka_part2_2026-05-09.jsonl | \
+    grep -E --line-buffered '"event": "(module_start|merge_held|merge_held_nits|codex_error|module_skip|gemini_error|claude_review_error|pilot_done)"'
+
+STEP 8 — on pilot_done: generate end-of-batch HTML report
+  Path: audit/388-cka-part2-batch/index.html
+  Use docs/migrations/html-first/_design-system.html for canonical
+  CSS variables and component patterns (KPI cards, status pills,
+  artifact matrix, vertical timeline).
+  Include cold-start orientation comment block at top.
+
+STEP 9 — update STATUS.md handoff index
+  - Move current "Latest handoff" to "Predecessor chain" first row.
+  - Insert new row pointing at the new session-end .html handoff
+    (or update §6 of THIS handoff with end-of-night state if no
+    new session was started).
+  - Refresh ## TODO and ## Blockers sections.
+
+FALLBACK PROCEDURES:
+
+  Codex auth drift (403 wss):  codex login   then re-dispatch.
+  Gemini 503/timeout:  fall back to dispatch_smart.py review --agent claude.
+  Codex push silent failure:  git ls-remote origin <branch> after every push.
+  PR holds twice with NEEDS CHANGES:  leave for morning, do not spiral.
+
+NEVER USE:
+  - open <html-file>  (use http://127.0.0.1:8768/artifacts/<rel-path>)
+  - file://  (lightpanda doesn't support it; user policy bans it)
+  - parallel codex dispatches (sequential rule)
+  - inline content writing (orchestrator dispatches; never inline-writes
+    modules / large content / multi-file refactors)
+
+================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Session Handoff — 2026-05-09 — CKA Part 1 + HTML Migration Pivot</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #161b22;
+    --panel-2: #1c232c;
+    --panel-3: #21262d;
+    --border: #30363d;
+    --border-soft: #21262d;
+    --fg: #e6edf3;
+    --fg-dim: #8b949e;
+    --fg-faint: #6e7681;
+    --green: #3fb950;
+    --green-bg: #0f2c1a;
+    --yellow: #d29922;
+    --yellow-bg: #2d2206;
+    --red: #f85149;
+    --red-bg: #2d0e0e;
+    --blue: #58a6ff;
+    --blue-bg: #0f1d2e;
+    --purple: #a371f7;
+    --purple-bg: #1f1830;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.55; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: var(--mono); font-size: 0.9em; }
+  code.inline { background: var(--panel-2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  /* Header */
+  header.hero { padding-bottom: 22px; border-bottom: 1px solid var(--border); margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  header.hero h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.01em; }
+  header.hero .sub { color: var(--fg-dim); font-size: 14px; max-width: 800px; }
+  header.hero .meta { font-size: 12px; color: var(--fg-dim); text-align: right; line-height: 1.8; }
+  header.hero .meta b { color: var(--fg); }
+
+  h2 { font-size: 18px; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); letter-spacing: -0.005em; display: flex; align-items: center; gap: 12px; }
+  h2 .num { font-family: var(--mono); font-size: 12px; color: var(--fg-faint); background: var(--panel); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); }
+  h3 { font-size: 14px; margin: 16px 0 8px; color: var(--fg); }
+
+  /* Cold-start banner */
+  .cold-start { background: linear-gradient(135deg, var(--blue-bg) 0%, var(--panel) 100%); border: 1px solid rgba(88,166,255,0.4); border-left: 4px solid var(--blue); border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; }
+  .cold-start h3 { margin: 0 0 6px; color: var(--blue); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .cold-start p { margin: 0; font-size: 14px; }
+  .cold-start b { color: var(--fg); }
+
+  /* KPIs */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .kpi .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi .value { font-size: 26px; font-weight: 600; }
+  .kpi .value.ok { color: var(--green); }
+  .kpi .value.warn { color: var(--yellow); }
+  .kpi .value.blue { color: var(--blue); }
+  .kpi .sub { color: var(--fg-dim); font-size: 12px; margin-top: 4px; }
+
+  /* Two-thread split */
+  .threads { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .thread { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .thread.marathon { border-left: 4px solid var(--green); }
+  .thread.migration { border-left: 4px solid var(--purple); }
+  .thread h3 { margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .thread h3 .badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.04em; }
+  .thread .stat-line { font-size: 12px; color: var(--fg-dim); margin-bottom: 10px; }
+  .thread .stat-line b { color: var(--fg); }
+  .thread .summary { font-size: 13px; color: var(--fg); margin-bottom: 10px; }
+  .thread ul.events { list-style: none; padding: 0; margin: 0; }
+  .thread ul.events li { padding: 5px 0; font-size: 13px; border-bottom: 1px dashed var(--border-soft); display: flex; gap: 8px; }
+  .thread ul.events li:last-child { border-bottom: 0; }
+  .thread ul.events li .ts { font-family: var(--mono); font-size: 11px; color: var(--fg-faint); flex-shrink: 0; }
+  .thread ul.events li .what { color: var(--fg); }
+  .badge.ok { color: var(--green); background: var(--green-bg); border: 1px solid rgba(63,185,80,0.4); }
+  .badge.warn { color: var(--yellow); background: var(--yellow-bg); border: 1px solid rgba(210,153,34,0.4); }
+  .badge.purple { color: var(--purple); background: var(--purple-bg); border: 1px solid rgba(163,113,247,0.4); }
+
+  /* PR table */
+  table.prs { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  table.prs th, table.prs td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border-soft); font-size: 13px; }
+  table.prs th { background: var(--panel-2); color: var(--fg-dim); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.prs tr:last-child td { border-bottom: 0; }
+  table.prs td.pr { font-family: var(--mono); font-size: 12px; }
+  table.prs td.module { font-weight: 600; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid; white-space: nowrap; }
+  .pill.ok { color: var(--green); background: var(--green-bg); border-color: rgba(63,185,80,0.4); }
+  .pill.warn { color: var(--yellow); background: var(--yellow-bg); border-color: rgba(210,153,34,0.4); }
+  .pill.fail { color: var(--red); background: var(--red-bg); border-color: rgba(248,81,73,0.4); }
+  .sha { font-family: var(--mono); font-size: 11px; background: var(--panel-2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
+
+  /* Decisions */
+  .decision { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; }
+  .decision .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .decision .text { font-size: 14px; color: var(--fg); }
+  .decision.locked { border-left: 4px solid var(--green); }
+  .decision.proposed { border-left: 4px solid var(--yellow); }
+
+  /* Next-up CTA */
+  .next-up { background: linear-gradient(135deg, var(--purple-bg) 0%, var(--panel) 100%); border: 1px solid rgba(163,113,247,0.4); border-left: 4px solid var(--purple); border-radius: 8px; padding: 18px 22px; margin: 24px 0; }
+  .next-up h3 { margin: 0 0 10px; color: var(--purple); font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .next-up .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .next-up .option { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; }
+  .next-up .option .name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .next-up .option .why { color: var(--fg-dim); font-size: 12px; }
+  .next-up .option.recommended { border-color: var(--purple); }
+  .next-up .option.recommended .name::after { content: " ★ recommended"; color: var(--purple); font-weight: 400; font-size: 11px; }
+
+  /* Memory + artifact lists */
+  .artifact-list { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px; margin-bottom: 12px; }
+  .artifact-list h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-dim); }
+  .artifact-list ul { margin: 0; padding-left: 20px; font-size: 13px; }
+  .artifact-list li { margin-bottom: 4px; }
+
+  footer.report-footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  @media (max-width: 900px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .threads { grid-template-columns: 1fr; }
+    .next-up .options { grid-template-columns: 1fr; }
+    header.hero { flex-direction: column; }
+    header.hero .meta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <h1>Session Handoff — 2026-05-09</h1>
+    <div class="sub">CKA Part 1 marathon (5/5 merged) + HTML-first migration pivot. First Phase 2 artifact under the new HTML default.</div>
+  </div>
+  <div class="meta">
+    <div><b>Session start:</b> 2026-05-08 ~22:30 UTC</div>
+    <div><b>Session end:</b> 2026-05-09 ~01:00 UTC</div>
+    <div><b>Duration:</b> ~2.5 h</div>
+    <div><b>Pivot point:</b> 23:54 UTC (CKA 1.3 merged)</div>
+  </div>
+</header>
+
+<div class="cold-start">
+  <h3>Cold-start TL;DR</h3>
+  <p><b>Marathon:</b> CKA Part 1 cluster-architecture section is fully cleared (5/5 PRs merged: <a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1016">#1016</a> · <a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1017">#1017</a> · <a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1018">#1018</a> · <a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1019">#1019</a> · <a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1020">#1020</a>). Next bucket: CKA Part 2 (workloads &amp; scheduling).<br>
+  <b>Pivot:</b> Adopted Thariq's HTML-first artifact policy mid-session. Phase 1 (batch reports) shipped; Phase 2 (this handoff) is the second artifact under the new default. Plan at <code class="inline">docs/migrations/html-first/plan.html</code>.<br>
+  <b>In-flight at handoff:</b> <code class="inline">ab discuss html-migration-strategy</code> running (claude+codex+gemini, 2 rounds) to align all agents on the migration. Output to be synthesized into a Decision Card on next read.</p>
+</div>
+
+<section>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">PRs merged</div>
+      <div class="value ok">5 / 5</div>
+      <div class="sub">CKA 1.1–1.5 — all on main</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Codex dispatches</div>
+      <div class="value">6</div>
+      <div class="sub">5 writers + 1 fix-up</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Gemini reviews</div>
+      <div class="value">6</div>
+      <div class="sub">5 round-1 + 1 round-2</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Decisions locked</div>
+      <div class="value blue">2</div>
+      <div class="sub">HTML-first · marathon paused</div>
+    </div>
+  </div>
+</section>
+
+<h2><span class="num">§1</span> Two threads, parallel</h2>
+
+<div class="threads">
+  <div class="thread marathon">
+    <h3>Marathon — CKA Part 1 <span class="badge ok">CLOSED 5 / 5</span></h3>
+    <div class="stat-line">Pipeline: <code class="inline">dispatch_388_pilot.py</code> · <b>67 min wall-clock</b> · 4× first-pass APPROVE · 1× fix-up cycle</div>
+    <div class="summary">Section that was the briefing's <code class="inline">actions.next</code> rubric-critical bucket cleared end-to-end. The fix-up pattern (focused codex re-dispatch on the existing worktree, not a fresh rewrite) closed CKA 1.3 in ~3 min after gemini's NEEDS CHANGES on the bitnami URL.</div>
+    <ul class="events">
+      <li><span class="ts">22:30</span><span class="what">pilot_start — 5 modules queued</span></li>
+      <li><span class="ts">22:51</span><span class="what">CKA 1.1 merged (PR #1016) · APPROVE</span></li>
+      <li><span class="ts">23:08</span><span class="what">CKA 1.2 merged (PR #1017) · APPROVE</span></li>
+      <li><span class="ts">23:21</span><span class="what">CKA 1.3 HELD on PR #1018 · NEEDS CHANGES (bitnami URL)</span></li>
+      <li><span class="ts">23:27</span><span class="what">CKA 1.4 HELD on PR #1019 · APPROVE_WITH_NITS (meta-nit)</span></li>
+      <li><span class="ts">23:38</span><span class="what">CKA 1.5 merged (PR #1020) · APPROVE · pilot_done</span></li>
+      <li><span class="ts">23:38</span><span class="what">Orchestrator merged 1.4 (nit was informational)</span></li>
+      <li><span class="ts">23:42</span><span class="what">Codex fix-up on 1.3 → URL fixed, headers restored, T0</span></li>
+      <li><span class="ts">23:48</span><span class="what">Gemini round-2 on 1.3 → APPROVE</span></li>
+      <li><span class="ts">23:54</span><span class="what">CKA 1.3 merged (PR #1018) · 5 / 5 closed</span></li>
+    </ul>
+  </div>
+  <div class="thread migration">
+    <h3>HTML migration pivot <span class="badge purple">Phase 1 + 2 LIVE</span></h3>
+    <div class="stat-line">Driver: Thariq @trq212 article (Anthropic Claude Code team, 2026-05-08) · user direction 2026-05-09</div>
+    <div class="summary">User pointed at the article and said "we should listen to their advice." Adopted the HTML-default policy for orchestrator artifacts (hybrid: 6 classes → HTML, 5 classes stay Markdown). User reaction to the first HTML batch report ("now I have much better overview what is happening") validated the pivot. Marathon paused at clean checkpoint to land migration tooling.</div>
+    <ul class="events">
+      <li><span class="ts">23:55</span><span class="what">Article read + memory rule saved</span></li>
+      <li><span class="ts">00:08</span><span class="what">Phase 1 shipped: <code class="inline">audit/388-cka-part1-batch/index.html</code></span></li>
+      <li><span class="ts">00:10</span><span class="what">User: "you have 2 minutes to decide" — committed publicly</span></li>
+      <li><span class="ts">00:30</span><span class="what">Article archived: <code class="inline">docs/references/external/...thariq...html</code></span></li>
+      <li><span class="ts">00:32</span><span class="what">Migration plan: <code class="inline">docs/migrations/html-first/plan.html</code></span></li>
+      <li><span class="ts">00:38</span><span class="what"><code class="inline">ab discuss</code> kicked off (claude+codex+gemini, 2 rounds)</span></li>
+      <li><span class="ts">00:45</span><span class="what">Phase 2 first instance: this handoff (HTML, not Markdown)</span></li>
+    </ul>
+  </div>
+</div>
+
+<h2><span class="num">§2</span> Marathon detail — PRs landed</h2>
+
+<table class="prs">
+  <thead>
+    <tr>
+      <th>PR</th>
+      <th>Module</th>
+      <th>Verifier</th>
+      <th>Round-1</th>
+      <th>Final</th>
+      <th>Squash SHA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="pr"><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1016" target="_blank">#1016</a></td>
+      <td class="module">CKA 1.1 — Control Plane Deep-Dive</td>
+      <td>T0 · 5044w · mwpp 71</td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">e98cae33</code></td>
+    </tr>
+    <tr>
+      <td class="pr"><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1017" target="_blank">#1017</a></td>
+      <td class="module">CKA 1.2 — Extension Interfaces (CNI/CSI/CRI)</td>
+      <td>T0 · 5007w · mwpp 77</td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">901c407a</code></td>
+    </tr>
+    <tr>
+      <td class="pr"><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1018" target="_blank">#1018</a></td>
+      <td class="module">CKA 1.3 — Helm</td>
+      <td>T0 · 5018w · mwpp 65</td>
+      <td><span class="pill fail">NEEDS CHANGES</span></td>
+      <td><span class="pill warn">Fix-up → APPROVE → Merged</span></td>
+      <td><code class="sha">ddbcacfa</code></td>
+    </tr>
+    <tr>
+      <td class="pr"><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1019" target="_blank">#1019</a></td>
+      <td class="module">CKA 1.4 — Kustomize</td>
+      <td>T0 · 5086w · mwpp 52</td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Orchestrator-merged</span></td>
+      <td><code class="sha">83a2c6e5</code></td>
+    </tr>
+    <tr>
+      <td class="pr"><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1020" target="_blank">#1020</a></td>
+      <td class="module">CKA 1.5 — CRDs &amp; Operators</td>
+      <td>T0 · 5705w · mwpp 65</td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">5f251357</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2><span class="num">§3</span> Decisions locked</h2>
+
+<div class="decision locked">
+  <div class="label">Decision · 2026-05-09 (durable)</div>
+  <div class="text"><b>HTML is the default output format</b> for orchestrator-generated artifacts that benefit from visualization, interactivity, or shareability (batch reports · session handoffs · PR review explainers · bug autopsies · audit reports · dispatch briefs). Markdown stays only for files the briefing API parses or that are grepped daily by tooling (STATUS · CLAUDE · rules · memory · decision-cards · module content). Memory rule: <code class="inline">feedback_html_over_markdown_for_artifacts.md</code> · plan: <code class="inline">docs/migrations/html-first/plan.html</code>.</div>
+</div>
+
+<div class="decision locked">
+  <div class="label">Decision · 2026-05-09 (this session)</div>
+  <div class="text"><b>Marathon paused at CKA Part 1 boundary</b> to land HTML migration. Resumes next session with CKA Part 2 (workloads &amp; scheduling, ~5 modules estimated). The pause is at a clean checkpoint — no in-flight work, all PRs merged, no held branches.</div>
+</div>
+
+<div class="decision proposed">
+  <div class="label">Pending · awaiting <code class="inline">ab discuss</code> outcome</div>
+  <div class="text"><b>Migration ticket structure:</b> single tracking issue with phase checkboxes, OR one issue per phase? Discussion in <code class="inline">html-migration-strategy</code> channel will surface codex/gemini perspectives on this and on whether a shared design-system reference HTML is needed for non-Claude agents.</div>
+</div>
+
+<h2><span class="num">§4</span> Artifacts produced this session</h2>
+
+<div class="artifact-list">
+  <h3>HTML — under the new policy</h3>
+  <ul>
+    <li><a href="../../audit/388-cka-part1-batch/index.html"><code class="inline">audit/388-cka-part1-batch/index.html</code></a> — Phase 1 exemplar, batch report</li>
+    <li><a href="../migrations/html-first/plan.html"><code class="inline">docs/migrations/html-first/plan.html</code></a> — Phase 2-5 migration plan</li>
+    <li><a href="../references/external/2026-05-08-thariq-html-effectiveness.html"><code class="inline">docs/references/external/2026-05-08-thariq-html-effectiveness.html</code></a> — archived source article</li>
+    <li><b>This file</b> — Phase 2 first instance (session handoff in HTML)</li>
+  </ul>
+</div>
+
+<div class="artifact-list">
+  <h3>Markdown — kept by design</h3>
+  <ul>
+    <li><code class="inline">docs/migrations/html-first/INDEX.md</code> — grep stub pointing at <code class="inline">plan.html</code></li>
+    <li><code class="inline">STATUS.md</code> updated — points at this handoff (briefing API parses it)</li>
+    <li><code class="inline">scripts/quality/cka-part1-2026-05-08.txt</code> — pilot input list</li>
+  </ul>
+</div>
+
+<div class="artifact-list">
+  <h3>Memory updates (cross-session)</h3>
+  <ul>
+    <li>NEW <code class="inline">feedback_html_over_markdown_for_artifacts.md</code> — locks the HTML-default policy with where-to-apply, what-stays-markdown, anti-patterns, tradeoffs</li>
+    <li>UPDATE <code class="inline">MEMORY.md</code> — added pointer to the HTML feedback rule</li>
+  </ul>
+</div>
+
+<div class="next-up">
+  <h3>Next session entry point</h3>
+  <p style="margin: 0; font-size: 13px;">Two paths. Briefing API will already surface CKA Part 2 as the actions.next bucket.</p>
+  <div class="options">
+    <div class="option recommended">
+      <div class="name">Resume marathon: CKA Part 2</div>
+      <div class="why">Workloads &amp; scheduling, ~5 modules, same pattern as Part 1. Estimated ~70 min wall-clock to clear. Continues the daily-grind quality work that ships content to learners.</div>
+    </div>
+    <div class="option">
+      <div class="name">Continue migration: ship Phase 3 / 4 tickets</div>
+      <div class="why">If the <code class="inline">ab discuss</code> outcome (read it on session start) recommends front-loading more tooling. Otherwise treat as on-demand triggers — fire when each phase's natural use case arrives.</div>
+    </div>
+  </div>
+</div>
+
+<h2><span class="num">§5</span> Cross-thread notes (still active)</h2>
+
+<div class="artifact-list">
+  <ul>
+    <li><b>HTML migration</b> — Phases 2-5 fire on demand. Phase 2 already fired in this handoff. Phases 3-5 fire when their respective natural use cases arrive (next non-APPROVE PR / next bug autopsy / next dispatch brief).</li>
+    <li><b>Branch protection UI flag</b> — making <code class="inline">Incident dedup gate</code> a required check still pending UI click (orchestrator PAT can't toggle it).</li>
+    <li><b>271 modules at critical rubric</b> across the curriculum — long-running marathon. Order: Platform Disciplines (71) · Toolkits (52) · Foundations (31) · CKS (29) · CKAD (23) · CKA-remaining (12) · On-Premises (~30). Recommendation: finish CKA before going wider.</li>
+    <li><b>Stale codex worktree</b> — <code class="inline">.worktrees/codex-h1-contract-patch</code> at <code class="inline">19041e16</code> on branch <code class="inline">fix/no-source-h1-contract</code>. Investigate next session whether to merge or discard.</li>
+  </ul>
+</div>
+
+<h2><span class="num">§6</span> Autonomous chain — launching tonight (post-01:30Z)</h2>
+
+<div class="cold-start">
+  <h3>If you're a cold-start agent reading this mid-overnight</h3>
+  <p>The orchestrator went autonomous after this section was written. Recovery procedure if anything looks stale:<br>
+  <b>1.</b> Hit <code class="inline">curl -s http://127.0.0.1:8768/api/briefing/session?compact=1</code> for current state.<br>
+  <b>2.</b> Check <code class="inline">git log origin/main -20</code> for landed PRs and <code class="inline">gh pr list --state open</code> for in-flight ones.<br>
+  <b>3.</b> Marathon batch input: <code class="inline">scripts/quality/cka-part2-2026-05-09.txt</code> (created at launch). Re-run with <code class="inline">.venv/bin/python scripts/quality/dispatch_388_pilot.py --input scripts/quality/cka-part2-2026-05-09.txt --log logs/388_cka_part2_2026-05-09.jsonl</code> if interrupted.<br>
+  <b>4.</b> HTML migration tooling logs: <code class="inline">logs/html-*-dispatch.log</code>.</p>
+</div>
+
+<div class="threads">
+  <div class="thread migration">
+    <h3>HTML migration tooling — IN FLIGHT</h3>
+    <ul class="events">
+      <li><span class="ts">~01:00</span><span class="what"><b>PR #1021</b> merged (<code class="inline">70130274</code>) · Phase 5 prereq: .html handoffs legalised in CLAUDE.md + hook + STATUS.md</span></li>
+      <li><span class="ts">~01:25</span><span class="what">Lightpanda verified — <code class="inline">/opt/homebrew/bin/lightpanda fetch --dump markdown</code> renders HTML→clean markdown for agent review. Memory <code class="inline">reference_lightpanda_html_rendering.md</code> saved.</span></li>
+      <li><span class="ts">~01:30</span><span class="what"><b>Dispatch #2</b> in flight: <code class="inline">feat/html-design-system-and-plan-update</code> branch · canonical <code class="inline">_design-system.html</code> + plan re-sequence + lightpanda contract</span></li>
+      <li><span class="ts">queued</span><span class="what"><b>Dispatch #3</b>: <code class="inline">/artifacts</code> route in <code class="inline">scripts/local_api.py</code> — browseable HTML index across audit/, docs/migrations/, docs/session-state/, docs/references/, docs/bug-autopsies/, docs/dispatch-briefs/</span></li>
+      <li><span class="ts">queued</span><span class="what"><b>Onboarding:</b> single GH tracking issue with phase checkboxes · <code class="inline">ab</code> message in html-migration-strategy channel · 1-line pointer in CLAUDE.md</span></li>
+    </ul>
+  </div>
+  <div class="thread marathon">
+    <h3>Marathon — CKA Part 2-6 (12 modules) — QUEUED</h3>
+    <ul class="events">
+      <li><span class="ts">queued</span><span class="what">Build <code class="inline">scripts/quality/cka-part2-2026-05-09.txt</code> with module paths from CKA parts 2-6 (workloads/scheduling, services/networking, storage, troubleshooting, mock exams)</span></li>
+      <li><span class="ts">queued</span><span class="what">Launch <code class="inline">dispatch_388_pilot.py</code> in background · sequential codex (gpt-5.5, danger, --search) → gemini review → merge</span></li>
+      <li><span class="ts">queued</span><span class="what">Tight Monitor: <code class="inline">module_start</code> / <code class="inline">merge_held*</code> / errors / <code class="inline">pilot_done</code> only · merges are silent</span></li>
+      <li><span class="ts">queued</span><span class="what">End-of-batch HTML report at <code class="inline">audit/388-cka-part2-batch/index.html</code> using new <code class="inline">_design-system.html</code></span></li>
+      <li><span class="ts">queued</span><span class="what">Final STATUS.md handoff update for next session entry</span></li>
+    </ul>
+  </div>
+</div>
+
+<div class="decision proposed">
+  <div class="label">Expected end-of-night state · 2026-05-09 ~05:00 UTC</div>
+  <div class="text">
+    <b>HTML migration:</b> 3-4 PRs merged (prereq · design-system + plan · /artifacts · optional CLAUDE.md pointer). Migration tooling fully live. Phase 5 unblocked.<br>
+    <b>Marathon:</b> CKA Part 2-6 cleared (12 modules · 12 PRs merged · same pattern as Part 1). CKA section fully done across all 6 parts; next bucket = Platform Disciplines (71 critical) or CKS (29).<br>
+    <b>Artifacts:</b> end-of-batch HTML report for CKA Part 2-6 + updated STATUS.md handoff pointing at next-session entry.
+  </div>
+</div>
+
+<div class="decision proposed">
+  <div class="label">Failure modes to watch for</div>
+  <div class="text">
+    <b>Codex auth drift:</b> if any dispatch returns 403 on wss, run <code class="inline">codex login</code> manually. Per <code class="inline">feedback_verify_codex_auth.md</code>.<br>
+    <b>Gemini OAuth burn:</b> if gemini reviews start rate-limiting, fall back to <code class="inline">dispatch_smart.py review --agent claude</code> (sonnet) per <code class="inline">feedback_headless_claude_gemini_fallback.md</code>.<br>
+    <b>Codex push silent failure:</b> verify each push via <code class="inline">git ls-remote origin &lt;branch&gt;</code> per <code class="inline">feedback_codex_push_silent_failure.md</code>.<br>
+    <b>Stuck holds:</b> if a PR holds with NEEDS CHANGES and the fix-up dispatch fails twice, leave it for morning. Don't spiral.
+  </div>
+</div>
+
+<footer class="report-footer">
+  <div>Handoff generated 2026-05-09 by KubeDojo orchestrator · index in <code class="inline">STATUS.md</code> · §6 added at autonomous-chain launch</div>
+  <div>HTML-first artifact &mdash; per <code class="inline">feedback_html_over_markdown_for_artifacts.md</code></div>
+</footer>
+
+</div>
+</body>
+</html>
