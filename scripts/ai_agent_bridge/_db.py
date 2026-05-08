@@ -20,6 +20,7 @@ import sqlite3
 from datetime import UTC, datetime
 
 from ._config import DB_PATH
+from ._fts import setup_fts_tables
 
 # ── Schema definitions ─────────────────────────────────────────────────
 # Kept at module scope so tests and tooling can import them.
@@ -169,6 +170,7 @@ def init_db():
     conn.executescript(_LEGACY_SCHEMA)
     conn.executescript(_CHANNELS_SCHEMA)
     conn.executescript(_CHANNEL_EVENTS_SCHEMA)
+    setup_fts_tables(conn)
     conn.commit()
     return conn
 
@@ -273,6 +275,7 @@ def get_db():
                         """
                     )
 
+        setup_fts_tables(conn)
         conn.commit()
     except Exception:
         conn.rollback()

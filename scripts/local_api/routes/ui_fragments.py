@@ -111,3 +111,135 @@ def render_afk_notify_markup() -> str:
   setInterval(pollPendingDecisions, POLL_MS);
 })();
 </script>"""
+
+
+def render_search_widget() -> str:
+    return """
+<style>
+  .search-widget{position:sticky;top:var(--topnav-h,45px);z-index:55;background:#121416;border-bottom:1px solid var(--line,rgba(255,255,255,.08));padding:8px 24px;--search-widget-h:53px}
+  .search-box{position:relative;max-width:720px}
+  .search-input{width:100%;height:36px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:6px;background:#0f1011;color:var(--text,#f3f4f2);padding:0 12px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
+  .search-input:focus{outline:2px solid rgba(61,214,198,.35);border-color:var(--teal,#3dd6c6)}
+  .search-dropdown{position:absolute;top:42px;left:0;right:0;z-index:70;display:grid;gap:2px;max-height:min(420px,70vh);overflow:auto;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:6px;background:#101112;box-shadow:0 18px 64px rgba(0,0,0,.45);padding:5px}
+  .search-dropdown[hidden]{display:none}
+  .search-result{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--text,#f3f4f2);padding:8px;text-align:left;cursor:pointer}
+  .search-result.active,.search-result:hover{border-color:rgba(61,214,198,.45);background:rgba(61,214,198,.11)}
+  .search-chip{align-self:start;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:999px;padding:2px 6px;color:var(--muted,#9ca3a3);font-size:10px;font-weight:850;letter-spacing:.04em}
+  .search-result-title{font-size:12px;font-weight:850;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .search-snippet{font-size:12px;color:var(--muted,#9ca3a3);margin-top:2px;line-height:1.35}
+  .search-snippet mark{background:rgba(253,224,71,.22);color:#fde68a;border-radius:3px;padding:0 2px}
+  .search-empty{color:var(--muted,#9ca3a3);font-size:12px;padding:10px}
+  @media(max-width:760px){.search-widget{padding:8px 12px}.search-dropdown{max-height:62vh}}
+</style>
+<div class="search-widget" data-search-widget>
+  <div class="search-box">
+    <input class="search-input" type="search" placeholder="Search messages + decisions" autocomplete="off" aria-label="Search messages and decisions">
+    <div class="search-dropdown" role="listbox" hidden></div>
+  </div>
+</div>
+<script>
+(() => {
+  const root = document.querySelector("[data-search-widget]");
+  if (!root) return;
+  const input = root.querySelector(".search-input");
+  const dropdown = root.querySelector(".search-dropdown");
+  let timer = null;
+  let results = [];
+  let active = -1;
+  const escapeHtml = value => String(value || "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[ch]));
+  function close() {
+    dropdown.hidden = true;
+    dropdown.innerHTML = "";
+    results = [];
+    active = -1;
+  }
+  function setActive(index) {
+    active = index;
+    dropdown.querySelectorAll(".search-result").forEach((row, idx) => {
+      row.classList.toggle("active", idx === active);
+      if (idx === active) row.scrollIntoView({block: "nearest"});
+    });
+  }
+  function navigate(result) {
+    if (result && result.url) window.location.href = result.url;
+  }
+  function render() {
+    if (!results.length) {
+      dropdown.innerHTML = '<div class="search-empty">No matches</div>';
+      dropdown.hidden = false;
+      return;
+    }
+    dropdown.innerHTML = results.map((result, idx) => {
+      const isDecision = result.kind === "decision";
+      const chip = isDecision ? "DECISION" : "CHAT";
+      const title = isDecision
+        ? (result.title || result.filename || "Decision")
+        : ((result.from_agent || "agent") + " in " + (result.channel || "channel"));
+      return '<button type="button" class="search-result" data-index="' + idx + '" role="option">' +
+        '<span class="search-chip">' + chip + '</span>' +
+        '<span><span class="search-result-title">' + escapeHtml(title) + '</span>' +
+        '<span class="search-snippet">' + (result.snippet || "") + '</span></span>' +
+      '</button>';
+    }).join("");
+    dropdown.hidden = false;
+    setActive(0);
+  }
+  async function runSearch() {
+    const query = input.value.trim();
+    if (query.length < 2) {
+      close();
+      return;
+    }
+    try {
+      const res = await fetch("/api/search?q=" + encodeURIComponent(query) + "&kind=all&limit=10", {cache: "no-store"});
+      if (!res.ok) {
+        close();
+        return;
+      }
+      const data = await res.json();
+      results = Array.isArray(data.results) ? data.results : [];
+      active = -1;
+      render();
+    } catch {
+      close();
+    }
+  }
+  input.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(runSearch, 200);
+  });
+  input.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      close();
+      input.blur();
+      return;
+    }
+    if (dropdown.hidden) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActive(Math.min(results.length - 1, active + 1));
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActive(Math.max(0, active - 1));
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      navigate(results[active]);
+    }
+  });
+  dropdown.addEventListener("mousedown", event => {
+    const row = event.target.closest(".search-result");
+    if (!row) return;
+    event.preventDefault();
+    navigate(results[Number(row.dataset.index)]);
+  });
+  document.addEventListener("click", event => {
+    if (!root.contains(event.target)) close();
+  });
+})();
+</script>"""

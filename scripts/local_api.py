@@ -54,8 +54,24 @@ def _load_decision_routes_module() -> Any:
     return module
 
 
+def _load_search_routes_module() -> Any:
+    module_name = "_local_api_routes_search"
+    loaded = sys.modules.get(module_name)
+    if loaded is not None:
+        return loaded
+    module_path = Path(__file__).resolve().with_name("local_api") / "routes" / "search.py"
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load search routes from {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 _CHANNEL_ROUTES = _load_channel_routes_module()
 _DECISION_ROUTES = _load_decision_routes_module()
+_SEARCH_ROUTES = _load_search_routes_module()
 
 # Heavy imports (pipeline_v2, status, translation_v2, ztt_status) are deferred
 # into the handlers that actually need them. Measured: moving these out of the
@@ -7081,6 +7097,7 @@ def build_api_schema() -> dict[str, Any]:
             {"path": "/api/decisions", "desc": "List decision files with status and lineage counts"},
             {"path": "/api/decisions/pending", "desc": "Pending/stale decision count for cold-start agents"},
             {"path": "/api/decision/{filename}/lineage", "desc": "Decision lineage scanner result"},
+            {"path": "/api/search", "desc": "FTS5 search across channel messages and decision cards"},
             {"path": "/api/quality/scores", "desc": "Live heuristic rubric scores from current English module files"},
             {
                 "path": "/api/quality/board",
@@ -7446,6 +7463,14 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         except (TypeError, ValueError):
             limit = 100
         return 200, build_bridge_messages(repo_root, since, limit), "application/json; charset=utf-8"
+    search_api = _SEARCH_ROUTES.route_search_request(
+        repo_root,
+        path,
+        query,
+        bridge_db_path=_resolve_bridge_db_path(repo_root),
+    )
+    if search_api is not None:
+        return search_api
     decision_api = _DECISION_ROUTES.route_decision_api_request(repo_root, path)
     if decision_api is not None:
         return decision_api
