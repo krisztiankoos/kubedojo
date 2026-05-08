@@ -621,6 +621,8 @@ def _normalized_cache_key(
 
 
 def _serialize_payload(payload: Any, content_type: str) -> bytes:
+    if isinstance(payload, bytes):
+        return payload
     if content_type.startswith("application/json"):
         return json.dumps(payload, indent=2, sort_keys=True, default=_json_default).encode("utf-8")
     if content_type.startswith("text/html"):
@@ -4321,6 +4323,7 @@ _TOP_NAV_CSS = """
 def _render_top_nav(active: str) -> str:
     links = [
         ("operator", "/operator", "Operator"),
+        ("artifacts", "/artifacts", "Artifacts"),
         ("quality", "/quality", "Quality"),
         ("pipeline", "/pipeline", "Pipeline"),
         ("activity", "/activity", "Activity"),
@@ -4365,6 +4368,259 @@ def _render_skeleton_page(title: str, issue_number: int) -> str:
   <p><a href="/">&larr; Home</a></p>
 </main>
 </body></html>"""
+
+
+_ARTIFACT_ALLOWED_DIRS = (
+    "audit",
+    "docs/migrations",
+    "docs/session-state",
+    "docs/references/external",
+    "docs/bug-autopsies",
+    "docs/dispatch-briefs",
+)
+_ARTIFACT_ASSET_TYPES = {
+    ".css": "text/css; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".woff2": "font/woff2",
+}
+_ARTIFACT_SECTION_SPECS = (
+    ("Reports", "audit", "**/*.html"),
+    ("Migrations", "docs/migrations", "**/*.html"),
+    ("Handoffs", "docs/session-state", "*.html"),
+    ("References", "docs/references/external", "*.html"),
+    ("Bug autopsies", "docs/bug-autopsies", "**/*.html"),
+    ("Dispatch briefs", "docs/dispatch-briefs", "**/*.html"),
+)
+_ARTIFACT_TITLE_RE = re.compile(r"<title[^>]*>([^<]+)</title>", re.IGNORECASE)
+
+
+def _artifact_content_type(path: Path) -> str | None:
+    suffix = path.suffix.lower()
+    if suffix == ".html":
+        return "text/html; charset=utf-8"
+    return _ARTIFACT_ASSET_TYPES.get(suffix)
+
+
+def _artifact_allowed_roots(repo_root: Path) -> list[Path]:
+    return [(repo_root / rel).resolve() for rel in _ARTIFACT_ALLOWED_DIRS]
+
+
+def _resolve_artifact_path(repo_root: Path, rel_path: str) -> Path | None:
+    if not rel_path or rel_path.startswith("/") or "\\" in rel_path:
+        return None
+    parts = rel_path.split("/")
+    if any(part in ("", ".", "..") for part in parts):
+        return None
+
+    candidate = (repo_root / rel_path).resolve()
+    for allowed_dir in _artifact_allowed_roots(repo_root):
+        try:
+            candidate.relative_to(allowed_dir)
+        except ValueError:
+            continue
+        return candidate
+    return None
+
+
+def _extract_artifact_title(path: Path) -> str:
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            head = handle.read(2048)
+    except OSError:
+        return path.stem.replace("-", " ").replace("_", " ").title()
+    match = _ARTIFACT_TITLE_RE.search(head)
+    if match is None:
+        return path.stem.replace("-", " ").replace("_", " ").title()
+    title = " ".join(html.unescape(match.group(1)).split())
+    return title or path.stem.replace("-", " ").replace("_", " ").title()
+
+
+def _relative_time(timestamp: float, *, now: float | None = None) -> str:
+    delta = max(0, int((time.time() if now is None else now) - timestamp))
+    if delta < 60:
+        return "just now"
+    if delta < 3600:
+        minutes = delta // 60
+        return f"{minutes}m ago"
+    if delta < 86400:
+        hours = delta // 3600
+        return f"{hours}h ago"
+    days = delta // 86400
+    if days < 30:
+        return f"{days}d ago"
+    months = days // 30
+    if months < 12:
+        return f"{months}mo ago"
+    return f"{days // 365}y ago"
+
+
+def build_artifacts_index(repo_root: Path) -> dict[str, list[dict[str, Any]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for category, base_rel, pattern in _ARTIFACT_SECTION_SPECS:
+        base = repo_root / base_rel
+        if not base.is_dir():
+            if category in {"Reports", "Migrations", "Handoffs", "References"}:
+                grouped[category] = []
+            continue
+        items: list[dict[str, Any]] = []
+        for path in base.glob(pattern):
+            if not path.is_file() or path.suffix.lower() != ".html":
+                continue
+            try:
+                resolved = path.resolve()
+                resolved.relative_to(base.resolve())
+                stat = resolved.stat()
+                rel = resolved.relative_to(repo_root.resolve()).as_posix()
+            except (OSError, ValueError):
+                continue
+            items.append(
+                {
+                    "title": _extract_artifact_title(resolved),
+                    "path": rel,
+                    "url": f"/artifacts/{rel}",
+                    "mtime": stat.st_mtime,
+                    "size_bytes": stat.st_size,
+                }
+            )
+        if items or category not in {"Bug autopsies", "Dispatch briefs"}:
+            grouped[category] = sorted(items, key=lambda item: item["mtime"], reverse=True)
+    return grouped
+
+
+def render_artifacts_index_html(repo_root: Path) -> str:
+    artifacts = build_artifacts_index(repo_root)
+    generated = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime())
+    total = sum(len(items) for items in artifacts.values())
+    section_html = []
+    for category, items in artifacts.items():
+        if not items and category in {"Bug autopsies", "Dispatch briefs"}:
+            continue
+        rows = []
+        for item in items:
+            title = html.escape(str(item["title"]))
+            rel_path = html.escape(str(item["path"]))
+            url = html.escape(str(item["url"]))
+            age = html.escape(_relative_time(float(item["mtime"])))
+            size_kb = f"{item['size_bytes'] / 1024:.1f} KB"
+            rows.append(
+                f"""<tr>
+      <td><a href="{url}">{title}</a></td>
+      <td class="mono path">{rel_path}</td>
+      <td><span class="pill neutral">{age}</span></td>
+      <td class="num">{size_kb}</td>
+    </tr>"""
+            )
+        body = "\n".join(rows) if rows else '<tr><td colspan="4" class="empty">No HTML artifacts found.</td></tr>'
+        section_html.append(
+            f"""<section class="panel">
+  <div class="panel-head">
+    <h2>{html.escape(category)}</h2>
+    <span class="pill neutral">{len(items)}</span>
+  </div>
+  <div class="table-wrap">
+    <table class="matrix">
+      <thead><tr><th>Title</th><th>Path</th><th>Modified</th><th>Size</th></tr></thead>
+      <tbody>
+    {body}
+      </tbody>
+    </table>
+  </div>
+</section>"""
+        )
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Artifacts - KubeDojo Local Monitor</title>
+  <style>
+    :root {{
+      --bg:#0e1116; --panel:#161b22; --panel-2:#1c232c; --panel-3:#21262d;
+      --border:#30363d; --border-soft:#21262d; --fg:#e6edf3; --fg-dim:#8b949e; --fg-faint:#6e7681;
+      --green:#3fb950; --green-bg:#0f2c1a; --blue:#58a6ff; --blue-bg:#0f1d2e;
+      --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+      --text:var(--fg); --text-secondary:var(--fg-dim); --text-dim:var(--fg-faint);
+      --surface-0:var(--panel); --surface-1:var(--panel-2); --surface-2:var(--panel-3);
+      --accent:var(--blue); --accent-muted:var(--blue-bg); --radius-sm:8px;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin:0; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;
+      background:var(--bg); color:var(--text); line-height:1.5; -webkit-font-smoothing:antialiased;
+    }}
+{_TOP_NAV_CSS}
+    a {{ color:var(--accent); text-decoration:none; }}
+    a:hover {{ text-decoration:underline; }}
+    .wrap {{ max-width:1200px; margin:0 auto; padding:32px 24px 64px; }}
+    .page-head {{ display:flex; justify-content:space-between; gap:20px; align-items:flex-end; margin-bottom:18px; }}
+    h1 {{ margin:0; font-size:30px; letter-spacing:0; }}
+    .page-sub {{ margin-top:4px; color:var(--fg-dim); font-size:14px; }}
+    .kpis {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin:18px 0; }}
+    .kpi {{ border:1px solid var(--border); border-radius:8px; background:var(--panel); padding:14px 16px; }}
+    .kpi .value {{ display:block; font-size:26px; font-weight:600; line-height:1; color:var(--blue); }}
+    .kpi .label {{ display:block; margin-top:6px; color:var(--fg-dim); font-size:11px; font-weight:600; letter-spacing:0; text-transform:uppercase; }}
+    .panel {{ border:1px solid var(--border); border-radius:8px; background:var(--panel); margin-top:14px; overflow:hidden; }}
+    .panel-head {{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid var(--border); }}
+    .panel-head h2 {{ margin:0; font-size:16px; letter-spacing:0; }}
+    .pill {{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; letter-spacing:0; border:1px solid; white-space:nowrap; }}
+    .pill.neutral {{ color:var(--fg-dim); background:var(--panel-2); border-color:var(--border); }}
+    .table-wrap {{ overflow-x:auto; }}
+    table.matrix {{ width:100%; border-collapse:collapse; }}
+    table.matrix th,table.matrix td {{ padding:10px 12px; border-bottom:1px solid var(--border-soft); text-align:left; vertical-align:top; font-size:13px; }}
+    table.matrix th {{ color:var(--fg-dim); font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0; background:var(--panel-2); }}
+    table.matrix tr:last-child td {{ border-bottom:0; }}
+    .mono {{ font-family:var(--mono); }}
+    .path {{ color:var(--fg-dim); min-width:320px; overflow-wrap:anywhere; }}
+    .num {{ text-align:right; white-space:nowrap; }}
+    .empty {{ color:var(--text-dim); text-align:center; padding:22px; }}
+    @media (max-width: 720px) {{
+      .wrap {{ padding:20px 14px 40px; }}
+      .page-head {{ display:block; }}
+      th,td {{ padding:9px 10px; }}
+      .num {{ text-align:left; }}
+    }}
+  </style>
+</head>
+<body>
+{_render_top_nav("artifacts")}
+<main class="wrap">
+  <header class="page-head">
+    <div>
+      <h1>Artifacts</h1>
+      <div class="page-sub">HTML-first migration outputs served through the local API.</div>
+    </div>
+    <span class="pill neutral">Generated {html.escape(generated)}</span>
+  </header>
+  <section class="kpis" aria-label="Artifact summary">
+    <div class="kpi"><span class="value">{total}</span><span class="label">HTML artifacts</span></div>
+    <div class="kpi"><span class="value">{len(artifacts)}</span><span class="label">Sections</span></div>
+    <div class="kpi"><span class="value">6</span><span class="label">Allowed roots</span></div>
+  </section>
+  {"".join(section_html)}
+</main>
+</body></html>"""
+
+
+def serve_artifact_file(repo_root: Path, rel_path: str) -> tuple[int, Any, str]:
+    decoded = unquote(rel_path)
+    candidate = _resolve_artifact_path(repo_root, decoded)
+    if candidate is None:
+        return 404, {"error": "not_found", "path": decoded}, "application/json; charset=utf-8"
+    content_type = _artifact_content_type(candidate)
+    if content_type is None:
+        return 404, {"error": "not_found", "path": decoded}, "application/json; charset=utf-8"
+    if not candidate.is_file():
+        return 404, {"error": "not_found", "path": decoded}, "application/json; charset=utf-8"
+    try:
+        return 200, candidate.read_bytes(), content_type
+    except OSError:
+        return 404, {"error": "not_found", "path": decoded}, "application/json; charset=utf-8"
 
 
 _OPERATOR_PAGE_CSS = """
@@ -6987,12 +7243,19 @@ def build_api_schema() -> dict[str, Any]:
         },
         "endpoints": [
             {"path": "/", "desc": "HTML dashboard", "content_type": "text/html"},
+            {"path": "/artifacts", "desc": "Browseable HTML artifact index", "content_type": "text/html"},
+            {
+                "path": "/artifacts/{rel-path}",
+                "desc": "Static HTML and sibling assets from approved artifact directories",
+                "content_type": "text/html or asset MIME type",
+            },
             {"path": "/quality", "desc": "Full-quality board and per-module summary table", "content_type": "text/html"},
             {"path": "/pipeline", "desc": "Pipeline v2 queue, recent events, and autopilot v3 health", "content_type": "text/html"},
             {"path": "/activity", "desc": "Activity feed with client-side track and agent filters", "content_type": "text/html"},
             {"path": "/health", "desc": "Runtime services, worktrees, and missing-module operational health", "content_type": "text/html"},
             {"path": "/healthz", "desc": "Liveness probe"},
             {"path": "/api/schema", "desc": "This document"},
+            {"path": "/api/artifacts", "desc": "JSON index of HTML artifacts served by /artifacts"},
             {
                 "path": "/api/briefing/session",
                 "desc": "Agent cold-start orientation snapshot. First call for fresh agents.",
@@ -7146,6 +7409,10 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         return 200, render_dashboard_html(repo_root), "text/html; charset=utf-8"
     if path == "/operator":
         return 200, render_operator_page_html(), "text/html; charset=utf-8"
+    if path == "/artifacts":
+        return 200, render_artifacts_index_html(repo_root), "text/html; charset=utf-8"
+    if path.startswith("/artifacts/"):
+        return serve_artifact_file(repo_root, path[len("/artifacts/"):])
     if path == "/quality":
         return 200, render_quality_board_page_html(), "text/html; charset=utf-8"
     if path.startswith("/quality/"):
@@ -7188,6 +7455,8 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         return channel_page
     if path == "/healthz":
         return 200, {"ok": True}, "application/json; charset=utf-8"
+    if path == "/api/artifacts":
+        return 200, build_artifacts_index(repo_root), "application/json; charset=utf-8"
     if path == "/api/status/summary":
         # Dashboard hot path: skip the git-per-file translation + ZTT passes
         # (~2min total). Full versions served by /api/translation/v2/status
@@ -7714,6 +7983,32 @@ def serve_request(
 
 def make_handler(repo_root: Path) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
+        def do_HEAD(self) -> None:  # noqa: N802
+            try:
+                status_code, body, content_type, etag = serve_request(repo_root, self.path)
+            except Exception:  # noqa: BLE001 - HEAD should mirror GET without surfacing stack traces
+                status_code = 500
+                body = b""
+                content_type = "application/json; charset=utf-8"
+                etag = _weak_etag(body)
+
+            location = None
+            if 300 <= status_code < 400:
+                decoded_body = body.decode("utf-8", errors="replace").strip()
+                if decoded_body.startswith("/"):
+                    location = decoded_body
+
+            content_type = _safe_header_value(content_type)
+            etag = _safe_etag_header_value(etag)
+            self.send_response(status_code)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(body)))
+            if location is not None:
+                self.send_header("Location", location)
+            if 200 <= status_code < 300:
+                self.send_header("ETag", etag)
+            self.end_headers()
+
         def do_GET(self) -> None:  # noqa: N802
             try:
                 status_code, body, content_type, etag = serve_request(repo_root, self.path)
