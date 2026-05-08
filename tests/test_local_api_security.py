@@ -97,7 +97,7 @@ def test_not_modified_etag_header_does_not_split_on_crlf(monkeypatch, tmp_path: 
 
 
 def test_post_response_headers_do_not_split_on_crlf(monkeypatch, tmp_path: Path) -> None:
-    def fake_route_post_request(_repo_root: Path, _path: str):
+    def fake_route_post_request(_repo_root: Path, _path: str, **_kwargs: object):
         return 202, {"ok": True}, "application/json\r\nX-Injected-Post: 1"
 
     monkeypatch.setattr(local_api, "route_post_request", fake_route_post_request)

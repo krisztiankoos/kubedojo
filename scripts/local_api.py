@@ -7486,10 +7486,24 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     return 404, {"error": "not_found", "path": path}, "application/json; charset=utf-8"
 
 
-def route_post_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
+def route_post_request(
+    repo_root: Path,
+    raw_path: str,
+    *,
+    body_bytes: bytes | None = None,
+    content_type: str = "",
+) -> tuple[int, Any, str]:
     path = urlsplit(raw_path).path.rstrip("/") or "/"
     if path == "/api/build/run":
         return start_build_job(repo_root)
+    channel_post = _CHANNEL_ROUTES.route_channel_post_request(
+        path,
+        body_bytes=body_bytes,
+        content_type=content_type,
+        bridge_db_path=_resolve_bridge_db_path(repo_root),
+    )
+    if channel_post is not None:
+        return channel_post
     return 404, {"error": "not_found", "path": path}, "application/json; charset=utf-8"
 
 
@@ -7709,7 +7723,15 @@ def make_handler(repo_root: Path) -> type[BaseHTTPRequestHandler]:
 
         def do_POST(self) -> None:  # noqa: N802
             try:
-                status_code, payload, content_type = route_post_request(repo_root, self.path)
+                content_length = int(self.headers.get("Content-Length", "0") or "0")
+                body_bytes = self.rfile.read(max(0, content_length))
+                request_content_type = self.headers.get("Content-Type", "")
+                status_code, payload, content_type = route_post_request(
+                    repo_root,
+                    self.path,
+                    body_bytes=body_bytes,
+                    content_type=request_content_type,
+                )
             except Exception as exc:  # noqa: BLE001 - surface all write failures as JSON
                 status_code = 500
                 payload = {
