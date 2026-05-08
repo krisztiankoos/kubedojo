@@ -574,6 +574,7 @@ def build_channel_timeline_payload(
     query_sqlite_rows_fn: Callable[..., list[dict[str, Any]]],
     since_event_id: int = 0,
     since_ts: str | None = None,
+    thread_id: str | None = None,
 ) -> dict[str, Any]:
     """Return channel events enriched with posted message bodies.
 
@@ -582,7 +583,40 @@ def build_channel_timeline_payload(
     the bridge primitive, so this read path joins them at render time.
     """
     db_path = resolve_bridge_db_path_fn(repo_root)
-    params: list[Any] = [channel_name, since_event_id]
+    if thread_id:
+        channel_rows = query_sqlite_rows_fn(
+            db_path,
+            """
+            SELECT channel
+            FROM channel_messages
+            WHERE thread_id = ?
+            ORDER BY round_index ASC, created_at ASC, rowid ASC
+            LIMIT 1
+            """,
+            (thread_id,),
+            limit=1,
+        )
+        if channel_rows and isinstance(channel_rows[0].get("channel"), str):
+            channel_name = channel_rows[0]["channel"]
+        scope_clause = """
+        ce.thread_id = ?
+        AND EXISTS (
+          SELECT 1
+          FROM channel_messages cm
+          WHERE cm.thread_id = ce.thread_id
+        )
+        """
+        params: list[Any] = [thread_id, since_event_id]
+    else:
+        scope_clause = """
+        EXISTS (
+          SELECT 1
+          FROM channel_messages cm
+          WHERE cm.channel = ?
+            AND cm.thread_id = ce.thread_id
+        )
+        """
+        params = [channel_name, since_event_id]
     since_clause = ""
     if since_ts:
         since_clause = "AND ce.ts > ?"
@@ -607,12 +641,7 @@ def build_channel_timeline_payload(
         FROM channel_events ce
         LEFT JOIN channel_messages posted
           ON posted.message_id = json_extract(ce.payload_json, '$.message_id')
-        WHERE EXISTS (
-          SELECT 1
-          FROM channel_messages cm
-          WHERE cm.channel = ?
-            AND cm.thread_id = ce.thread_id
-        )
+        WHERE {scope_clause}
           AND ce.event_id > ?
           {since_clause}
         ORDER BY ce.event_id ASC
@@ -657,6 +686,7 @@ def build_channel_timeline_payload(
 
     return {
         "channel": channel_name,
+        "thread_id": thread_id,
         "events": events,
         "count": len(events),
         "next_since_event_id": next_since_event_id,
@@ -674,6 +704,21 @@ def channel_exists_in_db(
         resolve_bridge_db_path_fn(repo_root),
         "SELECT 1 AS found FROM channels WHERE name = ? LIMIT 1",
         (channel_name,),
+    )
+    return bool(rows)
+
+
+def thread_exists_in_db(
+    repo_root: Path,
+    thread_id: str,
+    *,
+    resolve_bridge_db_path_fn: Callable[[Path], Path],
+    query_sqlite_rows_fn: Callable[..., list[dict[str, Any]]],
+) -> bool:
+    rows = query_sqlite_rows_fn(
+        resolve_bridge_db_path_fn(repo_root),
+        "SELECT 1 AS found FROM channel_messages WHERE thread_id = ? LIMIT 1",
+        (thread_id,),
     )
     return bool(rows)
 
@@ -700,7 +745,7 @@ def render_channels_chat_html(
     *{{box-sizing:border-box;margin:0}}
     body{{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);line-height:1.45;-webkit-font-smoothing:antialiased}}
 {top_nav_css}
-    .channels-app{{height:calc(100vh - var(--topnav-h, 45px));display:grid;grid-template-columns:240px minmax(0,1fr);border-top:1px solid var(--line)}}
+    .channels-app{{height:calc(100dvh - var(--topnav-h, 45px) - var(--search-widget-h, 53px));display:grid;grid-template-columns:240px minmax(0,1fr);border-top:1px solid var(--line)}}
     .channels-sidebar{{background:#121416;border-right:1px solid var(--line);padding:14px 10px;overflow:auto}}
     .sidebar-title{{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:4px 10px 10px}}
     .channel-link{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;color:var(--text);text-decoration:none;border-radius:6px;padding:7px 10px;font-size:13px;min-height:34px}}
@@ -780,7 +825,7 @@ def render_channels_chat_html(
     .turn-body{{min-width:0;border:1px solid var(--line);border-radius:6px;background:#0d0f10;overflow:hidden}}
     .turn-body h3{{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);background:#121416}}
     .turn-body pre{{white-space:pre-wrap;word-break:break-word;color:var(--text);font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px;max-height:62vh;overflow:auto}}
-    @media(max-width:760px){{.channels-app{{grid-template-columns:1fr;height:auto;min-height:calc(100vh - var(--topnav-h, 45px))}}.channels-sidebar{{max-height:210px;border-right:0;border-bottom:1px solid var(--line)}}.channel-main{{min-height:70vh}}.channel-header{{align-items:flex-start;flex-direction:column}}.view-toggle{{width:100%}}}}
+    @media(max-width:760px){{.channels-app{{grid-template-columns:1fr;height:auto;min-height:calc(100dvh - var(--topnav-h, 45px) - var(--search-widget-h, 53px))}}.channels-sidebar{{max-height:210px;border-right:0;border-bottom:1px solid var(--line)}}.channel-main{{min-height:70vh}}.channel-header{{align-items:flex-start;flex-direction:column}}.view-toggle{{width:100%}}}}
   </style>
 </head>
 <body>
@@ -909,6 +954,8 @@ function isNearBottom(){{return messageList.scrollHeight-messageList.scrollTop-m
 function resetMessages(){{renderedMsgIds.clear();sinceId=0;lastEventType="";lastNewEventAt=0;focusedMessageIndex=-1;messageList.replaceChildren(emptyState);emptyState.style.display="block";}}
 function hasStructuredVotes(summary){{return !!(summary&&summary.rounds&&summary.rounds.some(round=>(round.turns||[]).some(turn=>turn.vote)));}}
 function defaultViewForSummary(summary){{if(REQUESTED_VIEW)return REQUESTED_VIEW;if(summary&&(summary.status==="converged"||summary.decision_id))return"graph";return DEFAULT_VIEW;}}
+function shortThreadId(value){{return String(value||"").slice(0,8);}}
+function updateThreadHeading(summary){{if(!summary||!summary.thread_id||selectedChannel!==summary.thread_id||!summary.channel)return;threadSummary=summary;const title=document.getElementById("channelTitle");const meta=document.getElementById("channelMeta");title.textContent="# "+summary.channel;const pieces=["thread "+shortThreadId(summary.thread_id)];if(summary.rounds&&summary.rounds.length)pieces.push(summary.rounds.length+" round"+(summary.rounds.length===1?"":"s"));if(summary.decision_id)pieces.push("decision linked");meta.textContent=pieces.join(" · ");renderSidebar();}}
 function setView(view,updateUrl=true){{currentView=view==="graph"?"graph":"chat";messageList.hidden=currentView!=="chat";graphView.hidden=currentView!=="graph";document.querySelectorAll("[data-view-toggle]").forEach(btn=>btn.classList.toggle("active",btn.dataset.viewToggle===currentView));if(updateUrl){{const url=new URL(window.location.href);url.searchParams.set("view",currentView);history.replaceState(null,"",url);}}}}
 function voteClass(vote){{if(!vote)return"null";if(vote==="AGREE")return"agree";if(vote==="DEFER")return"defer";if(vote.startsWith("NEEDS"))return"needs";if(vote.startsWith("OPTION "))return"option";return"null";}}
 function agentColumns(summary){{const seen=new Set();(summary.rounds||[]).forEach(round=>(round.turns||[]).forEach(turn=>seen.add(turn.agent)));return Array.from(seen).sort((a,b)=>{{const order={{claude:0,codex:1,gemini:2}};return (order[a]??100)-(order[b]??100)||a.localeCompare(b);}});}}
@@ -920,10 +967,10 @@ function githubCommitUrl(sha){{return "https://github.com/kube-dojo/kube-dojo.gi
 function githubPrUrl(number){{return "https://github.com/kube-dojo/kube-dojo.github.io/pull/"+encodeURIComponent(number);}}
 function renderLineage(footer,decisionId){{if(!decisionId)return;const line=document.createElement("span");line.className="decision-lineage";line.textContent="Influenced: loading...";footer.appendChild(line);fetch("/api/decision/"+encodeURIComponent(basename(decisionId))+"/lineage").then(r=>r.json()).then(data=>{{const lineage=data.lineage||{{}};const prs=lineage.prs||[];const prShas=new Set(prs.map(pr=>pr.sha).filter(Boolean));const commits=(lineage.commits||[]).filter(commit=>!prShas.has(commit.sha));const parts=[];prs.forEach(pr=>{{const a=document.createElement("a");a.href=githubPrUrl(pr.number);a.textContent="PR #"+pr.number;parts.push(a);}});commits.slice(0,6).forEach(commit=>{{const a=document.createElement("a");a.href=githubCommitUrl(commit.sha);a.textContent="commit "+String(commit.sha||"").slice(0,8);parts.push(a);}});line.textContent="Influenced: ";if(!parts.length){{line.appendChild(document.createTextNode("none found"));return;}}parts.forEach((part,idx)=>{{if(idx)line.appendChild(document.createTextNode(" · "));line.appendChild(part);}});}}).catch(()=>{{line.textContent="Influenced: unavailable";}});}}
 function renderGraph(summary){{threadSummary=summary;graphMount.replaceChildren();const structured=hasStructuredVotes(summary);graphFallback.hidden=structured;if(!summary||!structured)return;const agents=agentColumns(summary);const card=document.createElement("div");card.className="graph-card";const table=document.createElement("table");table.className="decision-graph";const thead=document.createElement("thead");const headRow=document.createElement("tr");["Round",...agents].forEach(label=>{{const th=document.createElement("th");th.textContent=label;headRow.appendChild(th);}});thead.appendChild(headRow);table.appendChild(thead);const tbody=document.createElement("tbody");(summary.rounds||[]).forEach(round=>{{const tr=document.createElement("tr");const label=document.createElement("td");label.innerHTML="<span class='round-label'>ROUND "+String(round.round_idx)+"</span><span class='round-cost'>"+formatMoney(round.cost_usd)+" · "+formatElapsed(round.elapsed_s)+"</span>";tr.appendChild(label);agents.forEach(agent=>{{const td=document.createElement("td");const turn=(round.turns||[]).find(item=>item.agent===agent);if(turn){{const btn=document.createElement("button");btn.type="button";btn.className="vote-chip "+voteClass(turn.vote);btn.textContent=agent+": ["+(turn.vote||"NO VOTE")+"]";btn.addEventListener("click",()=>openTurnModal(round,turn));td.appendChild(btn);}}else{{const missed=document.createElement("span");missed.className="missed";missed.textContent="<missed>";td.appendChild(missed);}}tr.appendChild(td);}});tbody.appendChild(tr);}});table.appendChild(tbody);card.appendChild(table);const footer=document.createElement("div");footer.className="decision-footer";footer.innerHTML="<strong>DECISION</strong> → Selected: "+selectedDecision(summary)+(summary.decision_id?" · Linked: "+summary.decision_id:" · Linked: none")+" · Total: "+formatMoney(summary.total_cost_usd)+" / "+formatElapsed(summary.total_elapsed_s);renderLineage(footer,summary.decision_id);card.appendChild(footer);graphMount.appendChild(card);}}
-function loadSummary(){{const myFetchId=++summaryFetchId;threadSummary=null;graphMount.replaceChildren();graphFallback.hidden=true;if(!selectedChannel){{setView("chat",false);return;}}fetch("/api/channel/"+encodeURIComponent(selectedChannel)+"/summary").then(r=>r.json()).then(summary=>{{if(myFetchId!==summaryFetchId)return;renderGraph(summary);setView(defaultViewForSummary(summary),false);}}).catch(()=>{{if(myFetchId===summaryFetchId){{graphFallback.hidden=false;setView("chat",false);}}}});}}
+function loadSummary(){{const myFetchId=++summaryFetchId;threadSummary=null;graphMount.replaceChildren();graphFallback.hidden=true;if(!selectedChannel){{setView("chat",false);return;}}fetch("/api/channel/"+encodeURIComponent(selectedChannel)+"/summary").then(r=>r.json()).then(summary=>{{if(myFetchId!==summaryFetchId)return;updateThreadHeading(summary);renderGraph(summary);setView(defaultViewForSummary(summary),false);}}).catch(()=>{{if(myFetchId===summaryFetchId){{graphFallback.hidden=false;setView("chat",false);}}}});}}
 function openTurnModal(round,turn){{turnModalTitle.textContent="Round "+String(round.round_idx)+" · "+String(turn.agent||"turn");turnModalBody.replaceChildren();const turns=(round.turns||[]).length>1?round.turns:[turn];turns.forEach(item=>{{const wrap=document.createElement("section");wrap.className="turn-body";const h=document.createElement("h3");h.textContent=String(item.agent||"agent")+" · "+String(item.vote||"no vote")+" · "+String(item.model||"");const pre=document.createElement("pre");pre.textContent=String(item.body||item.body_preview||"");wrap.append(h,pre);turnModalBody.appendChild(wrap);}});turnModal.hidden=false;turnModalClose.focus();}}
 function closeTurnModal(){{turnModal.hidden=true;turnModalBody.replaceChildren();}}
-function renderSidebar(){{channelList.replaceChildren();channels.forEach(ch=>{{const a=document.createElement("a");a.className="channel-link"+(ch.name===selectedChannel?" active":"");a.href="/channels/"+encodeURIComponent(ch.name);a.dataset.channelName=ch.name;const name=document.createElement("span");name.className="channel-name";name.textContent="# "+ch.name;const badge=document.createElement("span");badge.className="unread-badge";badge.dataset.unreadFor=ch.name;a.append(name,badge);a.addEventListener("click",()=>rememberVisited(ch.name));channelList.appendChild(a);}});document.getElementById("sidebarMeta").textContent=channels.length+" channel"+(channels.length===1?"":"s");updateUnreadBadges();}}
+function renderSidebar(){{channelList.replaceChildren();let syntheticThreads=0;channels.forEach(ch=>{{const a=document.createElement("a");a.className="channel-link"+(ch.name===selectedChannel?" active":"");a.href="/channels/"+encodeURIComponent(ch.name);a.dataset.channelName=ch.name;const name=document.createElement("span");name.className="channel-name";if(ch.name===selectedChannel&&threadSummary&&threadSummary.thread_id===selectedChannel&&threadSummary.channel){{syntheticThreads+=1;name.textContent="thread "+shortThreadId(selectedChannel)+" · # "+threadSummary.channel;}}else{{name.textContent="# "+ch.name;}}const badge=document.createElement("span");badge.className="unread-badge";badge.dataset.unreadFor=ch.name;a.append(name,badge);a.addEventListener("click",()=>rememberVisited(ch.name));channelList.appendChild(a);}});const channelCount=Math.max(0,channels.length-syntheticThreads);document.getElementById("sidebarMeta").textContent=channelCount+" channel"+(channelCount===1?"":"s")+(syntheticThreads?" · "+syntheticThreads+" thread"+(syntheticThreads===1?"":"s"):"");updateUnreadBadges();}}
 function updateUnreadBadges(){{channels.forEach(ch=>{{const badge=channelList.querySelector(`[data-unread-for="${{CSS.escape(ch.name)}}"]`);if(!badge)return;const last=localStorage.getItem(lastVisitedKey(ch.name));if(ch.name===selectedChannel||!ch.last_event_ts||last&&new Date(ch.last_event_ts)<=new Date(last)){{badge.classList.remove("visible");badge.textContent="";return;}}if(!last){{badge.textContent=String(ch.event_count||1);badge.classList.add("visible");return;}}fetch("/api/channel/"+encodeURIComponent(ch.name)+"/events?since_ts="+encodeURIComponent(last)).then(r=>r.json()).then(data=>{{const n=(data.events||[]).length;if(n>0){{badge.textContent=String(n);badge.classList.add("visible");}}else{{badge.classList.remove("visible");badge.textContent="";}}}}).catch(()=>{{badge.textContent="!";badge.classList.add("visible");}});}});}}
 function appendMeta(parent,ev,agent){{const meta=document.createElement("div");meta.className="message-meta";const name=document.createElement("span");name.className="agent-name "+agent;name.textContent=agent==="user"?"👤 user":agent;meta.appendChild(name);if(ev.from_model||ev.model){{const model=document.createElement("span");model.className="model-tag";model.textContent=ev.from_model||ev.model;meta.appendChild(model);}}const stamp=document.createElement("span");stamp.textContent=(ev.ts||ev.created_at||"").slice(0,19).replace("T"," ");meta.appendChild(stamp);parent.appendChild(meta);}}
 function appendBody(parent,body){{const div=document.createElement("div");div.className="message-body";div.textContent=body||"";parent.appendChild(div);}}
@@ -1070,13 +1117,33 @@ def route_channel_post_request(
             if bridge_db_path is not None:
                 bridge_db.DB_PATH = bridge_db_path
             try:
+                target_channel = channel_name
+                parent_id = None
                 if get_channel(channel_name) is None:
-                    return _json_response(404, {"ok": False, "error": "channel_not_found"})
+                    conn = bridge_db.get_db()
+                    try:
+                        thread_row = conn.execute(
+                            """
+                            SELECT channel, message_id
+                            FROM channel_messages
+                            WHERE thread_id = ?
+                            ORDER BY round_index ASC, created_at ASC, rowid ASC
+                            LIMIT 1
+                            """,
+                            (channel_name,),
+                        ).fetchone()
+                    finally:
+                        conn.close()
+                    if thread_row is None:
+                        return _json_response(404, {"ok": False, "error": "channel_not_found"})
+                    target_channel = thread_row["channel"]
+                    parent_id = thread_row["message_id"]
                 result = post(
-                    channel=channel_name,
+                    channel=target_channel,
                     from_agent="user",
                     body=body,
                     to_agents=to_agents,
+                    parent_id=parent_id,
                     auto_snapshot=False,
                     context_rev_shared="",
                     context_rev_channel="",
@@ -1101,6 +1168,7 @@ def route_channel_post_request(
             "ok": True,
             "message_id": result.get("message_id"),
             "thread_id": result.get("thread_id"),
+            "parent_id": result.get("parent_id"),
             "ts": result.get("created_at"),
         },
     )
@@ -1200,6 +1268,25 @@ def route_channel_api_request(
                     query_sqlite_rows_fn=query_sqlite_rows_fn,
                     since_event_id=since_event_id,
                     since_ts=since_ts,
+                ),
+                "application/json; charset=utf-8",
+            )
+        if thread_exists_in_db(
+            repo_root,
+            name,
+            resolve_bridge_db_path_fn=resolve_bridge_db_path_fn,
+            query_sqlite_rows_fn=query_sqlite_rows_fn,
+        ):
+            return (
+                200,
+                build_channel_timeline_payload(
+                    repo_root,
+                    "",
+                    resolve_bridge_db_path_fn=resolve_bridge_db_path_fn,
+                    query_sqlite_rows_fn=query_sqlite_rows_fn,
+                    since_event_id=since_event_id,
+                    since_ts=since_ts,
+                    thread_id=name,
                 ),
                 "application/json; charset=utf-8",
             )

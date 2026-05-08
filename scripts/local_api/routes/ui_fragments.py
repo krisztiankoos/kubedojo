@@ -116,7 +116,9 @@ def render_afk_notify_markup() -> str:
 def render_search_widget() -> str:
     return """
 <style>
-  .search-widget{position:sticky;top:var(--topnav-h,45px);z-index:55;background:#121416;border-bottom:1px solid var(--line,rgba(255,255,255,.08));padding:8px 24px;--search-widget-h:53px}
+  /* Keep in sync with .channels-app height calculations in channels.py. */
+  :root{--search-widget-h:53px}
+  .search-widget{position:sticky;top:var(--topnav-h,45px);z-index:55;background:#121416;border-bottom:1px solid var(--line,rgba(255,255,255,.08));padding:8px 24px}
   .search-box{position:relative;max-width:720px}
   .search-input{width:100%;height:36px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:6px;background:#0f1011;color:var(--text,#f3f4f2);padding:0 12px;font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace}
   .search-input:focus{outline:2px solid rgba(61,214,198,.35);border-color:var(--teal,#3dd6c6)}
@@ -194,21 +196,23 @@ def render_search_widget() -> str:
     const query = input.value.trim();
     if (query.length < 2) {
       close();
-      return;
+      return [];
     }
     try {
       const res = await fetch("/api/search?q=" + encodeURIComponent(query) + "&kind=all&limit=10", {cache: "no-store"});
       if (!res.ok) {
         close();
-        return;
+        return [];
       }
       const data = await res.json();
       results = Array.isArray(data.results) ? data.results : [];
       active = -1;
       render();
+      return results;
     } catch {
       close();
     }
+    return [];
   }
   input.addEventListener("input", () => {
     clearTimeout(timer);
@@ -231,6 +235,12 @@ def render_search_widget() -> str:
       event.preventDefault();
       navigate(results[active]);
     }
+  });
+  input.addEventListener("keydown", async event => {
+    if (event.key !== "Enter" || !dropdown.hidden || input.value.trim().length < 2) return;
+    event.preventDefault();
+    const freshResults = await runSearch();
+    navigate(freshResults[0]);
   });
   dropdown.addEventListener("mousedown", event => {
     const row = event.target.closest(".search-result");

@@ -34,6 +34,9 @@ def test_channel_thread_returns_html_with_thread_id(tmp_path: Path) -> None:
     assert "text/html" in content_type
     assert "abc123" in body
     assert "/api/channel/" in body
+    assert "var(--search-widget-h, 53px)" in body
+    assert "updateThreadHeading(summary)" in body
+    assert 'name.textContent="thread "+shortThreadId(selectedChannel)' in body
 
 
 def test_channel_thread_xss_escaping(tmp_path: Path) -> None:
@@ -45,3 +48,12 @@ def test_channel_thread_xss_escaping(tmp_path: Path) -> None:
     assert "&lt;script&gt;" in body
     raw_tag = "<script>alert(1)</script>"
     assert raw_tag not in body, f"raw tag {raw_tag!r} leaked into rendered page"
+
+
+def test_global_search_enter_path_handles_closed_dropdown(tmp_path: Path) -> None:
+    status, body, content_type = local_api.route_request(tmp_path, "/channels")
+    assert status == 200
+    assert "text/html" in content_type
+    assert 'if (event.key !== "Enter" || !dropdown.hidden' in body
+    assert "return [];" in body
+    assert "const freshResults = await runSearch();" in body
