@@ -242,19 +242,29 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 
 ## TODO
 
-**Next session — top priorities:**
+**Priority lock (session 4, 2026-05-08):**
 
-- [ ] **codex-desktop UI/UX review feedback** — user dispatched codex-desktop session 3 to review the live `/channels` + `/decisions` + `/api/search` surface. They may open follow-up PRs; review cross-family when they signal. Likely the most actionable next item.
-- [ ] **Commit-or-discard the uncommitted CLAUDE.md cold-start ordering rule edit** on primary main. Same shape as session 2's `a1e8a7de` decision.
+- All EN content to "green" (reviewed, rubric ≥4 per dimension) is the master goal.
+- UK translation pauses until EN green is achieved. Then content expansion is considered.
+- Cron not needed during this phase — UK translation will be triggered manually per-section once EN green ships.
 
-**Carryover from session 4 (still open):**
+**Next session — top priorities (Phase 2 of green-content plan):**
 
-- [ ] **Wire cron for `detect_uk_divergence.py`** (PR #960 shipped the script; no schedule). `.github/workflows/uk-divergence-detect.yml` nightly OR a launchd plist for local — design decision pending.
-- [ ] **Wire cron for `translation_v2.py worker loop`** (PR #958 shipped `--max-calls`; no schedule). Same pattern as divergence detector.
-- [ ] **UK pipeline E2E smoke.** Enqueue 1 module via `/api/translation/v2/enqueue?from_quality=done&dry_run=0`; run `python3 scripts/translation_v2.py worker run --json`; verify UK file lands with valid `en_commit:` frontmatter.
+- [ ] **#388 readiness audit** — pull current state of the autopilot (queue depth, routing config, latest pilot verdict, last 5 modules through autopilot). Determine engine health before launching the marathon.
+- [ ] **Canary: drive CKA 0.1 end-to-end** — single module through codex draft → cross-family review → merge. Validates engine post-session-3 changes; outcome informs the sequential-vs-parallelism velocity decision.
+- [ ] **Velocity decision** — stay sequential at ~3.2/hr (~86 hr for 276 modules) OR invest 4-8 hr building P-series within-pipeline parallelism for ~10/hr (~28 hr compute).
+- [ ] **Define "green" precisely** — lock the threshold as structural ≥3.0 (heuristic scorer) AND cross-family pedagogical APPROVE-WITH-NITS or better (rubric ≥4 per dimension). Structural-only "green" would declare false victory on a regex.
+- [ ] **Phase 4: marathon** (multi-session) — section by section, CKA 0.1-0.5 first per briefing's `actions.next`. After each section: briefing refresh, STATUS.md update, decide whether to continue or pause.
+
+**Carryover (still open):**
+
+- [x] ~~**Wire cron for `detect_uk_divergence.py`** + `translation_v2.py worker loop`~~ — PR #1007 shipped wiring as launchd templates; user decided no cron until UK translation work resumes manually. Templates remain checked-in but un-installed (dormant). Issue #1008 (3 cosmetic nits) closed won't-fix.
+- [x] ~~**Commit-or-discard CLAUDE.md cold-start ordering rule edit**~~ — committed `e2b764b2` (session 4).
+- [x] ~~**Salvage orphan `fix/session-start-detach` services-up fix**~~ — rebased onto main, opened as PR #1009 (services start with `start_new_session=True` so they survive shell exit). Cross-family review in flight.
+- [ ] **UK pipeline E2E smoke** — moot until UK translation work resumes; defer.
 - [ ] **Flip `Incident dedup gate` to a `required` check** in GitHub branch protection settings for `main`. UI action — CLI can't do it without admin token.
-- [ ] **Open follow-up issues per autopilot section** for #388 density-rewrite pass (autopilot adds Sources but not pedagogical depth — the modules still need rubric ≥4 review).
-- [ ] **Autopilot perf: within-pipeline parallelism (P-series).** ~3.2 modules/hour sequential currently → ~10/hour with 3-way parallel within `pipeline_v3_section.run_section_pipeline`. Diagnosed in session 4; defer to dedicated perf session, distinct from L/D-series UI work.
+- [ ] **Open follow-up issues per autopilot section** for #388 density-rewrite pass (autopilot adds Sources but not pedagogical depth — modules still need rubric ≥4 review). Folded into the green-content marathon plan.
+- [ ] **Autopilot perf: within-pipeline parallelism (P-series).** Decision deferred to the velocity-decision step above.
 
 **Other carryover:**
 - [ ] **Bare URL → `[domain](url)` conversion across 26 modules** (was 21 in older docs; 5 added since 2026-05-05). List at `/tmp/bare-url-modules.txt`. Optional polish; not needed now that scorer accepts bare URLs.
@@ -296,7 +306,7 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 **Background / lower priority:**
 - [ ] Google Search Console verification — user will paste the meta-tag token (or HTML file). Then submit `https://kube-dojo.github.io/sitemap-index.xml` to GSC.
 - [ ] PR #558 + PR #565 stale-prose cleanup (content already on main)
-- [ ] **387 modules at critical rubric score (<2.0)** — content-debt workstream, codex-blocked, separate from #388.
+- [ ] **276 modules at critical rubric score (<2.0)** — content-debt workstream; this is the master goal of the green-content priority lock above. Per `reference_rubric_heuristic_structural.md`, the `<2.0` count is regex-based (Sources/quiz/exercise/diagram presence) — clearing it means structural OK, not pedagogical green. Both must pass to declare a module green.
 
 ## Blockers
 
