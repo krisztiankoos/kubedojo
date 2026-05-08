@@ -16,6 +16,38 @@ mkdir -p logs/pipeline .pids
 
 mode="${1:-all}"
 
+launch_detached() {
+  local pid_file="$1"
+  local log_file="$2"
+  shift 2
+  "$VENV_PY" - "$REPO_ROOT" "$pid_file" "$log_file" "$@" <<'PY'
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+repo_root = Path(sys.argv[1])
+pid_path = repo_root / sys.argv[2]
+log_path = repo_root / sys.argv[3]
+cmd = sys.argv[4:]
+
+pid_path.parent.mkdir(parents=True, exist_ok=True)
+log_path.parent.mkdir(parents=True, exist_ok=True)
+with log_path.open("ab", buffering=0) as log:
+    proc = subprocess.Popen(
+        cmd,
+        cwd=repo_root,
+        stdin=subprocess.DEVNULL,
+        stdout=log,
+        stderr=subprocess.STDOUT,
+        env=os.environ.copy(),
+        start_new_session=True,
+        close_fds=True,
+    )
+pid_path.write_text(f"{proc.pid}\n", encoding="utf-8")
+PY
+}
+
 is_alive() {
   local pid_file="$1"
   [ -f "$pid_file" ] || return 1
@@ -30,9 +62,8 @@ start_api() {
     echo "api: already running (pid $(cat .pids/api.pid))"
     return
   fi
-  nohup "$VENV_PY" scripts/local_api.py --host 127.0.0.1 --port 8768 \
-    > logs/api.log 2>&1 &
-  echo $! > .pids/api.pid
+  launch_detached .pids/api.pid logs/api.log \
+    "$VENV_PY" scripts/local_api.py --host 127.0.0.1 --port 8768
   sleep 1
   if is_alive .pids/api.pid; then
     echo "api: started (pid $(cat .pids/api.pid))"
@@ -49,10 +80,9 @@ start_worker() {
     echo "v2-${role}-worker: already running (pid $(cat "$pid_file"))"
     return
   fi
-  PYTHONPATH=scripts nohup "$VENV_PY" -m pipeline_v2.cli "${role}-worker" loop \
-    --worker-id "v2-${role}-01" --sleep-seconds 30 \
-    > "logs/pipeline/${role}-worker.log" 2>&1 &
-  echo $! > "$pid_file"
+  launch_detached "$pid_file" "logs/pipeline/${role}-worker.log" \
+    env PYTHONPATH=scripts "$VENV_PY" -m pipeline_v2.cli "${role}-worker" loop \
+      --worker-id "v2-${role}-01" --sleep-seconds 30
   sleep 1
   if is_alive "$pid_file"; then
     echo "v2-${role}-worker: started (pid $(cat "$pid_file"))"
