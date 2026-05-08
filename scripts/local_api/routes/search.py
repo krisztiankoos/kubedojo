@@ -40,7 +40,7 @@ def _sanitize_fts_query(raw: str) -> str | None:
 
     terms: list[str] = []
     for token in query.split():
-        cleaned = token.lstrip("*^()[]").strip()
+        cleaned = token.strip("*^()[]").strip()
         if not cleaned or not any(char.isalnum() for char in cleaned):
             continue
         terms.append(f'"{cleaned.replace("\"", "\"\"")}"')

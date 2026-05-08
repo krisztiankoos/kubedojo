@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html as _html
 import json as _json
+import logging as _logging
 import os as _os
 import re as _re
 import threading as _threading
@@ -24,6 +25,7 @@ except ModuleNotFoundError:
 
 
 RouteResponse = tuple[int, Any, str]
+_LOG = _logging.getLogger(__name__)
 _POST_DB_LOCK = _threading.Lock()
 _VOTE_RE = _re.compile(r"\[(AGREE|OPTION [A-Z][\w'’′‘]?|DEFER|NEEDS[- ]CHANGES)\]")
 
@@ -282,6 +284,12 @@ def build_channel_threads_index(
             # high cap keeps busy deliberations enriched without paginating.
             limit=_SUPPLEMENTARY_EVENTS_LIMIT,
         )
+        if len(event_rows) >= _SUPPLEMENTARY_EVENTS_LIMIT:
+            _LOG.warning(
+                "channel events query hit limit (%d rows); raise "
+                "KUBEDOJO_CHANNEL_EVENTS_LIMIT to see more",
+                _SUPPLEMENTARY_EVENTS_LIMIT,
+            )
         agents_by_thread: dict[str, set[str]] = {}
         latest_reply_state: dict[str, tuple[int, dict[str, Any]]] = {}
         for event_row in event_rows:
