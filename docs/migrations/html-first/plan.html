@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HTML-First Migration Plan — KubeDojo</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #161b22;
+    --panel-2: #1c232c;
+    --panel-3: #21262d;
+    --border: #30363d;
+    --border-soft: #21262d;
+    --fg: #e6edf3;
+    --fg-dim: #8b949e;
+    --fg-faint: #6e7681;
+    --green: #3fb950;
+    --green-bg: #0f2c1a;
+    --yellow: #d29922;
+    --yellow-bg: #2d2206;
+    --red: #f85149;
+    --red-bg: #2d0e0e;
+    --blue: #58a6ff;
+    --blue-bg: #0f1d2e;
+    --purple: #a371f7;
+    --purple-bg: #1f1830;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.55; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: var(--mono); font-size: 0.92em; }
+  code.inline { background: var(--panel-2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.hero { padding-bottom: 22px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  header.hero h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.01em; }
+  header.hero .sub { color: var(--fg-dim); font-size: 14px; max-width: 860px; }
+  header.hero .meta { margin-top: 14px; display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--fg-dim); }
+  header.hero .meta span { background: var(--panel); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; }
+  header.hero .meta b { color: var(--fg); }
+
+  h2 { font-size: 19px; margin: 36px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); letter-spacing: -0.005em; }
+  h3 { font-size: 14px; margin: 18px 0 8px; color: var(--fg); }
+
+  .thesis { background: linear-gradient(135deg, #1a1f29 0%, #161b22 100%); border: 1px solid var(--border); border-radius: 10px; padding: 22px 24px; margin-bottom: 24px; position: relative; overflow: hidden; }
+  .thesis::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: linear-gradient(180deg, var(--blue) 0%, var(--purple) 100%); }
+  .thesis blockquote { margin: 0; font-style: italic; color: var(--fg); font-size: 15px; line-height: 1.65; }
+  .thesis cite { display: block; margin-top: 10px; font-style: normal; color: var(--fg-dim); font-size: 12px; }
+
+  .decision { display: flex; align-items: center; gap: 16px; background: var(--panel); border: 1px solid var(--border); border-left: 4px solid var(--green); border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; }
+  .decision .check { width: 32px; height: 32px; background: var(--green-bg); border: 1px solid var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--green); font-size: 18px; font-weight: 700; }
+  .decision .body { font-size: 14px; }
+  .decision .body b { color: var(--fg); }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .kpi .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi .value { font-size: 24px; font-weight: 600; }
+  .kpi .value.ok { color: var(--green); }
+  .kpi .value.warn { color: var(--yellow); }
+  .kpi .value.fail { color: var(--red); }
+  .kpi .value.blue { color: var(--blue); }
+  .kpi .sub { color: var(--fg-dim); font-size: 12px; margin-top: 4px; }
+
+  .twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .col-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .col-card h3 { margin-top: 0; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .col-card .badge, .badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 999px; letter-spacing: 0.04em; border: 1px solid; white-space: nowrap; }
+  .badge.ok { color: var(--green); background: var(--green-bg); border-color: rgba(63,185,80,0.4); }
+  .badge.warn { color: var(--yellow); background: var(--yellow-bg); border-color: rgba(210,153,34,0.4); }
+  .badge.fail { color: var(--red); background: var(--red-bg); border-color: rgba(248,81,73,0.4); }
+  .badge.purple { color: var(--purple); background: var(--purple-bg); border-color: rgba(163,113,247,0.4); }
+  .col-card ul { margin: 0; padding-left: 20px; font-size: 13px; }
+  .col-card li { margin-bottom: 7px; }
+  .col-card li b { color: var(--fg); font-weight: 600; }
+  .col-card li .why { color: var(--fg-dim); font-size: 12px; display: block; margin-top: 1px; }
+
+  .phases { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+  .phase { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 12px; position: relative; transition: transform 0.1s; }
+  .phase:hover { transform: translateY(-1px); border-color: var(--blue); }
+  .phase .num { font-size: 11px; color: var(--fg-faint); letter-spacing: 0.05em; text-transform: uppercase; }
+  .phase .name { font-size: 13px; font-weight: 600; margin: 4px 0 6px; color: var(--fg); }
+  .phase .status { font-size: 11px; padding: 2px 8px; border-radius: 999px; display: inline-block; font-weight: 600; }
+  .phase .status.done { color: var(--green); background: var(--green-bg); border: 1px solid rgba(63,185,80,0.3); }
+  .phase .status.next { color: var(--blue); background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3); }
+  .phase .status.queued { color: var(--fg-dim); background: var(--panel-2); border: 1px solid var(--border); }
+  .phase .when { font-size: 10px; color: var(--fg-faint); margin-top: 6px; }
+  .phase .arrow { position: absolute; right: -10px; top: 50%; transform: translateY(-50%); color: var(--border); font-size: 14px; z-index: 1; }
+  .phase:last-child .arrow { display: none; }
+
+  .phase-detail { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; margin-bottom: 14px; }
+  .phase-detail.next { border-left: 4px solid var(--blue); }
+  .phase-detail.done { border-left: 4px solid var(--green); }
+  .phase-detail.queued { border-left: 4px solid var(--fg-faint); }
+  .phase-detail h3 { margin-top: 0; display: flex; align-items: baseline; gap: 12px; font-size: 16px; }
+  .phase-detail h3 .ph-num { font-family: var(--mono); font-size: 12px; color: var(--fg-dim); }
+  .phase-detail .goal { color: var(--fg-dim); font-size: 13px; margin-bottom: 12px; }
+  .phase-detail .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 13px; }
+  .phase-detail .grid2 div b { display: block; color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .phase-detail code.inline { font-size: 0.85em; }
+  .phase-detail .trigger { background: var(--panel-2); border-left: 3px solid var(--yellow); padding: 8px 12px; margin-top: 12px; font-size: 12px; border-radius: 0 6px 6px 0; }
+  .phase-detail .trigger b { color: var(--yellow); }
+
+  table.matrix { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+  table.matrix th, table.matrix td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border-soft); font-size: 13px; vertical-align: top; }
+  table.matrix th { background: var(--panel-2); color: var(--fg-dim); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.matrix tr:last-child td { border-bottom: 0; }
+  table.matrix td.artifact { font-weight: 600; min-width: 180px; }
+  table.matrix td.artifact .path { display: block; color: var(--fg-faint); font-family: var(--mono); font-size: 11px; font-weight: 400; margin-top: 2px; }
+  .heat { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
+  .heat.h1 { background: rgba(63,185,80,0.15); border: 1px solid rgba(63,185,80,0.3); }
+  .heat.h2 { background: rgba(63,185,80,0.45); }
+  .heat.h3 { background: rgba(210,153,34,0.7); }
+  .heat.h4 { background: rgba(248,81,73,0.85); }
+
+  .warn-box { background: var(--yellow-bg); border: 1px solid rgba(210,153,34,0.4); border-radius: 8px; padding: 14px 18px; margin: 16px 0; font-size: 13px; }
+  .warn-box b { color: var(--yellow); }
+  .warn-box ul { margin: 8px 0 0 0; padding-left: 20px; }
+
+  .info-box { background: linear-gradient(135deg, var(--blue-bg) 0%, var(--panel) 100%); border: 1px solid rgba(88,166,255,0.4); border-left: 4px solid var(--blue); border-radius: 8px; padding: 16px 20px; margin: 16px 0; font-size: 13px; }
+  .info-box h3 { margin: 0 0 8px; color: var(--blue); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .info-box p { margin: 0 0 8px; }
+  .info-box p:last-child { margin-bottom: 0; }
+
+  footer.report-footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  @media (max-width: 900px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .twocol { grid-template-columns: 1fr; }
+    .phases { grid-template-columns: repeat(2, 1fr); }
+    .phase-detail .grid2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>HTML-First Migration Plan</h1>
+  <div class="sub">
+    Migrating KubeDojo orchestrator artifacts from Markdown to HTML, per Thariq @trq212's <a href="../../references/external/2026-05-08-thariq-html-effectiveness.html">"The Unreasonable Effectiveness of HTML"</a> (2026-05-08, Anthropic Claude Code team). The goal is artifacts you actually read in 30 seconds, not 200-line markdown walls you skim.
+  </div>
+  <div class="meta">
+    <span><b>Adopted:</b> 2026-05-09</span>
+    <span><b>Updated:</b> 2026-05-09 post ab-discuss</span>
+    <span><b>Status:</b> Phase 1 done, Phase 2 next</span>
+    <span><b>Design:</b> <a href="_design-system.html"><code class="inline">_design-system.html</code></a></span>
+    <span><b>Reference:</b> <a href="../../references/external/2026-05-08-thariq-html-effectiveness.html">archived article</a></span>
+  </div>
+</header>
+
+<div class="decision">
+  <div class="check">✓</div>
+  <div class="body">
+    <b>Decision locked 2026-05-09, updated 2026-05-09 post ab-discuss:</b> HTML is the default output format for orchestrator-generated artifacts that benefit from visualization, interactivity, or shareability. Markdown stays only for files the briefing API parses or that are grepped daily by both humans and tooling. Cross-family review now uses lightpanda-rendered markdown, so <code class="inline">.notes.md</code> sidecars are optional polish, not load-bearing.
+  </div>
+</div>
+
+<div class="thesis">
+  <blockquote>
+    "I find it difficult to read a markdown file of more than a hundred lines. I want richer visualizations, color and diagrams and I want to be able to share them easily. I've started preferring HTML as an output format instead of Markdown and increasingly see this being used by others on the Claude Code team, this is why."
+  </blockquote>
+  <cite>Thariq @trq212, Anthropic Claude Code team, 2026-05-08</cite>
+</div>
+
+<div class="kpis">
+  <div class="kpi">
+    <div class="label">Phase 1</div>
+    <div class="value ok">DONE</div>
+    <div class="sub">Batch reports</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Phase 2</div>
+    <div class="value blue">NEXT</div>
+    <div class="sub">PR review explainers</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Review path</div>
+    <div class="value ok">LP</div>
+    <div class="sub">lightpanda to markdown</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Skill creation</div>
+    <div class="value warn">NO</div>
+    <div class="sub">Prompt naturally first</div>
+  </div>
+</div>
+
+<h2>Migration phase strip</h2>
+
+<div class="phases">
+  <div class="phase">
+    <div class="num">Phase 1</div>
+    <div class="name">Batch reports</div>
+    <span class="status done">DONE</span>
+    <div class="when">Live since 2026-05-09</div>
+    <span class="arrow">→</span>
+  </div>
+  <div class="phase">
+    <div class="num">Phase 2</div>
+    <div class="name">PR review explainers</div>
+    <span class="status next">NEXT</span>
+    <div class="when">On-demand: next non-APPROVE PR</div>
+    <span class="arrow">→</span>
+  </div>
+  <div class="phase">
+    <div class="num">Phase 3</div>
+    <div class="name">Bug autopsies + audits</div>
+    <span class="status queued">QUEUED</span>
+    <div class="when">On-demand: next incident/audit</div>
+    <span class="arrow">→</span>
+  </div>
+  <div class="phase">
+    <div class="num">Phase 4</div>
+    <div class="name">Dispatch briefs</div>
+    <span class="status queued">QUEUED</span>
+    <div class="when">On-demand: next batch</div>
+    <span class="arrow">→</span>
+  </div>
+  <div class="phase">
+    <div class="num">Phase 5</div>
+    <div class="name">Session handoffs</div>
+    <span class="status queued">UNBLOCKED</span>
+    <div class="when">Lazy: when the session warrants HTML</div>
+  </div>
+</div>
+
+<h2>Phase detail</h2>
+
+<div class="phase-detail done">
+  <h3>
+    <span class="ph-num">PHASE 1</span> Batch reports
+    <span class="badge ok">DONE</span>
+  </h3>
+  <div class="goal">First proof of concept. Ship a real artifact, validate the workflow on a single instance, then scale.</div>
+  <div class="grid2">
+    <div>
+      <b>What shipped</b>
+      <code class="inline">audit/388-cka-part1-batch/index.html</code> with a 5-module status grid, KPI cards, color-coded verdicts, vertical timeline, and two-column lessons block.
+    </div>
+    <div>
+      <b>What it replaced</b>
+      A flat markdown table that nobody would have opened. The user reaction, "now I have much better overview what is happening", validated the direction.
+    </div>
+  </div>
+</div>
+
+<div class="phase-detail next">
+  <h3>
+    <span class="ph-num">PHASE 2</span> PR review explainers
+    <span class="badge ok">NEXT</span>
+  </h3>
+  <div class="goal">Convert non-APPROVE review output into an HTML diff explainer: color-coded findings, spotlighted files, reviewer concern summary, and exact fix-up checklist.</div>
+  <div class="grid2">
+    <div>
+      <b>Where it slots in</b>
+      Generated after cross-family review for PRs that receive NEEDS CHANGES or APPROVE_WITH_NITS. The artifact can be linked from the PR comment or attached as a CI/local artifact.
+    </div>
+    <div>
+      <b>Why promoted</b>
+      The CKA 1.3 fix-up cycle proved the value. The real bug was a wrong Helm repository URL buried inside a long markdown review. HTML makes the actionable defect pop.
+    </div>
+  </div>
+  <div class="trigger">
+    <b>Trigger:</b> Next #388 sweep PR or migration PR with a non-APPROVE verdict.
+  </div>
+</div>
+
+<div class="phase-detail queued">
+  <h3>
+    <span class="ph-num">PHASE 3</span> Bug autopsies + summary audits
+    <span class="badge ok">QUEUED</span>
+  </h3>
+  <div class="goal">Lower-frequency, higher-stake artifacts. Autopsies need cause/effect flow, prevention panels, and proof links. Summary audits need side-by-side convergence tables and click-to-expand evidence.</div>
+  <div class="grid2">
+    <div>
+      <b>Currently</b>
+      <code class="inline">docs/bug-autopsies/INDEX.md</code> plus per-category markdown files. <code class="inline">audit/*/REPORT.md</code> for periodic audits.
+    </div>
+    <div>
+      <b>After migration</b>
+      Per-incident <code class="inline">.html</code> alongside the markdown index, which stays as the searchable list. Audit summaries become navigable HTML.
+    </div>
+  </div>
+  <div class="trigger">
+    <b>Trigger:</b> Next incident-class bug fix or scheduled summary audit.
+  </div>
+</div>
+
+<div class="phase-detail queued">
+  <h3>
+    <span class="ph-num">PHASE 4</span> Dispatch briefs
+    <span class="badge ok">QUEUED</span>
+  </h3>
+  <div class="goal">Pre-batch dispatch briefs are gate-heavy checklists. HTML can make the GO/NO-GO gates visual, smoke-test snippets copyable, and change classes collapsible.</div>
+  <div class="grid2">
+    <div>
+      <b>Bonus interactivity</b>
+      A brief can become an interactive form: toggle gates, edit smoke commands, and click "copy as prompt" for the next agent dispatch.
+    </div>
+    <div>
+      <b>Why after explainers</b>
+      PR explainers prove the cross-family review path first. Dispatch briefs require more polish to be a net win.
+    </div>
+  </div>
+  <div class="trigger">
+    <b>Trigger:</b> Next sweep that needs a brief written from scratch.
+  </div>
+</div>
+
+<div class="phase-detail queued">
+  <h3>
+    <span class="ph-num">PHASE 5</span> Session handoffs
+    <span class="badge ok">UNBLOCKED</span>
+  </h3>
+  <div class="goal">Handoffs can be rich HTML when they preserve multiple threads, decisions, timelines, and restart context. Brief sessions should remain Markdown or chat-only.</div>
+  <div class="grid2">
+    <div>
+      <b>Prerequisite</b>
+      DONE in PR <a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1021">#1021</a>, commit <code class="inline">70130274</code>: session-state now permits <code class="inline">.html</code> handoffs.
+    </div>
+    <div>
+      <b>Lazy practice</b>
+      Use HTML when the session warrants it: rich content, multiple threads, decisions to record, or visual state. Brief sessions still use Markdown.
+    </div>
+  </div>
+  <div class="trigger">
+    <b>Trigger:</b> Prereq DONE in PR #1021 (commit <code class="inline">70130274</code>). Phase is unblocked but practiced lazy.
+  </div>
+</div>
+
+<h2>Cross-family HTML review via lightpanda</h2>
+
+<div class="info-box">
+  <h3>ab-discuss outcome</h3>
+  <p>Gemini's round-1 objection to HTML PRs was diff noise: raw HTML can be too noisy and token-heavy for cross-family review. That objection is resolved because <code class="inline">/opt/homebrew/bin/lightpanda</code> renders HTML to clean markdown for agent review.</p>
+  <p>All three agents have a working path: Claude can inline-read the HTML or rendered markdown, Codex can use the Browser plugin for visual inspection, and Gemini can use lightpanda plus web_fetch. Reviewers should read the semantic markdown, not the raw HTML, unless they are auditing markup itself.</p>
+  <p><b>Canonical command:</b> <code class="inline">lightpanda fetch --dump markdown http://127.0.0.1:8989/&lt;path&gt;</code>. Reference memory: <code class="inline">~/.claude/projects/-Users-krisztiankoos-projects-kubedojo/memory/reference_lightpanda_html_rendering.md</code>.</p>
+  <p>The <code class="inline">.notes.md</code> sidecar invariant from the discussion becomes optional polish, not load-bearing. Use sidecars only when grep/provenance requires them.</p>
+</div>
+
+<h2>Artifact migration matrix</h2>
+
+<table class="matrix">
+  <thead>
+    <tr>
+      <th>Artifact class</th>
+      <th>Frequency</th>
+      <th>Read-value as HTML</th>
+      <th>Decision</th>
+      <th>Phase</th>
+      <th>Render path</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="artifact">Batch reports <span class="path">(audit/&lt;name&gt;/index.html)</span></td>
+      <td><span class="heat h3"></span>per batch</td>
+      <td><span class="heat h4"></span>very high</td>
+      <td><span class="badge ok">HTML</span></td>
+      <td>1 - DONE</td>
+      <td>lightpanda → markdown</td>
+    </tr>
+    <tr>
+      <td class="artifact">PR review explainers <span class="path">(audit/pr-reviews/&lt;num&gt;.html)</span></td>
+      <td><span class="heat h3"></span>per non-APPROVE PR</td>
+      <td><span class="heat h4"></span>very high</td>
+      <td><span class="badge ok">HTML (new)</span></td>
+      <td>2 - NEXT</td>
+      <td>lightpanda → markdown</td>
+    </tr>
+    <tr>
+      <td class="artifact">Bug autopsies <span class="path">(docs/bug-autopsies/*.html)</span></td>
+      <td><span class="heat h2"></span>per incident</td>
+      <td><span class="heat h3"></span>high</td>
+      <td><span class="badge ok">HTML</span></td>
+      <td>3</td>
+      <td>lightpanda → markdown</td>
+    </tr>
+    <tr>
+      <td class="artifact">Summary audits <span class="path">(audit/&lt;name&gt;/REPORT.html)</span></td>
+      <td><span class="heat h2"></span>periodic</td>
+      <td><span class="heat h3"></span>high</td>
+      <td><span class="badge ok">HTML</span></td>
+      <td>3</td>
+      <td>lightpanda → markdown</td>
+    </tr>
+    <tr>
+      <td class="artifact">Dispatch briefs <span class="path">(docs/dispatch-briefs/*.html)</span></td>
+      <td><span class="heat h2"></span>pre-batch</td>
+      <td><span class="heat h3"></span>high</td>
+      <td><span class="badge ok">HTML</span></td>
+      <td>4</td>
+      <td>lightpanda → markdown</td>
+    </tr>
+    <tr>
+      <td class="artifact">Session handoffs <span class="path">(docs/session-state/*.html)</span></td>
+      <td><span class="heat h4"></span>session-dependent</td>
+      <td><span class="heat h4"></span>very high when rich</td>
+      <td><span class="badge ok">HTML lazy</span></td>
+      <td>5 - UNBLOCKED</td>
+      <td>lightpanda → markdown</td>
+    </tr>
+    <tr>
+      <td class="artifact">STATUS.md <span class="path">(STATUS.md)</span></td>
+      <td><span class="heat h4"></span>every session</td>
+      <td><span class="heat h1"></span>low (already short, parsed)</td>
+      <td><span class="badge fail">stays Markdown</span></td>
+      <td>-</td>
+      <td>native markdown</td>
+    </tr>
+    <tr>
+      <td class="artifact">CLAUDE.md, .claude/rules <span class="path">(CLAUDE.md, .claude/rules/*.md)</span></td>
+      <td><span class="heat h4"></span>every cold-start</td>
+      <td><span class="heat h1"></span>low (grepped, edited as text)</td>
+      <td><span class="badge fail">stays Markdown</span></td>
+      <td>-</td>
+      <td>native markdown</td>
+    </tr>
+    <tr>
+      <td class="artifact">Memory files <span class="path">(~/.claude/projects/.../memory/*.md)</span></td>
+      <td><span class="heat h4"></span>every cold-start</td>
+      <td><span class="heat h1"></span>low (one-line files, indexed)</td>
+      <td><span class="badge fail">stays Markdown</span></td>
+      <td>-</td>
+      <td>native markdown</td>
+    </tr>
+    <tr>
+      <td class="artifact">Decision cards <span class="path">(docs/decisions/pending/*.md)</span></td>
+      <td><span class="heat h2"></span>per high-leverage decision</td>
+      <td><span class="heat h2"></span>medium</td>
+      <td><span class="badge fail">stays Markdown</span></td>
+      <td>-</td>
+      <td>native markdown</td>
+    </tr>
+    <tr>
+      <td class="artifact">Module content <span class="path">(src/content/docs/**/*.md)</span></td>
+      <td><span class="heat h4"></span>continuously</td>
+      <td>-</td>
+      <td><span class="badge fail">stays Markdown</span></td>
+      <td>-</td>
+      <td>native markdown / Astro render</td>
+    </tr>
+  </tbody>
+</table>
+
+<div style="font-size:11px;color:var(--fg-dim); margin-top:6px;">
+  Heat scale (frequency / read-value): <span class="heat h1"></span> low <span class="heat h2"></span> medium <span class="heat h3"></span> high <span class="heat h4"></span> very high
+</div>
+
+<h2>Anti-patterns to avoid</h2>
+
+<div class="warn-box">
+  <b>From the article itself:</b>
+  <ul>
+    <li><b>Don't build a <code class="inline">/html</code> skill yet.</b> Build muscle by prompting for HTML naturally; codify only after 5-10 real artifacts reveal patterns worth a skill.</li>
+    <li><b>Don't migrate everything at once.</b> Phase 1 through 5 are sequenced by frequency, value, and review readiness.</li>
+    <li><b>Don't migrate things that are grepped or parsed.</b> The briefing API parses STATUS.md heading-by-heading; rules and memory files are text-grepped continuously by cold-start agents.</li>
+  </ul>
+</div>
+
+<div class="warn-box">
+  <b>From our own constraints:</b>
+  <ul>
+    <li><b>Don't add a <code class="inline">.notes.md</code> sidecar by default.</b> Use only when grep/provenance demands it, such as handoff search across N sessions. Cross-family review uses lightpanda, not the sidecar.</li>
+    <li><b>HTML diffs are noisy, but review should not read raw HTML first.</b> Serve locally and render through lightpanda markdown before asking Gemini or another cross-family reviewer to judge semantics.</li>
+    <li><b>2-4x generation time.</b> Budget for it. The CKA Part 1 batch report took longer than a markdown table but was actually consumed.</li>
+    <li><b>Don't inline-write content modules as HTML.</b> Module content under <code class="inline">src/content/docs/**/*.md</code> is curriculum rendered by Astro. This migration is about orchestrator artifacts only.</li>
+  </ul>
+</div>
+
+<h2>How to apply (in conversations)</h2>
+
+<div class="twocol">
+  <div class="col-card">
+    <h3>Default move <span class="badge ok">DO</span></h3>
+    <ul>
+      <li><b>Use <code class="inline">_design-system.html</code></b> as the canonical source for CSS variables and components.</li>
+      <li><b>Make an HTML file</b> when generating any artifact in the migration matrix marked HTML and the content warrants visual structure.</li>
+      <li><b>Link to it</b> from STATUS.md, cross-thread notes, PRs, or Slack. HTML is shareable; that is the point.</li>
+      <li><b>Open it in the browser</b> after generating with <code class="inline">open path/to/file.html</code>.</li>
+      <li><b>Render it with lightpanda</b> before asking for cross-family review.</li>
+    </ul>
+  </div>
+  <div class="col-card">
+    <h3>Default avoid <span class="badge fail">DON'T</span></h3>
+    <ul>
+      <li><b>Don't skill-ify yet.</b> No <code class="inline">/html-report</code>, no <code class="inline">/html-handoff</code>. Build patterns by hand first.</li>
+      <li><b>Don't break grep paths.</b> If a tool or human greps for it, keep it Markdown or add a deliberate sidecar.</li>
+      <li><b>Don't generate HTML for one-line answers.</b> HTML overhead pays off only above roughly 50 lines or multiple visualizable dimensions.</li>
+      <li><b>Don't commit HTML diffs blindly</b> for high-frequency artifacts. Decide per class: commit the latest, or generate and link.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Living artifacts</h2>
+
+<div class="col-card">
+  <ul>
+    <li><b>This plan</b> - <code class="inline">docs/migrations/html-first/plan.html</code>. Update phase status as each one ships.</li>
+    <li><b>Design system</b> - <code class="inline">docs/migrations/html-first/_design-system.html</code>. Inline-copy these variables and components for future HTML artifacts.</li>
+    <li><b>Archived article</b> - <code class="inline">docs/references/external/2026-05-08-thariq-html-effectiveness.html</code> (the original X article, saved by user 2026-05-09).</li>
+    <li><b>Memory rule</b> - <code class="inline">~/.claude/projects/-Users-krisztiankoos-projects-kubedojo/memory/feedback_html_over_markdown_for_artifacts.md</code> (loads every session).</li>
+    <li><b>Lightpanda memory</b> - <code class="inline">~/.claude/projects/-Users-krisztiankoos-projects-kubedojo/memory/reference_lightpanda_html_rendering.md</code> (canonical HTML to markdown review path).</li>
+    <li><b>Phase 1 exemplar</b> - <code class="inline">audit/388-cka-part1-batch/index.html</code> (style and structure reference for future reports).</li>
+  </ul>
+</div>
+
+<footer class="report-footer">
+  <div>Plan generated 2026-05-09 by KubeDojo orchestrator; updated post ab-discuss thread <code class="inline">a05f5a1bea0446f79bb223e4e323e474</code>.</div>
+  <div><a href="_design-system.html">Design system</a> · <a href="../../references/external/2026-05-08-thariq-html-effectiveness.html">Archived article</a></div>
+</footer>
+
+</div>
+</body>
+</html>

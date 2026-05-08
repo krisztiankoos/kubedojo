@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KubeDojo HTML Artifact Design System</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #161b22;
+    --panel-2: #1c232c;
+    --panel-3: #21262d;
+    --border: #30363d;
+    --border-soft: #21262d;
+    --fg: #e6edf3;
+    --fg-dim: #8b949e;
+    --fg-faint: #6e7681;
+    --green: #3fb950;
+    --green-bg: #0f2c1a;
+    --yellow: #d29922;
+    --yellow-bg: #2d2206;
+    --red: #f85149;
+    --red-bg: #2d0e0e;
+    --blue: #58a6ff;
+    --blue-bg: #0f1d2e;
+    --purple: #a371f7;
+    --purple-bg: #1f1830;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.55; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: var(--mono); font-size: 0.9em; }
+  code.inline { background: var(--panel-2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.hero { padding-bottom: 22px; border-bottom: 1px solid var(--border); margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  header.hero h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.01em; }
+  header.hero .sub { color: var(--fg-dim); font-size: 14px; max-width: 840px; }
+  header.hero .meta { font-size: 12px; color: var(--fg-dim); text-align: right; line-height: 1.8; }
+  header.hero .meta b { color: var(--fg); }
+  h2 { font-size: 18px; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); letter-spacing: -0.005em; display: flex; align-items: center; gap: 12px; }
+  h2 .num { font-family: var(--mono); font-size: 12px; color: var(--fg-faint); background: var(--panel); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); }
+  h3 { font-size: 14px; margin: 16px 0 8px; color: var(--fg); }
+
+  .reference-note { background: linear-gradient(135deg, var(--blue-bg) 0%, var(--panel) 100%); border: 1px solid rgba(88,166,255,0.4); border-left: 4px solid var(--blue); border-radius: 8px; padding: 16px 20px; margin-bottom: 24px; }
+  .reference-note h3 { margin: 0 0 6px; color: var(--blue); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .reference-note p { margin: 0; font-size: 14px; }
+
+  .tokens { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .token { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  .swatch { height: 34px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 8px; }
+  .token .name { font-family: var(--mono); font-size: 12px; color: var(--fg); }
+  .token .value { font-family: var(--mono); font-size: 11px; color: var(--fg-dim); }
+
+  .gallery { display: grid; gap: 18px; }
+  .component { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .component h3 { margin-top: 0; display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+  .component h3 .class { font-family: var(--mono); color: var(--fg-dim); font-weight: 400; font-size: 11px; }
+  .demo { margin: 12px 0 14px; }
+  pre.source { background: var(--bg); color: var(--fg-dim); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin: 0; font-size: 12px; line-height: 1.45; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 0; }
+  .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .kpi .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi .value { font-size: 26px; font-weight: 600; }
+  .kpi .value.ok { color: var(--green); }
+  .kpi .value.warn { color: var(--yellow); }
+  .kpi .value.fail { color: var(--red); }
+  .kpi .value.blue { color: var(--blue); }
+  .kpi .sub { color: var(--fg-dim); font-size: 12px; margin-top: 4px; }
+
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; border: 1px solid; white-space: nowrap; }
+  .pill.ok { color: var(--green); background: var(--green-bg); border-color: rgba(63,185,80,0.4); }
+  .pill.warn { color: var(--yellow); background: var(--yellow-bg); border-color: rgba(210,153,34,0.4); }
+  .pill.fail { color: var(--red); background: var(--red-bg); border-color: rgba(248,81,73,0.4); }
+  .pill.neutral { color: var(--fg-dim); background: var(--panel-2); border-color: var(--border); }
+  .pill.purple { color: var(--purple); background: var(--purple-bg); border-color: rgba(163,113,247,0.4); }
+
+  .decision { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; margin-bottom: 12px; }
+  .decision .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .decision .text { font-size: 14px; color: var(--fg); }
+  .decision.locked { border-left: 4px solid var(--green); }
+  .decision.proposed { border-left: 4px solid var(--yellow); }
+
+  .cold-start { background: linear-gradient(135deg, var(--blue-bg) 0%, var(--panel) 100%); border: 1px solid rgba(88,166,255,0.4); border-left: 4px solid var(--blue); border-radius: 8px; padding: 16px 20px; margin-bottom: 0; }
+  .cold-start h3 { margin: 0 0 6px; color: var(--blue); font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .cold-start p { margin: 0; font-size: 14px; }
+  .cold-start b { color: var(--fg); }
+
+  .timeline { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .timeline ol { list-style: none; padding: 0; margin: 0; position: relative; }
+  .timeline ol::before { content: ""; position: absolute; left: 11px; top: 6px; bottom: 6px; width: 2px; background: var(--border); }
+  .timeline li { position: relative; padding: 6px 0 6px 32px; font-size: 13px; }
+  .timeline li::before { content: ""; position: absolute; left: 4px; top: 13px; width: 12px; height: 12px; border-radius: 50%; background: var(--panel); border: 2px solid var(--border); }
+  .timeline li.ok::before { border-color: var(--green); background: var(--green-bg); }
+  .timeline li.warn::before { border-color: var(--yellow); background: var(--yellow-bg); }
+  .timeline li.fail::before { border-color: var(--red); background: var(--red-bg); }
+  .timeline li .ts { color: var(--fg-dim); font-family: var(--mono); font-size: 11px; margin-right: 8px; }
+  .timeline li .what { color: var(--fg); }
+  .timeline li .detail { color: var(--fg-dim); font-size: 12px; margin-left: 4px; }
+
+  .lessons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .lesson { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+  .lesson h3 { margin: 0 0 8px; font-size: 14px; color: var(--fg); }
+  .lesson ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--fg); }
+  .lesson li { margin-bottom: 6px; }
+  .lesson li b { font-weight: 600; }
+
+  .threads { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 0; }
+  .thread { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .thread.marathon { border-left: 4px solid var(--green); }
+  .thread.migration { border-left: 4px solid var(--purple); }
+  .thread h3 { margin: 0 0 10px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .thread .stat-line { font-size: 12px; color: var(--fg-dim); margin-bottom: 10px; }
+  .thread .summary { font-size: 13px; color: var(--fg); margin-bottom: 10px; }
+  .thread ul.events { list-style: none; padding: 0; margin: 0; }
+  .thread ul.events li { padding: 5px 0; font-size: 13px; border-bottom: 1px dashed var(--border-soft); display: flex; gap: 8px; }
+  .thread ul.events li:last-child { border-bottom: 0; }
+  .thread ul.events li .ts { font-family: var(--mono); font-size: 11px; color: var(--fg-faint); flex-shrink: 0; }
+
+  table.prs, table.matrix { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  table.prs th, table.prs td, table.matrix th, table.matrix td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border-soft); font-size: 13px; vertical-align: top; }
+  table.prs th, table.matrix th { background: var(--panel-2); color: var(--fg-dim); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.prs tr:last-child td, table.matrix tr:last-child td { border-bottom: 0; }
+  table.prs td.pr { font-family: var(--mono); font-size: 12px; }
+  table.prs td.module, table.matrix td.artifact { font-weight: 600; }
+  table.matrix td.artifact .path { display: block; color: var(--fg-faint); font-family: var(--mono); font-size: 11px; font-weight: 400; margin-top: 2px; }
+  .sha { font-family: var(--mono); font-size: 11px; background: var(--panel-2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
+  .heat { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
+  .heat.h1 { background: rgba(63,185,80,0.15); border: 1px solid rgba(63,185,80,0.3); }
+  .heat.h2 { background: rgba(63,185,80,0.45); }
+  .heat.h3 { background: rgba(210,153,34,0.7); }
+  .heat.h4 { background: rgba(248,81,73,0.85); }
+
+  .phases { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 12px; }
+  .phase { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 12px; position: relative; }
+  .phase .num { font-size: 11px; color: var(--fg-faint); letter-spacing: 0.05em; text-transform: uppercase; }
+  .phase .name { font-size: 13px; font-weight: 600; margin: 4px 0 6px; color: var(--fg); }
+  .phase .status { font-size: 11px; padding: 2px 8px; border-radius: 999px; display: inline-block; font-weight: 600; }
+  .phase .status.done { color: var(--green); background: var(--green-bg); border: 1px solid rgba(63,185,80,0.3); }
+  .phase .status.next { color: var(--blue); background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3); }
+  .phase .status.queued { color: var(--fg-dim); background: var(--panel-2); border: 1px solid var(--border); }
+  .phase .when { font-size: 10px; color: var(--fg-faint); margin-top: 6px; }
+
+  .next-up { background: linear-gradient(135deg, var(--purple-bg) 0%, var(--panel) 100%); border: 1px solid rgba(163,113,247,0.4); border-left: 4px solid var(--purple); border-radius: 8px; padding: 18px 22px; margin: 0; }
+  .next-up h3 { margin: 0 0 10px; color: var(--purple); font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .next-up .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .next-up .option { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px 14px; }
+  .next-up .option .name { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  .next-up .option .why { color: var(--fg-dim); font-size: 12px; }
+  .next-up .option.recommended { border-color: var(--purple); }
+  .next-up .option.recommended .name::after { content: " recommended"; color: var(--purple); font-weight: 400; font-size: 11px; }
+
+  .contract { background: var(--yellow-bg); border: 1px solid rgba(210,153,34,0.4); border-radius: 8px; padding: 16px 20px; font-size: 13px; }
+  .contract b { color: var(--yellow); }
+  footer.report-footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  @media (max-width: 900px) {
+    .tokens, .kpis { grid-template-columns: repeat(2, 1fr); }
+    .threads, .lessons, .next-up .options { grid-template-columns: 1fr; }
+    .phases { grid-template-columns: repeat(2, 1fr); }
+    header.hero { flex-direction: column; }
+    header.hero .meta { text-align: left; }
+  }
+  @media (max-width: 720px) {
+    .tokens, .kpis, .phases { grid-template-columns: 1fr; }
+    table.prs td, table.prs th, table.matrix td, table.matrix th { font-size: 12px; padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <h1>KubeDojo HTML Artifact Design System</h1>
+    <div class="sub">Inline-copy these patterns when generating an HTML artifact in the HTML-first migration. The file shows each component with its exact CSS so other agents (codex, gemini, claude) can reproduce them faithfully without re-inventing.</div>
+  </div>
+  <div class="meta">
+    <div><b>Status:</b> canonical reference</div>
+    <div><b>Scope:</b> orchestrator artifacts</div>
+    <div><b>Updated:</b> 2026-05-09</div>
+  </div>
+</header>
+
+<div class="reference-note">
+  <h3>Copy contract</h3>
+  <p>Future artifacts should inline the CSS they use from this page, keep the same variables and class names, and drop unused components to stay compact.</p>
+</div>
+
+<h2><span class="num">§1</span> CSS Variables</h2>
+<div class="tokens">
+  <div class="token"><div class="swatch" style="background:var(--bg)"></div><div class="name">--bg</div><div class="value">#0e1116</div></div>
+  <div class="token"><div class="swatch" style="background:var(--panel)"></div><div class="name">--panel</div><div class="value">#161b22</div></div>
+  <div class="token"><div class="swatch" style="background:var(--panel-2)"></div><div class="name">--panel-2</div><div class="value">#1c232c</div></div>
+  <div class="token"><div class="swatch" style="background:var(--border)"></div><div class="name">--border</div><div class="value">#30363d</div></div>
+  <div class="token"><div class="swatch" style="background:var(--fg)"></div><div class="name">--fg</div><div class="value">#e6edf3</div></div>
+  <div class="token"><div class="swatch" style="background:var(--fg-dim)"></div><div class="name">--fg-dim</div><div class="value">#8b949e</div></div>
+  <div class="token"><div class="swatch" style="background:var(--green)"></div><div class="name">--green / --green-bg</div><div class="value">#3fb950 / #0f2c1a</div></div>
+  <div class="token"><div class="swatch" style="background:var(--yellow)"></div><div class="name">--yellow / --yellow-bg</div><div class="value">#d29922 / #2d2206</div></div>
+  <div class="token"><div class="swatch" style="background:var(--red)"></div><div class="name">--red / --red-bg</div><div class="value">#f85149 / #2d0e0e</div></div>
+  <div class="token"><div class="swatch" style="background:var(--blue)"></div><div class="name">--blue / --blue-bg</div><div class="value">#58a6ff / #0f1d2e</div></div>
+  <div class="token"><div class="swatch" style="background:var(--purple)"></div><div class="name">--purple / --purple-bg</div><div class="value">#a371f7 / #1f1830</div></div>
+  <div class="token"><div class="swatch" style="background:var(--panel-3)"></div><div class="name">--mono</div><div class="value">ui-monospace stack</div></div>
+</div>
+
+<h2><span class="num">§2</span> Component Gallery</h2>
+<div class="gallery">
+  <section class="component">
+    <h3>KPI Cards <span class="class">.kpis .kpi</span></h3>
+    <div class="demo"><div class="kpis"><div class="kpi"><div class="label">Merged</div><div class="value ok">5 / 5</div><div class="sub">All PRs on main</div></div><div class="kpi"><div class="label">Held</div><div class="value warn">1</div><div class="sub">Fix-up required</div></div><div class="kpi"><div class="label">Failed</div><div class="value fail">0</div><div class="sub">No blockers</div></div><div class="kpi"><div class="label">Reviews</div><div class="value blue">6</div><div class="sub">Cross-family</div></div></div></div>
+    <pre class="source"><code>.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.kpi .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.kpi .value { font-size: 26px; font-weight: 600; }
+.kpi .value.ok { color: var(--green); } .kpi .value.warn { color: var(--yellow); } .kpi .value.fail { color: var(--red); } .kpi .value.blue { color: var(--blue); }
+.kpi .sub { color: var(--fg-dim); font-size: 12px; margin-top: 4px; }</code></pre>
+  </section>
+
+  <section class="component">
+    <h3>Status Pills <span class="class">.pill.ok/.warn/.fail/.neutral/.purple</span></h3>
+    <div class="demo"><span class="pill ok">APPROVE</span> <span class="pill warn">NITS</span> <span class="pill fail">NEEDS CHANGES</span> <span class="pill neutral">QUEUED</span> <span class="pill purple">MIGRATION</span></div>
+    <pre class="source"><code>.pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; border:1px solid; white-space:nowrap; }
+.pill.ok { color:var(--green); background:var(--green-bg); border-color:rgba(63,185,80,0.4); }
+.pill.warn { color:var(--yellow); background:var(--yellow-bg); border-color:rgba(210,153,34,0.4); }
+.pill.fail { color:var(--red); background:var(--red-bg); border-color:rgba(248,81,73,0.4); }
+.pill.neutral { color:var(--fg-dim); background:var(--panel-2); border-color:var(--border); }
+.pill.purple { color:var(--purple); background:var(--purple-bg); border-color:rgba(163,113,247,0.4); }</code></pre>
+  </section>
+
+  <section class="component">
+    <h3>Decision Banner <span class="class">.decision.locked/.proposed</span></h3>
+    <div class="demo"><div class="decision locked"><div class="label">Decision · locked</div><div class="text"><b>HTML is default</b> for orchestrator artifacts with visual or shareable value.</div></div><div class="decision proposed"><div class="label">Decision · proposed</div><div class="text"><b>Ship on trigger</b> when the artifact warrants rich context.</div></div></div>
+    <pre class="source"><code>.decision { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px 18px; }
+.decision .label { color:var(--fg-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+.decision .text { font-size:14px; color:var(--fg); }
+.decision.locked { border-left:4px solid var(--green); }
+.decision.proposed { border-left:4px solid var(--yellow); }</code></pre>
+  </section>
+
+  <section class="component">
+    <h3>Cold-Start Banner <span class="class">.cold-start</span></h3>
+    <div class="demo"><div class="cold-start"><h3>Cold-start TL;DR</h3><p><b>Read this first:</b> the current branch has one plan update, one design reference, and no content-module edits.</p></div></div>
+    <pre class="source"><code>.cold-start { background:linear-gradient(135deg,var(--blue-bg) 0%,var(--panel) 100%); border:1px solid rgba(88,166,255,0.4); border-left:4px solid var(--blue); border-radius:8px; padding:16px 20px; }
+.cold-start h3 { margin:0 0 6px; color:var(--blue); font-size:13px; text-transform:uppercase; letter-spacing:0.05em; }
+.cold-start p { margin:0; font-size:14px; }</code></pre>
+  </section>
+
+  <section class="component">
+    <h3>Timeline <span class="class">.timeline ol::before</span></h3>
+    <div class="demo"><div class="timeline"><ol><li class="ok"><span class="ts">09:00</span><span class="what">PR opened</span><span class="detail">with HTML artifact</span></li><li class="warn"><span class="ts">09:12</span><span class="what">Review note</span><span class="detail">lightpanda markdown checked</span></li><li class="fail"><span class="ts">09:20</span><span class="what">Blocked</span><span class="detail">missing render path</span></li></ol></div></div>
+    <pre class="source"><code>.timeline { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:18px 20px; }
+.timeline ol { list-style:none; padding:0; margin:0; position:relative; }
+.timeline ol::before { content:""; position:absolute; left:11px; top:6px; bottom:6px; width:2px; background:var(--border); }
+.timeline li { position:relative; padding:6px 0 6px 32px; font-size:13px; }
+.timeline li::before { content:""; position:absolute; left:4px; top:13px; width:12px; height:12px; border-radius:50%; background:var(--panel); border:2px solid var(--border); }
+.timeline li.ok::before { border-color:var(--green); background:var(--green-bg); }</code></pre>
+  </section>
+
+  <section class="component">
+    <h3>Two-Column Lessons <span class="class">.lessons .lesson</span></h3>
+    <div class="demo"><div class="lessons"><div class="lesson"><h3>What worked</h3><ul><li><b>Lightpanda</b> makes HTML review semantic.</li></ul></div><div class="lesson"><h3>Carry forward</h3><ul><li><b>Copy exact classes</b> before inventing new ones.</li></ul></div></div></div>
+    <pre class="source"><code>.lessons { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.lesson { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:16px 18px; }
+.lesson h3 { margin:0 0 8px; font-size:14px; }
+.lesson ul { margin:0; padding-left:18px; font-size:13px; }</code></pre>
+  </section>
+
+  <section class="component">
+    <h3>Side-by-Side Thread Split <span class="class">.threads .thread</span></h3>
+    <div class="demo"><div class="threads"><div class="thread marathon"><h3>Delivery <span class="pill ok">DONE</span></h3><div class="stat-line">5 PRs merged</div><div class="summary">Use green for completed execution threads.</div></div><div class="thread migration"><h3>Migration <span class="pill purple">ACTIVE</span></h3><div class="stat-line">Plan updated</div><div class="summary">Use purple for strategy or tooling threads.</div></div></div></div>
+    <pre class="source"><code>.threads { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.thread { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:18px 20px; }
+.thread.marathon { border-left:4px solid var(--green); }
+.thread.migration { border-left:4px solid var(--purple); }</code></pre>
+  </section>
+
+  <section class="component">
+    <h3>Status Table <span class="class">table.prs</span></h3>
+    <div class="demo"><table class="prs"><thead><tr><th>PR</th><th>Module</th><th>Review</th><th>SHA</th></tr></thead><tbody><tr><td class="pr">#1022</td><td class="module">HTML design system</td><td><span class="pill ok">READY</span></td><td><code class="sha">abc1234</code></td></tr></tbody></table></div>
+    <pre class="source"><code>table.prs { width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+table.prs th, table.prs td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border-soft); font-size:13px; }
+table.prs th { background:var(--panel-2); color:var(--fg-dim); font-size:11px; text-transform:uppercase; letter-spacing:0.04em; }</code></pre>
+  </section>
+
+  <section class="component">
+    <h3>Phase Strip <span class="class">.phases .phase</span></h3>
+    <div class="demo"><div class="phases"><div class="phase"><div class="num">Phase 1</div><div class="name">Batch reports</div><span class="status done">DONE</span><div class="when">Live</div></div><div class="phase"><div class="num">Phase 2</div><div class="name">PR explainers</div><span class="status next">NEXT</span><div class="when">On trigger</div></div><div class="phase"><div class="num">Phase 3</div><div class="name">Autopsies</div><span class="status queued">QUEUED</span><div class="when">Incident</div></div></div></div>
+    <pre class="source"><code>.phases { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+.phase { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px 12px; position:relative; }
+.phase .status.done { color:var(--green); background:var(--green-bg); border:1px solid rgba(63,185,80,0.3); }
+.phase .status.next { color:var(--blue); background:rgba(88,166,255,0.1); border:1px solid rgba(88,166,255,0.3); }</code></pre>
+  </section>
+
+  <section class="component">
+    <h3>Artifact Matrix + Heat Legend <span class="class">table.matrix .heat</span></h3>
+    <div class="demo"><table class="matrix"><thead><tr><th>Artifact</th><th>Frequency</th><th>Render path</th></tr></thead><tbody><tr><td class="artifact">Batch reports <span class="path">(audit/*/index.html)</span></td><td><span class="heat h3"></span>per batch</td><td>lightpanda → markdown</td></tr><tr><td class="artifact">STATUS.md <span class="path">(STATUS.md)</span></td><td><span class="heat h4"></span>every session</td><td>native markdown</td></tr></tbody></table><div style="font-size:11px;color:var(--fg-dim); margin-top:6px;"><span class="heat h1"></span> low <span class="heat h2"></span> medium <span class="heat h3"></span> high <span class="heat h4"></span> very high</div></div>
+    <pre class="source"><code>table.matrix { width:100%; border-collapse:collapse; background:var(--panel); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.heat { display:inline-block; width:14px; height:14px; border-radius:3px; margin-right:4px; vertical-align:middle; }
+.heat.h1 { background:rgba(63,185,80,0.15); border:1px solid rgba(63,185,80,0.3); }
+.heat.h2 { background:rgba(63,185,80,0.45); } .heat.h3 { background:rgba(210,153,34,0.7); } .heat.h4 { background:rgba(248,81,73,0.85); }</code></pre>
+  </section>
+
+  <section class="component">
+    <h3>Sidecar-Style Next-Up CTA <span class="class">.next-up</span></h3>
+    <div class="demo"><div class="next-up"><h3>Next up</h3><p style="margin:0;font-size:13px;">Pick the next migration artifact by trigger, not by vanity.</p><div class="options"><div class="option recommended"><div class="name">PR explainer</div><div class="why">Use when review returns NEEDS CHANGES.</div></div><div class="option"><div class="name">Handoff</div><div class="why">Use when the session has decisions worth preserving.</div></div></div></div></div>
+    <pre class="source"><code>.next-up { background:linear-gradient(135deg,var(--purple-bg) 0%,var(--panel) 100%); border:1px solid rgba(163,113,247,0.4); border-left:4px solid var(--purple); border-radius:8px; padding:18px 22px; }
+.next-up h3 { margin:0 0 10px; color:var(--purple); font-size:14px; text-transform:uppercase; letter-spacing:0.05em; }
+.next-up .options { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+.next-up .option { background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:12px 14px; }</code></pre>
+  </section>
+</div>
+
+<h2><span class="num">§3</span> Render-And-Review Contract</h2>
+<div class="contract">
+  <p><b>Every committed HTML artifact MUST be renderable by lightpanda:</b></p>
+  <p><code class="inline">lightpanda fetch --dump markdown http://127.0.0.1:8989/&lt;path&gt;</code></p>
+  <p>Agents reviewing HTML PRs use this command to read the artifact semantically. Lightpanda requires <code class="inline">http://</code>, so serve the repo root first, for example <code class="inline">.venv/bin/python -m http.server 8989 --bind 127.0.0.1</code> when the venv is available.</p>
+  <p><b>If lightpanda's markdown rendering of your HTML drops critical information, restructure the HTML — don't add a sidecar.</b></p>
+</div>
+
+<footer class="report-footer">
+  <div>Canonical design reference for KubeDojo HTML-first orchestrator artifacts.</div>
+  <div><a href="plan.html">Migration plan</a> · <a href="../../references/external/2026-05-08-thariq-html-effectiveness.html">Archived Thariq article</a></div>
+</footer>
+
+</div>
+</body>
+</html>
