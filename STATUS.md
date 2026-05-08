@@ -250,11 +250,12 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 
 **Next session — top priorities (Phase 2 of green-content plan):**
 
-- [ ] **#388 readiness audit** — pull current state of the autopilot (queue depth, routing config, latest pilot verdict, last 5 modules through autopilot). Determine engine health before launching the marathon.
-- [ ] **Canary: drive CKA 0.1 end-to-end** — single module through codex draft → cross-family review → merge. Validates engine post-session-3 changes; outcome informs the sequential-vs-parallelism velocity decision.
-- [ ] **Velocity decision** — stay sequential at ~3.2/hr (~86 hr for 276 modules) OR invest 4-8 hr building P-series within-pipeline parallelism for ~10/hr (~28 hr compute).
-- [ ] **Define "green" precisely** — lock the threshold as structural ≥3.0 (heuristic scorer) AND cross-family pedagogical APPROVE-WITH-NITS or better (rubric ≥4 per dimension). Structural-only "green" would declare false victory on a regex.
-- [ ] **Phase 4: marathon** (multi-session) — section by section, CKA 0.1-0.5 first per briefing's `actions.next`. After each section: briefing refresh, STATUS.md update, decide whether to continue or pause.
+- [x] ~~**#388 readiness audit**~~ — engine operational, idle, queue empty. Last successful run 2026-05-07 (~14h compute). Routing locked: codex gpt-5.5 + danger writes, gemini cross-family reviews, claude-sonnet headless fallback.
+- [x] ~~**Canary: drive CKA 0.1 end-to-end**~~ — PR #1010 merged. Stage 1 (codex+gemini) ~14 min wall. Stage 2 (claude-sonnet rubric, 36/40, every dim ≥4) APPROVE-WITH-NITS = green. Module officially green. Nits filed as #1011. **Significant finding: structural rewrite alone produced pedagogically-green content; gemini stage-1 review explicitly noted Bloom L3+, scenario-based quiz, constructive alignment.**
+- [x] ~~**Define "green" precisely**~~ — locked in `docs/decisions/2026-05-08-content-green-definition.md` (commit `14372d1f`). Structural ≥3.0 AND pedagogical rubric ≥4 per dim = green.
+- [ ] **Phase 2.5: 3-module mini-batch (CKA 0.2-0.4)** — IN FLIGHT at handoff time. N=1 canary insufficient for 276-module commit. Mini-batch running detached as PID 53340; results to logs/388_pilot_2026-05-02.jsonl. Each ~14 min stage 1 + spot-check stage 2 on 1 module. Will inform velocity decision.
+- [ ] **Velocity decision** — pending mini-batch results. Initial signal favors Option A (sequential, both stages) since canary suggests stage 2 mostly redundant after stage 1; can drop to spot-check ratio after 5-10 confirmed-green modules. Sequential path: ~18 min/module × 276 modules = ~83 hr. Parallel P-series: ~28 hr + 4-8 hr build cost. Decision deferred until mini-batch data arrives.
+- [ ] **Phase 4: marathon** (multi-session) — section by section. After CKA 0.1-0.5 cleared, next sections by critical-count: Platform Disciplines (71), Toolkits (52), Foundations (31), CKS (29), CKAD (23), CKA-remaining (12), On-Premises (~30).
 
 **Carryover (still open):**
 
