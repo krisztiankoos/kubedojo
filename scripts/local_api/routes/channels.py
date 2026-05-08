@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html as _html
 import json as _json
+import re as _re
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import unquote
@@ -17,7 +18,11 @@ def build_channel_threads_index(
     resolve_bridge_db_path_fn: Callable[[Path], Path],
     query_sqlite_rows_fn: Callable[..., list[dict[str, Any]]],
 ) -> dict[str, Any]:
-    """Build thread rollups for deliberation channels from ``channel_events``."""
+    """Build deliberation thread rollups from ``channel_messages``.
+
+    ``channel_messages`` is the transcript source of truth. ``channel_events``
+    is optional metadata for progress state and visualization hints.
+    """
     db_path = resolve_bridge_db_path_fn(repo_root)
     channels_raw = list_channels_fn()
 
@@ -36,57 +41,136 @@ def build_channel_threads_index(
         """
         SELECT
           cm.channel AS channel,
-          ce.thread_id AS thread_id,
-          MIN(ce.ts) AS first_event_ts,
-          MAX(ce.ts) AS last_event_ts,
-          COUNT(ce.event_id) AS event_count
-        FROM channel_events ce
-        INNER JOIN channel_messages cm
-          ON cm.thread_id = ce.thread_id
-        GROUP BY cm.channel, ce.thread_id
-        ORDER BY cm.channel, ce.thread_id
+          cm.thread_id AS thread_id,
+          MIN(cm.created_at) AS thread_started_at,
+          MAX(cm.created_at) AS thread_last_at,
+          COUNT(*) AS message_count,
+          (
+            SELECT substr(cm2.body, 1, 80)
+            FROM channel_messages cm2
+            WHERE cm2.channel = cm.channel
+              AND cm2.thread_id = cm.thread_id
+            ORDER BY cm2.rowid ASC
+            LIMIT 1
+          ) AS subject
+        FROM channel_messages cm
+        GROUP BY cm.channel, cm.thread_id
+        ORDER BY cm.channel ASC, MAX(cm.created_at) DESC
         """,
     )
 
-    if thread_rows:
-        for row in thread_rows:
-            channel = row.get("channel")
-            if not isinstance(channel, str):
+    thread_index: dict[tuple[str, str], dict[str, Any]] = {}
+    thread_keys_by_id: dict[str, list[tuple[str, str]]] = {}
+    for row in thread_rows:
+        channel = row.get("channel")
+        thread_id = row.get("thread_id")
+        if not isinstance(channel, str) or not isinstance(thread_id, str):
+            continue
+        thread_started_at = row.get("thread_started_at")
+        thread_last_at = row.get("thread_last_at")
+        thread_entry = {
+            "thread_id": thread_id,
+            "subject": (row.get("subject") or "").strip(),
+            "thread_started_at": thread_started_at,
+            "thread_last_at": thread_last_at,
+            "message_count": int(row.get("message_count") or 0),
+            "first_event_ts": None,
+            "last_event_ts": thread_last_at,
+            "event_count": 0,
+            "agents": [],
+            "model_cascades": [],
+            "reply_state": None,
+            "vote_counts": {
+                "agree": 0,
+                "defer": 0,
+                "options": {},
+            },
+        }
+        thread_key = (channel, thread_id)
+        thread_index[thread_key] = thread_entry
+        thread_keys_by_id.setdefault(thread_id, []).append(thread_key)
+        entry = channels.setdefault(
+            channel,
+            {"name": channel, "created_at": None, "threads": []},
+        )
+        entry["threads"].append(thread_entry)
+
+    if thread_index:
+        event_rows = query_sqlite_rows_fn(
+            db_path,
+            """
+            SELECT event_id, thread_id, event, payload_json, ts
+            FROM channel_events
+            ORDER BY event_id ASC
+            """,
+            limit=10000,
+        )
+        agents_by_thread: dict[str, set[str]] = {}
+        latest_reply_state: dict[str, tuple[int, dict[str, Any]]] = {}
+        for event_row in event_rows:
+            thread_id = event_row.get("thread_id")
+            if not isinstance(thread_id, str) or thread_id not in thread_keys_by_id:
                 continue
+            entries = [
+                thread_index[thread_key]
+                for thread_key in thread_keys_by_id[thread_id]
+            ]
+            ts = event_row.get("ts")
+            for entry in entries:
+                entry["first_event_ts"] = entry["first_event_ts"] or ts
+                entry["last_event_ts"] = ts or entry["last_event_ts"]
+                entry["event_count"] += 1
 
-            thread_id = row.get("thread_id")
-            if not isinstance(thread_id, str):
-                continue
+            payload_raw = event_row.get("payload_json")
+            try:
+                payload = _json.loads(payload_raw) if payload_raw else {}
+            except _json.JSONDecodeError:
+                payload = {}
+            event = event_row.get("event")
+            event_id = int(event_row.get("event_id") or 0)
 
-            thread_entry = {
-                "thread_id": thread_id,
-                "first_event_ts": row.get("first_event_ts"),
-                "last_event_ts": row.get("last_event_ts"),
-                "event_count": int(row.get("event_count") or 0),
-                "agents": [
-                    agent_row["agent"]
-                    for agent_row in query_sqlite_rows_fn(
-                        db_path,
-                        """
-                        SELECT DISTINCT json_extract(payload_json, '$.agent') AS agent
-                        FROM channel_events
-                        WHERE thread_id = ?
-                          AND event = 'reply_started'
-                          AND json_extract(payload_json, '$.agent') IS NOT NULL
-                        ORDER BY agent ASC
-                        """,
-                        (thread_id,),
-                    )
-                    if isinstance(agent_row.get("agent"), str)
-                ],
-            }
+            if event == "reply_started":
+                agent = payload.get("agent")
+                if isinstance(agent, str):
+                    agents_by_thread.setdefault(thread_id, set()).add(agent)
+                latest_reply_state[thread_id] = (
+                    event_id,
+                    {"event": event, "ts": ts, **payload},
+                )
+            elif event == "reply_complete":
+                agent = payload.get("agent")
+                if isinstance(agent, str):
+                    agents_by_thread.setdefault(thread_id, set()).add(agent)
+                latest_reply_state[thread_id] = (
+                    event_id,
+                    {"event": event, "ts": ts, **payload},
+                )
+                body = payload.get("body")
+                if isinstance(body, str):
+                    for entry in entries:
+                        entry["vote_counts"]["agree"] += len(
+                            _re.findall(r"\[AGREE\]", body)
+                        )
+                        entry["vote_counts"]["defer"] += len(
+                            _re.findall(r"\[DEFER\]", body)
+                        )
+                        options = entry["vote_counts"]["options"]
+                        for match in _re.findall(r"\[OPTION ([A-Z0-9]+)\]", body):
+                            options[match] = int(options.get(match, 0)) + 1
+            elif event == "model_cascade":
+                for entry in entries:
+                    entry["model_cascades"].append({"ts": ts, **payload})
 
-            entry = channels.setdefault(channel, {"name": channel, "created_at": None, "threads": []})
-            entry["threads"].append(thread_entry)
-
+        for thread_id, agents in agents_by_thread.items():
+            for thread_key in thread_keys_by_id.get(thread_id, []):
+                thread_index[thread_key]["agents"] = sorted(agents)
+        for thread_id, (_, state) in latest_reply_state.items():
+            for thread_key in thread_keys_by_id.get(thread_id, []):
+                thread_index[thread_key]["reply_state"] = state
         return {"channels": list(channels.values())}
 
-    # TODO: per-channel grouping when channels↔threads link is added
+    # Legacy fallback for event-only databases created before channel_messages
+    # existed. New rollups never depend on this path.
     fallback_threads = query_sqlite_rows_fn(
         db_path,
         """
