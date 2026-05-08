@@ -31,9 +31,14 @@ def _has_channels_nav(html: str) -> bool:
     return bool(re.search(r'<a class="navlink(?: active)?" href="/channels"', html))
 
 
+def _has_decisions_nav(html: str) -> bool:
+    return bool(re.search(r'<a class="navlink(?: active)?" href="/decisions"', html))
+
+
 def test_health_route_keeps_topnav(tmp_path: Path) -> None:
     html = _route(tmp_path, "/health")
     assert _has_channels_nav(html)
+    assert _has_decisions_nav(html)
     assert '<a class="navlink active" href="/health"' in html
 
 
@@ -65,9 +70,18 @@ def test_dashboard_summary_links_to_operator(tmp_path: Path) -> None:
 def test_home_page_links_to_channels(tmp_path: Path) -> None:
     html = _route(tmp_path, "/")
     assert _has_channels_nav(html)
+    assert _has_decisions_nav(html)
 
 
 def test_channels_pages_keep_topnav(tmp_path: Path) -> None:
     for path in ["/channels", "/channels/thread-123"]:
         html = _route(tmp_path, path)
         assert _has_channels_nav(html)
+        assert _has_decisions_nav(html)
+
+
+def test_decisions_page_keeps_topnav(tmp_path: Path) -> None:
+    html = _route(tmp_path, "/decisions")
+    assert _has_channels_nav(html)
+    assert _has_decisions_nav(html)
+    assert '<a class="navlink active" href="/decisions"' in html
