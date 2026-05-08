@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import html as _html
+import hashlib
 import json as _json
 import os
 import re as _re
 import subprocess
+import threading
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -20,7 +22,8 @@ _ISSUE_REF_RE = _re.compile(r"#(\d+)")
 _PHASE_CELL_RE = _re.compile(r"^\|\s*(D\d+)\s*\|")
 _SAFE_DECISION_FILENAME_RE = _re.compile(r"^[A-Za-z0-9._-]+\.md$")
 _STALE_SECONDS = 24 * 3600
-_CACHE_VERSION = 5
+_CACHE_VERSION = 6
+_CACHE_LOCK = threading.Lock()
 
 
 def _json_response(status: int, payload: dict[str, Any]) -> RouteResponse:
@@ -49,6 +52,23 @@ def _write_cache(repo_root: Path, cache: dict[str, Any]) -> None:
         encoding="utf-8",
     )
     os.replace(tmp, path)
+
+
+def _repo_revision_key(repo_root: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "for-each-ref", "--format=%(refname):%(objectname)", "refs/heads", "refs/remotes"],
+            cwd=repo_root,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+    if result.returncode != 0:
+        return ""
+    return hashlib.sha1(result.stdout.encode("utf-8")).hexdigest()
 
 
 def _relative_decision_path(repo_root: Path, decision_path: str | Path) -> tuple[Path, str]:
@@ -164,18 +184,21 @@ def scan_decision_lineage(repo_root: Path, decision_path: str | Path) -> dict[st
     except OSError as exc:
         raise FileNotFoundError(rel_path) from exc
 
-    cache = _load_cache(repo_root)
-    cached = cache.get(rel_path)
-    if (
-        isinstance(cached, dict)
-        and cached.get("mtime") == mtime
-        and cached.get("version") == _CACHE_VERSION
-    ):
-        lineage = cached.get("lineage")
-        if isinstance(lineage, dict):
-            payload = dict(lineage)
-            payload["status"] = _status_for_path(rel_path, mtime)
-            return payload
+    repo_rev = _repo_revision_key(repo_root)
+    with _CACHE_LOCK:
+        cache = _load_cache(repo_root)
+        cached = cache.get(rel_path)
+        if (
+            isinstance(cached, dict)
+            and cached.get("mtime") == mtime
+            and cached.get("repo_rev") == repo_rev
+            and cached.get("version") == _CACHE_VERSION
+        ):
+            lineage = cached.get("lineage")
+            if isinstance(lineage, dict):
+                payload = dict(lineage)
+                payload["status"] = _status_for_path(rel_path, mtime)
+                return payload
 
     body = decision_file.read_text(encoding="utf-8")
     slug = decision_file.stem
@@ -215,13 +238,16 @@ def scan_decision_lineage(repo_root: Path, decision_path: str | Path) -> dict[st
         "status": _status_for_path(rel_path, mtime),
         "lineage": lineage,
     }
-    cache[rel_path] = {
-        "mtime": mtime,
-        "lineage": payload,
-        "scanned_at": datetime.now(UTC).isoformat(),
-        "version": _CACHE_VERSION,
-    }
-    _write_cache(repo_root, cache)
+    with _CACHE_LOCK:
+        cache = _load_cache(repo_root)
+        cache[rel_path] = {
+            "mtime": mtime,
+            "repo_rev": repo_rev,
+            "lineage": payload,
+            "scanned_at": datetime.now(UTC).isoformat(),
+            "version": _CACHE_VERSION,
+        }
+        _write_cache(repo_root, cache)
     return payload
 
 
@@ -297,6 +323,7 @@ def build_pending_decisions(repo_root: Path) -> dict[str, Any]:
     pending_dir = repo_root / "docs" / "decisions" / "pending"
     files: list[dict[str, Any]] = []
     stale = 0
+    pending = 0
     if pending_dir.exists():
         for path in sorted(pending_dir.glob("*.md")):
             try:
@@ -307,6 +334,8 @@ def build_pending_decisions(repo_root: Path) -> dict[str, Any]:
             status = _status_for_path(rel, mtime)
             if status == "stale":
                 stale += 1
+            else:
+                pending += 1
             files.append(
                 {
                     "filename": path.name,
@@ -315,7 +344,7 @@ def build_pending_decisions(repo_root: Path) -> dict[str, Any]:
                     "mtime": mtime,
                 }
             )
-    return {"pending": len(files), "stale": stale, "files": files}
+    return {"pending": pending, "stale": stale, "files": files}
 
 
 def _status_badge(status: str) -> str:
@@ -532,6 +561,8 @@ def route_decision_api_request(repo_root: Path, path: str) -> RouteResponse | No
         if not _SAFE_DECISION_FILENAME_RE.match(filename):
             return _json_response(400, {"error": "invalid_decision_filename"})
         decision_path = repo_root / "docs" / "decisions" / filename
+        if not decision_path.exists():
+            decision_path = repo_root / "docs" / "decisions" / "pending" / filename
         if not decision_path.exists():
             return _json_response(404, {"error": "decision_not_found", "filename": filename})
         try:

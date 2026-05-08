@@ -44,9 +44,16 @@ def test_pending_decision_older_than_24h_is_stale(tmp_path: Path) -> None:
 
     assert payload["status"] == "stale"
     pending = decisions.build_pending_decisions(tmp_path)
-    assert pending["pending"] == 1
+    assert pending["pending"] == 0
     assert pending["stale"] == 1
     assert pending["files"][0]["status"] == "stale"
+
+    status, lineage, _ = decisions.route_decision_api_request(
+        tmp_path,
+        "/api/decision/test.md/lineage",
+    )
+    assert status == 200
+    assert lineage["status"] == "stale"
 
 
 def test_decisions_index_shows_banner_for_stale_pending_file(tmp_path: Path) -> None:
