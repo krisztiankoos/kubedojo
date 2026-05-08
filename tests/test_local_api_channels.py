@@ -3,14 +3,17 @@ from __future__ import annotations
 import importlib.util
 import json
 import sqlite3
+import sys
 from pathlib import Path
 from typing import Any
 
-import sys
+SCRIPTS_DIR = Path(__file__).resolve().parent.parent / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
 
 
 def _load_local_api():
-    module_path = Path(__file__).resolve().parent.parent / "scripts" / "local_api.py"
+    module_path = SCRIPTS_DIR / "local_api.py"
     spec = importlib.util.spec_from_file_location("local_api_channels", module_path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -101,8 +104,10 @@ def _seed_channel_events(db_path: Path, events: list[dict[str, Any]], *, thread_
 def _use_bridge_db(monkeypatch, db_path: Path) -> None:
     import importlib
 
+    bridge_config = importlib.import_module("ai_agent_bridge._config")
     bridge_db = importlib.import_module("ai_agent_bridge._db")
     monkeypatch.setenv("AB_DB_PATH", str(db_path))
+    monkeypatch.setattr(bridge_config, "DB_PATH", db_path)
     monkeypatch.setattr(bridge_db, "DB_PATH", db_path)
 
 
@@ -352,3 +357,88 @@ def test_api_channel_events_since_event_id_filters(tmp_path: Path, monkeypatch) 
         }
     ]
     assert payload["next_since_event_id"] == 3
+
+
+def _seed_bridge_thread(db_path: Path, monkeypatch) -> tuple[Any, dict[str, Any], dict[str, Any]]:
+    import importlib
+
+    _use_bridge_db(monkeypatch, db_path)
+    bridge_channels = importlib.import_module("ai_agent_bridge._channels")
+    bridge_db = importlib.import_module("ai_agent_bridge._db")
+    bridge_db.init_db().close()
+    bridge_channels.create_channel("deliberation-ui-roadmap")
+    root = bridge_channels.post(
+        "deliberation-ui-roadmap",
+        "claude",
+        "Root decision prompt",
+        auto_snapshot=False,
+    )
+    reply = bridge_channels.post(
+        "deliberation-ui-roadmap",
+        "codex",
+        "[AGREE] Reply with implementation detail",
+        parent_id=root["message_id"],
+        auto_snapshot=False,
+    )
+    return bridge_db, root, reply
+
+
+def test_api_channel_thread_events_include_message_bodies(tmp_path: Path, monkeypatch) -> None:
+    db_path = tmp_path / "messages.db"
+    _, root, reply = _seed_bridge_thread(db_path, monkeypatch)
+
+    status_code, payload, _ = local_api.route_request(
+        tmp_path,
+        f"/api/channel/{root['thread_id']}/events",
+    )
+
+    assert status_code == 200
+    assert payload["thread_id"] == root["thread_id"]
+    assert payload["channel"] == "deliberation-ui-roadmap"
+    posted_events = [
+        event for event in payload["events"] if event["event"] == "message_posted"
+    ]
+    assert [event["message_id"] for event in posted_events] == [
+        root["message_id"],
+        reply["message_id"],
+    ]
+    assert [event["body"] for event in posted_events] == [
+        "Root decision prompt",
+        "[AGREE] Reply with implementation detail",
+    ]
+
+
+def test_api_channel_thread_post_replies_into_existing_thread(tmp_path: Path, monkeypatch) -> None:
+    db_path = tmp_path / "messages.db"
+    bridge_db, root, _ = _seed_bridge_thread(db_path, monkeypatch)
+
+    status_code, payload, _ = local_api.route_post_request(
+        tmp_path,
+        f"/api/channel/{root['thread_id']}/post",
+        body_bytes=json.dumps({"body": "Human follow-up"}).encode(),
+        content_type="application/json",
+    )
+
+    assert status_code == 200
+    assert payload["ok"] is True
+    assert payload["thread_id"] == root["thread_id"]
+    assert payload["parent_id"] == root["message_id"]
+    conn = bridge_db.get_db()
+    try:
+        row = conn.execute(
+            """
+            SELECT channel, thread_id, parent_id, from_agent, body
+            FROM channel_messages
+            WHERE message_id = ?
+            """,
+            (payload["message_id"],),
+        ).fetchone()
+    finally:
+        conn.close()
+
+    assert row is not None
+    assert row["channel"] == "deliberation-ui-roadmap"
+    assert row["thread_id"] == root["thread_id"]
+    assert row["parent_id"] == root["message_id"]
+    assert row["from_agent"] == "user"
+    assert row["body"] == "Human follow-up"
