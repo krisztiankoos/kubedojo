@@ -39,7 +39,23 @@ def _load_channel_routes_module() -> Any:
     return module
 
 
+def _load_decision_routes_module() -> Any:
+    module_name = "_local_api_routes_decisions"
+    loaded = sys.modules.get(module_name)
+    if loaded is not None:
+        return loaded
+    module_path = Path(__file__).resolve().with_name("local_api") / "routes" / "decisions.py"
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load decision routes from {module_path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
 _CHANNEL_ROUTES = _load_channel_routes_module()
+_DECISION_ROUTES = _load_decision_routes_module()
 
 # Heavy imports (pipeline_v2, status, translation_v2, ztt_status) are deferred
 # into the handlers that actually need them. Measured: moving these out of the
@@ -4293,6 +4309,7 @@ def _render_top_nav(active: str) -> str:
         ("pipeline", "/pipeline", "Pipeline"),
         ("activity", "/activity", "Activity"),
         ("channels", "/channels", "Channels"),
+        ("decisions", "/decisions", "Decisions"),
         ("health", "/health", "Health"),
     ]
     rendered_links = "\n  ".join(
@@ -7059,6 +7076,11 @@ def build_api_schema() -> dict[str, Any]:
                 "desc": "Channel thread event timeline",
                 "query": ["since_event_id=..."],
             },
+            {"path": "/decisions", "desc": "Decision index with lineage counts", "content_type": "text/html"},
+            {"path": "/decisions/{filename}", "desc": "Plain decision markdown renderer", "content_type": "text/html"},
+            {"path": "/api/decisions", "desc": "List decision files with status and lineage counts"},
+            {"path": "/api/decisions/pending", "desc": "Pending/stale decision count for cold-start agents"},
+            {"path": "/api/decision/{filename}/lineage", "desc": "Decision lineage scanner result"},
             {"path": "/api/quality/scores", "desc": "Live heuristic rubric scores from current English module files"},
             {
                 "path": "/api/quality/board",
@@ -7129,6 +7151,14 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         return 200, render_activity_page_html(), "text/html; charset=utf-8"
     if path == "/health":
         return 200, render_health_page_html(), "text/html; charset=utf-8"
+    decision_page = _DECISION_ROUTES.route_decision_page_request(
+        repo_root,
+        path,
+        top_nav_css=_TOP_NAV_CSS,
+        render_top_nav_fn=_render_top_nav,
+    )
+    if decision_page is not None:
+        return decision_page
     channel_page = _CHANNEL_ROUTES.route_channel_page_request(
         path,
         top_nav_css=_TOP_NAV_CSS,
@@ -7416,6 +7446,9 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         except (TypeError, ValueError):
             limit = 100
         return 200, build_bridge_messages(repo_root, since, limit), "application/json; charset=utf-8"
+    decision_api = _DECISION_ROUTES.route_decision_api_request(repo_root, path)
+    if decision_api is not None:
+        return decision_api
     channel_api = _CHANNEL_ROUTES.route_channel_api_request(
         repo_root,
         path,
