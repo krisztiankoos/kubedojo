@@ -31,11 +31,10 @@ def _has_channels_nav(html: str) -> bool:
     return bool(re.search(r'<a class="navlink(?: active)?" href="/channels"', html))
 
 
-def test_new_skeleton_routes_return_topnav(tmp_path: Path) -> None:
-    for path in ["/health"]:
-        html = _route(tmp_path, path)
-        assert _has_channels_nav(html)
-        assert "This page is part of the L0-L6 local-API UI split." in html
+def test_health_route_keeps_topnav(tmp_path: Path) -> None:
+    html = _route(tmp_path, "/health")
+    assert _has_channels_nav(html)
+    assert '<a class="navlink active" href="/health"' in html
 
 
 def test_quality_route_returns_real_page(tmp_path: Path) -> None:

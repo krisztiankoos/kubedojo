@@ -4625,6 +4625,26 @@ _ACTIVITY_SUMMARY_CSS = """
 """
 
 
+_HEALTH_SUMMARY_CSS = """
+    .health-summary-card {
+      grid-template-columns: minmax(0, 1fr) auto;
+      min-height: 64px;
+    }
+    .health-summary-copy {
+      min-width: 0;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    @media (max-width: 640px) {
+      .health-summary-copy { white-space: normal; }
+    }
+"""
+
+
 _ACTIVITY_FEED_CSS = """
     .activity-feed { list-style:none; margin:0; padding:0; max-height:560px; overflow-y:auto; }
     .activity-feed li { display:grid; grid-template-columns:18px 80px 120px 1fr; gap:10px; padding:8px 18px; font-size:12px; border-bottom:1px solid var(--border-subtle); align-items:center; }
@@ -4723,6 +4743,214 @@ _ACTIVITY_PAGE_JS = r"""
     $('#activity-track-filter').addEventListener('change', renderActivityRows);
     $('#activity-agent-filter').addEventListener('change', renderActivityRows);
     loadActivityPage().catch(err => { activityData = {error: 'Activity data unavailable'}; renderActivityRows(); console.error('Activity page load failed:', err); });
+"""
+
+
+_HEALTH_PAGE_CSS = """
+    :root { --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --surface-2:#1f2b3d; --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280; --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12); --green:#4ade80; --green-muted:rgba(74,222,128,0.12); --amber:#fbbf24; --amber-muted:rgba(251,191,36,0.10); --red:#f87171; --red-muted:rgba(248,113,113,0.10); --border:rgba(255,255,255,0.06); --border-subtle:rgba(255,255,255,0.03); --radius:12px; --radius-sm:8px; --radius-xs:6px; }
+    *, *::before, *::after { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5; }
+    .mono { font-family:'SF Mono','Fira Code','Cascadia Code',ui-monospace,monospace; }
+    .main { max-width:1180px; margin:0 auto; padding:28px 24px 40px; }
+    .page-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
+    .page-title { margin:0; font-size:26px; letter-spacing:0; }
+    .page-sub { margin-top:4px; color:var(--text-secondary); font-size:13px; }
+    .health-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .section-full { grid-column:1 / -1; }
+    .panel { background:var(--surface-0); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    .panel-header { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border); gap:14px; }
+    .panel-title { display:flex; align-items:center; gap:10px; font-weight:700; }
+    .panel-icon { width:24px; height:24px; border-radius:var(--radius-sm); display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
+    .panel-badge { padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:var(--accent-muted); color:var(--accent); white-space:nowrap; }
+    .panel-body { padding:16px 18px; }
+    .panel-body-flush { padding:0; }
+    .empty-state { padding:24px; text-align:center; color:var(--text-dim); font-size:13px; }
+    .svc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:0; }
+    .svc-item { padding:14px 18px; border-right:1px solid var(--border); display:flex; align-items:center; gap:12px; }
+    .svc-item:last-child { border-right:0; }
+    .svc-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .svc-dot.running { background:var(--green); box-shadow:0 0 8px rgba(74,222,128,0.4); }
+    .svc-dot.stopped { background:var(--text-dim); }
+    .svc-dot.stale { background:var(--red); box-shadow:0 0 8px rgba(248,113,113,0.45); }
+    .svc-info { min-width:0; flex:1; }
+    .svc-name { font-size:13px; font-weight:500; display:flex; align-items:center; gap:6px; }
+    .svc-detail { font-size:11px; color:var(--text-dim); }
+    .svc-chip { display:inline-block; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; }
+    .svc-chip.stale { background:var(--red-muted); color:var(--red); }
+    .svc-chip.discovered { background:var(--accent-muted); color:var(--accent); }
+    .wt-summary { display:flex; gap:16px; padding:12px 18px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+    .wt-stat { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-secondary); }
+    .wt-stat-val { font-weight:600; color:var(--text); }
+    .wt-table { width:100%; border-collapse:collapse; }
+    .wt-table th { text-align:left; padding:8px 14px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-dim); border-bottom:1px solid var(--border); background:rgba(0,0,0,0.15); }
+    .wt-table td { padding:6px 14px; font-size:12px; border-bottom:1px solid var(--border-subtle); }
+    .wt-table tr:last-child td { border-bottom:0; }
+    .wt-path { color:var(--text-secondary); word-break:break-all; }
+    .wt-badge { display:inline-block; padding:1px 6px; border-radius:4px; font-size:10px; font-weight:600; text-transform:uppercase; }
+    .wt-badge.M { background:var(--amber-muted); color:var(--amber); }
+    .wt-badge.A { background:var(--green-muted); color:var(--green); }
+    .wt-badge.D, .wt-badge.U { background:var(--red-muted); color:var(--red); }
+    .wt-badge.Q { background:var(--accent-muted); color:var(--accent); }
+    .wt-scroll { max-height:420px; overflow:auto; }
+    .missing-group { margin-bottom:12px; }
+    .missing-group:last-child { margin-bottom:0; }
+    .missing-group-title { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--text-dim); margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+    .missing-list { margin:0; padding:0; list-style:none; }
+    .missing-item { padding:5px 10px; font-size:12px; color:var(--text-secondary); border-radius:var(--radius-xs); margin-bottom:2px; }
+    .missing-item:hover { background:rgba(255,255,255,0.03); }
+    .clr-red { color:var(--red); }
+    @media (max-width:900px) { .health-grid, .svc-grid { grid-template-columns:1fr; } .section-full { grid-column:auto; } .svc-item { border-right:0; border-bottom:1px solid var(--border); } .svc-item:last-child { border-bottom:0; } .page-head, .panel-header { flex-direction:column; align-items:flex-start; } }
+"""
+
+
+_HEALTH_PAGE_JS = r"""
+    const $ = (sel) => document.querySelector(sel);
+    async function fetchJson(url) { const r = await fetch(url); return r.ok ? r.json() : {error: `HTTP ${r.status}`, url}; }
+    function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+    function formatUptime(seconds) {
+      if (seconds == null || !isFinite(seconds) || seconds < 0) return '';
+      const s = Math.floor(seconds);
+      if (s < 60) return `${s}s`;
+      const m = Math.floor(s / 60);
+      if (m < 60) return `${m}m`;
+      const h = Math.floor(m / 60);
+      if (h < 48) return `${h}h ${m % 60}m`;
+      const d = Math.floor(h / 24);
+      return `${d}d ${h % 24}h`;
+    }
+
+    function renderServices(data) {
+      const el = $('#services');
+      const badge = $('#svc-badge');
+      if (!data || data.error) {
+        el.innerHTML = `<div class="empty-state clr-red">${esc(data?.error || 'No data')}</div>`;
+        badge.textContent = 'Unknown';
+        return;
+      }
+      if (!data.services || data.services.length === 0) {
+        el.innerHTML = '<div class="empty-state">No services configured</div>';
+        badge.textContent = 'Empty';
+        return;
+      }
+      const total = data.total ?? (data.running + data.stopped + (data.stale || 0));
+      badge.textContent = `${data.running} / ${total} running${data.stale ? ` · ${data.stale} stale` : ''}`;
+      badge.style.background = data.stale ? 'var(--red-muted)' : (data.stopped === 0 ? 'var(--green-muted)' : 'var(--amber-muted)');
+      badge.style.color = data.stale ? 'var(--red)' : (data.stopped === 0 ? 'var(--green)' : 'var(--amber)');
+      el.innerHTML = data.services.map(s => {
+        const chips = [];
+        if (s.status === 'stale') chips.push('<span class="svc-chip stale">Stale PID</span>');
+        if (s.known === false) chips.push('<span class="svc-chip discovered">Discovered</span>');
+        let detail = 'Stopped';
+        if (s.status === 'running') {
+          const up = formatUptime(s.uptime_seconds);
+          detail = `PID ${s.pid}${up ? ` &middot; up ${up}` : ''}`;
+        } else if (s.status === 'stale') {
+          detail = s.pid != null ? `PID ${s.pid} not responding` : 'Unreadable PID file';
+        }
+        if (s.port) detail += ` &middot; :${s.port}`;
+        return `<div class="svc-item">
+          <span class="svc-dot ${esc(s.status)}"></span>
+          <div class="svc-info">
+            <div class="svc-name">${esc(s.label)}${chips.join('')}</div>
+            <div class="svc-detail mono">${detail}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderWorktrees(data) {
+      const el = $('#worktrees');
+      const badge = $('#worktrees-badge');
+      if (!data || data.error) {
+        el.innerHTML = `<div class="empty-state clr-red">${esc(data?.error || 'No data')}</div>`;
+        badge.textContent = 'Unknown';
+        return;
+      }
+      const rows = data.worktrees || [];
+      const dirty = rows.filter(w => w.dirty === true).length;
+      const unknown = rows.filter(w => w.dirty == null).length;
+      badge.textContent = `${rows.length} worktrees${dirty ? ` · ${dirty} dirty` : ''}${unknown ? ` · ${unknown} unknown` : ''}`;
+      badge.style.background = dirty || unknown ? 'var(--amber-muted)' : 'var(--green-muted)';
+      badge.style.color = dirty || unknown ? 'var(--amber)' : 'var(--green)';
+      if (!rows.length) {
+        el.innerHTML = '<div class="empty-state">No worktrees found</div>';
+        return;
+      }
+      const primary = data.primary || '';
+      const body = rows.map(w => {
+        const counts = w.counts || {};
+        const dirtyText = w.dirty == null ? 'unknown' : (w.dirty ? `${counts.total || 0} files` : 'clean');
+        const state = w.locked ? ['locked', 'D'] : (w.prunable ? ['prunable', 'D'] : (w.detached ? ['detached', 'M'] : ['active', 'A']));
+        const branch = w.branch || (w.detached ? 'detached' : 'unknown');
+        return `<tr>
+          <td><span class="wt-badge ${state[1]}">${state[0]}</span></td>
+          <td class="mono">${esc(branch)}</td>
+          <td>${esc(dirtyText)}</td>
+          <td class="wt-path mono">${esc(w.path)}${w.path === primary ? ' <span class="wt-badge Q">primary</span>' : ''}</td>
+        </tr>`;
+      }).join('');
+      el.innerHTML = `<div class="wt-summary">
+          <div class="wt-stat">Total: <span class="wt-stat-val">${rows.length}</span></div>
+          <div class="wt-stat">Dirty: <span class="wt-stat-val">${dirty}</span></div>
+          <div class="wt-stat">Unknown: <span class="wt-stat-val">${unknown}</span></div>
+        </div>
+        <div class="wt-scroll"><table class="wt-table">
+          <thead><tr><th>State</th><th>Branch</th><th>Dirty</th><th>Path</th></tr></thead>
+          <tbody>${body}</tbody>
+        </table></div>`;
+    }
+
+    function renderMissing(data) {
+      const el = $('#missing');
+      const badge = $('#missing-badge');
+      if (!data || data.error) {
+        el.innerHTML = `<div class="empty-state clr-red">${esc(data?.error || 'No data')}</div>`;
+        badge.textContent = 'Unknown';
+        return;
+      }
+      const activeList = data.active_exact?.modules ?? [];
+      const deferredList = data.deferred?.modules ?? [];
+      const total = activeList.length + deferredList.length;
+      badge.textContent = total === 0 ? 'Complete' : `${total} missing`;
+      badge.style.background = total === 0 ? 'var(--green-muted)' : 'var(--amber-muted)';
+      badge.style.color = total === 0 ? 'var(--green)' : 'var(--amber)';
+      if (total === 0) {
+        el.innerHTML = '<div class="empty-state">All modules present</div>';
+        return;
+      }
+      let html = '';
+      if (activeList.length) {
+        html += `<div class="missing-group">
+          <div class="missing-group-title"><span class="wt-badge M">Active</span> ${activeList.length} missing</div>
+          <ul class="missing-list">${activeList.map(m => `<li class="missing-item mono">${esc(m)}</li>`).join('')}</ul>
+        </div>`;
+      }
+      if (deferredList.length) {
+        html += `<div class="missing-group">
+          <div class="missing-group-title"><span class="wt-badge Q">Deferred</span> ${deferredList.length} estimated</div>
+          <ul class="missing-list">${deferredList.slice(0, 20).map(m => `<li class="missing-item mono">${esc(m)}</li>`).join('')}</ul>
+          ${deferredList.length > 20 ? `<div class="empty-state">+${deferredList.length - 20} more</div>` : ''}
+        </div>`;
+      }
+      el.innerHTML = html;
+    }
+
+    async function loadHealthPage() {
+      const [services, worktrees, missing] = await Promise.all([
+        fetchJson('/api/runtime/services'),
+        fetchJson('/api/git/worktrees'),
+        fetchJson('/api/missing-modules/status'),
+      ]);
+      renderServices(services);
+      renderWorktrees(worktrees);
+      renderMissing(missing);
+    }
+    loadHealthPage().catch(err => {
+      $('#services').innerHTML = '<div class="empty-state">Health data unavailable</div>';
+      $('#worktrees').innerHTML = '<div class="empty-state">Worktree data unavailable</div>';
+      $('#missing').innerHTML = '<div class="empty-state">Missing-module data unavailable</div>';
+      console.error('Health page load failed:', err);
+    });
 """
 
 
@@ -5852,6 +6080,72 @@ def render_activity_page_html() -> str:
 </html>"""
 
 
+def render_health_page_html() -> str:
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Health - KubeDojo Local Monitor</title>
+  <style>
+{_TOP_NAV_CSS}
+{_HEALTH_PAGE_CSS}
+  </style>
+</head>
+<body>
+  {_render_top_nav("health")}
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Health</h1>
+        <div class="page-sub">Operational triage for local services, attached worktrees, and missing-module drift.</div>
+      </div>
+    </div>
+
+    <div class="health-grid">
+      <section class="panel section-full" id="health-services-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon" style="background:var(--green-muted);color:var(--green);">S</span>
+            Runtime Services
+          </div>
+          <span class="panel-badge" id="svc-badge"></span>
+        </div>
+        <div class="panel-body-flush">
+          <div class="svc-grid" id="services"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="health-worktrees-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">W</span>
+            Worktrees
+          </div>
+          <span class="panel-badge" id="worktrees-badge"></span>
+        </div>
+        <div class="panel-body-flush" id="worktrees"><div class="empty-state">Loading&hellip;</div></div>
+      </section>
+
+      <section class="panel" id="health-missing-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">M</span>
+            Missing / Dead Letters
+          </div>
+          <span class="panel-badge" id="missing-badge"></span>
+        </div>
+        <div class="panel-body" id="missing"><div class="empty-state">Loading&hellip;</div></div>
+      </section>
+    </div>
+  </main>
+  <script>
+{_HEALTH_PAGE_JS}
+  </script>
+</body>
+</html>"""
+
+
 def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     autopilot = _load_autopilot_v3_health(repo_root)
     autopilot_label = html.escape(_autopilot_v3_badge(autopilot))
@@ -6013,26 +6307,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
     .panel-body {{ padding: 16px 18px; }}
     .panel-body-flush {{ padding: 0; }}
 
-    .svc-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }}
-    .svc-item {{
-      padding: 14px 18px; border-right: 1px solid var(--border);
-      display: flex; align-items: center; gap: 12px;
-    }}
-    .svc-item:last-child {{ border-right: 0; }}
-    .svc-dot {{ width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }}
-    .svc-dot.running {{ background: var(--green); box-shadow: 0 0 8px rgba(74,222,128,0.4); }}
-    .svc-dot.stopped {{ background: var(--text-dim); }}
-    .svc-dot.stale {{ background: var(--red); box-shadow: 0 0 8px rgba(248,113,113,0.45); }}
-    .svc-info {{ min-width: 0; flex: 1; }}
-    .svc-name {{ font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; }}
-    .svc-detail {{ font-size: 11px; color: var(--text-dim); }}
-    .svc-chip {{
-      display: inline-block; padding: 1px 6px; border-radius: 4px;
-      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
-    }}
-    .svc-chip.stale {{ background: var(--red-muted); color: var(--red); }}
-    .svc-chip.discovered {{ background: var(--accent-muted); color: var(--accent); }}
-
     .queue-cols {{ display: grid; grid-template-columns: 1fr 1fr; gap: 0; }}
     .queue-col {{ border-right: 1px solid var(--border); }}
     .queue-col:last-child {{ border-right: 0; }}
@@ -6056,40 +6330,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
     }}
     .queue-item:last-child {{ border-bottom: 0; }}
     .queue-empty {{ padding: 20px 14px; text-align: center; font-size: 12px; color: var(--text-dim); }}
-
-    .wt-summary {{
-      display: flex; gap: 16px; padding: 12px 18px;
-      border-bottom: 1px solid var(--border); flex-wrap: wrap;
-    }}
-    .wt-stat {{ display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }}
-    .wt-stat-val {{ font-weight: 600; color: var(--text); }}
-    .wt-table {{ width: 100%; border-collapse: collapse; }}
-    .wt-table th {{
-      text-align: left; padding: 8px 14px; font-size: 11px;
-      font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
-      color: var(--text-dim); border-bottom: 1px solid var(--border);
-      background: rgba(0,0,0,0.15);
-    }}
-    .wt-table td {{ padding: 5px 14px; font-size: 12px; border-bottom: 1px solid var(--border-subtle); }}
-    .wt-table tr:last-child td {{ border-bottom: 0; }}
-    .wt-path {{ color: var(--text-secondary); }}
-    .wt-badge {{
-      display: inline-block; padding: 1px 6px; border-radius: 4px;
-      font-size: 10px; font-weight: 600; text-transform: uppercase;
-    }}
-    .wt-badge.M {{ background: var(--amber-muted); color: var(--amber); }}
-    .wt-badge.A {{ background: var(--green-muted); color: var(--green); }}
-    .wt-badge.D {{ background: var(--red-muted); color: var(--red); }}
-    .wt-badge.U {{ background: var(--red-muted); color: var(--red); }}
-    .wt-badge.Q {{ background: var(--accent-muted); color: var(--accent); }}
-    .wt-cat {{
-      font-size: 10px; padding: 1px 6px; border-radius: 4px;
-      background: rgba(255,255,255,0.04); color: var(--text-dim);
-    }}
-    .wt-scroll {{ max-height: 260px; overflow-y: auto; }}
-    .wt-scroll::-webkit-scrollbar {{ width: 4px; }}
-    .wt-scroll::-webkit-scrollbar-track {{ background: transparent; }}
-    .wt-scroll::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.08); border-radius: 2px; }}
 
     .tracks-table {{ width: 100%; border-collapse: collapse; }}
     .tracks-table th {{
@@ -6183,20 +6423,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
     .ztt-label {{ color: var(--text-secondary); }}
     .ztt-val {{ margin-left: auto; font-weight: 600; font-size: 11px; }}
 
-    .missing-group {{ margin-bottom: 12px; }}
-    .missing-group:last-child {{ margin-bottom: 0; }}
-    .missing-group-title {{
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.04em; color: var(--text-dim); margin-bottom: 8px;
-      display: flex; align-items: center; gap: 8px;
-    }}
-    .missing-list {{ margin: 0; padding: 0; list-style: none; }}
-    .missing-item {{
-      padding: 5px 10px; font-size: 12px; color: var(--text-secondary);
-      border-radius: var(--radius-xs); margin-bottom: 2px;
-    }}
-    .missing-item:hover {{ background: rgba(255,255,255,0.03); }}
-
     .fb-header {{ display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }}
     .fb-icon {{
       width: 32px; height: 32px; border-radius: 50%;
@@ -6277,9 +6503,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
     @media (max-width: 960px) {{
       .sections {{ grid-template-columns: 1fr; }}
       .metrics {{ grid-template-columns: repeat(2, 1fr); }}
-      .svc-grid {{ grid-template-columns: 1fr; }}
-      .svc-item {{ border-right: 0; border-bottom: 1px solid var(--border); }}
-      .svc-item:last-child {{ border-bottom: 0; }}
       .queue-cols, .ztt-grid {{ grid-template-columns: 1fr; }}
       .queue-col {{ border-right: 0; border-bottom: 1px solid var(--border); }}
       .queue-col:last-child {{ border-bottom: 0; }}
@@ -6296,6 +6519,7 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
 {_QUALITY_SUMMARY_CSS}
 {_PIPELINE_SUMMARY_CSS}
 {_ACTIVITY_SUMMARY_CSS}
+{_HEALTH_SUMMARY_CSS}
 
     /* Section readiness grid */
     .readiness-wrap {{ padding: 4px 0 0 0; }}
@@ -6508,6 +6732,22 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
         <div class="panel">
           <div class="panel-header">
             <div class="panel-title">
+              <span class="panel-icon" style="background:var(--green-muted);color:var(--green);">H</span>
+              Health
+            </div>
+            <span class="panel-badge" id="health-summary-state" style="background:var(--green-muted);color:var(--green);">&nbsp;</span>
+          </div>
+          <a class="op-summary-card health-summary-card" href="/health">
+            <span class="health-summary-copy" id="health-summary-copy">Services: 0 running / 0 total &middot; Worktrees: 0 &middot; Missing: 0</span>
+            <span class="op-summary-link">View health &rarr;</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="section-full">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
               <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">#</span>
               Site by Track
             </div>
@@ -6532,21 +6772,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
         </div>
       </div>
 
-      <div class="section-full">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <span class="panel-icon" style="background:var(--green-muted);color:var(--green);">S</span>
-              Runtime Services
-            </div>
-            <span class="panel-badge" id="svc-badge" style="background:var(--green-muted);color:var(--green);"></span>
-          </div>
-          <div class="panel-body-flush">
-            <div class="svc-grid" id="services"></div>
-          </div>
-        </div>
-      </div>
-
       <div class="panel">
         <div class="panel-header">
           <div class="panel-title">
@@ -6556,28 +6781,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
           <span class="panel-badge" id="trans-badge"></span>
         </div>
         <div class="panel-body-flush" id="trans-body"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">G</span>
-            Git Worktree
-          </div>
-          <span class="panel-badge" id="wt-badge"></span>
-        </div>
-        <div class="panel-body-flush" id="worktree"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">M</span>
-            Missing Modules
-          </div>
-          <span class="panel-badge" id="missing-badge"></span>
-        </div>
-        <div class="panel-body" id="missing"></div>
       </div>
 
       <div class="panel">
@@ -6646,14 +6849,11 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
       return `<div class="progress-track"><div class="progress-fill ${{color}}" style="width:${{p}}%"></div></div>`;
     }}
 
-    function renderMetrics(summary, worktree, feedback, t2FullQueue) {{
+    function renderMetrics(summary, t2FullQueue) {{
       const v2 = summary.v2_pipeline || {{}};
       const t2 = t2FullQueue || summary.translation_v2_pipeline?.queue || {{}};
-      const missing = summary.missing_modules || {{}};
-      const svc = summary.runtime_services || {{}};
       const v2rate = v2.convergence_rate ?? 0;
       const t2rate = t2.convergence_rate ?? 0;
-      const activeMissing = missing.active_exact?.missing ?? 0;
 
       const cards = [
         {{
@@ -6676,33 +6876,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
           sub: `${{t2.total_modules ?? 0}} modules tracked`,
           bar: {{ pct: t2rate, color: t2rate >= 90 ? 'green' : 'amber' }},
         }},
-        {{
-          label: 'Active Missing',
-          value: activeMissing,
-          cls: activeMissing === 0 ? 'good' : 'warn',
-          sub: `${{missing.deferred?.missing_min ?? 0}}&ndash;${{missing.deferred?.missing_max ?? 0}} deferred`,
-        }},
-        (() => {{
-          const run = svc.running ?? 0;
-          const stop = svc.stopped ?? 0;
-          const st = svc.stale ?? 0;
-          const total = svc.total ?? (run + stop + st);
-          const bits = [];
-          if (stop) bits.push(`${{stop}} stopped`);
-          if (st) bits.push(`${{st}} stale`);
-          return {{
-            label: 'Services',
-            value: `${{run}}/${{total}}`,
-            cls: st ? 'bad' : (stop ? 'warn' : 'good'),
-            sub: bits.length ? bits.join(' · ') : 'All running',
-          }};
-        }})(),
-        {{
-          label: 'Worktree',
-          value: worktree.dirty ? `${{worktree.counts?.total ?? 0}} files` : 'Clean',
-          cls: worktree.dirty ? 'warn' : 'good',
-          sub: worktree.branch ? `${{esc(worktree.branch)}}${{worktree.ahead ? ` +${{worktree.ahead}}` : ''}}` : '',
-        }},
       ];
 
       $('#metrics').innerHTML = cards.map(c => `
@@ -6713,64 +6886,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
           ${{c.bar ? progressBar(c.bar.pct, c.bar.color) : ''}}
         </div>
       `).join('');
-    }}
-
-    function formatUptime(seconds) {{
-      if (seconds == null || !isFinite(seconds) || seconds < 0) return '';
-      const s = Math.floor(seconds);
-      if (s < 60) return `${{s}}s`;
-      const m = Math.floor(s / 60);
-      if (m < 60) return `${{m}}m`;
-      const h = Math.floor(m / 60);
-      if (h < 48) return `${{h}}h ${{m % 60}}m`;
-      const d = Math.floor(h / 24);
-      return `${{d}}d ${{h % 24}}h`;
-    }}
-
-    function renderServices(data) {{
-      if (!data.services || data.services.length === 0) {{
-        $('#services').innerHTML = '<div class="empty-state">No services configured</div>';
-        return;
-      }}
-      const total = data.total ?? (data.running + data.stopped + (data.stale || 0));
-      const badge = $('#svc-badge');
-      const badgeBits = [`${{data.running}} / ${{total}} running`];
-      if (data.stale) badgeBits.push(`${{data.stale}} stale`);
-      badge.textContent = badgeBits.join(' · ');
-      if (data.stale) {{
-        badge.style.background = 'var(--red-muted)';
-        badge.style.color = 'var(--red)';
-      }} else if (data.stopped === 0) {{
-        badge.style.background = 'var(--green-muted)';
-        badge.style.color = 'var(--green)';
-      }} else {{
-        badge.style.background = 'var(--amber-muted)';
-        badge.style.color = 'var(--amber)';
-      }}
-
-      $('#services').innerHTML = data.services.map(s => {{
-        const chips = [];
-        if (s.status === 'stale') chips.push('<span class="svc-chip stale">Stale PID</span>');
-        if (s.known === false) chips.push('<span class="svc-chip discovered">Discovered</span>');
-        let detail;
-        if (s.status === 'running') {{
-          const up = formatUptime(s.uptime_seconds);
-          detail = `PID ${{s.pid}}${{up ? ` &middot; up ${{up}}` : ''}}`;
-        }} else if (s.status === 'stale') {{
-          detail = s.pid != null ? `PID ${{s.pid}} not responding` : 'Unreadable PID file';
-        }} else {{
-          detail = 'Stopped';
-        }}
-        if (s.port) detail += ` &middot; :${{s.port}}`;
-        return `
-        <div class="svc-item">
-          <span class="svc-dot ${{s.status}}"></span>
-          <div class="svc-info">
-            <div class="svc-name">${{esc(s.label)}}${{chips.join('')}}</div>
-            <div class="svc-detail mono">${{detail}}</div>
-          </div>
-        </div>`;
-      }}).join('');
     }}
 
 {_PIPELINE_PANEL_JS}
@@ -6803,68 +6918,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
       }};
 
       $('#tracks-body').innerHTML = tracks.map(rowFor).join('');
-    }}
-
-    function renderWorktree(data) {{
-      const el = $('#worktree');
-      if (data.error) {{
-        el.innerHTML = `<div class="empty-state clr-red">${{esc(data.error)}}</div>`;
-        return;
-      }}
-
-      const badge = $('#wt-badge');
-      if (!data.dirty) {{
-        badge.textContent = 'Clean';
-        badge.style.background = 'var(--green-muted)';
-        badge.style.color = 'var(--green)';
-        el.innerHTML = `
-          <div class="wt-summary">
-            <div class="wt-stat">Branch: <span class="wt-stat-val">${{esc(data.branch)}}</span></div>
-          </div>
-          <div class="empty-state">Working tree is clean</div>`;
-        return;
-      }}
-
-      badge.textContent = `${{data.counts.total}} changes`;
-      badge.style.background = 'var(--amber-muted)';
-      badge.style.color = 'var(--amber)';
-
-      const c = data.counts;
-      let summary = `
-        <div class="wt-summary">
-          <div class="wt-stat">Branch: <span class="wt-stat-val">${{esc(data.branch)}}</span></div>
-          ${{data.ahead ? `<div class="wt-stat">Ahead: <span class="wt-stat-val clr-green">+${{data.ahead}}</span></div>` : ''}}
-          ${{data.behind ? `<div class="wt-stat">Behind: <span class="wt-stat-val clr-red">-${{data.behind}}</span></div>` : ''}}
-          ${{c.staged ? `<div class="wt-stat">Staged: <span class="wt-stat-val clr-green">${{c.staged}}</span></div>` : ''}}
-          ${{c.unstaged ? `<div class="wt-stat">Unstaged: <span class="wt-stat-val clr-amber">${{c.unstaged}}</span></div>` : ''}}
-          ${{c.untracked ? `<div class="wt-stat">Untracked: <span class="wt-stat-val clr-accent">${{c.untracked}}</span></div>` : ''}}
-        </div>`;
-
-      const statusLabel = (entry) => {{
-        if (entry.untracked) return ['?', 'Q'];
-        if (entry.conflicted) return ['U', 'U'];
-        const s = entry.index_status !== ' ' && entry.index_status !== '?' ? entry.index_status : entry.worktree_status;
-        return [s, s];
-      }};
-
-      const entries = (data.entries || []).slice(0, 80);
-      let rows = entries.map(e => {{
-        const [label, cls] = statusLabel(e);
-        return `<tr>
-          <td><span class="wt-badge ${{cls}}">${{label}}</span></td>
-          <td class="wt-path mono">${{esc(e.path)}}</td>
-          <td><span class="wt-cat">${{e.category}}</span></td>
-        </tr>`;
-      }}).join('');
-
-      el.innerHTML = `${{summary}}
-        <div class="wt-scroll">
-          <table class="wt-table">
-            <thead><tr><th>Status</th><th>Path</th><th>Category</th></tr></thead>
-            <tbody>${{rows}}</tbody>
-          </table>
-        </div>
-        ${{data.entries.length > 80 ? `<div class="empty-state">Showing 80 of ${{data.entries.length}} entries</div>` : ''}}`;
     }}
 
     function renderZtt(data) {{
@@ -6911,47 +6964,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
             <div class="ztt-row">${{chk(uk.no_stale)}}<span class="ztt-label">No Stale</span></div>
           </div>
         </div>`;
-    }}
-
-    function renderMissing(data) {{
-      const el = $('#missing');
-      const badge = $('#missing-badge');
-
-      if (data.error) {{
-        el.innerHTML = `<div class="empty-state clr-red">${{esc(data.error)}}</div>`;
-        return;
-      }}
-
-      const active = data.active_exact || {{}};
-      const deferred = data.deferred || {{}};
-      const activeList = active.modules ?? [];
-      const deferredList = deferred.modules ?? [];
-      const total = activeList.length + deferredList.length;
-
-      badge.textContent = total === 0 ? 'Complete' : `${{total}} missing`;
-      badge.style.background = total === 0 ? 'var(--green-muted)' : 'var(--amber-muted)';
-      badge.style.color = total === 0 ? 'var(--green)' : 'var(--amber)';
-
-      if (total === 0) {{
-        el.innerHTML = '<div class="empty-state">All modules present</div>';
-        return;
-      }}
-
-      let html = '';
-      if (activeList.length) {{
-        html += `<div class="missing-group">
-          <div class="missing-group-title"><span class="wt-badge M">Active</span> ${{activeList.length}} missing</div>
-          <ul class="missing-list">${{activeList.map(m => `<li class="missing-item mono">${{esc(m)}}</li>`).join('')}}</ul>
-        </div>`;
-      }}
-      if (deferredList.length) {{
-        html += `<div class="missing-group">
-          <div class="missing-group-title"><span class="wt-badge Q">Deferred</span> ${{deferredList.length}} estimated</div>
-          <ul class="missing-list">${{deferredList.slice(0, 20).map(m => `<li class="missing-item mono">${{esc(m)}}</li>`).join('')}}</ul>
-          ${{deferredList.length > 20 ? `<div class="empty-state">+${{deferredList.length - 20}} more</div>` : ''}}
-        </div>`;
-      }}
-      el.innerHTML = html;
     }}
 
     function renderFeedback(data) {{
@@ -7203,6 +7215,23 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
       el.innerHTML = rows;
     }}
 
+    function renderHealthSummary(briefing, missingData) {{
+      const badge = $('#health-summary-state');
+      const line = $('#health-summary-copy');
+      const services = briefing?.services || {{}};
+      const workspace = briefing?.workspace || {{}};
+      const missing = missingData || {{}};
+      const running = services.running ?? 0;
+      const total = services.total ?? running + (services.stopped ?? 0) + (services.stale ?? 0);
+      const worktrees = workspace.worktrees_total ?? 0;
+      const missingCount = missing.active_exact?.missing ?? missing.active_exact?.modules?.length ?? 0;
+      line.textContent = `Services: ${{running}} running / ${{total}} total · Worktrees: ${{worktrees}} · Missing: ${{missingCount}}`;
+      const attention = (services.stale ?? 0) + (services.stopped ?? 0) + missingCount;
+      badge.textContent = attention ? `${{attention}} needs attention` : 'Healthy';
+      badge.style.background = attention ? 'var(--amber-muted)' : 'var(--green-muted)';
+      badge.style.color = attention ? 'var(--amber)' : 'var(--green)';
+    }}
+
     const BOOK_STATUS_TONE = {{
       accepted: 'green',
       prose_ready: 'teal',
@@ -7340,12 +7369,10 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
       btn.classList.add('loading');
 
       try {{
-        const [summary, missing, services, worktree, feedback, reviews, v2Status, transStatus,
+        const [summary, missing, feedback, reviews, v2Status, transStatus,
                briefing, readiness, qualityBoard, activitySummary, bookProgress] = await Promise.all([
           fetchJson('/api/status/summary'),
           fetchJson('/api/missing-modules/status'),
-          fetchJson('/api/runtime/services'),
-          fetchJson('/api/git/worktree'),
           fetchJson(`/api/issue-watch/${{ISSUE}}`),
           fetchJson('/api/reviews'),
           fetchJson('/api/pipeline/v2/status'),
@@ -7358,7 +7385,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
         ]);
 
         summary.missing_modules = missing;
-        summary.runtime_services = services;
 
         const t2Queue = transStatus.queue || transStatus;
         renderOperator(briefing);
@@ -7366,12 +7392,10 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
         renderQualitySummary(qualityBoard);
         renderPipelineSummary(v2Status);
         renderActivitySummary(activitySummary);
-        renderMetrics(summary, worktree, feedback, t2Queue);
-        renderServices(services);
+        renderHealthSummary(briefing, missing);
+        renderMetrics(summary, t2Queue);
         renderSiteTracks(summary, v2Status, t2Queue);
         renderPipelinePanel('#trans-body', '#trans-badge', t2Queue, 'Translation V2');
-        renderWorktree(worktree);
-        renderMissing(missing);
         renderBookProgress(bookProgress);
         renderModuleCompletion(summary, missing);
         renderReviews(reviews);
@@ -8141,6 +8165,7 @@ def build_api_schema() -> dict[str, Any]:
             {"path": "/quality", "desc": "Full-quality board and per-module summary table", "content_type": "text/html"},
             {"path": "/pipeline", "desc": "Pipeline v2 queue, recent events, and autopilot v3 health", "content_type": "text/html"},
             {"path": "/activity", "desc": "Activity feed with client-side track and agent filters", "content_type": "text/html"},
+            {"path": "/health", "desc": "Runtime services, worktrees, and missing-module operational health", "content_type": "text/html"},
             {"path": "/healthz", "desc": "Liveness probe"},
             {"path": "/api/schema", "desc": "This document"},
             {
@@ -8464,7 +8489,7 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     if path == "/activity":
         return 200, render_activity_page_html(), "text/html; charset=utf-8"
     if path == "/health":
-        return 200, _render_skeleton_page("Health", 978), "text/html; charset=utf-8"
+        return 200, render_health_page_html(), "text/html; charset=utf-8"
     if path == "/channels":
         return 200, render_channels_index_html(), "text/html; charset=utf-8"
     if path.startswith("/channels/"):
