@@ -1,0 +1,116 @@
+from __future__ import annotations
+
+import importlib.util
+import os
+import sys
+import time
+from pathlib import Path
+
+
+def _load_module():
+    module_path = Path(__file__).resolve().parent.parent / "scripts" / "local_api.py"
+    spec = importlib.util.spec_from_file_location("local_api_artifacts", module_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+local_api = _load_module()
+
+
+def _write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+def test_artifacts_index_lists_seeded_html_by_category(tmp_path: Path) -> None:
+    first = tmp_path / "audit" / "report.html"
+    second = tmp_path / "docs" / "migrations" / "html-first" / "_design-system.html"
+    _write(first, "<!doctype html><title>Audit Report</title><h1>Report</h1>")
+    _write(second, "<!doctype html><title>Design System</title><h1>Design</h1>")
+    now = time.time()
+    os.utime(first, (now - 7200, now - 7200))
+    os.utime(second, (now - 60, now - 60))
+
+    status, body, content_type = local_api.route_request(tmp_path, "/artifacts")
+
+    assert status == 200
+    assert content_type == "text/html; charset=utf-8"
+    assert "Audit Report" in body
+    assert "Design System" in body
+    assert "/artifacts/audit/report.html" in body
+    assert "/artifacts/docs/migrations/html-first/_design-system.html" in body
+    assert '<a class="navlink active" href="/artifacts"' in body
+
+
+def test_api_artifacts_returns_json_shape(tmp_path: Path) -> None:
+    _write(tmp_path / "docs" / "session-state" / "handoff.html", "<title>Handoff</title>")
+
+    status, body, content_type = local_api.route_request(tmp_path, "/api/artifacts")
+
+    assert status == 200
+    assert content_type == "application/json; charset=utf-8"
+    assert body["Handoffs"][0]["title"] == "Handoff"
+    assert body["Handoffs"][0]["path"] == "docs/session-state/handoff.html"
+    assert body["Handoffs"][0]["url"] == "/artifacts/docs/session-state/handoff.html"
+    assert isinstance(body["Handoffs"][0]["mtime"], float)
+    assert isinstance(body["Handoffs"][0]["size_bytes"], int)
+
+
+def test_artifact_html_serves_with_html_content_type(tmp_path: Path) -> None:
+    _write(tmp_path / "docs" / "references" / "external" / "ref.html", "<title>Reference</title>")
+
+    status, body, content_type = local_api.route_request(
+        tmp_path,
+        "/artifacts/docs/references/external/ref.html",
+    )
+
+    assert status == 200
+    assert body == b"<title>Reference</title>"
+    assert content_type == "text/html; charset=utf-8"
+
+
+def test_artifact_assets_serve_only_from_allowed_tree(tmp_path: Path) -> None:
+    _write(tmp_path / "docs" / "migrations" / "html-first" / "style.css", "body{}")
+    _write(tmp_path / "src" / "content" / "docs" / "style.css", "body{}")
+
+    status, body, content_type = local_api.route_request(
+        tmp_path,
+        "/artifacts/docs/migrations/html-first/style.css",
+    )
+    blocked_status, _, _ = local_api.route_request(
+        tmp_path,
+        "/artifacts/src/content/docs/style.css",
+    )
+
+    assert status == 200
+    assert body == b"body{}"
+    assert content_type == "text/css; charset=utf-8"
+    assert blocked_status == 404
+
+
+def test_artifact_path_traversal_returns_404(tmp_path: Path) -> None:
+    _write(tmp_path / "docs" / "migrations" / "index.html", "<title>Index</title>")
+
+    status, _, _ = local_api.route_request(
+        tmp_path,
+        "/artifacts/docs/migrations/../migrations/index.html",
+    )
+
+    assert status == 404
+
+
+def test_artifact_nonexistent_returns_404(tmp_path: Path) -> None:
+    status, _, _ = local_api.route_request(tmp_path, "/artifacts/audit/missing.html")
+
+    assert status == 404
+
+
+def test_operator_nav_links_to_artifacts(tmp_path: Path) -> None:
+    status, body, content_type = local_api.route_request(tmp_path, "/")
+
+    assert status == 200
+    assert "text/html" in content_type
+    assert '<a class="navlink" href="/artifacts">Artifacts</a>' in body
