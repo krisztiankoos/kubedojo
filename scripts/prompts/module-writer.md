@@ -33,7 +33,7 @@ TASK: Write a complete KubeDojo educational module.
 
 **REQUIRED SECTIONS** (in this exact order):
 
-1. **Title and metadata** — H1 title, complexity tag, time estimate, prerequisites
+1. **Frontmatter and metadata blockquote** — frontmatter `title:` + `slug:` + `sidebar.order:` (Starlight renders the page H1 from `title:`, so do NOT add a source `# Module X.Y` heading after the frontmatter — this would render as a duplicate visible title). Then a blockquote with `> **Complexity**: ...`, `> **Time to Complete**: ...`, `> **Prerequisites**: ...`, separated by `>` blank-quote lines, terminated with `---`.
 2. **Learning Outcomes** — 3-5 measurable outcomes using Bloom's Taxonomy Level 3+ action verbs: "debug", "design", "evaluate", "compare", "diagnose", "implement". NOT "understand" or "know". Each outcome must be testable by the quiz or exercise.
 3. **Why This Module Matters** — Open with a concrete scenario that makes the operational stakes clear, then transition to what the learner will build or diagnose. Use a real incident only when it is sourced and specific enough to verify. Otherwise label it explicitly with `Hypothetical scenario:` or `Exercise scenario:` so the reader never mistakes invented framing for a real event. 2-3 paragraphs minimum.
 4. **Core content sections** (3-6 sections) — Each section should include:

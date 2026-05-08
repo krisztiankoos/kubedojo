@@ -12,8 +12,6 @@ lab:
   environment: ubuntu
 ---
 
-# Module 0.5: Exam Strategy - Three-Pass Method
-
 > **Complexity**: `[QUICK]` - Strategy, timing discipline, and exam execution habits
 >
 > **Time to Complete**: 20-30 minutes to learn, repeated timed practice to internalize

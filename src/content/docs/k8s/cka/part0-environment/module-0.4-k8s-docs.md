@@ -12,8 +12,6 @@ lab:
   environment: kubernetes
 ---
 
-# Module 0.4: kubernetes.io Navigation
-
 > **Complexity**: `[QUICK]` - Know where things are, find them fast
 >
 > **Time to Complete**: 20-30 minutes

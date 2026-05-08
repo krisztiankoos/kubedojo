@@ -11,6 +11,7 @@ from scripts.quality import verify_module
 
 def _base_gates() -> dict[str, bool | None]:
     return {
+        "gate_no_source_h1": True,
         "density_mean_wpp_30": True,
         "density_median_wpp_28": True,
         "density_short_rate_20pct": True,
@@ -143,6 +144,64 @@ This second teaching paragraph also remains after the separator without counting
         "This first teaching paragraph has enough words to count as prose before the separator.",
         "This second teaching paragraph also remains after the separator without counting the rule itself.",
     ]
+
+
+def test_source_h1_after_frontmatter_fails(tmp_path: Path) -> None:
+    module = tmp_path / "module.md"
+    module.write_text(
+        """---
+title: "Module 0.1: Demo"
+slug: k8s/demo/module-0.1
+sidebar:
+  order: 1
+---
+> **Complexity**: `[QUICK]`
+>
+> **Time to Complete**: 15 minutes
+>
+> **Prerequisites**: None
+
+---
+
+# Module 0.1: Demo
+
+## What You'll Be Able to Do
+""",
+        encoding="utf-8",
+    )
+
+    result = verify_module.verify(module, skip_source_check=True)
+
+    assert result["gates"]["gate_no_source_h1"] is False
+    assert any("source_h1_after_frontmatter" in item for item in result["diagnostics"])
+
+
+def test_no_source_h1_passes(tmp_path: Path) -> None:
+    module = tmp_path / "module.md"
+    module.write_text(
+        """---
+title: "Module 0.1: Demo"
+slug: k8s/demo/module-0.1
+sidebar:
+  order: 1
+---
+> **Complexity**: `[QUICK]`
+>
+> **Time to Complete**: 15 minutes
+>
+> **Prerequisites**: None
+
+---
+
+## What You'll Be Able to Do
+""",
+        encoding="utf-8",
+    )
+
+    result = verify_module.verify(module, skip_source_check=True)
+
+    assert result["gates"]["gate_no_source_h1"] is True
+    assert not any("source_h1_after_frontmatter" in item for item in result["diagnostics"])
 
 
 def test_runnable_no_kubectl_alias_passes_on_clean_kubectl() -> None:
