@@ -3,7 +3,8 @@
 > **Read this first every session. Update before ending.**
 >
 > This file is an **index**, not a log. Per-session handoffs live in
-> [`docs/session-state/`](./docs/session-state/) as dated files; this file
+> [`docs/session-state/`](./docs/session-state/) as dated files (`.md` or
+> `.html`); prefer `.html` per the HTML-first artifact policy. This file
 > just points at them. When you finish a session, **add a row to "Latest
 > handoff" and shift the previous Latest into "Predecessor chain" — do
 > NOT replace this whole file**.
@@ -179,7 +180,7 @@ These are state items that span individual sessions. Prune entries as threads cl
 
 ## End-of-session ritual
 
-1. Write today's full handoff to `docs/session-state/YYYY-MM-DD-<topic>.md` (or `YYYY-MM-DD-<topic>-N.md` if multiple in a day).
+1. Write today's full handoff to `docs/session-state/YYYY-MM-DD-<topic>.{md,html}` (or `YYYY-MM-DD-<topic>-N.{md,html}` if multiple in a day). Prefer `.html` per the HTML-first artifact policy; use `.md` only for brief handoffs where a markdown sidecar is not warranted.
 2. Edit this file:
    - Promote the new file to **Latest handoff** (overwrite the row).
    - Move the previous Latest into **Predecessor chain** (newest at top).
@@ -326,4 +327,4 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 - 2026-04-28: STATUS.md migrated to **index pattern** (was a 1623-line forever-growing log). Per-session handoffs now live in `docs/session-state/`; this file just points at them.
 
 ---
-**Maintenance Rule**: Claude updates this file at session end or after completing modules. Per-session detail goes into a new `docs/session-state/YYYY-MM-DD-*.md` file, not inline.
+**Maintenance Rule**: Claude updates this file at session end or after completing modules. Per-session detail goes into a new `docs/session-state/YYYY-MM-DD-*.{md,html}` file, not inline.
