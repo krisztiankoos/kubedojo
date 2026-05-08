@@ -99,7 +99,7 @@ A Helm repository is an HTTP location that exposes an `index.yaml` file pointing
 
 ```bash
 # Add the Bitnami repository (popular, well-maintained charts)
-helm repo add bitnami https://github.com/bitnami/charts
+helm repo add bitnami https://charts.bitnami.com/bitnami
 
 # Add other common repositories
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
@@ -111,6 +111,8 @@ helm repo update
 # List configured repositories
 helm repo list
 ```
+
+Bitnami now recommends OCI chart references for new automation, but this legacy index URL still resolves and redirects to Broadcom's hosted index so the repository-qualified `bitnami/nginx` examples remain runnable after the 2025 OCI migration.
 
 Repository configuration is local to your machine, which explains a frequent "works on my laptop" problem. If one terminal can search `bitnami/nginx` and another cannot, the difference may be repository configuration or an out-of-date index rather than a Kubernetes cluster issue. Before blaming the cluster, run `helm repo list`, refresh with `helm repo update`, and confirm that the chart name includes the repository prefix you intended.
 
@@ -393,7 +395,7 @@ The exam scenarios below are intentionally compact, but they represent the full 
 # Task: Install nginx with 3 replicas exposed on NodePort 30080
 
 # Solution:
-helm repo add bitnami https://github.com/bitnami/charts
+helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
 
 helm install web bitnami/nginx \
@@ -570,7 +572,7 @@ The same decision can be expressed as a simple flow. If the release does not exi
 
 ## Common Mistakes
 
-| Mistake | Why It Happens | How to Fix It |
+| Mistake | Why | Fix |
 |---------|----------------|---------------|
 | Forgetting `-n namespace` | Helm releases are namespace-scoped, so the default namespace may not contain the release you want | Use `helm list -A` to find the release, then repeat status, upgrade, rollback, or uninstall with the explicit namespace |
 | Not using `--reuse-values` during a narrow upgrade | Operators expect Helm to remember previous custom values automatically | Use `--reuse-values` for additive changes, or provide a complete values file for fully declared upgrades |
@@ -648,7 +650,7 @@ Use a cluster where you can create namespaces, Deployments, Services, and Secret
 Start by adding and updating the repository, then inspect the chart before writing values. Create a small values file that sets the replica count and Service configuration, render it with `helm template`, and only then install the release. After installation, use `helm upgrade --reuse-values --set replicaCount=5` for the narrow replica change, inspect history, and roll back if the exercise asks for recovery. The important success criterion is that every live change can be explained from Helm release state and Kubernetes object state.
 
 ```bash
-helm repo add bitnami https://github.com/bitnami/charts
+helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
 helm search repo bitnami/nginx
 helm show values bitnami/nginx > nginx-defaults.yaml
