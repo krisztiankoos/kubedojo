@@ -103,6 +103,9 @@ docs/quality-progress.tsv.lock
 .claude/scheduled_tasks.lock
 .claude/local_api.db
 
+# launchd runtime logs
+.pipeline/launchd-logs/
+
 # Agent bridge runtime
 .bridge/
 .agent/

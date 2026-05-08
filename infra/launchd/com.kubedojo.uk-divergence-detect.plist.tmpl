@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.kubedojo.uk-divergence-detect</string>
+	<key>WorkingDirectory</key>
+	<string>{{REPO_ROOT}}</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>{{REPO_ROOT}}/.venv/bin/python</string>
+		<string>{{REPO_ROOT}}/scripts/detect_uk_divergence.py</string>
+		<string>--json</string>
+	</array>
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Hour</key>
+		<integer>3</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+	</dict>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardOutPath</key>
+	<string>{{REPO_ROOT}}/.pipeline/launchd-logs/uk-divergence-detect.out.log</string>
+	<key>StandardErrorPath</key>
+	<string>{{REPO_ROOT}}/.pipeline/launchd-logs/uk-divergence-detect.err.log</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>HOME</key>
+		<string>{{HOME}}</string>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+	</dict>
+</dict>
+</plist>
