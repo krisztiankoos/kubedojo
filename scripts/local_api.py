@@ -6172,7 +6172,7 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
 {_TOP_NAV_CSS}
     .header {{ position:sticky; top:var(--topnav-h,45px); z-index:50; border-bottom:1px solid var(--border); background:rgba(10,15,26,0.96); backdrop-filter:blur(12px); }}
     .header-inner {{ max-width:1180px; margin:0 auto; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }}
-    .brand {{ display:flex; align-items:center; gap:12px; min-width:0; }}
+    .header-brand {{ display:flex; align-items:center; gap:12px; min-width:0; }}
     .logo {{ width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,var(--accent),var(--teal)); display:flex; align-items:center; justify-content:center; color:#0a0f1a; font-weight:800; }}
     .title {{ font-size:16px; font-weight:700; }}
     .sub {{ color:var(--text-dim); font-size:12px; }}
@@ -6212,7 +6212,7 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
   {_render_top_nav("home")}
   <header class="header">
     <div class="header-inner">
-      <div class="brand"><div class="logo">K</div><div><div class="title">KubeDojo Local Monitor</div><div class="sub">Overview cards · details live on dedicated routes</div></div></div>
+      <div class="header-brand"><div class="logo">K</div><div><div class="title">KubeDojo Local Monitor</div><div class="sub">Overview cards · details live on dedicated routes</div></div></div>
       <div class="header-right"><span class="status-pill" id="conn-status"><span class="dot"></span> Connected</span><span class="last-updated" id="last-updated"></span><button class="refresh-btn" id="refresh">Refresh</button></div>
     </div>
   </header>
