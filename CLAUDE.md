@@ -4,7 +4,7 @@ KubeDojo — free, open-source cloud native curriculum.
 
 ## Agent Orientation (first call on a cold start)
 
-Before `cat`-ing `STATUS.md`, reading the latest `docs/session-state/*.md` handoff, or running `git log`, hit the local API — it returns the same orientation in ~65 % fewer tokens.
+Before `cat`-ing `STATUS.md`, reading the latest `docs/session-state/*.{md,html}` handoff, or running `git log`, hit the local API — it returns the same orientation in ~65 % fewer tokens.
 
 ```
 curl -s http://127.0.0.1:8768/api/briefing/session             # ~1.5K tokens, full
@@ -17,7 +17,7 @@ The briefing covers: current branch + dirty summary, all worktrees, runtime serv
 **Cold-start ordering rule (do not regress):**
 
 1. Briefing API first. It already covers `recent_commits`, `workspace.dirty`, `blockers`, `actions.{active,blocked,next}`, `focus`, `alerts`. **Do not redundantly run `git log -N` or read the latest handoff in full.**
-2. The handoff file at `docs/session-state/YYYY-MM-DD-*.md` is the *narrative-why* canonical record. Read it only when the briefing leaves a real gap (e.g., needing the rationale behind a contract decision, or full PR-by-PR provenance for the prior session). Use `Read` with `limit:` to pull only the relevant section.
+2. The handoff file at `docs/session-state/YYYY-MM-DD-*.{md,html}` is the *narrative-why* canonical record. The extension is whatever `STATUS.md` points at — could be `.md` or `.html` depending on the session. Read it only when the briefing leaves a real gap (e.g., needing the rationale behind a contract decision, or full PR-by-PR provenance for the prior session). Use `Read` with `limit:` to pull only the relevant section.
 3. `git status --short` is the only marginal-value supplement to the briefing — useful for spotting untracked-files state the briefing summarizes but doesn't enumerate.
 4. Only fall back to STATUS.md when the API is down.
 
@@ -62,7 +62,7 @@ Convention: each agent ends its turn with `[AGREE]` / `[OPTION X]` / `[DEFER]`. 
 1. **Orient via `/api/briefing/session`** (see *Agent Orientation* above). `STATUS.md` is the fallback when the API is down.
 2. Use `scripts/prompts/module-writer.md` for new modules
 3. Send completed work to the designated cross-family reviewer (see `docs/review-protocol.md`) before closing issues
-4. **At session end**: write the full handoff to a new `docs/session-state/YYYY-MM-DD-<topic>.md` file, then update `STATUS.md` (the index) — promote the new file to "Latest handoff", shift the previous Latest into "Predecessor chain", refresh "Cross-thread notes" / `## TODO` / `## Blockers`. **Do NOT inline the full handoff into STATUS.md** — it is an index, not a log. The briefing API (`scripts/local_api.py:_parse_status_md`) parses `## TODO` (unchecked `- [ ]`) and `## Blockers` (`- `) from STATUS.md, so keep those headings populated.
+4. **At session end**: write the full handoff to a new `docs/session-state/YYYY-MM-DD-<topic>.{md,html}` file. Prefer `.html` per the HTML-first artifact policy (see `docs/migrations/html-first/plan.html`); use `.md` only if the handoff is brief and a markdown sidecar (`.notes.md`) is not warranted. Then update `STATUS.md` (the index) — promote the new file to "Latest handoff", shift the previous Latest into "Predecessor chain", refresh "Cross-thread notes" / `## TODO` / `## Blockers`. **Do NOT inline the full handoff into STATUS.md** — it is an index, not a log. The briefing API (`scripts/local_api.py:_parse_status_md`) parses `## TODO` (unchecked `- [ ]`) and `## Blockers` (`- `) from STATUS.md, so keep those headings populated.
 
 ## Build & Serve
 
