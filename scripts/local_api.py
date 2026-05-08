@@ -117,6 +117,7 @@ RUNTIME_SERVICE_ORDER = tuple(svc["name"] for svc in RUNTIME_SERVICES)
 # attempts like "..", ".", or leading-dot hidden names.
 _MODULE_KEY_SEGMENT_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 _ETAG_HEADER_RE = re.compile(r'^(?:W/)?"[A-Za-z0-9_./:-]+"$')
+_HANDOFF_FILENAME_RE = re.compile(r"^(?P<date>\d{4}-\d{2}-\d{2})-(?P<label>.+)\.(?P<format>md|html)$")
 
 
 def _validate_module_key(repo_root: Path, raw: str) -> str | None:
@@ -4607,6 +4608,257 @@ def render_artifacts_index_html(repo_root: Path) -> str:
 </body></html>"""
 
 
+def _truncate_text(text: str, *, limit: int = 600) -> str:
+    cleaned = re.sub(r"\s+", " ", text).strip()
+    if len(cleaned) <= limit:
+        return cleaned
+    return cleaned[: limit - 3].rstrip() + "..."
+
+
+def _html_fragment_to_text(fragment: str) -> str:
+    no_tags = re.sub(r"<[^>]+>", " ", fragment)
+    return html.unescape(re.sub(r"\s+", " ", no_tags)).strip()
+
+
+def _strip_html_noncontent(text: str) -> str:
+    text = re.sub(r"<!--.*?-->", " ", text, flags=re.DOTALL)
+    text = re.sub(r"<script\b[^>]*>.*?</script>", " ", text, flags=re.IGNORECASE | re.DOTALL)
+    return re.sub(r"<style\b[^>]*>.*?</style>", " ", text, flags=re.IGNORECASE | re.DOTALL)
+
+
+def _extract_html_h1(text: str) -> str | None:
+    text = _strip_html_noncontent(text)
+    match = re.search(r"<h1\b[^>]*>(.*?)</h1>", text, re.IGNORECASE | re.DOTALL)
+    if not match:
+        return None
+    title = _html_fragment_to_text(match.group(1))
+    return title or None
+
+
+def _extract_markdown_h1(text: str) -> str | None:
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("# "):
+            title = stripped[2:].strip()
+            return title or None
+    return None
+
+
+def _extract_html_tldr(text: str) -> str | None:
+    text = _strip_html_noncontent(text)
+    tldr_section = re.search(
+        r"<(?:h2|h3|p)\b[^>]*>\s*(?:TL;DR|TLDR)\s*</(?:h2|h3|p)>\s*<p\b[^>]*>(.*?)</p>",
+        text,
+        re.IGNORECASE | re.DOTALL,
+    )
+    if tldr_section:
+        tldr = _html_fragment_to_text(tldr_section.group(1))
+        if tldr:
+            return _truncate_text(tldr)
+    paragraph = re.search(r"<p\b[^>]*>(.*?)</p>", text, re.IGNORECASE | re.DOTALL)
+    if paragraph:
+        tldr = _html_fragment_to_text(paragraph.group(1))
+        if tldr:
+            return _truncate_text(tldr)
+    return None
+
+
+def _extract_markdown_tldr(text: str) -> str | None:
+    lines = text.splitlines()
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if re.match(r"^#{1,3}\s*(?:TL;DR|TLDR)\b", stripped, re.IGNORECASE):
+            body: list[str] = []
+            for candidate in lines[idx + 1 :]:
+                candidate = candidate.strip()
+                if not candidate:
+                    if body:
+                        break
+                    continue
+                if candidate.startswith("#"):
+                    break
+                body.append(candidate)
+            if body:
+                return _truncate_text(" ".join(body))
+        if re.match(r"^(?:\*\*)?TL;DR(?:\*\*)?\s*[:-]\s*", stripped, re.IGNORECASE):
+            tldr = re.sub(r"^(?:\*\*)?TL;DR(?:\*\*)?\s*[:-]\s*", "", stripped, flags=re.IGNORECASE)
+            if tldr:
+                return _truncate_text(tldr)
+
+    paragraph: list[str] = []
+    in_frontmatter = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped == "---" and not paragraph:
+            in_frontmatter = not in_frontmatter
+            continue
+        if in_frontmatter or not stripped or stripped.startswith("#") or stripped.startswith("|"):
+            if paragraph:
+                break
+            continue
+        paragraph.append(stripped)
+    if paragraph:
+        return _truncate_text(" ".join(paragraph))
+    return None
+
+
+def _handoff_metadata(repo_root: Path, path: Path, *, include_detail: bool) -> dict[str, Any] | None:
+    match = _HANDOFF_FILENAME_RE.match(path.name)
+    if not match or path.name.startswith("archive-pre-"):
+        return None
+    try:
+        rel = path.relative_to(repo_root).as_posix()
+    except ValueError:
+        return None
+    metadata: dict[str, Any] = {
+        "filename": path.name,
+        "path": rel,
+        "date": match.group("date"),
+        "session_label": match.group("label"),
+        "format": match.group("format"),
+    }
+    if not include_detail:
+        return metadata
+
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        text = ""
+    is_html = metadata["format"] == "html"
+    title = _extract_html_h1(text) if is_html else _extract_markdown_h1(text)
+    tldr = _extract_html_tldr(text) if is_html else _extract_markdown_tldr(text)
+    raw_url = f"/artifacts/{rel}" if rel.startswith("docs/session-state/") else None
+    metadata.update(
+        {
+            "render_url": f"http://127.0.0.1:8910/{rel}",
+            "raw_url": raw_url,
+            "title": title,
+            "tldr": tldr,
+        }
+    )
+    return metadata
+
+
+def build_current_session(repo_root: Path) -> dict[str, Any]:
+    handoff_dir = repo_root / "docs" / "session-state"
+    handoffs: list[dict[str, Any]] = []
+    if handoff_dir.is_dir():
+        for path in handoff_dir.iterdir():
+            if not path.is_file() or path.suffix.lower() not in {".md", ".html"}:
+                continue
+            metadata = _handoff_metadata(repo_root, path, include_detail=False)
+            if metadata is not None:
+                handoffs.append(metadata)
+
+    handoffs.sort(key=lambda item: item["filename"], reverse=True)
+    latest = None
+    predecessors: list[dict[str, Any]] = []
+    if handoffs:
+        latest_path = handoff_dir / handoffs[0]["filename"]
+        latest = _handoff_metadata(repo_root, latest_path, include_detail=True)
+        predecessors = handoffs[1:11]
+
+    return {
+        "latest": latest,
+        "predecessors": predecessors,
+        "total_handoffs": len(handoffs),
+    }
+
+
+def build_state_manifest() -> dict[str, Any]:
+    """Pointer-only index for canonical cold-start state discovery."""
+    return {
+        "version": 1,
+        "categories": [
+            {
+                "category": "cold_start",
+                "entries": [
+                    {
+                        "name": "Session briefing",
+                        "path": "/api/briefing/session",
+                        "purpose": "Full agent orientation snapshot with current actions, blockers, and repo state.",
+                        "type": "api",
+                    },
+                    {
+                        "name": "Compact session briefing",
+                        "path": "/api/briefing/session?compact=1",
+                        "purpose": "Token-light briefing for first contact on a fresh agent session.",
+                        "type": "api",
+                    },
+                    {
+                        "name": "Current session handoff",
+                        "path": "/api/session/current",
+                        "purpose": "Most recent session handoff plus predecessor chain.",
+                        "type": "api",
+                    },
+                    {
+                        "name": "API schema",
+                        "path": "/api/schema",
+                        "purpose": "Machine-readable index of local API routes and query conventions.",
+                        "type": "api",
+                    },
+                ],
+            },
+            {
+                "category": "dashboards",
+                "entries": [
+                    {"name": "Operator dashboard", "path": "/", "purpose": "Top-level local monitor summary.", "type": "html"},
+                    {"name": "Quality board", "path": "/quality", "purpose": "Per-module quality status dashboard.", "type": "html"},
+                    {"name": "Pipeline board", "path": "/pipeline", "purpose": "Pipeline v2 queue and event dashboard.", "type": "html"},
+                    {"name": "Activity feed", "path": "/activity", "purpose": "Recent commits, pipeline events, and bridge messages.", "type": "html"},
+                    {"name": "Health dashboard", "path": "/health", "purpose": "Runtime services, worktrees, and delivery health.", "type": "html"},
+                ],
+            },
+            {
+                "category": "pipeline",
+                "entries": [
+                    {
+                        "name": "Pipeline leases",
+                        "path": "/api/pipeline/leases",
+                        "purpose": "Active leases to check before claiming pipeline work.",
+                        "type": "api",
+                    },
+                    {
+                        "name": "Module state",
+                        "path": "/api/module/{key}/state",
+                        "purpose": "Structured diagnostics to check before fixing a module.",
+                        "type": "api",
+                    },
+                    {
+                        "name": "Review audit log",
+                        "path": "/api/reviews",
+                        "purpose": "Existing review records to check before re-reviewing a module.",
+                        "type": "api",
+                    },
+                    {
+                        "name": "Track readiness",
+                        "path": "/api/tracks/readiness",
+                        "purpose": "Per-track cleared, in-flight, dead-letter, and pending counts.",
+                        "type": "api",
+                    },
+                ],
+            },
+            {
+                "category": "artifacts",
+                "entries": [
+                    {
+                        "name": "Artifacts index",
+                        "path": "/artifacts",
+                        "purpose": "Browseable HTML artifact index, including current handoffs.",
+                        "type": "html_artifact",
+                    },
+                    {
+                        "name": "Artifacts JSON",
+                        "path": "/api/artifacts",
+                        "purpose": "JSON index of HTML artifacts served by the artifacts route.",
+                        "type": "api",
+                    },
+                ],
+            },
+        ],
+    }
+
+
 def serve_artifact_file(repo_root: Path, rel_path: str) -> tuple[int, Any, str]:
     decoded = unquote(rel_path)
     candidate = _resolve_artifact_path(repo_root, decoded)
@@ -7255,12 +7507,22 @@ def build_api_schema() -> dict[str, Any]:
             {"path": "/health", "desc": "Runtime services, worktrees, and missing-module operational health", "content_type": "text/html"},
             {"path": "/healthz", "desc": "Liveness probe"},
             {"path": "/api/schema", "desc": "This document"},
+            {
+                "path": "/api/state/manifest",
+                "desc": "Pointer-only cold-start state index grouped by purpose",
+                "content_type": "application/json",
+            },
             {"path": "/api/artifacts", "desc": "JSON index of HTML artifacts served by /artifacts"},
             {
                 "path": "/api/briefing/session",
                 "desc": "Agent cold-start orientation snapshot. First call for fresh agents.",
                 "query": ["compact=1"],
                 "freshness": "background-refreshed every 15s",
+            },
+            {
+                "path": "/api/session/current",
+                "desc": "Latest session handoff with render/raw URLs plus up to 10 predecessors",
+                "content_type": "application/json",
             },
             {
                 "path": "/api/briefing/book",
@@ -7677,6 +7939,8 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         return _build_gh_detail("pr", number)
     if path == "/api/schema":
         return 200, build_api_schema(), "application/json; charset=utf-8"
+    if path == "/api/state/manifest":
+        return 200, build_state_manifest(), "application/json; charset=utf-8"
     if path == "/api/briefing/session":
         compact = query.get("compact", ["0"])[0] not in ("0", "false", "")
         briefing, freshness = get_or_build_session_briefing(repo_root)
@@ -7685,6 +7949,8 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         if compact:
             briefing = _compact_briefing(briefing)
         return 200, briefing, "application/json; charset=utf-8"
+    if path == "/api/session/current":
+        return 200, build_current_session(repo_root), "application/json; charset=utf-8"
     if path == "/api/briefing/book":
         return 200, build_book_briefing(repo_root), "application/json; charset=utf-8"
     if path == "/api/cache/stats":
@@ -7896,6 +8162,8 @@ def _v_quality_board(repo_root: Path) -> tuple:
 CACHE_POLICY: dict[str, tuple[float, Callable[[Path], tuple] | None]] = {
     "/healthz": (60.0, None),
     "/api/schema": (600.0, None),
+    "/api/state/manifest": (600.0, None),
+    "/api/session/current": (30.0, None),
     "/api/status/summary": (10.0, _v_v2_db),
     "/api/missing-modules/status": (30.0, None),
     "/api/activity/recent": (5.0, _v_v2_db),
