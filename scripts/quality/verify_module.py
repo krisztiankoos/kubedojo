@@ -733,9 +733,9 @@ def source_h1_metrics(text: str) -> dict[str, object]:
 
     for line_number, line in enumerate(body.splitlines(), start=body_start_line):
         stripped = line.strip()
-        if not stripped or stripped.startswith(">") or stripped == "---":
+        if not stripped or stripped.startswith(">") or stripped == "---" or stripped.startswith("<!--"):
             continue
-        if stripped.startswith("# ") and not stripped.startswith("## "):
+        if stripped.startswith("# "):
             return {
                 "violation": True,
                 "line": line_number,
