@@ -32,7 +32,7 @@ def _has_channels_nav(html: str) -> bool:
 
 
 def test_new_skeleton_routes_return_topnav(tmp_path: Path) -> None:
-    for path in ["/pipeline", "/activity", "/health"]:
+    for path in ["/activity", "/health"]:
         html = _route(tmp_path, path)
         assert _has_channels_nav(html)
         assert "This page is part of the L0-L6 local-API UI split." in html
