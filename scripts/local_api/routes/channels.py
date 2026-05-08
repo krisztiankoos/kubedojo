@@ -8,6 +8,14 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs, unquote
 
+try:
+    from local_api.routes.ui_fragments import AFK_NOTIFY_CSS, render_afk_notify_markup
+except ModuleNotFoundError:
+    from scripts.local_api.routes.ui_fragments import (
+        AFK_NOTIFY_CSS,
+        render_afk_notify_markup,
+    )
+
 
 RouteResponse = tuple[int, Any, str]
 _POST_DB_LOCK = _threading.Lock()
@@ -648,6 +656,7 @@ def render_channels_chat_html(
     .sidebar-title{{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:4px 10px 10px}}
     .channel-link{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;color:var(--text);text-decoration:none;border-radius:6px;padding:7px 10px;font-size:13px;min-height:34px}}
     .channel-link:hover,.channel-link.active{{background:var(--panel-2)}}
+{AFK_NOTIFY_CSS}
     .channel-name{{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
     .unread-badge{{display:none;min-width:18px;padding:1px 6px;border-radius:999px;background:var(--orange);color:#16120a;font-size:11px;font-weight:800;text-align:center}}
     .unread-badge.visible{{display:inline-block}}
@@ -727,6 +736,7 @@ def render_channels_chat_html(
 </head>
 <body>
 {render_top_nav_fn("channels")}
+{render_afk_notify_markup()}
 <div class="channels-app" data-selected-channel="{_html.escape(selected_channel or "", quote=True)}">
   <nav class="channels-sidebar" aria-label="Channels">
     <div class="sidebar-title">Channels</div>
