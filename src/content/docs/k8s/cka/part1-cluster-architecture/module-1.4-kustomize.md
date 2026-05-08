@@ -1,6 +1,7 @@
 ---
 title: "Module 1.4: Kustomize - Template-Free Configuration"
 slug: k8s/cka/part1-cluster-architecture/module-1.4-kustomize
+revision_pending: false
 sidebar:
   order: 5
 lab:
@@ -11,6 +12,8 @@ lab:
   environment: kubernetes
 ---
 
+# Module 1.4: Kustomize - Template-Free Configuration
+
 > **Complexity**: `[MEDIUM]` - Essential CKA skill for Kubernetes 1.35+
 >
 > **Time to Complete**: 40-55 minutes
@@ -19,7 +22,7 @@ lab:
 
 ---
 
-## What You'll Be Able to Do
+## Learning Outcomes
 
 After this module, you will be able to:
 
@@ -33,7 +36,7 @@ After this module, you will be able to:
 
 ## Why This Module Matters
 
-A platform team inherits a Kubernetes repository with three nearly identical folders named `dev`, `staging`, and `prod`. Each folder contains a Deployment, Service, ConfigMap, and Ingress for the same application. During an incident, the team patches a missing readiness probe in production, then forgets to apply the same fix to staging. Two weeks later, staging passes a release candidate that production would have rejected. The outage was not caused by Kubernetes being unpredictable; it was caused by configuration drift that the repository design made easy.
+Hypothetical scenario: A platform team inherits a Kubernetes repository with three nearly identical folders named `dev`, `staging`, and `prod`. Each folder contains a Deployment, Service, ConfigMap, and Ingress for the same application. During an incident, the team patches a missing readiness probe in production, then forgets to apply the same fix to staging. Two weeks later, staging passes a release candidate that production would have rejected. The outage was not caused by Kubernetes being unpredictable; it was caused by configuration drift that the repository design made easy.
 
 Kustomize solves that exact class of problem by separating what stays the same from what changes by environment. The shared application shape lives in a base. Each environment has an overlay that references the base and describes only the differences: namespace, image tag, replica count, labels, resource limits, or generated configuration. The learner still works with normal Kubernetes YAML, but the final manifest is assembled by a deterministic renderer before `kubectl` sends anything to the API server.
 
@@ -50,6 +53,10 @@ For the CKA, Kustomize matters because it is built into `kubectl` and appears in
 Kustomize is not a package manager and it is not a template engine. It is a manifest renderer that reads Kubernetes resources, applies transformations, applies patches, runs generators, and prints the final YAML. That distinction matters because Kustomize does not install release history, manage chart dependencies, or remember a previous deployment. It produces manifests; `kubectl apply -k` then applies those manifests.
 
 The first habit to build is previewing the rendered output before you apply it. The command `kubectl kustomize <directory>` prints the YAML that Kustomize would generate. The command `kubectl apply -k <directory>` renders and applies that same output. In the exam and in real clusters, previewing first catches broken paths, incorrect names, unwanted selector changes, and surprising generated names before they become API objects.
+
+The mental model becomes easier if you separate three moments in time. First, you have source files in Git, which may include a base, one or more overlays, patches, and generator inputs. Second, Kustomize renders those files into a single stream of ordinary Kubernetes YAML. Third, `kubectl apply` compares that rendered YAML with cluster state and submits create or update requests to the API server. Most confusing Kustomize bugs happen because a learner skips the middle moment and assumes the files on disk are the same thing as the objects Kubernetes will receive.
+
+That middle moment is also where Kustomize earns its place in a CKA workflow. You do not need a cluster to answer many questions about a broken overlay, because the renderer can prove whether paths, names, patches, and generated references line up. When a task is under time pressure, this matters more than it first appears. A failed apply can leave you reading server errors, admission messages, and partial object state, while a failed render usually points back to a specific local directory or file that you can repair directly.
 
 ```text
 ┌────────────────────────────────────────────────────────────────┐
@@ -79,6 +86,8 @@ The first habit to build is previewing the rendered output before you apply it. 
 
 The base should be boring. It should define the objects that every environment needs, with safe defaults and names that make sense before environment-specific prefixes are added. The overlay should be small and opinionated. It says, "for this environment, use this namespace, this image tag, these resource limits, and these generated configuration values."
 
+A useful review question is whether a future teammate could read the base without knowing which environment will use it. If the answer is yes, the base is probably doing its job. If the base mentions production-only replica counts, development-only debug flags, or a staging-only namespace, then the repository is starting to hide environment decisions in the shared layer. Kustomize does not stop you from making that design mistake, so the discipline has to come from how you divide the files.
+
 | Term | What it means | Practical test |
 |------|---------------|----------------|
 | **Base** | A directory containing reusable Kubernetes resources and a `kustomization.yaml` that lists them. | Could another environment reuse this without copying files? |
@@ -98,10 +107,10 @@ A base directory starts with normal Kubernetes manifests. There is no special sy
 
 The base also needs a `kustomization.yaml` file. This file is the local build recipe. It tells Kustomize which resources belong in this unit and which transformations or generators should run. If a directory has YAML files but no `kustomization.yaml`, `kubectl apply -k` does not know how to treat it as a Kustomize package.
 
-A common convention is to use `k` as a shell alias for `kubectl` after explaining it once. The CKA environment may not provide aliases by default, so use the full `kubectl` command until you intentionally create the alias. If you do create it during practice, remember that the exam grader only sees cluster state, not your shell preferences.
+A common convention in interactive shells is to shorten `kubectl`, but that habit is risky in training material and copied scripts because aliases often do not expand in non-interactive execution. The CKA environment may also start from a clean shell, so this module uses the full `kubectl` command everywhere. Before you begin a timed task, a safer readiness check is to confirm that the real binary is available and that its client version prints as expected.
 
 ```bash
-alias k=kubectl
+kubectl version --client
 ```
 
 The following base defines a small web application. It deliberately keeps the namespace out of the base because namespaces usually differ by environment. It also uses stable labels for selectors and pod matching. Later sections will explain why changing selector labels casually is one of the easiest ways to break an otherwise valid overlay.
@@ -184,6 +193,10 @@ kubectl kustomize webapp/base/ | kubectl apply --dry-run=client -f -
 
 The base is intentionally minimal, but it is not a stub. It contains the API resources that define the workload shape. The overlay will decide the environment, image version, replica count, and operational policy. That separation is what prevents environment drift from becoming a maintenance habit.
 
+Notice that the base Deployment and Service use the same stable label pair for the selector relationship. This is deliberate because selector labels are part of the contract between objects, not merely decorative metadata. A Service that selects pods by `app.kubernetes.io/name` and `app.kubernetes.io/component` must continue to find pods after the overlay renders. When you later add environment labels, prefixes, and image changes, you should verify that those changes do not accidentally change the meaning of the selector contract.
+
+There is also a practical exam reason to keep the base small and conventional. If the base is valid Kubernetes YAML, you can reason about it with the same habits you already use for Deployments and Services. You can inspect `spec.selector.matchLabels`, compare it with the pod template labels, and check the container image without learning a second syntax. Kustomize adds composition around those objects; it does not replace the need to understand the objects themselves.
+
 ---
 
 ## Part 3: Add Overlays Without Copying the Base
@@ -216,6 +229,8 @@ labels:
 
 The `labels` transformer is safer here than a blind selector-changing label strategy. Environment labels are useful on object metadata and pod templates, but adding them to selectors can make Services and Deployments select a narrower set of pods than you intended. For a new workload, selector changes may work. For an existing workload, selector mutations can fail because Deployment selectors are immutable.
 
+The important phrase in that paragraph is "for an existing workload." Kubernetes allows many fields to change over time, but it treats a Deployment selector as identity, not decoration. If a label transformer changes selectors after the Deployment already exists, the API server may reject the update because the controller would no longer own the same pod set. Even if an object is new and the apply succeeds, selector changes can still surprise operators because the Service and Deployment may stop agreeing about which pods are part of the application.
+
 > **Active learning prompt:** Predict the rendered names before running the command. Will the Service be named `webapp`, `dev-webapp`, or `webapp-dev`? Then run the preview and verify whether your mental model matched the output.
 
 ```bash
@@ -223,6 +238,8 @@ kubectl kustomize webapp/overlays/dev/
 ```
 
 A production overlay usually needs stronger differences. It may change replicas, image tags, resource limits, generated configuration, or annotations used by policy and observability tools. The key is that the overlay still avoids copying the entire Deployment. It expresses only the production-specific decisions.
+
+Production is the environment where overlay discipline pays off most clearly. You want production to be different where operations require it, but you do not want production to become a fork of the application definition. Five replicas, stronger resource limits, a production namespace, and a hardened image tag are legitimate production decisions. Copying the whole Deployment just to express those decisions creates a second source of truth, and that second source will eventually miss a shared fix unless review culture is unusually strict.
 
 ```yaml
 # webapp/overlays/prod/kustomization.yaml
@@ -293,6 +310,8 @@ kubectl kustomize webapp/overlays/prod/
 ## Part 4: Transformers as Controlled Bulk Edits
 
 Transformers are powerful because they apply a consistent change across many resources. They are also risky because a broad transformation can affect more fields than a beginner expects. The right way to use them is to understand which fields they touch, preview output, and keep environment overlays narrow enough that review stays meaningful.
+
+Think of a transformer as a controlled bulk edit with Kubernetes awareness. A text editor search-and-replace can change names in places where they are comments, examples, or unrelated strings. Kustomize transformers operate on structured resource fields and, for known reference relationships, update related fields together. That structure is useful, but it does not remove judgment. You still need to decide whether a bulk edit is the clearest expression of intent or whether a targeted patch would be safer for a single object.
 
 The name transformers are straightforward. `namePrefix` prepends text to resource names, while `nameSuffix` appends text. Kustomize also updates internal references when it understands the relationship, such as a Deployment referring to a generated ConfigMap. This is one reason Kustomize is better than simple search-and-replace.
 
@@ -379,11 +398,15 @@ labels:
 
 A senior-level Kustomize review asks whether the transformer expresses intent better than a patch. If you are changing every resource in the overlay, a transformer is clearer. If you are changing one field on one object, a patch is often clearer. If you are changing behavior that Kubernetes treats as immutable, you need to plan a migration instead of assuming the renderer can force it through.
 
+The review should also ask whether the rendered output will be understandable to someone debugging the cluster later. A namespace transformer is easy to explain because every namespaced object lands in the environment namespace. An image transformer is easy to explain because the base image name maps to a specific tag or registry in that overlay. A broad label rule with selector inclusion is harder to explain because it can affect metadata, pod templates, and controller selectors at once. When the effect is broad, the preview step becomes part of the design, not just a final check.
+
 ---
 
 ## Part 5: Patches and Why Names Matter
 
 Patches are how overlays make targeted changes to resources from the base. The two practical patch styles you will see most often are strategic merge patches and JSON 6902 patches. Strategic merge patches look like partial Kubernetes objects. JSON patches look like a list of operations against JSON paths. Both are useful, but they solve different problems.
+
+The strongest reason to use a patch is that the change belongs to one object, not to the whole overlay. A replica count, readiness probe, resource limit, or pod security setting may be production-specific, but it does not necessarily need a transformer that touches every resource. Patches let you keep the base readable while expressing the operational difference near the environment that owns it. The trade-off is that patch identity must be exact: the kind, name, API version, and list merge keys have to match what Kustomize is rendering.
 
 Strategic merge is usually easier for Kubernetes-native objects such as Deployments. It understands merge keys for many Kubernetes lists. For example, containers merge by `name`, so a patch that mentions the `webapp` container modifies that container instead of replacing the entire container list. This is exactly why container names must be accurate.
 
@@ -456,11 +479,15 @@ patches:
 
 The senior habit is to make patch intent obvious during review. A patch file named `patch.yaml` forces reviewers to open it before they know what risk it carries. A patch named `patch-resources.yaml` or `patch-readiness-probe.yaml` tells the reviewer what behavior should change and makes accidental scope creep easier to spot.
 
+Patch files should be small enough that a reviewer can answer two questions quickly. What resource is this patch supposed to match, and what behavior is it supposed to change? If a patch changes replicas, resources, probes, labels, and annotations at the same time, it is harder to detect an accidental selector mutation or a container-name mismatch. Splitting patches by intent is not ceremony; it is a way to make rendered-output review faster and more reliable when a repository grows beyond one application.
+
 ---
 
 ## Part 6: ConfigMap and Secret Generators
 
 Generators create ConfigMaps and Secrets from files, literals, or environment files. They are useful because configuration content often belongs near the overlay that owns it. A development overlay may set a verbose log level. A production overlay may set a stricter timeout. The generator keeps that environment-owned configuration close to the environment-owned kustomization.
+
+Generators also make configuration changes visible in the same review as workload changes. If a production overlay changes a timeout file and a resource limit patch together, reviewers can reason about both effects before the manifest is applied. Without a generator, teams often hand-create ConfigMaps in a separate folder or apply them manually, which weakens the link between the application version and the configuration it expects. Kustomize does not solve every configuration-management problem, but it gives you a clean way to keep ordinary ConfigMap and Secret inputs inside the overlay boundary.
 
 The most important generator behavior is the hash suffix. By default, Kustomize appends a content hash to generated ConfigMap and Secret names. When the content changes, the generated name changes. If a Deployment references that generated object through Kustomize-managed name references, the Pod template changes too, which triggers a rollout.
 
@@ -542,11 +569,15 @@ generatorOptions:
 
 The field name is `disableNameSuffixHash`, not `disableNameSuffix`. This detail matters in troubleshooting because examples from memory or outdated notes can lead to a kustomization that does not behave as expected. When in doubt, render output and inspect the generated names instead of assuming the option worked.
 
+Hash suffixes are worth keeping unless you can name the system that truly requires stable generated object names. With the suffix enabled, a ConfigMap content change becomes a name change, and a rewritten pod template reference gives the Deployment controller a reason to create new Pods. With the suffix disabled, the object data can change while the pod template stays identical, so existing Pods may continue running with older environment-derived configuration until something else restarts them. That difference is easy to miss if you only inspect the ConfigMap and forget to inspect the Deployment template.
+
 ---
 
 ## Part 7: Debugging Kustomize Like an Operator
 
 Debugging Kustomize starts before you talk to the API server. If rendering fails, Kubernetes never sees the resources. If rendering succeeds but the output is wrong, Kubernetes may accept an object that behaves differently than you intended. The safest workflow is render, inspect, validate, diff, then apply.
+
+This order is intentionally conservative because it separates local mistakes from cluster mistakes. A bad relative path, missing kustomization file, or unmatched patch target is a local composition problem. A rejected immutable selector, missing namespace, or failed admission policy is a cluster interaction problem. If you apply before rendering, these categories blur together and you spend time asking the API server questions that the local renderer could have answered faster.
 
 ```bash
 kubectl kustomize webapp/overlays/prod/
@@ -612,11 +643,17 @@ A good troubleshooting sequence is intentionally repetitive. First, prove the pa
 
 When an overlay fails with a resource accumulation error, read the path in the error message literally. It usually tells you which file or directory Kustomize tried to load. When a patch appears to do nothing, check the target kind, target name, API version, and container names. When a generated ConfigMap does not roll pods, inspect whether the Deployment reference was rewritten and whether hash suffixing was disabled.
 
+For CKA practice, build a habit of writing down the intended field before you run the command. If the task says production should have five replicas, ask where that number should appear in the rendered Deployment and then verify exactly that field. If the task says the production image should use a specific tag, search for `image:` in the rendered output and confirm that the tag changed in the container you intended. This small pause turns Kustomize debugging from "look at a wall of YAML" into "prove or disprove one expectation at a time."
+
 ---
 
 ## Part 8: Kustomize vs Helm vs Plain Manifests
 
 Kustomize, Helm, and plain manifests can all deploy Kubernetes objects, but they optimize for different situations. Plain manifests are easiest when there is only one environment and little variation. Kustomize is strongest when you own the manifests and need environment overlays without templates. Helm is strongest when you want packaging, values files, dependencies, and release history.
+
+The comparison is not about which tool is more professional. It is about where the variation lives and who owns the source material. If you own a Deployment and need three environment variants, Kustomize lets you keep ordinary Kubernetes YAML while expressing differences without copying the whole object. If you consume a third-party application that already ships as a chart, Helm may give you a better supported interface than editing rendered YAML directly. If you need one temporary debug Pod, plain manifests are simpler than building a directory hierarchy around it.
+
+Another useful way to decide is to ask who should be able to review the change. Kustomize overlays are friendly to Kubernetes reviewers because the final intent remains close to standard manifests: a Deployment patch still looks like part of a Deployment, and an image transformer still names an image. Helm values can be cleaner for packaged software, but the relationship between a value and the rendered object may require chart knowledge. Plain manifests are the easiest to read for one-off work, but they provide no built-in answer when the same object needs controlled differences across environments.
 
 The wrong decision often shows up as friction during change. If every environment folder contains copied YAML, plain manifests have exceeded their useful size. If a Kustomize repository starts simulating conditionals, loops, and reusable functions, the team may be trying to use Kustomize as a template language. If a Helm chart has only one Deployment and three values, Helm may be more machinery than the task needs.
 
@@ -638,7 +675,7 @@ In real teams, Kustomize often pairs with GitOps controllers such as Argo CD or 
 
 ## Part 9: Worked Example - Fix a Broken Production Overlay
 
-A team reports that `kubectl apply -k webapp/overlays/prod/` fails after a directory cleanup. The base still exists, but the overlay cannot find it. Instead of editing randomly, debug the render path first.
+Exercise scenario: A team reports that `kubectl apply -k webapp/overlays/prod/` fails after a directory cleanup. The base still exists, but the overlay cannot find it. Instead of editing randomly, debug the render path first.
 
 Broken overlay:
 
@@ -711,6 +748,8 @@ kubectl kustomize webapp/overlays/prod/ | grep -A 8 "kind: Deployment"
 
 This example is small, but it models the senior workflow. You corrected the path, verified the render, added the smallest patch that expressed the production difference, and verified the rendered field before applying. The important skill is not memorizing this exact file layout; it is following a repeatable reasoning path when Kustomize output surprises you.
 
+That reasoning path scales beyond the example because it keeps the question narrow at each step. A broken path is repaired in the overlay recipe, not in the Deployment. A missing replica change is repaired in the patch target, not by copying the full base into production. A confusing final name is explained by the order of Kustomize transformations, not by guessing that Kubernetes renamed the object after apply. When you can name the layer that owns the symptom, Kustomize stops feeling like magic and starts behaving like a deterministic build step.
+
 ---
 
 ## Did You Know?
@@ -724,7 +763,7 @@ This example is small, but it models the senior workflow. You corrected the path
 
 ## Common Mistakes
 
-| Mistake | Why it hurts | How to fix it |
+| Mistake | Why It Happens | How to Fix It |
 |---------|--------------|---------------|
 | Referencing the base with the wrong relative path | Kustomize fails before Kubernetes sees any resource, often with an accumulation or "must resolve to a file" error. | Count from the overlay directory and verify with `kubectl kustomize <overlay>`. |
 | Forgetting a `kustomization.yaml` file in the base or overlay | A directory full of YAML is not automatically a Kustomize unit. | Add `apiVersion`, `kind: Kustomization`, and a `resources` list to each Kustomize directory. |
@@ -738,6 +777,8 @@ This example is small, but it models the senior workflow. You corrected the path
 ---
 
 ## Quiz
+
+Use these questions as reasoning drills rather than recall checks. In each one, identify the layer that owns the problem before choosing a command: source files, Kustomize rendering, Kubernetes validation, or live cluster state. That habit matches how real troubleshooting works because a single failed deployment can involve more than one layer. The best answer is rarely "rerun apply"; it is usually "prove which layer is wrong, repair the smallest thing, and preview again."
 
 1. **Your team deploys the same API to development, staging, and production. A developer copied the Deployment into all three environment folders and changed the replica count in each copy. A security context fix was later applied only to production. How would you redesign the repository with Kustomize, and why does that reduce risk?**
 
@@ -809,6 +850,8 @@ This example is small, but it models the senior workflow. You corrected the path
 **Task**: Build, inspect, apply, and troubleshoot a Kustomize structure for a web application with development and production overlays.
 
 This exercise follows the same progression you should use in the exam: create the base, add a simple overlay, add a production overlay, render before applying, validate with dry-run, apply only after the output is correct, and then clean up. The commands are written to run in a shell with `kubectl` available and a working Kubernetes cluster.
+
+The exercise intentionally repeats render commands more often than a rushed operator might. That repetition is the point. You are training yourself to treat rendered YAML as the contract between the repository and the cluster, not as an optional diagnostic artifact. When the output looks wrong, stop in the repository and repair the Kustomize input. When the output looks right but the API server rejects it, move your attention to cluster constraints such as namespaces, immutable fields, admission policy, and permissions.
 
 ### Step 1: Create the directory structure
 
@@ -1251,6 +1294,24 @@ Read each scenario and decide whether plain manifests, Kustomize, or Helm is the
 Plain manifests are enough for the quick debug Pod because there is no reusable environment structure. Kustomize fits the owned web application because the base can hold the shared workload while overlays hold environment differences. Helm fits the third-party ingress controller because chart packaging, dependencies, values, and release history are part of the requirement.
 
 </details>
+
+---
+
+## Sources
+
+- https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/
+- https://kubernetes.io/docs/reference/kubectl/generated/kubectl_kustomize/
+- https://kubernetes.io/docs/reference/kubectl/generated/kubectl_apply/
+- https://kubernetes.io/docs/reference/kubectl/generated/kubectl_diff/
+- https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+- https://kubernetes.io/docs/concepts/services-networking/service/
+- https://kubernetes.io/docs/concepts/configuration/configmap/
+- https://kubernetes.io/docs/concepts/configuration/secret/
+- https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+- https://kubernetes.io/docs/concepts/overview/working-with-objects/names/
+- https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/
+- https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/
+- https://fluxcd.io/flux/components/kustomize/kustomizations/
 
 ---
 
