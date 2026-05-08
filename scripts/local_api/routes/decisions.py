@@ -13,6 +13,14 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import unquote
 
+try:
+    from local_api.routes.ui_fragments import AFK_NOTIFY_CSS, render_afk_notify_markup
+except ModuleNotFoundError:
+    from scripts.local_api.routes.ui_fragments import (
+        AFK_NOTIFY_CSS,
+        render_afk_notify_markup,
+    )
+
 
 RouteResponse = tuple[int, Any, str]
 _THREAD_ID_RE = _re.compile(r"\b[a-f0-9]{32}\b", _re.IGNORECASE)
@@ -332,6 +340,7 @@ def build_pending_decisions(repo_root: Path) -> dict[str, Any]:
             except OSError:
                 continue
             status = _status_for_path(rel, mtime)
+            is_stale = status == "stale"
             if status == "stale":
                 stale += 1
             else:
@@ -342,6 +351,7 @@ def build_pending_decisions(repo_root: Path) -> dict[str, Any]:
                     "decision_path": rel,
                     "status": status,
                     "mtime": mtime,
+                    "is_stale": is_stale,
                 }
             )
     return {"pending": pending, "stale": stale, "files": files}
@@ -372,8 +382,9 @@ def render_decisions_index_html(
 
     rows = []
     for item in decisions:
+        row_id = "card-" + str(item["filename"])
         rows.append(
-            "<tr>"
+            f'<tr class="decision-card" id="{_html.escape(row_id, quote=True)}">'
             f'<td><a href="{_html.escape(str(item["href"]), quote=True)}">{_html.escape(str(item["title"]))}</a>'
             f'<span>{_html.escape(str(item["decision_path"]))}</span></td>'
             f'<td>{_html.escape(str(item["date"]))}</td>'
@@ -400,6 +411,7 @@ def render_decisions_index_html(
     .meta{{color:var(--muted);font-size:13px;margin-top:4px}}
     .banner{{border:1px solid rgba(245,158,11,.55);background:rgba(245,158,11,.11);color:#f8d9a0;border-radius:6px;padding:12px 14px;margin-bottom:16px;font-weight:750}}
     .banner.stale{{border-color:rgba(251,113,133,.65);background:rgba(251,113,133,.11);color:#fecdd3}}
+{AFK_NOTIFY_CSS}
     table{{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}}
     th,td{{padding:11px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:13px;vertical-align:middle}}
     th{{background:#121416;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}}
@@ -411,6 +423,8 @@ def render_decisions_index_html(
     .status-badge.decided{{background:rgba(85,209,127,.13);color:#9ef0b7}}
     .status-badge.pending{{background:rgba(245,158,11,.14);color:#f8d9a0}}
     .status-badge.stale{{background:rgba(251,113,133,.14);color:#fecdd3}}
+    tr.decision-card:target{{animation:decision-target-highlight 3s ease-out}}
+    @keyframes decision-target-highlight{{0%,70%{{outline:2px solid #fde047;background:rgba(253,224,71,.16)}}100%{{outline:2px solid transparent;background:transparent}}}}
     .empty{{color:var(--muted);text-align:center;padding:30px}}
     @media(max-width:760px){{.page-head{{align-items:flex-start;flex-direction:column}}table{{display:block;overflow:auto}}}}
   </style>
@@ -427,6 +441,7 @@ def render_decisions_index_html(
     <tbody>{body_rows}</tbody>
   </table>
 </main>
+{render_afk_notify_markup()}
 </body>
 </html>"""
 
