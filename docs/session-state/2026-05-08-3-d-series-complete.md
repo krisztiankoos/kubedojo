@@ -75,9 +75,22 @@ User dispatched codex-desktop (with new web UI tools) to do a holistic UI/UX rev
 
 ## What's still in flight at handoff write-time
 
-- **Nit-batch PR (`b6myc4qe4`)** — codex dispatched at session end to address all 4 D-series follow-up issues (#992 PR #985 deferred nits, #996 D1.5 nits, #999 D3 nits, #1004 D6 nits) in ONE PR. Specs: `data-default-view` server-render to fix D3's view flash; remove dead DEFER guard; tighten vote regex with last-line anchor + add U+2018 left-curly-quote; symmetric `OperationalError` guard on `_query_decision_results`; sanitizer paren-strip; partial UNIQUE INDEX for backfill dedup; `_overload` decorators on `set_session`; legacy fallback shape divergence fix; `limit=10000` constant extraction. Cross-family review still required before merge.
 - **codex-desktop UI/UX review** — separate session, reviewing the live `/channels` + `/decisions` + `/api/search` surface against UX heuristics. May open follow-up PRs.
 - **Local API on :8768** — confirmed running fresh post-D6 code after the user's second restart this session. No carryover.
+
+(Nothing else. PR #1005 nit-batch + round-2 both shipped before session end — see "Late-session additions" below.)
+
+## Late-session additions (after the main D-series chain)
+
+- **PR #1005 nit-batch shipped** (`d5403449`) — addresses #992 #996 #999 #1004 in one commit. Authored by codex (`b6myc4qe4`, 706s), reviewed by claude-sonnet, NEEDS-CHANGES with 2 specific findings, round-2 (`bg5dgg09y`, 250s) addressed both, merged after CI green.
+    - Round-1 commit `8a75246f`: legacy fallback dict shape, partial UNIQUE INDEX on `channel_events`, `_SUPPLEMENTARY_EVENTS_LIMIT` constant, `data-default-view` server-render (kills view flash), dead DEFER guard removed, vote regex tightened with last-line anchor + U+2018, symmetric `OperationalError` guard on `_query_decision_results`, sanitizer `lstrip("*^()[]")`, `@overload` on `set_session`, session_mode integration test.
+    - Round-2 commit `6327ac8a`: `_sanitize_fts_query` `lstrip` → `strip` (balanced parens like `(needle)` were producing the literal-search token `"needle)"`); supplementary events query now logs `WARNING` when row count hits `_SUPPLEMENTARY_EVENTS_LIMIT`.
+    - 281 tests pass post-round-2.
+    - 4 follow-up issues now CLOSED: #992 #996 #999 #1004.
+
+### Diagnosis hiccup worth flagging
+
+I misdiagnosed `b6myc4qe4` as "died silently" when the dispatch was actually still running and just slow-flushing stdio. Saw 1-line task file + no `pgrep` match + no JSONL entry at the ~7-min mark. Dispatched a "salvage" (`b6vl2v0pt`) on the same worktree to commit + push. The original then completed cleanly at 11:46s with PR #1005 already opened — both dispatches converged on the same artifact (no duplicate PR, no harm done), but the duplicate compute was avoidable. Memory `feedback_no_ampersand_in_run_in_background.md` extended with a sibling rule: **don't proactively diagnose "dispatch died" before the harness's task notification fires; wait the full timeout budget before re-dispatching.** ~3 min of wasted codex compute.
 
 ## What was NOT done (carryover)
 
@@ -251,11 +264,11 @@ Memory reaffirmed: 7
 
 ## Final tally
 
-- **10 PRs merged** (D1, D1.5, D2, D3, D4, D4.5, D5, D6, dependabot setup-python, dependabot checkout)
-- **8 D-series GH issues closed** (#964–#970 + #993)
+- **11 PRs merged** (D1, D1.5, D2, D3, D4, D4.5, D5, D6, dependabot setup-python, dependabot checkout, nit-batch #1005)
+- **12 GH issues closed** (8 D-series #964–#970 + #993; 4 follow-up nits #992 #996 #999 #1004)
 - **5 stale L-series GH issues closed manually** (#973, #974, #977, #978, #979)
-- **3 follow-up nit-tracking issues opened** (#996, #999, #1004) — all in flight to close via the nit-batch PR
-- **11 codex dispatches** (8 authors + 2 round-2 fixes + 1 failed-then-retry first-D1 + 1 nit-batch in flight). One model-default issue caught (`gpt-5.3-codex-spark` silent bail on 6KB prompts; pin `gpt-5.5` for D-class work).
-- **7 cross-family reviews** (6 by claude-sonnet, 1 self-managed by codex via gemini-3.1-pro). Cross-family rule satisfied on every PR.
+- **0 follow-up nit-tracking issues open at session end** (all 4 batched into PR #1005 and merged)
+- **14 codex dispatches** (8 D-series authors + 4 round-2 fixes [D1.5, D2, nit-batch r2, plus the no-op duplicate salvage] + 1 failed-then-retry first-D1 + 1 nit-batch round-1). One model-default issue caught (`gpt-5.3-codex-spark` silent bail on 6KB prompts; pin `gpt-5.5` for D-class work). One slow-flush misdiagnosis caught (don't assume dead before notification fires).
+- **8 cross-family reviews** (7 by claude-sonnet, 1 self-managed by codex via gemini-3.1-pro on D4). Cross-family rule satisfied on every PR.
 - **3 new memories**, 7 reaffirmed.
-- **The autonomous queue from session 2 is closed end-to-end.** D-series complete. Channel feature is live, posting works, search works, lineage works, keyboard nav works, AFK-notify works. codex-desktop now has the settled surface to do the UI/UX pass without my chain shifting under their feet.
+- **The autonomous queue from session 2 is closed end-to-end + the follow-up nits are all closed too.** D-series complete with NO open carryover from this session's own work. Channel feature is live, posting works, search works, lineage works, keyboard nav works, AFK-notify works. codex-desktop now has the settled surface to do the UI/UX pass without my chain shifting under their feet.
