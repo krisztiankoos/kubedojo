@@ -15,6 +15,7 @@ ab channel info <name>
 ab channel context <name> [--edit] [--show]
 ab channel tail <name> [--n N] [--thread TID]
 ab channel watch <thread_id> [--follow] [--event-stream]
+ab channel backfill-events
 
 ab post <channel> <body> [--to A,...] [--parent ID] [--corr ID]
 ab p <channel> <agent> <body>                    # shorthand
@@ -143,6 +144,11 @@ def register_channel_commands(subparsers: Any) -> None:
         "--event-stream",
         action="store_true",
         help="Emit JSONL rows for machine readers",
+    )
+
+    channel_sub.add_parser(
+        "backfill-events",
+        help="Backfill missing message_posted events from channel_messages",
     )
 
     # ── top-level: post ───────────────────────────────────────────
@@ -323,6 +329,8 @@ def _dispatch_channel_group(args) -> int:
         return _handle_channel_tail(args)
     if sub == "watch":
         return _handle_channel_watch(args)
+    if sub == "backfill-events":
+        return _handle_channel_backfill_events(args)
     print(f"unknown subcommand: channel {sub}", file=sys.stderr)
     return 2
 
@@ -708,6 +716,16 @@ def _handle_channel_watch(args) -> int:
     except ValueError as exc:
         print(f"❌ {exc}", file=sys.stderr)
         return 1
+
+
+def _handle_channel_backfill_events(args) -> int:
+    try:
+        inserted = _channels.backfill_message_posted_events()
+    except Exception as exc:
+        print(f"❌ backfill failed: {exc}", file=sys.stderr)
+        return 1
+    print(f"backfill-events: inserted {inserted} message_posted event(s)")
+    return 0
 
 
 def _handle_post(args) -> int:
