@@ -706,6 +706,19 @@ def render_channels_chat_html(
     .modal-title{{font-size:13px;font-weight:850}}
     .modal-close{{border:1px solid var(--line);background:#111315;color:var(--text);border-radius:6px;width:30px;height:30px;cursor:pointer;font-size:18px;line-height:1}}
     .modal-body{{overflow:auto;padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}}
+    .event-row.kbd-focused{{border-left-color:var(--red);box-shadow:inset 3px 0 0 var(--red);background:rgba(251,113,133,.1);padding-top:8px;padding-bottom:8px;border-radius:0 6px 6px 0}}
+    .kbd-modal{{width:min(560px,94vw);max-height:82vh;display:grid;grid-template-rows:auto minmax(0,1fr);background:#101112;border:1px solid var(--line);border-radius:8px;box-shadow:0 24px 80px rgba(0,0,0,.48);overflow:hidden}}
+    .kbd-modal-body{{overflow:auto;padding:14px}}
+    .switcher-input{{width:100%;border:1px solid var(--line);border-radius:6px;background:#0f1011;color:var(--text);padding:10px 12px;font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;margin-bottom:10px}}
+    .switcher-input:focus{{outline:2px solid rgba(61,214,198,.35);border-color:var(--teal)}}
+    .switcher-list{{display:grid;gap:4px}}
+    .switcher-result{{border:1px solid transparent;background:transparent;color:var(--text);border-radius:6px;padding:9px 10px;text-align:left;font-size:13px;cursor:pointer}}
+    .switcher-result.active,.switcher-result:hover{{border-color:rgba(61,214,198,.5);background:rgba(61,214,198,.12)}}
+    .switcher-empty{{color:var(--muted);font-size:13px;padding:14px 4px}}
+    .help-list{{display:grid;gap:8px;font-size:13px}}
+    .help-row{{display:grid;grid-template-columns:86px minmax(0,1fr);gap:12px;align-items:center;border-bottom:1px solid var(--line);padding:9px 0}}
+    .help-row:last-child{{border-bottom:0}}
+    .help-key{{justify-self:start;border:1px solid var(--line);background:#111315;border-radius:5px;padding:3px 7px;font:12px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--teal)}}
     .turn-body{{min-width:0;border:1px solid var(--line);border-radius:6px;background:#0d0f10;overflow:hidden}}
     .turn-body h3{{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);background:#121416}}
     .turn-body pre{{white-space:pre-wrap;word-break:break-word;color:var(--text);font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px;max-height:62vh;overflow:auto}}
@@ -757,6 +770,34 @@ def render_channels_chat_html(
     <div class="modal-body" id="turnModalBody"></div>
   </div>
 </div>
+<div class="modal-backdrop" id="channel-switcher-modal" hidden>
+  <div class="kbd-modal" role="dialog" aria-modal="true" aria-labelledby="channelSwitcherTitle">
+    <div class="modal-header">
+      <div class="modal-title" id="channelSwitcherTitle">Switch channel</div>
+      <button class="modal-close" id="channelSwitcherClose" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="kbd-modal-body">
+      <input class="switcher-input" id="channelSwitcherInput" type="text" autocomplete="off" spellcheck="false" placeholder="Type a channel name">
+      <div class="switcher-list" id="channelSwitcherList"></div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="keybindings-help-modal" hidden>
+  <div class="kbd-modal" role="dialog" aria-modal="true" aria-labelledby="keybindingsHelpTitle">
+    <div class="modal-header">
+      <div class="modal-title" id="keybindingsHelpTitle">Keyboard shortcuts</div>
+      <button class="modal-close" id="keybindingsHelpClose" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="kbd-modal-body">
+      <div class="help-list">
+        <div class="help-row"><span class="help-key">⌘K / Ctrl+K</span><span>Open the channel switcher.</span></div>
+        <div class="help-row"><span class="help-key">j / k</span><span>Move the focused message indicator.</span></div>
+        <div class="help-row"><span class="help-key">gg / G</span><span>Jump to the top or bottom of the message list.</span></div>
+        <div class="help-row"><span class="help-key">?</span><span>Show or hide this shortcuts panel.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
 const INITIAL_CHANNEL = {selected_js};
 const INITIAL_PARAMS = new URLSearchParams(window.location.search);
@@ -775,6 +816,8 @@ let hasBooted = false;
 let currentView = REQUESTED_VIEW || "chat";
 let threadSummary = null;
 let summaryFetchId = 0;
+let focusedMessageIndex = -1;
+let lastGKeyAt = 0;
 const renderedMsgIds = new Set();
 const channelList = document.getElementById("channelList");
 const messageList = document.getElementById("messageList");
@@ -790,13 +833,19 @@ const turnModal = document.getElementById("turnModal");
 const turnModalTitle = document.getElementById("turnModalTitle");
 const turnModalBody = document.getElementById("turnModalBody");
 const turnModalClose = document.getElementById("turnModalClose");
+const channelSwitcherModal = document.getElementById("channel-switcher-modal");
+const channelSwitcherInput = document.getElementById("channelSwitcherInput");
+const channelSwitcherList = document.getElementById("channelSwitcherList");
+const channelSwitcherClose = document.getElementById("channelSwitcherClose");
+const keybindingsHelpModal = document.getElementById("keybindings-help-modal");
+const keybindingsHelpClose = document.getElementById("keybindingsHelpClose");
 function lastVisitedKey(name){{return "kdjo_channel_lastvisited_"+name;}}
 function timeAgo(iso){{if(!iso)return"no activity";const d=Math.floor((Date.now()-new Date(iso))/1000);if(d<60)return d+"s ago";if(d<3600)return Math.floor(d/60)+"m ago";if(d<86400)return Math.floor(d/3600)+"h ago";return Math.floor(d/86400)+"d ago";}}
 function setText(el,value){{el.textContent=value == null ? "" : String(value);}}
 function rememberVisited(name){{if(name)localStorage.setItem(lastVisitedKey(name),new Date().toISOString());}}
 function computePollDelayMs(now=Date.now()){{if((lastEventType==="reply_started"||lastEventType==="heartbeat")&&lastNewEventAt&&now-lastNewEventAt<QUIET_RESET_MS)return TIGHT_POLL_MS;return DEFAULT_POLL_MS;}}
 function isNearBottom(){{return messageList.scrollHeight-messageList.scrollTop-messageList.clientHeight<48;}}
-function resetMessages(){{renderedMsgIds.clear();sinceId=0;lastEventType="";lastNewEventAt=0;messageList.replaceChildren(emptyState);emptyState.style.display="block";}}
+function resetMessages(){{renderedMsgIds.clear();sinceId=0;lastEventType="";lastNewEventAt=0;focusedMessageIndex=-1;messageList.replaceChildren(emptyState);emptyState.style.display="block";}}
 function hasStructuredVotes(summary){{return !!(summary&&summary.rounds&&summary.rounds.some(round=>(round.turns||[]).some(turn=>turn.vote)));}}
 function defaultViewForSummary(summary){{if(REQUESTED_VIEW)return REQUESTED_VIEW;if(summary&&(summary.status==="converged"||summary.decision_id))return"graph";return"chat";}}
 function setView(view,updateUrl=true){{currentView=view==="graph"?"graph":"chat";messageList.hidden=currentView!=="chat";graphView.hidden=currentView!=="graph";document.querySelectorAll("[data-view-toggle]").forEach(btn=>btn.classList.toggle("active",btn.dataset.viewToggle===currentView));if(updateUrl){{const url=new URL(window.location.href);url.searchParams.set("view",currentView);history.replaceState(null,"",url);}}}}
@@ -825,6 +874,29 @@ function schedulePoll(){{clearTimeout(pollTimer);pollTimer=setTimeout(poll,compu
 function poll(){{if(!selectedChannel){{schedulePoll();return;}}const myFetchId=++currentFetchId;fetch("/api/channel/"+encodeURIComponent(selectedChannel)+"/events?since_event_id="+sinceId).then(r=>r.json()).then(data=>{{if(myFetchId!==currentFetchId)return;applyEvents(data.events||[],data.next_since_event_id);}}).catch(()=>{{if(myFetchId===currentFetchId)document.getElementById("pollState").textContent="API unavailable";}}).finally(()=>{{if(myFetchId===currentFetchId)schedulePoll();}});}}
 function chooseChannel(name){{selectedChannel=name;if(!selectedChannel&&channels.length)selectedChannel=channels[0].name;document.getElementById("channelTitle").textContent=selectedChannel?"# "+selectedChannel:"Agent Deliberations";postButton.disabled=!selectedChannel;resetMessages();loadSummary();rememberVisited(selectedChannel);renderSidebar();poll();}}
 function loadChannels(){{fetch("/api/channels").then(r=>r.json()).then(data=>{{channels=data.channels||[];if(selectedChannel&&!channels.some(ch=>ch.name===selectedChannel))channels.unshift({{name:selectedChannel,event_count:0,last_event_ts:null,threads:[]}});renderSidebar();if(!hasBooted){{hasBooted=true;chooseChannel(selectedChannel);}}}}).catch(()=>{{document.getElementById("sidebarMeta").textContent="API unavailable";}});}}
+// D4.5 keybindings
+function isKeybindingInputTarget(event){{return event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA';}}
+function messageRows(){{return Array.from(messageList.querySelectorAll(".event-row"));}}
+function focusMessageAt(index){{const rows=messageRows();if(!rows.length)return;const next=(index+rows.length)%rows.length;rows.forEach(row=>row.classList.remove("kbd-focused"));focusedMessageIndex=next;rows[next].classList.add("kbd-focused");rows[next].scrollIntoView({{block:"nearest",behavior:"smooth"}});}}
+function moveFocusedMessage(delta){{const rows=messageRows();if(!rows.length)return;const start=focusedMessageIndex<0?(delta>0?-1:0):focusedMessageIndex;focusMessageAt(start+delta);}}
+function jumpToMessageEdge(edge){{const rows=messageRows();if(rows.length)focusMessageAt(edge==="top"?0:rows.length-1);messageList.scrollTo({{top:edge==="top"?0:messageList.scrollHeight,behavior:"smooth"}});}}
+function channelsFromSidebar(){{return Array.from(document.querySelectorAll(".channel-link")).map(link=>({{name:link.dataset.channelName||link.textContent.replace(/^#\\s*/,"").trim()}})).filter(channel=>channel.name);}}
+function filteredSwitcherChannels(){{const query=channelSwitcherInput.value.toLowerCase();return channelsFromSidebar().filter(channel=>channel.name.toLowerCase().includes(query));}}
+function renderChannelSwitcherResults(){{const matches=filteredSwitcherChannels();channelSwitcherList.replaceChildren();if(!matches.length){{const empty=document.createElement("div");empty.className="switcher-empty";empty.textContent="No matching channels";channelSwitcherList.appendChild(empty);return;}}matches.forEach((channel,index)=>{{const button=document.createElement("button");button.type="button";button.className="switcher-result"+(index===0?" active":"");button.textContent="# "+channel.name;button.dataset.channelName=channel.name;button.addEventListener("click",()=>navigateToSwitcherChannel(channel.name));channelSwitcherList.appendChild(button);}});}}
+function activeSwitcherIndex(){{return Array.from(channelSwitcherList.querySelectorAll(".switcher-result")).findIndex(button=>button.classList.contains("active"));}}
+function moveSwitcherHighlight(delta){{const buttons=Array.from(channelSwitcherList.querySelectorAll(".switcher-result"));if(!buttons.length)return;let next=activeSwitcherIndex();next=next<0?0:(next+delta+buttons.length)%buttons.length;buttons.forEach(button=>button.classList.remove("active"));buttons[next].classList.add("active");buttons[next].scrollIntoView({{block:"nearest"}});}}
+function navigateToSwitcherChannel(name){{if(!name)return;window.location.href="/channels/"+encodeURIComponent(name);}}
+function openChannelSwitcher(){{renderChannelSwitcherResults();channelSwitcherModal.hidden=false;channelSwitcherInput.value="";renderChannelSwitcherResults();channelSwitcherInput.focus();}}
+function closeChannelSwitcher(){{channelSwitcherModal.hidden=true;}}
+function toggleKeybindingsHelp(){{keybindingsHelpModal.hidden=!keybindingsHelpModal.hidden;if(!keybindingsHelpModal.hidden)keybindingsHelpClose.focus();}}
+function closeKeybindingsHelp(){{keybindingsHelpModal.hidden=true;}}
+channelSwitcherInput.addEventListener("input",renderChannelSwitcherResults);
+channelSwitcherInput.addEventListener("keydown",event=>{{if(event.key==="ArrowDown"){{event.preventDefault();moveSwitcherHighlight(1);}}else if(event.key==="ArrowUp"){{event.preventDefault();moveSwitcherHighlight(-1);}}else if(event.key==="Enter"){{event.preventDefault();const active=channelSwitcherList.querySelector(".switcher-result.active");navigateToSwitcherChannel(active?active.dataset.channelName:"");}}else if(event.key==="Escape"){{event.preventDefault();closeChannelSwitcher();}}}});
+channelSwitcherClose.addEventListener("click",closeChannelSwitcher);
+channelSwitcherModal.addEventListener("click",event=>{{if(event.target===channelSwitcherModal)closeChannelSwitcher();}});
+keybindingsHelpClose.addEventListener("click",closeKeybindingsHelp);
+keybindingsHelpModal.addEventListener("click",event=>{{if(event.target===keybindingsHelpModal)closeKeybindingsHelp();}});
+document.addEventListener('keydown', event=>{{if((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k'){{event.preventDefault();openChannelSwitcher();return;}}if(isKeybindingInputTarget(event))return;if(event.key==="Escape"){{if(!channelSwitcherModal.hidden){{closeChannelSwitcher();return;}}if(!keybindingsHelpModal.hidden){{closeKeybindingsHelp();return;}}}}if(event.key === '?'){{event.preventDefault();toggleKeybindingsHelp();return;}}if(event.key === 'j'){{event.preventDefault();moveFocusedMessage(1);return;}}if(event.key === 'k'){{event.preventDefault();moveFocusedMessage(-1);return;}}if(event.key === 'G'){{event.preventDefault();jumpToMessageEdge("bottom");return;}}if(event.key === 'g'){{const now=Date.now();if(now-lastGKeyAt<500){{event.preventDefault();lastGKeyAt=0;jumpToMessageEdge("top");return;}}lastGKeyAt=now;}}}});
 postForm.addEventListener("submit",ev=>{{ev.preventDefault();if(!selectedChannel)return;const body=postBody.value;if(!body.trim()){{formStatus.textContent="Body is required.";return;}}postButton.disabled=true;formStatus.textContent="Posting...";fetch("/api/channel/"+encodeURIComponent(selectedChannel)+"/post",{{method:"POST",headers:{{"Content-Type":"application/json"}},body:JSON.stringify({{body,from_agent:"user"}})}}).then(async r=>{{const data=await r.json();if(!r.ok)throw new Error(data.error||"post failed");postBody.value="";formStatus.textContent="Posted.";rememberVisited(selectedChannel);poll();loadChannels();}}).catch(err=>{{formStatus.textContent=err.message;}}).finally(()=>{{postButton.disabled=false;postBody.focus();}});}});
 document.querySelectorAll("[data-view-toggle]").forEach(btn=>btn.addEventListener("click",()=>setView(btn.dataset.viewToggle,true)));
 turnModalClose.addEventListener("click",closeTurnModal);
