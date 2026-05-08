@@ -6157,1274 +6157,177 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
   <title>KubeDojo Local Monitor</title>
   <style>
     :root {{
-      --bg: #0a0f1a;
-      --surface-0: #111827;
-      --surface-1: #1a2332;
-      --surface-2: #1f2b3d;
-      --text: #e5e7eb;
-      --text-secondary: #9ca3af;
-      --text-dim: #6b7280;
-      --accent: #38bdf8;
-      --accent-muted: rgba(56,189,248,0.12);
-      --teal: #2dd4bf;
-      --teal-muted: rgba(45,212,191,0.12);
-      --green: #4ade80;
-      --green-muted: rgba(74,222,128,0.12);
-      --amber: #fbbf24;
-      --amber-muted: rgba(251,191,36,0.10);
-      --red: #f87171;
-      --red-muted: rgba(248,113,113,0.10);
-      --border: rgba(255,255,255,0.06);
-      --border-subtle: rgba(255,255,255,0.03);
-      --radius: 12px;
-      --radius-sm: 8px;
-      --radius-xs: 6px;
+      --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --surface-2:#1f2b3d;
+      --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280;
+      --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12);
+      --teal:#2dd4bf; --teal-muted:rgba(45,212,191,0.12);
+      --green:#4ade80; --green-muted:rgba(74,222,128,0.12);
+      --amber:#fbbf24; --amber-muted:rgba(251,191,36,0.10);
+      --red:#f87171; --red-muted:rgba(248,113,113,0.10);
+      --border:rgba(255,255,255,0.06); --radius:12px; --radius-sm:8px;
     }}
-    *, *::before, *::after {{ box-sizing: border-box; }}
-    body {{
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      -webkit-font-smoothing: antialiased;
-      line-height: 1.5;
-    }}
-    .mono {{ font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', ui-monospace, monospace; }}
+    *,*::before,*::after {{ box-sizing:border-box; }}
+    body {{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; -webkit-font-smoothing:antialiased; }}
+    .mono {{ font-family:'SF Mono','Fira Code','Cascadia Code',ui-monospace,monospace; }}
 {_TOP_NAV_CSS}
-
-    .header {{
-      background: linear-gradient(180deg, rgba(17,24,39,0.95) 0%, rgba(10,15,26,0.98) 100%);
-      border-bottom: 1px solid var(--border);
-      padding: 20px 0;
-      position: sticky;
-      top: var(--topnav-h, 45px);
-      z-index: 50;
-      backdrop-filter: blur(12px);
-    }}
-    .header-inner {{
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }}
-    .header-left {{ display: flex; align-items: center; gap: 14px; }}
-    .logo {{
-      width: 32px; height: 32px; border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent), var(--teal));
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 800; font-size: 14px; color: #0a0f1a; flex-shrink: 0;
-    }}
-    .header-title {{ font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }}
-    .header-sub {{ font-size: 12px; color: var(--text-dim); }}
-    .header-right {{ display: flex; align-items: center; gap: 12px; }}
-    .status-pill {{
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 12px; border-radius: 20px;
-      font-size: 12px; font-weight: 500;
-      background: var(--green-muted); color: var(--green);
-    }}
-    .status-pill .dot {{
-      width: 6px; height: 6px; border-radius: 50%;
-      background: currentColor; animation: pulse 2s ease-in-out infinite;
-    }}
-    @keyframes pulse {{ 0%, 100% {{ opacity: 1; }} 50% {{ opacity: 0.4; }} }}
-    .refresh-btn {{
-      background: var(--surface-1); color: var(--text);
-      border: 1px solid var(--border); padding: 6px 14px;
-      border-radius: var(--radius-sm); font-size: 13px;
-      font-weight: 500; cursor: pointer; transition: all 0.15s;
-      display: flex; align-items: center; gap: 6px;
-    }}
-    .refresh-btn:hover {{ background: var(--surface-2); border-color: rgba(255,255,255,0.12); }}
-    .refresh-btn.loading {{ opacity: 0.6; pointer-events: none; }}
-    .refresh-btn svg {{ transition: transform 0.3s; }}
-    .refresh-btn.loading svg {{ animation: spin 0.8s linear infinite; }}
-    @keyframes spin {{ to {{ transform: rotate(360deg); }} }}
-    .last-updated {{ font-size: 11px; color: var(--text-dim); }}
-
-    .main {{ max-width: 1440px; margin: 0 auto; padding: 24px; }}
-
-    .metrics {{
-      display: grid; grid-template-columns: repeat(6, 1fr);
-      gap: 12px; margin-bottom: 24px;
-    }}
-    .metric {{
-      background: var(--surface-0); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 16px;
-      position: relative; overflow: hidden;
-    }}
-    .metric::before {{
-      content: ''; position: absolute; top: 0; left: 0; right: 0;
-      height: 2px; background: var(--border);
-    }}
-    .metric.good::before {{ background: var(--green); }}
-    .metric.warn::before {{ background: var(--amber); }}
-    .metric.bad::before {{ background: var(--red); }}
-    .metric.accent::before {{ background: var(--accent); }}
-    .metric-label {{
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 8px;
-    }}
-    .metric-value {{ font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }}
-    .metric-sub {{ font-size: 11px; color: var(--text-dim); margin-top: 6px; }}
-
-    .progress-track {{
-      height: 4px; background: rgba(255,255,255,0.06);
-      border-radius: 2px; margin-top: 10px; overflow: hidden;
-    }}
-    .progress-fill {{ height: 100%; border-radius: 2px; transition: width 0.6s ease; }}
-    .progress-fill.green {{ background: var(--green); }}
-    .progress-fill.amber {{ background: var(--amber); }}
-    .progress-fill.accent {{ background: var(--accent); }}
-    .progress-fill.teal {{ background: var(--teal); }}
-
-    .sections {{ display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }}
-    .section-full {{ grid-column: 1 / -1; }}
-
-    .panel {{
-      background: var(--surface-0); border: 1px solid var(--border);
-      border-radius: var(--radius); overflow: hidden;
-    }}
-    .panel-header {{
-      padding: 14px 18px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
-    }}
-    .panel-title {{
-      font-size: 13px; font-weight: 600;
-      display: flex; align-items: center; gap: 8px;
-    }}
-    .panel-icon {{
-      width: 18px; height: 18px; border-radius: 4px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; flex-shrink: 0;
-    }}
-    .panel-badge {{
-      font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600;
-    }}
-    .panel-body {{ padding: 16px 18px; }}
-    .panel-body-flush {{ padding: 0; }}
-
-    .queue-cols {{ display: grid; grid-template-columns: 1fr 1fr; gap: 0; }}
-    .queue-col {{ border-right: 1px solid var(--border); }}
-    .queue-col:last-child {{ border-right: 0; }}
-    .queue-col-header {{
-      padding: 10px 14px; border-bottom: 1px solid var(--border-subtle);
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.04em; color: var(--text-dim);
-      display: flex; align-items: center; justify-content: space-between;
-    }}
-    .queue-count {{
-      font-size: 10px; padding: 1px 6px; border-radius: 8px;
-      background: rgba(255,255,255,0.06); color: var(--text-secondary);
-    }}
-    .queue-list {{ margin: 0; padding: 0; list-style: none; max-height: 180px; overflow-y: auto; }}
-    .queue-list::-webkit-scrollbar {{ width: 4px; }}
-    .queue-list::-webkit-scrollbar-track {{ background: transparent; }}
-    .queue-list::-webkit-scrollbar-thumb {{ background: rgba(255,255,255,0.08); border-radius: 2px; }}
-    .queue-item {{
-      padding: 6px 14px; font-size: 12px; border-bottom: 1px solid var(--border-subtle);
-      color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }}
-    .queue-item:last-child {{ border-bottom: 0; }}
-    .queue-empty {{ padding: 20px 14px; text-align: center; font-size: 12px; color: var(--text-dim); }}
-
-    .tracks-table {{ width: 100%; border-collapse: collapse; }}
-    .tracks-table th {{
-      text-align: left; padding: 10px 18px; font-size: 11px;
-      font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
-      color: var(--text-dim); border-bottom: 1px solid var(--border);
-      background: rgba(0,0,0,0.15);
-    }}
-    .tracks-table th.num {{ text-align: right; }}
-    .tracks-table td {{
-      padding: 10px 18px; font-size: 13px;
-      border-bottom: 1px solid var(--border-subtle);
-    }}
-    .tracks-table tr:last-child td {{ border-bottom: 0; }}
-    .tracks-table tr:hover td {{ background: rgba(255,255,255,0.02); }}
-    .tracks-table td.num {{ text-align: right; font-variant-numeric: tabular-nums; }}
-    .tracks-table td.name {{ font-weight: 600; }}
-    .tracks-table .dim {{ color: var(--text-dim); }}
-    .tracks-table .warn {{ color: var(--amber); font-weight: 600; }}
-    .tracks-table .bad {{ color: var(--red); font-weight: 600; }}
-    .tracks-table .good {{ color: var(--green); }}
-    .tracks-table .zero {{ color: var(--text-dim); }}
-
-    .queue-summary {{
-      padding: 14px 18px; border-bottom: 1px solid var(--border);
-      display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
-      gap: 0; text-align: center;
-    }}
-    .queue-stat {{ border-right: 1px solid var(--border-subtle); padding: 2px 8px; }}
-    .queue-stat:last-child {{ border-right: 0; }}
-    .queue-stat-val {{ font-size: 20px; font-weight: 700; letter-spacing: -0.01em; line-height: 1; }}
-    .queue-stat-label {{
-      font-size: 10px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.04em; color: var(--text-dim); margin-top: 6px;
-    }}
-    .queue-per-track {{ padding: 0; }}
-    .qpt-row {{
-      display: grid; grid-template-columns: 1fr auto;
-      padding: 8px 18px; border-bottom: 1px solid var(--border-subtle);
-      font-size: 12px; align-items: center; gap: 12px;
-    }}
-    .qpt-row:last-child {{ border-bottom: 0; }}
-    .qpt-name {{ color: var(--text-secondary); }}
-    .qpt-status {{ font-size: 11px; color: var(--text-dim); text-align: right; }}
-    .qpt-status .pill {{
-      display: inline-block; padding: 1px 7px; border-radius: 10px;
-      font-size: 10px; font-weight: 600; margin-left: 4px;
-    }}
-    .qpt-status .pill.w {{ background: var(--accent-muted); color: var(--accent); }}
-    .qpt-status .pill.r {{ background: var(--amber-muted); color: var(--amber); }}
-    .qpt-status .pill.p {{ background: var(--teal-muted); color: var(--teal); }}
-    .qpt-status .pill.d {{ background: var(--red-muted); color: var(--red); }}
-    .qpt-status.idle {{ color: var(--green); }}
-    .qpt-top {{
-      padding: 12px 18px; border-top: 1px solid var(--border);
-      background: rgba(0,0,0,0.12);
-    }}
-    .qpt-top-title {{
-      font-size: 10px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.04em; color: var(--text-dim); margin-bottom: 8px;
-    }}
-    .qpt-top-list {{ margin: 0; padding: 0; list-style: none; }}
-    .qpt-top-list li {{
-      padding: 3px 0; font-size: 12px; color: var(--text-secondary);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }}
-    .qpt-top-kind {{
-      display: inline-block; width: 14px; font-weight: 700;
-      font-size: 10px; text-transform: uppercase;
-    }}
-    .qpt-top-kind.w {{ color: var(--accent); }}
-    .qpt-top-kind.r {{ color: var(--amber); }}
-    .qpt-top-kind.p {{ color: var(--teal); }}
-    .qpt-top-kind.d {{ color: var(--red); }}
-
-    .ztt-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 0; }}
-    .ztt-section {{ padding: 14px 18px; border-right: 1px solid var(--border); }}
-    .ztt-section:last-child {{ border-right: 0; }}
-    .ztt-section-title {{
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: 0.04em; color: var(--text-dim); margin-bottom: 10px;
-    }}
-    .ztt-row {{ display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 12px; }}
-    .ztt-check {{
-      width: 16px; height: 16px; border-radius: 4px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; flex-shrink: 0;
-    }}
-    .ztt-check.pass {{ background: var(--green-muted); color: var(--green); }}
-    .ztt-check.fail {{ background: var(--red-muted); color: var(--red); }}
-    .ztt-label {{ color: var(--text-secondary); }}
-    .ztt-val {{ margin-left: auto; font-weight: 600; font-size: 11px; }}
-
-    .fb-header {{ display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }}
-    .fb-icon {{
-      width: 32px; height: 32px; border-radius: 50%;
-      background: var(--accent-muted); color: var(--accent);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; flex-shrink: 0;
-    }}
-    .fb-title {{ font-size: 14px; font-weight: 600; }}
-    .fb-meta {{
-      font-size: 12px; color: var(--text-dim);
-      display: flex; gap: 12px; margin-top: 2px; flex-wrap: wrap;
-    }}
-    .fb-meta span {{ display: flex; align-items: center; gap: 4px; }}
-    .fb-comment {{
-      background: var(--surface-1); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 12px; margin-top: 12px;
-    }}
-    .fb-comment-header {{ font-size: 11px; color: var(--text-dim); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }}
-    .fb-comment-body {{
-      font-size: 12px; color: var(--text-secondary); line-height: 1.5;
-      max-height: 120px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
-    }}
-    .review-list {{ list-style: none; margin: 0; padding: 0; }}
-    .review-item {{ padding: 10px 0; border-bottom: 1px solid var(--border-subtle); }}
-    .review-item:last-child {{ border-bottom: 0; }}
-    .review-head {{ display: flex; align-items: center; justify-content: space-between; gap: 12px; }}
-    .review-pill {{ padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; }}
-    .review-pill.verified {{ background: var(--green-muted); color: var(--green); }}
-    .review-pill.unverified {{ background: var(--amber-muted); color: var(--amber); }}
-    .review-pill.failed {{ background: var(--red-muted); color: var(--red); }}
-    .review-pill.none {{ background: rgba(255,255,255,0.06); color: var(--text-dim); }}
-    .review-note {{ margin-top: 6px; font-size: 12px; color: var(--text-secondary); }}
-    .review-note mark {{ background: var(--amber-muted); color: var(--amber); padding: 0 3px; border-radius: 4px; }}
-
-    .clr-green {{ color: var(--green); }}
-    .clr-amber {{ color: var(--amber); }}
-    .clr-red {{ color: var(--red); }}
-    .clr-accent {{ color: var(--accent); }}
-    .clr-teal {{ color: var(--teal); }}
-
-    .book-chip-cell {{ padding: 6px 12px !important; }}
-    .book-chip {{
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 10px;
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      padding: 2px 7px 2px 4px;
-      border-radius: 999px;
-      margin: 1px 4px 1px 0;
-      line-height: 1.4;
-      border: 1px solid transparent;
-      white-space: nowrap;
-    }}
-    .book-chip-n {{
-      font-variant-numeric: tabular-nums;
-      font-weight: 700;
-      font-size: 11px;
-      padding: 0 5px;
-      border-radius: 999px;
-      background: rgba(0,0,0,0.25);
-    }}
-    .book-chip-green {{ color: var(--green); background: rgba(74,222,128,0.10); border-color: rgba(74,222,128,0.30); }}
-    .book-chip-teal {{ color: var(--teal); background: var(--teal-muted); border-color: rgba(45,212,191,0.30); }}
-    .book-chip-accent {{ color: var(--accent); background: var(--accent-muted); border-color: rgba(56,189,248,0.30); }}
-    .book-chip-amber {{ color: var(--amber); background: var(--amber-muted); border-color: rgba(251,191,36,0.30); }}
-    .book-chip-dim {{ color: var(--text-dim); background: rgba(255,255,255,0.04); border-color: var(--border-subtle); }}
-    .empty-state {{ padding: 24px; text-align: center; color: var(--text-dim); font-size: 13px; }}
-    .skeleton {{
-      background: linear-gradient(90deg, var(--surface-1) 25%, var(--surface-2) 50%, var(--surface-1) 75%);
-      background-size: 200% 100%; animation: shimmer 1.5s infinite;
-      border-radius: var(--radius-xs); height: 16px;
-    }}
-    @keyframes shimmer {{ 0% {{ background-position: -200% 0; }} 100% {{ background-position: 200% 0; }} }}
-
-    @media (max-width: 1200px) {{ .metrics {{ grid-template-columns: repeat(3, 1fr); }} }}
-    @media (max-width: 960px) {{
-      .sections {{ grid-template-columns: 1fr; }}
-      .metrics {{ grid-template-columns: repeat(2, 1fr); }}
-      .queue-cols, .ztt-grid {{ grid-template-columns: 1fr; }}
-      .queue-col {{ border-right: 0; border-bottom: 1px solid var(--border); }}
-      .queue-col:last-child {{ border-bottom: 0; }}
-      .ztt-section {{ border-right: 0; border-bottom: 1px solid var(--border); }}
-      .ztt-section:last-child {{ border-bottom: 0; }}
-    }}
-    @media (max-width: 640px) {{
-      .metrics {{ grid-template-columns: 1fr; }}
-      .main {{ padding: 16px; }}
-      .header-inner {{ padding: 0 16px; flex-wrap: wrap; }}
-    }}
-
-{_OPERATOR_SUMMARY_CSS}
-{_QUALITY_SUMMARY_CSS}
-{_PIPELINE_SUMMARY_CSS}
-{_ACTIVITY_SUMMARY_CSS}
-{_HEALTH_SUMMARY_CSS}
-
-    /* Section readiness grid */
-    .readiness-wrap {{ padding: 4px 0 0 0; }}
-    .readiness-track {{
-      border-bottom: 1px solid var(--border-subtle);
-      padding: 12px 18px;
-    }}
-    .readiness-track:last-child {{ border-bottom: 0; }}
-    .readiness-track-header {{
-      display: flex; justify-content: space-between; align-items: baseline;
-      margin-bottom: 8px;
-    }}
-    .readiness-track-name {{
-      font-weight: 600; font-size: 14px;
-    }}
-    .readiness-track-sub {{
-      font-size: 12px; color: var(--text-dim);
-      font-variant-numeric: tabular-nums;
-    }}
-    .readiness-sections {{
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 8px;
-    }}
-    .readiness-section {{
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 8px 10px;
-      font-size: 12px;
-    }}
-    .readiness-section-head {{
-      display: flex; justify-content: space-between;
-      font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
-      font-size: 11px;
-      margin-bottom: 6px;
-    }}
-    .readiness-section-slug {{ color: var(--text); font-weight: 600; }}
-    .readiness-section-pct {{
-      color: var(--green); font-variant-numeric: tabular-nums;
-    }}
-    .readiness-section-pct.mid {{ color: var(--amber); }}
-    .readiness-section-pct.low {{ color: var(--text-dim); }}
-    .readiness-section-bar {{
-      height: 4px; border-radius: 2px; background: var(--border);
-      overflow: hidden; margin-bottom: 6px;
-    }}
-    .readiness-section-fill {{
-      height: 100%; background: var(--green); transition: width 0.3s;
-    }}
-    .readiness-section-fill.mid {{ background: var(--amber); }}
-    .readiness-section-fill.low {{ background: var(--text-dim); }}
-    .readiness-section-counts {{
-      display: flex; gap: 8px;
-      color: var(--text-dim);
-      font-variant-numeric: tabular-nums;
-      font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
-      font-size: 11px;
-    }}
-    .readiness-section-counts .dead {{ color: var(--red); }}
-    .readiness-section-counts .inflight {{ color: var(--amber); }}
-    .readiness-section-counts .cleared {{ color: var(--green); }}
-
+    .header {{ position:sticky; top:var(--topnav-h,45px); z-index:50; border-bottom:1px solid var(--border); background:rgba(10,15,26,0.96); backdrop-filter:blur(12px); }}
+    .header-inner {{ max-width:1180px; margin:0 auto; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }}
+    .brand {{ display:flex; align-items:center; gap:12px; min-width:0; }}
+    .logo {{ width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,var(--accent),var(--teal)); display:flex; align-items:center; justify-content:center; color:#0a0f1a; font-weight:800; }}
+    .title {{ font-size:16px; font-weight:700; }}
+    .sub {{ color:var(--text-dim); font-size:12px; }}
+    .header-right {{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }}
+    .status-pill,.panel-badge {{ display:inline-flex; align-items:center; gap:6px; padding:3px 9px; border-radius:999px; font-size:11px; font-weight:700; background:var(--green-muted); color:var(--green); white-space:nowrap; }}
+    .dot {{ width:6px; height:6px; border-radius:50%; background:currentColor; }}
+    .last-updated {{ color:var(--text-dim); font-size:11px; }}
+    .refresh-btn {{ border:1px solid var(--border); background:var(--surface-1); color:var(--text); border-radius:var(--radius-sm); padding:7px 12px; font-size:12px; font-weight:700; cursor:pointer; }}
+    .refresh-btn:hover {{ background:var(--surface-2); }}
+    .refresh-btn.loading {{ opacity:.6; pointer-events:none; }}
+    .main {{ max-width:1180px; margin:0 auto; padding:24px; }}
+    .summary-grid {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }}
+    .summary-shell {{ background:var(--surface-0); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }}
+    .summary-head {{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 16px; border-bottom:1px solid var(--border); }}
+    .summary-title {{ display:flex; align-items:center; gap:9px; font-size:13px; font-weight:700; }}
+    .summary-icon {{ width:20px; height:20px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; }}
+    .op-summary-card,.quality-summary-card,.pipeline-summary-card,.activity-summary-card,.channels-summary-card {{ display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:14px; min-height:78px; padding:15px 16px; color:var(--text); text-decoration:none; }}
+    .op-summary-card,.pipeline-summary-card {{ grid-template-columns:repeat(3,minmax(82px,1fr)) auto; }}
+    .op-summary-card:hover,.quality-summary-card:hover,.pipeline-summary-card:hover,.activity-summary-card:hover,.channels-summary-card:hover {{ background:rgba(255,255,255,0.02); }}
+    .op-summary-value,.pipeline-summary-value,.summary-value {{ display:block; font-size:23px; line-height:1; font-weight:800; font-variant-numeric:tabular-nums; }}
+    .op-summary-label,.pipeline-summary-label,.summary-label {{ display:block; margin-top:5px; color:var(--text-dim); font-size:10px; font-weight:800; letter-spacing:0; text-transform:uppercase; }}
+    .quality-summary-title {{ display:block; color:var(--text-dim); font-size:10px; font-weight:800; letter-spacing:0; text-transform:uppercase; margin-bottom:6px; }}
+    .quality-summary-counts,.summary-copy,.health-summary-copy {{ display:block; color:var(--text-secondary); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
+    .activity-summary-list {{ list-style:none; margin:0; padding:0; min-width:0; }}
+    .activity-summary-item {{ display:grid; grid-template-columns:18px 58px minmax(0,1fr); gap:8px; align-items:center; padding:2px 0; font-size:12px; color:var(--text-secondary); }}
+    .activity-summary-src {{ width:18px; height:18px; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:10px; background:var(--amber-muted); color:var(--amber); }}
+    .activity-summary-src.commit {{ background:var(--accent-muted); color:var(--accent); }}
+    .activity-summary-src.pipeline_event {{ background:var(--teal-muted); color:var(--teal); }}
+    .activity-summary-time {{ color:var(--text-dim); font-size:11px; white-space:nowrap; }}
+    .activity-summary-text {{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }}
+    .op-summary-link,.quality-summary-link,.pipeline-summary-link,.activity-summary-link,.summary-link {{ color:var(--accent); font-size:13px; font-weight:800; white-space:nowrap; }}
+    @media (max-width:860px) {{ .summary-grid {{ grid-template-columns:1fr; }} .op-summary-card,.pipeline-summary-card {{ grid-template-columns:repeat(2,minmax(0,1fr)); }} .op-summary-link,.pipeline-summary-link {{ justify-self:start; }} }}
+    @media (max-width:640px) {{ .main {{ padding:16px; }} .header-inner {{ padding:16px; align-items:flex-start; flex-direction:column; }} .op-summary-card,.quality-summary-card,.pipeline-summary-card,.activity-summary-card,.channels-summary-card {{ grid-template-columns:1fr; }} .quality-summary-counts,.summary-copy,.health-summary-copy {{ white-space:normal; }} }}
   </style>
 </head>
 <body>
   {_render_top_nav("home")}
   <header class="header">
     <div class="header-inner">
-      <div class="header-left">
-        <div class="logo">K</div>
-        <div>
-          <div class="header-title">KubeDojo Local Monitor</div>
-          <div class="header-sub">Read-only operations console &middot; port 8768</div>
-        </div>
-      </div>
-      <div class="header-right">
-        <span class="status-pill" id="conn-status"><span class="dot"></span> Connected</span>
-        <span class="last-updated" id="last-updated"></span>
-        <button class="refresh-btn" id="refresh">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-          Refresh
-        </button>
-      </div>
+      <div class="brand"><div class="logo">K</div><div><div class="title">KubeDojo Local Monitor</div><div class="sub">Overview cards · details live on dedicated routes</div></div></div>
+      <div class="header-right"><span class="status-pill" id="conn-status"><span class="dot"></span> Connected</span><span class="last-updated" id="last-updated"></span><button class="refresh-btn" id="refresh">Refresh</button></div>
     </div>
   </header>
 
-  <div class="main">
-    <div class="metrics" id="metrics">
-      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:60%"></div></div>
-      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:80%"></div></div>
-      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:70%"></div></div>
-      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:50%"></div></div>
-      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:65%"></div></div>
-      <div class="metric"><div class="metric-label">Loading</div><div class="skeleton" style="width:75%"></div></div>
+  <main class="main">
+    <div class="summary-grid">
+      <section class="summary-shell">
+        <div class="summary-head"><div class="summary-title"><span class="summary-icon" style="background:var(--accent-muted);color:var(--accent);">O</span>Operator</div><span class="panel-badge" id="op-badge">&nbsp;</span></div>
+        <a class="op-summary-card" href="/operator"><span><span class="op-summary-value" id="op-active-count">0</span><span class="op-summary-label">Active</span></span><span><span class="op-summary-value" id="op-blocked-count">0</span><span class="op-summary-label">Blocked</span></span><span><span class="op-summary-value" id="op-next-count">0</span><span class="op-summary-label">Next</span></span><span class="op-summary-link">View &rarr;</span></a>
+      </section>
+
+      <section class="summary-shell">
+        <div class="summary-head"><div class="summary-title"><span class="summary-icon" style="background:var(--accent-muted);color:var(--accent);">Q</span>Quality</div><span class="panel-badge" id="quality-summary-badge">&nbsp;</span></div>
+        <a class="quality-summary-card" href="/quality"><span><span class="quality-summary-title">Aggregate quality</span><span class="quality-summary-counts" id="quality-summary-counts">Loading&hellip;</span></span><span class="quality-summary-link">View board &rarr;</span></a>
+      </section>
+
+      <section class="summary-shell">
+        <div class="summary-head"><div class="summary-title"><span class="summary-icon" style="background:var(--accent-muted);color:var(--accent);">P</span>Pipeline</div><span class="panel-badge" id="pipeline-summary-badge">&nbsp;</span></div>
+        <a class="pipeline-summary-card" href="/pipeline"><span><span class="pipeline-summary-value" id="pipeline-queue-depth">0</span><span class="pipeline-summary-label">Queue</span></span><span><span class="pipeline-summary-value" id="pipeline-inflight">0</span><span class="pipeline-summary-label">Active</span></span><span><span class="pipeline-summary-value">{autopilot_label}</span><span class="pipeline-summary-label">Autopilot</span></span><span class="pipeline-summary-link">View pipeline &rarr;</span></a>
+      </section>
+
+      <section class="summary-shell">
+        <div class="summary-head"><div class="summary-title"><span class="summary-icon" style="background:var(--amber-muted);color:var(--amber);">A</span>Activity</div><span class="panel-badge" id="activity-summary-state">&nbsp;</span></div>
+        <a class="activity-summary-card" href="/activity"><ul class="activity-summary-list" id="activity-summary-items"><li class="activity-summary-item"><span class="activity-summary-src">A</span><span class="activity-summary-time">now</span><span class="activity-summary-text">Loading&hellip;</span></li></ul><span class="activity-summary-link">View activity &rarr;</span></a>
+      </section>
+
+      <section class="summary-shell">
+        <div class="summary-head"><div class="summary-title"><span class="summary-icon" style="background:var(--green-muted);color:var(--green);">H</span>Health</div><span class="panel-badge" id="health-summary-state">&nbsp;</span></div>
+        <a class="op-summary-card health-summary-card" href="/health"><span class="health-summary-copy" id="health-summary-copy">Services: 0 running / 0 total &middot; Worktrees: 0 &middot; Missing: 0</span><span class="op-summary-link">View health &rarr;</span></a>
+      </section>
+
+      <section class="summary-shell">
+        <div class="summary-head"><div class="summary-title"><span class="summary-icon" style="background:var(--teal-muted);color:var(--teal);">C</span>Channels</div><span class="panel-badge" id="channels-summary-badge">Open</span></div>
+        <a class="channels-summary-card" href="/channels"><span><span class="summary-copy" id="channels-summary-copy">Bridge conversations and live deliberation threads.</span></span><span class="summary-link">View channels &rarr;</span></a>
+      </section>
+
     </div>
-
-    <div class="sections">
-      <div class="section-full">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">O</span>
-              Operator
-            </div>
-            <span class="panel-badge" id="op-badge" style="background:var(--accent-muted);color:var(--accent);">&nbsp;</span>
-          </div>
-          <a class="op-summary-card" href="/operator">
-            <span class="op-summary-stat">
-              <span class="op-summary-value" id="op-active-count">0</span>
-              <span class="op-summary-label">Active</span>
-            </span>
-            <span class="op-summary-stat">
-              <span class="op-summary-value" id="op-blocked-count">0</span>
-              <span class="op-summary-label">Blocked</span>
-            </span>
-            <span class="op-summary-link">View &rarr;</span>
-          </a>
-        </div>
-      </div>
-
-      <div class="section-full">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <span class="panel-icon" style="background:var(--teal-muted);color:var(--teal);">R</span>
-              Section Readiness
-            </div>
-            <span class="panel-badge" id="readiness-badge" style="background:var(--teal-muted);color:var(--teal);">&nbsp;</span>
-          </div>
-          <div class="panel-body-flush readiness-wrap" id="readiness-body">
-            <div class="empty-state">Loading&hellip;</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-full">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">Q</span>
-              Quality
-            </div>
-            <span class="panel-badge" id="quality-summary-badge" style="background:var(--accent-muted);color:var(--accent);">&nbsp;</span>
-          </div>
-          <a class="quality-summary-card" href="/quality">
-            <span class="quality-summary-main">
-              <span class="quality-summary-title">Aggregate quality</span>
-              <span class="quality-summary-counts" id="quality-summary-counts">Loading&hellip;</span>
-            </span>
-            <span class="quality-summary-link">View full board &rarr;</span>
-          </a>
-        </div>
-      </div>
-
-      <div class="section-full">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">P</span>
-              Pipeline
-            </div>
-            <span class="panel-badge" id="pipeline-summary-badge" style="background:var(--accent-muted);color:var(--accent);">&nbsp;</span>
-          </div>
-          <a class="pipeline-summary-card" href="/pipeline">
-            <span>
-              <span class="pipeline-summary-value" id="pipeline-queue-depth">0</span>
-              <span class="pipeline-summary-label">Queue depth</span>
-            </span>
-            <span>
-              <span class="pipeline-summary-value" id="pipeline-inflight">0</span>
-              <span class="pipeline-summary-label">In flight</span>
-            </span>
-            <span>
-              <span class="pipeline-summary-value" id="pipeline-dead">0</span>
-              <span class="pipeline-summary-label">Dead-letter</span>
-            </span>
-            <span>
-              <span class="pipeline-summary-value">{autopilot_label}</span>
-              <span class="pipeline-summary-label">Autopilot</span>
-            </span>
-            <span class="pipeline-summary-link">View pipeline &rarr;</span>
-          </a>
-        </div>
-      </div>
-
-      <div class="section-full">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">A</span>
-              Activity
-            </div>
-            <span class="panel-badge" id="activity-summary-state" style="background:var(--amber-muted);color:var(--amber);">&nbsp;</span>
-          </div>
-          <a class="activity-summary-card" href="/activity">
-            <ul class="activity-summary-list" id="activity-summary-items">
-              <li class="activity-summary-item">
-                <span class="activity-summary-src">A</span>
-                <span class="activity-summary-time">now</span>
-                <span class="activity-summary-text">Loading&hellip;</span>
-              </li>
-            </ul>
-            <span class="activity-summary-link">View activity &rarr;</span>
-          </a>
-        </div>
-      </div>
-
-      <div class="section-full">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <span class="panel-icon" style="background:var(--green-muted);color:var(--green);">H</span>
-              Health
-            </div>
-            <span class="panel-badge" id="health-summary-state" style="background:var(--green-muted);color:var(--green);">&nbsp;</span>
-          </div>
-          <a class="op-summary-card health-summary-card" href="/health">
-            <span class="health-summary-copy" id="health-summary-copy">Services: 0 running / 0 total &middot; Worktrees: 0 &middot; Missing: 0</span>
-            <span class="op-summary-link">View health &rarr;</span>
-          </a>
-        </div>
-      </div>
-
-      <div class="section-full">
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">#</span>
-              Site by Track
-            </div>
-            <span class="panel-badge" id="tracks-badge" style="background:var(--accent-muted);color:var(--accent);"></span>
-          </div>
-          <div class="panel-body-flush">
-            <table class="tracks-table">
-              <thead>
-                <tr>
-                  <th>Track</th>
-                  <th class="num">Modules</th>
-                  <th class="num">V2 write</th>
-                  <th class="num">V2 review</th>
-                  <th class="num">V2 patch</th>
-                  <th class="num">V2 dead</th>
-                  <th class="num">T2 pend</th>
-                </tr>
-              </thead>
-              <tbody id="tracks-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="panel-icon" style="background:var(--teal-muted);color:var(--teal);">T</span>
-            Translation V2
-          </div>
-          <span class="panel-badge" id="trans-badge"></span>
-        </div>
-        <div class="panel-body-flush" id="trans-body"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">B</span>
-            AI History Book Progress
-          </div>
-          <span class="panel-badge" id="book-badge"></span>
-        </div>
-        <div class="panel-body-flush" id="book-body"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="panel-icon" style="background:var(--teal-muted);color:var(--teal);">C</span>
-            Module Distribution
-          </div>
-          <span class="panel-badge" id="completion-badge"></span>
-        </div>
-        <div class="panel-body-flush" id="completion-body"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">R</span>
-            Review Audit
-          </div>
-          <span class="panel-badge" id="reviews-badge"></span>
-        </div>
-        <div class="panel-body" id="reviews"></div>
-      </div>
-
-      <div class="panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <span class="panel-icon" style="background:var(--accent-muted);color:var(--accent);">F</span>
-            Feedback Issue #{issue_number}
-          </div>
-        </div>
-        <div class="panel-body" id="feedback"></div>
-      </div>
-    </div>
-  </div>
+  </main>
 
   <script>
     const ISSUE = {issue_number};
     const $ = (sel) => document.querySelector(sel);
-
-    async function fetchJson(url) {{
-      const r = await fetch(url);
-      if (!r.ok) return {{ error: `HTTP ${{r.status}}`, url }};
-      return r.json();
-    }}
-
-    function esc(s) {{
-      const d = document.createElement('div');
-      d.textContent = String(s ?? '');
-      return d.innerHTML;
-    }}
-
-    function progressBar(pct, color) {{
-      const p = Math.max(0, Math.min(100, pct || 0));
-      return `<div class="progress-track"><div class="progress-fill ${{color}}" style="width:${{p}}%"></div></div>`;
-    }}
-
-    function renderMetrics(summary, t2FullQueue) {{
-      const v2 = summary.v2_pipeline || {{}};
-      const t2 = t2FullQueue || summary.translation_v2_pipeline?.queue || {{}};
-      const v2rate = v2.convergence_rate ?? 0;
-      const t2rate = t2.convergence_rate ?? 0;
-
-      const cards = [
-        {{
-          label: 'English Modules',
-          value: summary.english_modules ?? 0,
-          cls: 'accent',
-          sub: `${{summary.tracks?.length ?? 0}} tracks`,
-        }},
-        {{
-          label: 'V2 Convergence',
-          value: `${{v2rate.toFixed(1)}}%`,
-          cls: v2rate >= 90 ? 'good' : v2rate >= 50 ? 'warn' : 'bad',
-          sub: `${{v2.total_modules ?? 0}} modules tracked`,
-          bar: {{ pct: v2rate, color: v2rate >= 90 ? 'green' : 'amber' }},
-        }},
-        {{
-          label: 'Translation V2',
-          value: `${{t2rate.toFixed(1)}}%`,
-          cls: t2rate >= 90 ? 'good' : t2rate >= 50 ? 'warn' : 'bad',
-          sub: `${{t2.total_modules ?? 0}} modules tracked`,
-          bar: {{ pct: t2rate, color: t2rate >= 90 ? 'green' : 'amber' }},
-        }},
-      ];
-
-      $('#metrics').innerHTML = cards.map(c => `
-        <div class="metric ${{c.cls}}">
-          <div class="metric-label">${{c.label}}</div>
-          <div class="metric-value">${{c.value}}</div>
-          ${{c.sub ? `<div class="metric-sub">${{c.sub}}</div>` : ''}}
-          ${{c.bar ? progressBar(c.bar.pct, c.bar.color) : ''}}
-        </div>
-      `).join('');
-    }}
-
-{_PIPELINE_PANEL_JS}
-
-    function renderSiteTracks(summary, v2, t2Queue) {{
-      const tracks = summary.tracks || [];
-      const v2ByTrack = new Map(((v2 || {{}}).per_track || []).map(t => [t.slug, t.counts]));
-      const t2ByTrack = new Map(((t2Queue || {{}}).per_track || []).map(t => [t.slug, t.counts]));
-
-      const total = tracks.reduce((sum, t) => sum + (t.module_count || 0), 0);
-      const active = tracks.filter(t => t.module_count > 0).length;
-      $('#tracks-badge').textContent = `${{total}} modules · ${{active}} tracks`;
-
-      const cls = (n) => n > 0 ? '' : 'zero';
-      const rowFor = (t) => {{
-        const v = v2ByTrack.get(t.slug) || {{}};
-        const tr2 = t2ByTrack.get(t.slug) || {{}};
-        const t2Pend = (tr2.pending_write || 0) + (tr2.pending_review || 0);
-        const deadCls = (v.dead_letter || 0) > 0 ? 'bad' : 'zero';
-        const reviewCls = (v.pending_review || 0) > 0 ? 'warn' : 'zero';
-        return `<tr>
-          <td class="name">${{esc(t.label)}}</td>
-          <td class="num">${{t.module_count}}</td>
-          <td class="num ${{cls(v.pending_write || 0)}}">${{v.pending_write || 0}}</td>
-          <td class="num ${{reviewCls}}">${{v.pending_review || 0}}</td>
-          <td class="num ${{cls(v.pending_patch || 0)}}">${{v.pending_patch || 0}}</td>
-          <td class="num ${{deadCls}}">${{v.dead_letter || 0}}</td>
-          <td class="num ${{cls(t2Pend)}}">${{t2Pend}}</td>
-        </tr>`;
-      }};
-
-      $('#tracks-body').innerHTML = tracks.map(rowFor).join('');
-    }}
-
-    function renderZtt(data) {{
-      const el = $('#ztt');
-      const badge = $('#ztt-badge');
-
-      if (data.error) {{
-        el.innerHTML = `<div class="empty-state clr-red">${{esc(data.error)}}</div>`;
-        return;
-      }}
-
-      const ready = data.ready || {{}};
-      const allReady = ready.english_production_bar && ready.ukrainian_sync_clean;
-      badge.textContent = allReady ? 'Ready' : 'Needs Work';
-      badge.style.background = allReady ? 'var(--green-muted)' : 'var(--amber-muted)';
-      badge.style.color = allReady ? 'var(--green)' : 'var(--amber)';
-
-      const chk = (val) => val
-        ? '<span class="ztt-check pass">&#10003;</span>'
-        : '<span class="ztt-check fail">&#10007;</span>';
-
-      const theory = data.theory || {{}};
-      const labs = data.labs || {{}};
-      const uk = data.ukrainian || {{}};
-
-      el.innerHTML = `
-        <div class="ztt-grid">
-          <div class="ztt-section">
-            <div class="ztt-section-title">Readiness</div>
-            <div class="ztt-row">${{chk(ready.english_production_bar)}}<span class="ztt-label">English Production</span></div>
-            <div class="ztt-row">${{chk(ready.ukrainian_sync_clean)}}<span class="ztt-label">Ukrainian Sync</span></div>
-            <div class="ztt-section-title" style="margin-top:14px">Theory</div>
-            <div class="ztt-row">${{chk(theory.all_have_frontmatter)}}<span class="ztt-label">Frontmatter</span><span class="ztt-val">${{theory.module_count ?? 0}} modules</span></div>
-            <div class="ztt-row">${{chk(theory.all_have_labs)}}<span class="ztt-label">Labs Linked</span></div>
-            <div class="ztt-row">${{chk(theory.meets_line_threshold)}}<span class="ztt-label">Line Threshold</span></div>
-          </div>
-          <div class="ztt-section">
-            <div class="ztt-section-title">Labs</div>
-            <div class="ztt-row">${{chk(labs.all_exist)}}<span class="ztt-label">All Exist</span><span class="ztt-val">${{labs.total ?? 0}} labs</span></div>
-            <div class="ztt-row">${{chk(labs.all_executable)}}<span class="ztt-label">Executable</span></div>
-            <div class="ztt-row">${{chk(labs.all_have_solutions)}}<span class="ztt-label">Solutions</span></div>
-            <div class="ztt-section-title" style="margin-top:14px">Ukrainian</div>
-            <div class="ztt-row">${{chk(uk.all_synced)}}<span class="ztt-label">All Synced</span><span class="ztt-val">${{uk.synced ?? 0}}/${{uk.total ?? 0}}</span></div>
-            <div class="ztt-row">${{chk(uk.no_stale)}}<span class="ztt-label">No Stale</span></div>
-          </div>
-        </div>`;
-    }}
-
-    function renderFeedback(data) {{
-      const el = $('#feedback');
-      if (data.error) {{
-        el.innerHTML = `<div class="empty-state">${{data.error === 'missing_issue_watch_state' ? 'Issue watcher not running or no data yet' : esc(data.error)}}</div>`;
-        return;
-      }}
-
-      let html = `
-        <div class="fb-header">
-          <div class="fb-icon">#</div>
-          <div>
-            <div class="fb-title">${{esc(data.title || `Issue #${{data.issue_number}}`)}}</div>
-            <div class="fb-meta">
-              <span><span class="wt-badge ${{data.state === 'open' ? 'A' : 'D'}}">${{data.state || 'unknown'}}</span></span>
-              <span>${{data.comments_count ?? 0}} comments</span>
-              ${{data.updated_at ? `<span>Updated ${{esc(data.updated_at)}}</span>` : ''}}
-            </div>
-          </div>
-        </div>`;
-
-      if (data.last_comment) {{
-        const c = data.last_comment;
-        const body = typeof c === 'object' ? (c.body || JSON.stringify(c, null, 2)) : String(c);
-        const author = typeof c === 'object' ? (c.author || c.user || '') : '';
-        html += `
-          <div class="fb-comment">
-            <div class="fb-comment-header">
-              ${{author ? `<strong>${{esc(author)}}</strong> &middot; ` : ''}}Latest comment
-            </div>
-            <div class="fb-comment-body mono">${{esc(body.substring(0, 800))}}</div>
-          </div>`;
-      }}
-      el.innerHTML = html;
-    }}
-
-    function renderReviews(data) {{
-      const el = $('#reviews');
-      const badge = $('#reviews-badge');
-      if (!data || data.error) {{
-        badge.textContent = 'Unknown';
-        el.innerHTML = `<div class="empty-state">${{esc(data?.error || 'No data')}}</div>`;
-        return;
-      }}
-      const rows = (data.reviews || []).slice(0, 8);
-      const unverified = rows.filter(r => r.fact_check_status === 'unverified').length;
-      badge.textContent = unverified ? `${{unverified}} unverified` : `${{data.count || 0}} reviews`;
-      badge.style.background = unverified ? 'var(--amber-muted)' : 'var(--green-muted)';
-      badge.style.color = unverified ? 'var(--amber)' : 'var(--green)';
-      el.innerHTML = rows.length ? `<ul class="review-list">${{rows.map(r => `
-        <li class="review-item">
-          <div class="review-head">
-            <span class="mono">${{esc(shortenKey(r.module_key))}}</span>
-            <span class="review-pill ${{esc(r.fact_check_status || 'none')}}">${{esc(r.fact_check_status || 'none')}}</span>
-          </div>
-          ${{r.unverified_evidence?.[0] ? `<div class="review-note"><mark>${{esc(r.unverified_evidence[0])}}</mark></div>` : ''}}
-        </li>`).join('')}}</ul>` : '<div class="empty-state">No review audit files</div>';
-    }}
-
-    // ---- Operator summary / Readiness / Activity ----
+    async function fetchJson(url) {{ const r = await fetch(url); return r.ok ? r.json() : {{error:`HTTP ${{r.status}}`, url}}; }}
+    function esc(s) {{ const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }}
+    function tone(el, name) {{ const map = {{green:['var(--green-muted)','var(--green)'], amber:['var(--amber-muted)','var(--amber)'], red:['var(--red-muted)','var(--red)'], accent:['var(--accent-muted)','var(--accent)'], teal:['var(--teal-muted)','var(--teal)']}}; [el.style.background, el.style.color] = map[name] || map.accent; }}
+    function shortenKey(key) {{ return String(key || '').replace('src/content/docs/', '').replace(/\\.md$/, ''); }}
+    function relTime(epoch, now) {{ const dt = Math.max(0, now - epoch); if (dt < 60) return `${{dt}}s`; if (dt < 3600) return `${{Math.floor(dt/60)}}m`; if (dt < 86400) return `${{Math.floor(dt/3600)}}h`; return `${{Math.floor(dt/86400)}}d`; }}
 
     function renderOperator(briefing) {{
-      const rowsSrc = Array.isArray(briefing?.action_rows) && briefing.action_rows.length
-        ? briefing.action_rows
-        : (() => {{
-            const bag = [];
-            for (const bucket of ['active', 'blocked', 'next']) {{
-              for (const label of (briefing?.actions?.[bucket] || [])) {{
-                bag.push({{bucket, label, module_key: null, phase: null, reason: null, endpoint: null}});
-              }}
-            }}
-            return bag;
-          }})();
-
-      const counts = {{active: 0, blocked: 0, next: 0}};
-      for (const r of rowsSrc) {{
-        if (counts[r.bucket] !== undefined) counts[r.bucket]++;
-      }}
+      const rows = Array.isArray(briefing?.action_rows) && briefing.action_rows.length ? briefing.action_rows : [];
+      const counts = {{active:0, blocked:0, next:0}};
+      if (rows.length) rows.forEach(r => {{ if (counts[r.bucket] !== undefined) counts[r.bucket]++; }});
+      else for (const k of Object.keys(counts)) counts[k] = (briefing?.actions?.[k] || []).length;
+      $('#op-active-count').textContent = counts.active; $('#op-blocked-count').textContent = counts.blocked; $('#op-next-count').textContent = counts.next;
       const total = counts.active + counts.blocked + counts.next;
-      $('#op-active-count').textContent = counts.active;
-      $('#op-blocked-count').textContent = counts.blocked;
-      const badge = $('#op-badge');
-      badge.textContent = total ? `${{total}} items` : 'Idle';
-      if (counts.blocked) {{
-        badge.style.background = 'var(--red-muted)';
-        badge.style.color = 'var(--red)';
-      }} else if (total) {{
-        badge.style.background = 'var(--accent-muted)';
-        badge.style.color = 'var(--accent)';
-      }} else {{
-        badge.style.background = 'var(--green-muted)';
-        badge.style.color = 'var(--green)';
-      }}
+      const b = $('#op-badge'); b.textContent = total ? `${{total}} items` : 'Idle'; tone(b, counts.blocked ? 'red' : total ? 'accent' : 'green');
     }}
 
-    function readinessClass(pct) {{
-      if (pct >= 80) return '';
-      if (pct >= 40) return 'mid';
-      return 'low';
+    function renderQuality(data) {{
+      const b = $('#quality-summary-badge'), c = $('#quality-summary-counts');
+      if (!data || data.error) {{ b.textContent = 'Unavailable'; c.textContent = 'No quality data'; tone(b, 'red'); return; }}
+      const t = data.totals || {{}};
+      const left = (t.needs_rewrite || 0) + (t.needs_review || 0) + (t.shipped_unreviewed || 0) + (t.both || 0);
+      b.textContent = `${{t.done || 0}} / ${{t.total || 0}} done`; tone(b, left ? 'amber' : 'green');
+      c.textContent = `rewrite=${{t.needs_rewrite || 0}} · review=${{t.needs_review || 0}} · shipped=${{t.shipped_unreviewed || 0}} · both=${{t.both || 0}}`;
     }}
 
-    function renderReadiness(data) {{
-      const el = $('#readiness-body');
-      const badge = $('#readiness-badge');
-      if (!data || data.error) {{
-        el.innerHTML = `<div class="empty-state">${{esc(data?.error || 'No data')}}</div>`;
-        badge.textContent = 'Unknown';
-        return;
-      }}
-      const tracks = data.tracks || [];
-      const totals = data.totals || {{}};
-      const pct = totals.readiness_pct ?? 0;
-      badge.textContent = `${{totals.cleared ?? 0}} / ${{totals.total ?? 0}} cleared · ${{pct}}%`;
-      if (tracks.length === 0) {{
-        el.innerHTML = '<div class="empty-state">No modules on disk</div>';
-        return;
-      }}
-      el.innerHTML = tracks.map(t => {{
-        const sections = (t.sections || []).map(s => {{
-          const scls = readinessClass(s.readiness_pct ?? 0);
-          const parts = [
-            `<span class="cleared">${{s.cleared ?? 0}}✓</span>`,
-            (s.in_flight ? `<span class="inflight">${{s.in_flight}}↻</span>` : ''),
-            (s.dead_letter ? `<span class="dead">${{s.dead_letter}}✗</span>` : ''),
-            (s.not_yet_enqueued ? `<span>${{s.not_yet_enqueued}}·</span>` : ''),
-          ].filter(Boolean).join(' ');
-          return `<div class="readiness-section">
-            <div class="readiness-section-head">
-              <span class="readiness-section-slug">${{esc(s.slug)}}</span>
-              <span class="readiness-section-pct ${{scls}}">${{s.readiness_pct}}%</span>
-            </div>
-            <div class="readiness-section-bar">
-              <div class="readiness-section-fill ${{scls}}" style="width:${{s.readiness_pct}}%"></div>
-            </div>
-            <div class="readiness-section-counts">${{parts}} <span>/ ${{s.total}}</span></div>
-          </div>`;
-        }}).join('');
-        return `<div class="readiness-track">
-          <div class="readiness-track-header">
-            <span class="readiness-track-name">${{esc(t.label)}}</span>
-            <span class="readiness-track-sub">${{t.cleared ?? 0}} / ${{t.total ?? 0}} · ${{t.readiness_pct ?? 0}}%</span>
-          </div>
-          <div class="readiness-sections">${{sections}}</div>
-        </div>`;
-      }}).join('');
+    function renderPipeline(data) {{
+      const b = $('#pipeline-summary-badge');
+      if (!data || data.error) {{ b.textContent = 'Unknown'; tone(b, 'amber'); return; }}
+      const c = data.counts || {{}};
+      const q = (c.pending_write || 0) + (c.pending_review || 0) + (c.pending_patch || 0);
+      $('#pipeline-queue-depth').textContent = q; $('#pipeline-inflight').textContent = c.in_progress || 0;
+      b.textContent = q || c.in_progress || c.dead_letter ? `${{q}} queued · ${{c.in_progress || 0}} active · ${{c.dead_letter || 0}} dead` : 'Idle';
+      tone(b, c.dead_letter ? 'red' : q || c.in_progress ? 'amber' : 'green');
     }}
 
-    function renderQualitySummary(data) {{
-      const counts = $('#quality-summary-counts');
-      const badge = $('#quality-summary-badge');
-      if (!counts || !badge) {{
-        return;
-      }}
-
-      if (!data || data.error) {{
-        counts.textContent = 'No quality data';
-        badge.textContent = 'Unavailable';
-        badge.style.background = 'var(--red-muted)';
-        badge.style.color = 'var(--red)';
-        return;
-      }}
-
-      const totals = data.totals || {{}};
-      const done = totals.done || 0;
-      const needsRewrite = totals.needs_rewrite || 0;
-      const needsReview = totals.needs_review || 0;
-      const shippedUnreviewed = totals.shipped_unreviewed || 0;
-      const both = totals.both || 0;
-      const total = totals.total || 0;
-      const outstanding = needsRewrite + needsReview + shippedUnreviewed + both;
-
-      counts.textContent = `done=${{done}} / needs_rewrite=${{needsRewrite}} / needs_review=${{needsReview}} / shipped_unreviewed=${{shippedUnreviewed}}${{both ? ` / both=${{both}}` : ''}}`;
-      badge.textContent = `${{done}} / ${{total}} done`;
-      badge.style.background = outstanding ? 'var(--amber-muted)' : 'var(--green-muted)';
-      badge.style.color = outstanding ? 'var(--amber)' : 'var(--green)';
-    }}
-
-    function renderPipelineSummary(data) {{
-      const badge = $('#pipeline-summary-badge');
-      if (!data || data.error) {{
-        badge.textContent = 'Unknown';
-        badge.style.background = 'var(--amber-muted)';
-        badge.style.color = 'var(--amber)';
-        return;
-      }}
-      const counts = data.counts || {{}};
-      const queueDepth = (counts.pending_write || 0) + (counts.pending_review || 0) + (counts.pending_patch || 0);
-      const inflight = counts.in_progress || 0;
-      const dead = counts.dead_letter || 0;
-      $('#pipeline-queue-depth').textContent = queueDepth;
-      $('#pipeline-inflight').textContent = inflight;
-      $('#pipeline-dead').textContent = dead;
-      badge.textContent = queueDepth || inflight || dead ? `${{queueDepth}} queued · ${{inflight}} active · ${{dead}} dead` : 'Idle';
-      badge.style.background = dead ? 'var(--red-muted)' : (queueDepth || inflight ? 'var(--amber-muted)' : 'var(--green-muted)');
-      badge.style.color = dead ? 'var(--red)' : (queueDepth || inflight ? 'var(--amber)' : 'var(--green)');
-    }}
-
-    function formatRelTime(epoch, nowEpoch) {{
-      const dt = Math.max(0, nowEpoch - epoch);
-      if (dt < 60) return `${{dt}}s`;
-      if (dt < 3600) return `${{Math.floor(dt/60)}}m`;
-      if (dt < 86400) return `${{Math.floor(dt/3600)}}h`;
-      return `${{Math.floor(dt/86400)}}d`;
-    }}
-
-    function renderActivitySummary(data) {{
-      const el = $('#activity-summary-items');
-      const badge = $('#activity-summary-state');
-      if (!data || data.error) {{
-        el.innerHTML = `<li class="activity-summary-item"><span class="activity-summary-src">!</span><span class="activity-summary-time">n/a</span><span class="activity-summary-text">${{esc(data?.error || 'No data')}}</span></li>`;
-        badge.textContent = 'Unknown';
-        return;
-      }}
-      const items = (data.items || []).slice(0, 3);
+    function renderActivity(data) {{
+      const b = $('#activity-summary-state'), el = $('#activity-summary-items');
+      if (!data || data.error) {{ b.textContent = 'Unknown'; el.innerHTML = '<li class="activity-summary-item"><span class="activity-summary-src">!</span><span class="activity-summary-time">n/a</span><span class="activity-summary-text">No data</span></li>'; tone(b, 'amber'); return; }}
       const counts = data.source_counts || {{}};
-      const parts = [];
-      if (counts.commit) parts.push(`${{counts.commit}} commits`);
-      if (counts.pipeline_event) parts.push(`${{counts.pipeline_event}} events`);
-      if (counts.bridge_message) parts.push(`${{counts.bridge_message}} msgs`);
-      badge.textContent = parts.length ? parts.join(' / ') : 'Quiet';
-      if (items.length === 0) {{
-        el.innerHTML = '<li class="activity-summary-item"><span class="activity-summary-src">A</span><span class="activity-summary-time">n/a</span><span class="activity-summary-text">No recent activity</span></li>';
-        return;
-      }}
+      b.textContent = [counts.commit && `${{counts.commit}} commits`, counts.pipeline_event && `${{counts.pipeline_event}} events`, counts.bridge_message && `${{counts.bridge_message}} msgs`].filter(Boolean).join(' / ') || 'Quiet';
       const now = data.generated_at || Math.floor(Date.now() / 1000);
-      const srcAbbrev = {{commit: 'C', pipeline_event: 'P', bridge_message: 'B'}};
-      const rows = items.map(it => {{
-        const srcCls = String(it.source || '');
-        const abbr = srcAbbrev[srcCls] || '?';
-        const t = formatRelTime(it.at, now);
-        let desc;
-        if (it.source === 'commit') {{
-          desc = `${{esc(it.ref?.sha || '')}} ${{esc(it.summary || '')}}`;
-        }} else if (it.source === 'pipeline_event') {{
-          const modPart = it.module_key
-            ? `${{esc(shortenKey(it.module_key))}} `
-            : '';
-          desc = `${{modPart}}${{esc(it.kind || '')}}`;
-        }} else {{
-          desc = `${{esc(it.summary || '')}} ${{esc(it.kind || '')}}`;
-        }}
-        return `<li class="activity-summary-item">
-          <span class="activity-summary-src ${{srcCls}}">${{abbr}}</span>
-          <span class="activity-summary-time">${{t}} ago</span>
-          <span class="activity-summary-text">${{desc}}</span>
-        </li>`;
-      }}).join('');
-      el.innerHTML = rows;
+      const abbr = {{commit:'C', pipeline_event:'P', bridge_message:'B'}};
+      const rows = (data.items || []).slice(0, 3).map(it => `<li class="activity-summary-item"><span class="activity-summary-src ${{esc(it.source)}}">${{abbr[it.source] || '?'}}</span><span class="activity-summary-time">${{relTime(it.at, now)}} ago</span><span class="activity-summary-text">${{esc(it.source === 'pipeline_event' ? shortenKey(it.module_key) + ' ' + (it.kind || '') : (it.summary || it.kind || ''))}}</span></li>`).join('');
+      el.innerHTML = rows || '<li class="activity-summary-item"><span class="activity-summary-src">A</span><span class="activity-summary-time">n/a</span><span class="activity-summary-text">No recent activity</span></li>';
     }}
 
-    function renderHealthSummary(briefing, missingData) {{
-      const badge = $('#health-summary-state');
-      const line = $('#health-summary-copy');
-      const services = briefing?.services || {{}};
-      const workspace = briefing?.workspace || {{}};
-      const missing = missingData || {{}};
-      const running = services.running ?? 0;
-      const total = services.total ?? running + (services.stopped ?? 0) + (services.stale ?? 0);
-      const worktrees = workspace.worktrees_total ?? 0;
+    function renderHealth(briefing, missingData) {{
+      const b = $('#health-summary-state'), line = $('#health-summary-copy');
+      const services = briefing?.services || {{}}, workspace = briefing?.workspace || {{}}, missing = missingData || {{}};
+      const running = services.running ?? 0, total = services.total ?? running + (services.stopped ?? 0) + (services.stale ?? 0);
       const missingCount = missing.active_exact?.missing ?? missing.active_exact?.modules?.length ?? 0;
-      line.textContent = `Services: ${{running}} running / ${{total}} total · Worktrees: ${{worktrees}} · Missing: ${{missingCount}}`;
+      line.textContent = `Services: ${{running}} running / ${{total}} total · Worktrees: ${{workspace.worktrees_total ?? 0}} · Missing: ${{missingCount}}`;
       const attention = (services.stale ?? 0) + (services.stopped ?? 0) + missingCount;
-      badge.textContent = attention ? `${{attention}} needs attention` : 'Healthy';
-      badge.style.background = attention ? 'var(--amber-muted)' : 'var(--green-muted)';
-      badge.style.color = attention ? 'var(--amber)' : 'var(--green)';
+      b.textContent = attention ? `${{attention}} needs attention` : 'Healthy'; tone(b, attention ? 'amber' : 'green');
     }}
 
-    const BOOK_STATUS_TONE = {{
-      accepted: 'green',
-      prose_ready: 'teal',
-      capacity_plan_anchored: 'accent',
-      capacity_planned: 'accent',
-      research_only: 'amber',
-      pending: 'amber',
-    }};
-
-    function bookStatusChip(status, count) {{
-      const tone = BOOK_STATUS_TONE[status] || 'dim';
-      const label = esc(status.replace(/_/g, ' '));
-      return `<span class="book-chip book-chip-${{tone}}"><span class="book-chip-n">${{count}}</span>${{label}}</span>`;
-    }}
-
-    function renderBookProgress(data) {{
-      if (data.error) {{
-        $('#book-body').innerHTML = `<div class="empty-state">Error loading book data</div>`;
-        return;
-      }}
-      const badge = $('#book-badge');
-      const total = data.expected_chapter_count || 0;
-      const published = data.published_count || 0;
-      const aidsLanded = data.aids_landed_count || 0;
-      const accepted = (data.total_status_rollup || {{}}).accepted || 0;
-      badge.textContent = `${{published}} / ${{total}} published · ${{aidsLanded}} with aids`;
-
-      const orderedStatuses = ['accepted', 'prose_ready', 'capacity_plan_anchored'];
-
-      let html = `<div class="queue-summary">
-        <div class="queue-stat">
-          <div class="queue-stat-val clr-green">${{published}}</div>
-          <div class="queue-stat-label">Published</div>
-        </div>
-        <div class="queue-stat">
-          <div class="queue-stat-val clr-teal">${{aidsLanded}}</div>
-          <div class="queue-stat-label">Reader Aids Landed</div>
-        </div>
-        <div class="queue-stat">
-          <div class="queue-stat-val clr-accent">${{accepted}}</div>
-          <div class="queue-stat-label">Research Accepted</div>
-        </div>
-      </div>`;
-
-      html += `<table class="tracks-table">
-        <thead>
-          <tr>
-            <th class="num">Part</th>
-            <th>Name</th>
-            <th class="num">Chs</th>
-            <th>Live</th>
-            <th>Research Status</th>
-          </tr>
-        </thead>
-        <tbody>`;
-
-      (data.parts || []).forEach(part => {{
-         const chips = Object.entries(part.status_rollup || {{}})
-           .sort((a, b) => {{
-             const oa = orderedStatuses.indexOf(a[0]);
-             const ob = orderedStatuses.indexOf(b[0]);
-             return (oa === -1 ? 99 : oa) - (ob === -1 ? 99 : ob);
-           }})
-           .map(([k, v]) => bookStatusChip(k, v))
-           .join(' ');
-         const live = part.published_count === part.chapter_count && part.chapter_count > 0
-           ? `<span class="book-chip book-chip-green"><span class="book-chip-n">${{part.aids_landed_count}}/${{part.chapter_count}}</span>aids</span>`
-           : `<span class="book-chip book-chip-amber"><span class="book-chip-n">${{part.published_count}}/${{part.chapter_count}}</span>live</span>`;
-         html += `<tr>
-            <td class="num">${{part.part}}</td>
-            <td class="name">${{esc(part.name)}}</td>
-            <td class="num">${{part.chapter_count}}</td>
-            <td class="book-chip-cell">${{live}}</td>
-            <td class="book-chip-cell">${{chips || '<span class="dim">—</span>'}}</td>
-         </tr>`;
-      }});
-      html += `</tbody></table>`;
-      $('#book-body').innerHTML = html;
-    }}
-
-    function renderModuleCompletion(summary, missing) {{
-      const badge = $('#completion-badge');
-      const totalEng = summary.english_modules || 0;
-      const ukPresent = summary.uk_modules_present || 0;
-      const ukPct = totalEng > 0 ? Math.round(100 * ukPresent / totalEng) : 0;
-      badge.textContent = `${{totalEng}} EN · ${{ukPresent}} UK · ${{ukPct}}%`;
-
-      let html = `<div class="queue-summary">
-         <div class="queue-stat">
-            <div class="queue-stat-val clr-accent">${{totalEng}}</div>
-            <div class="queue-stat-label">English Modules</div>
-         </div>
-         <div class="queue-stat">
-            <div class="queue-stat-val clr-teal">${{ukPresent}}</div>
-            <div class="queue-stat-label">Ukrainian Present</div>
-         </div>
-         <div class="queue-stat">
-            <div class="queue-stat-val clr-amber">${{ukPct}}%</div>
-            <div class="queue-stat-label">UK Coverage</div>
-         </div>
-      </div>`;
-
-      html += `<table class="tracks-table">
-        <thead>
-          <tr>
-            <th>Track</th>
-            <th class="num">EN</th>
-            <th class="num">UK</th>
-            <th>UK Coverage</th>
-          </tr>
-        </thead>
-        <tbody>`;
-
-      (summary.tracks || []).forEach(t => {{
-         const en = t.module_count || 0;
-         const uk = t.uk_module_count || 0;
-         const trackPct = en > 0 ? Math.round(100 * uk / en) : 0;
-         const tone = en === 0 ? 'dim' : (trackPct >= 80 ? 'green' : trackPct > 0 ? 'teal' : 'dim');
-         html += `<tr>
-            <td class="name">${{esc(t.label)}}</td>
-            <td class="num">${{en}}</td>
-            <td class="num ${{tone === 'dim' ? 'dim' : 'clr-' + tone}}">${{uk}}</td>
-            <td>${{en > 0 ? progressBar(trackPct, trackPct >= 80 ? 'green' : 'teal') : '<span class="dim" style="font-size:11px;">—</span>'}}</td>
-         </tr>`;
-      }});
-      html += `</tbody></table>`;
-      $('#completion-body').innerHTML = html;
-    }}
-
-    let refreshing = false;
     async function refresh() {{
-      if (refreshing) return;
-      refreshing = true;
-      const btn = $('#refresh');
-      btn.classList.add('loading');
-
+      const btn = $('#refresh'); btn.classList.add('loading');
       try {{
-        const [summary, missing, feedback, reviews, v2Status, transStatus,
-               briefing, readiness, qualityBoard, activitySummary, bookProgress] = await Promise.all([
-          fetchJson('/api/status/summary'),
-          fetchJson('/api/missing-modules/status'),
-          fetchJson(`/api/issue-watch/${{ISSUE}}`),
-          fetchJson('/api/reviews'),
-          fetchJson('/api/pipeline/v2/status'),
-          fetchJson('/api/translation/v2/status'),
-          fetchJson('/api/briefing/session?compact=1'),
-          fetchJson('/api/tracks/readiness'),
-          fetchJson('/api/quality/board'),
-          fetchJson('/api/activity?limit=3'),
-          fetchJson('/api/briefing/book'),
+        const [missing, pipelineStatus, briefing, qualityBoard, activitySummary] = await Promise.all([
+          fetchJson('/api/missing-modules/status'), fetchJson('/api/pipeline/v2/status'), fetchJson('/api/briefing/session?compact=1'), fetchJson('/api/quality/board'), fetchJson('/api/activity?limit=3')
         ]);
-
-        summary.missing_modules = missing;
-
-        const t2Queue = transStatus.queue || transStatus;
-        renderOperator(briefing);
-        renderReadiness(readiness);
-        renderQualitySummary(qualityBoard);
-        renderPipelineSummary(v2Status);
-        renderActivitySummary(activitySummary);
-        renderHealthSummary(briefing, missing);
-        renderMetrics(summary, t2Queue);
-        renderSiteTracks(summary, v2Status, t2Queue);
-        renderPipelinePanel('#trans-body', '#trans-badge', t2Queue, 'Translation V2');
-        renderBookProgress(bookProgress);
-        renderModuleCompletion(summary, missing);
-        renderReviews(reviews);
-        renderFeedback(feedback);
-
-        const now = new Date();
-        $('#last-updated').textContent = `Updated ${{now.toLocaleTimeString()}}`;
-        const pill = $('#conn-status');
-        pill.innerHTML = '<span class="dot"></span> Connected';
-        pill.style.background = 'var(--green-muted)';
-        pill.style.color = 'var(--green)';
-      }} catch (err) {{
-        const pill = $('#conn-status');
-        pill.innerHTML = '<span class="dot"></span> Error';
-        pill.style.background = 'var(--red-muted)';
-        pill.style.color = 'var(--red)';
-        console.error('Dashboard refresh failed:', err);
-      }} finally {{
-        refreshing = false;
-        btn.classList.remove('loading');
-      }}
+        renderOperator(briefing); renderQuality(qualityBoard); renderPipeline(pipelineStatus); renderActivity(activitySummary); renderHealth(briefing, missing);
+        $('#last-updated').textContent = `Updated ${{new Date().toLocaleTimeString()}}`;
+        const pill = $('#conn-status'); pill.innerHTML = '<span class="dot"></span> Connected'; tone(pill, 'green');
+      }} catch (err) {{ const pill = $('#conn-status'); pill.innerHTML = '<span class="dot"></span> Error'; tone(pill, 'red'); console.error('Dashboard refresh failed:', err); }}
+      finally {{ btn.classList.remove('loading'); }}
     }}
-
-    $('#refresh').addEventListener('click', refresh);
-    refresh();
-    setInterval(refresh, 60000);
+    $('#refresh').addEventListener('click', refresh); refresh(); setInterval(refresh, 60000);
   </script>
 </body>
 </html>"""
+
 
 
 # ============================================================
