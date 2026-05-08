@@ -4797,12 +4797,6 @@ def build_state_manifest() -> dict[str, Any]:
                         "purpose": "Machine-readable index of local API routes and query conventions.",
                         "type": "api",
                     },
-                    {
-                        "name": "Handoffs index",
-                        "path": "/api/session/current",
-                        "purpose": "Current stand-in for handoff discovery until a dedicated list endpoint exists.",
-                        "type": "api",
-                    },
                 ],
             },
             {
