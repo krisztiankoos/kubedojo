@@ -872,7 +872,7 @@ autocmd FileType yml setlocal tabstop=2 softtabstop=2 shiftwidth=2 expandtab
 EOF
 ```
 
-Success criteria for this step focus on the editor baseline rather than Kubernetes behavior. Do not move on until you can point to the settings that prevent tab insertion and make indentation changes predictable.
+Success criteria for this step:
 
 - [ ] `~/.vimrc` exists.
 - [ ] The file contains `set expandtab`.
@@ -898,7 +898,7 @@ EOF
 kubectl apply -f exercise-pod.yaml --dry-run=client
 ```
 
-Success criteria for this step prove that the file exists, the YAML is readable, and the Kubernetes client accepts the object before vim enters the workflow. That clean baseline is what makes the later edit-validate loop meaningful.
+Success criteria for this step:
 
 - [ ] `exercise-pod.yaml` exists.
 - [ ] `kubectl apply -f exercise-pod.yaml --dry-run=client` succeeds.
@@ -926,7 +926,7 @@ Save and validate after the label edit so the exercise checks both syntax and Ku
 kubectl apply -f exercise-pod.yaml --dry-run=client
 ```
 
-Success criteria for this step verify that the labels are under the right parent and that you used the normal vim save path instead of abandoning the terminal session. The point is to build a recoverable editing habit, not just to produce a file once.
+Success criteria for this step:
 
 - [ ] `labels:` is indented under `metadata:`.
 - [ ] `app` and `tier` are indented under `labels:`.
@@ -1061,7 +1061,7 @@ Remove the files created by the exercise so future drills start from fresh manif
 rm -f exercise-pod.yaml broken-exercise.yaml replace-exercise.yaml
 ```
 
-Final success criteria summarize the operational skills this module is meant to build. You should be able to explain each check in terms of YAML structure, Kubernetes schema, or editor recovery rather than in terms of memorized keystrokes alone.
+Success criteria for this step:
 
 - [ ] You can create a Kubernetes YAML file in vim without tabs.
 - [ ] You can add nested fields under the correct parent.
