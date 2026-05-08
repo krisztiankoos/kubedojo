@@ -9,11 +9,16 @@ from typing import Any, Callable
 from urllib.parse import parse_qs, unquote
 
 try:
-    from local_api.routes.ui_fragments import AFK_NOTIFY_CSS, render_afk_notify_markup
+    from local_api.routes.ui_fragments import (
+        AFK_NOTIFY_CSS,
+        render_afk_notify_markup,
+        render_search_widget,
+    )
 except ModuleNotFoundError:
     from scripts.local_api.routes.ui_fragments import (
         AFK_NOTIFY_CSS,
         render_afk_notify_markup,
+        render_search_widget,
     )
 
 
@@ -736,6 +741,7 @@ def render_channels_chat_html(
 </head>
 <body>
 {render_top_nav_fn("channels")}
+{render_search_widget()}
 {render_afk_notify_markup()}
 <div class="channels-app" data-selected-channel="{_html.escape(selected_channel or "", quote=True)}">
   <nav class="channels-sidebar" aria-label="Channels">

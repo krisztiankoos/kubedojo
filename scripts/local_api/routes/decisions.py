@@ -5,6 +5,7 @@ import hashlib
 import json as _json
 import os
 import re as _re
+import sqlite3
 import subprocess
 import threading
 import time
@@ -14,11 +15,18 @@ from typing import Any, Callable
 from urllib.parse import unquote
 
 try:
-    from local_api.routes.ui_fragments import AFK_NOTIFY_CSS, render_afk_notify_markup
+    from ai_agent_bridge._fts import setup_decisions_fts
+    from local_api.routes.ui_fragments import (
+        AFK_NOTIFY_CSS,
+        render_afk_notify_markup,
+        render_search_widget,
+    )
 except ModuleNotFoundError:
+    from scripts.ai_agent_bridge._fts import setup_decisions_fts
     from scripts.local_api.routes.ui_fragments import (
         AFK_NOTIFY_CSS,
         render_afk_notify_markup,
+        render_search_widget,
     )
 
 
@@ -32,6 +40,8 @@ _SAFE_DECISION_FILENAME_RE = _re.compile(r"^[A-Za-z0-9._-]+\.md$")
 _STALE_SECONDS = 24 * 3600
 _CACHE_VERSION = 6
 _CACHE_LOCK = threading.Lock()
+_DECISIONS_FTS_LOCK = threading.Lock()
+_DECISIONS_FTS_META: dict[str, dict[str, float]] = {}
 
 
 def _json_response(status: int, payload: dict[str, Any]) -> RouteResponse:
@@ -270,6 +280,10 @@ def _decision_files(repo_root: Path) -> list[Path]:
     return files
 
 
+def _bridge_db_path(repo_root: Path) -> Path:
+    return repo_root / ".bridge" / "messages.db"
+
+
 def _decision_title(body: str, filename: str) -> str:
     for line in body.splitlines():
         stripped = line.strip()
@@ -283,6 +297,77 @@ def _decision_date(body: str, filename: str) -> str:
     if match:
         return match.group(1).strip()
     return filename[:10] if len(filename) >= 10 else ""
+
+
+def _refresh_decisions_fts(
+    repo_root: Path,
+    *,
+    db_path: Path | None = None,
+    create_db: bool = True,
+) -> dict[str, Any]:
+    """Refresh changed decision markdown rows in ``decisions_fts``."""
+    target_db = db_path or _bridge_db_path(repo_root)
+    if not create_db and not target_db.exists():
+        return {"scanned": 0, "updated": [], "deleted": []}
+
+    files = _decision_files(repo_root)
+    current_names = {path.name for path in files}
+    cache_key = f"{repo_root.resolve()}::{target_db.resolve()}"
+
+    with _DECISIONS_FTS_LOCK:
+        target_db.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(target_db)
+        try:
+            setup_decisions_fts(conn)
+            meta = _DECISIONS_FTS_META.setdefault(cache_key, {})
+            updated: list[str] = []
+            deleted: list[str] = []
+            existing_names = {
+                str(row[0])
+                for row in conn.execute("SELECT filename FROM decisions_fts").fetchall()
+            }
+
+            for filename in sorted((set(meta) | existing_names) - current_names):
+                conn.execute("DELETE FROM decisions_fts WHERE filename = ?", (filename,))
+                meta.pop(filename, None)
+                deleted.append(filename)
+
+            for path in files:
+                try:
+                    mtime = path.stat().st_mtime
+                except OSError:
+                    continue
+                filename = path.name
+                if meta.get(filename) == mtime:
+                    continue
+                try:
+                    body = path.read_text(encoding="utf-8")
+                    rel = path.relative_to(repo_root).as_posix()
+                except OSError:
+                    continue
+                conn.execute("DELETE FROM decisions_fts WHERE filename = ?", (filename,))
+                conn.execute(
+                    """
+                    INSERT INTO decisions_fts(title, body, filename, mtime, status)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        _decision_title(body, filename),
+                        body,
+                        filename,
+                        repr(mtime),
+                        _status_for_path(rel, mtime),
+                    ),
+                )
+                meta[filename] = mtime
+                updated.append(filename)
+            conn.commit()
+            return {"scanned": len(files), "updated": updated, "deleted": deleted}
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
 
 def build_decisions_index(repo_root: Path) -> dict[str, Any]:
@@ -431,6 +516,7 @@ def render_decisions_index_html(
 </head>
 <body>
 {render_top_nav_fn("decisions")}
+{render_search_widget()}
 <main>
   <div class="page-head">
     <div><h1>Decisions</h1><div class="meta">{int(counts["total"])} total · {int(counts["decided"])} decided · {int(counts["pending"])} pending · {int(counts["stale"])} stale</div></div>
@@ -444,6 +530,12 @@ def render_decisions_index_html(
 {render_afk_notify_markup()}
 </body>
 </html>"""
+
+
+try:
+    _refresh_decisions_fts(Path(__file__).resolve().parents[3], create_db=False)
+except Exception:
+    pass
 
 
 def _render_markdownish(body: str) -> str:
