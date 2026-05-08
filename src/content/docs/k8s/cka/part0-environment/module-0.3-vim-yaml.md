@@ -12,8 +12,6 @@ lab:
 revision_pending: false
 ---
 
-# Module 0.3: Vim for YAML
-
 > **Complexity**: `[QUICK]` - Small command set, high exam leverage
 >
 > **Time to Complete**: 25-35 minutes

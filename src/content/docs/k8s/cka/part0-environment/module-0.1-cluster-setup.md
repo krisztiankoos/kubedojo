@@ -17,8 +17,6 @@ lab:
 >
 > **Prerequisites**: Two or more machines, provided as physical hosts, local VMs, or cloud instances
 
-# Module 0.1: Cluster Setup
-
 ## Learning Outcomes
 
 After this module, you will be able to:

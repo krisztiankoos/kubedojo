@@ -17,6 +17,10 @@ For this audit, count normal body prose paragraphs. Exclude frontmatter, heading
 
 If the draft fails any density check, revise the prose before reporting completion.
 
+## NO SOURCE H1
+
+Starlight renders the page H1 from frontmatter `title:`. Do NOT write a `# Module X.Y: <Title>` heading anywhere in the body. The first heading after the frontmatter blockquote must be `## What You'll Be Able to Do` (or whatever the section's house standard is). A source `# ` line after frontmatter is a hard verifier failure.
+
 ## PARAGRAPH STYLE
 
 Write body sections as flowing instructional prose, not punchy note blocks. Most body paragraphs should be 3-5 sentences and 35-80 words. Single-sentence paragraphs are allowed only for deliberate emphasis, at most 5 times in the whole module, and never adjacent to another short paragraph.

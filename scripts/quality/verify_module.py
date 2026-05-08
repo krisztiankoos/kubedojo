@@ -726,6 +726,29 @@ def anti_fabrication_metrics(text: str) -> dict[str, object]:
     return {"unsourced_anecdotes": violations}
 
 
+def source_h1_metrics(text: str) -> dict[str, object]:
+    match = re.match(r"^---\s*\n(.*?)\n---\s*(?:\n|$)", text, re.DOTALL)
+    body = text[match.end() :] if match else text
+    body_start_line = text[: match.end()].count("\n") + 1 if match else 1
+
+    for line_number, line in enumerate(body.splitlines(), start=body_start_line):
+        stripped = line.strip()
+        if not stripped or stripped.startswith(">") or stripped == "---" or stripped.startswith("<!--"):
+            continue
+        if stripped.startswith("# "):
+            return {
+                "violation": True,
+                "line": line_number,
+                "message": (
+                    f"source_h1_after_frontmatter: line {line_number} — "
+                    "Starlight already renders H1 from title:; remove this line"
+                ),
+            }
+        break
+
+    return {"violation": False, "line": None, "message": ""}
+
+
 def _strip_top_metadata(body: str) -> str:
     """Drop canonical metadata blockquotes before prose checks."""
     lines = body.splitlines()
@@ -854,9 +877,11 @@ def gate_results(
     practice_mcq: dict[str, object],
     alignment: dict[str, object],
     skip_source_check: bool,
+    source_h1: dict[str, object] | None = None,
 ) -> dict[str, bool | None]:
     quiz_count = int(structure["quiz_count"])
     gates: dict[str, bool | None] = {
+        "gate_no_source_h1": not source_h1["violation"] if source_h1 is not None else True,
         "density_mean_wpp_30": float(metrics["mean_wpp"]) >= 30,
         "density_median_wpp_28": float(metrics["median_wpp"]) >= 28,
         "density_short_rate_20pct": float(metrics["short_paragraph_rate"]) <= 0.20,
@@ -929,6 +954,7 @@ def verify(path: str | Path, skip_source_check: bool = False, max_workers: int =
     anti_fabrication = anti_fabrication_metrics(text)
     practice_mcq = practice_mcq_metrics(module_path, text)
     alignment = alignment_metrics(text)
+    source_h1 = source_h1_metrics(text)
     gates = gate_results(
         metrics,
         structure,
@@ -939,9 +965,11 @@ def verify(path: str | Path, skip_source_check: bool = False, max_workers: int =
         practice_mcq,
         alignment,
         skip_source_check,
+        source_h1,
     )
     tier, reasons = classify_tier(metrics, gates)
     passed = all(value is not False for value in gates.values())
+    diagnostics = [str(source_h1["message"])] if source_h1["message"] else []
     try:
         display_path = str(module_path.relative_to(REPO_ROOT))
     except ValueError:
@@ -960,6 +988,8 @@ def verify(path: str | Path, skip_source_check: bool = False, max_workers: int =
         "anti_fabrication": anti_fabrication,
         "practice_mcq": practice_mcq,
         "alignment": alignment,
+        "source_h1": source_h1,
+        "diagnostics": diagnostics,
         "gates": gates,
         "passed": passed,
         "frontmatter": frontmatter,
