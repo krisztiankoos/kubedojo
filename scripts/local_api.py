@@ -7726,20 +7726,12 @@ def make_handler(repo_root: Path) -> type[BaseHTTPRequestHandler]:
                 content_length = int(self.headers.get("Content-Length", "0") or "0")
                 body_bytes = self.rfile.read(max(0, content_length))
                 request_content_type = self.headers.get("Content-Type", "")
-                try:
-                    status_code, payload, content_type = route_post_request(
-                        repo_root,
-                        self.path,
-                        body_bytes=body_bytes,
-                        content_type=request_content_type,
-                    )
-                except TypeError as exc:
-                    if "unexpected keyword argument" not in str(exc):
-                        raise
-                    status_code, payload, content_type = route_post_request(
-                        repo_root,
-                        self.path,
-                    )
+                status_code, payload, content_type = route_post_request(
+                    repo_root,
+                    self.path,
+                    body_bytes=body_bytes,
+                    content_type=request_content_type,
+                )
             except Exception as exc:  # noqa: BLE001 - surface all write failures as JSON
                 status_code = 500
                 payload = {
