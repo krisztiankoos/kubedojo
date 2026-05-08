@@ -4,7 +4,7 @@ KubeDojo — free, open-source cloud native curriculum.
 
 ## Agent Orientation (first call on a cold start)
 
-Before `cat`-ing `STATUS.md` or running `git log`, hit the local API — it returns the same orientation in ~65 % fewer tokens.
+Before `cat`-ing `STATUS.md`, reading the latest `docs/session-state/*.md` handoff, or running `git log`, hit the local API — it returns the same orientation in ~65 % fewer tokens.
 
 ```
 curl -s http://127.0.0.1:8768/api/briefing/session             # ~1.5K tokens, full
@@ -12,7 +12,14 @@ curl -s http://127.0.0.1:8768/api/briefing/session?compact=1   # ~0.7K tokens, c
 curl -s http://127.0.0.1:8768/api/schema                       # endpoint index
 ```
 
-The briefing covers: current branch + dirty summary, all worktrees, runtime services, pipeline v2 queue head, recent commits, top TODO bullets, blockers, and alerts. It also returns the actionable triage triple — `actions.{active, blocked, next}` plus `top_modules[{module_key, phase, reason, endpoint}]` — so a fresh agent decides *what to touch* in the same call. Responses carry a weak ETag — send `If-None-Match` for 304 on repeat polls. If the API is down, fall back to reading `STATUS.md` + `CLAUDE.md`.
+The briefing covers: current branch + dirty summary, all worktrees, runtime services, pipeline v2 queue head, **recent commits**, top TODO bullets, blockers, and alerts. It also returns the actionable triage triple — `actions.{active, blocked, next}` plus `top_modules[{module_key, phase, reason, endpoint}]` — so a fresh agent decides *what to touch* in the same call. Responses carry a weak ETag — send `If-None-Match` for 304 on repeat polls. If the API is down, fall back to reading `STATUS.md` + `CLAUDE.md`.
+
+**Cold-start ordering rule (do not regress):**
+
+1. Briefing API first. It already covers `recent_commits`, `workspace.dirty`, `blockers`, `actions.{active,blocked,next}`, `focus`, `alerts`. **Do not redundantly run `git log -N` or read the latest handoff in full.**
+2. The handoff file at `docs/session-state/YYYY-MM-DD-*.md` is the *narrative-why* canonical record. Read it only when the briefing leaves a real gap (e.g., needing the rationale behind a contract decision, or full PR-by-PR provenance for the prior session). Use `Read` with `limit:` to pull only the relevant section.
+3. `git status --short` is the only marginal-value supplement to the briefing — useful for spotting untracked-files state the briefing summarizes but doesn't enumerate.
+4. Only fall back to STATUS.md when the API is down.
 
 **Before you claim work**: `GET /api/pipeline/leases` (or `/api/module/{key}/lease`) to see if another worker already holds it — avoids concurrent re-writes.
 **Before you fix a module**: `GET /api/module/{key}/state` for the structured `diagnostics[]` (frontmatter, UK sync, rubric, lease, dead-letter).

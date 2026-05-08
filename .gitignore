@@ -101,6 +101,7 @@ docs/quality-progress.tsv.lock
 
 # Claude Code scheduled-task runtime
 .claude/scheduled_tasks.lock
+.claude/local_api.db
 
 # Agent bridge runtime
 .bridge/
