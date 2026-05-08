@@ -4610,6 +4610,122 @@ _PIPELINE_SUMMARY_CSS = """
 """
 
 
+_ACTIVITY_SUMMARY_CSS = """
+    .activity-summary-card { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:14px; padding:12px 18px; color:var(--text); text-decoration:none; }
+    .activity-summary-card:hover { background:rgba(255,255,255,0.02); }
+    .activity-summary-list { list-style:none; margin:0; padding:0; min-width:0; }
+    .activity-summary-item { display:grid; grid-template-columns:18px 64px minmax(0,1fr); gap:8px; align-items:center; padding:3px 0; font-size:12px; color:var(--text-secondary); }
+    .activity-summary-src { width:18px; height:18px; border-radius:4px; display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:10px; background:var(--amber-muted); color:var(--amber); }
+    .activity-summary-src.commit { background:var(--accent-muted); color:var(--accent); }
+    .activity-summary-src.pipeline_event { background:var(--teal-muted); color:var(--teal); }
+    .activity-summary-time { color:var(--text-dim); font-size:11px; font-family:'SF Mono','Fira Code',ui-monospace,monospace; white-space:nowrap; }
+    .activity-summary-text { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .activity-summary-link { color:var(--accent); font-size:13px; font-weight:700; white-space:nowrap; }
+    @media (max-width:640px) { .activity-summary-card { grid-template-columns:1fr; } .activity-summary-link { justify-self:start; } }
+"""
+
+
+_ACTIVITY_FEED_CSS = """
+    .activity-feed { list-style:none; margin:0; padding:0; max-height:560px; overflow-y:auto; }
+    .activity-feed li { display:grid; grid-template-columns:18px 80px 120px 1fr; gap:10px; padding:8px 18px; font-size:12px; border-bottom:1px solid var(--border-subtle); align-items:center; }
+    .activity-feed li:last-child { border-bottom:0; }
+    .activity-src { width:18px; height:18px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:10px; }
+    .activity-src.commit { background:var(--accent-muted); color:var(--accent); }
+    .activity-src.pipeline_event { background:var(--teal-muted); color:var(--teal); }
+    .activity-src.bridge_message { background:var(--amber-muted); color:var(--amber); }
+    .activity-time, .activity-meta { font-family:'SF Mono','Fira Code',ui-monospace,monospace; color:var(--text-dim); font-size:11px; }
+    .activity-text { color:var(--text-secondary); word-break:break-word; min-width:0; }
+    .activity-text .mod { color:var(--accent); }
+"""
+
+
+_ACTIVITY_PAGE_CSS = """
+    :root { --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --surface-2:#1f2b3d; --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280; --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12); --teal:#2dd4bf; --teal-muted:rgba(45,212,191,0.12); --green:#4ade80; --green-muted:rgba(74,222,128,0.12); --amber:#fbbf24; --amber-muted:rgba(251,191,36,0.10); --red:#f87171; --red-muted:rgba(248,113,113,0.10); --border:rgba(255,255,255,0.06); --border-subtle:rgba(255,255,255,0.03); --radius:12px; --radius-sm:8px; }
+    *, *::before, *::after { box-sizing:border-box; }
+    body { margin:0; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif; background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; line-height:1.5; }
+    .mono { font-family:'SF Mono','Fira Code','Cascadia Code',ui-monospace,monospace; }
+    .main { max-width:1180px; margin:0 auto; padding:28px 24px 40px; }
+    .page-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
+    .page-title { margin:0; font-size:26px; letter-spacing:0; }
+    .page-sub { margin-top:4px; color:var(--text-secondary); font-size:13px; }
+    .panel { background:var(--surface-0); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    .panel-header { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:14px 18px; border-bottom:1px solid var(--border); }
+    .panel-title { display:flex; align-items:center; gap:10px; font-weight:700; }
+    .panel-icon { width:24px; height:24px; border-radius:var(--radius-sm); display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
+    .panel-badge { padding:3px 8px; border-radius:999px; font-size:11px; font-weight:700; background:var(--amber-muted); color:var(--amber); white-space:nowrap; }
+    .activity-tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .activity-select { background:var(--surface-1); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-sm); padding:7px 10px; font-size:12px; outline:none; }
+    .activity-select:focus { border-color:rgba(56,189,248,0.55); }
+    .empty-state { padding:24px; text-align:center; color:var(--text-dim); font-size:13px; }
+    @media (max-width:760px) { .page-head, .panel-header { flex-direction:column; align-items:flex-start; } .activity-feed li { grid-template-columns:18px 68px 1fr; } .activity-meta { display:none; } }
+"""
+
+
+_ACTIVITY_PAGE_JS = r"""
+    const $ = (sel) => document.querySelector(sel);
+    const AGENTS = ['claude', 'codex', 'gemini', 'autopilot'];
+    const SRC_ABBR = {commit: 'C', pipeline_event: 'P', bridge_message: 'B'};
+    let activityData = null;
+    async function fetchJson(url) { const r = await fetch(url); return r.ok ? r.json() : {error: `HTTP ${r.status}`, url}; }
+    function esc(s) { const d = document.createElement('div'); d.textContent = String(s ?? ''); return d.innerHTML; }
+    function shortenKey(key) { return String(key || '').replace(/^src\/content\/docs\//, '').replace(/\.md$/, ''); }
+    function formatRelTime(epoch, nowEpoch) {
+      const dt = Math.max(0, nowEpoch - epoch);
+      if (dt < 60) return `${dt}s`;
+      if (dt < 3600) return `${Math.floor(dt / 60)}m`;
+      if (dt < 86400) return `${Math.floor(dt / 3600)}h`;
+      return `${Math.floor(dt / 86400)}d`;
+    }
+    function activityTrack(item) {
+      const key = shortenKey(item.module_key || '').toLowerCase();
+      if (key.startsWith('prerequisites/') || key.startsWith('linux/')) return 'fundamentals';
+      if (key.startsWith('cloud/')) return 'cloud';
+      if (key.startsWith('k8s/')) return 'certifications';
+      if (key.startsWith('platform/')) return 'platform';
+      return 'other';
+    }
+    function activityAgent(item) {
+      const hay = [item.actor, item.from_agent, item.to_agent, item.from_llm, item.to_llm, item.source, item.kind, item.summary, item.ref?.task_id]
+        .map(v => String(v || '').toLowerCase()).join(' ');
+      return AGENTS.find(agent => hay.includes(agent)) || 'unknown';
+    }
+    function activityDescription(item) {
+      if (item.source === 'commit') return `<span class="mono">${esc(item.ref?.sha || '')}</span> ${esc(item.summary || '')}`;
+      if (item.source === 'pipeline_event') {
+        const mod = item.module_key ? `<span class="mod mono">${esc(shortenKey(item.module_key))}</span> ` : '';
+        return `${mod}${esc(item.kind || '')}`;
+      }
+      return `${esc(item.summary || '')} <span class="mono" style="color:var(--text-dim)">${esc(item.kind || '')}</span>`;
+    }
+    function renderActivityRows() {
+      const el = $('#activity-body');
+      if (!activityData || activityData.error) {
+        el.innerHTML = `<div class="empty-state">${esc(activityData?.error || 'No data')}</div>`;
+        $('#activity-badge').textContent = 'Unknown';
+        return;
+      }
+      const items = activityData.items || [];
+      const track = $('#activity-track-filter').value;
+      const agent = $('#activity-agent-filter').value;
+      const shown = items.filter(item => (!track || activityTrack(item) === track) && (!agent || activityAgent(item) === agent));
+      const counts = activityData.source_counts || {};
+      const parts = [['commit', 'commits'], ['pipeline_event', 'events'], ['bridge_message', 'msgs']]
+        .filter(([k]) => counts[k]).map(([k, label]) => `${counts[k]} ${label}`);
+      $('#activity-badge').textContent = `${shown.length === items.length ? '' : `${shown.length}/${items.length} shown / `}${parts.join(' / ') || 'Quiet'}`;
+      if (!shown.length) { el.innerHTML = '<div class="empty-state">No activity matches these filters</div>'; return; }
+      const now = activityData.generated_at || Math.floor(Date.now() / 1000);
+      el.innerHTML = `<ul class="activity-feed">${shown.map(item => {
+        const src = String(item.source || '');
+        return `<li><span class="activity-src ${src}">${SRC_ABBR[src] || '?'}</span><span class="activity-time">${formatRelTime(item.at, now)} ago</span><span class="activity-meta">${esc(`${activityTrack(item)} / ${activityAgent(item)}`)}</span><span class="activity-text">${activityDescription(item)}</span></li>`;
+      }).join('')}</ul>`;
+    }
+    async function loadActivityPage() { activityData = await fetchJson('/api/activity?limit=120'); renderActivityRows(); }
+    $('#activity-track-filter').addEventListener('change', renderActivityRows);
+    $('#activity-agent-filter').addEventListener('change', renderActivityRows);
+    loadActivityPage().catch(err => { activityData = {error: 'Activity data unavailable'}; renderActivityRows(); console.error('Activity page load failed:', err); });
+"""
+
+
 _PIPELINE_PAGE_CSS = """
     :root { --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --surface-2:#1f2b3d; --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280; --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12); --teal:#2dd4bf; --teal-muted:rgba(45,212,191,0.12); --green:#4ade80; --green-muted:rgba(74,222,128,0.12); --amber:#fbbf24; --amber-muted:rgba(251,191,36,0.10); --red:#f87171; --red-muted:rgba(248,113,113,0.10); --border:rgba(255,255,255,0.06); --border-subtle:rgba(255,255,255,0.03); --radius:12px; --radius-sm:8px; }
     *, *::before, *::after { box-sizing: border-box; }
@@ -5676,6 +5792,66 @@ def render_pipeline_page_html(repo_root: Path, *, tail: int = 30) -> str:
 </html>"""
 
 
+def render_activity_page_html() -> str:
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Activity - KubeDojo Local Monitor</title>
+  <style>
+{_TOP_NAV_CSS}
+{_ACTIVITY_PAGE_CSS}
+{_ACTIVITY_FEED_CSS}
+  </style>
+</head>
+<body>
+  {_render_top_nav("activity")}
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <h1 class="page-title">Activity</h1>
+        <div class="page-sub">Merged commits, pipeline events, and bridge messages from /api/activity.</div>
+      </div>
+    </div>
+
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">A</span>
+          Activity feed
+        </div>
+        <div class="activity-tools">
+          <select class="activity-select" id="activity-track-filter" aria-label="Track filter">
+            <option value="">All tracks</option>
+            <option value="fundamentals">Fundamentals</option>
+            <option value="cloud">Cloud</option>
+            <option value="certifications">Certifications</option>
+            <option value="platform">Platform</option>
+            <option value="other">Other</option>
+          </select>
+          <select class="activity-select" id="activity-agent-filter" aria-label="Agent filter">
+            <option value="">All</option>
+            <option value="claude">claude</option>
+            <option value="codex">codex</option>
+            <option value="gemini">gemini</option>
+            <option value="autopilot">autopilot</option>
+          </select>
+          <span class="panel-badge" id="activity-badge">&nbsp;</span>
+        </div>
+      </div>
+      <div class="panel-body-flush" id="activity-body">
+        <div class="empty-state">Loading&hellip;</div>
+      </div>
+    </section>
+  </main>
+  <script>
+{_ACTIVITY_PAGE_JS}
+  </script>
+</body>
+</html>"""
+
+
 def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DEFAULT_FEEDBACK_ISSUE) -> str:
     autopilot = _load_autopilot_v3_health(repo_root)
     autopilot_label = html.escape(_autopilot_v3_badge(autopilot))
@@ -6119,6 +6295,7 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
 {_OPERATOR_SUMMARY_CSS}
 {_QUALITY_SUMMARY_CSS}
 {_PIPELINE_SUMMARY_CSS}
+{_ACTIVITY_SUMMARY_CSS}
 
     /* Section readiness grid */
     .readiness-wrap {{ padding: 4px 0 0 0; }}
@@ -6182,34 +6359,6 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
     .readiness-section-counts .inflight {{ color: var(--amber); }}
     .readiness-section-counts .cleared {{ color: var(--green); }}
 
-    /* Activity feed */
-    .activity-feed {{
-      list-style: none; margin: 0; padding: 0;
-      max-height: 420px; overflow-y: auto;
-    }}
-    .activity-feed li {{
-      display: grid;
-      grid-template-columns: 18px 80px 1fr;
-      gap: 10px; padding: 8px 18px;
-      font-size: 12px;
-      border-bottom: 1px solid var(--border-subtle);
-      align-items: center;
-    }}
-    .activity-feed li:last-child {{ border-bottom: 0; }}
-    .activity-src {{
-      width: 18px; height: 18px; border-radius: 4px;
-      display: flex; align-items: center; justify-content: center;
-      font-weight: 700; font-size: 10px;
-    }}
-    .activity-src.commit {{ background: var(--accent-muted); color: var(--accent); }}
-    .activity-src.pipeline_event {{ background: var(--teal-muted); color: var(--teal); }}
-    .activity-src.bridge_message {{ background: var(--amber-muted); color: var(--amber); }}
-    .activity-time {{
-      font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
-      color: var(--text-dim); font-size: 11px;
-    }}
-    .activity-text {{ color: var(--text-secondary); word-break: break-word; min-width: 0; }}
-    .activity-text .mod {{ color: var(--accent); }}
   </style>
 </head>
 <body>
@@ -6338,13 +6487,20 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
           <div class="panel-header">
             <div class="panel-title">
               <span class="panel-icon" style="background:var(--amber-muted);color:var(--amber);">A</span>
-              Activity (last 24 h)
+              Activity
             </div>
-            <span class="panel-badge" id="activity-badge" style="background:var(--amber-muted);color:var(--amber);">&nbsp;</span>
+            <span class="panel-badge" id="activity-summary-state" style="background:var(--amber-muted);color:var(--amber);">&nbsp;</span>
           </div>
-          <div class="panel-body-flush" id="activity-body">
-            <div class="empty-state">Loading&hellip;</div>
-          </div>
+          <a class="activity-summary-card" href="/activity">
+            <ul class="activity-summary-list" id="activity-summary-items">
+              <li class="activity-summary-item">
+                <span class="activity-summary-src">A</span>
+                <span class="activity-summary-time">now</span>
+                <span class="activity-summary-text">Loading&hellip;</span>
+              </li>
+            </ul>
+            <span class="activity-summary-link">View activity &rarr;</span>
+          </a>
         </div>
       </div>
 
@@ -7002,23 +7158,23 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
       return `${{Math.floor(dt/86400)}}d`;
     }}
 
-    function renderActivity(data) {{
-      const el = $('#activity-body');
-      const badge = $('#activity-badge');
+    function renderActivitySummary(data) {{
+      const el = $('#activity-summary-items');
+      const badge = $('#activity-summary-state');
       if (!data || data.error) {{
-        el.innerHTML = `<div class="empty-state">${{esc(data?.error || 'No data')}}</div>`;
+        el.innerHTML = `<li class="activity-summary-item"><span class="activity-summary-src">!</span><span class="activity-summary-time">n/a</span><span class="activity-summary-text">${{esc(data?.error || 'No data')}}</span></li>`;
         badge.textContent = 'Unknown';
         return;
       }}
-      const items = (data.items || []).slice(0, 60);
+      const items = (data.items || []).slice(0, 3);
       const counts = data.source_counts || {{}};
       const parts = [];
       if (counts.commit) parts.push(`${{counts.commit}} commits`);
       if (counts.pipeline_event) parts.push(`${{counts.pipeline_event}} events`);
       if (counts.bridge_message) parts.push(`${{counts.bridge_message}} msgs`);
-      badge.textContent = parts.length ? parts.join(' · ') : 'Quiet';
+      badge.textContent = parts.length ? parts.join(' / ') : 'Quiet';
       if (items.length === 0) {{
-        el.innerHTML = '<div class="empty-state">No recent activity</div>';
+        el.innerHTML = '<li class="activity-summary-item"><span class="activity-summary-src">A</span><span class="activity-summary-time">n/a</span><span class="activity-summary-text">No recent activity</span></li>';
         return;
       }}
       const now = data.generated_at || Math.floor(Date.now() / 1000);
@@ -7029,22 +7185,22 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
         const t = formatRelTime(it.at, now);
         let desc;
         if (it.source === 'commit') {{
-          desc = `<span class="mono">${{esc(it.ref?.sha || '')}}</span> ${{esc(it.summary || '')}}`;
+          desc = `${{esc(it.ref?.sha || '')}} ${{esc(it.summary || '')}}`;
         }} else if (it.source === 'pipeline_event') {{
           const modPart = it.module_key
-            ? `<span class="mod mono">${{esc(shortenKey(it.module_key))}}</span> `
+            ? `${{esc(shortenKey(it.module_key))}} `
             : '';
           desc = `${{modPart}}${{esc(it.kind || '')}}`;
         }} else {{
-          desc = `${{esc(it.summary || '')}} <span class="mono" style="color:var(--text-dim)">${{esc(it.kind || '')}}</span>`;
+          desc = `${{esc(it.summary || '')}} ${{esc(it.kind || '')}}`;
         }}
-        return `<li>
-          <span class="activity-src ${{srcCls}}">${{abbr}}</span>
-          <span class="activity-time">${{t}} ago</span>
-          <span class="activity-text">${{desc}}</span>
+        return `<li class="activity-summary-item">
+          <span class="activity-summary-src ${{srcCls}}">${{abbr}}</span>
+          <span class="activity-summary-time">${{t}} ago</span>
+          <span class="activity-summary-text">${{desc}}</span>
         </li>`;
       }}).join('');
-      el.innerHTML = `<ul class="activity-feed">${{rows}}</ul>`;
+      el.innerHTML = rows;
     }}
 
     const BOOK_STATUS_TONE = {{
@@ -7185,7 +7341,7 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
 
       try {{
         const [summary, missing, services, worktree, feedback, reviews, v2Status, transStatus,
-               briefing, readiness, qualityBoard, activity, bookProgress] = await Promise.all([
+               briefing, readiness, qualityBoard, activitySummary, bookProgress] = await Promise.all([
           fetchJson('/api/status/summary'),
           fetchJson('/api/missing-modules/status'),
           fetchJson('/api/runtime/services'),
@@ -7197,7 +7353,7 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
           fetchJson('/api/briefing/session?compact=1'),
           fetchJson('/api/tracks/readiness'),
           fetchJson('/api/quality/board'),
-          fetchJson('/api/activity?limit=60'),
+          fetchJson('/api/activity?limit=3'),
           fetchJson('/api/briefing/book'),
         ]);
 
@@ -7209,7 +7365,7 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
         renderReadiness(readiness);
         renderQualitySummary(qualityBoard);
         renderPipelineSummary(v2Status);
-        renderActivity(activity);
+        renderActivitySummary(activitySummary);
         renderMetrics(summary, worktree, feedback, t2Queue);
         renderServices(services);
         renderSiteTracks(summary, v2Status, t2Queue);
@@ -7984,6 +8140,7 @@ def build_api_schema() -> dict[str, Any]:
             {"path": "/", "desc": "HTML dashboard", "content_type": "text/html"},
             {"path": "/quality", "desc": "Full-quality board and per-module summary table", "content_type": "text/html"},
             {"path": "/pipeline", "desc": "Pipeline v2 queue, recent events, and autopilot v3 health", "content_type": "text/html"},
+            {"path": "/activity", "desc": "Activity feed with client-side track and agent filters", "content_type": "text/html"},
             {"path": "/healthz", "desc": "Liveness probe"},
             {"path": "/api/schema", "desc": "This document"},
             {
@@ -8305,7 +8462,7 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
             tail = 30
         return 200, render_pipeline_page_html(repo_root, tail=tail), "text/html; charset=utf-8"
     if path == "/activity":
-        return 200, _render_skeleton_page("Activity", 977), "text/html; charset=utf-8"
+        return 200, render_activity_page_html(), "text/html; charset=utf-8"
     if path == "/health":
         return 200, _render_skeleton_page("Health", 978), "text/html; charset=utf-8"
     if path == "/channels":
