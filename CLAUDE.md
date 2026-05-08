@@ -57,6 +57,8 @@ Convention: each agent ends its turn with `[AGREE]` / `[OPTION X]` / `[DEFER]`. 
 
 **Ukrainian translation**: ~40% (Prerequisites, CKA, CKAD). Files in `src/content/docs/uk/`.
 
+> **HTML-first artifact policy:** see [`docs/migrations/html-first/plan.html`](docs/migrations/html-first/plan.html) — orchestrator artifacts (audit reports, dispatch briefs, bug autopsies, batch summaries, PR review explainers, session handoffs) default to HTML; STATUS.md / CLAUDE.md / `.claude/rules/` / memory stay Markdown.
+
 ## Session Workflow
 
 1. **Orient via `/api/briefing/session`** (see *Agent Orientation* above). `STATUS.md` is the fallback when the API is down.
