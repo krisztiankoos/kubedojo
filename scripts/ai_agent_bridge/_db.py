@@ -18,6 +18,7 @@ in the B.1 design round (task bridge-b1-schema-design, 2026-04-11).
 
 import sqlite3
 from datetime import UTC, datetime
+from typing import Literal, overload
 
 from ._config import DB_PATH
 from ._fts import setup_fts_tables
@@ -139,6 +140,10 @@ CREATE TABLE IF NOT EXISTS channel_events (
 
 CREATE INDEX IF NOT EXISTS idx_channel_events_thread_event
     ON channel_events(thread_id, event_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_channel_events_message_posted
+    ON channel_events (event, json_extract(payload_json, '$.message_id'))
+    WHERE event = 'message_posted';
 """
 
 
@@ -274,6 +279,20 @@ def get_db():
                         ON channel_events(thread_id, event_id)
                         """
                     )
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='index' AND name='idx_channel_events_message_posted'"
+                )
+                if not cursor.fetchone():
+                    conn.execute(
+                        """
+                        CREATE UNIQUE INDEX IF NOT EXISTS idx_channel_events_message_posted
+                        ON channel_events (
+                            event,
+                            json_extract(payload_json, '$.message_id')
+                        )
+                        WHERE event = 'message_posted'
+                        """
+                    )
 
         setup_fts_tables(conn)
         conn.commit()
@@ -285,14 +304,8 @@ def get_db():
 
 def get_session(task_id: str) -> dict:
     """Get session IDs for a task."""
-    empty = {
-        "claude": None,
-        "gemini": None,
-        "codex": None,
-    }
     if not task_id:
         return {
-            **empty,
             "claude_session_id": None,
             "gemini_session_id": None,
             "codex_session_id": None,
@@ -309,15 +322,11 @@ def get_session(task_id: str) -> dict:
 
     if row:
         return {
-            "claude": row[0],
-            "gemini": row[1],
-            "codex": row[2],
             "claude_session_id": row[0],
             "gemini_session_id": row[1],
             "codex_session_id": row[2],
         }
     return {
-        **empty,
         "claude_session_id": None,
         "gemini_session_id": None,
         "codex_session_id": None,
@@ -334,6 +343,32 @@ def _session_column(agent: str) -> str:
     if agent not in columns:
         raise ValueError(f"Unknown session agent: {agent}")
     return columns[agent]
+
+
+@overload
+def set_session(
+    task_id: str,
+    agent: Literal["claude", "gemini", "codex"],
+    session_id: str,
+    *,
+    claude_session_id: None = None,
+    gemini_session_id: None = None,
+    codex_session_id: None = None,
+) -> None:
+    ...
+
+
+@overload
+def set_session(
+    task_id: str,
+    agent: None = None,
+    session_id: None = None,
+    *,
+    claude_session_id: str | None = None,
+    gemini_session_id: str | None = None,
+    codex_session_id: str | None = None,
+) -> None:
+    ...
 
 
 def set_session(

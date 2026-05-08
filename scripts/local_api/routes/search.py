@@ -34,13 +34,13 @@ def _safe_snippet(value: str | None) -> str:
 
 def _sanitize_fts_query(raw: str) -> str | None:
     query = " ".join(raw.replace("\x00", " ").split()).strip()
-    query = query.lstrip("*^").strip()
+    query = query.lstrip("*^()[]").strip()
     if not query:
         return None
 
     terms: list[str] = []
     for token in query.split():
-        cleaned = token.lstrip("*^").strip()
+        cleaned = token.lstrip("*^()[]").strip()
         if not cleaned or not any(char.isalnum() for char in cleaned):
             continue
         terms.append(f'"{cleaned.replace("\"", "\"\"")}"')
@@ -111,20 +111,25 @@ def _query_decision_results(
     *,
     limit: int,
 ) -> list[dict[str, Any]]:
-    rows = conn.execute(
-        """
-        SELECT
-          title,
-          filename,
-          snippet(decisions_fts, -1, '<mark>', '</mark>', '...', 18) AS snippet,
-          bm25(decisions_fts) AS rank
-        FROM decisions_fts
-        WHERE decisions_fts MATCH ?
-        ORDER BY rank ASC
-        LIMIT ?
-        """,
-        (fts_query, limit),
-    ).fetchall()
+    try:
+        rows = conn.execute(
+            """
+            SELECT
+              title,
+              filename,
+              snippet(decisions_fts, -1, '<mark>', '</mark>', '...', 18) AS snippet,
+              bm25(decisions_fts) AS rank
+            FROM decisions_fts
+            WHERE decisions_fts MATCH ?
+            ORDER BY rank ASC
+            LIMIT ?
+            """,
+            (fts_query, limit),
+        ).fetchall()
+    except sqlite3.OperationalError as exc:
+        if "no such table" in str(exc):
+            return []
+        raise
     return [
         {
             "kind": "decision",

@@ -114,3 +114,34 @@ def test_channel_backfill_events_is_idempotent(isolate_db: Path, capsys) -> None
         conn.close()
 
     assert count == 1
+
+
+def test_message_posted_unique_index_blocks_duplicate_payload(
+    isolate_db: Path,
+) -> None:
+    conn = sqlite3.connect(isolate_db)
+    payload = json.dumps({"message_id": "dup-message"}, sort_keys=True)
+    try:
+        conn.execute(
+            """
+            INSERT INTO channel_events (delivery_id, thread_id, event, payload_json, ts)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (None, "thread-a", "message_posted", payload, "2026-05-07T12:00:00+00:00"),
+        )
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(
+                """
+                INSERT INTO channel_events (delivery_id, thread_id, event, payload_json, ts)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    None,
+                    "thread-b",
+                    "message_posted",
+                    payload,
+                    "2026-05-07T12:01:00+00:00",
+                ),
+            )
+    finally:
+        conn.close()

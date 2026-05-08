@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -50,3 +51,17 @@ def test_search_endpoint_rejects_bad_kind(tmp_path: Path) -> None:
     )
     assert status == 400
     assert payload["error"] == "invalid kind"
+
+
+def test_search_sanitizer_strips_leading_parens_and_brackets() -> None:
+    assert search_route._sanitize_fts_query("([needle") == '"needle"'
+    assert search_route._sanitize_fts_query("() []") is None
+
+
+def test_query_decision_results_missing_table_returns_empty() -> None:
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    try:
+        assert search_route._query_decision_results(conn, '"needle"', limit=10) == []
+    finally:
+        conn.close()

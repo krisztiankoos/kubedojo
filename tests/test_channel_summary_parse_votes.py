@@ -29,10 +29,14 @@ def test_vote_regex_extracts_last_structured_vote() -> None:
         ("I considered [OPTION B], but final is [AGREE]", "AGREE"),
         ("Ship [OPTION A]", "OPTION A"),
         ("Use the alternate [OPTION A′]", "OPTION A′"),
+        ("Use the alternate [OPTION A‘]", "OPTION A‘"),
         ("Pause this [DEFER]", "DEFER"),
         ("Not ready [NEEDS-CHANGES]", "NEEDS-CHANGES"),
         ("Not ready [NEEDS CHANGES]", "NEEDS CHANGES"),
         ("No bracketed vote here", None),
+        ("Earlier fallback [DEFER]\nFinal line [DISAGREE]", None),
+        ("Earlier fallback [DEFER]\nFinal line without protocol", None),
+        ("Earlier fallback [DEFER]\n\nFinal line [AGREE]", "AGREE"),
     ]
 
     for body, expected in cases:
