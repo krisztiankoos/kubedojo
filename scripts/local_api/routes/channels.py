@@ -11,6 +11,7 @@ from urllib.parse import parse_qs, unquote
 
 RouteResponse = tuple[int, Any, str]
 _POST_DB_LOCK = _threading.Lock()
+_VOTE_RE = _re.compile(r"\[(AGREE|OPTION [A-Z][\w'’′]?|DEFER|NEEDS[- ]CHANGES)\]")
 
 
 def _json_response(status: int, payload: dict[str, Any]) -> RouteResponse:
@@ -29,6 +30,86 @@ def _safe_json_for_script(value: Any) -> str:
 def _channel_event_sort_key(channel: dict[str, Any]) -> str:
     value = channel.get("last_event_ts") or channel.get("created_at") or ""
     return str(value)
+
+
+def extract_thread_vote(body: str) -> str | None:
+    matches = _VOTE_RE.findall(body)
+    return matches[-1] if matches else None
+
+
+def _float_from_payload(payload: dict[str, Any], key: str) -> float:
+    value = payload.get(key, 0)
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, int | float):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value)
+        except ValueError:
+            return 0.0
+    return 0.0
+
+
+def _thread_status(rounds: list[dict[str, Any]]) -> str:
+    if not rounds:
+        return "in_flight"
+    final_turns = rounds[-1]["turns"]
+    final_votes = [
+        str(turn.get("vote"))
+        for turn in final_turns
+        if isinstance(turn.get("vote"), str)
+    ]
+    if (
+        final_votes
+        and len(final_votes) == len(final_turns)
+        and all(vote == "AGREE" for vote in final_votes)
+        and "DEFER" not in final_votes
+    ):
+        return "converged"
+    option_votes = {
+        vote
+        for vote in final_votes
+        if vote.startswith("OPTION ")
+    }
+    if len(option_votes) >= 2:
+        return "diverged"
+    return "in_flight"
+
+
+def _decision_frontmatter_or_first_section(path: Path) -> str:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return ""
+    if not lines:
+        return ""
+    if lines[0].strip() == "---":
+        for idx, line in enumerate(lines[1:], start=1):
+            if line.strip() == "---":
+                return "\n".join(lines[: idx + 1])
+        return "\n".join(lines[:80])
+    section: list[str] = []
+    saw_h1 = False
+    for line in lines:
+        if line.startswith("# "):
+            if saw_h1:
+                break
+            saw_h1 = True
+        elif saw_h1 and line.startswith("## "):
+            break
+        section.append(line)
+    return "\n".join(section or lines[:20])
+
+
+def find_decision_id_for_thread(repo_root: Path, thread_id: str) -> str | None:
+    decisions_dir = repo_root / "docs" / "decisions"
+    if not thread_id or not decisions_dir.exists():
+        return None
+    for path in sorted(decisions_dir.glob("*.md")):
+        if thread_id in _decision_frontmatter_or_first_section(path):
+            return path.relative_to(repo_root).as_posix()
+    return None
 
 
 def _finalize_channel_rollup(
@@ -307,6 +388,129 @@ def build_channel_events_payload(
     }
 
 
+def build_channel_thread_summary(
+    repo_root: Path,
+    thread_id: str,
+    *,
+    resolve_bridge_db_path_fn: Callable[[Path], Path],
+    query_sqlite_rows_fn: Callable[..., list[dict[str, Any]]],
+) -> dict[str, Any]:
+    db_path = resolve_bridge_db_path_fn(repo_root)
+    rows = query_sqlite_rows_fn(
+        db_path,
+        """
+        SELECT
+          cm.message_id,
+          cm.channel,
+          cm.thread_id,
+          cm.round_index,
+          cm.from_agent,
+          cm.from_model,
+          cm.body,
+          cm.created_at,
+          mc.cost_usd AS cascade_cost_usd,
+          mc.elapsed_s AS cascade_elapsed_s
+        FROM channel_messages cm
+        LEFT JOIN (
+          SELECT
+            thread_id,
+            json_extract(payload_json, '$.message_id') AS message_id,
+            SUM(COALESCE(json_extract(payload_json, '$.cost_usd'), 0)) AS cost_usd,
+            SUM(COALESCE(json_extract(payload_json, '$.elapsed_s'), 0)) AS elapsed_s
+          FROM channel_events
+          WHERE event = 'model_cascade'
+            AND json_extract(payload_json, '$.message_id') IS NOT NULL
+          GROUP BY thread_id, json_extract(payload_json, '$.message_id')
+        ) mc
+          ON mc.thread_id = cm.thread_id
+         AND mc.message_id = cm.message_id
+        WHERE cm.thread_id = ?
+        ORDER BY cm.round_index ASC, cm.created_at ASC, cm.rowid ASC
+        """,
+        (thread_id,),
+        limit=10000,
+    )
+
+    channel = ""
+    subject = ""
+    turns_by_round_idx: dict[int, list[dict[str, Any]]] = {}
+    total_cost_usd = 0.0
+    total_elapsed_s = 0.0
+
+    for row in rows:
+        if not channel and isinstance(row.get("channel"), str):
+            channel = str(row["channel"])
+        body = row.get("body") if isinstance(row.get("body"), str) else ""
+        if not subject:
+            subject = body.strip()[:200]
+
+        agent = row.get("from_agent")
+        if not isinstance(agent, str) or agent == "user":
+            continue
+
+        cost_usd = _float_from_payload({"cost_usd": row.get("cascade_cost_usd")}, "cost_usd")
+        elapsed_s = _float_from_payload({"elapsed_s": row.get("cascade_elapsed_s")}, "elapsed_s")
+        total_cost_usd += cost_usd
+        total_elapsed_s += elapsed_s
+
+        turns_by_round_idx.setdefault(int(row.get("round_index") or 0), []).append(
+            {
+                "agent": agent,
+                "model": row.get("from_model"),
+                "vote": extract_thread_vote(body),
+                "body_preview": body[:200],
+                "body": body,
+                "message_id": row.get("message_id"),
+                "cost_usd": cost_usd,
+                "elapsed_s": elapsed_s,
+                "ts": row.get("created_at"),
+            }
+        )
+
+    rounds: list[dict[str, Any]] = []
+
+    def append_round(turns: list[dict[str, Any]]) -> None:
+        rounds.append(
+            {
+                "round_idx": len(rounds) + 1,
+                "turns": turns,
+                "cost_usd": round(
+                    sum(float(turn.get("cost_usd") or 0) for turn in turns),
+                    6,
+                ),
+                "elapsed_s": round(
+                    sum(float(turn.get("elapsed_s") or 0) for turn in turns),
+                    3,
+                ),
+            }
+        )
+
+    for round_idx in sorted(turns_by_round_idx):
+        current_turns: list[dict[str, Any]] = []
+        seen_agents: set[str] = set()
+        for turn in turns_by_round_idx[round_idx]:
+            agent = str(turn.get("agent") or "")
+            if agent in seen_agents and current_turns:
+                append_round(current_turns)
+                current_turns = []
+                seen_agents = set()
+            current_turns.append(turn)
+            seen_agents.add(agent)
+        if current_turns:
+            append_round(current_turns)
+
+    return {
+        "thread_id": thread_id,
+        "channel": channel,
+        "subject": subject,
+        "rounds": rounds,
+        "status": _thread_status(rounds),
+        "decision_id": find_decision_id_for_thread(repo_root, thread_id),
+        "total_cost_usd": round(total_cost_usd, 6),
+        "total_elapsed_s": round(total_elapsed_s, 3),
+    }
+
+
 def build_channel_timeline_payload(
     repo_root: Path,
     channel_name: str,
@@ -449,10 +653,17 @@ def render_channels_chat_html(
     .unread-badge.visible{{display:inline-block}}
     .sidebar-meta{{font-size:11px;color:var(--muted);padding:10px}}
     .channel-main{{min-width:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;background:var(--bg)}}
-    .channel-header{{border-bottom:1px solid var(--line);background:rgba(23,25,27,.96);padding:14px 18px}}
+    .channel-header{{border-bottom:1px solid var(--line);background:rgba(23,25,27,.96);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:14px}}
+    .channel-heading{{min-width:0}}
     .channel-header h1{{font-size:18px;font-weight:750;letter-spacing:0}}
     .channel-header p{{font-size:12px;color:var(--muted);margin-top:2px}}
+    .view-toggle{{display:inline-grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:#111315;flex:0 0 auto}}
+    .view-toggle button{{border:0;border-left:1px solid var(--line);background:transparent;color:var(--muted);padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer}}
+    .view-toggle button:first-child{{border-left:0}}
+    .view-toggle button.active{{background:var(--teal);color:#071211}}
+    .view-shell{{min-width:0;min-height:0;position:relative;overflow:hidden}}
     .messages{{overflow:auto;padding:16px 18px 28px;scrollbar-gutter:stable}}
+    .messages[hidden],.graph-view[hidden]{{display:none}}
     .empty{{color:var(--muted);font-size:13px;padding:28px 4px}}
     .event-row{{max-width:900px;margin:0 0 12px;border-left:3px solid var(--line);padding-left:10px}}
     .event-row.claude{{border-left-color:var(--blue)}}.event-row.codex{{border-left-color:var(--green)}}.event-row.gemini{{border-left-color:var(--violet)}}
@@ -468,7 +679,34 @@ def render_channels_chat_html(
     .post-button{{border:1px solid rgba(245,158,11,.6);background:var(--orange);color:#171207;border-radius:6px;padding:0 16px;font-size:13px;font-weight:800;cursor:pointer}}
     .post-button:disabled{{opacity:.55;cursor:not-allowed}}
     .form-status{{grid-column:1 / -1;color:var(--muted);font-size:12px;min-height:16px}}
-    @media(max-width:760px){{.channels-app{{grid-template-columns:1fr;height:auto;min-height:calc(100vh - var(--topnav-h, 45px))}}.channels-sidebar{{max-height:210px;border-right:0;border-bottom:1px solid var(--line)}}.channel-main{{min-height:70vh}}}}
+    .graph-view{{height:100%;overflow:auto;padding:16px 18px 28px}}
+    .graph-banner{{border:1px solid rgba(245,158,11,.45);background:rgba(245,158,11,.1);color:#f8d9a0;border-radius:6px;padding:12px 14px;font-size:13px;margin-bottom:14px}}
+    .graph-card{{min-width:680px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}}
+    .decision-graph{{width:100%;border-collapse:collapse;table-layout:fixed}}
+    .decision-graph th,.decision-graph td{{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:10px;vertical-align:top;font-size:12px}}
+    .decision-graph th{{background:#121416;color:var(--muted);text-align:left;text-transform:uppercase;letter-spacing:.06em;font-size:10px}}
+    .decision-graph tr:last-child td{{border-bottom:0}}
+    .round-label{{font-weight:850;color:var(--text);white-space:nowrap}}
+    .round-cost{{display:block;color:var(--muted);font-size:10px;font-weight:600;margin-top:2px}}
+    .vote-chip{{border:1px solid var(--line);border-radius:999px;background:#111315;color:var(--text);padding:5px 8px;font-size:11px;font-weight:850;cursor:pointer;max-width:100%;white-space:normal;text-align:left}}
+    .vote-chip.agree{{border-color:rgba(85,209,127,.55);background:rgba(85,209,127,.12);color:#9ef0b7}}
+    .vote-chip.defer,.vote-chip.needs{{border-color:rgba(245,158,11,.55);background:rgba(245,158,11,.12);color:#f8d9a0}}
+    .vote-chip.option{{border-color:rgba(105,167,255,.6);background:rgba(105,167,255,.12);color:#a9cfff}}
+    .vote-chip.null{{color:var(--muted)}}
+    .missed{{color:var(--muted);font-style:italic}}
+    .decision-footer{{border-top:1px solid var(--line);padding:12px 14px;color:var(--muted);font-size:13px}}
+    .decision-footer strong{{color:var(--text)}}
+    .modal-backdrop{{position:fixed;inset:0;background:rgba(0,0,0,.62);display:grid;place-items:center;padding:24px;z-index:20}}
+    .modal-backdrop[hidden]{{display:none}}
+    .turn-modal{{width:min(1100px,96vw);max-height:88vh;display:grid;grid-template-rows:auto minmax(0,1fr);background:#101112;border:1px solid var(--line);border-radius:8px;box-shadow:0 24px 80px rgba(0,0,0,.45);overflow:hidden}}
+    .modal-header{{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:12px 14px;background:var(--panel)}}
+    .modal-title{{font-size:13px;font-weight:850}}
+    .modal-close{{border:1px solid var(--line);background:#111315;color:var(--text);border-radius:6px;width:30px;height:30px;cursor:pointer;font-size:18px;line-height:1}}
+    .modal-body{{overflow:auto;padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}}
+    .turn-body{{min-width:0;border:1px solid var(--line);border-radius:6px;background:#0d0f10;overflow:hidden}}
+    .turn-body h3{{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);background:#121416}}
+    .turn-body pre{{white-space:pre-wrap;word-break:break-word;color:var(--text);font:12px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;padding:10px;max-height:62vh;overflow:auto}}
+    @media(max-width:760px){{.channels-app{{grid-template-columns:1fr;height:auto;min-height:calc(100vh - var(--topnav-h, 45px))}}.channels-sidebar{{max-height:210px;border-right:0;border-bottom:1px solid var(--line)}}.channel-main{{min-height:70vh}}.channel-header{{align-items:flex-start;flex-direction:column}}.view-toggle{{width:100%}}}}
   </style>
 </head>
 <body>
@@ -481,13 +719,25 @@ def render_channels_chat_html(
   </nav>
   <main class="channel-main">
     <header class="channel-header">
-      <h1 id="channelTitle">Agent Deliberations</h1>
-      <p><span id="channelMeta">Select a channel</span> · <span id="pollState">idle</span></p>
+      <div class="channel-heading">
+        <h1 id="channelTitle">Agent Deliberations</h1>
+        <p><span id="channelMeta">Select a channel</span> · <span id="pollState">idle</span></p>
+      </div>
+      <div class="view-toggle" aria-label="Thread view">
+        <button type="button" data-view-toggle="chat">Chat</button>
+        <button type="button" data-view-toggle="graph">Graph</button>
+      </div>
     </header>
-    <!-- delta-render: message nodes use data-message-id and renderedMsgIds; existing nodes are never overwritten -->
-    <section class="messages" id="messageList" aria-live="polite">
-      <div class="empty" id="emptyState">Waiting for channel activity...</div>
-    </section>
+    <div class="view-shell">
+      <!-- delta-render: message nodes use data-message-id and renderedMsgIds; existing nodes are never overwritten -->
+      <section class="messages" id="messageList" aria-live="polite">
+        <div class="empty" id="emptyState">Waiting for channel activity...</div>
+      </section>
+      <section class="graph-view" id="graphView" hidden>
+        <div class="graph-banner" id="graphFallback" hidden>This thread has no structured votes — switch to Chat view to read the discussion.</div>
+        <div id="graphMount"></div>
+      </section>
+    </div>
     <form class="post-form" id="postForm">
       <textarea class="post-input" id="postBody" name="body" maxlength="8000" placeholder="Post to the selected channel"></textarea>
       <button class="post-button" id="postButton" type="submit">Post</button>
@@ -495,8 +745,19 @@ def render_channels_chat_html(
     </form>
   </main>
 </div>
+<div class="modal-backdrop" id="turnModal" hidden>
+  <div class="turn-modal" role="dialog" aria-modal="true" aria-labelledby="turnModalTitle">
+    <div class="modal-header">
+      <div class="modal-title" id="turnModalTitle">Turn body</div>
+      <button class="modal-close" id="turnModalClose" type="button" aria-label="Close">×</button>
+    </div>
+    <div class="modal-body" id="turnModalBody"></div>
+  </div>
+</div>
 <script>
 const INITIAL_CHANNEL = {selected_js};
+const INITIAL_PARAMS = new URLSearchParams(window.location.search);
+const REQUESTED_VIEW = ["chat","graph"].includes(INITIAL_PARAMS.get("view")) ? INITIAL_PARAMS.get("view") : null;
 const DEFAULT_POLL_MS = 5000;
 const TIGHT_POLL_MS = 1000;
 const QUIET_RESET_MS = 30000;
@@ -508,14 +769,24 @@ let lastEventType = "";
 let lastNewEventAt = 0;
 let channels = [];
 let hasBooted = false;
+let currentView = REQUESTED_VIEW || "chat";
+let threadSummary = null;
+let summaryFetchId = 0;
 const renderedMsgIds = new Set();
 const channelList = document.getElementById("channelList");
 const messageList = document.getElementById("messageList");
 const emptyState = document.getElementById("emptyState");
+const graphView = document.getElementById("graphView");
+const graphMount = document.getElementById("graphMount");
+const graphFallback = document.getElementById("graphFallback");
 const postForm = document.getElementById("postForm");
 const postBody = document.getElementById("postBody");
 const postButton = document.getElementById("postButton");
 const formStatus = document.getElementById("formStatus");
+const turnModal = document.getElementById("turnModal");
+const turnModalTitle = document.getElementById("turnModalTitle");
+const turnModalBody = document.getElementById("turnModalBody");
+const turnModalClose = document.getElementById("turnModalClose");
 function lastVisitedKey(name){{return "kdjo_channel_lastvisited_"+name;}}
 function timeAgo(iso){{if(!iso)return"no activity";const d=Math.floor((Date.now()-new Date(iso))/1000);if(d<60)return d+"s ago";if(d<3600)return Math.floor(d/60)+"m ago";if(d<86400)return Math.floor(d/3600)+"h ago";return Math.floor(d/86400)+"d ago";}}
 function setText(el,value){{el.textContent=value == null ? "" : String(value);}}
@@ -523,6 +794,17 @@ function rememberVisited(name){{if(name)localStorage.setItem(lastVisitedKey(name
 function computePollDelayMs(now=Date.now()){{if((lastEventType==="reply_started"||lastEventType==="heartbeat")&&lastNewEventAt&&now-lastNewEventAt<QUIET_RESET_MS)return TIGHT_POLL_MS;return DEFAULT_POLL_MS;}}
 function isNearBottom(){{return messageList.scrollHeight-messageList.scrollTop-messageList.clientHeight<48;}}
 function resetMessages(){{renderedMsgIds.clear();sinceId=0;lastEventType="";lastNewEventAt=0;messageList.replaceChildren(emptyState);emptyState.style.display="block";}}
+function hasStructuredVotes(summary){{return !!(summary&&summary.rounds&&summary.rounds.some(round=>(round.turns||[]).some(turn=>turn.vote)));}}
+function defaultViewForSummary(summary){{if(REQUESTED_VIEW)return REQUESTED_VIEW;if(summary&&(summary.status==="converged"||summary.decision_id))return"graph";return"chat";}}
+function setView(view,updateUrl=true){{currentView=view==="graph"?"graph":"chat";messageList.hidden=currentView!=="chat";graphView.hidden=currentView!=="graph";document.querySelectorAll("[data-view-toggle]").forEach(btn=>btn.classList.toggle("active",btn.dataset.viewToggle===currentView));if(updateUrl){{const url=new URL(window.location.href);url.searchParams.set("view",currentView);history.replaceState(null,"",url);}}}}
+function voteClass(vote){{if(!vote)return"null";if(vote==="AGREE")return"agree";if(vote==="DEFER")return"defer";if(vote.startsWith("NEEDS"))return"needs";if(vote.startsWith("OPTION "))return"option";return"null";}}
+function agentColumns(summary){{const seen=new Set();(summary.rounds||[]).forEach(round=>(round.turns||[]).forEach(turn=>seen.add(turn.agent)));return Array.from(seen).sort((a,b)=>{{const order={{claude:0,codex:1,gemini:2}};return (order[a]??100)-(order[b]??100)||a.localeCompare(b);}});}}
+function formatMoney(value){{const n=Number(value||0);return n?"$"+n.toFixed(3):"$0";}}
+function formatElapsed(value){{const n=Number(value||0);return n?Math.round(n)+"s":"0s";}}
+function renderGraph(summary){{threadSummary=summary;graphMount.replaceChildren();const structured=hasStructuredVotes(summary);graphFallback.hidden=structured;if(!summary||!structured)return;const agents=agentColumns(summary);const card=document.createElement("div");card.className="graph-card";const table=document.createElement("table");table.className="decision-graph";const thead=document.createElement("thead");const headRow=document.createElement("tr");["Round",...agents].forEach(label=>{{const th=document.createElement("th");th.textContent=label;headRow.appendChild(th);}});thead.appendChild(headRow);table.appendChild(thead);const tbody=document.createElement("tbody");(summary.rounds||[]).forEach(round=>{{const tr=document.createElement("tr");const label=document.createElement("td");label.innerHTML="<span class='round-label'>ROUND "+String(round.round_idx)+"</span><span class='round-cost'>"+formatMoney(round.cost_usd)+" · "+formatElapsed(round.elapsed_s)+"</span>";tr.appendChild(label);agents.forEach(agent=>{{const td=document.createElement("td");const turn=(round.turns||[]).find(item=>item.agent===agent);if(turn){{const btn=document.createElement("button");btn.type="button";btn.className="vote-chip "+voteClass(turn.vote);btn.textContent=agent+": ["+(turn.vote||"NO VOTE")+"]";btn.addEventListener("click",()=>openTurnModal(round,turn));td.appendChild(btn);}}else{{const missed=document.createElement("span");missed.className="missed";missed.textContent="<missed>";td.appendChild(missed);}}tr.appendChild(td);}});tbody.appendChild(tr);}});table.appendChild(tbody);card.appendChild(table);const footer=document.createElement("div");footer.className="decision-footer";footer.innerHTML="<strong>DECISION</strong> → Status: "+String(summary.status||"in_flight")+(summary.decision_id?" · Linked: "+summary.decision_id:" · Linked: none")+" · Total: "+formatMoney(summary.total_cost_usd)+" / "+formatElapsed(summary.total_elapsed_s);card.appendChild(footer);graphMount.appendChild(card);}}
+function loadSummary(){{const myFetchId=++summaryFetchId;threadSummary=null;graphMount.replaceChildren();graphFallback.hidden=true;if(!selectedChannel){{setView("chat",false);return;}}fetch("/api/channel/"+encodeURIComponent(selectedChannel)+"/summary").then(r=>r.json()).then(summary=>{{if(myFetchId!==summaryFetchId)return;renderGraph(summary);setView(defaultViewForSummary(summary),false);}}).catch(()=>{{if(myFetchId===summaryFetchId){{graphFallback.hidden=false;setView("chat",false);}}}});}}
+function openTurnModal(round,turn){{turnModalTitle.textContent="Round "+String(round.round_idx)+" · "+String(turn.agent||"turn");turnModalBody.replaceChildren();const turns=(round.turns||[]).length>1?round.turns:[turn];turns.forEach(item=>{{const wrap=document.createElement("section");wrap.className="turn-body";const h=document.createElement("h3");h.textContent=String(item.agent||"agent")+" · "+String(item.vote||"no vote")+" · "+String(item.model||"");const pre=document.createElement("pre");pre.textContent=String(item.body||item.body_preview||"");wrap.append(h,pre);turnModalBody.appendChild(wrap);}});turnModal.hidden=false;turnModalClose.focus();}}
+function closeTurnModal(){{turnModal.hidden=true;turnModalBody.replaceChildren();}}
 function renderSidebar(){{channelList.replaceChildren();channels.forEach(ch=>{{const a=document.createElement("a");a.className="channel-link"+(ch.name===selectedChannel?" active":"");a.href="/channels/"+encodeURIComponent(ch.name);a.dataset.channelName=ch.name;const name=document.createElement("span");name.className="channel-name";name.textContent="# "+ch.name;const badge=document.createElement("span");badge.className="unread-badge";badge.dataset.unreadFor=ch.name;a.append(name,badge);a.addEventListener("click",()=>rememberVisited(ch.name));channelList.appendChild(a);}});document.getElementById("sidebarMeta").textContent=channels.length+" channel"+(channels.length===1?"":"s");updateUnreadBadges();}}
 function updateUnreadBadges(){{channels.forEach(ch=>{{const badge=channelList.querySelector(`[data-unread-for="${{CSS.escape(ch.name)}}"]`);if(!badge)return;const last=localStorage.getItem(lastVisitedKey(ch.name));if(ch.name===selectedChannel||!ch.last_event_ts||last&&new Date(ch.last_event_ts)<=new Date(last)){{badge.classList.remove("visible");badge.textContent="";return;}}if(!last){{badge.textContent=String(ch.event_count||1);badge.classList.add("visible");return;}}fetch("/api/channel/"+encodeURIComponent(ch.name)+"/events?since_ts="+encodeURIComponent(last)).then(r=>r.json()).then(data=>{{const n=(data.events||[]).length;if(n>0){{badge.textContent=String(n);badge.classList.add("visible");}}else{{badge.classList.remove("visible");badge.textContent="";}}}}).catch(()=>{{badge.textContent="!";badge.classList.add("visible");}});}});}}
 function appendMeta(parent,ev,agent){{const meta=document.createElement("div");meta.className="message-meta";const name=document.createElement("span");name.className="agent-name "+agent;name.textContent=agent==="user"?"👤 user":agent;meta.appendChild(name);if(ev.from_model||ev.model){{const model=document.createElement("span");model.className="model-tag";model.textContent=ev.from_model||ev.model;meta.appendChild(model);}}const stamp=document.createElement("span");stamp.textContent=(ev.ts||ev.created_at||"").slice(0,19).replace("T"," ");meta.appendChild(stamp);parent.appendChild(meta);}}
@@ -533,9 +815,14 @@ function renderEvent(ev){{if(emptyState)emptyState.style.display="none";if(ev.ev
 function applyEvents(events,nextSince){{if(!events.length)return;const stick=isNearBottom();events.forEach(renderEvent);sinceId=Math.max(sinceId,nextSince||sinceId);lastEventType=events[events.length-1].event||"";lastNewEventAt=Date.now();document.getElementById("channelMeta").textContent=events.length+" new event"+(events.length===1?"":"s")+" · last "+timeAgo(events[events.length-1].ts);if(stick)messageList.scrollTop=messageList.scrollHeight;rememberVisited(selectedChannel);updateUnreadBadges();}}
 function schedulePoll(){{clearTimeout(pollTimer);pollTimer=setTimeout(poll,computePollDelayMs());document.getElementById("pollState").textContent="next poll "+computePollDelayMs()/1000+"s";}}
 function poll(){{if(!selectedChannel){{schedulePoll();return;}}const myFetchId=++currentFetchId;fetch("/api/channel/"+encodeURIComponent(selectedChannel)+"/events?since_event_id="+sinceId).then(r=>r.json()).then(data=>{{if(myFetchId!==currentFetchId)return;applyEvents(data.events||[],data.next_since_event_id);}}).catch(()=>{{if(myFetchId===currentFetchId)document.getElementById("pollState").textContent="API unavailable";}}).finally(()=>{{if(myFetchId===currentFetchId)schedulePoll();}});}}
-function chooseChannel(name){{selectedChannel=name;if(!selectedChannel&&channels.length)selectedChannel=channels[0].name;document.getElementById("channelTitle").textContent=selectedChannel?"# "+selectedChannel:"Agent Deliberations";postButton.disabled=!selectedChannel;resetMessages();rememberVisited(selectedChannel);renderSidebar();poll();}}
+function chooseChannel(name){{selectedChannel=name;if(!selectedChannel&&channels.length)selectedChannel=channels[0].name;document.getElementById("channelTitle").textContent=selectedChannel?"# "+selectedChannel:"Agent Deliberations";postButton.disabled=!selectedChannel;resetMessages();loadSummary();rememberVisited(selectedChannel);renderSidebar();poll();}}
 function loadChannels(){{fetch("/api/channels").then(r=>r.json()).then(data=>{{channels=data.channels||[];if(selectedChannel&&!channels.some(ch=>ch.name===selectedChannel))channels.unshift({{name:selectedChannel,event_count:0,last_event_ts:null,threads:[]}});renderSidebar();if(!hasBooted){{hasBooted=true;chooseChannel(selectedChannel);}}}}).catch(()=>{{document.getElementById("sidebarMeta").textContent="API unavailable";}});}}
 postForm.addEventListener("submit",ev=>{{ev.preventDefault();if(!selectedChannel)return;const body=postBody.value;if(!body.trim()){{formStatus.textContent="Body is required.";return;}}postButton.disabled=true;formStatus.textContent="Posting...";fetch("/api/channel/"+encodeURIComponent(selectedChannel)+"/post",{{method:"POST",headers:{{"Content-Type":"application/json"}},body:JSON.stringify({{body,from_agent:"user"}})}}).then(async r=>{{const data=await r.json();if(!r.ok)throw new Error(data.error||"post failed");postBody.value="";formStatus.textContent="Posted.";rememberVisited(selectedChannel);poll();loadChannels();}}).catch(err=>{{formStatus.textContent=err.message;}}).finally(()=>{{postButton.disabled=false;postBody.focus();}});}});
+document.querySelectorAll("[data-view-toggle]").forEach(btn=>btn.addEventListener("click",()=>setView(btn.dataset.viewToggle,true)));
+turnModalClose.addEventListener("click",closeTurnModal);
+turnModal.addEventListener("click",ev=>{{if(ev.target===turnModal)closeTurnModal();}});
+document.addEventListener("keydown",ev=>{{if(ev.key==="Escape"&&!turnModal.hidden)closeTurnModal();}});
+setView(currentView,false);
 loadChannels();
 </script>
 </body></html>"""
@@ -712,6 +999,21 @@ def route_channel_api_request(
             build_channel_threads_index(
                 repo_root,
                 list_channels_fn=list_channels,
+                resolve_bridge_db_path_fn=resolve_bridge_db_path_fn,
+                query_sqlite_rows_fn=query_sqlite_rows_fn,
+            ),
+            "application/json; charset=utf-8",
+        )
+    if path.startswith("/api/channel/") and path.endswith("/summary"):
+        raw_thread_id = path[len("/api/channel/") : -len("/summary")]
+        thread_id = unquote(raw_thread_id).strip("/")
+        if not thread_id:
+            return 400, {"error": "missing_thread_id"}, "application/json; charset=utf-8"
+        return (
+            200,
+            build_channel_thread_summary(
+                repo_root,
+                thread_id,
                 resolve_bridge_db_path_fn=resolve_bridge_db_path_fn,
                 query_sqlite_rows_fn=query_sqlite_rows_fn,
             ),
