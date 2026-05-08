@@ -60,8 +60,12 @@ def process_for_claude(message_id: int, new_session: bool = False,
     if not msg:
         return
 
-    session = get_session(msg['task_id']) if msg['task_id'] else {"claude": None, "gemini": None}
-    claude_session_id = session["claude"] if not new_session else None
+    session = (
+        get_session(msg['task_id'])
+        if msg['task_id']
+        else {"claude_session_id": None, "gemini_session_id": None}
+    )
+    claude_session_id = session["claude_session_id"] if not new_session else None
 
     _print_claude_message_info(msg, fire_and_forget, no_timeout, claude_session_id)
 

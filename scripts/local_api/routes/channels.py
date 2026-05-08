@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import html as _html
 import json as _json
+import logging as _logging
+import os as _os
 import re as _re
 import threading as _threading
 from pathlib import Path
@@ -23,8 +25,19 @@ except ModuleNotFoundError:
 
 
 RouteResponse = tuple[int, Any, str]
+_LOG = _logging.getLogger(__name__)
 _POST_DB_LOCK = _threading.Lock()
-_VOTE_RE = _re.compile(r"\[(AGREE|OPTION [A-Z][\w'’′]?|DEFER|NEEDS[- ]CHANGES)\]")
+_VOTE_RE = _re.compile(r"\[(AGREE|OPTION [A-Z][\w'’′‘]?|DEFER|NEEDS[- ]CHANGES)\]")
+
+
+def _int_from_env(name: str, default: int) -> int:
+    try:
+        return int(_os.environ.get(name, str(default)))
+    except ValueError:
+        return default
+
+
+_SUPPLEMENTARY_EVENTS_LIMIT = _int_from_env("KUBEDOJO_CHANNEL_EVENTS_LIMIT", 10000)
 
 
 def _json_response(status: int, payload: dict[str, Any]) -> RouteResponse:
@@ -46,7 +59,16 @@ def _channel_event_sort_key(channel: dict[str, Any]) -> str:
 
 
 def extract_thread_vote(body: str) -> str | None:
-    matches = _VOTE_RE.findall(body)
+    """Return a protocol vote from the final non-empty line only.
+
+    ``[DISAGREE]`` is intentionally not a protocol token. Count only
+    ``[AGREE]``, ``[OPTION X]`` variants, ``[DEFER]``, and
+    ``[NEEDS CHANGES]`` / ``[NEEDS-CHANGES]``.
+    """
+    lines = [line.strip() for line in body.splitlines() if line.strip()]
+    if not lines:
+        return None
+    matches = _VOTE_RE.findall(lines[-1])
     return matches[-1] if matches else None
 
 
@@ -77,7 +99,6 @@ def _thread_status(rounds: list[dict[str, Any]]) -> str:
         final_votes
         and len(final_votes) == len(final_turns)
         and all(vote == "AGREE" for vote in final_votes)
-        and "DEFER" not in final_votes
     ):
         return "converged"
     option_votes = {
@@ -88,6 +109,12 @@ def _thread_status(rounds: list[dict[str, Any]]) -> str:
     if len(option_votes) >= 2:
         return "diverged"
     return "in_flight"
+
+
+def _default_view_for_summary(summary: dict[str, Any]) -> str:
+    if summary.get("status") == "converged" or summary.get("decision_id"):
+        return "graph"
+    return "chat"
 
 
 def _decision_frontmatter_or_first_section(path: Path) -> str:
@@ -253,8 +280,16 @@ def build_channel_threads_index(
             FROM channel_events
             ORDER BY event_id ASC
             """,
-            limit=10000,
+            # The progress stream is supplementary to channel_messages; this
+            # high cap keeps busy deliberations enriched without paginating.
+            limit=_SUPPLEMENTARY_EVENTS_LIMIT,
         )
+        if len(event_rows) >= _SUPPLEMENTARY_EVENTS_LIMIT:
+            _LOG.warning(
+                "channel events query hit limit (%d rows); raise "
+                "KUBEDOJO_CHANNEL_EVENTS_LIMIT to see more",
+                _SUPPLEMENTARY_EVENTS_LIMIT,
+            )
         agents_by_thread: dict[str, set[str]] = {}
         latest_reply_state: dict[str, tuple[int, dict[str, Any]]] = {}
         for event_row in event_rows:
@@ -344,6 +379,10 @@ def build_channel_threads_index(
             continue
         threads.append({
             "thread_id": thread_id,
+            "subject": None,
+            "thread_started_at": None,
+            "thread_last_at": None,
+            "message_count": None,
             "first_event_ts": row.get("first_event_ts"),
             "last_event_ts": row.get("last_event_ts"),
             "event_count": int(row.get("event_count") or 0),
@@ -363,6 +402,9 @@ def build_channel_threads_index(
                 )
                 if isinstance(agent_row.get("agent"), str)
             ],
+            "model_cascades": None,
+            "reply_state": None,
+            "vote_counts": None,
         })
 
     return _finalize_channel_rollup(
@@ -441,7 +483,7 @@ def build_channel_thread_summary(
         ORDER BY cm.round_index ASC, cm.created_at ASC, cm.rowid ASC
         """,
         (thread_id,),
-        limit=10000,
+        limit=_SUPPLEMENTARY_EVENTS_LIMIT,
     )
 
     channel = ""
@@ -576,7 +618,7 @@ def build_channel_timeline_payload(
         ORDER BY ce.event_id ASC
         """,
         tuple(params),
-        limit=10000,
+        limit=_SUPPLEMENTARY_EVENTS_LIMIT,
     )
 
     events: list[dict[str, Any]] = []
@@ -641,10 +683,12 @@ def render_channels_chat_html(
     *,
     top_nav_css: str,
     render_top_nav_fn: Callable[[str], str],
+    default_view: str = "chat",
 ) -> str:
     selected_js = _safe_json_for_script(selected_channel)
     title_channel = selected_channel or "Channels"
     escaped_title = _html.escape(title_channel, quote=True)
+    escaped_default_view = _html.escape(default_view, quote=True)
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -743,7 +787,7 @@ def render_channels_chat_html(
 {render_top_nav_fn("channels")}
 {render_search_widget()}
 {render_afk_notify_markup()}
-<div class="channels-app" data-selected-channel="{_html.escape(selected_channel or "", quote=True)}">
+<div class="channels-app" data-selected-channel="{_html.escape(selected_channel or "", quote=True)}" data-default-view="{escaped_default_view}">
   <nav class="channels-sidebar" aria-label="Channels">
     <div class="sidebar-title">Channels</div>
     <div id="channelList"></div>
@@ -816,6 +860,7 @@ def render_channels_chat_html(
 </div>
 <script>
 const INITIAL_CHANNEL = {selected_js};
+const DEFAULT_VIEW = document.querySelector(".channels-app")?.dataset.defaultView || "chat";
 const INITIAL_PARAMS = new URLSearchParams(window.location.search);
 const REQUESTED_VIEW = ["chat","graph"].includes(INITIAL_PARAMS.get("view")) ? INITIAL_PARAMS.get("view") : null;
 const DEFAULT_POLL_MS = 5000;
@@ -829,7 +874,7 @@ let lastEventType = "";
 let lastNewEventAt = 0;
 let channels = [];
 let hasBooted = false;
-let currentView = REQUESTED_VIEW || "chat";
+let currentView = REQUESTED_VIEW || DEFAULT_VIEW;
 let threadSummary = null;
 let summaryFetchId = 0;
 let focusedMessageIndex = -1;
@@ -863,7 +908,7 @@ function computePollDelayMs(now=Date.now()){{if((lastEventType==="reply_started"
 function isNearBottom(){{return messageList.scrollHeight-messageList.scrollTop-messageList.clientHeight<48;}}
 function resetMessages(){{renderedMsgIds.clear();sinceId=0;lastEventType="";lastNewEventAt=0;focusedMessageIndex=-1;messageList.replaceChildren(emptyState);emptyState.style.display="block";}}
 function hasStructuredVotes(summary){{return !!(summary&&summary.rounds&&summary.rounds.some(round=>(round.turns||[]).some(turn=>turn.vote)));}}
-function defaultViewForSummary(summary){{if(REQUESTED_VIEW)return REQUESTED_VIEW;if(summary&&(summary.status==="converged"||summary.decision_id))return"graph";return"chat";}}
+function defaultViewForSummary(summary){{if(REQUESTED_VIEW)return REQUESTED_VIEW;if(summary&&(summary.status==="converged"||summary.decision_id))return"graph";return DEFAULT_VIEW;}}
 function setView(view,updateUrl=true){{currentView=view==="graph"?"graph":"chat";messageList.hidden=currentView!=="chat";graphView.hidden=currentView!=="graph";document.querySelectorAll("[data-view-toggle]").forEach(btn=>btn.classList.toggle("active",btn.dataset.viewToggle===currentView));if(updateUrl){{const url=new URL(window.location.href);url.searchParams.set("view",currentView);history.replaceState(null,"",url);}}}}
 function voteClass(vote){{if(!vote)return"null";if(vote==="AGREE")return"agree";if(vote==="DEFER")return"defer";if(vote.startsWith("NEEDS"))return"needs";if(vote.startsWith("OPTION "))return"option";return"null";}}
 function agentColumns(summary){{const seen=new Set();(summary.rounds||[]).forEach(round=>(round.turns||[]).forEach(turn=>seen.add(turn.agent)));return Array.from(seen).sort((a,b)=>{{const order={{claude:0,codex:1,gemini:2}};return (order[a]??100)-(order[b]??100)||a.localeCompare(b);}});}}
@@ -941,11 +986,13 @@ def render_channel_thread_html(
     *,
     top_nav_css: str,
     render_top_nav_fn: Callable[[str], str],
+    default_view: str = "chat",
 ) -> str:
     return render_channels_chat_html(
         channel_name,
         top_nav_css=top_nav_css,
         render_top_nav_fn=render_top_nav_fn,
+        default_view=default_view,
     )
 
 
@@ -1060,10 +1107,13 @@ def route_channel_post_request(
 
 
 def route_channel_page_request(
+    repo_root: Path,
     path: str,
     *,
     top_nav_css: str,
     render_top_nav_fn: Callable[[str], str],
+    resolve_bridge_db_path_fn: Callable[[Path], Path],
+    query_sqlite_rows_fn: Callable[..., list[dict[str, Any]]],
 ) -> RouteResponse | None:
     if path == "/channels":
         return 200, render_channels_index_html(
@@ -1072,10 +1122,17 @@ def route_channel_page_request(
         ), "text/html; charset=utf-8"
     if path.startswith("/channels/"):
         raw_tid = unquote(path[len("/channels/"):]).strip("/")
+        summary = build_channel_thread_summary(
+            repo_root,
+            raw_tid,
+            resolve_bridge_db_path_fn=resolve_bridge_db_path_fn,
+            query_sqlite_rows_fn=query_sqlite_rows_fn,
+        )
         return 200, render_channel_thread_html(
             raw_tid,
             top_nav_css=top_nav_css,
             render_top_nav_fn=render_top_nav_fn,
+            default_view=_default_view_for_summary(summary),
         ), "text/html; charset=utf-8"
     return None
 

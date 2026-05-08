@@ -7177,9 +7177,12 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     if decision_page is not None:
         return decision_page
     channel_page = _CHANNEL_ROUTES.route_channel_page_request(
+        repo_root,
         path,
         top_nav_css=_TOP_NAV_CSS,
         render_top_nav_fn=_render_top_nav,
+        resolve_bridge_db_path_fn=_resolve_bridge_db_path,
+        query_sqlite_rows_fn=_query_sqlite_rows,
     )
     if channel_page is not None:
         return channel_page
