@@ -899,6 +899,10 @@ def _handle_discuss(args) -> int:
         )
         from agent_runtime.runner import invoke as runtime_invoke
         from ._db import get_session as _get_session, set_session as _set_session
+        from ._gemini import (
+            _should_switch_after_rate_limit_exception,
+            _should_switch_to_subscription,
+        )
     except ImportError as e:
         print(f"❌ agent_runtime unavailable: {e}", file=sys.stderr)
         print(
@@ -1029,6 +1033,8 @@ def _handle_discuss(args) -> int:
         print(f"   root message: {root_id[:12]} / thread {correlation_id[:12]}")
         print()
 
+    gemini_use_subscription_auth = os.environ.get("KUBEDOJO_GEMINI_SUBSCRIPTION") == "1"
+
     def _invoke_one(
         agent_name: str, prompt_text: str, round_idx: int
     ) -> tuple[str, str, bool]:
@@ -1039,6 +1045,8 @@ def _handle_discuss(args) -> int:
         row in a 4-round discussion would collide on the same task_id
         and the dashboard couldn't tell them apart.
         """
+        nonlocal gemini_use_subscription_auth
+
         # Codex.supported_modes drops read-only (PR #981 — codex always
         # runs in danger mode; read-only starves codex of network/spawn
         # and produces garbage). Other agents stay read-only because they
@@ -1057,19 +1065,58 @@ def _handle_discuss(args) -> int:
             # Codex is intentionally never resumable under registry policy;
             # never read stale codex rows even if present.
             session_id = None
-        try:
-            result = runtime_invoke(
+
+        def _invoke_runtime(*, use_subscription_auth: bool = False):
+            tool_config = None
+            skip_headroom_check = False
+            if agent_name == "gemini" and use_subscription_auth:
+                tool_config = {"use_subscription_auth": True}
+                skip_headroom_check = True
+            return runtime_invoke(
                 agent_name,
                 prompt_text,
                 mode=agent_mode,
                 cwd=agent_cwd,
                 task_id=f"discuss-{correlation_id[:8]}-r{round_idx}-{agent_name}",
                 session_id=session_id,
+                tool_config=tool_config,
                 entrypoint="bridge",
                 hard_timeout=900,
+                skip_headroom_check=skip_headroom_check,
+            )
+
+        try:
+            result = _invoke_runtime(
+                use_subscription_auth=gemini_use_subscription_auth,
             )
         except RateLimitedError as exc:
-            return (agent_name, f"[rate-limited: {exc}]", False)
+            if (
+                agent_name == "gemini"
+                and _should_switch_after_rate_limit_exception(
+                    gemini_use_subscription_auth,
+                )
+            ):
+                gemini_use_subscription_auth = True
+                print(
+                    "   🔁 gemini API-key quota exhausted — retrying via OAuth/subscription.",
+                    flush=True,
+                )
+                try:
+                    result = _invoke_runtime(use_subscription_auth=True)
+                except RateLimitedError as retry_exc:
+                    return (agent_name, f"[rate-limited: {retry_exc}]", False)
+                except (AgentStalledError, AgentTimeoutError) as retry_exc:
+                    return (agent_name, f"[timeout: {retry_exc}]", False)
+                except AgentUnavailableError as retry_exc:
+                    return (agent_name, f"[unavailable: {retry_exc}]", False)
+                except Exception as retry_exc:
+                    return (
+                        agent_name,
+                        f"[error: {type(retry_exc).__name__}: {retry_exc}]",
+                        False,
+                    )
+            else:
+                return (agent_name, f"[rate-limited: {exc}]", False)
         except (AgentStalledError, AgentTimeoutError) as exc:
             return (agent_name, f"[timeout: {exc}]", False)
         except AgentUnavailableError as exc:
@@ -1079,6 +1126,34 @@ def _handle_discuss(args) -> int:
             # is BaseException, not Exception, so Ctrl+C still bubbles
             # up to the pool-shutdown branch in the main loop.
             return (agent_name, f"[error: {type(exc).__name__}: {exc}]", False)
+
+        if (
+            agent_name == "gemini"
+            and not result.ok
+            and _should_switch_to_subscription(
+                result.stderr_excerpt or "",
+                gemini_use_subscription_auth,
+            )
+        ):
+            gemini_use_subscription_auth = True
+            print(
+                "   🔁 gemini API-key quota exhausted — retrying via OAuth/subscription.",
+                flush=True,
+            )
+            try:
+                result = _invoke_runtime(use_subscription_auth=True)
+            except RateLimitedError as exc:
+                return (agent_name, f"[rate-limited: {exc}]", False)
+            except (AgentStalledError, AgentTimeoutError) as exc:
+                return (agent_name, f"[timeout: {exc}]", False)
+            except AgentUnavailableError as exc:
+                return (agent_name, f"[unavailable: {exc}]", False)
+            except Exception as exc:
+                return (
+                    agent_name,
+                    f"[error: {type(exc).__name__}: {exc}]",
+                    False,
+                )
 
         if not result.ok:
             return (
@@ -1228,7 +1303,7 @@ def _handle_discuss(args) -> int:
             text, ok = responses[agent]
             reply_recipients = [name for name in with_agents if name != agent]
             try:
-                _channels.post(
+                reply = _channels.post(
                     args.channel,
                     agent,
                     text,
@@ -1238,6 +1313,11 @@ def _handle_discuss(args) -> int:
                     kind="reply",
                     auto_snapshot=False,
                     pre_delivered=True,
+                )
+                _channels.mark_message_delivery_delivered(
+                    root_id,
+                    agent,
+                    reply["message_id"],
                 )
             except ValueError as e:
                 print(
