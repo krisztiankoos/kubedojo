@@ -3,16 +3,13 @@ title: "Module 1.1: GPU Provisioning & Device Plugins"
 slug: platform/disciplines/data-ai/ai-infrastructure/module-1.1-gpu-provisioning
 sidebar:
   order: 2
+revision_pending: false
 ---
-> **Discipline Module** | Complexity: `[MEDIUM]` | Time: 3 hours
-
-## Prerequisites
-
-Before starting this module:
-- **Required**: Kubernetes administration experience (Deployments, DaemonSets, RBAC, Helm)
-- **Required**: Basic Linux hardware awareness (PCI devices, drivers, kernel modules)
-- **Recommended**: [Observability Theory](/platform/foundations/observability-theory/) — Understanding metrics pipelines
-- **Recommended**: Access to a node with at least one NVIDIA GPU (even a modest T4 or RTX 3060 works)
+> **Complexity**: `[MEDIUM]`
+>
+> **Time to Complete**: 3 hours
+>
+> **Prerequisites**: Kubernetes administration experience with Deployments, DaemonSets, RBAC, and Helm; basic Linux hardware awareness including PCI devices, drivers, and kernel modules; recommended familiarity with observability pipelines; access to at least one NVIDIA GPU node if you want to run every command.
 
 ---
 
@@ -20,30 +17,25 @@ Before starting this module:
 
 After completing this module, you will be able to:
 
-- **Configure GPU node pools on Kubernetes with proper device plugins, drivers, and runtime settings**
-- **Design GPU provisioning strategies that balance availability, cost, and workload requirements**
-- **Implement node affinity and toleration rules that schedule GPU workloads on appropriate hardware**
-- **Evaluate GPU instance types across cloud providers to optimize price-performance for your AI workloads**
+- **Diagnose** why a Kubernetes node with physical GPUs is not advertising `nvidia.com/gpu` capacity to the scheduler.
+- **Implement** a GPU Operator installation that includes drivers, container runtime integration, device plugins, discovery labels, and DCGM metrics.
+- **Design** GPU node selection rules that place AI workloads on appropriate hardware without depending on manual labels.
+- **Evaluate** GPU provisioning strategies for cost, reliability, observability, and workload fit across training and inference use cases.
+- **Debug** common GPU workload failures involving CUDA compatibility, missing runtime injection, Xid errors, and idle expensive capacity.
 
 ## Why This Module Matters
 
-GPUs are the engine of the AI revolution — and they are absurdly expensive. A single NVIDIA H100 costs more than most engineers' annual salary. An 8-GPU DGX H100 node lists north of $300,000.
+Hypothetical scenario: a data science team has reserved a short window on a cluster with eight premium GPU nodes. Their training job is ready, the dataset is staged, and the business stakeholders expect results in the morning. The Pod stays `Pending` because Kubernetes sees ordinary CPU and memory capacity but no `nvidia.com/gpu` resource, while the cloud bill continues to run because the nodes are already provisioned. The immediate symptom looks like scheduling, but the actual fault could live in the host driver, the container runtime, the device plugin, a node label, or the monitoring path that should have caught the idle hardware earlier.
 
-If your organization is investing in AI, someone has to make those GPUs available to data scientists, ML engineers, and inference pipelines **reliably, securely, and without waste**. That someone is the platform team.
+That scenario is common because Kubernetes did not grow up with accelerators as native resources. CPU and memory are part of the kubelet's core accounting model, while GPUs enter the cluster through extension points, vendor drivers, runtime hooks, and health-reporting daemons. The platform engineer's job is to turn that layered stack into a boring service: workloads ask for a GPU, the scheduler finds the right node, the container receives only the devices it was allocated, and the monitoring system shows whether the expensive hardware is actually doing useful work.
 
-**Here's the uncomfortable truth**: Kubernetes was designed for CPUs. GPUs are a bolt-on. The Device Plugin API, the GPU Operator, the container toolkit — these exist because GPUs don't fit neatly into the Kubernetes resource model. Understanding these seams is the difference between a GPU platform that works and one that burns money while scientists wait.
+This module teaches the provisioning layer that makes the rest of an AI platform possible on Kubernetes 1.35 and newer. You will trace how physical NVIDIA devices become schedulable extended resources, how the NVIDIA GPU Operator assembles the required DaemonSets, how Node Feature Discovery turns hardware facts into scheduling labels, and how DCGM-Exporter gives Prometheus enough signal to catch waste and hardware trouble. Later modules build on this foundation with advanced sharing, distributed training, model serving, and cost-aware autoscaling, so the goal here is not memorizing commands; the goal is learning where each layer starts, where it stops, and how to prove it is working.
 
-This module teaches you how GPUs become first-class citizens in your cluster.
+## The GPU Provisioning Model in Kubernetes
 
----
+GPUs are specialized processors with their own memory, driver stack, failure modes, and scheduling constraints. Kubernetes can divide CPU time into millicores because the operating system kernel already knows how to schedule CPU execution among many processes, but a GPU is not automatically safe to overcommit in the same way. A Pod that receives a full GPU usually receives a discrete hardware device with dedicated VRAM, and anything more subtle than whole-device allocation requires deliberate technologies such as MIG, time-slicing, MPS, or Dynamic Resource Allocation, which are covered after this introductory provisioning module.
 
-## The GPU Landscape in Kubernetes
-
-### Why GPUs Are Different
-
-A CPU is a **general-purpose** processor. Kubernetes understands CPUs intimately: it can measure usage in millicores, throttle processes, and share a single CPU across dozens of containers.
-
-A GPU is a **specialized** processor. It has its own memory (VRAM), its own driver stack, and its own rules:
+The first operational mistake is treating GPU provisioning as a single installation step. A working cluster needs the host kernel module, user-space CUDA libraries, a container runtime integration layer, a Kubernetes device plugin, discovery labels, monitoring exporters, and workload manifests that request the resource correctly. If any layer is missing, the failure usually appears somewhere else; for example, a container may start but fail to find `/dev/nvidia0`, or a scheduler may reject a Pod even though `lspci` proves the node contains an NVIDIA device.
 
 | Property | CPU | GPU |
 |----------|-----|-----|
@@ -53,9 +45,7 @@ A GPU is a **specialized** processor. It has its own memory (VRAM), its own driv
 | Kubernetes awareness | Native | Via Device Plugin API |
 | Failure mode | Graceful degradation | Hard crash (OOM, Xid errors) |
 
-### The Software Stack
-
-From bottom to top, here is every layer involved in running a GPU workload on Kubernetes:
+The stack is easiest to reason about from the workload downward. A PyTorch or TensorFlow process calls CUDA libraries inside the container, those libraries talk through NVIDIA user-space components that must match the host driver contract, the container runtime exposes device files and libraries, and the kubelet allows that only after a device plugin has allocated a specific GPU to the container. When you debug, work in the opposite direction: prove the node sees the hardware, prove the driver is loaded, prove the plugin reports healthy devices, prove Kubernetes advertises capacity, and only then debug the application.
 
 ```mermaid
 flowchart TD
@@ -68,24 +58,19 @@ flowchart TD
     G --> H[Physical GPU <br/> PCIe / NVLink]
 ```
 
-Every layer matters. A mismatch between the CUDA version in your container and the driver on the host will give you cryptic errors that waste hours.
+Pause and predict: if a CUDA sample image works on one GPU node but the same image fails on a newly added node, which layer would you inspect first, and what evidence would convince you that the problem is below Kubernetes rather than inside the Pod spec? A strong answer starts with host-level driver and PCI evidence, then moves upward toward the device plugin and runtime injection path. The key habit is avoiding a blind restart loop; restarts only help when you know which layer is stale or unhealthy.
 
----
+Cloud instance selection adds another dimension because the hardware shape controls both performance and blast radius. A single modest inference Pod may need a T4 or L4 class accelerator, while a large training job may require A100 or H100 capacity with high-bandwidth interconnects and enough host CPU to feed the GPUs. Platform teams should encode those decisions as node pools, labels, taints, and quotas rather than asking every data scientist to know cloud SKU details. The Kubernetes API should expose a clean resource request, while the platform layer maps that request to reliable hardware.
 
-## The Kubernetes Device Plugin API
+There is also a social contract hidden inside provisioning. When a user writes `nvidia.com/gpu: 1`, they usually expect a working accelerator, not a research assignment about kernel modules, device files, and driver ABI compatibility. The platform team can honor that expectation only by treating the GPU stack as a product surface with version policy, health checks, ownership labels, and documented failure modes. If the stack is assembled manually by whoever first needed it, the next team will inherit a fragile bundle of node-specific assumptions that no one can confidently upgrade.
 
-> **Stop and think**: How does the kubelet, which natively only knows about CPU and memory, become aware of proprietary hardware like GPUs without requiring recompilation of the Kubernetes source code?
+Think of a GPU node as a small hardware appliance inside your cluster rather than as a slightly larger CPU node. It has scarce inventory, high replacement cost, thermal constraints, specialized firmware and driver dependencies, and workloads that can waste hours before failing. That appliance model changes operational priorities: capacity planning must include lead time, monitoring must include physical health, scheduling must prevent accidental use, and incident response must know when to restart a Pod versus when to remove a node from service.
 
-### How It Works
+## Device Plugins, Extended Resources, and Workload Requests
 
-The Device Plugin API (stable since Kubernetes 1.26) is the mechanism that lets Kubernetes discover and allocate hardware devices — GPUs, FPGAs, InfiniBand NICs, anything the kubelet doesn't know about natively.
+The Kubernetes Device Plugin API is the bridge between the kubelet and hardware that Kubernetes does not manage natively. The device plugin is a gRPC server, commonly deployed as a DaemonSet, that registers with the kubelet over a Unix domain socket and streams the list of available devices. Once the kubelet trusts that stream, it exposes a vendor-scoped extended resource such as `nvidia.com/gpu` in node capacity and allocatable fields, and the scheduler can place Pods that request the resource.
 
-The flow:
-
-1. **Registration**: The device plugin registers itself with the kubelet via a Unix domain socket at `/var/lib/kubelet/device-plugins/`
-2. **Discovery**: The plugin reports available devices and their health to the kubelet via gRPC `ListAndWatch`
-3. **Allocation**: When a Pod requests a device (e.g., `nvidia.com/gpu: 1`), the kubelet calls the plugin's `Allocate` RPC
-4. **Injection**: The plugin returns device paths, environment variables, and mounts that the kubelet injects into the container
+The important design decision is that the kubelet remains generic. It does not need proprietary NVIDIA logic compiled into Kubernetes, and it does not need to understand every possible accelerator vendor. Instead, the plugin owns discovery, health, and allocation details, while the kubelet owns resource accounting and container admission. That separation is powerful, but it also means a broken plugin can make a perfectly healthy physical GPU disappear from Kubernetes scheduling.
 
 ```mermaid
 sequenceDiagram
@@ -98,15 +83,13 @@ sequenceDiagram
     Plugin-->>Kubelet: Devices, Envs
 ```
 
-### What the Plugin Advertises
-
-After registration, your node will show GPU resources:
+The `Register` call tells kubelet which resource name the plugin provides, and `ListAndWatch` is the ongoing inventory and health feed. When a Pod requesting `nvidia.com/gpu: 1` is assigned to the node, kubelet calls `Allocate`, and the plugin returns enough information for the runtime to expose device files, environment variables, and mounts. If a node shows no GPU capacity, focus on registration and `ListAndWatch`; if capacity exists but containers cannot use CUDA, focus on allocation and runtime injection.
 
 ```bash
 kubectl describe node gpu-worker-01 | grep -A 6 "Capacity:"
 ```
 
-```
+```text
 Capacity:
   cpu:                64
   memory:             256Gi
@@ -117,9 +100,7 @@ Allocatable:
   nvidia.com/gpu:     4
 ```
 
-### Requesting GPUs in Pod Specs
-
-GPUs are requested in the `resources.limits` field. **You cannot request fractional GPUs through the standard API** — it is always whole integers:
+GPU resource requests also surprise teams because extended resources are requested through `limits`. For extended resources, Kubernetes requires the request and limit to be equal; if you specify only a limit, the request is defaulted to that same value. In normal manifests, write the GPU quantity under `resources.limits`, use a whole integer, and avoid implying fractional sharing unless your cluster has a configured sharing layer that advertises separate resource names or partitioned devices.
 
 ```yaml
 apiVersion: v1
@@ -136,27 +117,19 @@ spec:
           nvidia.com/gpu: 1    # Request exactly 1 GPU
 ```
 
-Three critical rules to remember:
+There are three rules worth making automatic in code review. First, a Pod cannot consume GPUs from multiple nodes, so distributed jobs need framework-level coordination rather than a larger single-Pod request. Second, a standard `nvidia.com/gpu` request is whole-device accounting, so `0.5` is invalid even when the workload's actual utilization is low. Third, node capacity is not enough; the Pod must also tolerate the GPU node taints and match any labels or affinity rules your platform uses to separate GPU families.
 
-1. **Limits only**: You specify GPUs in `limits`, not `requests`. The kubelet sets `requests` equal to `limits` automatically.
-2. **No overcommit**: If you request 1 GPU, you get exactly 1 GPU. There is no CPU-like "fractional usage."
-3. **No cross-node**: A single Pod cannot use GPUs from multiple nodes (for that, you need distributed training — Module 1.3).
+Before running this, what output do you expect from `kubectl describe node` on a healthy GPU node after the plugin registers? You should expect both `Capacity` and `Allocatable` to contain the same `nvidia.com/gpu` count unless something else has already reserved or consumed devices. If the resource exists in capacity but not allocatable, inspect kubelet health, plugin logs, and node conditions before blaming the workload.
 
----
+A useful diagnostic shortcut is to separate "Kubernetes cannot see the GPU" from "the container cannot use the GPU." If `kubectl describe node` lacks `nvidia.com/gpu`, the failure is before scheduling: driver, plugin, kubelet registration, or plugin health reporting. If the node advertises capacity and the Pod schedules, but CUDA cannot initialize inside the container, the failure is after allocation: runtime injection, library compatibility, device node visibility, or image contents. This split keeps troubleshooting focused and prevents application teams from rewriting manifests that were already correct.
 
-## Node Feature Discovery (NFD)
+Resource accounting also affects fairness. Without namespace quotas or admission policy, a single user can submit several one-GPU Jobs and consume the entire accelerator pool even if each Job is idle most of the time. GPU quotas should be aligned with organizational ownership and workload class, not just namespace convenience, because accelerator capacity is usually purchased for specific business priorities. Pair quotas with clear denial messages so users understand whether they need a different queue, a smaller accelerator, or an approval path for temporary burst capacity.
 
-> **Pause and predict**: If you manage a fleet of 500 nodes and add 50 new GPU nodes, how would you ensure workloads only schedule on the nodes with the right GPU architecture without doing manual work?
+## Discovery Labels and Container Runtime Integration
 
-### The Problem
+Scheduling a GPU Pod to any node with `nvidia.com/gpu` is rarely good enough. In a mixed fleet, a T4 inference node, an A100 training node, and an H100 high-end training node all expose the same basic resource name unless you add more information. Node Feature Discovery solves the scaling problem by detecting hardware and kernel features on each node and publishing them as labels, while GPU Feature Discovery adds NVIDIA-specific facts such as product, memory, count, driver, and MIG capability.
 
-You have a heterogeneous cluster: some nodes have A100 GPUs, some have T4s, some have no GPUs at all. How do you ensure workloads land on the right hardware?
-
-Labels. But **manually** labeling nodes is error-prone and doesn't scale.
-
-### The Solution
-
-Node Feature Discovery (NFD) is a Kubernetes add-on that automatically detects hardware features and labels nodes:
+Manual labels are tempting during the first lab because they are fast, visible, and easy to understand. They become dangerous when nodes are replaced, images are rebuilt, autoscalers create fresh nodes, or hardware revisions change under an existing node pool name. A stale label can strand expensive jobs in `Pending` or, worse, schedule a model onto a smaller GPU where it fails after downloading data and initializing the training loop. Discovery labels let the platform treat hardware facts as measured state rather than tribal knowledge.
 
 ```bash
 # NFD automatically adds labels like:
@@ -164,8 +137,6 @@ feature.node.kubernetes.io/pci-10de.present=true        # NVIDIA PCI device
 feature.node.kubernetes.io/cpu-model.vendor_id=Intel
 feature.node.kubernetes.io/kernel-version.major=5
 ```
-
-When combined with the GPU Operator, NFD adds GPU-specific labels:
 
 ```bash
 nvidia.com/gpu.product=NVIDIA-A100-SXM4-80GB
@@ -176,7 +147,7 @@ nvidia.com/cuda.driver.major=535
 nvidia.com/mig.capable=true
 ```
 
-Now you can write `nodeSelector` or `nodeAffinity` rules that are precise:
+Those labels become the vocabulary for safe placement. A large model that expects 80 GiB of VRAM should not land on a smaller card simply because both nodes report one GPU. Use required node affinity when the workload truly cannot run elsewhere, and prefer a higher-level scheduling abstraction or platform template when you want users to choose intent, such as `training-large` or `inference-small`, without copying hardware product names into every manifest.
 
 ```yaml
 affinity:
@@ -191,25 +162,7 @@ affinity:
                 - NVIDIA-H100-SXM5-80GB
 ```
 
-This ensures your large training job lands on A100/H100 nodes, not on a T4 that would take 15x longer.
-
----
-
-## nvidia-container-toolkit
-
-> **Stop and think**: If a container is isolated from the host via namespaces and cgroups, how can it securely access a physical hardware component like a GPU without running in fully privileged mode?
-
-### What It Does
-
-The nvidia-container-toolkit (formerly nvidia-docker2) is the bridge between containers and GPUs. Without it, a container cannot see or use any GPU on the host.
-
-It works by hooking into the container runtime (containerd or CRI-O) and:
-
-1. **Mounting the NVIDIA driver** libraries from the host into the container
-2. **Creating device nodes** (`/dev/nvidia0`, `/dev/nvidiactl`, `/dev/nvidia-uvm`) inside the container
-3. **Setting environment variables** (`NVIDIA_VISIBLE_DEVICES`, `NVIDIA_DRIVER_CAPABILITIES`)
-
-### The Container Runtime Flow
+The other half of the story is container runtime integration. Even after Kubernetes assigns a GPU to a Pod, a Linux container does not magically gain access to physical device files or host driver libraries. The NVIDIA Container Toolkit integrates with containerd or CRI-O so the runtime can create `/dev/nvidia*` device nodes, mount compatible libraries, and set environment variables such as `NVIDIA_VISIBLE_DEVICES` and `CUDA_VISIBLE_DEVICES` for the allocated GPU.
 
 ```mermaid
 flowchart TD
@@ -220,9 +173,7 @@ flowchart TD
     E --> F[Container starts with GPU access]
 ```
 
-### Configuration
-
-The toolkit is configured at `/etc/nvidia-container-runtime/config.toml`:
+Modern deployments increasingly use Container Device Interface mode because CDI describes devices in runtime-readable specification files rather than relying on older hook behavior. The operational benefit is simpler integration across runtimes and less hidden mutation at container start. The tradeoff is that your driver, toolkit, runtime, and device plugin versions must be aligned well enough for CDI generation and consumption to agree, so version pinning and upgrade testing matter.
 
 ```toml
 [nvidia-container-cli]
@@ -238,28 +189,17 @@ mode = "cdi"
 log-level = "info"
 ```
 
-Modern setups (Kubernetes 1.28+) prefer **CDI mode** (Container Device Interface), which generates CDI specification files that the container runtime reads directly, removing the need for the runtime hook.
+Which approach would you choose here and why: one generic GPU node pool with labels, or separate node pools for each accelerator family? A small platform can begin with one pool and strict labels, but production teams usually separate families because autoscaling, quotas, driver lifecycle, and cost attribution become clearer. The right design depends on whether your primary failure risk is underutilization, accidental misplacement, or operational drift during upgrades.
 
----
+Taints and tolerations complete the scheduling boundary. Labels attract the right workloads to GPU nodes, while taints repel ordinary workloads that do not explicitly declare they belong there. This distinction matters because a CPU-only batch job can consume memory, local disk, network bandwidth, or Pod slots on a costly accelerator node even though it never asks for a GPU. A good baseline is to taint GPU pools with a key such as `accelerator=nvidia:NoSchedule`, then provide a platform-approved workload template that includes the matching toleration only for jobs that request GPU resources.
 
-## The NVIDIA GPU Operator
+Runtime classes can also be useful when the cluster supports multiple container runtime configurations. Some environments define a runtime class for NVIDIA-aware execution, while others rely on CDI and default runtime behavior. Whichever path you choose, document it in terms a workload owner can test: "a Pod requesting one GPU should see exactly one device through `nvidia-smi` and should not require privileged mode." Privileged containers are a warning sign in this context because the device plugin and runtime integration are supposed to provide constrained access without handing the application broad host control.
 
-> **Pause and predict**: If you have to install drivers, container runtimes, and device plugins across 100 nodes, how do you handle rolling updates of the NVIDIA driver without bringing down the whole cluster?
+## Installing and Verifying the NVIDIA GPU Operator
 
-### Why It Exists
+The NVIDIA GPU Operator exists because installing GPUs manually requires coordinating too many moving parts across every GPU node. You need the driver DaemonSet when the host image does not already include a supported driver, the container toolkit DaemonSet for runtime integration, the device plugin DaemonSet for extended resources, DCGM-Exporter for metrics, Node Feature Discovery for labels, and GPU Feature Discovery for NVIDIA-specific labels. Installing those components one by one is possible, but operating them as separate lifecycles increases the odds of a version mismatch or partial rollout.
 
-Installing GPUs on Kubernetes requires managing at least 6 separate components:
-
-1. NVIDIA drivers
-2. nvidia-container-toolkit
-3. Kubernetes device plugin
-4. DCGM-Exporter (metrics)
-5. Node Feature Discovery
-6. GPU Feature Discovery
-
-Managing these independently — especially driver upgrades across a fleet — is a nightmare. The GPU Operator bundles everything into a single Helm chart with a CRD-driven lifecycle.
-
-### Architecture
+The Operator packages that stack behind a Helm chart and a `ClusterPolicy` custom resource. It is still not magic; it is a controller that creates and reconciles DaemonSets, validators, ConfigMaps, and related objects. Treat it like any other infrastructure controller: pin versions, test upgrades on a small node group, watch its rollout status, and understand which components it manages versus which components are already supplied by your cloud provider or base node image.
 
 ```mermaid
 flowchart TD
@@ -272,7 +212,7 @@ flowchart TD
     Controller --> GFD["GPU Feature Discovery DaemonSet"]
 ```
 
-### Installation
+For a first installation, keep the configuration explicit even when defaults would work. The values below enable the major stack components, turn on DCGM-Exporter, select a MIG strategy, and install NFD. In a managed Kubernetes environment, you may disable driver management if the node image already includes the correct driver, but do that intentionally and document the owner of driver upgrades.
 
 ```bash
 # Add the NVIDIA Helm repository
@@ -291,9 +231,7 @@ helm install gpu-operator nvidia/gpu-operator \
   --set nfd.enabled=true
 ```
 
-### The ClusterPolicy CRD
-
-The GPU Operator is configured through a `ClusterPolicy` custom resource:
+The `ClusterPolicy` is the declarative contract for the Operator. Read it the same way you would read a CNI or storage operator configuration: each field names an operational responsibility that must be owned somewhere. Driver version controls compatibility with CUDA user-space expectations, toolkit version controls runtime injection behavior, device plugin version controls resource advertisement, DCGM version controls metric availability, and MIG strategy controls whether partitioned GPU instances are exposed in a consistent way across the node.
 
 ```yaml
 apiVersion: nvidia.com/v1
@@ -332,9 +270,7 @@ spec:
     enabled: true
 ```
 
-### Verifying the Installation
-
-After installation, verify that every component is running:
+Verification should prove each layer rather than only checking that the Helm release exists. Confirm Operator Pods, validator Pods, driver Pods, toolkit Pods, device plugin Pods, NFD Pods, and DCGM Pods reach the expected state. Then check that node capacity advertises `nvidia.com/gpu`, run a CUDA sample that requests a GPU, and inspect the sample output. That sequence narrows failure quickly: if Pods are unhealthy, fix the Operator rollout; if node capacity is missing, inspect plugin and driver logs; if capacity exists but CUDA fails, inspect toolkit and compatibility.
 
 ```bash
 # Check all GPU Operator pods
@@ -364,24 +300,19 @@ kubectl run cuda-test --rm -it --restart=Never \
 # Expected: "Test PASSED"
 ```
 
----
+Exercise scenario: imagine a validator Pod completed successfully yesterday, but today a new node group joins and only the driver DaemonSet is failing there. Do not assume the old cluster-wide success applies to new nodes. GPU provisioning is node-local, so every autoscaled or replaced node must satisfy the same driver, runtime, plugin, and monitoring checks before workloads depend on it.
 
-## DCGM-Exporter: GPU Metrics for Prometheus
+Driver management is the part of the Operator that deserves the most caution. In some clusters, the Operator installs the driver into a generic GPU node image; in others, the cloud provider or image pipeline ships a preinstalled driver and the Operator should not replace it. Both approaches can work, but mixing them accidentally creates confusing ownership. Decide whether your platform owns drivers through the Operator or through node images, then make the other path explicitly disabled. During upgrades, run representative CUDA workloads before rolling across every node pool because driver compatibility failures often show up only when real application images start.
 
-> **Pause and predict**: If your organization's cloud bill spikes due to GPU costs, how would you systematically determine if those GPUs were actively training models versus sitting completely idle while attached to running Pods?
+Validation should be repeatable enough to run after scale-out, replacement, and upgrade events. A one-time installation checklist is weaker than a small conformance Job that proves the resource is advertised, the container sees the device, and a CUDA operation completes. Store the exact image tags used for validation because "latest" images can change beneath you and blur whether a failure came from the platform or the test itself. When a new GPU family is introduced, add a validation case for that family rather than assuming the old test covers new memory sizes, compute capability, or MIG behavior.
 
-### Why GPU Metrics Matter
+Operationally, the Operator namespace is a service boundary. Give it the same attention you give networking and storage operators: collect logs, watch DaemonSet rollout status, alert when desired and ready Pods diverge, and require a change plan for version bumps. GPU teams sometimes focus on application dashboards while forgetting that a failed device plugin DaemonSet can remove all scheduling capacity without any model code changing. If your monitoring only watches user namespaces, the root cause will be invisible until users start reporting stuck Jobs.
 
-You cannot manage what you cannot measure. Without GPU metrics, you are flying blind:
+## Observability, Idle Capacity, and GPU Health
 
-- Is the GPU actually being used, or is it idle while you pay $3/hr for it?
-- Is the GPU memory full, or is the workload only using 10% of VRAM?
-- Is the GPU throttling due to temperature?
-- Are there ECC memory errors that predict hardware failure?
+GPU observability is not an optional dashboard project; it is part of provisioning. A cluster that can schedule GPU Pods but cannot show utilization, VRAM pressure, temperatures, power draw, or Xid errors is not production-ready because it cannot distinguish healthy acceleration from expensive idleness. DCGM, the Data Center GPU Manager, exposes low-level NVIDIA telemetry, and DCGM-Exporter turns that telemetry into Prometheus metrics that platform teams can alert on, trend, and use for cost conversations.
 
-### What DCGM-Exporter Provides
-
-DCGM (Data Center GPU Manager) is NVIDIA's tool for monitoring GPUs. DCGM-Exporter wraps it as a Prometheus exporter. Key metrics:
+GPU utilization needs careful interpretation. A training job may show bursty utilization if input pipelines starve the device, an inference service may deliberately run below peak to preserve latency, and a memory-heavy model may be constrained by VRAM rather than compute. The point is not to punish every low-utilization minute; the point is to make invisible waste visible enough that teams can decide whether to batch, downsize, share, autoscale, or move work to a different accelerator class.
 
 | Metric | Description | Why It Matters |
 |--------|-------------|----------------|
@@ -396,9 +327,7 @@ DCGM (Data Center GPU Manager) is NVIDIA's tool for monitoring GPUs. DCGM-Export
 | `DCGM_FI_DEV_PCIE_TX_THROUGHPUT` | PCIe TX throughput (KB/s) | Data transfer bottleneck? |
 | `DCGM_FI_PROF_GR_ENGINE_ACTIVE` | Ratio of time the GPU was active | More precise than utilization |
 
-### Custom Metrics Configuration
-
-You can control which metrics DCGM-Exporter collects via a ConfigMap:
+DCGM-Exporter can be configured to expose the counters your team actually uses. More metrics are not always better because cardinality, scrape volume, and dashboard noise can hide the signals that matter. Start with utilization, memory, temperature, power, PCIe throughput, Xid errors, and profiling engine activity; add specialized counters when you have a concrete question about tensor cores, NVLink, ECC behavior, or application-level performance.
 
 ```yaml
 apiVersion: v1
@@ -421,16 +350,7 @@ data:
     DCGM_FI_PROF_PIPE_TENSOR_ACTIVE, gauge, Ratio of time the tensor cores are active.
 ```
 
-### Grafana Dashboard
-
-Once DCGM-Exporter feeds Prometheus, you can import the official NVIDIA dashboard (Grafana ID: **12239**) or build your own. Essential panels:
-
-**GPU Cluster Overview**:
-- **GPU Util**: 67%
-- **Memory Used**: 72GB
-- **Temperature**: 62°C
-- **Xid Errors (last 24h)**: 0
-- **Power Draw**: 1,247W
+The original NVIDIA DCGM Grafana dashboard is useful for a first view, but production teams should add panels that map metrics to decisions. Show per-node and per-Pod utilization together, because a node-level graph without workload labels does not tell you who owns the waste. Show VRAM used and free together, because compute utilization alone misses memory-bound failures. Show Xid errors as events rather than only averages, because one severe hardware fault deserves immediate investigation even when the aggregate rate looks tiny.
 
 ```mermaid
 xychart-beta
@@ -440,11 +360,7 @@ xychart-beta
     bar [78, 94, 12, 100]
 ```
 
-*(Notice the anomaly on GPU2 — a utilization of 12% during a training run warrants immediate investigation.)*
-
-### Alerting on GPU Metrics
-
-Create PrometheusRules for GPU health:
+In the chart, GPU2 is the interesting line, not because low utilization is always wrong, but because it is inconsistent with the other devices during what is supposedly a training run. That gap could be input starvation, an imbalanced distributed job, a failed worker, a model shard that is smaller than expected, or accidental placement of a lightweight process on a premium accelerator. A good alert points to investigation, while a good dashboard gives enough context to avoid guessing.
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
@@ -489,11 +405,13 @@ spec:
             summary: "GPU {{ $labels.gpu }} has been below 10% utilization for 30m — waste?"
 ```
 
----
+Hypothetical scenario: a team reserves a weekend training window and the job exits cleanly on Saturday morning, but the GPU nodes remain attached until Monday because no autoscaler can scale them down and no alert detects sustained idleness. The fix is not a clever invoice spreadsheet after the fact; the fix is a provisioning pattern that combines DCGM utilization alerts, ownership labels, quota boundaries, and autoscaling rules that let unused GPU pools return to zero when no pending GPU Pods exist. Monitoring pays for itself when it changes scheduling and lifecycle behavior.
 
-## Try This: Explore nvidia-smi Inside a Container
+Cost alerts should be framed as engineering feedback, not blame. Low utilization can be perfectly reasonable for latency-sensitive serving or for a training phase that alternates compute with checkpointing, so the alert should provide context and invite investigation. Useful labels include namespace, workload name, node pool, accelerator product, and team owner. With that context, a platform engineer can ask whether the workload should move to a smaller GPU, use a sharing mode, batch more requests, or keep the current allocation because the business requirement values latency over utilization.
 
-If you have a GPU node, run this to understand what the nvidia-container-toolkit actually injects:
+Health alerts need a different posture. Temperature and Xid alerts are not cost optimization signals; they are reliability signals that can threaten correctness, availability, or job progress. The runbook should distinguish transient single samples from persistent or severe faults, but it should also be willing to cordon a node quickly when the hardware path is suspect. Long-running training jobs are expensive to restart, so a conservative node-remediation policy often costs less than repeatedly rescheduling onto a device that is already showing failure symptoms.
+
+The fastest way to connect these concepts is to inspect a GPU container directly. The command below asks Kubernetes for one GPU and then prints the visible NVIDIA state from inside the container. If `nvidia-smi` works and device files appear, runtime injection is working; if the Pod schedules but these are missing, inspect the toolkit and runtime configuration rather than the scheduler.
 
 ```bash
 kubectl run nvidia-smi --rm -it --restart=Never \
@@ -514,114 +432,144 @@ kubectl run nvidia-smi --rm -it --restart=Never \
   '
 ```
 
-Notice how the device nodes and libraries appear inside the container even though the container image has no NVIDIA driver installed. That is the nvidia-container-toolkit at work.
+Notice that the container image does not need to contain the host NVIDIA driver. It needs compatible user-space CUDA components, while the runtime injects the host driver libraries and device nodes needed to talk to the allocated GPU. That distinction is why CUDA compatibility matrices matter during upgrades: the image, host driver, and runtime layer must agree on a supported contract, even though they are delivered by different teams and artifacts.
 
----
+This is also why base image governance matters in AI platforms. If every team builds from a different CUDA image tag, the platform team must test a wide compatibility surface for every driver change. A curated set of approved base images reduces that surface while still giving users enough flexibility for PyTorch, TensorFlow, JAX, and custom native extensions. The goal is not to centralize all model code; it is to centralize the fragile boundary where application dependencies meet host driver policy.
+
+## Patterns & Anti-Patterns
+
+GPU provisioning patterns are mostly about making the invisible parts explicit. The platform should know which component owns drivers, which labels define placement, which metrics prove utilization, and which guardrails prevent users from accidentally consuming scarce accelerators. A working demo can survive with manual steps; a shared AI platform needs repeatable patterns because GPUs are too expensive for informal operations.
+
+| Pattern | When to Use | Why It Works | Scaling Consideration |
+|---------|-------------|--------------|-----------------------|
+| Operator-managed GPU stack | You need consistent driver, toolkit, plugin, discovery, and metrics lifecycle across many nodes | The Operator reconciles the components as a declared cluster policy instead of relying on runbooks | Pin versions and test upgrades on one node group before rolling fleet-wide |
+| Hardware labels from NFD and GPU Feature Discovery | Your cluster has mixed GPU generations, memory sizes, or MIG capability | Scheduling decisions follow detected hardware facts instead of manual labels | Standardize workload templates so users choose intent rather than raw product labels |
+| DCGM metrics tied to ownership labels | You need to control idle cost and hardware health | Metrics become actionable when they identify node, GPU, namespace, and workload owner | Keep cardinality under control and alert on sustained conditions rather than noisy samples |
+| Dedicated GPU node pools with taints | GPU capacity is scarce or expensive compared with general compute | Taints keep ordinary Pods off accelerator nodes and make cost boundaries visible | Combine with quotas and autoscaling so unused pools can shrink safely |
+
+Anti-patterns usually come from trying to make GPUs look simpler than they are. Teams either hide too much behind a single generic resource name, or they expose every hardware detail directly to every user. The better path is a platform contract that is honest about constraints while still shielding most application teams from low-level driver and SKU decisions.
+
+| Anti-pattern | What Goes Wrong | Better Alternative |
+|--------------|-----------------|-------------------|
+| Treating `nvidia.com/gpu` as the only placement signal | Workloads land on the wrong accelerator family and fail late or run inefficiently | Use discovery labels, affinity templates, or higher-level workload classes |
+| Upgrading drivers without CUDA compatibility review | Containers that worked yesterday fail with driver or kernel image errors | Test representative CUDA images against the target driver before rollout |
+| Installing the device plugin but skipping runtime integration | Nodes advertise GPUs, but containers cannot access `/dev/nvidia*` or driver libraries | Install and validate the NVIDIA Container Toolkit or CDI path as part of the same change |
+| Alerting only on node readiness | Hardware faults and idle accelerators remain invisible while Kubernetes looks healthy | Alert on DCGM temperature, Xid errors, utilization, memory pressure, and exporter availability |
+
+One useful mental model is a four-part contract: discovery tells Kubernetes what exists, allocation tells kubelet what a Pod receives, injection makes the device usable inside the container, and telemetry proves the device remains useful after start. If your platform design cannot name the component responsible for each part, it is not ready for production GPU workloads. This contract also gives you a practical review checklist for manifests, Helm values, and incident runbooks.
+
+Another pattern is to separate experimentation from production serving at the namespace, quota, and node-pool level. Experiments benefit from flexible scheduling, burst capacity, and quick cleanup, while serving workloads need predictable availability and carefully managed upgrades. When both classes share the same pool without policy, experiments can starve serving, and serving can pin capacity that experiments assume will scale down. The separation does not require separate clusters in every organization, but it does require explicit resource boundaries and dashboards that show which class is consuming each accelerator.
+
+Finally, make failure drills part of the platform lifecycle. Simulate a missing toleration, a broken affinity label, a disabled device plugin, and an unreachable DCGM exporter in a non-production environment. These drills teach the team which symptoms appear at scheduling time, container start time, and monitoring time. They also reveal whether runbooks contain enough concrete commands for an engineer who did not build the platform to diagnose the issue under pressure.
+
+## Decision Framework
+
+GPU provisioning decisions should begin with the workload's bottleneck, not the cloud provider's instance catalog. Training jobs may need high VRAM, fast interconnects, and long uninterrupted runs, while inference services may need lower latency, smaller accelerators, or the ability to scale horizontally. Batch experiments may tolerate preemption, but model serving usually needs predictable availability. The platform's job is to translate those needs into node pools, labels, taints, quotas, monitoring, and lifecycle automation.
+
+```mermaid
+flowchart TD
+    A[Start with workload need] --> B{Needs GPU?}
+    B -- No --> C[Use general compute pool]
+    B -- Yes --> D{Memory-bound model?}
+    D -- Yes --> E[Select high-VRAM GPU family and enforce product or memory labels]
+    D -- No --> F{Latency-sensitive inference?}
+    F -- Yes --> G[Use dedicated inference pool with quotas, metrics, and autoscaling]
+    F -- No --> H{Large training or distributed job?}
+    H -- Yes --> I[Use training pool with compatible accelerator family and topology awareness]
+    H -- No --> J[Use shared or smaller GPU pool, then monitor utilization]
+```
+
+The first branch protects the cluster from accidental GPU consumption. If a workload can run on CPU during development, keep that path available so early tests do not tie up expensive accelerators. The second branch separates memory constraints from compute constraints because VRAM exhaustion is one of the fastest ways to waste time: a model that cannot fit will fail regardless of how much aggregate cluster capacity exists. The third branch separates serving from training because availability and scaling patterns differ.
+
+| Decision | Choose This When | Avoid This When | Evidence to Collect |
+|----------|------------------|-----------------|---------------------|
+| Operator-managed drivers | You own the node image or need consistent fleet upgrades | A managed service already supplies and tests the driver stack | Operator rollout status, driver Pod logs, CUDA validation output |
+| Pre-baked driver node image | Startup time and immutable infrastructure matter more than in-cluster driver rollout | You need frequent driver changes without rebuilding images | Image build provenance, `nvidia-smi`, driver compatibility tests |
+| Required node affinity | The workload only runs on specific GPU families or memory sizes | A fallback accelerator is acceptable and cost-effective | NFD labels, model memory profile, benchmark results |
+| GPU taints plus tolerations | You must keep ordinary Pods away from costly nodes | GPU nodes are dedicated by separate clusters or hard isolation | Pending Pod events, node utilization, quota reports |
+| DCGM alerting at provisioning time | Any production GPU workload will run in the cluster | The cluster is a short-lived throwaway lab | Prometheus targets, DCGM metric samples, alert rule tests |
+
+Use this framework during design reviews. Ask whether the workload can tolerate a smaller GPU, whether it needs a specific CUDA capability, whether the node pool can scale down, how ownership is recorded, and how a device fault will be remediated. A GPU platform is mature when these questions have boring answers in manifests, dashboards, and runbooks rather than in one engineer's memory.
+
+For early platforms, the most pragmatic default is conservative isolation with strong observability. Give expensive accelerator families their own node pools, taint those pools, require explicit GPU requests, install the Operator with DCGM enabled, and expose a small number of approved workload templates. Once you have utilization data and user demand patterns, you can introduce more advanced sharing and autoscaling. Starting with aggressive sharing before you have metrics usually hides the very signals you need to decide whether sharing is safe.
+
+For mature platforms, the decision framework should feed a service catalog. Users should be able to choose something like "small inference GPU," "large training GPU," or "partitioned development GPU" and receive the right tolerations, affinity, resource requests, and monitoring labels automatically. The catalog can still compile down to ordinary Kubernetes manifests, but it prevents every team from rediscovering the same placement rules. This is the difference between allowing GPUs in a cluster and offering GPU infrastructure as a platform capability.
 
 ## Did You Know?
 
-1. **A single NVIDIA H100 GPU draws up to 700W of power** — roughly the same as a microwave oven. An 8-GPU server can draw 10kW, which is why GPU data centers require specialized cooling. Some hyperscalers spend more on electricity for GPUs than on the GPUs themselves over a 3-year lifecycle.
+1. **A single NVIDIA H100 accelerator can draw up to 700 watts depending on the form factor and configuration.** An eight-GPU server can therefore demand several kilowatts before you count CPUs, memory, networking, and cooling overhead, which is why power and thermal metrics belong in the same conversation as scheduling.
 
-2. **The Kubernetes Device Plugin API was originally designed for FPGAs, not GPUs**. Intel proposed it in 2017 for their Arria/Stratix FPGAs. NVIDIA adopted it quickly, and GPUs became the dominant use case — but the API's design (whole-device allocation, no fractional sharing) reflects its FPGA origins.
+2. **The Kubernetes Device Plugin API became stable in Kubernetes 1.26, but the operational pattern remains important in Kubernetes 1.35 and newer.** Stability means the API contract is mature; it does not mean every vendor plugin, driver version, and runtime integration is interchangeable without testing.
 
-3. **Xid error 79 (GPU has fallen off the bus)** is the most dreaded error in GPU operations. It means the GPU has become unreachable via PCIe and usually requires a full node reboot. In large clusters, teams see this several times per week and automate node drain/reboot workflows around it.
+3. **Xid errors are NVIDIA driver-reported hardware or driver fault events, and some values indicate severe device loss.** When a GPU falls off the PCIe bus, restarting the application container is usually not enough; the node often needs cordon, drain, and reboot or hardware investigation.
 
----
-
-## War Story: The $47,000 Idle GPU Weekend
-
-A platform team I advised provisioned a cluster of 16 A100 nodes on a cloud provider for a major training run. The training job finished on Friday afternoon. Nobody remembered to scale down the cluster. The nodes sat idle — 128 GPUs doing absolutely nothing — for the entire weekend.
-
-**Cost**: 128 GPUs x $3.06/hr x 60 hours = **$23,500**. And this happened twice before anyone noticed the pattern.
-
-**The fix**: Three changes saved them:
-
-1. **DCGM-Exporter alerts** for GPUs below 5% utilization for more than 1 hour
-2. **Karpenter** (Module 1.6) configured to scale GPU nodes to zero when no pending GPU pods exist
-3. **A Slack webhook** that posts to #gpu-costs when any GPU node has been idle for 30 minutes
-
-The monitoring paid for itself on the first prevented incident.
-
-**Lesson**: GPU observability is not optional. Every minute an idle GPU runs costs real money.
-
----
+4. **DCGM-Exporter can expose both coarse utilization counters and profiling counters such as graphics engine or tensor activity.** That distinction matters because a GPU can look partly busy while the model is still bottlenecked on input pipelines, memory transfers, or uneven work distribution.
 
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
-| Requesting GPUs in `requests` only | Kubelet ignores `requests` for extended resources; Pod gets no GPU | Always specify `limits` for `nvidia.com/gpu` |
-| Mismatched CUDA/driver versions | `CUDA error: no kernel image is available` or `driver version insufficient` | Check compatibility matrix at docs.nvidia.com/deploy/cuda-compatibility |
-| Not installing nvidia-container-toolkit | Container starts but `nvidia-smi` returns "command not found" | GPU Operator handles this; if manual, install toolkit and restart containerd |
-| Manually labeling GPU nodes | Labels drift, new nodes missed | Use NFD + GPU Feature Discovery for automatic labeling |
-| Ignoring Xid errors | Silent data corruption or crashes during training | Alert on `DCGM_FI_DEV_XID_ERRORS` and drain nodes with persistent Xid errors |
-| Deploying GPU Operator without monitoring | GPUs are idle or overheated without anyone knowing | Always enable DCGM-Exporter and create PrometheusRules |
-| Using `nvidia-docker2` (deprecated) | Outdated, no CDI support | Migrate to nvidia-container-toolkit with CDI mode |
+| Mistake | Why It Happens | How to Fix It |
+|---------|----------------|---------------|
+| Requesting GPUs in `requests` only | Engineers copy CPU and memory patterns and forget that extended resources are handled as whole, non-overcommitted limits | Put `nvidia.com/gpu` under `resources.limits` and review manifests for integer quantities |
+| Mismatching CUDA image and host driver compatibility | Application teams choose a CUDA image independently from the platform driver lifecycle | Maintain a tested compatibility matrix for approved base images and driver versions |
+| Installing the device plugin without validating runtime injection | The scheduler path is visible first, so teams stop once nodes advertise capacity | Run a CUDA validation Pod and inspect `/dev/nvidia*`, `CUDA_VISIBLE_DEVICES`, and `nvidia-smi` inside the container |
+| Manually labeling GPU nodes | Manual labels work in small static labs but drift when nodes are replaced or autoscaled | Use Node Feature Discovery and GPU Feature Discovery as the source of scheduling labels |
+| Ignoring Xid errors after Pods restart | Kubernetes may make the Pod look recovered while the underlying device remains unstable | Alert on `DCGM_FI_DEV_XID_ERRORS`, cordon suspect nodes, and require hardware-level remediation for recurring faults |
+| Deploying GPU capacity without DCGM metrics | The initial goal is often "make the Pod run," so utilization and health are delayed | Treat DCGM-Exporter and Prometheus targets as part of the provisioning definition of done |
+| Letting ordinary workloads run on GPU nodes | Missing taints allow CPU-only Pods to consume memory, network, and scheduling space on costly nodes | Taint GPU pools, require explicit tolerations, and enforce namespace quotas for accelerator usage |
 
----
-
-## Quiz: Check Your Understanding
-
-### Question 1
-A developer complains that their Pod is stuck in `Pending` state, and the events show `0/10 nodes are available: 10 Insufficient nvidia.com/gpu`. You verify the nodes physically have GPUs and the drivers are loaded. You suspect the Device Plugin. In a scenario where the plugin is failing, which specific gRPC communication step between the plugin and the kubelet is likely broken to cause this exact error?
+## Quiz
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 1: A Pod is stuck in `Pending` with `Insufficient nvidia.com/gpu`, but `lspci` on the node shows NVIDIA hardware and the driver is loaded. Which layer do you inspect first, and why?</summary>
 
-The `ListAndWatch` gRPC method is likely failing. The kubelet relies on the Device Plugin to continuously report the inventory of available devices via the `ListAndWatch` stream. If this stream is broken or the plugin fails to register properly, the kubelet will assume there are zero `nvidia.com/gpu` resources available on the node, leading to the `Insufficient` scheduling error. To resolve this, you would check the logs of the device plugin DaemonSet to see why it cannot discover or report the hardware to the kubelet.
+Inspect the NVIDIA device plugin registration and `ListAndWatch` path first, especially the device plugin DaemonSet logs and kubelet device plugin socket directory. The scheduler can only consider `nvidia.com/gpu` after kubelet reports that extended resource in node capacity, and kubelet learns that from the plugin rather than from PCI directly. Driver evidence proves the hardware is visible to Linux, but it does not prove Kubernetes has received a healthy device inventory. If the plugin is failing, the fix is to restore registration and health reporting before changing the workload manifest.
 </details>
-
-### Question 2
-A data scientist submits a YAML manifest requesting `nvidia.com/gpu: 0.5` because their inference workload only needs a fraction of a T4 GPU's memory. The Kubernetes API server immediately rejects the manifest. Why does Kubernetes strictly forbid fractional requests for this specific resource, even though it allows `cpu: 0.5`?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 2: A developer requests `nvidia.com/gpu: 0.5` for a lightweight inference Pod and the API rejects the manifest. How do you explain the failure and propose a production-safe alternative?</summary>
 
-Extended resources like `nvidia.com/gpu` are fundamentally different from native resources like CPU and memory. The Device Plugin API was designed to allocate whole, discrete hardware devices rather than time-sliced virtual resources. Consequently, Kubernetes only supports integer quantities for extended resources because it simply passes the device ID to the container runtime to mount. Sharing a GPU at the hardware or driver level requires specialized technologies like Multi-Instance GPU (MIG) or NVIDIA Time-Slicing, which are configured outside the standard Kubernetes resource request mechanism.
+The standard extended resource request for `nvidia.com/gpu` represents whole devices, so Kubernetes expects an integer quantity and does not divide the accelerator the way it divides CPU. A production-safe alternative depends on hardware and isolation needs: MIG can expose partitioned GPU instances on supported cards, while time-slicing can improve utilization when weaker isolation is acceptable. The platform should advertise those sharing modes through explicit configuration and documentation rather than letting users invent fractional quantities. The key is to make the sharing boundary visible in scheduling and monitoring.
 </details>
-
-### Question 3
-You are managing a cluster that just received a hardware upgrade: 10 older nodes with T4 GPUs were physically replaced with new nodes containing A100 GPUs. The deployment pipelines for your training jobs use `nodeSelector` for `nvidia.com/gpu.product: NVIDIA-A100-SXM4-80GB`. If your team relies on manual node labeling, what specific failures will occur in this scenario, and how does Node Feature Discovery (NFD) prevent them?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 3: A new autoscaled node group joins with A100 GPUs, but large training jobs using `nvidia.com/gpu.product: NVIDIA-A100-SXM4-80GB` remain pending. What do you check before changing the training manifest?</summary>
 
-If relying on manual labeling, the new A100 nodes would likely lack the required labels until an administrator remembers to apply them, causing training jobs to remain stuck in a `Pending` state. Even worse, if the old T4 nodes were reprovisioned but kept their old labels, workloads might schedule onto them and fail due to Out-Of-Memory errors or incompatible CUDA architectures. Node Feature Discovery (NFD) eliminates this risk by dynamically interrogating the hardware via PCI and kernel data on every boot. It automatically applies accurate labels reflecting the true state of the hardware, ensuring scheduling decisions are always based on reality rather than stale administrative records.
+Check whether Node Feature Discovery and GPU Feature Discovery ran successfully on the new nodes and applied the expected product labels. The training manifest may be correct if the workload truly requires that accelerator family, while the node state may be incomplete because discovery DaemonSets are unhealthy, taints are missing tolerations, or the new hardware reports a slightly different product string. You should compare labels on old working nodes and new nodes, inspect discovery logs, and confirm GPU capacity exists. Only relax the manifest if the workload can actually run on the reported hardware.
 </details>
-
-### Question 4
-A data science team deploys a PyTorch training Pod using `nvidia.com/gpu: 1` on an 80GB A100 node. The Pod starts successfully, but exactly two minutes into the training loop, the application crashes with a "CUDA out of memory" error. You confirm their model mathematically requires only 45GB of VRAM. What architectural or environmental factors could cause this OOM on a supposedly dedicated 80GB GPU?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 4: A CUDA validation Pod schedules successfully, but `nvidia-smi` inside the container cannot find NVIDIA devices. Which provisioning layer is most suspicious?</summary>
 
-Even when requesting a full GPU, several factors can lead to unexpected VRAM exhaustion. First, if NVIDIA Time-Slicing is enabled on the node, the GPU memory is actually shared with other containers, meaning the 80GB is not exclusively available to this Pod. Second, PyTorch's memory allocator can suffer from severe fragmentation, where 35GB of memory might be technically "free" but fragmented into blocks too small for the next tensor allocation. Finally, the NVIDIA driver and CUDA context themselves consume between 500MB and 2GB of VRAM just to initialize, which must be factored into the total memory budget. The team should verify actual usage using `nvidia-smi` and consider tuning PyTorch's allocation configuration.
+The most suspicious layer is container runtime integration through the NVIDIA Container Toolkit or CDI configuration. Scheduling proves the device plugin advertised capacity and kubelet allocated a GPU, but the container still needs device nodes and driver libraries injected at start. Inspect the toolkit DaemonSet, containerd or CRI-O runtime configuration, generated CDI specs if used, and kubelet allocation logs. Reinstalling the application image is unlikely to help unless the image also lacks compatible CUDA user-space components.
 </details>
-
-### Question 5
-It's 3:00 AM, and PagerDuty wakes you up. A critical training job has stalled. You check the logs and see `DCGM_FI_DEV_XID_ERRORS == 79` firing on node `gpu-worker-14`. The Pods on that node are completely unresponsive. What is the physical reality of this error, and what automated remediation workflow should you implement to prevent this from waking you up again?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 5: DCGM shows one GPU at 12 percent utilization while three peers sit above 75 percent during a supposedly balanced training run. What investigation path gives the highest signal?</summary>
 
-Xid 79 translates to "GPU has fallen off the bus," meaning the operating system has completely lost PCIe communication with the physical GPU hardware. This is a severe, hardware-level fault that cannot be fixed by simply restarting the container or the kubelet. The correct automated remediation is to immediately cordon and drain the affected node to reschedule the workloads elsewhere, followed by a hard power cycle or reboot of the physical server via its BMC/IPMI interface. If the error persists after a reboot, the node must be marked for hardware replacement, as the GPU or motherboard is likely failing.
+Start by correlating the low-utilization GPU with the owning Pod, process, and training worker rather than treating the node as a single black box. Then inspect application logs, input pipeline throughput, distributed training membership, and VRAM usage to see whether that worker is starved, smaller, failed, or waiting on synchronization. The GPU may be healthy; the anomaly is the mismatch with peer devices under the same job. A useful remediation might be data loading changes, worker restart, job rescheduling, or a training framework fix rather than hardware replacement.
 </details>
 
----
+<details>
+<summary>Question 6: An alert fires for `DCGM_FI_DEV_XID_ERRORS` on a node running a critical training job. The Pod restarts, but the alert returns after a few minutes. What should the runbook do?</summary>
 
-## Hands-On Exercise: GPU Operator Installation with DCGM Metrics
+The runbook should treat recurring Xid errors as a node or device health problem, not merely an application crash. Cordon the node to stop new GPU placements, drain or reschedule affected workloads according to the job's recovery policy, and collect driver logs and DCGM evidence for hardware analysis. If the error indicates device loss or persists after reboot, mark the node for repair or replacement. Repeated container restarts can hide the hardware fault while wasting training time.
+</details>
 
-### Objective
+<details>
+<summary>Question 7: A platform team wants to prove its GPU provisioning is production-ready before onboarding model-serving workloads. What evidence should it gather?</summary>
 
-Install the NVIDIA GPU Operator on a Kubernetes cluster, run a GPU workload, and verify that DCGM metrics are scraped by Prometheus.
+The team should gather evidence across the full contract: node hardware discovery, driver health, device plugin resource advertisement, runtime injection, workload scheduling, and DCGM telemetry. A strong readiness packet includes `kubectl describe node` capacity, successful CUDA validation logs, NFD and GPU labels, toolkit or CDI configuration evidence, Prometheus samples for utilization and health metrics, and alert rules for temperature, Xid errors, and sustained idleness. It should also show taints, tolerations, quotas, and ownership labels so model-serving workloads do not share capacity accidentally. Production readiness is a chain, and every link needs observable proof.
+</details>
 
-### Environment Setup
+## Hands-On Exercise
 
-You need a Kubernetes cluster with at least one GPU node. Options:
+In this exercise, you will install the NVIDIA GPU Operator, run a CUDA workload, and verify that DCGM metrics reach Prometheus. The commands assume a Kubernetes 1.35 or newer cluster with at least one NVIDIA GPU node and Helm installed on your workstation. If you are using a managed cloud GPU node image that already includes drivers, adapt the Operator values deliberately rather than copying `driver.enabled=true` blindly.
 
-- **Cloud**: GKE with `nvidia-tesla-t4` accelerator, EKS with `g4dn.xlarge`, AKS with `Standard_NC4as_T4_v3`
-- **On-prem**: Any node with an NVIDIA GPU (driver installed or not — the Operator handles drivers)
-- **Local**: Not practical — kind/minikube cannot access host GPUs without passthrough
+Exercise scenario: you are preparing a shared GPU pool for a data science team that will run both validation jobs and early training experiments. Your definition of done is not just a successful Helm release; it is proof that Kubernetes advertises GPU capacity, a workload can use CUDA, and Prometheus receives GPU health and utilization metrics. Keep notes as you go, because those notes become the seed of your production runbook.
+
+### Setup
+
+You need a Kubernetes cluster with at least one GPU node. Cloud options include GKE nodes with NVIDIA accelerators, EKS nodes such as GPU-backed instance families, and AKS GPU virtual machine sizes. On premises, any supported NVIDIA GPU node can work if the driver path is compatible with the Operator strategy. Local clusters are usually poor candidates because kind and minikube cannot access host GPUs without additional passthrough work.
 
 ```bash
 # Verify you have a GPU node (look for NVIDIA PCI device)
@@ -629,7 +577,9 @@ kubectl get nodes -o wide
 kubectl debug node/<gpu-node-name> -it --image=ubuntu -- lspci | grep -i nvidia
 ```
 
-### Step 1: Install Prometheus Stack (if not present)
+### Task 1: Install Prometheus Stack
+
+Install Prometheus and Grafana if your cluster does not already have them. The important setting here is allowing ServiceMonitors created by other releases to be selected, because the GPU Operator can create a DCGM ServiceMonitor that Prometheus must scrape. In a production cluster, align these values with your monitoring team's release labels and retention settings.
 
 ```bash
 # Install kube-prometheus-stack for Prometheus + Grafana
@@ -643,7 +593,15 @@ helm install kube-prometheus prometheus-community/kube-prometheus-stack \
   --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
 ```
 
-### Step 2: Install the GPU Operator
+<details>
+<summary>Solution notes</summary>
+
+The `kube-prometheus-stack` release should create Prometheus, Grafana, Alertmanager, and the CRDs used by `ServiceMonitor` and `PrometheusRule`. If your organization already runs this stack, do not install a second copy; instead, confirm the existing Prometheus instance can discover ServiceMonitors in the `gpu-operator` namespace. The success signal is a healthy Prometheus target list after the DCGM exporter appears later.
+</details>
+
+### Task 2: Install the GPU Operator
+
+Install the GPU Operator with DCGM ServiceMonitor creation enabled. The wait command may take several minutes because driver installation and validation are node-local operations, and new GPU nodes need time to converge. Watch the Pods if the wait times out; a timeout is diagnostic data, not a reason to immediately delete and retry.
 
 ```bash
 # Add NVIDIA Helm repo
@@ -662,7 +620,15 @@ helm install gpu-operator nvidia/gpu-operator \
 kubectl -n gpu-operator wait --for=condition=Ready pods --all --timeout=600s
 ```
 
-### Step 3: Verify GPU Resources
+<details>
+<summary>Solution notes</summary>
+
+If the wait fails, run `kubectl get pods -n gpu-operator` and separate driver failures from toolkit, plugin, NFD, or DCGM failures. Driver Pods often reveal kernel header, secure boot, or node image issues. Device plugin failures often reveal missing devices or driver initialization problems. The right fix depends on the failing component, so avoid reinstalling the chart until you have read the relevant logs.
+</details>
+
+### Task 3: Verify GPU Resources and Labels
+
+Now prove Kubernetes has a schedulable accelerator resource and enough labels for placement decisions. Capacity tells you the device plugin is reporting GPUs to kubelet, while labels tell you discovery is describing the hardware in a way workload manifests can use. Save the output for comparison when future node groups are added.
 
 ```bash
 # Check that GPU resources are advertised
@@ -672,7 +638,15 @@ kubectl get nodes -o json | jq '.items[] | select(.status.capacity["nvidia.com/g
 kubectl get nodes --show-labels | grep nvidia
 ```
 
-### Step 4: Run a GPU Workload
+<details>
+<summary>Solution notes</summary>
+
+The JSON output should list at least one node with `gpus` and `gpu_allocatable`. If that output is empty, inspect the device plugin and driver before editing workload manifests. The label output should include NVIDIA-specific labels when GPU Feature Discovery is enabled; if it does not, inspect NFD and GFD Pods and verify the Operator values include discovery components.
+</details>
+
+### Task 4: Run a GPU Workload
+
+Run a CUDA sample Job that requests one GPU and performs enough work to produce useful DCGM metrics. A validation Pod that exits immediately proves basic access, but a benchmark with multiple iterations gives Prometheus time to scrape utilization, memory, and temperature. Keep the namespace separate so cleanup is simple and ownership is clear.
 
 ```bash
 # Create a namespace for experiments
@@ -703,23 +677,39 @@ EOF
 kubectl -n ai-lab logs -f job/gpu-burn-test
 ```
 
-### Step 5: Verify DCGM Metrics in Prometheus
+<details>
+<summary>Solution notes</summary>
+
+The Job should schedule onto a GPU node, start the CUDA sample, and print benchmark output. If it remains pending, inspect events for missing tolerations, node affinity mismatch, or insufficient `nvidia.com/gpu`. If it starts but CUDA fails, inspect runtime injection and driver compatibility. If it completes too quickly to scrape, rerun with more iterations or query metrics immediately after completion while the exporter still exposes recent samples.
+</details>
+
+### Task 5: Verify DCGM Metrics in Prometheus
+
+Query Prometheus directly before relying on Grafana. Dashboards can hide scrape problems with cached panels or wrong data sources, while the API query shows whether the metric series exists. Use `127.0.0.1` for the local port-forward target so the command behaves consistently in local environments that treat hostnames differently.
 
 ```bash
 # Port-forward to Prometheus
 kubectl port-forward -n monitoring svc/kube-prometheus-prometheus 9090:9090 &
 
 # Query DCGM metrics (wait 2-3 minutes for first scrape)
-curl -s 'http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_GPU_UTIL' | jq '.data.result[] | {gpu: .metric.gpu, node: .metric.node, utilization: .value[1]}'
+curl -s 'http://127.0.0.1:9090/api/v1/query?query=DCGM_FI_DEV_GPU_UTIL' | jq '.data.result[] | {gpu: .metric.gpu, node: .metric.node, utilization: .value[1]}'
 
 # Check memory usage
-curl -s 'http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_FB_USED' | jq '.data.result[] | {gpu: .metric.gpu, node: .metric.node, vram_used_mib: .value[1]}'
+curl -s 'http://127.0.0.1:9090/api/v1/query?query=DCGM_FI_DEV_FB_USED' | jq '.data.result[] | {gpu: .metric.gpu, node: .metric.node, vram_used_mib: .value[1]}'
 
 # Check temperature
-curl -s 'http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_GPU_TEMP' | jq '.data.result[] | {gpu: .metric.gpu, temp_celsius: .value[1]}'
+curl -s 'http://127.0.0.1:9090/api/v1/query?query=DCGM_FI_DEV_GPU_TEMP' | jq '.data.result[] | {gpu: .metric.gpu, temp_celsius: .value[1]}'
 ```
 
-### Step 6: Import Grafana Dashboard
+<details>
+<summary>Solution notes</summary>
+
+Each query should return at least one result with GPU and node labels. Empty results usually mean Prometheus is not scraping DCGM-Exporter, the ServiceMonitor labels do not match the Prometheus selector, or the exporter is not healthy. If utilization is zero after the benchmark completes, repeat the workload and query while it runs so you can distinguish scrape failure from a quiet device.
+</details>
+
+### Task 6: Import a Grafana Dashboard
+
+Import the NVIDIA DCGM dashboard or build an equivalent internal dashboard. The dashboard is not the goal by itself; it is a shared view for spotting idle devices, thermal trouble, memory pressure, and workload imbalance. In production, add panels that group by namespace and workload owner so the platform team can act without manually mapping GPUs back to Pods.
 
 ```bash
 # Port-forward to Grafana
@@ -728,7 +718,7 @@ kubectl port-forward -n monitoring svc/kube-prometheus-grafana 3000:80 &
 # Login: admin / kubedojo
 # Import dashboard ID 12239 (NVIDIA DCGM Exporter Dashboard)
 # Or use the API:
-curl -X POST http://admin:kubedojo@localhost:3000/api/dashboards/import \
+curl -X POST http://admin:kubedojo@127.0.0.1:3000/api/dashboards/import \
   -H 'Content-Type: application/json' \
   -d '{
     "dashboard": {"id": 12239},
@@ -738,7 +728,15 @@ curl -X POST http://admin:kubedojo@localhost:3000/api/dashboards/import \
   }'
 ```
 
-### Step 7: Cleanup
+<details>
+<summary>Solution notes</summary>
+
+If the dashboard imports but panels are empty, check the Prometheus data source name and the metric names used by your DCGM-Exporter version. Do not treat dashboard import as a substitute for API verification. The best production dashboard is usually a fork of the vendor dashboard with local ownership labels, quota views, and alert links added.
+</details>
+
+### Cleanup
+
+Clean up the experiment namespace when you are done. Leave the Operator installed if this cluster is meant to keep serving GPU workloads; remove it only in a temporary lab where no other users depend on the GPU stack. If you uninstall the Operator, confirm whether it also removes CRDs, driver artifacts, or monitoring objects you may want to keep.
 
 ```bash
 kubectl delete namespace ai-lab
@@ -748,50 +746,29 @@ kubectl delete namespace ai-lab
 
 ### Success Criteria
 
-You have completed this exercise when you can verify:
-- [ ] GPU Operator pods are all Running/Completed in `gpu-operator` namespace (9+ pods)
-- [ ] `nvidia.com/gpu` appears in `kubectl describe node` output
-- [ ] A CUDA test Pod runs and prints "Test PASSED" or produces benchmark output
-- [ ] `DCGM_FI_DEV_GPU_UTIL` metric returns data in Prometheus
-- [ ] `DCGM_FI_DEV_GPU_TEMP` metric returns data in Prometheus
-- [ ] `DCGM_FI_DEV_FB_USED` metric returns data in Prometheus
-- [ ] Grafana dashboard shows GPU utilization graph for the benchmark job
+- [ ] GPU Operator Pods are Running or Completed in the `gpu-operator` namespace.
+- [ ] `nvidia.com/gpu` appears in node capacity and allocatable output.
+- [ ] GPU product, memory, count, or MIG labels appear on GPU nodes.
+- [ ] A CUDA sample Pod or Job runs and prints successful validation or benchmark output.
+- [ ] `DCGM_FI_DEV_GPU_UTIL` returns data from Prometheus.
+- [ ] `DCGM_FI_DEV_GPU_TEMP` returns data from Prometheus.
+- [ ] `DCGM_FI_DEV_FB_USED` returns data from Prometheus.
+- [ ] Grafana shows GPU utilization for the benchmark or validation workload.
 
----
+## Sources
 
-## Key Takeaways
-
-1. **GPUs are not native to Kubernetes** — the Device Plugin API bridges this gap by advertising GPU resources to the kubelet and injecting device access into containers
-2. **The GPU Operator is the standard way to manage NVIDIA GPUs** on Kubernetes — it handles drivers, toolkit, device plugin, metrics, and discovery as a single lifecycle
-3. **NFD + GPU Feature Discovery** replace manual node labeling with automatic hardware detection, enabling precise scheduling across heterogeneous GPU fleets
-4. **nvidia-container-toolkit** is the invisible layer that makes containers GPU-aware by mounting drivers and creating device nodes at runtime
-5. **DCGM-Exporter is non-negotiable** — without GPU metrics in Prometheus, you cannot detect idle GPUs, thermal throttling, hardware errors, or memory pressure
-6. **GPU resources use `limits` only** and must be whole integers — fractional sharing requires the techniques covered in Module 1.2
-
----
-
-## Further Reading
-
-**Documentation**:
-- **NVIDIA GPU Operator**: docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/
-- **Kubernetes Device Plugin API**: kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/
-- **DCGM User Guide**: docs.nvidia.com/datacenter/dcgm/latest/user-guide/
-
-**Talks**:
-- **"GPUs in Kubernetes at Scale"** — Kevin Klues, NVIDIA, KubeCon EU 2024
-- **"GPU Operator Deep Dive"** — Pramod Ramarao, NVIDIA, KubeCon NA 2023
-
-**Tools**:
-- **nvtop**: An htop-like GPU monitor (github.com/Syllo/nvtop)
-- **nvidia-smi**: The essential GPU CLI tool bundled with every NVIDIA driver
-
----
-
-## Summary
-
-GPU provisioning on Kubernetes is a multi-layered problem: drivers, container integration, device advertisement, scheduling, and monitoring. The NVIDIA GPU Operator packages these layers into a manageable whole, while DCGM-Exporter provides the visibility needed to avoid wasting these expensive resources. Master this stack, and you have the foundation for everything else in the AI infrastructure discipline.
-
----
+- https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/
+- https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+- https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/
+- https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/
+- https://docs.nvidia.com/datacenter/cloud-native/gpu-telemetry/latest/dcgm-exporter.html
+- https://docs.nvidia.com/datacenter/dcgm/latest/user-guide/
+- https://docs.nvidia.com/deploy/cuda-compatibility/
+- https://github.com/NVIDIA/k8s-device-plugin
+- https://github.com/kubernetes-sigs/node-feature-discovery
+- https://github.com/cncf-tags/container-device-interface
+- https://prometheus-operator.dev/docs/developer/getting-started/
+- https://grafana.com/grafana/dashboards/12239-nvidia-dcgm-exporter-dashboard/
 
 ## Next Module
 
