@@ -56,6 +56,153 @@ def sample_fact_ledger() -> dict:
     }
 
 
+class TestPrMergeHelper(unittest.TestCase):
+    def test_merge_when_green_waits_then_direct_squash_merges(self):
+        from lib import pr_merge
+
+        calls = []
+
+        def fake_run_gh(args, repo):
+            calls.append(args)
+            if args[:3] == ["pr", "view", "123"] and "statusCheckRollup" in args[-1]:
+                if len([c for c in calls if c[:3] == ["pr", "view", "123"]]) == 1:
+                    payload = {
+                        "state": "OPEN",
+                        "statusCheckRollup": [{"status": "IN_PROGRESS"}],
+                    }
+                else:
+                    payload = {
+                        "state": "OPEN",
+                        "statusCheckRollup": [{"conclusion": "SUCCESS"}],
+                    }
+                return subprocess.CompletedProcess(args, 0, json.dumps(payload), "")
+            if args == ["pr", "merge", "123", "--squash", "--delete-branch"]:
+                return subprocess.CompletedProcess(args, 0, "", "")
+            if args == ["pr", "view", "123", "--json", "mergeCommit"]:
+                payload = {"mergeCommit": {"oid": "abc123"}}
+                return subprocess.CompletedProcess(args, 0, json.dumps(payload), "")
+            raise AssertionError(f"unexpected gh call: {args}")
+
+        sleeps = []
+        with patch.object(pr_merge, "_run_gh", side_effect=fake_run_gh):
+            sha = pr_merge.merge_when_green(
+                123,
+                repo=REPO_ROOT,
+                poll_interval=1,
+                sleep_fn=sleeps.append,
+            )
+
+        self.assertEqual(sha, "abc123")
+        self.assertEqual(sleeps, [1])
+        self.assertIn(["pr", "merge", "123", "--squash", "--delete-branch"], calls)
+        self.assertNotIn("--auto", " ".join(" ".join(call) for call in calls))
+
+
+class TestGitVerifyHelper(unittest.TestCase):
+    def test_verify_pushed_to_remote_accepts_matching_sha(self):
+        from lib.git_verify import verify_pushed_to_remote
+
+        def fake_run(_cmd, **_kwargs):
+            return subprocess.CompletedProcess(
+                _cmd,
+                0,
+                "abc123\trefs/heads/feature/test\n",
+                "",
+            )
+
+        with patch("lib.git_verify.subprocess.run", side_effect=fake_run):
+            ok, remote_sha, error = verify_pushed_to_remote(
+                "feature/test",
+                "abc123",
+                repo=REPO_ROOT,
+            )
+
+        self.assertTrue(ok)
+        self.assertEqual(remote_sha, "abc123")
+        self.assertIsNone(error)
+
+    def test_verify_pushed_to_remote_rejects_stale_sha(self):
+        from lib.git_verify import verify_pushed_to_remote
+
+        def fake_run(_cmd, **_kwargs):
+            return subprocess.CompletedProcess(
+                _cmd,
+                0,
+                "old456\trefs/heads/feature/test\n",
+                "",
+            )
+
+        with patch("lib.git_verify.subprocess.run", side_effect=fake_run):
+            ok, remote_sha, error = verify_pushed_to_remote(
+                "feature/test",
+                "new123",
+                repo=REPO_ROOT,
+            )
+
+        self.assertFalse(ok)
+        self.assertEqual(remote_sha, "old456")
+        self.assertIn("expected new123", error or "")
+
+
+class TestCodexPushVerification(unittest.TestCase):
+    def test_runner_marks_codex_danger_success_failed_when_origin_stale(self):
+        from agent_runtime import runner
+        from agent_runtime.adapters.base import InvocationPlan
+        from agent_runtime.result import ParseResult
+
+        class FakeAdapter:
+            default_model = "gpt-test"
+            supported_modes = frozenset({"danger"})
+
+            def build_invocation(self, **kwargs):
+                return InvocationPlan(cmd=["fake-codex"], cwd=kwargs["cwd"])
+
+            def liveness_signal_paths(self, _plan):
+                return ()
+
+            def parse_response(self, **_kwargs):
+                return ParseResult(ok=True, response="push: done")
+
+        class FakeProc:
+            returncode = 0
+            stdin = None
+
+            def poll(self):
+                return 0
+
+            def kill(self):
+                return None
+
+            def wait(self, timeout=None):
+                return 0
+
+        class FakeWatchdogState:
+            stdout_lines = ["push: done"]
+            stderr_lines = []
+
+        stale_error = "Codex danger-mode dispatch left origin stale"
+        with patch.object(runner, "_load_adapter", return_value=FakeAdapter()), \
+             patch.object(runner, "has_headroom", return_value=(True, "")), \
+             patch.object(runner, "build_agent_env", return_value={}), \
+             patch.object(runner.subprocess, "Popen", return_value=FakeProc()), \
+             patch.object(runner, "start_watchdog", return_value=(FakeWatchdogState(), [])), \
+             patch.object(runner, "stop_watchdog"), \
+             patch.object(runner, "write_record"), \
+             patch.object(runner, "verify_current_branch_pushed", return_value=(False, stale_error)):
+            result = runner.invoke(
+                "codex",
+                "commit and push",
+                mode="danger",
+                cwd=REPO_ROOT,
+                model="gpt-test",
+                skip_headroom_check=True,
+            )
+
+        self.assertFalse(result.ok)
+        self.assertIn(stale_error, result.stderr_excerpt or "")
+        self.assertEqual(result.usage_record["outcome"], "error")
+
+
 # ---------------------------------------------------------------------------
 # Fixtures: known-good and known-bad module content
 # ---------------------------------------------------------------------------

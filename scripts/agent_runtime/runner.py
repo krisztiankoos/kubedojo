@@ -53,6 +53,10 @@ from .watchdog import (
     stop_watchdog,
     tail_liveness_file_for_debug,
 )
+try:
+    from scripts.lib.git_verify import verify_current_branch_pushed
+except ImportError:  # pragma: no cover - depends on invocation style
+    from lib.git_verify import verify_current_branch_pushed
 
 # Poll interval while waiting on subprocess + watchdog. 1s is a good balance:
 # fast enough that stall detection fires within 1s of the threshold, slow
@@ -611,6 +615,12 @@ def invoke(
         else:
             outcome = "error"
 
+        push_verify_error: str | None = None
+        if agent_name == "codex" and mode == "danger" and parse.ok:
+            push_ok, push_verify_error = verify_current_branch_pushed(effective_cwd)
+            if not push_ok:
+                outcome = "error"
+
         record = _build_usage_record(
             agent=agent_name,
             entrypoint=entrypoint,
@@ -627,7 +637,7 @@ def invoke(
             outcome=outcome,
             rate_limited=parse.rate_limited,
             stalled=False,
-            stderr_excerpt=parse.stderr_excerpt,
+            stderr_excerpt=push_verify_error or parse.stderr_excerpt,
             tokens=parse.tokens,
         )
         write_record(record)
@@ -640,12 +650,12 @@ def invoke(
             )
 
         return Result(
-            ok=parse.ok,
+            ok=parse.ok and push_verify_error is None,
             agent=agent_name,
             model=effective_model,
             mode=mode,
             response=parse.response,
-            stderr_excerpt=parse.stderr_excerpt,
+            stderr_excerpt=push_verify_error or parse.stderr_excerpt,
             duration_s=duration_s,
             session_id=parse.session_id,
             rate_limited=parse.rate_limited,
