@@ -4,6 +4,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 from agent_runtime.adapters.claude import ClaudeAdapter
@@ -14,6 +16,7 @@ SPECIAL_PROMPT = """--monitor snapshot
 {"--foo": "bar", "note": "keep this out of argv"}
 Shell metacharacters: $(echo nope); `uname`; | & > < *
 """
+FAKE_CLAUDE_BIN = str(Path(__file__).resolve().parent / "mock-claude")
 
 
 def _completed_process(cmd: list[str], *, stdout: str = "ok", stderr: str = ""):
@@ -67,3 +70,47 @@ def test_claude_runtime_adapter_pipes_special_prompt_to_stdin(monkeypatch):
     assert SPECIAL_PROMPT not in plan.cmd
     assert not any('{"--foo": "bar"' in arg for arg in plan.cmd)
     assert not any("$(echo nope)" in arg for arg in plan.cmd)
+
+
+@pytest.mark.parametrize(
+    ("tool_config", "env_value", "expected_prefix"),
+    [
+        (
+            {"use_bare": False},
+            None,
+            ["npx", "@anthropic-ai/claude-code@latest"],
+        ),
+        (
+            {"use_bare": False, "use_path_claude": True},
+            None,
+            [FAKE_CLAUDE_BIN],
+        ),
+        (
+            {"use_bare": False},
+            "1",
+            [FAKE_CLAUDE_BIN],
+        ),
+    ],
+)
+def test_claude_runtime_adapter_prefix_selection(monkeypatch, tool_config, env_value, expected_prefix):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("KUBEDOJO_CLAUDE_USE_PATH", raising=False)
+    if env_value is not None:
+        monkeypatch.setenv("KUBEDOJO_CLAUDE_USE_PATH", env_value)
+    monkeypatch.setattr(
+        "agent_runtime.adapters.claude.shutil.which",
+        lambda name: FAKE_CLAUDE_BIN if name == "claude" else None,
+    )
+
+    plan = ClaudeAdapter().build_invocation(
+        prompt="hello",
+        mode="read-only",
+        cwd=Path.cwd(),
+        model=None,
+        task_id=None,
+        session_id=None,
+        tool_config=tool_config,
+    )
+
+    assert plan.cmd[: len(expected_prefix)] == expected_prefix
+    assert plan.cmd[len(expected_prefix)] == "-p"
