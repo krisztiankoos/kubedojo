@@ -27,17 +27,40 @@ By the end of this module, you will be able to perform the same design, evaluati
 - **Compare** static alert thresholds, statistical baselines, and model-based anomaly detection for bare-metal Kubernetes workloads.
 - **Configure** Robusta to enrich Prometheus alerts with Kubernetes context and a local OpenAI-compatible LLM endpoint.
 - **Evaluate** predictive scaling decisions against reactive HPA behavior, resource limits, and dirty historical data.
-- **Implement** human-in-the-loop guardrails and **diagnose** latency, timeout, and resource-isolation failures before automation can widen an outage.
+
+<ul>
+<li><strong>Implement</strong> human-in-the-loop guardrails that prevent automated remediation from turning a local incident into a wider outage.</li>
+<li><strong>Diagnose</strong> latency, timeout, and resource-isolation failures when local inference runs beside production workloads.</li>
+</ul>
 
 ## Why This Module Matters
 
-Hypothetical scenario: a platform team in a regulated manufacturing company receives a severe incident report at 02:13. A critical internal API is returning intermittent errors. The on-call engineer opens the alert, copies recent logs, pastes a stack trace into a public AI assistant, and asks for a root cause. The assistant gives a useful answer. The incident is resolved faster than usual. The security team is not relieved. The copied logs contained customer identifiers, private service names, internal hostnames, and a database error that exposed part of the schema. The team did not intend to leak sensitive operational data.
-
-They were trying to recover service. This is the central tension of AIOps; AI-assisted investigation can shorten mean time to understanding. It can summarize noisy alerts, correlate events, and propose the next command to run. It can also export the exact data that regulated teams are forbidden to send outside their environment. Bare-metal Kubernetes makes this tension sharper. The cluster often exists because the organization needs control over hardware, networking, compliance boundaries, latency, or data residency.
-
-Sending Alertmanager payloads, Pod logs, and incident timelines to an external SaaS API can violate the same constraints that justified bare metal in the first place. Private AIOps changes the shape of the system. Instead of sending operational data to an external intelligence service, the team brings the intelligence to the operational data. Prometheus, Alertmanager, Robusta, local LLM endpoints, and guarded automation run inside the same trust boundary as the workloads they inspect. That shift does not make the system automatically safe. A private model can still hallucinate. A statistical alert can still flap.
-
-A predictive scaler can still overreact to a past load test. A remediation playbook can still delete the wrong thing if it is granted too much access. The goal of this module is not to make AI sound magical. The goal is to teach a disciplined architecture for using AI and anomaly detection without weakening the reliability and security posture of the cluster.
+<p>Hypothetical scenario: a platform team in a regulated manufacturing company receives a severe incident report at 02:13.</p>
+<p>A critical internal API is returning intermittent errors.</p>
+<p>The on-call engineer opens the alert, copies recent logs, pastes a stack trace into a public AI assistant, and asks for a root cause.</p>
+<p>The assistant gives a useful answer.</p>
+<p>The incident is resolved faster than usual.</p>
+<p>The security team is not relieved.</p>
+<p>The copied logs contained customer identifiers, private service names, internal hostnames, and a database error that exposed part of the schema.</p>
+<p>The team did not intend to leak sensitive operational data.</p>
+<p>They were trying to recover service.</p>
+<p>This is the central tension of AIOps.</p>
+<p>AI-assisted investigation can shorten mean time to understanding.</p>
+<p>It can summarize noisy alerts, correlate events, and propose the next command to run.</p>
+<p>It can also export the exact data that regulated teams are forbidden to send outside their environment.</p>
+<p>Bare-metal Kubernetes makes this tension sharper.</p>
+<p>The cluster often exists because the organization needs control over hardware, networking, compliance boundaries, latency, or data residency.</p>
+<p>Sending Alertmanager payloads, Pod logs, and incident timelines to an external SaaS API can violate the same constraints that justified bare metal in the first place.</p>
+<p>Private AIOps changes the shape of the system.</p>
+<p>Instead of sending operational data to an external intelligence service, the team brings the intelligence to the operational data.</p>
+<p>Prometheus, Alertmanager, Robusta, local LLM endpoints, and guarded automation run inside the same trust boundary as the workloads they inspect.</p>
+<p>That shift does not make the system automatically safe.</p>
+<p>A private model can still hallucinate.</p>
+<p>A statistical alert can still flap.</p>
+<p>A predictive scaler can still overreact to a past load test.</p>
+<p>A remediation playbook can still delete the wrong thing if it is granted too much access.</p>
+<p>The goal of this module is not to make AI sound magical.</p>
+<p>The goal is to teach a disciplined architecture for using AI and anomaly detection without weakening the reliability and security posture of the cluster.</p>
 
 ## 1. Private AIOps as a Control Loop
 
@@ -68,14 +91,28 @@ The local LLM endpoint should also be treated as an internal service, not a trus
 
 If the model says "the database is down" but the facts only show an image pull error, the operator can reject the inference. The architecture must also protect the rest of the cluster from the AIOps workload. Local inference is compute-heavy. A CPU-only model may take tens of seconds to summarize one alert; a GPU model may starve other jobs if scheduling is not isolated. A runner that fetches too many logs can overload the API server; an Alertmanager route that sends every warning to the LLM can create a feedback loop during an outage; the first private AIOps rule is therefore capacity-aware design.
 
-Put the AI backend on dedicated nodes when possible; set requests and limits; use NetworkPolicy; use alert routing to select only alerts that benefit from enrichment; use timeouts and fallbacks; never make incident delivery depend solely on AI completion.
+- Put the AI backend on dedicated nodes when possible.
+- Set requests and limits.
+- Use NetworkPolicy.
+- Use alert routing to select only alerts that benefit from enrichment.
+- Use timeouts and fallbacks.
+- Never make incident delivery depend solely on AI completion.
 
 :::tip
 Running local LLMs and ML models requires dedicated GPU resources or significant CPU overhead.
 On bare metal, isolate these workloads using node selectors, taints, tolerations, and resource quotas so they do not starve control plane add-ons or production workloads.
 :::
 
-A minimal private AIOps deployment should answer these questions before it is accepted into production; what data enters the prompt; where are prompts logged; which service account reads cluster context; can the runner write to the Kubernetes API? What happens if the LLM endpoint is slow; what happens if the LLM endpoint is wrong; what happens if one alert storm triggers hundreds of inference requests; what human approval step exists before remediation changes cluster state?
+A minimal private AIOps deployment should answer these questions before it is accepted into production:
+
+- What data enters the prompt?
+- Where are prompts logged?
+- Which service account reads cluster context?
+- Can the runner write to the Kubernetes API?
+- What happens if the LLM endpoint is slow?
+- What happens if the LLM endpoint is wrong?
+- What happens if one alert storm triggers hundreds of inference requests?
+- What human approval step exists before remediation changes cluster state?
 
 **Active learning prompt:** Before reading further, sketch the trust boundary for your own cluster and mark every place where alert payloads, logs, prompts, responses, and notifications could be stored or forwarded.
 
@@ -83,15 +120,36 @@ Put Prometheus, Alertmanager, Robusta, the LLM endpoint, notification sinks, and
 
 ## 2. Telemetry and Anomaly Detection
 
-AIOps is only as good as the telemetry it can reason over; the model may write the most visible text, but the metrics and events determine whether the diagnosis is grounded. If the metrics are sparse, stale, mislabeled, or missing workload context, the AIOps layer will create confident summaries from weak evidence; a private AIOps stack usually starts with Prometheus or VictoriaMetrics; Prometheus is excellent for scraping metrics and evaluating rules.
+AIOps is only as good as the telemetry it can reason over. The model may write the most visible text, but the metrics and events determine whether the diagnosis is grounded. If the metrics are sparse, stale, mislabeled, or missing workload context, the AIOps layer will create confident summaries from weak evidence. A private AIOps stack usually starts with Prometheus or VictoriaMetrics. Prometheus is excellent for scraping metrics and evaluating rules.
 
-VictoriaMetrics is often used when teams need longer retention, lower storage cost, or larger query volume; Thanos and Cortex-style architectures extend Prometheus by adding long-term storage and distributed query capabilities; the important design point is that anomaly detection needs history. A static alert may only need the last five minutes; a baseline alert may need days or weeks; a predictive scaler may need enough clean data to understand seasonality; the amount of history changes the architecture.
+The retention and density trade-offs should be explicit:
 
-Single-node Prometheus can evaluate simple alerts efficiently; it may struggle when rules repeatedly compute week-long standard deviations across high-cardinality series; long windows require more samples to be scanned; more samples require more memory, more CPU, and more query time. A private AIOps design should therefore separate critical alerting from expensive analysis where possible; critical alerts should remain simple, fast, and reliable. Analysis jobs can run on a slower path if they do not block paging; static thresholds are still useful; they are appropriate when the failure boundary is known.
+- VictoriaMetrics is often used when teams need longer retention, lower storage cost, or larger query volume.
+- Thanos and Cortex-style architectures extend Prometheus by adding long-term storage and distributed query capabilities.
+- The important design point is that anomaly detection needs history.
+- A static alert may only need the last five minutes.
+- A baseline alert may need days or weeks.
+- A predictive scaler may need enough clean data to understand seasonality.
+- The amount of history changes the architecture.
+- Single-node Prometheus can evaluate simple alerts efficiently.
+- It may struggle when rules repeatedly compute week-long standard deviations across high-cardinality series.
+- Long windows require more samples to be scanned.
+- More samples require more memory, more CPU, and more query time.
 
-A node filesystem that is 98 percent full is a problem regardless of seasonality; a Pod restarting continuously is a problem regardless of traffic pattern. An API returning many 5xx responses is a problem when users are affected; anomaly detection is useful when "normal" changes with time; batch jobs may spike CPU at night; an internal portal may be quiet on weekends. A retail service may have predictable traffic peaks; a training pipeline may use a node pool heavily during planned windows.
+A private AIOps design should therefore separate critical alerting from expensive analysis where possible. Critical alerts should remain simple, fast, and reliable. Analysis jobs can run on a slower path if they do not block paging. Static thresholds are still useful. They are appropriate when the failure boundary is known.
 
-In those cases, a fixed threshold either pages too often or misses important deviations; Prometheus gives you enough statistical tools to build a first useful baseline; you can compare the current metric to its historical average. You can divide that difference by historical standard deviation; the result is a Z-score; a Z-score around zero means the metric is near its baseline. A high positive score means the metric is unusually high compared with its own history; the following rule records a CPU anomaly score and alerts when the score stays high.
+Use the alerting style that matches the failure pattern:
+
+- A node filesystem that is 98 percent full is a problem regardless of seasonality.
+- A Pod restarting continuously is a problem regardless of traffic pattern.
+- An API returning many 5xx responses is a problem when users are affected.
+- Anomaly detection is useful when "normal" changes with time.
+- Batch jobs may spike CPU at night.
+- An internal portal may be quiet on weekends.
+- A retail service may have predictable traffic peaks.
+- A training pipeline may use a node pool heavily during planned windows.
+
+In those cases, a fixed threshold either pages too often or misses important deviations. Prometheus gives you enough statistical tools to build a first useful baseline. You can compare the current metric to its historical average. You can divide that difference by historical standard deviation. The result is a Z-score. A Z-score around zero means the metric is near its baseline. A high positive score means the metric is unusually high compared with its own history. The following rule records a CPU anomaly score and alerts when the score stays high.
 
 ```yaml
 # prometheus-rules.yaml
