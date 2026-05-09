@@ -145,8 +145,8 @@
   </div>
   <div class="meta">
     <span><b>Adopted:</b> 2026-05-09</span>
-    <span><b>Updated:</b> 2026-05-09 post ab-discuss</span>
-    <span><b>Status:</b> Phase 1 done, Phase 2 next</span>
+    <span><b>Updated:</b> 2026-05-09 — consumer-direction lens revision</span>
+    <span><b>Status:</b> Phases 1+5(rev) done, Phase 2 next, Phases 3-4(rev) on-demand</span>
     <span><b>Design:</b> <a href="_design-system.html"><code class="inline">_design-system.html</code></a></span>
     <span><b>Reference:</b> <a href="../../references/external/2026-05-08-thariq-html-effectiveness.html">archived article</a></span>
   </div>
@@ -157,6 +157,42 @@
   <div class="body">
     <b>Decision locked 2026-05-09, updated 2026-05-09 post ab-discuss:</b> HTML is the default output format for orchestrator-generated artifacts that benefit from visualization, interactivity, or shareability. Markdown stays only for files the briefing API parses or that are grepped daily by both humans and tooling. Cross-family review now uses lightpanda-rendered markdown, so <code class="inline">.notes.md</code> sidecars are optional polish, not load-bearing.
   </div>
+</div>
+
+<div class="info-box" style="margin-bottom:24px;">
+  <h3>Consumer-direction lens (refinement, 2026-05-09)</h3>
+  <p>Format is picked by <b>who reads the artifact</b>, not just by artifact class. Three directions, three defaults:</p>
+  <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;">
+    <thead>
+      <tr>
+        <th style="text-align:left;padding:5px 10px;background:rgba(88,166,255,0.12);border:1px solid rgba(88,166,255,0.25);color:var(--fg-dim);font-weight:600;">Direction</th>
+        <th style="text-align:left;padding:5px 10px;background:rgba(88,166,255,0.12);border:1px solid rgba(88,166,255,0.25);color:var(--fg-dim);font-weight:600;">Primary consumer</th>
+        <th style="text-align:left;padding:5px 10px;background:rgba(88,166,255,0.12);border:1px solid rgba(88,166,255,0.25);color:var(--fg-dim);font-weight:600;">Default format</th>
+        <th style="text-align:left;padding:5px 10px;background:rgba(88,166,255,0.12);border:1px solid rgba(88,166,255,0.25);color:var(--fg-dim);font-weight:600;">Examples</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);font-weight:600;">AI → Human</td>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);">User reads it</td>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);"><span class="badge ok">HTML</span></td>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);color:var(--fg-dim);">Batch reports, PR explainers, bug autopsies, summary audits</td>
+      </tr>
+      <tr>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);font-weight:600;">Human → AI</td>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);">User types it (agent reads)</td>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);"><span class="badge fail">Markdown</span></td>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);color:var(--fg-dim);">CLAUDE.md, rules, memory files, decision cards</td>
+      </tr>
+      <tr>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);font-weight:600;">AI → AI</td>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);">Next agent reads first</td>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);"><span class="badge fail">Markdown</span></td>
+        <td style="padding:5px 10px;border:1px solid rgba(88,166,255,0.15);color:var(--fg-dim);">Dispatch briefs (paste-to-agent), session handoffs (Read by next session)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin-top:10px;color:var(--fg-dim);">This flips <b>Dispatch briefs</b> and <b>Session handoffs</b> to Markdown by default. HTML is reserved for explicit user-facing variants of those artifact classes. Source of truth: <code class="inline">memory/feedback_html_over_markdown_for_artifacts.md</code>.</p>
 </div>
 
 <div class="thesis">
@@ -216,15 +252,15 @@
   <div class="phase">
     <div class="num">Phase 4</div>
     <div class="name">Dispatch briefs</div>
-    <span class="status queued">QUEUED</span>
-    <div class="when">On-demand: next batch</div>
+    <span class="status queued">REVISED</span>
+    <div class="when">Markdown by default (AI→AI)</div>
     <span class="arrow">→</span>
   </div>
   <div class="phase">
     <div class="num">Phase 5</div>
     <div class="name">Session handoffs</div>
-    <span class="status queued">UNBLOCKED</span>
-    <div class="when">Lazy: when the session warrants HTML</div>
+    <span class="status queued">REVISED</span>
+    <div class="when">Markdown by default (AI→AI)</div>
   </div>
 </div>
 
@@ -293,42 +329,42 @@
 <div class="phase-detail queued">
   <h3>
     <span class="ph-num">PHASE 4</span> Dispatch briefs
-    <span class="badge ok">QUEUED</span>
+    <span class="badge warn">REVISED</span>
   </h3>
-  <div class="goal">Pre-batch dispatch briefs are gate-heavy checklists. HTML can make the GO/NO-GO gates visual, smoke-test snippets copyable, and change classes collapsible.</div>
+  <div class="goal"><b>Reclassified AI→AI (Markdown by default).</b> Dispatch briefs are pasted directly into agent prompts — the primary consumer is the dispatched agent, not the user. Markdown is the correct format. HTML is reserved for explicit user-facing pre-batch dashboards where the user wants to review gate status visually before kicking off a sweep.</div>
   <div class="grid2">
     <div>
-      <b>Bonus interactivity</b>
-      A brief can become an interactive form: toggle gates, edit smoke commands, and click "copy as prompt" for the next agent dispatch.
+      <b>When HTML still applies</b>
+      Only when the brief is genuinely user-facing: a dashboard a human reviews and approves before triggering a large sweep. In that case, the AI→Human rule applies and HTML wins.
     </div>
     <div>
-      <b>Why after explainers</b>
-      PR explainers prove the cross-family review path first. Dispatch briefs require more polish to be a net win.
+      <b>Default practice</b>
+      Write briefs as <code class="inline">docs/briefs/*.md</code>. The native markdown <code class="inline">/artifacts</code> renderer handles display. No lightpanda conversion needed.
     </div>
   </div>
   <div class="trigger">
-    <b>Trigger:</b> Next sweep that needs a brief written from scratch.
+    <b>Trigger:</b> Phase 4 reclassified Markdown 2026-05-09 per consumer-direction lens; HTML version reserved for explicit user-facing brief dashboards.
   </div>
 </div>
 
 <div class="phase-detail queued">
   <h3>
     <span class="ph-num">PHASE 5</span> Session handoffs
-    <span class="badge ok">UNBLOCKED</span>
+    <span class="badge warn">REVISED</span>
   </h3>
-  <div class="goal">Handoffs can be rich HTML when they preserve multiple threads, decisions, timelines, and restart context. Brief sessions should remain Markdown or chat-only.</div>
+  <div class="goal"><b>Reclassified AI→AI (Markdown by default).</b> The primary consumer of a session handoff is the next-session agent, which reads it via the <code class="inline">Read</code> tool before starting work. That is an AI→AI flow — Markdown is the correct format. HTML is reserved for genuinely user-facing handoffs such as rare demo-ready end-of-week summaries the user will share externally.</div>
   <div class="grid2">
     <div>
       <b>Prerequisite</b>
-      DONE in PR <a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1021">#1021</a>, commit <code class="inline">70130274</code>: session-state now permits <code class="inline">.html</code> handoffs.
+      DONE in PR <a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1021">#1021</a>, commit <code class="inline">70130274</code>: session-state directory accepts both <code class="inline">.md</code> and <code class="inline">.html</code> handoffs. Default path is now <code class="inline">docs/session-state/*.md</code>.
     </div>
     <div>
-      <b>Lazy practice</b>
-      Use HTML when the session warrants it: rich content, multiple threads, decisions to record, or visual state. Brief sessions still use Markdown.
+      <b>When HTML still applies</b>
+      Only for explicit user-facing handoffs: end-of-week summaries, external demos, or any handoff the user intends to share beyond the next agent session. Otherwise Markdown.
     </div>
   </div>
   <div class="trigger">
-    <b>Trigger:</b> Prereq DONE in PR #1021 (commit <code class="inline">70130274</code>). Phase is unblocked but practiced lazy.
+    <b>Trigger:</b> Phase 5 reclassified Markdown 2026-05-09 per consumer-direction lens; HTML reserved for explicit user-facing handoffs (rare). Prereq still DONE in PR #1021.
   </div>
 </div>
 
@@ -389,20 +425,20 @@
       <td>lightpanda → markdown</td>
     </tr>
     <tr>
-      <td class="artifact">Dispatch briefs <span class="path">(docs/dispatch-briefs/*.html)</span></td>
+      <td class="artifact">Dispatch briefs <span class="path">(docs/briefs/*.md)</span></td>
       <td><span class="heat h2"></span>pre-batch</td>
-      <td><span class="heat h3"></span>high</td>
-      <td><span class="badge ok">HTML</span></td>
-      <td>4</td>
-      <td>lightpanda → markdown</td>
+      <td><span class="heat h1"></span>low (agent pastes, not reads)</td>
+      <td><span class="badge fail">Markdown (AI→AI)</span></td>
+      <td>4 - REVISED</td>
+      <td>native markdown via /artifacts renderer (brief #2026-05-09)</td>
     </tr>
     <tr>
-      <td class="artifact">Session handoffs <span class="path">(docs/session-state/*.html)</span></td>
+      <td class="artifact">Session handoffs <span class="path">(docs/session-state/*.md)</span></td>
       <td><span class="heat h4"></span>session-dependent</td>
-      <td><span class="heat h4"></span>very high when rich</td>
-      <td><span class="badge ok">HTML lazy</span></td>
-      <td>5 - UNBLOCKED</td>
-      <td>lightpanda → markdown</td>
+      <td><span class="heat h1"></span>low (next agent reads via Read tool)</td>
+      <td><span class="badge fail">Markdown (AI→AI)</span></td>
+      <td>5 - REVISED</td>
+      <td>native markdown via /artifacts renderer (brief #2026-05-09)</td>
     </tr>
     <tr>
       <td class="artifact">STATUS.md <span class="path">(STATUS.md)</span></td>
@@ -500,6 +536,7 @@
 
 <div class="col-card">
   <ul>
+    <li><b>Consumer-direction lens</b> - <code class="inline">docs/briefs/2026-05-09-codex-desktop-artifacts-ui-brief.md</code>. First correctly-classified Markdown brief: AI→AI dispatch brief written for an agent consumer, not a human reader. Source of truth for the format flip.</li>
     <li><b>This plan</b> - <code class="inline">docs/migrations/html-first/plan.html</code>. Update phase status as each one ships.</li>
     <li><b>Design system</b> - <code class="inline">docs/migrations/html-first/_design-system.html</code>. Inline-copy these variables and components for future HTML artifacts.</li>
     <li><b>Archived article</b> - <code class="inline">docs/references/external/2026-05-08-thariq-html-effectiveness.html</code> (the original X article, saved by user 2026-05-09).</li>
