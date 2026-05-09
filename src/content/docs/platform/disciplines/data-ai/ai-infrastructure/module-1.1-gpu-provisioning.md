@@ -497,7 +497,7 @@ For mature platforms, the decision framework should feed a service catalog. User
 
 ## Did You Know?
 
-1. **A single NVIDIA H100 accelerator can draw up to 700 watts depending on the form factor and configuration.** An eight-GPU server can therefore demand several kilowatts before you count CPUs, memory, networking, and cooling overhead, which is why power and thermal metrics belong in the same conversation as scheduling.
+1. **A single NVIDIA H100 SXM5 accelerator can draw up to 700 watts (PCIe variants top out at ~350 watts).** An eight-GPU server can therefore demand several kilowatts before you count CPUs, memory, networking, and cooling overhead, which is why power and thermal metrics belong in the same conversation as scheduling.
 
 2. **The Kubernetes Device Plugin API became stable in Kubernetes 1.26, but the operational pattern remains important in Kubernetes 1.35 and newer.** Stability means the API contract is mature; it does not mean every vendor plugin, driver version, and runtime integration is interchangeable without testing.
 
