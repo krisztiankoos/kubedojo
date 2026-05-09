@@ -60,7 +60,10 @@ That separation is one reason Kubernetes commands often come in pairs: one comma
 
 There is a practical security lesson here too. Because `kubectl` talks to the API server with your identity, every command is subject to authentication, authorization, and admission. A cluster may let you read pods while blocking deletes, or let you create ConfigMaps while rejecting privileged pods through policy. When a command is denied, do not work around it with a more powerful credential by reflex. First decide whether the policy is protecting the cluster from exactly the kind of change you are trying to make.
 
-Pause and predict: if `kubectl` is only an API client, what do you think happens when your kubeconfig points at a healthy cluster but your credential has expired? The pods are still running and the controllers are still reconciling, but your command fails at authentication before it can read anything useful. That distinction is operationally important because it prevents you from treating every `kubectl` error as an application outage.
+> **Pause and predict:** if `kubectl` is only an API client, what happens when your kubeconfig points at a healthy cluster but your credential has expired?
+> **Answer:** the cluster can keep reconciling and pods can keep running, but your command fails before reading objects because auth is denied.
+
+That distinction is operationally important because it prevents you from treating every `kubectl` error as an application outage.
 
 ## Command Anatomy and Read-Only Inspection
 
@@ -79,18 +82,27 @@ The read-only verbs should become your default entry point because they reduce u
 
 ```bash
 # What exists in this namespace?
+# Show all pods in the current namespace.
 kubectl get pods
+# Show pods in all namespaces.
 kubectl get pods -A
+# Focus on a specific namespace.
 kubectl get pods -n kube-system
+# Add networking and node metadata.
 kubectl get pods -o wide
+# Inspect one full object as YAML.
 kubectl get pod nginx -o yaml
 
 # What's the state of this specific thing?
+# Inspect pod status, owners, conditions, and Events.
 kubectl describe pod nginx
+# Inspect node-level status from the API object.
 kubectl describe node kind-control-plane
 
 # What fields does this resource even have?
+# See the fields available on Pod containers.
 kubectl explain pod.spec.containers
+# Expand nested resource definitions recursively.
 kubectl explain pod.spec.containers.resources --recursive
 ```
 
@@ -104,17 +116,24 @@ The namespace default is another reason read commands can mislead beginners. `ku
 
 `kubectl explain` is easy to ignore until you need it, then it becomes a permanent habit. It reads schema information from the API server, so the answer matches the Kubernetes version and Custom Resource Definitions installed on the cluster in front of you. That means you can ask for `kubectl explain deployment.spec.strategy --recursive` while authoring a manifest and get a field map without leaving the terminal. The tool is not a tutorial, but it is an accurate dictionary for the object model you are editing.
 
-Before running this, what output do you expect from `kubectl get all -n kube-system`? Many learners expect literally every resource in the namespace, but `all` is a curated shortcut for common workload resources and services. It does not include every Secret, ConfigMap, Role, ServiceAccount, CRD instance, or policy object, so it is not an audit command. When completeness matters, ask for the specific resource types you need or use `kubectl api-resources` to discover what the cluster supports.
+> **Stop and predict:** before you run `kubectl get all -n kube-system`, what objects do you expect to see?
+> **Answer:** `all` returns a curated set of common workload resources, not every Secret, ConfigMap, Role, ServiceAccount, or CRD.
+
+It does not include every Secret, ConfigMap, Role, ServiceAccount, CRD instance, or policy object, so it is not an audit command. When completeness matters, ask for the specific resource types you need or use `kubectl api-resources` to discover what the cluster supports.
 
 ## Output Formats, Filtering, and Automation
 
 Default `kubectl get` output is designed for a human scanning a terminal. That makes it excellent for a first look and fragile for automation. A script that pipes the default table to `grep` is depending on column layout, headers, spacing, and incidental text, all of which are less stable than the underlying JSON object. Kubernetes stores resources as typed objects, and `kubectl` can render those objects as YAML, JSON, JSONPath projections, or custom tables when you need precision.
 
 ```bash
-# The five formats you will actually use
+# The five formats you will actually use.
+# Human-scanned table.
 kubectl get pods
+# Extra context for quick triage.
 kubectl get pods -o wide
+# Full object for inspection.
 kubectl get pod nginx -o yaml
+# Exact JSON for script pipelines.
 kubectl get pod nginx -o json | jq '.status.podIP'
 
 # JSONPath: extract a single field
@@ -286,23 +305,31 @@ Day-to-day Kubernetes debugging usually follows a small set of commands rather t
 
 ```bash
 # Logs: the first thing you check when an app misbehaves
-kubectl logs nginx
-kubectl logs nginx -f
-kubectl logs nginx --tail=200
-kubectl logs nginx --since=10m
-kubectl logs nginx -c sidecar
-kubectl logs nginx --previous
-kubectl logs -l app=web --tail=50
+# Logs: the first thing to check when an app misbehaves.
+kubectl logs nginx # current container output
+kubectl logs nginx -f # follow output while behavior evolves
+kubectl logs nginx --tail=200 # inspect recent history
+kubectl logs nginx --since=10m # focus on the last 10 minutes
+kubectl logs nginx -c sidecar # inspect sidecar container logs
+kubectl logs nginx --previous # inspect terminated instance logs
+kubectl logs -l app=web --tail=50 # combine pod selector with latest logs
 
 # Exec: run commands inside the container
+# Run a command inside the container.
 kubectl exec nginx -- ls /etc/nginx
+# Open an interactive shell when available.
 kubectl exec -it nginx -- bash
+# Use a fallback shell if bash is missing.
 kubectl exec -it nginx -- sh
+# Run shell against a specific container.
 kubectl exec -it nginx -c sidecar -- sh
 
 # Port-forward: tunnel a local port to a pod, service, or deployment
+# Validate pod-level reachability.
 kubectl port-forward pod/nginx 8080:80
+# Validate service-level reachability.
 kubectl port-forward svc/api 9090:80
+# Validate deployment-level reachability.
 kubectl port-forward deploy/web 8080:80
 ```
 
@@ -662,6 +689,7 @@ The namespace deletion can take a little time because Kubernetes removes the res
 
 - [ ] You ran `kubectl config current-context` before doing anything destructive and confirmed you were on a local cluster.
 - [ ] You created the `kubectl-practice` namespace and set it as the default namespace for your shell.
+- [ ] You used read-only inspection (`kubectl get`, `kubectl describe`, `kubectl logs --previous`) before the repair step in the lab.
 - [ ] You deployed `imperative-web` with an imperative `kubectl create deployment` command and `declarative-web` from a generated YAML manifest.
 - [ ] You broke `imperative-web` by setting a non-existent image tag, observed the resulting `ImagePullBackOff`, and used `kubectl describe` Events to confirm the cause.
 - [ ] You fixed the broken Deployment by re-setting a valid image and confirmed via `kubectl rollout status` that the rollout succeeded.
