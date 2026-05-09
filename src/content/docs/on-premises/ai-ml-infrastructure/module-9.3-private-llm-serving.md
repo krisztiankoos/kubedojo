@@ -1004,7 +1004,7 @@ If multi-GPU experiments show NCCL errors, confirm `/dev/shm` is mounted, inspec
 ## Sources
 
 - https://docs.vllm.ai/en/v0.7.2/serving/openai_compatible_server.html
-- https://docs.vllm.ai/en/v0.4.2/
+- https://docs.vllm.ai/en/v0.7.2/
 - https://docs.vllm.ai/en/v0.7.2/features/quantization/
 - https://huggingface.co/docs/text-generation-inference/en/index
 - https://huggingface.co/docs/text-generation-inference/en/conceptual/quantization
