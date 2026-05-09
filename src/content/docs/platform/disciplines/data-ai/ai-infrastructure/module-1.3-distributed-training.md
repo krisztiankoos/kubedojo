@@ -3,17 +3,13 @@ title: "Module 1.3: Distributed Training Infrastructure"
 slug: platform/disciplines/data-ai/ai-infrastructure/module-1.3-distributed-training
 sidebar:
   order: 4
+revision_pending: false
 ---
-> **Discipline Module** | Complexity: `[COMPLEX]` | Time: 5 hours
-
-## Prerequisites
-
-Before starting this module:
-- **Required**: [Module 1.2: Advanced GPU Scheduling & Sharing](../module-1.2-gpu-scheduling/) — GPU topology, multi-GPU allocation
-- **Required**: Kubernetes networking fundamentals (Services, CNI, Pod-to-Pod communication)
-- **Recommended**: Basic understanding of neural network training (forward pass, backward pass, gradient descent)
-- **Recommended**: Familiarity with PyTorch or TensorFlow distributed APIs
-- **Recommended**: Access to a cluster with at least 2 GPU nodes (for multi-node exercises)
+> **Complexity**: `[COMPLEX]`
+>
+> **Time to Complete**: 5 hours
+>
+> **Prerequisites**: [Module 1.2: Advanced GPU Scheduling & Sharing](../module-1.2-gpu-scheduling/), Kubernetes Services and CNI fundamentals, basic neural network training concepts, and familiarity with PyTorch or TensorFlow distributed APIs. A cluster with at least 2 GPU nodes is recommended for the hands-on exercise.
 
 ---
 
@@ -21,35 +17,27 @@ Before starting this module:
 
 After completing this module, you will be able to:
 
-- **Implement distributed training jobs on Kubernetes using PyTorch DDP, Horovod, or DeepSpeed**
-- **Design multi-node training architectures with proper NCCL configuration and network topology awareness**
-- **Configure Kubernetes operators like Kubeflow Training Operator for managing distributed training lifecycle**
-- **Diagnose common distributed training failures — NCCL timeouts, OOM errors, stragglers — in Kubernetes environments**
+- **Design** a distributed training topology that matches model size, GPU count, network fabric, and Kubernetes placement constraints.
+- **Configure** NCCL, RDMA, GPUDirect RDMA, and Multus so training pods use the intended high-speed data path instead of silently falling back to TCP.
+- **Implement** multi-node PyTorch and MPI-style training jobs with Kubeflow Training Operator primitives, shared memory, checkpoint storage, and Kubernetes 1.35 scheduling controls.
+- **Diagnose** NCCL timeouts, low GPU utilization, OOM restarts, missing secondary interfaces, and straggler nodes by reading logs, pod state, and topology signals.
+- **Evaluate** failure recovery choices, including checkpoint cadence, restart budgets, elastic training, and placement policies for long-running training jobs.
 
 ## Why This Module Matters
 
-Modern AI models are too large and too slow to train on a single GPU. GPT-4 is estimated to have been trained on ~25,000 GPUs for roughly 100 days. Even a "small" LLM like Llama-3-8B requires 1.3 million GPU-hours to train.
+Hypothetical scenario: your platform team has just reserved a short training window on a costly GPU cluster, and the ML team expects a multi-node fine-tuning run to finish overnight. The job starts cleanly, all pods reach `Running`, and every GPU appears allocated, but utilization stays near idle because the workers are spending most of each step waiting for gradient synchronization. Nothing looks broken from a normal Kubernetes dashboard, yet the cluster is burning time because distributed training is a tightly coupled system where scheduling, network interfaces, collective communication, shared memory, and checkpoint storage all have to line up at once.
 
-This reality creates a brutal infrastructure challenge: you must make **hundreds or thousands of GPUs across dozens of machines** work together as if they were a single giant accelerator. Every microsecond of network latency between GPUs becomes a tax on your training throughput. Every node failure forces a decision: restart from scratch or recover from a checkpoint?
+Distributed training infrastructure is different from ordinary batch infrastructure because the slowest rank controls the whole job. A web service can survive one pod responding a little slowly, but an all-reduce cannot move to the next optimizer step until every participant has contributed its gradients. When a single pod lands on the wrong rack, chooses `eth0` instead of the high-speed fabric, loses access to `/dev/shm`, or restarts without a usable checkpoint, the failure is multiplied by every GPU in the job. The operational stakes are therefore not just correctness; they are throughput, cost, deadline risk, and developer trust.
 
-The platform team's job is to build the infrastructure that makes this possible:
-
-- **High-speed networking** (InfiniBand, RoCE) so GPUs can exchange gradients at wire speed
-- **Kubernetes operators** (MPI Operator, PyTorch Operator) that orchestrate distributed jobs
-- **Multi-network CNIs** (Multus) that give pods secondary high-speed network interfaces
-- **Fault tolerance** that recovers from node failures without losing days of work
-
-Get this right, and your ML team ships models on schedule. Get it wrong, and they burn millions of dollars in GPU-hours on jobs that fail, stall, or run at a fraction of their potential speed.
-
----
+This module teaches the infrastructure side of that problem. You will connect the parallelism choices used by frameworks such as PyTorch DDP, Horovod, and DeepSpeed to concrete Kubernetes objects: secondary networks, RDMA drivers, NCCL environment variables, Training Operator CRDs, topology spread constraints, and checkpoint volumes. The goal is not to memorize every flag, because real clusters vary, but to learn the reasoning loop: predict the expected data path, configure Kubernetes to expose it, verify that NCCL actually used it, and design recovery so a long run can survive real node failures.
 
 ## Distributed Training Fundamentals
 
-### Why Distribute?
+The first decision in a distributed training design is whether the model fits on one accelerator and whether one accelerator can finish the job in useful time. If the model fits but training is too slow, data parallelism is often the simplest starting point: each GPU keeps a full copy of the model, processes a different shard of the batch, and synchronizes gradients after each step. If the model does not fit, the platform has to support tensor or pipeline parallelism as well, which increases communication complexity because activations and layer partitions now move between GPUs during the forward and backward passes.
 
-> **Pause and predict**: If a single GPU takes 67 years to train a model, how many GPUs do you realistically need to train it in one month, assuming perfect scaling?
+> **Pause and predict**: If a single GPU would take decades to train a model, which limit matters first when you add more GPUs: arithmetic throughput, gradient synchronization bandwidth, or checkpoint write speed?
 
-A single A100 GPU can process roughly 300 TFLOPS of BF16 operations. Training Llama-3-70B requires approximately 6.4 x 10^23 FLOPs. At 300 TFLOPS:
+A single high-end GPU can perform enormous BF16 compute, but the training budget for a large model is larger still. Using the earlier sizing estimate from this module, a single A100-class GPU processing roughly 300 TFLOPS would need about 67 years for 6.4 x 10^23 floating point operations. With 2,048 GPUs at only half of ideal scaling efficiency, the same rough workload becomes a multi-week run, which is why the design question shifts from "can one GPU train this" to "can thousands of GPUs behave like one reliable training machine."
 
 ```
 6.4 × 10^23 FLOPS / (300 × 10^12 FLOPS/s)
@@ -57,18 +45,14 @@ A single A100 GPU can process roughly 300 TFLOPS of BF16 operations. Training Ll
 = ~67 years on a single GPU
 ```
 
-With 2,048 GPUs running at 50% efficiency:
-
 ```
 67 years / (2,048 × 0.50)
 = 24 days
 ```
 
-The math is clear: you either distribute or you don't train.
+The math is useful because it sets expectations before any Kubernetes YAML appears. Perfect scaling is not realistic: each additional worker adds coordination cost, and the all-reduce phase eventually dominates the step time if the network cannot keep up. A platform engineer therefore has to reason about both compute and communication, much like planning a kitchen where adding more chefs helps only until everyone blocks the same narrow doorway.
 
-### Parallelism Strategies
-
-Distributed training uses three complementary strategies:
+That expectation-setting step also prevents a common budgeting mistake. GPU count is easy to quote because it appears directly in cloud reservations and capacity dashboards, but useful training throughput is the product of GPU count, per-GPU compute efficiency, communication efficiency, input pipeline health, and recovery overhead. A cluster that is 90 percent efficient for one-node jobs can fall below 30 percent efficiency when the workload crosses racks or uses the wrong interface. The platform review should therefore ask for a scaling curve, not only a requested GPU total.
 
 ```mermaid
 graph TD
@@ -79,7 +63,8 @@ graph TD
     end
 ```
 
-**Data Parallelism** (most common for models that fit in one GPU's memory):
+Data parallelism remains the operational baseline because its Kubernetes shape is understandable: schedule identical workers, give each worker the same image and checkpoint storage, set rank and world-size metadata, and ensure every rank can reach every other rank. The hard part is that the synchronization is collective, not point-to-point in the application sense. A slow or disconnected rank does not just hurt its own progress; it blocks the entire group until the collective operation completes or times out.
+
 ```mermaid
 graph LR
     subgraph Data_Parallelism [Data Parallelism]
@@ -88,9 +73,9 @@ graph LR
         G1[GPU 1: Full model + Batch shard 1]
         G2[GPU 2: Full model + Batch shard 2]
         G3[GPU 3: Full model + Batch shard 3]
-        
+
         AR((All-Reduce<br>gradients<br>after each<br>step))
-        
+
         G0 --> AR
         G1 --> AR
         G2 --> AR
@@ -98,7 +83,8 @@ graph LR
     end
 ```
 
-**Tensor Parallelism** (for layers too large for one GPU):
+Tensor parallelism is used when a layer is too large or too expensive for one GPU to process alone. Instead of each worker holding a full independent copy of the layer, the layer is partitioned across GPUs, and intermediate results must be exchanged during the computation. This makes topology more important because a tensor-parallel group usually wants the fastest local links available, such as NVLink within a node, before crossing an inter-node fabric.
+
 ```mermaid
 graph LR
     subgraph Tensor_Parallelism [Tensor Parallelism]
@@ -106,7 +92,8 @@ graph LR
     end
 ```
 
-**Pipeline Parallelism** (for models with many layers):
+Pipeline parallelism splits the model by layers and sends micro-batches through the stages. It reduces per-GPU memory pressure, but it introduces scheduling bubbles and dependencies between adjacent stages. The platform impact is that failures, stragglers, and uneven placement now affect not only gradient synchronization but also the flow of micro-batches through the pipeline.
+
 ```mermaid
 graph LR
     subgraph Pipeline_Parallelism [Pipeline Parallelism]
@@ -116,15 +103,13 @@ graph LR
     end
 ```
 
-In practice, large training runs use **3D parallelism**: data parallel across nodes, tensor parallel within a node (NVLink), and pipeline parallel across node groups.
+Large production runs often combine the three approaches into 3D parallelism: data parallel groups across many nodes, tensor parallel groups inside fast local GPU islands, and pipeline stages across groups of layers. Kubernetes does not understand this structure automatically, so the platform must expose enough topology information and scheduling control for the training launcher to create the intended rank layout. When the rank layout and physical layout disagree, the framework can still run, but the job pays for every accidental cross-rack hop and every slow collective path.
 
-### The Communication Bottleneck
+Think of rank layout as the seating chart for the training job. Tensor-parallel ranks should sit close together because they talk frequently during layer computation, pipeline neighbors should have predictable links because micro-batches flow between them, and data-parallel groups need enough bandwidth for gradient synchronization. If the launcher assigns these roles without seeing the physical topology, it may put the most chatty ranks on the most distant links. Kubernetes labels, node pools, and placement policies are how the platform translates physical topology into something the launcher can safely consume.
 
-> **Stop and think**: How much bandwidth is required to synchronize 140 GB of gradients across a cluster every second?
+> **Stop and think**: How much bandwidth is required to synchronize 140 GB of gradients across a cluster every second, and what happens if the fabric provides only a small fraction of that?
 
-Here is the key insight: **distributed training is a networking problem disguised as a compute problem**.
-
-During data-parallel training, every GPU must synchronize its gradients with every other GPU after each training step. For a model with 70 billion parameters in BF16:
+For data parallel training, every rank computes gradients and then participates in an all-reduce so the model copies stay consistent. For a 70 billion parameter model using BF16 gradients, a single gradient tensor can be about 140 GB before accounting for optimizer state or sharding. Ring all-reduce moves roughly twice that volume across the group, so a target of one training step per second implies hundreds of gigabytes per second of bidirectional fabric capacity at the cluster level.
 
 ```
 Gradient size per step: 70 × 10^9 × 2 bytes = 140 GB
@@ -133,15 +118,13 @@ Training steps per second target: 1 step/s
 Required network bandwidth: 280 GB/s bidirectional across the cluster
 ```
 
-This is why standard Kubernetes networking (typically 10-25 Gbps) is completely inadequate for distributed training. You need specialized high-bandwidth, low-latency networks.
+This is the reason distributed training is a networking problem disguised as a compute problem. Standard pod networking is excellent for service traffic, DNS, metrics, API calls, and many batch jobs, but a 10 to 25 Gbps path is not remotely comparable to the needs of large all-reduce operations. The platform must provide a separate data path with the right hardware, kernel modules, device plugins, pod annotations, and framework environment variables, then verify that the training job actually uses that path.
 
----
+The same calculation also explains why small smoke tests can be misleading. A two-rank MNIST job may complete over ordinary sockets because its gradients are tiny, while a larger language-model job can become unusable on the same path. That does not make the smoke test worthless; it proves the operator, image, rendezvous, and basic training script can work. It simply cannot prove that the production path is fast enough unless the test also exercises realistic message sizes, rank counts, and the intended high-speed fabric.
 
-## High-Speed Networking: InfiniBand and RoCE
+## High-Speed Networking, RDMA, and NCCL
 
-### InfiniBand
-
-InfiniBand (IB) is a specialized network fabric designed for high-performance computing. It operates entirely outside the TCP/IP stack:
+InfiniBand and RoCE exist because ordinary TCP/IP networking spends too much time copying data, interrupting CPUs, and traversing kernel paths for tightly coupled compute. InfiniBand is a specialized fabric with native RDMA semantics, while RoCE carries RDMA over Ethernet and depends on a carefully configured lossless Ethernet environment. The practical distinction for a Kubernetes platform team is that InfiniBand often gives the cleanest high-performance path, while RoCE can fit existing Ethernet operations but requires switch-level PFC and ECN discipline.
 
 | Property | InfiniBand HDR | InfiniBand NDR | Ethernet (25GbE) |
 |----------|---------------|----------------|-------------------|
@@ -152,7 +135,7 @@ InfiniBand (IB) is a specialized network fabric designed for high-performance co
 | CPU overhead | Near zero | Near zero | Significant |
 | Cost | $$$$ | $$$$$ | $ |
 
-InfiniBand's killer feature is **RDMA (Remote Direct Memory Access)**: one machine can read from or write to another machine's memory without involving either machine's CPU or operating system. The network card (HCA) handles the entire transfer in hardware.
+RDMA, or Remote Direct Memory Access, lets one machine read from or write to another machine's memory without sending the payload through the remote CPU and kernel in the normal way. That matters because gradient synchronization is not a rare control-plane event; it is on the critical path of every training step. Removing CPU involvement reduces jitter and frees CPU cores for data loading, preprocessing, logging, and the framework runtime.
 
 ```mermaid
 graph TD
@@ -172,9 +155,7 @@ graph TD
     end
 ```
 
-### RoCE (RDMA over Converged Ethernet)
-
-RoCE brings RDMA to standard Ethernet networks. It is cheaper than InfiniBand but requires lossless Ethernet (PFC/ECN configuration):
+RoCE keeps the familiar Ethernet physical and operational model but places RDMA semantics above UDP/IP. That flexibility is valuable in environments standardized on Ethernet, yet it also means the fabric must avoid packet loss in ways normal application teams rarely think about. If priority flow control, congestion notification, VLAN design, or switch buffers are wrong, the Kubernetes objects may be perfect while NCCL still stalls, retries, or falls back to a slower transport.
 
 ```mermaid
 graph TD
@@ -186,9 +167,7 @@ graph TD
     end
 ```
 
-### GPUDirect RDMA
-
-The ultimate optimization: GPUDirect RDMA allows a network card to read/write directly to GPU memory, bypassing both system memory and the CPU entirely:
+GPUDirect RDMA removes another copy from the path by allowing the network adapter to read and write GPU memory directly. Without it, data moves from GPU memory to system RAM and then to the NIC, with the reverse path on the receiving side. With it, the NIC and GPU exchange data over PCIe without staging in system memory, which is especially important when all-reduce volume is large enough that extra copies become visible in every step.
 
 ```mermaid
 graph TD
@@ -199,7 +178,7 @@ graph TD
         W_NIC2 -->|PCIe| W_RAM2[System RAM]
         W_RAM2 -->|PCIe| W_GPU2[GPU Memory]
     end
-    
+
     subgraph With_GPUDirect_RDMA [With GPUDirect RDMA: 2 PCIe hops, 0 memory copies, 0 CPU involvement]
         D_GPU[GPU Memory] -->|PCIe| D_NIC1[NIC]
         D_NIC1 -.->|Network| D_NIC2[NIC]
@@ -207,13 +186,9 @@ graph TD
     end
 ```
 
-GPUDirect RDMA requires:
-1. The GPU and NIC on the same PCIe root complex (ideally same PCIe switch)
-2. NVIDIA peer memory kernel module (`nvidia-peermem`)
-3. A supported NIC (Mellanox/NVIDIA ConnectX-6 or newer)
-4. The `nv_peer_mem` or `nvidia-peermem` driver loaded
+The physical preconditions are strict enough that you should treat GPUDirect RDMA as an integration test, not a single checkbox. The GPU and NIC should be under an appropriate PCIe topology, the peer memory module must be loaded, and the NIC must support the path. In Kubernetes, the NVIDIA GPU Operator can manage the driver side when the host and OFED assumptions match your cluster design.
 
-In Kubernetes, the GPU Operator can manage the peermem driver:
+This is where platform and hardware boundaries meet. A Kubernetes manifest can request a GPU and annotate a secondary network, but it cannot by itself move a NIC to a better PCIe root complex or repair a host driver mismatch. When performance is unexpectedly low, include host-level topology commands, device plugin inventory, and driver module state in the diagnostic path. The most useful platform abstraction is not one that hides these details forever; it is one that makes the healthy hardware path repeatable and makes deviations visible early.
 
 ```yaml
 apiVersion: nvidia.com/v1
@@ -228,37 +203,29 @@ spec:
       useHostMofed: true   # Use host-installed Mellanox OFED drivers
 ```
 
----
+NCCL is the library that most GPU training frameworks use for collective communication. PyTorch DDP, Horovod, and DeepSpeed may expose different launchers and APIs, but when the job needs all-reduce, all-gather, broadcast, or reduce-scatter across NVIDIA GPUs, NCCL is usually in the hot path. That makes NCCL logs one of the most important diagnostic surfaces in the entire training stack.
 
-## NCCL: The GPU Communication Library
+> **Stop and think**: If NCCL can automatically select communication paths, why do platform teams still set variables such as `NCCL_SOCKET_IFNAME` and `NCCL_IB_HCA`?
 
-### What NCCL Does
-
-NCCL (NVIDIA Collective Communications Library, pronounced "nickel") is the library that implements collective operations (all-reduce, all-gather, broadcast, reduce-scatter) across GPUs. Every distributed training framework (PyTorch DDP, Horovod, DeepSpeed) uses NCCL under the hood.
-
-> **Stop and think**: If NCCL automatically selects the best path, why do we need to set environment variables like `NCCL_SOCKET_IFNAME`?
-
-NCCL automatically selects the best communication path:
+NCCL probes GPU, PCIe, NVLink, NIC, and network topology during initialization, then chooses paths for each peer relationship. Auto-selection is useful, but it cannot infer your intent when Kubernetes presents multiple interfaces, when a secondary Multus interface has the high-speed address, or when a container can see a device but lacks the driver path needed for RDMA. Explicit environment variables document the expected path and make misconfiguration easier to catch in logs.
 
 ```mermaid
 graph TD
     subgraph NCCL [NCCL]
         direction TB
         AutoSelect[Automatically selects best path per GPU pair]
-        
+
         NVLink[NVLink: intra-node, fastest]
         PCIe[PCIe: intra-node, slower]
         Network[Network: inter-node, IB/RoCE]
-        
+
         AutoSelect --> NVLink
         AutoSelect --> PCIe
         AutoSelect --> Network
     end
 ```
 
-### Critical NCCL Environment Variables
-
-These environment variables dramatically affect distributed training performance:
+These environment variables dramatically affect distributed training performance, and they should be reviewed as part of any production job template. A good default template separates bootstrapping traffic from the high-speed data path, enables useful initialization logging, and avoids over-tuning algorithms before you have a measured baseline. Treat these settings as an observability contract: they should make the intended fabric visible in the job logs.
 
 ```bash
 # Network selection
@@ -282,9 +249,9 @@ NCCL_DEBUG=INFO                # Logging: WARN, INFO, TRACE
 NCCL_DEBUG_SUBSYS=INIT,NET     # Subsystem-specific debugging
 ```
 
-### NCCL Topology Detection
+The most useful NCCL signal is not that the process started; it is which transport NCCL reports after topology detection. `NET/IB/0/GDRDMA` indicates an InfiniBand or RoCE-backed path with GPUDirect RDMA, while `NET/Socket` means the job is using a TCP socket path. A socket path may still complete for a small demo, but on a real multi-node training job it can turn expensive GPUs into idle passengers.
 
-NCCL probes the system topology at initialization and logs its findings. Look for these lines in your training job logs:
+Build your runbook around that distinction. First, confirm that every rank logs the same world size and reaches `Init COMPLETE`; mismatched rank counts usually point to rendezvous or launcher issues. Second, inspect the transport string and interface selection; a socket fallback points toward Multus, RDMA device exposure, or NCCL environment variables. Third, compare timestamps across ranks; a single slow rank often reveals CPU starvation, a degraded link, an unhealthy GPU, or a placement problem that the aggregate job status hides.
 
 ```
 NCCL INFO Trees [0] 1/-1/-1->0->-1 [1] -1/-1/-1->0->1
@@ -294,25 +261,17 @@ NCCL INFO Using 12 channels per connection
 NCCL INFO comm 0x7f8b00003c00 rank 0 nranks 16 - Init COMPLETE
 ```
 
-The key line is `NET/IB/0/GDRDMA` — this confirms NCCL is using InfiniBand with GPUDirect RDMA, the optimal path.
+Hypothetical scenario: a four-node training job runs at about half of the expected throughput even though every pod has a GPU and the code is unchanged from the single-node benchmark. The first investigation step is not to tune the model; it is to inspect NCCL initialization and confirm whether the job used the high-speed fabric. If the logs show `NET/Socket`, you then verify the pod interfaces, the `NCCL_SOCKET_IFNAME` value, the RDMA device exposure, and the switch-side RoCE configuration before changing framework-level parameters.
 
-If you see `NET/Socket` instead, NCCL has fallen back to TCP, and your training will be 10-50x slower for communication.
+If the logs show the expected transport, keep moving down the stack instead of declaring victory. Check whether all ranks use comparable channel counts, whether one node reports repeated retries or delayed initialization, and whether GPU utilization drops in a synchronized pattern after each backward pass. Then correlate those observations with node placement and fabric counters. Distributed training diagnosis works best as a narrowing exercise: prove the transport, prove the topology, prove shared memory and data loading, then evaluate framework-level tuning.
 
----
+## Multi-Network Pods with Multus
 
-## Multus CNI: Multi-Network Pods
+Kubernetes gives each pod a primary network interface, commonly `eth0`, that belongs to the cluster CNI. That interface is the right default for API calls, DNS, Services, metrics, and normal application traffic, but it is usually not the right interface for hundreds of gigabytes of gradient traffic. Distributed training pods often need a second interface connected to InfiniBand or RoCE, and Multus provides the Kubernetes mechanism for attaching that secondary network.
 
-### The Problem
+> **Pause and predict**: If your pod has both `eth0` and `net1`, what evidence would convince you that NCCL used the intended interface for training traffic?
 
-> **Pause and predict**: If your Pod has both `eth0` and `net1` interfaces, how does NCCL know which one to use for distributed training traffic?
-
-Kubernetes gives each Pod a single network interface (typically `eth0`) on the cluster's primary CNI network. This network is designed for general traffic — Service discovery, API calls, metrics scraping — not for 400 Gbps GPU-to-GPU data transfers.
-
-For distributed training, Pods need a **second network interface** connected to the high-speed InfiniBand or RoCE fabric.
-
-### Multus Architecture
-
-Multus CNI is a "meta-plugin" that chains multiple CNI plugins, giving Pods multiple network interfaces:
+Multus is a meta-plugin rather than a replacement for the primary CNI. It lets the normal pod network continue doing normal Kubernetes work while adding one or more secondary interfaces requested through annotations and `NetworkAttachmentDefinition` objects. This split is operationally important because it keeps service discovery and control traffic stable while giving training jobs a fabric designed for low latency and high bandwidth.
 
 ```mermaid
 graph TD
@@ -321,15 +280,15 @@ graph TD
         eth0[eth0<br>primary<br>Calico/Cilium<br>10.0.1.5]
         net1[net1<br>secondary<br>SRIOV/macvlan/host-device<br>192.168.1.5]
     end
-    
+
     ClusterNet[Cluster Network<br>10GbE]
     HighSpeedNet[InfiniBand / RoCE<br>200 Gbps]
-    
+
     eth0 --> ClusterNet
     net1 --> HighSpeedNet
 ```
 
-### Installing Multus
+Installing Multus is straightforward, but production readiness depends on the secondary plugin and device model you choose. A macvlan attachment can be enough for a simple RoCE or Ethernet lab, SR-IOV provides stronger hardware-level isolation and direct virtual functions, and host-device can hand a specific interface to a pod when you want minimal abstraction. The right answer depends on whether you need isolation, IP address management, RDMA device visibility, and compatibility with your fabric operations model.
 
 ```bash
 # Install Multus CNI (thick plugin — recommended)
@@ -339,11 +298,7 @@ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-c
 kubectl get pods -n kube-system -l app=multus
 ```
 
-### Network Attachment Definitions
-
-Define secondary networks using `NetworkAttachmentDefinition` CRDs:
-
-**macvlan (for RoCE/Ethernet high-speed networks):**
+The `NetworkAttachmentDefinition` is the contract between a pod annotation and a concrete secondary network. For RoCE over Ethernet in a lab, macvlan is easy to reason about because it creates an additional interface backed by a host NIC and assigns an address from a defined range. In a real cluster, you would coordinate the `master` interface, VLAN, IPAM range, and switch configuration with the network team before letting training teams depend on it.
 
 ```yaml
 apiVersion: k8s.cni.cncf.io/v1
@@ -370,7 +325,7 @@ spec:
     }
 ```
 
-**SR-IOV (for InfiniBand with hardware-level network isolation):**
+SR-IOV is a stronger choice when hardware isolation and direct device access matter. It requires more platform setup than macvlan, including device plugin configuration and virtual function management, but it better matches environments where performance isolation and RDMA behavior are first-class requirements. For InfiniBand, the details of partition keys, RDMA isolation, and IPAM should be treated as part of the cluster design rather than left to individual training job authors.
 
 ```yaml
 apiVersion: k8s.cni.cncf.io/v1
@@ -394,7 +349,7 @@ spec:
     }
 ```
 
-**host-device (directly attach host NIC to Pod):**
+The host-device style is the most direct of the examples because a specific host device is attached into the pod. It can be useful for controlled environments and diagnostics, but it reduces scheduling flexibility because the pod now depends on a particular local device name. If you use this model, node labels and admission controls should prevent jobs from landing on nodes that cannot satisfy the device assumption.
 
 ```yaml
 apiVersion: k8s.cni.cncf.io/v1
@@ -415,9 +370,7 @@ spec:
     }
 ```
 
-### Using Secondary Networks in Pods
-
-Annotate Pods to attach secondary networks:
+Once the secondary network exists, the training pod must request it and the framework must be told how to use it. The annotation attaches the network, while variables such as `NCCL_SOCKET_IFNAME` steer NCCL toward the intended interface. This is a common place for partial success: the pod can have `net1`, and the job can still run over `eth0` if the framework configuration does not match the pod network.
 
 ```yaml
 apiVersion: v1
@@ -438,7 +391,7 @@ spec:
           value: "0"
 ```
 
-Inside the Pod, you will see both interfaces:
+Before running a large job, verify the interface from inside the pod and compare the address with the expected IPAM range. This simple check catches wrong namespace, wrong annotation, missing CNI daemonset, and unexpected interface naming before you spend time debugging framework logs. It does not prove RDMA or GPUDirect are working, but it proves Kubernetes gave the pod the network surface the framework is supposed to use.
 
 ```bash
 # ip addr show
@@ -449,13 +402,15 @@ Inside the Pod, you will see both interfaces:
    inet 192.168.10.105/24
 ```
 
----
+Before running this in a shared cluster, decide who owns each layer of the failure domain. The platform team usually owns Multus, device plugins, node labels, and base job templates; the network team owns switch behavior and fabric health; the ML team owns framework code, batch sizing, checkpoint semantics, and model parallelism choices. Distributed training becomes fragile when those ownership boundaries are implicit because every outage looks like "Kubernetes is slow" until someone reconstructs the whole path.
 
-## Kubeflow Training Operators
+A useful preflight test makes those ownership boundaries concrete. It should launch a small pod with the same annotation as the real job, list interfaces, check RDMA device files, run a fabric-specific bandwidth probe when available, and emit a clear pass or fail result before the expensive reservation begins. That preflight does not replace full training validation, but it catches configuration drift while the fix still belongs to the platform team. Once the large job starts, every missed preflight check becomes more expensive to correct.
 
-### Overview
+You should also decide how secondary networks are requested by tenants. Letting every team write raw `NetworkAttachmentDefinition` JSON gives flexibility but increases the chance of overlapping IP ranges, wrong master interfaces, or inconsistent isolation settings. A safer platform offers a small set of approved attachment names and hides the fabric details behind templates or admission policies. The ML team still chooses the training profile, but the platform owns the low-level network contract.
 
-The Kubeflow Training Operator manages distributed training jobs on Kubernetes. It provides CRDs for:
+## Training Operators, Placement, and Failure Recovery
+
+Kubeflow Training Operator turns distributed training from a hand-managed set of pods into declarative job resources. It does not remove the need to understand PyTorch, MPI, NCCL, or networking, but it gives Kubernetes a controller that can create the right launcher, master, and worker pods for each framework style. That controller becomes the place where restart policy, replica counts, clean-up behavior, and framework-specific launch conventions are expressed consistently.
 
 | CRD | Framework | Communication |
 |-----|-----------|---------------|
@@ -465,7 +420,7 @@ The Kubeflow Training Operator manages distributed training jobs on Kubernetes. 
 | `PaddleJob` | PaddlePaddle | NCCL + Gloo |
 | `JAXJob` | JAX/XLA | gRPC |
 
-### Installing the Training Operator
+The CRD choice should follow the launcher model, not only the library imported by the training script. A native PyTorch DDP job usually fits `PyTorchJob` because `torchrun` and rendezvous manage the worker group. A Horovod workload, or a DeepSpeed workload built around MPI launch semantics, often fits `MPIJob` because it expects a launcher pod that coordinates worker processes with MPI conventions.
 
 ```bash
 # Install via Helm
@@ -478,9 +433,9 @@ helm install training-operator kubeflow/training-operator \
   --version v1.8.1
 ```
 
-### PyTorchJob Example
+The PyTorchJob below preserves the core production pattern from the original module: a master and worker replica set, `torchrun`, NCCL logging, a secondary Multus network annotation, a shared checkpoint volume, GPU limits, and a memory-backed `/dev/shm`. Notice that the YAML does more than allocate GPUs. It encodes rendezvous, resource isolation, communication intent, and recovery assumptions in one object.
 
-A complete multi-node PyTorch DDP training job:
+Review this kind of manifest from the bottom up as well as from the top down. Volumes tell you whether the job can checkpoint and whether shared memory is large enough; resources tell you whether the pod can get scheduled and whether CPU starvation is likely; environment variables tell you whether NCCL will expose useful evidence; annotations tell you whether the pod requests the right network. A manifest that looks long is not necessarily overcomplicated if each field protects a real failure mode.
 
 ```yaml
 apiVersion: kubeflow.org/v1
@@ -599,7 +554,9 @@ spec:
                 sizeLimit: 64Gi
 ```
 
-### MPIJob Example (for Horovod/DeepSpeed)
+The MPIJob example keeps the launcher-and-worker model used by Horovod and some DeepSpeed deployments. Here the launcher has modest CPU and memory needs because it coordinates the worker processes, while the workers hold GPUs and large memory allocations. The important infrastructure lesson is that the launcher must pass the same NCCL and network environment into the distributed processes, or the worker pods may have the right devices while the launched ranks inherit the wrong communication defaults.
+
+MPI-style jobs also make log collection more important because useful evidence may be split between launcher output, worker container logs, and framework logs written inside the training process. If your platform exposes only the launcher log in a dashboard, operators may miss the rank that actually failed. Standardize labels and log queries for all pods owned by a training job, and teach teams to compare rank output rather than reading a single happy path. Collective failures are group failures, so observability has to be group-aware.
 
 ```yaml
 apiVersion: kubeflow.org/v1
@@ -668,17 +625,7 @@ spec:
                 sizeLimit: 64Gi
 ```
 
----
-
-## Topology Spread and Pod Placement
-
-### The Problem
-
-When training across multiple nodes, you want pods placed on nodes that are physically close in the network. In a data center with multiple racks and spine-leaf networking, two nodes on the same leaf switch have ~2 μs latency, while nodes on different spine switches may have ~10 μs.
-
-### Topology Spread Constraints
-
-Use Kubernetes topology spread constraints to keep training workers close:
+Placement is the next infrastructure layer because a valid distributed job can still be inefficient if the scheduler spreads ranks across distant failure domains or congested links. Kubernetes topology spread constraints are not a complete topology-aware training scheduler, but they give you a standard way to control skew across zones, racks, or hostnames when the nodes are labeled accurately. For Kubernetes 1.35 clusters, combine these constraints with node labels that reflect the actual GPU and network topology your training framework assumes.
 
 ```yaml
 spec:
@@ -697,9 +644,9 @@ spec:
           training.kubeflow.org/job-name: llama-finetune
 ```
 
-### Cloud Provider Placement Groups
+Cloud placement features serve a similar purpose outside Kubernetes by asking the infrastructure provider to keep instances physically close. They do not replace Kubernetes scheduling, because Kubernetes still needs to place pods on the nodes you received, but they reduce the chance that your node pool spans a topology the all-reduce cannot tolerate. The safe pattern is to align provider placement groups, node labels, and Training Operator templates so every layer expresses the same proximity assumption.
 
-For cloud-based training clusters:
+Placement policy should be reviewed whenever a job changes scale. A two-node run may tolerate placement across a broad node pool, while a larger run may require compact placement, reserved capacity, or a dedicated GPU island. The scheduler can only choose among available nodes, so capacity planning and scheduling policy are connected decisions. If you promise a training team a low-latency topology but admit unrelated workloads into the same node pool, the eventual contention is a platform design failure, not just a noisy neighbor problem.
 
 ```bash
 # GCP: Compact placement policy
@@ -712,15 +659,9 @@ aws ec2 create-placement-group \
   --strategy cluster
 ```
 
----
+Failure recovery is not optional for multi-day training because the probability of some component failing rises with every GPU-hour. A one-node notebook can treat a crash as an inconvenience; a distributed run with many nodes must assume recoverable GPU errors, device resets, NIC problems, OOM kills, kernel failures, and storage issues will happen during the schedule. The design question is whether the job loses minutes, hours, or days when that happens.
 
-## Node Failure Handling
-
-### The Reality
-
-> **Pause and predict**: If a node fails in a 128-node cluster, does the entire job fail, or can the remaining 127 nodes continue training?
-
-In a cluster with 128 GPU nodes running a multi-day training job, node failures are not a possibility — they are a certainty. Common failure modes:
+> **Pause and predict**: If one node fails in a 128-node training group, can the remaining workers keep training immediately, or do they need a new rendezvous and checkpoint decision?
 
 | Failure | Frequency (per 1000 GPU-hours) | Impact |
 |---------|-------------------------------|--------|
@@ -731,9 +672,9 @@ In a cluster with 128 GPU nodes running a multi-day training job, node failures 
 | Node kernel panic | 0.1-0.3 | Node replacement |
 | Disk failures | 0.05-0.1 | Checkpoint loss if local |
 
-### Checkpointing Strategy
+Checkpointing is the bridge between failure detection and useful recovery. The checkpoint must include enough model, optimizer, epoch, step, and random-number state to resume consistently, and it must land on storage that survives the failed node. Rank zero often writes the checkpoint, but the platform must still provide shared storage semantics, adequate bandwidth, retention policy, and enough observability for teams to know when the last successful checkpoint happened.
 
-Checkpointing saves model state periodically so training can resume after failures:
+The checkpoint interval is an engineering tradeoff rather than a moral rule. Frequent checkpoints reduce lost work after a failure, but they can steal bandwidth from data loading and pause the training loop if writes are synchronous. Infrequent checkpoints improve steady-state throughput but increase replay time after a crash. A mature platform helps teams measure checkpoint duration, retained versions, storage saturation, and time since last successful checkpoint so they can choose the interval from evidence.
 
 ```python
 # In your training script (PyTorch example)
@@ -760,9 +701,7 @@ for step, batch in enumerate(dataloader):
         save_checkpoint(model, optimizer, epoch, step, "/checkpoints")
 ```
 
-### Elastic Training
-
-PyTorch Elastic (torchrun) supports **elastic training** — workers can join or leave during training:
+Elastic training changes the recovery model by allowing a job to reform with a different number of workers inside configured bounds. This is powerful, but it is not magic: the training script must tolerate changing world size, the data sampler must avoid duplicate or skipped work, and checkpointing must remain consistent. Use elasticity when reduced throughput is better than losing the reservation, and test the exact failure paths before presenting it as a production guarantee.
 
 ```yaml
 apiVersion: kubeflow.org/v1
@@ -797,122 +736,145 @@ spec:
                   nvidia.com/gpu: 4
 ```
 
-With elastic training, if a node fails:
-1. Remaining workers detect the failure via rendezvous timeout
-2. Workers re-form a new group (excluding the failed node)
-3. Training resumes from the last checkpoint with fewer GPUs
-4. When the node recovers, it can rejoin the group
+When a node fails under an elastic policy, surviving workers detect the broken rendezvous, form a new worker group within the allowed replica range, reload from the most recent usable checkpoint, and continue with fewer GPUs until capacity returns. That recovery path is only as good as the checkpoint cadence and the storage layer behind it. A checkpoint every 500 steps may be reasonable for one workload and wasteful for another, so choose the interval by balancing write cost against the amount of retraining you can afford after a failure.
 
----
+Elastic training also changes how you report progress to users. If the job continues with fewer GPUs, wall-clock estimates, learning-rate schedules, and input sampling assumptions may change. The platform should surface that the job is degraded rather than simply healthy, because a run that survives at half throughput may still miss its delivery window. Treat elasticity as graceful degradation with explicit signals, not as a way to hide infrastructure failures from the training team.
+
+## Patterns & Anti-Patterns
+
+The strongest distributed training platforms make the intended data path explicit and testable. They do not ask every ML team to rediscover the same CNI annotations, NCCL variables, shared memory mounts, and checkpoint volumes from scratch. Instead, they ship versioned job templates, validation checks, and diagnostic runbooks that make the healthy path boring and the unhealthy path obvious.
+
+Those templates should be opinionated without becoming mysterious. Include comments or documentation explaining why `/dev/shm` is mounted, why `NCCL_DEBUG=INFO` is enabled, why the secondary interface is named in the environment, and why checkpoint storage is mandatory for long jobs. Otherwise teams will remove fields that look incidental during cleanup, and the platform will rediscover the same failure later. Good defaults are valuable because they carry hard-won operational knowledge into the next job.
+
+| Pattern | When to Use It | Why It Works | Scaling Considerations |
+|---------|----------------|--------------|------------------------|
+| Versioned training job templates | Multiple teams run PyTorch, MPI, or DeepSpeed jobs on the same clusters | Templates encode `/dev/shm`, NCCL logging, GPU limits, checkpoint mounts, and network annotations consistently | Keep separate templates for native PyTorch and MPI launchers so environment propagation stays correct |
+| Secondary fabric with explicit verification | Jobs need inter-node GPU communication beyond ordinary pod networking | Multus exposes the fabric and NCCL logs prove whether the job used it | Add conformance tests that check pod interfaces, RDMA device visibility, and NCCL transport before large reservations |
+| Topology-aware scheduling contracts | Racks, zones, placement groups, or GPU islands affect performance | Labels and spread constraints align Kubernetes placement with physical network assumptions | Keep labels maintained by automation, not manual notes, or scheduler decisions will drift from reality |
+| Checkpoint-first recovery design | Training runs last long enough that node failures are expected | Shared checkpoints turn crashes into bounded replay instead of full restarts | Measure checkpoint write time and storage impact before lowering checkpoint intervals aggressively |
+
+Anti-patterns often begin as reasonable shortcuts during a demo. A small two-pod job can appear to work over TCP, with a tiny `/dev/shm`, without topology labels, and without checkpointing, because the scale is too small to reveal the cost. The danger is promoting that demo into a shared template where every future team inherits the hidden bottleneck.
+
+The antidote is to separate demonstration templates from production templates. A demo should state which guarantees it does not provide, such as RDMA validation, realistic gradient sizes, failure recovery, or provider placement. A production template should require those guarantees or fail early when the cluster cannot provide them. This distinction helps learners experiment safely while preventing a convenient lab artifact from becoming the default for expensive workloads.
+
+| Anti-Pattern | Why Teams Fall Into It | Better Alternative |
+|--------------|------------------------|--------------------|
+| Treating pod `Running` as proof of training health | Kubernetes reports scheduling success, not collective communication quality | Gate production runs on NCCL transport logs, rank count, GPU utilization, and checkpoint creation |
+| Using the same network for control traffic and gradient traffic | It simplifies YAML and avoids network-team coordination | Attach a secondary fabric with Multus and document which interface each framework should use |
+| Tuning NCCL algorithms before checking topology | Algorithm flags feel actionable when throughput is low | First verify `NET/IB` or `GDRDMA`, interface names, RDMA drivers, and placement; then benchmark algorithm choices |
+| Storing checkpoints on node-local disks | Local storage is fast and easy during early tests | Use shared or replicated storage with retention policy so node failure does not erase recovery state |
+
+## Decision Framework
+
+Use this framework when you are asked to design or review a distributed training platform change. Start with the model and framework because they determine the communication pattern, then move outward to network, scheduling, and recovery. If you start with a Kubernetes object first, it is easy to build something that is syntactically correct but mismatched to the training algorithm.
+
+```mermaid
+flowchart TD
+    A[Model and training goal] --> B{Fits on one GPU?}
+    B -->|Yes, but too slow| C[Start with data parallelism]
+    B -->|No| D[Add tensor or pipeline parallelism]
+    C --> E{Inter-node training?}
+    D --> E
+    E -->|No| F[Optimize intra-node GPU topology and /dev/shm]
+    E -->|Yes| G{High-speed fabric available?}
+    G -->|InfiniBand or RoCE| H[Expose fabric through Multus and RDMA devices]
+    G -->|Only ordinary Ethernet| I[Reduce scope, shard differently, or expect poor scaling]
+    H --> J{Launcher model?}
+    J -->|torchrun native| K[Use PyTorchJob]
+    J -->|MPI or Horovod| L[Use MPIJob]
+    K --> M[Verify NCCL transport, placement, checkpoints]
+    L --> M
+    M --> N{Failure tolerance needed?}
+    N -->|Yes| O[Set checkpoint cadence, restart budget, elastic policy]
+    N -->|No short run| P[Document accepted restart risk]
+```
+
+| Decision | Prefer This | Avoid This | Reasoning |
+|----------|-------------|------------|-----------|
+| Framework CRD | `PyTorchJob` for native `torchrun`; `MPIJob` for MPI launchers | Choosing by import statements alone | The launcher controls rank creation and environment propagation |
+| Network exposure | Multus plus RDMA-aware device setup | Hoping the primary CNI is fast enough | Ordinary pod networking is rarely sized for all-reduce traffic |
+| NCCL configuration | Minimal explicit variables plus `NCCL_DEBUG=INFO` | Large copied flag sets without measurement | You need enough control to verify the path, then benchmark further changes |
+| Placement | Provider placement plus Kubernetes topology labels | Random placement across zones or racks | Collective operations amplify distance and straggler effects |
+| Recovery | Shared checkpoints and tested restart behavior | Relying only on pod restart policy | Restarting a process is not the same as resuming useful training |
+
+Which approach would you choose here and why: a short two-node fine-tuning job on a lab cluster with no RDMA, or a week-long pretraining run across many GPU nodes with a reserved RoCE fabric? The lab job may justify a simpler PyTorchJob and explicit warning that scaling results are not representative, while the long run needs fabric validation, placement contracts, checkpoint storage, restart budgets, and a preflight NCCL test. The framework is the same family, but the operational design is completely different.
+
+For a design review, ask the team to bring four artifacts: the expected parallelism layout, the Kubernetes job template, the network and placement assumptions, and the recovery plan. If one artifact is missing, the review is not ready because the remaining pieces cannot be evaluated in isolation. A beautiful PyTorchJob without a fabric plan is a scheduling demo; a fabric plan without checkpoint recovery is a risky reservation; a recovery plan without rank and topology understanding may resume into the same bottleneck.
 
 ## Did You Know?
 
-1. **Meta's Grand Teton cluster for Llama 3 training used 16,384 H100 GPUs** connected via 400 Gbps RoCE fabric. During the 54-day training run, they experienced 466 job interruptions — roughly 8.6 per day. Their checkpoint-and-resume automation was so good that these interruptions cost only 3% of total GPU time.
+1. **Meta reported that Llama 3 training used two clusters of 24,576 GPUs each**, with RoCE-based networking and extensive automation for detecting, diagnosing, and recovering from interruptions. The lesson for platform teams is that reliability engineering is part of training performance, not a separate afterthought.
 
-2. **The `/dev/shm` mount is one of the most overlooked performance bottlenecks** in distributed training on Kubernetes. NCCL and PyTorch DataLoader use shared memory extensively. Docker's default `/dev/shm` size is 64MB. A multi-GPU training job can easily need 16-64GB of shared memory. Forgetting to set `emptyDir.medium: Memory` with an adequate `sizeLimit` is one of the most common reasons distributed training silently runs 2-5x slower than expected.
+2. **NCCL supports multiple collective algorithms and protocols**, including ring, tree, and low-latency protocol variants. The best choice depends on message size, topology, GPU count, and fabric behavior, which is why blind flag copying is less reliable than measured baselines.
 
-3. **The term "NCCL" was originally an acronym for "NVIDIA Collective Communications Library"** but the team internally jokes it stands for "Nickel" because every distributed training job is "nickel-and-dimed" by communication overhead. At Meta's scale, a 1% improvement in NCCL efficiency saves millions of dollars per year.
+3. **Container shared memory defaults are often tiny compared with training needs**, and modern multi-GPU jobs may require many GiB of `/dev/shm` for data loading and communication buffers. A job can appear healthy while silently running slower because the fast shared-memory path is unavailable.
 
----
-
-## War Story: The Mysterious 50% Throughput Drop
-
-A team running a 32-GPU (4 nodes x 8 GPUs) training job on RoCE noticed that throughput was exactly half of what they expected based on single-node benchmarks.
-
-The investigation:
-1. **NCCL logs**: showed `NET/Socket` instead of `NET/IB` — NCCL was using TCP, not RDMA
-2. **Root cause**: Multus was correctly attaching the RoCE NIC, but `NCCL_SOCKET_IFNAME` was set to `eth0` instead of `net1`
-3. **Secondary issue**: Even after fixing the interface name, RoCE was slow because the switch did not have PFC (Priority Flow Control) enabled, causing packet drops and retransmissions
-
-The fix:
-1. Set `NCCL_SOCKET_IFNAME=net1` (or the correct secondary interface)
-2. Configured PFC on the ToR switches for the RoCE VLAN
-3. Verified with `NCCL_DEBUG=INFO` that logs showed `NET/IB/0/GDRDMA`
-
-Result: throughput jumped from 50% to 93% of linear scaling.
-
-**Lesson**: Always check NCCL debug output. The difference between TCP fallback and RDMA is not a 10% performance difference — it is a 10x difference.
-
----
+4. **Kubernetes topology spread constraints are scheduler hints over labels, not magic rack awareness**. If node labels do not accurately represent zones, racks, GPU islands, or placement groups, the scheduler will faithfully enforce the wrong map.
 
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
-| Missing `/dev/shm` mount | NCCL and DataLoader OOM or slow | Always mount `emptyDir: {medium: Memory, sizeLimit: 64Gi}` at `/dev/shm` |
-| Wrong `NCCL_SOCKET_IFNAME` | NCCL uses slow primary interface instead of high-speed secondary | Set to the Multus secondary interface name (e.g., `net1`) |
-| No checkpointing | Node failure loses all training progress | Checkpoint every 500-1000 steps to shared storage |
-| TCP fallback without noticing | Training runs 10-50x slower; team blames "Kubernetes overhead" | Always check `NCCL_DEBUG=INFO` output for `NET/IB` vs `NET/Socket` |
-| Pods on different racks | Inter-rack latency kills all-reduce performance | Use topology spread constraints or placement groups |
-| Insufficient `backoffLimit` | Job fails permanently after first transient error | Set `backoffLimit: 3-5` for training jobs |
-| Not setting `hostIPC: true` when needed | Some NCCL/MPI configurations need host IPC namespace | Enable `hostIPC` for MPI jobs that use shared memory transports |
-| Forgetting RDMA device permissions | Pod cannot open IB device — `errno 13` | Use RDMA device plugin or set `securityContext.capabilities.add: ["IPC_LOCK"]` |
+| Mistake | Why It Happens | How to Fix It |
+|---------|----------------|---------------|
+| Missing `/dev/shm` mount | The container starts successfully, so teams forget that NCCL and DataLoader workers need large shared-memory buffers | Mount `emptyDir` with `medium: Memory` and a measured `sizeLimit` such as 8Gi for labs or larger values for production |
+| Wrong `NCCL_SOCKET_IFNAME` | Multus attaches `net1`, but copied framework settings still point at the primary CNI interface | Set the interface to the actual secondary name and verify NCCL logs plus `ip addr show` inside the pod |
+| No checkpointing | Early tests finish quickly, so the template ships without a recovery contract | Save model, optimizer, step, epoch, and RNG state to shared storage at an interval based on acceptable replay cost |
+| TCP fallback without noticing | The job still runs, especially at small scale, so poor throughput is misread as framework overhead | Enable `NCCL_DEBUG=INFO` and check for `NET/IB`, `GDRDMA`, rank count, and channel initialization before scaling |
+| Pods placed across distant topology domains | Kubernetes sees all GPU nodes as equivalent because labels are missing or too generic | Add accurate topology labels, provider placement groups, and `topologySpreadConstraints` that match the training plan |
+| Insufficient restart budget | Teams copy defaults from short jobs where a single failure should fail fast | Set `backoffLimit`, elastic policy, and checkpoint cadence according to expected GPU-hours and failure probability |
+| MPI environment not propagated | The launcher pod has variables, but worker ranks started by MPI do not inherit the same NCCL settings | Pass required variables through `mpirun` with explicit `-x` entries and verify worker logs, not only launcher logs |
+| RDMA devices visible but unusable | Device plugins expose nodes, but drivers, permissions, or peer-memory modules are incomplete | Test RDMA and GPUDirect readiness as a preflight and align GPU Operator, OFED, and security context settings |
 
----
-
-## Quiz: Check Your Understanding
-
-### Question 1
-Your team is training a 70B parameter model on a cluster with 10Gbps Ethernet. The GPU utilization is hovering around 2%. Why is this happening, and why is distributed training fundamentally a networking problem in this scenario?
+## Quiz
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 1: Your team trains a 70B parameter model on ordinary 10 Gbps Ethernet, and GPU utilization stays near idle even though every pod is running. What do you diagnose first, and why?</summary>
 
-In data-parallel training, every GPU computes gradients independently, but then all GPUs must synchronize gradients before the next training step via an all-reduce operation. For a 70B parameter model in BF16, this means exchanging ~280GB of data every single training step across the cluster. If the network is slow, such as a 10Gbps Ethernet link, GPUs spend the vast majority of their time waiting for this gradient synchronization instead of actually computing. With 10 Gbps Ethernet, transferring 280GB takes roughly 224 seconds, whereas the actual compute phase might only take 3 seconds, leading to a dismal 1.3% GPU utilization. The network ultimately determines whether your expensive GPUs are actively computing or sitting idle waiting for data, making distributed training fundamentally a networking challenge.
+Start with the communication path, not with model code, because data-parallel training must synchronize large gradient tensors before each step can complete. A 70B BF16 model can imply about 140 GB of gradients and roughly 280 GB of ring all-reduce traffic per step, so a 10 Gbps path makes the GPUs wait for the network. Check NCCL logs for `NET/Socket` versus `NET/IB` or `GDRDMA`, then confirm pod interfaces and `NCCL_SOCKET_IFNAME`. The issue is not that Kubernetes scheduled the pods incorrectly in the basic sense; it is that the available fabric cannot support the collective workload.
 </details>
-
-### Question 2
-You are setting up a new training cluster with InfiniBand networking. A colleague suggests skipping the GPUDirect RDMA configuration to save setup time, arguing that regular RDMA is fast enough. How do you explain the impact of this decision on the data path and training latency?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 2: A colleague wants to skip GPUDirect RDMA because standard RDMA already sounds fast. How do you evaluate that decision for a multi-node GPU job?</summary>
 
-GPUDirect RDMA is a technology that allows a network card (NIC or HCA) to read from and write to GPU memory directly, bypassing system RAM and the CPU entirely. If you skip GPUDirect RDMA, the data path becomes significantly longer: data must travel from the GPU over PCIe to system RAM, then from system RAM over PCIe to the NIC, involving multiple memory copies and CPU overhead. By using GPUDirect RDMA, the data travels directly from the GPU over PCIe to the NIC, eliminating two PCIe hops, zeroing out memory copies, and removing CPU involvement. This direct path reduces gradient synchronization latency by 30-50%, which is critical for maintaining high GPU utilization and minimizing the communication bottleneck during distributed training.
+Standard RDMA removes much CPU and kernel overhead, but without GPUDirect RDMA the data path still stages GPU data through system memory before reaching the NIC. That adds PCIe hops and memory copies on a path that runs every training step. For small tests the difference may be hidden by other costs, but for large all-reduce traffic it can reduce scaling efficiency and increase jitter. The better answer is to test GPUDirect readiness explicitly, then decide from measured throughput rather than from setup convenience.
 </details>
-
-### Question 3
-A new engineer deploys a 4-node PyTorch training job. The job starts successfully but is running 4x slower than expected. You notice they omitted the `/dev/shm` volume mount in the Pod specification. What is happening under the hood to cause this silent performance degradation?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 3: A PyTorchJob has the Multus annotation and a `net1` interface, yet NCCL logs show `NET/Socket`. What checks should you perform before changing the model script?</summary>
 
-The `/dev/shm` directory provides shared memory backed by the host's RAM, which is heavily utilized by NCCL for intra-node GPU-to-GPU communication buffers and by the PyTorch DataLoader to share data between worker processes. By default, container runtimes like containerd limit `/dev/shm` to a mere 64MB, which is vastly insufficient for the 16-64GB typically required by modern multi-GPU training jobs. When this shared memory is exhausted, NCCL silently falls back to much slower communication paths, such as standard TCP sockets, instead of using high-speed shared memory. Simultaneously, DataLoader workers may fail to allocate shared tensors for data batching, which stalls the data pipeline and starves the GPUs. Because these fallbacks do not crash the container, the entire training job continues to run but at 2-5x slower speeds, making it a notoriously difficult performance degradation to diagnose without checking system resource utilization.
+First verify that the pod annotation references the correct `NetworkAttachmentDefinition` in the correct namespace and that `ip addr show net1` reports an address from the expected high-speed network. Next check whether `NCCL_SOCKET_IFNAME` points to `net1`, whether InfiniBand or RoCE devices are exposed into the container, and whether the peer-memory or RDMA driver path is available. Then inspect NCCL initialization logs across all ranks, because one rank with a missing device can force a bad path or a timeout. Changing the model script first is premature because the symptoms point to infrastructure path selection.
 </details>
-
-### Question 4
-Your platform team is migrating a legacy Horovod-based computer vision workload to Kubernetes. A developer asks if they should use the `PyTorchJob` CRD since the underlying code uses PyTorch, or stick to `MPIJob`. How do you guide them based on how these two CRDs manage distributed workers?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 4: A legacy Horovod computer-vision workload uses PyTorch tensors but expects `mpirun` to launch workers. Should you use `PyTorchJob` or `MPIJob`, and what configuration risk matters most?</summary>
 
-You should guide the developer to use the `MPIJob` CRD because their legacy computer vision workload is based on Horovod, which fundamentally relies on MPI for distributed execution. The `PyTorchJob` CRD is specifically designed for workloads using PyTorch's native distributed launching mechanism (`torchrun`). In that model, workers self-organize and discover each other dynamically via a rendezvous backend like c10d. In contrast, an `MPIJob` uses a centralized Launcher pod running `mpirun` to start and orchestrate workers via SSH, which is exactly how Horovod and some legacy DeepSpeed setups expect to operate. Attempting to use `PyTorchJob` for a Horovod workload would instantly fail because it lacks the centralized MPI process management and SSH daemon setup required to bootstrap the job.
+Use `MPIJob` because the launcher model matters more than the tensor library. Horovod and MPI-based DeepSpeed deployments expect a launcher pod to create and coordinate worker processes through MPI semantics, while `PyTorchJob` is a better fit for native `torchrun` rendezvous. The major configuration risk is failing to propagate NCCL and network environment variables from the launcher into the worker ranks. Passing variables explicitly with MPI options and checking worker logs prevents a job that launches correctly but communicates over the wrong path.
 </details>
-
-### Question 5
-A 4-node distributed training job reports NCCL timeout errors after 5 minutes. Node 3 is the last to report the timeout. What is your investigation workflow and why do you follow these specific steps?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 5: A four-node training job times out after several minutes, and one pod is consistently the last rank to report the NCCL error. What investigation workflow do you follow?</summary>
 
-First, you must check the NCCL debug logs (`NCCL_DEBUG=INFO`) to determine if the job is actually utilizing the InfiniBand/RDMA transport or if it has silently fallen back to TCP sockets. TCP fallback often causes synchronization timeouts because it cannot handle the sheer bandwidth requirements of collective operations. Since Node 3 is the last to report the timeout, it is highly likely the source of the bottleneck or failure, as it is holding up the global all-reduce operation. You should use `kubectl describe pod` and `kubectl exec` to verify its resource allocation and network connectivity on the secondary high-speed interface (`net1`). From within Node 3's pod, use diagnostic tools like `ib_write_bw` to verify direct RDMA connectivity to other nodes, checking for asymmetric issues such as a missing `nvidia-peermem` kernel module or a downed InfiniBand link. Finally, verify that the pod is not hitting CPU or memory limits, which can lead to NCCL thread starvation and subsequent synchronization timeouts across the entire training group.
+Treat the last-reporting rank as a likely straggler or blocked participant, but verify instead of assuming. Compare NCCL initialization logs across all ranks, inspect that pod's secondary interface, GPU allocation, CPU and memory pressure, and RDMA device visibility, then check node-level events for Xid errors or network link problems. If the job uses RoCE, include fabric loss or PFC issues in the investigation because packet loss can appear as NCCL timeouts. Only after the infrastructure path is verified should you tune timeout values or training batch behavior.
 </details>
 
----
+<details>
+<summary>Question 6: Your training job restarts successfully after a node failure, but the loss curve jumps and previous progress appears partly lost. What design gap does this suggest?</summary>
 
-## Hands-On Exercise: Multi-Node Distributed PyTorch Training with Multus
+The restart policy may be working while the training recovery contract is incomplete. Check whether checkpoints include model weights, optimizer state, epoch, step, sampler state, and RNG state, and confirm they are written to storage that survived the failed node. Also verify that only the intended rank writes the checkpoint and that all ranks load a consistent version after rendezvous. A pod restart is not sufficient for distributed training unless the application can resume from a coherent checkpoint.
+</details>
 
-### Objective
+<details>
+<summary>Question 7: A team asks for elastic training so jobs can survive failures by continuing with fewer workers. What conditions do you evaluate before approving the platform template?</summary>
 
-Deploy Multus CNI, configure a secondary macvlan network for high-speed inter-node communication, and run a distributed PyTorch training job across 2 nodes using the Kubeflow Training Operator.
+Confirm that the framework version, launcher, and training script support changing worker membership without corrupting data sampling or optimizer behavior. Then review `minReplicas`, `maxReplicas`, restart budgets, rendezvous backend, and checkpoint cadence so the job has a defined recovery window. You should also test an actual worker loss in a staging cluster and inspect whether the resumed run makes forward progress with expected throughput. Elastic policy is valuable, but it is only safe when the application and storage design match the platform setting.
+</details>
 
-### Environment
+## Hands-On Exercise
 
-- Kubernetes cluster with 2+ GPU nodes (at least 1 GPU each)
-- GPU Operator installed (Module 1.1)
-- Helm installed
-- Nodes with a shared Layer-2 network on a secondary NIC (for the macvlan exercise; if using cloud, adapt to use the primary network)
+Exercise scenario: you operate a Kubernetes 1.35 training cluster with two GPU nodes and want a repeatable smoke test that proves Multus attaches a secondary network, Kubeflow Training Operator launches a two-rank PyTorch job, NCCL initializes, and the model writes a checkpoint. This lab uses a small MNIST workload because the goal is infrastructure verification, not model quality. In a production RoCE or InfiniBand environment, adapt the network attachment and device exposure to your fabric rather than copying the lab macvlan values blindly.
 
-### Step 1: Install Multus CNI
+### Task 1: Install Multus CNI
+
+Install the Multus thick plugin and verify that the daemonset is running on the nodes that will host the training pods. If your organization already manages Multus centrally, do not reinstall it from this command; instead, use the verification command and record the installed version. The important success signal is that pods can request a secondary interface through a `NetworkAttachmentDefinition`.
 
 ```bash
 # Install Multus thick plugin
@@ -922,7 +884,15 @@ kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-c
 kubectl -n kube-system get pods -l app=multus -o wide
 ```
 
-### Step 2: Create a Network Attachment Definition
+<details>
+<summary>Solution notes for Task 1</summary>
+
+The Multus pods should be present in `kube-system` and scheduled on the nodes that will host training workloads. If they are missing, secondary network annotations will not create `net1` interfaces even though the training pod YAML is otherwise valid. If your cluster uses a managed Multus installation, compare labels before relying on the exact selector shown here.
+</details>
+
+### Task 2: Create a Network Attachment Definition
+
+Create a namespace and a lab `NetworkAttachmentDefinition` for the secondary training network. The example uses macvlan on `eth0` because it is portable for a lab, but a real GPU fabric may use a different master interface, SR-IOV, host-device, Whereabouts IPAM, or InfiniBand-specific settings. Before applying this in a shared cluster, ask which NIC and subnet are reserved for training traffic.
 
 ```bash
 # Identify the secondary NIC on your GPU nodes
@@ -978,7 +948,15 @@ spec:
 EOF
 ```
 
-### Step 3: Install the Kubeflow Training Operator
+<details>
+<summary>Solution notes for Task 2</summary>
+
+The first apply may fail if the namespace does not exist yet; the second apply creates the object in the intended namespace after `ml-training` exists. In your own template, create the namespace first to avoid that rough edge. The key verification is that `kubectl -n ml-training get network-attachment-definitions` shows `training-network`.
+</details>
+
+### Task 3: Install the Training Operator and Checkpoint Storage
+
+Install Kubeflow Training Operator and create a shared checkpoint PVC. The storage example intentionally leaves `storageClassName` empty because RWX storage classes vary by cluster; replace it with your supported ReadWriteMany class when running this for real. If you only have ReadWriteOnce storage, the distributed job may start but checkpoint behavior will not represent a multi-node production run.
 
 ```bash
 helm repo add kubeflow https://kubeflow.github.io/training-operator
@@ -992,8 +970,6 @@ helm install training-operator kubeflow/training-operator \
 # Verify
 kubectl -n kubeflow get pods
 ```
-
-### Step 4: Create Shared Storage for Checkpoints
 
 ```bash
 cat <<'EOF' | kubectl apply -f -
@@ -1012,7 +988,15 @@ spec:
 EOF
 ```
 
-### Step 5: Deploy a Distributed PyTorch Training Job
+<details>
+<summary>Solution notes for Task 3</summary>
+
+The operator controller pods should be healthy before you create a `PyTorchJob`, or the custom resource may be accepted without any training pods appearing. The PVC should bind to a storage backend that both nodes can mount. If it remains pending, fix storage before debugging PyTorch because the job will not have a reliable checkpoint destination.
+</details>
+
+### Task 4: Deploy a Distributed PyTorch Training Job
+
+Create a ConfigMap containing the training script and then launch a two-rank PyTorchJob. This preserves the original module's important teaching detail: `torchrun` expects a script file path, so the script is mounted from a ConfigMap instead of passed as an inline `-c` string. The job requests one GPU per pod, mounts `/dev/shm`, writes a checkpoint from rank zero, and asks Multus for the training network.
 
 ```bash
 # First, create a ConfigMap with the training script
@@ -1176,7 +1160,15 @@ JOBEOF
 kubectl -n ml-training get pods -w
 ```
 
-### Step 6: Verify Distributed Communication
+<details>
+<summary>Solution notes for Task 4</summary>
+
+You should see a master pod and a worker pod for the `distributed-mnist` job. If pods remain pending, inspect GPU availability, PVC binding, image pull access, and Training Operator events. If pods run but training stalls, move directly to NCCL logs and network-interface verification rather than changing the MNIST model.
+</details>
+
+### Task 5: Verify Communication, Progress, and Cleanup
+
+Check NCCL initialization, training progress, secondary interface attachment, and checkpoint output. The exact transport depends on your lab environment; a simple macvlan lab may show socket transport, while an RDMA-capable cluster should show InfiniBand or GPUDirect indicators. The point is to identify the transport from evidence instead of assuming that the annotation created the desired path.
 
 ```bash
 # Check NCCL initialization in master logs
@@ -1194,67 +1186,46 @@ kubectl -n ml-training logs -f distributed-mnist-master-0
 kubectl -n ml-training exec distributed-mnist-master-0 -- ip addr show net1
 ```
 
-### Step 7: Cleanup
-
 ```bash
 kubectl -n ml-training delete pytorchjob distributed-mnist
 kubectl delete namespace ml-training
 ```
 
+<details>
+<summary>Solution notes for Task 5</summary>
+
+Successful output includes NCCL initialization, rank messages from the training script, decreasing or at least changing loss values, and a saved checkpoint message from rank zero. If `net1` is absent, debug Multus and the network attachment before debugging NCCL. If `net1` exists but the transport is not what you expect, inspect framework variables and RDMA device exposure next.
+</details>
+
 ### Success Criteria
 
 You have completed this exercise when:
-- [ ] Multus CNI is running on all nodes
-- [ ] `NetworkAttachmentDefinition` is created and Pods get a `net1` interface
-- [ ] The PyTorchJob creates both Master and Worker pods on different nodes
-- [ ] NCCL logs show `Init COMPLETE` with `nranks 2`
-- [ ] Both ranks report decreasing loss values across 3 epochs
-- [ ] The master saves a model checkpoint to the shared PVC
-- [ ] You can identify which transport NCCL used (IB, Socket, etc.) from the logs
 
----
+- [ ] Multus CNI is running on all nodes that may host training pods.
+- [ ] `NetworkAttachmentDefinition` is created in `ml-training`, and pods receive a `net1` interface.
+- [ ] The PyTorchJob creates both Master and Worker pods and both participate in the run.
+- [ ] NCCL logs show `Init COMPLETE` with `nranks 2`.
+- [ ] Both ranks report loss values across 3 epochs.
+- [ ] The master saves a model checkpoint to the shared PVC.
+- [ ] You can identify which transport NCCL used, such as IB, GPUDirect RDMA, or Socket, from logs rather than assumptions.
 
-## Key Takeaways
+## Sources
 
-1. **Distributed training is bottlenecked by network bandwidth** — standard Kubernetes networking (10-25 Gbps) is orders of magnitude too slow for gradient synchronization
-2. **InfiniBand/RoCE with RDMA** eliminates CPU overhead and memory copies, providing 200-400 Gbps with sub-microsecond latency
-3. **GPUDirect RDMA** is the optimal path — NIC reads/writes GPU memory directly, zero system memory involvement
-4. **Multus CNI** gives training Pods secondary network interfaces connected to the high-speed fabric
-5. **NCCL environment variables** are critical — a wrong `NCCL_SOCKET_IFNAME` can silently degrade performance by 10-50x
-6. **Always mount `/dev/shm`** with adequate size (16-64GB) for NCCL and DataLoader shared memory
-7. **Checkpointing is mandatory** — node failures in multi-day training runs are certain, not possible
-8. **Elastic training** (PyTorch Elastic) allows training to continue with fewer workers after failures
-
----
-
-## Further Reading
-
-**Documentation**:
-- **Kubeflow Training Operator**: www.kubeflow.org/docs/components/training/
-- **NCCL Documentation**: docs.nvidia.com/deeplearning/nccl/user-guide/
-- **Multus CNI**: github.com/k8snetworkplumbingwg/multus-cni
-- **GPUDirect RDMA**: docs.nvidia.com/cuda/gpudirect-rdma/
-
-**Papers**:
-- **"Efficient Large-Scale Language Model Training on GPU Clusters Using Megatron-LM"** — NVIDIA (3D parallelism)
-- **"PyTorch FSDP: Experiences on Scaling Fully Sharded Data Parallel"** — Meta (scaling DDP)
-
-**Talks**:
-- **"Training LLMs at Scale on Kubernetes"** — Meta, KubeCon NA 2024
-- **"High Performance Networking for AI/ML in Kubernetes"** — NVIDIA, KubeCon EU 2024
-
----
-
-## Summary
-
-Distributed training infrastructure is the highest-stakes platform engineering challenge in AI. It requires mastering high-speed networking (InfiniBand/RoCE), GPU communication libraries (NCCL), multi-network Kubernetes (Multus), distributed job orchestration (Training Operator), and fault tolerance (checkpointing, elastic training). Every layer must work perfectly — a single misconfiguration in any layer can silently reduce your million-dollar GPU cluster to a fraction of its potential throughput.
-
----
+- [Kubernetes topology spread constraints](https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/)
+- [Kubernetes pods networking model](https://kubernetes.io/docs/concepts/workloads/pods/)
+- [NVIDIA NCCL user guide](https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/)
+- [NVIDIA NCCL environment variables](https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/env.html)
+- [NVIDIA GPUDirect RDMA documentation](https://docs.nvidia.com/cuda/gpudirect-rdma/)
+- [NVIDIA GPU Operator RDMA documentation](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-operator-rdma.html)
+- [Multus CNI project](https://github.com/k8snetworkplumbingwg/multus-cni)
+- [SR-IOV Network Device Plugin](https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin)
+- [Kubeflow Training Operator](https://www.kubeflow.org/docs/components/training/)
+- [Kubeflow PyTorchJob guide](https://www.kubeflow.org/docs/components/training/user-guides/pytorch/)
+- [PyTorch torchrun elastic launch](https://pytorch.org/docs/stable/elastic/run.html)
+- [PyTorch distributed package](https://pytorch.org/docs/stable/distributed.html)
+- [AWS EC2 placement groups](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html)
+- [Google Cloud compact placement policies](https://cloud.google.com/compute/docs/instances/placement-policies-overview)
 
 ## Next Module
 
-Continue to [Module 1.4: High-Performance Storage for AI](../module-1.4-ai-storage/) to learn how to solve the data pipeline bottleneck with NVMe caching, distributed filesystems, and dataset caching layers.
-
----
-
-*"In distributed training, the network is the computer."* — Adapted from John Gage (Sun Microsystems)
+Continue to [Module 1.4: High-Performance Storage for AI](../module-1.4-ai-storage/) to learn how to remove the data pipeline bottleneck with NVMe caching, distributed filesystems, and dataset caching layers.
