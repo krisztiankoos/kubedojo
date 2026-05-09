@@ -9,7 +9,7 @@ revision_pending: false
 >
 > **Time to Complete**: 4 hours
 >
-> **Prerequisites**: Module 1.2 GPU scheduling and sharing, Kubernetes Services, Deployments, HPA basics, Module 1.4 AI storage, basic transformer architecture, and access to a cluster with at least one GPU with 16 GB or more of VRAM.
+> **Prerequisites**: [Module 1.2: Advanced GPU Scheduling & Sharing](../module-1.2-gpu-scheduling/) (GPU allocation, topology awareness); Kubernetes Services, Deployments, HPA basics; [Module 1.4: High-Performance Storage for AI](../module-1.4-ai-storage/) (model weight loading); basic transformer architecture; and access to a cluster with at least one GPU with 16 GB or more of VRAM.
 
 ---
 
