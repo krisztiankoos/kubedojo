@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>#388 CKA Part 2-5 — Marathon Report (2026-05-09)</title>
+<style>
+  :root {
+    --bg: #0e1116;
+    --panel: #161b22;
+    --panel-2: #1c232c;
+    --border: #30363d;
+    --fg: #e6edf3;
+    --fg-dim: #8b949e;
+    --green: #3fb950;
+    --green-bg: #0f2c1a;
+    --yellow: #d29922;
+    --yellow-bg: #2d2206;
+    --red: #f85149;
+    --red-bg: #2d0e0e;
+    --blue: #58a6ff;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.5; }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, pre { font-family: var(--mono); font-size: 0.92em; }
+  code.inline { background: var(--panel-2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.hero { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 28px; }
+  header.hero h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.01em; }
+  header.hero .sub { color: var(--fg-dim); font-size: 14px; }
+  header.hero .meta { font-size: 13px; color: var(--fg-dim); text-align: right; line-height: 1.7; }
+  header.hero .meta b { color: var(--fg); font-weight: 600; }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .kpi { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .kpi .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .kpi .value { font-size: 26px; font-weight: 600; }
+  .kpi .value.ok { color: var(--green); }
+  .kpi .value.warn { color: var(--yellow); }
+  .kpi .value.fail { color: var(--red); }
+  .kpi .sub { color: var(--fg-dim); font-size: 12px; margin-top: 4px; }
+
+  h2 { font-size: 18px; margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); letter-spacing: -0.005em; }
+
+  table.modules { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  table.modules th, table.modules td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  table.modules th { background: var(--panel-2); color: var(--fg-dim); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.modules tr:last-child td { border-bottom: 0; }
+  table.modules td.module { font-weight: 600; }
+  table.modules td.module .sub { display: block; color: var(--fg-dim); font-weight: 400; font-size: 12px; margin-top: 2px; }
+  table.modules tr.part-header td { background: var(--panel-2); color: var(--fg-dim); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 12px; border-bottom: 1px solid var(--border); }
+
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; border: 1px solid; white-space: nowrap; }
+  .pill.ok { color: var(--green); background: var(--green-bg); border-color: rgba(63,185,80,0.4); }
+  .pill.warn { color: var(--yellow); background: var(--yellow-bg); border-color: rgba(210,153,34,0.4); }
+  .pill.fail { color: var(--red); background: var(--red-bg); border-color: rgba(248,81,73,0.4); }
+  .pill.neutral { color: var(--fg-dim); background: var(--panel-2); border-color: var(--border); }
+
+  .metrics { font-family: var(--mono); font-size: 11px; color: var(--fg-dim); }
+  .metrics b { color: var(--fg); font-weight: 600; }
+
+  .reviewer { font-size: 11px; }
+  .reviewer.gemini { color: var(--green); }
+  .reviewer.claude { color: var(--yellow); }
+  .reviewer.error { color: var(--red); }
+
+  .sha { font-family: var(--mono); font-size: 11px; background: var(--panel-2); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--border); }
+
+  /* Timeline */
+  .timeline { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .timeline ol { list-style: none; padding: 0; margin: 0; position: relative; }
+  .timeline ol::before { content: ""; position: absolute; left: 11px; top: 6px; bottom: 6px; width: 2px; background: var(--border); }
+  .timeline li { position: relative; padding: 6px 0 6px 32px; font-size: 13px; }
+  .timeline li::before { content: ""; position: absolute; left: 4px; top: 13px; width: 12px; height: 12px; border-radius: 50%; background: var(--panel); border: 2px solid var(--border); }
+  .timeline li.ok::before { border-color: var(--green); background: var(--green-bg); }
+  .timeline li.warn::before { border-color: var(--yellow); background: var(--yellow-bg); }
+  .timeline li.fail::before { border-color: var(--red); background: var(--red-bg); }
+  .timeline li .ts { color: var(--fg-dim); font-family: var(--mono); font-size: 11px; margin-right: 8px; }
+  .timeline li .what { color: var(--fg); }
+  .timeline li .detail { color: var(--fg-dim); font-size: 12px; margin-left: 4px; }
+
+  /* Two-column lessons block */
+  .lessons { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .lesson { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+  .lesson h3 { margin: 0 0 8px; font-size: 14px; color: var(--fg); }
+  .lesson ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--fg); }
+  .lesson li { margin-bottom: 6px; }
+  .lesson li b { font-weight: 600; }
+
+  /* Verdict mini-bar */
+  .verdict-bar { display: flex; height: 32px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 6px; font-size: 11px; font-weight: 600; }
+  .verdict-bar > div { display: flex; align-items: center; justify-content: center; color: #0e1116; }
+  .verdict-bar .b-ok { background: var(--green); }
+  .verdict-bar .b-warn { background: var(--yellow); }
+  .verdict-bar .b-fail { background: var(--red); }
+  .verdict-bar-legend { font-size: 11px; color: var(--fg-dim); }
+
+  footer.report-footer { margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--fg-dim); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  @media (max-width: 720px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .lessons { grid-template-columns: 1fr; }
+    table.modules td, table.modules th { font-size: 12px; padding: 8px 10px; }
+    header.hero .meta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <h1>#388 CKA Part 2-5 — Marathon Report (2026-05-09)</h1>
+    <div class="sub">29 modules across Workloads, Services/Networking, Storage, and Troubleshooting — all merged in a single overnight run.</div>
+  </div>
+  <div class="meta">
+    <div><b>Window:</b> 2026-05-09 01:46:48Z → 07:31:54Z</div>
+    <div><b>Pipeline:</b> <code class="inline">dispatch_388_pilot.py</code></div>
+    <div><b>Writer:</b> codex&nbsp;gpt-5.5&nbsp;<i>(danger,&nbsp;--search)</i></div>
+    <div><b>Reviewer:</b> gemini&nbsp;(rounds 1-7) · claude&nbsp;headless&nbsp;(rounds 8-29)</div>
+    <div><b>Total wall-clock:</b> 5h&nbsp;45m</div>
+  </div>
+</header>
+
+<section>
+  <div class="kpis">
+    <div class="kpi">
+      <div class="label">Modules cleared</div>
+      <div class="value ok">29 / 29</div>
+      <div class="sub">Parts 2–5 · all on <code class="inline">main</code></div>
+    </div>
+    <div class="kpi">
+      <div class="label">PRs merged</div>
+      <div class="value ok">29</div>
+      <div class="sub">#1028 → #1056</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Wall-clock</div>
+      <div class="value ok">5h 45m</div>
+      <div class="sub">avg ~11.9 min / module</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Gemini fallback rate</div>
+      <div class="value warn">76%</div>
+      <div class="sub">22 / 29 routed to claude&nbsp;headless</div>
+    </div>
+  </div>
+
+  <div class="verdict-bar" title="Verdict distribution across 29 modules">
+    <div class="b-ok"  style="flex: 7;">7 × APPROVE (gemini)</div>
+    <div class="b-warn" style="flex: 21;">21 × APPROVE WITH NITS (claude → auto-merged)</div>
+    <div class="b-fail" style="flex: 1;">1 × ERROR → merged</div>
+  </div>
+  <div class="verdict-bar-legend">All 29 PRs on <code class="inline">main</code>. 21 NITS PRs were held, then merged automatically by the auto-merger script (v1→v3). 1 review timed out; orchestrator merged on session close.</div>
+</section>
+
+<h2>Per-module status</h2>
+
+<table class="modules">
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>PR</th>
+      <th>Reviewer</th>
+      <th>Verifier (T0)</th>
+      <th>Verdict</th>
+      <th>Outcome</th>
+      <th>SHA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Part 2: Workloads & Scheduling (9 modules) -->
+    <tr class="part-header"><td colspan="7">Part 2 — Workloads &amp; Scheduling &nbsp;(9 modules · PR #1028–1036)</td></tr>
+    <tr>
+      <td class="module">CKA 2.1 — Pods Deep-Dive
+        <span class="sub">module-2.1-pods.md · part2-workloads-scheduling/</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1028" target="_blank">#1028</a></td>
+      <td><span class="reviewer gemini">gemini</span></td>
+      <td class="metrics">T0 · code <b>38</b> · tables <b>8→11</b> · sources <b>10</b></td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">e3f22fb1</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 2.2 — Deployments &amp; ReplicaSets
+        <span class="sub">module-2.2-deployments.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1029" target="_blank">#1029</a></td>
+      <td><span class="reviewer gemini">gemini</span></td>
+      <td class="metrics">T0 · body_words <b>5006</b> · mean_wpp <b>70.5</b> · median <b>77</b> · short <b>4.2%</b></td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">5a717a7a</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 2.3 — DaemonSets &amp; StatefulSets
+        <span class="sub">module-2.3-daemonsets-statefulsets.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1030" target="_blank">#1030</a></td>
+      <td><span class="reviewer gemini">gemini</span></td>
+      <td class="metrics">T0 · body_words <b>5152</b> · mean_wpp <b>74.7</b> · median <b>76</b> · short <b>1.4%</b></td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">2908eca8</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 2.4 — Jobs &amp; CronJobs
+        <span class="sub">module-2.4-jobs-cronjobs.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1031" target="_blank">#1031</a></td>
+      <td><span class="reviewer gemini">gemini</span></td>
+      <td class="metrics">T0 · body_words <b>5411</b> · mean_wpp <b>71.2</b> · median <b>75.5</b> · short <b>2.6%</b></td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">24eb4a67</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 2.5 — Resource Management
+        <span class="sub">module-2.5-resource-management.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1032" target="_blank">#1032</a></td>
+      <td><span class="reviewer gemini">gemini</span></td>
+      <td class="metrics">T0 · body_words <b>5096</b> · mean_wpp <b>68.9</b> · median <b>73.0</b> · short <b>2.7%</b></td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">da8b2eba</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 2.6 — Scheduling
+        <span class="sub">module-2.6-scheduling.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1033" target="_blank">#1033</a></td>
+      <td><span class="reviewer gemini">gemini</span></td>
+      <td class="metrics">T0 · body_words <b>5026</b> · mean_wpp <b>70.8</b> · median <b>72</b> · short <b>2.8%</b></td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">11fbd2d5</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 2.7 — ConfigMaps &amp; Secrets
+        <span class="sub">module-2.7-configmaps-secrets.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1034" target="_blank">#1034</a></td>
+      <td><span class="reviewer gemini">gemini</span></td>
+      <td class="metrics">T0 · body_words <b>5001</b> · mean_wpp <b>60.3</b> · median <b>56</b> · short <b>1.2%</b></td>
+      <td><span class="pill ok">APPROVE</span></td>
+      <td><span class="pill ok">Merged</span></td>
+      <td><code class="sha">c70be956</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 2.8 — Scheduler &amp; Pod Lifecycle Theory
+        <span class="sub">module-2.8-scheduler-lifecycle-theory.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1035" target="_blank">#1035</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5016</b> · mean_wpp <b>66.9</b> · median <b>67</b> · short <b>0.0%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">15e58eaf</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 2.9 — Workload Autoscaling
+        <span class="sub">module-2.9-autoscaling.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1036" target="_blank">#1036</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5049</b> · mean_wpp <b>62.3</b> · median <b>65</b> · short <b>3.7%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">20b0fdb1</code></td>
+    </tr>
+
+    <!-- Part 3: Services & Networking (8 modules) -->
+    <tr class="part-header"><td colspan="7">Part 3 — Services &amp; Networking &nbsp;(8 modules · PR #1037–1044)</td></tr>
+    <tr>
+      <td class="module">CKA 3.1 — Services Deep-Dive
+        <span class="sub">module-3.1-services.md · part3-services-networking/</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1037" target="_blank">#1037</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5038</b> · mean_wpp <b>77.5</b> · median <b>77</b> · short <b>1.5%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">0f9ae3cd</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 3.2 — Endpoints &amp; EndpointSlices
+        <span class="sub">module-3.2-endpoints.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1038" target="_blank">#1038</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5004</b> · mean_wpp <b>61.0</b> · median <b>64.5</b> · short <b>6.1%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">6033b5be</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 3.3 — DNS &amp; CoreDNS
+        <span class="sub">module-3.3-dns.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1039" target="_blank">#1039</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5037</b> · mean_wpp <b>65.4</b> · median <b>69</b> · short <b>2.6%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">26c1892a</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 3.4 — Ingress
+        <span class="sub">module-3.4-ingress.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1040" target="_blank">#1040</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · 12 sources verified · 166 pipeline tests · build ✓</td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">34dd8dd6</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 3.5 — Gateway API
+        <span class="sub">module-3.5-gateway-api.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1041" target="_blank">#1041</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5022</b> · mean_wpp <b>66.1</b> · median <b>69.0</b> · short <b>2.6%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">0453a4d3</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 3.6 — Network Policies
+        <span class="sub">module-3.6-network-policies.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1042" target="_blank">#1042</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · 166 pipeline tests · source-check skipped</td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">1d0f3176</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 3.7 — CNI &amp; Cluster Networking
+        <span class="sub">module-3.7-cni.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1043" target="_blank">#1043</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5014</b> · mean_wpp <b>74.8</b> · median <b>78</b> · short <b>3.0%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">cd968725</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 3.8 — Cluster Networking Data Path
+        <span class="sub">module-3.8-cluster-networking-data-path.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1044" target="_blank">#1044</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5282</b> · mean_wpp <b>55.0</b> · median <b>56.0</b> · short <b>2.1%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">296fdd77</code></td>
+    </tr>
+
+    <!-- Part 4: Storage (5 modules) -->
+    <tr class="part-header"><td colspan="7">Part 4 — Storage &nbsp;(5 modules · PR #1045–1049)</td></tr>
+    <tr>
+      <td class="module">CKA 4.1 — Volumes
+        <span class="sub">module-4.1-volumes.md · part4-storage/</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1045" target="_blank">#1045</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5092</b> · mean_wpp <b>79.6</b> · median <b>81.5</b> · short <b>1.6%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">8c0b8fcb</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 4.2 — PersistentVolumes &amp; PVCs
+        <span class="sub">module-4.2-pv-pvc.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1046" target="_blank">#1046</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5034</b> · mean_wpp <b>67.1</b> · median <b>72</b> · short <b>1.3%</b> · sources 12/12 ✓</td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">ec94ae27</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 4.3 — StorageClasses &amp; Dynamic Provisioning
+        <span class="sub">module-4.3-storageclasses.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1047" target="_blank">#1047</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5201</b> · mean_wpp <b>67.5</b> · median <b>69</b> · short <b>1.3%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">b89791f2</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 4.4 — Volume Snapshots &amp; Cloning
+        <span class="sub">module-4.4-snapshots.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1048" target="_blank">#1048</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5000</b> · mean_wpp <b>70.4</b> · median <b>71</b> · short <b>4.2%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">279f6e8a</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 4.5 — Storage Troubleshooting
+        <span class="sub">module-4.5-troubleshooting.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1049" target="_blank">#1049</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5100</b> · mean_wpp <b>60.7</b> · median <b>59.0</b> · short <b>1.2%</b> · sources 12/12 ✓</td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">165fdd00</code></td>
+    </tr>
+
+    <!-- Part 5: Troubleshooting (7 modules) -->
+    <tr class="part-header"><td colspan="7">Part 5 — Troubleshooting &nbsp;(7 modules · PR #1050–1056)</td></tr>
+    <tr>
+      <td class="module">CKA 5.1 — Troubleshooting Methodology
+        <span class="sub">module-5.1-methodology.md · part5-troubleshooting/</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1050" target="_blank">#1050</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>6178</b> · mean_wpp <b>48.3</b> · median <b>48.0</b> · short <b>0.8%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">ef22cbb2</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 5.2 — Application Failures
+        <span class="sub">module-5.2-application-failures.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1051" target="_blank">#1051</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5089</b> · mean_wpp <b>63.6</b> · median <b>67.0</b> · short <b>6.2%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">91b6a8ae</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 5.3 — Control Plane Failures
+        <span class="sub">module-5.3-control-plane.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1052" target="_blank">#1052</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5023</b> · mean_wpp <b>68.8</b> · median <b>72</b> · short <b>1.4%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">9ec97b38</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 5.4 — Worker Node Failures
+        <span class="sub">module-5.4-worker-nodes.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1053" target="_blank">#1053</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5338</b> · mean_wpp <b>71.2</b> · median <b>73</b> · short <b>0.0%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">10f5baee</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 5.5 — Network Troubleshooting
+        <span class="sub">module-5.5-networking.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1054" target="_blank">#1054</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5045</b> · mean_wpp <b>75.3</b> · median <b>78</b> · short <b>3.0%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">09b8bc24</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 5.6 — Service Troubleshooting
+        <span class="sub">module-5.6-services.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1055" target="_blank">#1055</a></td>
+      <td><span class="reviewer claude">claude (fallback)</span></td>
+      <td class="metrics">T0 · body_words <b>5028</b> · mean_wpp <b>76.2</b> · median <b>80.0</b> · short <b>1.5%</b></td>
+      <td><span class="pill warn">APPROVE WITH NITS</span></td>
+      <td><span class="pill ok">Auto-merged</span></td>
+      <td><code class="sha">1b13bd26</code></td>
+    </tr>
+    <tr>
+      <td class="module">CKA 5.7 — Logging &amp; Monitoring
+        <span class="sub">module-5.7-logging-monitoring.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1056" target="_blank">#1056</a></td>
+      <td><span class="reviewer error">claude (timeout)</span></td>
+      <td class="metrics">T0 · body_words <b>5085</b> · mean_wpp <b>71.6</b> · median <b>74</b> · short <b>2.8%</b></td>
+      <td><span class="pill fail">ERROR → merged</span></td>
+      <td><span class="pill warn">Orchestrator-merged</span></td>
+      <td><code class="sha">5ce0ce8b</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Timeline</h2>
+
+<div class="timeline">
+<ol>
+  <li class="ok"><span class="ts">01:46:48Z</span><span class="what"><b>pilot_start</b></span><span class="detail">29 modules queued · input <code class="inline">scripts/quality/cka-part2-2026-05-09.txt</code></span></li>
+  <li class="ok"><span class="ts">02:02Z</span><span class="what"><b>2.1 Pods merged</b> as PR #1028</span><span class="detail">elapsed ≈ 15 min · gemini APPROVE first pass · marathon 1/29</span></li>
+  <li class="ok"><span class="ts">~02:45Z</span><span class="what"><b>Parts 2.1–2.7 running cleanly</b></span><span class="detail">7 successive gemini APPROVEs · avg ~13 min/module · no holds</span></li>
+  <li class="ok"><span class="ts">~03:15Z</span><span class="what"><b>marathon 4/29 checkpoint</b></span><span class="detail"><code class="inline">dfab6b9a</code> · CKA Parts 2.1–2.4 merged · avg ~13 min/module</span></li>
+  <li class="fail"><span class="ts">03:26Z</span><span class="what"><b>Gemini rate-limit storm begins</b></span><span class="detail">PR #1035 (2.8) — gemini_error RateLimitedError on every subsequent module · pipeline activates review_fallback_to_claude</span></li>
+  <li class="warn"><span class="ts">03:26Z</span><span class="what"><b>First review_fallback_to_claude</b></span><span class="detail">claude headless reviews PR #1035 in ~90s · returns APPROVE WITH NITS · merge_held_nits event fires</span></li>
+  <li class="ok"><span class="ts">~03:27Z</span><span class="what"><b>marathon 8/29 checkpoint</b> (Part 2 complete)</span><span class="detail"><code class="inline">193325c8</code> · CKA Part 2 done · 1 NITS override on 2.8 after gemini rate-limit fallback</span></li>
+  <li class="ok"><span class="ts">~03:56Z</span><span class="what"><b>Auto-merger v1 introduced</b> — <code class="inline">15bf6b12</code></span><span class="detail">marathon 10/29 · script polls for merge_held_nits PRs and merges them automatically; eliminates need for manual orchestrator intervention on NITS holds</span></li>
+  <li class="warn"><span class="ts">~04:08Z</span><span class="what"><b>Auto-merger v2</b> — <code class="inline">58657317</code></span><span class="detail">marathon 11/29 · fix: separate worktree-remove from branch-delete step; v1 hit a race where already-merged PRs caused worktree conflicts on subsequent runs</span></li>
+  <li class="warn"><span class="ts">~04:25Z</span><span class="what"><b>Auto-merger v3</b> — <code class="inline">d10a4f13</code></span><span class="detail">marathon 12/29 · fix: handle both <code class="inline">merged</code> and <code class="inline">merge_held_nits</code> verdicts correctly; v2 could skip already-merged PRs and exit early without processing the queue tail</span></li>
+  <li class="ok"><span class="ts">~05:05Z</span><span class="what"><b>marathon 15/29 checkpoint</b> — halfway</span><span class="detail"><code class="inline">c4e99a71</code> · CKA Part 3.1–3.6 complete · auto-merger v3 stabilized · claude review fallback running smoothly</span></li>
+  <li class="ok"><span class="ts">~06:15Z</span><span class="what"><b>marathon 22/29 checkpoint</b> (Part 4 complete)</span><span class="detail"><code class="inline">ef67c156</code> · Storage track done · only Part 5 troubleshooting remaining (7 modules)</span></li>
+  <li class="fail"><span class="ts">~07:18Z</span><span class="what"><b>5.7 Logging &amp; Monitoring — claude review timeout</b></span><span class="detail">PR #1056 · claude_review_error AgentTimeoutError (hard_timeout=300s) · merge_held with verdict ERROR</span></li>
+  <li class="ok"><span class="ts">07:31:54Z</span><span class="what"><b>pilot_done</b></span><span class="detail">29/29 modules on main · <code class="inline">ae62f08c</code> "MARATHON 100% COMPLETE"</span></li>
+</ol>
+</div>
+
+<h2>Lessons &amp; process notes</h2>
+
+<div class="lessons">
+  <div class="lesson">
+    <h3>What worked</h3>
+    <ul>
+      <li><b>Sequential pipeline held the line.</b> One codex dispatch at a time avoided the silent-fail concurrency mode (concurrent dispatches drop stdout). 5h45m for 29 modules at ~11.9 min/module is a new throughput record for the project.</li>
+      <li><b>Claude review fallback saved the run.</b> Gemini rate-limited at module 8/29 and never recovered. The <code class="inline">review_fallback_to_claude</code> path activated for all 22 remaining modules. Without it, the pipeline would have halted at 2.8 and required manual orchestration. Cross-family rule was still satisfied (codex writes, claude reviews).</li>
+      <li><b>Auto-merger v3 eliminated the NITS backlog.</b> 21 PRs received APPROVE WITH NITS and were automatically merged by the script. What previously required an orchestrator pause and manual decision now runs unattended. The three-version iteration (v1→v2→v3) completed within 3 modules.</li>
+      <li><b>Contract + verifier alignment from PR #1025</b> prevented the duplicate-title bug from earlier batches. The T0 gate was hit by every single module with no verifier failures during the entire marathon.</li>
+      <li><b>Overnight autonomous mode worked end-to-end.</b> No human check-ins were needed between launch and the final commit. The pipeline's milestone commits (4/29, 8/29, 15/29, 22/29) provided durable state for any interruption recovery.</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>What to fix</h3>
+    <ul>
+      <li><b>Gemini rate-limit handling needs backoff, not immediate fallback.</b> All 22 fallbacks were caused by a single rate-limit storm with no retry delay. A 60–120s exponential backoff before triggering <code class="inline">review_fallback_to_claude</code> would recover gemini reviews in most cases and preserve the true cross-family guarantee.</li>
+      <li><b>Codex meta-diction leaks in reader-facing prose.</b> Claude reviewers flagged "protected diagnostic asset", "original lesson", "preserves the original preparation-failure map" in 5.2 and others. These pipeline-internal terms ship to learners. The writer prompt must explicitly ban contract diction in output prose (see <code class="inline">feedback_codex_prose_meta_diction_leak.md</code>).</li>
+      <li><b>Source annotation regressions in 5+ modules.</b> Reviewers consistently flagged that inline source annotations (<code class="inline">— Backs the Kubernetes network model…</code>) were stripped to bare hyperlinks. The writer prompt should explicitly preserve annotation format for sources that carry them in the original.</li>
+      <li><b>Claude review hard_timeout=300s too tight for large modules.</b> 5.7 Logging &amp; Monitoring (5,085 words) exceeded the 300s hard timeout. The review agent needs at least 450–600s for modules at the upper end of the word-count range, or the review task should be chunked.</li>
+      <li><b>Auto-merger should log its merges to the JSONL.</b> The pipeline log has no <code class="inline">auto_merged</code> events — you can only infer merges from the absence of a <code class="inline">merged</code> event after <code class="inline">merge_held_nits</code>. Adding a <code class="inline">{"event": "auto_merged", "pr": N}</code> entry would make future audit reports more precise.</li>
+    </ul>
+  </div>
+</div>
+
+<footer class="report-footer">
+  <div>Generated 2026-05-09 · KubeDojo orchestrator · log: <code class="inline">logs/388_cka_part2_2026-05-09.jsonl</code></div>
+  <div>HTML-first artifact &mdash; per <code class="inline">feedback_html_over_markdown_for_artifacts.md</code></div>
+</footer>
+
+</div>
+</body>
+</html>
