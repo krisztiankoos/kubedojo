@@ -2,16 +2,20 @@
 title: "Private AI Training Infrastructure"
 description: "Architecting and operating bare-metal Kubernetes infrastructure for distributed AI training workloads using PyTorch, NCCL, InfiniBand, and advanced batch schedulers."
 slug: on-premises/ai-ml-infrastructure/module-9.2-private-ai-training
+revision_pending: false
 sidebar:
   order: 92
 ---
 
-# Private AI Training Infrastructure
+> **Complexity**: Advanced
+>
+> **Time to Complete**: 120-150 minutes
+>
+> **Prerequisites**: Kubernetes Jobs, Services, device plugins, GPU basics, Linux networking, storage fundamentals, and basic PyTorch familiarity
+>
+> **Environment**: Kubernetes 1.35+, a local `kind` cluster for the lab, and production familiarity with GPU nodes, RDMA-capable NICs, and shared storage
 
-**Complexity:** Advanced  
-**Time:** 120-150 minutes  
-**Prerequisites:** Kubernetes Jobs, Services, device plugins, GPU basics, Linux networking, storage fundamentals, and basic PyTorch familiarity  
-**Environment:** Kubernetes 1.35+, a local `kind` cluster for the lab, and production familiarity with GPU nodes, RDMA-capable NICs, and shared storage  
+---
 
 ## Learning Outcomes
 
@@ -23,105 +27,23 @@ By the end of this module, you will be able to:
 * **Evaluate** whether Kueue, Volcano, or native Kubernetes scheduling is appropriate for a specific private AI training platform.
 * **Design** a checkpoint storage path that reduces synchronous training stalls while preserving durable recovery points.
 
+
+
 ## Why This Module Matters
 
-A platform team builds a private training cluster because sensitive model data cannot leave the company network.
+A platform team builds a private training cluster because sensitive model data cannot leave the company network. The first pilot looks successful. Eight GPU nodes join the cluster. The NVIDIA device plugin exposes GPUs. A data science team submits a distributed PyTorch job. Pods begin to start. Then the platform falls apart in slow motion. Rank 0 starts first. Rank 1 cannot resolve the rendezvous address. Several workers land on nodes attached to the wrong top-of-rack switch. NCCL fails to initialize RDMA and silently falls back to TCP over the default Kubernetes network.
 
-The first pilot looks successful.
+Half of the pods are running, half are pending, and every allocated GPU is idle because synchronous training cannot begin until every rank joins. The scheduler did exactly what a general-purpose Kubernetes scheduler normally does. It placed pods one at a time. It did not know that a training job is only useful when all workers start together. It did not know that two GPUs on the same host may have very different paths to the NIC. It did not know that a pending rank wastes every running rank. The storage system then adds another failure mode.
 
-Eight GPU nodes join the cluster.
+Checkpoint writes arrive as synchronized bursts from many workers. A single checkpoint pauses training for minutes. When one rank crashes during a checkpoint window, the whole job restarts from stale state. The bill is not just wasted hardware. The bill is lost research time, delayed model releases, and a platform that teams stop trusting. Private AI training infrastructure is therefore not "Kubernetes plus GPUs." It is a coordinated system of scheduling, networking, topology, storage, and operational feedback. The hard part is not launching a container that can see a GPU.
 
-The NVIDIA device plugin exposes GPUs.
-
-A data science team submits a distributed PyTorch job.
-
-Pods begin to start.
-
-Then the platform falls apart in slow motion.
-
-Rank 0 starts first.
-
-Rank 1 cannot resolve the rendezvous address.
-
-Several workers land on nodes attached to the wrong top-of-rack switch.
-
-NCCL fails to initialize RDMA and silently falls back to TCP over the default Kubernetes network.
-
-Half of the pods are running, half are pending, and every allocated GPU is idle because synchronous training cannot begin until every rank joins.
-
-The scheduler did exactly what a general-purpose Kubernetes scheduler normally does.
-
-It placed pods one at a time.
-
-It did not know that a training job is only useful when all workers start together.
-
-It did not know that two GPUs on the same host may have very different paths to the NIC.
-
-It did not know that a pending rank wastes every running rank.
-
-The storage system then adds another failure mode.
-
-Checkpoint writes arrive as synchronized bursts from many workers.
-
-A single checkpoint pauses training for minutes.
-
-When one rank crashes during a checkpoint window, the whole job restarts from stale state.
-
-The bill is not just wasted hardware.
-
-The bill is lost research time, delayed model releases, and a platform that teams stop trusting.
-
-Private AI training infrastructure is therefore not "Kubernetes plus GPUs."
-
-It is a coordinated system of scheduling, networking, topology, storage, and operational feedback.
-
-The hard part is not launching a container that can see a GPU.
-
-The hard part is making hundreds or thousands of GPUs behave like one reliable training machine.
-
-This module builds that mental model from first principles.
-
-You will start with the training process itself.
-
-Then you will map ranks and rendezvous onto Kubernetes primitives.
-
-Then you will add RDMA, topology, gang scheduling, observability, and checkpoint design.
-
-Finally, you will practice the same pattern in a local lab using CPU-backed PyTorch so the scheduling behavior is visible without requiring physical GPUs.
+The hard part is making hundreds or thousands of GPUs behave like one reliable training machine. This module builds that mental model from first principles. You will start with the training process itself. Then you will map ranks and rendezvous onto Kubernetes primitives. Then you will add RDMA, topology, gang scheduling, observability, and checkpoint design. Finally, you will practice the same pattern in a local lab using CPU-backed PyTorch so the scheduling behavior is visible without requiring physical GPUs.
 
 ## 1. Start With The Training Shape
 
-Distributed training is strict about coordination.
+Distributed training is strict about coordination. A web application can usually tolerate partial availability. If one replica is missing, the load balancer sends traffic to the remaining replicas. A synchronous training job behaves differently. If one rank is missing, every other rank may wait. If one rank is slow, every other rank may idle at the synchronization point. If one rank crashes, the whole job usually fails or rolls back to a checkpoint. That difference changes the infrastructure design. You are not scheduling independent replicas. You are scheduling a single distributed computation.
 
-A web application can usually tolerate partial availability.
-
-If one replica is missing, the load balancer sends traffic to the remaining replicas.
-
-A synchronous training job behaves differently.
-
-If one rank is missing, every other rank may wait.
-
-If one rank is slow, every other rank may idle at the synchronization point.
-
-If one rank crashes, the whole job usually fails or rolls back to a checkpoint.
-
-That difference changes the infrastructure design.
-
-You are not scheduling independent replicas.
-
-You are scheduling a single distributed computation.
-
-Each worker has a role.
-
-Each worker needs a rank.
-
-Each worker needs to discover the others.
-
-Each worker needs a network path that can handle repeated collective communication.
-
-Each worker needs access to checkpoint storage at nearly the same time.
-
-The smallest useful model is four workers training together.
+Each worker has a role. Each worker needs a rank. Each worker needs to discover the others. Each worker needs a network path that can handle repeated collective communication. Each worker needs access to checkpoint storage at nearly the same time. The smallest useful model is four workers training together.
 
 ```text
 +----------------------+       +----------------------+
@@ -139,57 +61,17 @@ The smallest useful model is four workers training together.
 +----------------------+       +----------------------+
 ```
 
-That diagram hides several production risks.
-
-The ranks may not start at the same time.
-
-The DNS records may not exist when the first worker tries to resolve them.
-
-The network path may be the wrong one.
-
-The GPU and NIC may sit behind different NUMA domains.
-
-The scheduler may place only some ranks because resources are fragmented.
-
-A production platform must make each of those risks explicit.
+That diagram hides several production risks. The ranks may not start at the same time. The DNS records may not exist when the first worker tries to resolve them. The network path may be the wrong one. The GPU and NIC may sit behind different NUMA domains. The scheduler may place only some ranks because resources are fragmented. A production platform must make each of those risks explicit.
 
 ### Distributed Data Parallel And Sharded Training
 
-Modern distributed training commonly uses data parallelism, tensor/model parallelism, pipeline parallelism, or combinations of them.
+Modern distributed training commonly uses data parallelism, tensor/model parallelism, pipeline parallelism, or combinations of them. This module focuses on the infrastructure pattern behind synchronous data parallel and sharded data parallel training because it is the foundation most Kubernetes-based training stacks build on. **Distributed Data Parallel (DDP)** copies the model to every worker. Each worker processes a different slice of the data. After the backward pass, workers synchronize gradients. That synchronization is usually the expensive cross-node communication path. **Fully Sharded Data Parallel (FSDP)** reduces per-GPU memory pressure by sharding model parameters, gradients, and optimizer state.
 
-This module focuses on the infrastructure pattern behind synchronous data parallel and sharded data parallel training because it is the foundation most Kubernetes-based training stacks build on.
-
-**Distributed Data Parallel (DDP)** copies the model to every worker.
-
-Each worker processes a different slice of the data.
-
-After the backward pass, workers synchronize gradients.
-
-That synchronization is usually the expensive cross-node communication path.
-
-**Fully Sharded Data Parallel (FSDP)** reduces per-GPU memory pressure by sharding model parameters, gradients, and optimizer state.
-
-The infrastructure implications are similar but more intense.
-
-Workers still need reliable collective communication.
-
-They also become more sensitive to communication latency because model state is repeatedly gathered and sharded.
-
-**Pipeline and tensor parallelism** split work inside the model.
-
-They often require even tighter network expectations because some layers cannot proceed until remote partitions finish.
-
-The exact framework API changes over time.
-
-The infrastructure lesson is more stable:
-
-A training platform must support deterministic rank identity, all-or-nothing startup, high-bandwidth communication, topology alignment, and checkpoint recovery.
+The infrastructure implications are similar but more intense. Workers still need reliable collective communication. They also become more sensitive to communication latency because model state is repeatedly gathered and sharded. **Pipeline and tensor parallelism** split work inside the model. They often require even tighter network expectations because some layers cannot proceed until remote partitions finish. The exact framework API changes over time. The infrastructure lesson is more stable: A training platform must support deterministic rank identity, all-or-nothing startup, high-bandwidth communication, topology alignment, and checkpoint recovery.
 
 ### PyTorch DDP And FSDP2
 
-PyTorch training commonly launches distributed workers with `torchrun`.
-
-A typical `torchrun` invocation tells each worker:
+PyTorch training commonly launches distributed workers with `torchrun`. A typical `torchrun` invocation tells each worker:
 
 * how many nodes exist,
 * how many processes run per node,
@@ -197,27 +79,11 @@ A typical `torchrun` invocation tells each worker:
 * where the rendezvous endpoint is,
 * which backend to use.
 
-DDP is easy to explain because every worker owns the whole model.
 
-FSDP2 is more efficient for large models because state is sharded.
 
-The infrastructure does not get easier when the framework gets smarter.
+DDP is easy to explain because every worker owns the whole model. FSDP2 is more efficient for large models because state is sharded. The infrastructure does not get easier when the framework gets smarter. The scheduler still must admit the full job. The network still must carry collectives. The storage path still must handle checkpoint bursts. The operator still must prove that the job is using the intended hardware path. When planning a private AI cluster, separate framework concerns from platform concerns. Framework teams choose DDP, FSDP2, DeepSpeed, JAX, or another training strategy.
 
-The scheduler still must admit the full job.
-
-The network still must carry collectives.
-
-The storage path still must handle checkpoint bursts.
-
-The operator still must prove that the job is using the intended hardware path.
-
-When planning a private AI cluster, separate framework concerns from platform concerns.
-
-Framework teams choose DDP, FSDP2, DeepSpeed, JAX, or another training strategy.
-
-Platform teams provide the reliable substrate.
-
-The substrate must expose the right devices, place pods intelligently, admit jobs as a group, and make failures diagnosable.
+Platform teams provide the reliable substrate. The substrate must expose the right devices, place pods intelligently, admit jobs as a group, and make failures diagnosable.
 
 ### Mapping Training Requirements To Kubernetes
 
@@ -227,19 +93,9 @@ Distributed training frameworks require three basic platform guarantees.
 2. **Predictable discovery.** Workers must resolve each other before training begins.
 3. **Predictable admission.** Workers must start as a useful group, not as isolated pods.
 
-Historically, teams used custom training operators such as MPIJob or PyTorchJob.
 
-Those operators are still useful.
 
-However, Kubernetes now provides a strong native building block for simple distributed jobs: Indexed Jobs.
-
-An Indexed Job assigns each pod a stable completion index.
-
-That index maps naturally to a training rank.
-
-A headless Service provides stable DNS.
-
-Together, they give `torchrun` enough information to form a worker group.
+Historically, teams used custom training operators such as MPIJob or PyTorchJob. Those operators are still useful. However, Kubernetes now provides a strong native building block for simple distributed jobs: Indexed Jobs. An Indexed Job assigns each pod a stable completion index. That index maps naturally to a training rank. A headless Service provides stable DNS. Together, they give `torchrun` enough information to form a worker group.
 
 ```mermaid
 graph TD
@@ -251,146 +107,56 @@ graph TD
             P3[Pod 3: index-3.ddp-svc\nRank 3]
         end
     end
-    
     P0 <-->|NCCL AllReduce| P1
     P1 <-->|NCCL AllReduce| P2
     P2 <-->|NCCL AllReduce| P3
     P3 <-->|NCCL AllReduce| P0
-    
     P1 -.->|c10d Rendezvous| P0
     P2 -.->|c10d Rendezvous| P0
     P3 -.->|c10d Rendezvous| P0
 ```
 
-The important detail is that `completionMode: Indexed` gives each pod a value in `JOB_COMPLETION_INDEX`.
+The important detail is that `completionMode: Indexed` gives each pod a value in `JOB_COMPLETION_INDEX`. Rank 0 can be pod index 0. Rank 1 can be pod index 1. The rendezvous endpoint can point to rank 0 through the headless Service. That is a clean Kubernetes-native design. It is also incomplete by itself. Indexed Jobs do not solve gang admission. A plain Indexed Job can still partially start. A plain Indexed Job does not guarantee that workers are on the right network topology. A plain Indexed Job does not expose RDMA devices.
 
-Rank 0 can be pod index 0.
-
-Rank 1 can be pod index 1.
-
-The rendezvous endpoint can point to rank 0 through the headless Service.
-
-That is a clean Kubernetes-native design.
-
-It is also incomplete by itself.
-
-Indexed Jobs do not solve gang admission.
-
-A plain Indexed Job can still partially start.
-
-A plain Indexed Job does not guarantee that workers are on the right network topology.
-
-A plain Indexed Job does not expose RDMA devices.
-
-A plain Indexed Job does not make checkpoint storage fast.
-
-You should treat Indexed Jobs as the identity layer, not the whole platform.
+A plain Indexed Job does not make checkpoint storage fast. You should treat Indexed Jobs as the identity layer, not the whole platform.
 
 > **Active learning prompt:** A team tells you their Indexed Job has `parallelism: 16`, but only 10 pods are running and the rest are pending. The running pods consume GPUs while the job waits. Which platform guarantee is missing: identity, discovery, admission, topology, or storage?
 
-The missing guarantee is admission.
-
-The job has identity because each pod can get an index.
-
-It may even have discovery.
-
-But the platform admitted a partial job.
-
-For synchronous training, partial admission is often worse than no admission because it wastes expensive resources.
+The missing guarantee is admission. The job has identity because each pod can get an index. It may even have discovery. But the platform admitted a partial job. For synchronous training, partial admission is often worse than no admission because it wastes expensive resources.
 
 ## 2. Design The Network Before You Schedule The Job
 
-GPU training performance often fails at the network layer first.
+GPU training performance often fails at the network layer first. Kubernetes overlay networks are excellent for ordinary service traffic. They are not designed for sustained low-latency GPU collectives. An overlay network adds encapsulation, host networking overhead, and CPU involvement. For distributed training, those costs multiply at every synchronization point. NVIDIA Collective Communications Library, or NCCL, is commonly used for GPU collectives. NCCL can use multiple transports. When the RDMA path is healthy, it can use InfiniBand or RoCEv2. When that path is broken, it may fall back to TCP sockets.
 
-Kubernetes overlay networks are excellent for ordinary service traffic.
-
-They are not designed for sustained low-latency GPU collectives.
-
-An overlay network adds encapsulation, host networking overhead, and CPU involvement.
-
-For distributed training, those costs multiply at every synchronization point.
-
-NVIDIA Collective Communications Library, or NCCL, is commonly used for GPU collectives.
-
-NCCL can use multiple transports.
-
-When the RDMA path is healthy, it can use InfiniBand or RoCEv2.
-
-When that path is broken, it may fall back to TCP sockets.
-
-The dangerous failure mode is silent fallback.
-
-The job still runs.
-
-The dashboards still show GPU allocation.
-
-The training loop still progresses.
-
-But throughput collapses.
-
-A platform engineer must therefore ask two questions for every training workload:
+The dangerous failure mode is silent fallback. The job still runs. The dashboards still show GPU allocation. The training loop still progresses. But throughput collapses. A platform engineer must therefore ask two questions for every training workload:
 
 * Which network path should this job use?
 * How will we prove that the job actually used it?
 
+
+
 ### InfiniBand And RoCEv2 In Plain Terms
 
-InfiniBand is a purpose-built high-performance fabric.
+InfiniBand is a purpose-built high-performance fabric. RoCEv2 carries RDMA over Ethernet. Both allow remote direct memory access. The value of RDMA is that data can move between systems with much less CPU and kernel involvement than ordinary TCP. For GPU training, the strongest design is usually GPUDirect RDMA. That allows a capable NIC to transfer data directly to or from GPU memory without staging everything through host memory. This reduces latency and CPU pressure. It also makes topology alignment more important. If the NIC is close to one group of GPUs but the scheduler assigns a pod GPUs from a different NUMA domain, traffic crosses additional host interconnects before it reaches the NIC.
 
-RoCEv2 carries RDMA over Ethernet.
-
-Both allow remote direct memory access.
-
-The value of RDMA is that data can move between systems with much less CPU and kernel involvement than ordinary TCP.
-
-For GPU training, the strongest design is usually GPUDirect RDMA.
-
-That allows a capable NIC to transfer data directly to or from GPU memory without staging everything through host memory.
-
-This reduces latency and CPU pressure.
-
-It also makes topology alignment more important.
-
-If the NIC is close to one group of GPUs but the scheduler assigns a pod GPUs from a different NUMA domain, traffic crosses additional host interconnects before it reaches the NIC.
-
-The platform still "works."
-
-It just works badly.
+The platform still "works." It just works badly.
 
 ### The Kubernetes Problem With RDMA
 
-A normal pod receives a normal network interface from the cluster CNI.
-
-That interface is not the RDMA interface.
-
-You cannot route RDMA traffic through a standard overlay and expect kernel-bypass behavior.
-
-The pod needs access to a secondary interface or device resource that maps to the high-performance fabric.
-
-This is commonly done with:
+A normal pod receives a normal network interface from the cluster CNI. That interface is not the RDMA interface. You cannot route RDMA traffic through a standard overlay and expect kernel-bypass behavior. The pod needs access to a secondary interface or device resource that maps to the high-performance fabric. This is commonly done with:
 
 * Multus CNI for secondary network attachment,
 * SR-IOV device plugins for virtual functions,
 * the NVIDIA Network Operator for NVIDIA networking stacks,
 * switch-level configuration for lossless RoCEv2 or InfiniBand fabric operation.
 
-The pod spec then carries both application intent and hardware intent.
 
-It says "I need GPUs."
 
-It also says "I need the RDMA network attachment."
-
-It may say "I need this SR-IOV resource."
-
-That lets the scheduler and kubelet coordinate compute and network resources.
+The pod spec then carries both application intent and hardware intent. It says "I need GPUs." It also says "I need the RDMA network attachment." It may say "I need this SR-IOV resource." That lets the scheduler and kubelet coordinate compute and network resources.
 
 ### Exposing RDMA To Pods
 
-You cannot route RDMA traffic through a standard Kubernetes CNI overlay.
-
-You must attach secondary network interfaces directly to the Pods.
-
-This is accomplished using Multus CNI combined with the SR-IOV Network Device Plugin.
+You cannot route RDMA traffic through a standard Kubernetes CNI overlay. You must attach secondary network interfaces directly to the Pods. This is accomplished using Multus CNI combined with the SR-IOV Network Device Plugin.
 
 ```yaml
 # Example Multus NetworkAttachmentDefinition for RoCEv2
@@ -413,45 +179,15 @@ spec:
   }'
 ```
 
-This object is only one piece of the design.
+This object is only one piece of the design. The physical NIC must exist. The host drivers must be installed. The device plugin must advertise the resource. The pod must request the resource. The switch fabric must be configured correctly. The application must be told to use the intended interface. If any one of those pieces is wrong, NCCL may avoid the RDMA path. **Operational caution:** RoCEv2 requires a lossless network fabric, so Priority Flow Control and Explicit Congestion Notification must be configured on the top-of-rack switches that carry the training traffic. If packets drop during congestion, RoCEv2 can enter retransmission behavior that creates severe latency spikes, and synchronous training magnifies that latency because every rank waits at the collective boundary.
 
-The physical NIC must exist.
-
-The host drivers must be installed.
-
-The device plugin must advertise the resource.
-
-The pod must request the resource.
-
-The switch fabric must be configured correctly.
-
-The application must be told to use the intended interface.
-
-If any one of those pieces is wrong, NCCL may avoid the RDMA path.
-
-:::caution
-**RoCEv2 Requirements:** RoCEv2 requires a lossless network fabric. You must configure Priority Flow Control (PFC) and Explicit Congestion Notification (ECN) on your Top of Rack (ToR) switches. If packets drop, RoCEv2 falls back to Go-Back-N, causing catastrophic latency spikes that stall training.
-:::
-
-InfiniBand has its own operational requirements.
-
-For InfiniBand, the subnet manager matters.
-
-Without a subnet manager such as OpenSM, ports may remain inactive or unusable.
-
-For NVIDIA networking stacks, validate the driver and operator prerequisites before trying to debug training code.
-
-A PyTorch error can be the final symptom of a fabric that was never initialized.
+InfiniBand has its own operational requirements. For InfiniBand, the subnet manager matters. Without a subnet manager such as OpenSM, ports may remain inactive or unusable. For NVIDIA networking stacks, validate the driver and operator prerequisites before trying to debug training code. A PyTorch error can be the final symptom of a fabric that was never initialized.
 
 > **Stop and think:** Why is it critical for the NVIDIA Network Operator to have the DOCA driver and OpenSM running before attempting an InfiniBand deployment? Without a subnet manager like OpenSM, the InfiniBand fabric remains uninitialized, and ports will stay in an inactive state, preventing any RDMA communication.
 
 ### NCCL Configuration
 
-NCCL behavior is controlled through environment variables passed to the training container.
-
-These variables are not a substitute for correct hardware setup.
-
-They are the control surface you use to verify and constrain NCCL behavior.
+NCCL behavior is controlled through environment variables passed to the training container. These variables are not a substitute for correct hardware setup. They are the control surface you use to verify and constrain NCCL behavior.
 
 | Variable | Recommended Value | Purpose |
 | :--- | :--- | :--- |
@@ -468,36 +204,17 @@ graph TD
     A --> C[NCCL_IB_HCA=mlx5_0,mlx5_1]
     A --> D[NCCL_IB_DISABLE=0]
     A --> E[NCCL_NET_GDR_LEVEL=2]
-
     B --> B1[Verifies RDMA usage vs TCP fallback]
     C --> C1[Restricts NCCL to specific RoCE/IB devices]
     D --> D1[Set to 1 only for TCP debugging]
     E --> E1[Enables GPUDirect RDMA, bypassing CPU]
 ```
 
-Use `NCCL_DEBUG=INFO` during validation and incident response.
-
-In mature production environments, you may reduce log verbosity for steady-state runs.
-
-Do not remove the ability to re-enable it quickly.
-
-A useful platform pattern is to provide a debug profile.
-
-The default profile sets conservative production values.
-
-The debug profile adds NCCL logging, interface restrictions, and short test jobs that run collectives before a large training run begins.
+Use `NCCL_DEBUG=INFO` during validation and incident response. In mature production environments, you may reduce log verbosity for steady-state runs. Do not remove the ability to re-enable it quickly. A useful platform pattern is to provide a debug profile. The default profile sets conservative production values. The debug profile adds NCCL logging, interface restrictions, and short test jobs that run collectives before a large training run begins.
 
 ### What To Check When RDMA Is Suspect
 
-Start with the symptom.
-
-If training is slow but not failing, look for TCP fallback.
-
-If training fails immediately, look for rendezvous, DNS, or interface discovery.
-
-If training progresses but stalls during collectives, inspect fabric loss, MTU, congestion, and topology.
-
-A practical debugging sequence is:
+Start with the symptom. If training is slow but not failing, look for TCP fallback. If training fails immediately, look for rendezvous, DNS, or interface discovery. If training progresses but stalls during collectives, inspect fabric loss, MTU, congestion, and topology. A practical debugging sequence is:
 
 1. Confirm that the pod requested the GPU and RDMA resources.
 2. Confirm that the pod received the Multus attachment.
@@ -507,108 +224,32 @@ A practical debugging sequence is:
 6. Confirm that switch counters do not show loss or retransmission symptoms.
 7. Confirm that pods are not crossing a poor NUMA or rack topology.
 
-The order matters.
 
-Do not start by tuning NCCL if the pod never received the RDMA interface.
 
-Do not start by changing switch settings if NCCL logs show it is using sockets.
-
-Do not blame PyTorch if DNS resolution fails before the process group forms.
+The order matters. Do not start by tuning NCCL if the pod never received the RDMA interface. Do not start by changing switch settings if NCCL logs show it is using sockets. Do not blame PyTorch if DNS resolution fails before the process group forms.
 
 ### Worked Example: Diagnosing A Slow AllReduce
 
-A research team reports that a four-node DDP job is running at one third of expected throughput.
+A research team reports that a four-node DDP job is running at one third of expected throughput. The job does not crash. GPU utilization rises and falls in waves. The team suspects PyTorch. You are the platform engineer. Your task is to decide whether this is a framework problem or an infrastructure problem. **Step 1: Look for the communication symptom.** The training logs show long pauses after backward passes. That points toward gradient synchronization. In DDP, gradient synchronization commonly uses NCCL AllReduce. So the first hypothesis is a communication path problem.
 
-The job does not crash.
-
-GPU utilization rises and falls in waves.
-
-The team suspects PyTorch.
-
-You are the platform engineer.
-
-Your task is to decide whether this is a framework problem or an infrastructure problem.
-
-**Step 1: Look for the communication symptom.**
-
-The training logs show long pauses after backward passes.
-
-That points toward gradient synchronization.
-
-In DDP, gradient synchronization commonly uses NCCL AllReduce.
-
-So the first hypothesis is a communication path problem.
-
-**Step 2: Check whether NCCL used RDMA.**
-
-You inspect the worker logs and find lines similar to:
+**Step 2: Check whether NCCL used RDMA.** You inspect the worker logs and find lines similar to:
 
 ```text
 NCCL INFO NET/Socket : Using eth0
 ```
 
-You do not see the expected `NET/IB` path.
-
-That means the job likely fell back to TCP sockets.
-
-PyTorch is not the first suspect anymore.
-
-The infrastructure did not provide or select the intended RDMA path.
-
-**Step 3: Confirm the pod attachment.**
-
-You check the pod annotations and network interfaces.
+You do not see the expected `NET/IB` path. That means the job likely fell back to TCP sockets. PyTorch is not the first suspect anymore. The infrastructure did not provide or select the intended RDMA path. **Step 3: Confirm the pod attachment.** You check the pod annotations and network interfaces.
 
 ```bash
 kubectl get pod pytorch-ddp-0 -o jsonpath='{.metadata.annotations.k8s\.v1\.cni\.cncf\.io/network-status}'
 kubectl exec pytorch-ddp-0 -- ip link
 ```
 
-The pod only has the default `eth0`.
+The pod only has the default `eth0`. It does not have the secondary RoCE interface. That means NCCL could not use the RDMA path even if the host was configured correctly. **Step 4: Check the pod resource request.** You inspect the job template. The pod requests GPUs but does not request the SR-IOV resource associated with the RoCE NetworkAttachmentDefinition. The Multus annotation was also missing. The scheduler placed the pod as a normal GPU workload. **Step 5: Fix the platform contract.** You update the workload template so it includes the network attachment annotation and requests the RDMA resource advertised by the device plugin.
 
-It does not have the secondary RoCE interface.
+You also include NCCL environment variables that restrict the expected interface. The fix is not "upgrade PyTorch." The fix is to express the network requirement in Kubernetes. **Step 6: Re-run a small collective test.** Before launching the expensive training run, you run a small two-node job. The logs now show the intended RDMA path. GPU utilization becomes smoother. The team can then re-run the larger job with much lower risk. **Step 7: Capture the lesson as a platform guardrail.** You add an admission policy or workload template validation rule. Training jobs in the high-performance queue must request both GPU and RDMA resources.
 
-That means NCCL could not use the RDMA path even if the host was configured correctly.
-
-**Step 4: Check the pod resource request.**
-
-You inspect the job template.
-
-The pod requests GPUs but does not request the SR-IOV resource associated with the RoCE NetworkAttachmentDefinition.
-
-The Multus annotation was also missing.
-
-The scheduler placed the pod as a normal GPU workload.
-
-**Step 5: Fix the platform contract.**
-
-You update the workload template so it includes the network attachment annotation and requests the RDMA resource advertised by the device plugin.
-
-You also include NCCL environment variables that restrict the expected interface.
-
-The fix is not "upgrade PyTorch."
-
-The fix is to express the network requirement in Kubernetes.
-
-**Step 6: Re-run a small collective test.**
-
-Before launching the expensive training run, you run a small two-node job.
-
-The logs now show the intended RDMA path.
-
-GPU utilization becomes smoother.
-
-The team can then re-run the larger job with much lower risk.
-
-**Step 7: Capture the lesson as a platform guardrail.**
-
-You add an admission policy or workload template validation rule.
-
-Training jobs in the high-performance queue must request both GPU and RDMA resources.
-
-They must also include the standard NCCL debug profile during preflight.
-
-That turns an incident into a reusable control.
+They must also include the standard NCCL debug profile during preflight. That turns an incident into a reusable control.
 
 > **Active learning prompt:** In the worked example, what would change if the pod had the secondary RoCE interface but NCCL still used `eth0`? Name two checks you would perform before changing application code.
 
@@ -616,57 +257,13 @@ Good answers include checking `NCCL_IB_HCA`, checking whether the interface name
 
 ## 3. Align Hardware Topology With Pod Placement
 
-A GPU node is not a flat box of identical devices.
+A GPU node is not a flat box of identical devices. It has PCIe root complexes. It has NUMA domains. It may have NVLink or other GPU interconnects. It has NICs attached through specific CPU and PCIe paths. Two GPUs in the same server may have very different communication paths to a NIC. If a pod asks for four GPUs, the device plugin can expose four GPUs. That does not automatically mean they are the best four GPUs. If the pod receives GPUs split across NUMA domains, CPU memory access and NIC paths may cross host interconnects.
 
-It has PCIe root complexes.
-
-It has NUMA domains.
-
-It may have NVLink or other GPU interconnects.
-
-It has NICs attached through specific CPU and PCIe paths.
-
-Two GPUs in the same server may have very different communication paths to a NIC.
-
-If a pod asks for four GPUs, the device plugin can expose four GPUs.
-
-That does not automatically mean they are the best four GPUs.
-
-If the pod receives GPUs split across NUMA domains, CPU memory access and NIC paths may cross host interconnects.
-
-The job still starts.
-
-The performance loss may only appear under communication pressure.
-
-This is why topology alignment is an admission problem, not just a monitoring problem.
-
-You want a bad placement to fail early.
-
-A pending pod is visible and recoverable.
-
-A badly placed pod can waste an entire training run.
+The job still starts. The performance loss may only appear under communication pressure. This is why topology alignment is an admission problem, not just a monitoring problem. You want a bad placement to fail early. A pending pod is visible and recoverable. A badly placed pod can waste an entire training run.
 
 ### What NUMA Means For Training
 
-NUMA stands for Non-Uniform Memory Access.
-
-In a multi-socket server, memory is attached to different CPU sockets.
-
-A CPU can access remote memory, but remote access is slower.
-
-PCIe devices are also attached through particular root complexes.
-
-A GPU may be close to one CPU socket.
-
-A NIC may be close to another.
-
-When training traffic must cross sockets, latency rises and bandwidth falls.
-
-For ordinary batch jobs, that may be acceptable.
-
-For synchronous GPU collectives, it can dominate runtime.
-
-A simplified node might look like this:
+NUMA stands for Non-Uniform Memory Access. In a multi-socket server, memory is attached to different CPU sockets. A CPU can access remote memory, but remote access is slower. PCIe devices are also attached through particular root complexes. A GPU may be close to one CPU socket. A NIC may be close to another. When training traffic must cross sockets, latency rises and bandwidth falls. For ordinary batch jobs, that may be acceptable. For synchronous GPU collectives, it can dominate runtime. A simplified node might look like this:
 
 ```text
 +--------------------------------------------------------------------+
@@ -685,13 +282,7 @@ A simplified node might look like this:
 +--------------------------------------------------------------------+
 ```
 
-A pod requesting four GPUs can fit neatly in one NUMA domain.
-
-A pod requesting six GPUs cannot.
-
-If the platform permits the six-GPU pod to run on this node, it must cross the interconnect.
-
-If the platform rejects it, the job may wait for a better shape or require a different workload design.
+A pod requesting four GPUs can fit neatly in one NUMA domain. A pod requesting six GPUs cannot. If the platform permits the six-GPU pod to run on this node, it must cross the interconnect. If the platform rejects it, the job may wait for a better shape or require a different workload design.
 
 ### Kubelet Topology Manager
 
@@ -703,49 +294,15 @@ topologyManagerPolicy: single-numa-node
 topologyManagerScope: pod
 ```
 
-Setting `single-numa-node` ensures the kubelet rejects pod admission if it cannot allocate CPUs, memory, GPUs, and SR-IOV NICs from the same NUMA node.
+Setting `single-numa-node` ensures the kubelet rejects pod admission if it cannot allocate CPUs, memory, GPUs, and SR-IOV NICs from the same NUMA node. The failure appears as a `TopologyAffinityError`. That failure is useful. It tells the platform that the request cannot be satisfied with the required locality. `topologyManagerScope: pod` matters because training pods often contain init containers or sidecars. The platform should reason about the pod as a whole. For the NVIDIA device plugin to report NUMA topology to the kubelet, deploy it with topology reporting enabled in the plugin configuration.
 
-The failure appears as a `TopologyAffinityError`.
-
-That failure is useful.
-
-It tells the platform that the request cannot be satisfied with the required locality.
-
-`topologyManagerScope: pod` matters because training pods often contain init containers or sidecars.
-
-The platform should reason about the pod as a whole.
-
-For the NVIDIA device plugin to report NUMA topology to the kubelet, deploy it with topology reporting enabled in the plugin configuration.
-
-The exact key names depend on the operator and plugin version.
-
-Validate against the operator documentation used in your cluster.
-
-The design principle is stable:
-
-Device plugins must expose topology hints.
-
-The kubelet must enforce them.
-
-Workloads must request resources in a shape that can be admitted.
+The exact key names depend on the operator and plugin version. Validate against the operator documentation used in your cluster. The design principle is stable: Device plugins must expose topology hints. The kubelet must enforce them. Workloads must request resources in a shape that can be admitted.
 
 > **Pause and predict:** If a Kubernetes cluster has nodes with 8 GPUs split evenly across two NUMA domains, and a Pod requests 5 GPUs with a Kubelet policy of `single-numa-node`, will the Pod be scheduled? No, it will be rejected with a TopologyAffinityError, because 5 GPUs cannot be fulfilled by a single 4-GPU NUMA node.
 
 ### Scheduler Placement Versus Kubelet Admission
 
-It is easy to confuse scheduler placement with kubelet admission.
-
-The scheduler chooses a node.
-
-The kubelet admits the pod on that node.
-
-Topology Manager runs at kubelet admission time.
-
-That means the scheduler may pick a node that appears to have enough total GPUs, but the kubelet may reject the pod because those GPUs cannot be aligned with CPU, memory, or NIC resources.
-
-This can create frustrating loops if the scheduler does not have enough topology awareness.
-
-For production AI clusters, combine several layers:
+It is easy to confuse scheduler placement with kubelet admission. The scheduler chooses a node. The kubelet admits the pod on that node. Topology Manager runs at kubelet admission time. That means the scheduler may pick a node that appears to have enough total GPUs, but the kubelet may reject the pod because those GPUs cannot be aligned with CPU, memory, or NIC resources. This can create frustrating loops if the scheduler does not have enough topology awareness. For production AI clusters, combine several layers:
 
 * node labels for hardware class,
 * taints and tolerations for GPU pools,
@@ -755,11 +312,9 @@ For production AI clusters, combine several layers:
 * batch admission to avoid partial starts,
 * observability that records topology admission failures.
 
-Do not rely on one layer to solve every placement problem.
 
-Kubernetes scheduling is intentionally modular.
 
-Private AI platforms need that modularity, but they must wire the modules together deliberately.
+Do not rely on one layer to solve every placement problem. Kubernetes scheduling is intentionally modular. Private AI platforms need that modularity, but they must wire the modules together deliberately.
 
 ### Topology-Aware Design Checklist
 
@@ -774,87 +329,25 @@ Before opening a GPU pool to training teams, answer these questions:
 * Can users see why a topology admission failure happened?
 * Does the queueing layer avoid admitting jobs that will fragment the pool?
 
-These answers should become platform documentation.
 
-They should also become workload templates.
 
-Most data scientists should not need to know every PCIe path in the server.
-
-They should choose from validated shapes such as `1xGPU`, `4xGPU single NUMA`, or `8xGPU full node`.
-
-The platform should make the correct path the easy path.
+These answers should become platform documentation. They should also become workload templates. Most data scientists should not need to know every PCIe path in the server. They should choose from validated shapes such as `1xGPU`, `4xGPU single NUMA`, or `8xGPU full node`. The platform should make the correct path the easy path.
 
 ## 4. Use Gang Scheduling To Avoid Partial Training Jobs
 
-The default kube-scheduler evaluates pods individually.
+The default kube-scheduler evaluates pods individually. That behavior is sensible for many workloads. It is dangerous for synchronous training. If a job needs 64 workers and only 40 can start, those 40 workers are not useful. They hold GPUs. They may start containers. They may wait at rendezvous. They may fail after timeout. Other jobs may be blocked by the partial allocation. This is the scheduling version of deadlock. Gang scheduling solves the problem by admitting a group only when the group can run as a group. In Kubernetes AI platforms, the common choices are Kueue and Volcano.
 
-That behavior is sensible for many workloads.
-
-It is dangerous for synchronous training.
-
-If a job needs 64 workers and only 40 can start, those 40 workers are not useful.
-
-They hold GPUs.
-
-They may start containers.
-
-They may wait at rendezvous.
-
-They may fail after timeout.
-
-Other jobs may be blocked by the partial allocation.
-
-This is the scheduling version of deadlock.
-
-Gang scheduling solves the problem by admitting a group only when the group can run as a group.
-
-In Kubernetes AI platforms, the common choices are Kueue and Volcano.
-
-Both can solve all-or-nothing admission.
-
-They differ in how deeply they replace or extend Kubernetes scheduling.
+Both can solve all-or-nothing admission. They differ in how deeply they replace or extend Kubernetes scheduling.
 
 ### Why Native Jobs Are Not Enough
 
-A Kubernetes Job manages completion.
-
-It does not manage global fairness.
-
-It does not hold a job until all pods can run.
-
-It does not understand that a training worker is useless without the other ranks.
-
-A Job can retry failed pods.
-
-An Indexed Job can assign ranks.
-
-Neither is a complete batch platform.
-
-Without queueing, teams create accidental priority systems.
-
-The first job to grab partial resources may block better-shaped jobs.
-
-A large job can fragment the cluster.
-
-A small job can slip through and delay a larger reserved run.
+A Kubernetes Job manages completion. It does not manage global fairness. It does not hold a job until all pods can run. It does not understand that a training worker is useless without the other ranks. A Job can retry failed pods. An Indexed Job can assign ranks. Neither is a complete batch platform. Without queueing, teams create accidental priority systems. The first job to grab partial resources may block better-shaped jobs. A large job can fragment the cluster. A small job can slip through and delay a larger reserved run.
 
 The platform needs admission control before pod creation becomes resource allocation.
 
 ### Kueue
 
-Kueue is a job queueing controller.
-
-It sits above normal Kubernetes scheduling.
-
-Instead of replacing the scheduler, it controls when jobs are admitted.
-
-For native Jobs, Kueue can keep the job suspended until quota and capacity are available.
-
-When the workload is admitted, Kueue allows the job to proceed.
-
-This is a strong fit for modern Kubernetes environments that already use standard Job APIs and want queueing without replacing the scheduling stack.
-
-Kueue works especially well when your platform contract is:
+Kueue is a job queueing controller. It sits above normal Kubernetes scheduling. Instead of replacing the scheduler, it controls when jobs are admitted. For native Jobs, Kueue can keep the job suspended until quota and capacity are available. When the workload is admitted, Kueue allows the job to proceed. This is a strong fit for modern Kubernetes environments that already use standard Job APIs and want queueing without replacing the scheduling stack. Kueue works especially well when your platform contract is:
 
 * users submit Jobs,
 * queues represent teams or priorities,
@@ -862,50 +355,26 @@ Kueue works especially well when your platform contract is:
 * ClusterQueues define quota,
 * admission happens before workers start.
 
-Kueue is less focused on deep HPC-style placement than Volcano.
 
-You may still need node labels, topology policies, and device plugin configuration for placement details.
+
+Kueue is less focused on deep HPC-style placement than Volcano. You may still need node labels, topology policies, and device plugin configuration for placement details.
 
 ### Volcano
 
-Volcano is a Kubernetes-native batch scheduler.
-
-It runs as a scheduler and introduces batch concepts such as queues, pod groups, and scheduling plugins.
-
-Volcano is often used in HPC and AI workloads that need more explicit gang semantics and advanced scheduling behavior.
-
-It can be a strong fit when:
+Volcano is a Kubernetes-native batch scheduler. It runs as a scheduler and introduces batch concepts such as queues, pod groups, and scheduling plugins. Volcano is often used in HPC and AI workloads that need more explicit gang semantics and advanced scheduling behavior. It can be a strong fit when:
 
 * the platform already standardizes on Volcano CRDs,
 * workloads use Kubeflow operators that integrate with Volcano,
 * the team wants scheduler-level batch behavior,
 * advanced queueing and pod group semantics are required.
 
-The tradeoff is operational complexity.
 
-A secondary scheduler changes upgrade planning, debugging paths, and failure domains.
 
-Teams must understand which scheduler owns which pods.
-
-The more deeply you customize scheduling, the more carefully you must test cluster upgrades.
+The tradeoff is operational complexity. A secondary scheduler changes upgrade planning, debugging paths, and failure domains. Teams must understand which scheduler owns which pods. The more deeply you customize scheduling, the more carefully you must test cluster upgrades.
 
 ### Choosing Between Kueue And Volcano
 
-Use the workload shape to choose.
-
-If your platform mostly runs native Kubernetes Jobs or Indexed Jobs, start with Kueue.
-
-If your platform runs HPC-style workloads with explicit PodGroups and advanced batch scheduling needs, evaluate Volcano.
-
-If you only need autoscaling for stateless inference, use neither as the primary answer.
-
-Inference scaling is a different problem.
-
-KEDA or HPA-style scaling is usually a better starting point for request-driven inference.
-
-Training queueing and inference autoscaling often coexist in the same cluster.
-
-They should not be confused.
+Use the workload shape to choose. If your platform mostly runs native Kubernetes Jobs or Indexed Jobs, start with Kueue. If your platform runs HPC-style workloads with explicit PodGroups and advanced batch scheduling needs, evaluate Volcano. If you only need autoscaling for stateless inference, use neither as the primary answer. Inference scaling is a different problem. KEDA or HPA-style scaling is usually a better starting point for request-driven inference. Training queueing and inference autoscaling often coexist in the same cluster. They should not be confused.
 
 ```text
 +----------------------------+--------------------------+--------------------------+
@@ -919,41 +388,15 @@ They should not be confused.
 +----------------------------+--------------------------+--------------------------+
 ```
 
-The most common mistake is asking one component to solve the whole system.
-
-Kueue does not configure RoCE.
-
-Volcano does not fix checkpoint storage.
-
-Topology Manager does not provide fairness.
-
-Multus does not provide gang admission.
-
-A private AI platform is the composition.
+The most common mistake is asking one component to solve the whole system. Kueue does not configure RoCE. Volcano does not fix checkpoint storage. Topology Manager does not provide fairness. Multus does not provide gang admission. A private AI platform is the composition.
 
 ## 5. Operators, Device Plugins, And Workload APIs
 
-GPU infrastructure usually requires operators.
-
-Operators install drivers, device plugins, monitoring agents, container runtime configuration, and supporting components.
-
-They reduce manual host work.
-
-They do not remove the need to understand the stack.
+GPU infrastructure usually requires operators. Operators install drivers, device plugins, monitoring agents, container runtime configuration, and supporting components. They reduce manual host work. They do not remove the need to understand the stack.
 
 ### NVIDIA GPU Operator
 
-The NVIDIA GPU Operator commonly manages driver installation, container runtime integration, device plugin deployment, GPU feature discovery, and DCGM exporter.
-
-The exact component versions change over time.
-
-For production planning, do not copy a component matrix from a lesson and treat it as permanent truth.
-
-Validate the GPU Operator version, supported Kubernetes versions, CUDA compatibility, driver branch, and device plugin behavior from the live vendor matrix during upgrade planning.
-
-The platform decision is broader than "install the operator."
-
-You must decide:
+The NVIDIA GPU Operator commonly manages driver installation, container runtime integration, device plugin deployment, GPU feature discovery, and DCGM exporter. The exact component versions change over time. For production planning, do not copy a component matrix from a lesson and treat it as permanent truth. Validate the GPU Operator version, supported Kubernetes versions, CUDA compatibility, driver branch, and device plugin behavior from the live vendor matrix during upgrade planning. The platform decision is broader than "install the operator." You must decide:
 
 * whether drivers are managed by the operator or by the base OS image,
 * whether GPU nodes are internet-connected or air-gapped,
@@ -963,23 +406,13 @@ You must decide:
 * how MIG or full-GPU modes are exposed,
 * how topology information reaches the kubelet.
 
-A private AI cluster often has strict change windows.
 
-A driver upgrade can affect every training workload.
 
-Treat operator upgrades like platform releases.
+A private AI cluster often has strict change windows. A driver upgrade can affect every training workload. Treat operator upgrades like platform releases.
 
 ### AMD ROCm Ecosystem
 
-AMD accelerator clusters follow a similar pattern with ROCm components, AMD device plugins, and ROCm-oriented operators.
-
-The resource name differs.
-
-The driver stack differs.
-
-The observability tools differ.
-
-The Kubernetes contract remains familiar:
+AMD accelerator clusters follow a similar pattern with ROCm components, AMD device plugins, and ROCm-oriented operators. The resource name differs. The driver stack differs. The observability tools differ. The Kubernetes contract remains familiar:
 
 * nodes expose accelerator resources,
 * pods request those resources,
@@ -987,45 +420,19 @@ The Kubernetes contract remains familiar:
 * training frameworks use the accelerator backend,
 * observability confirms that the expected hardware path is active.
 
-Mixed accelerator environments require extra care.
 
-Do not hide hardware differences behind a single generic queue unless workloads are truly portable.
 
-Different accelerators may require different images, libraries, drivers, and performance expectations.
-
-Use ResourceFlavors, node labels, or separate queues to make hardware differences explicit.
+Mixed accelerator environments require extra care. Do not hide hardware differences behind a single generic queue unless workloads are truly portable. Different accelerators may require different images, libraries, drivers, and performance expectations. Use ResourceFlavors, node labels, or separate queues to make hardware differences explicit.
 
 ### Kubeflow Trainer And Training Operators
 
-Training operators can simplify user experience.
-
-They can generate workers, manage launcher pods, integrate with framework-specific conventions, and reduce YAML burden.
-
-Kubeflow Trainer v2 is a modern approach for multiple training runtimes.
-
-Legacy training operators may still exist in clusters for older frameworks.
-
-When adopting a training operator, evaluate it at two levels.
-
-At the user level, ask whether it makes common training jobs easier to submit correctly.
-
-At the platform level, ask whether it integrates cleanly with your queueing, topology, networking, and observability stack.
-
-A training operator that hides too much can make incidents harder.
+Training operators can simplify user experience. They can generate workers, manage launcher pods, integrate with framework-specific conventions, and reduce YAML burden. Kubeflow Trainer v2 is a modern approach for multiple training runtimes. Legacy training operators may still exist in clusters for older frameworks. When adopting a training operator, evaluate it at two levels. At the user level, ask whether it makes common training jobs easier to submit correctly. At the platform level, ask whether it integrates cleanly with your queueing, topology, networking, and observability stack. A training operator that hides too much can make incidents harder.
 
 A good operator should make the right path shorter without obscuring the underlying Kubernetes objects during debugging.
 
 ### MLflow, W&B, And Experiment Visibility
 
-Training infrastructure is not only about pods and devices.
-
-Teams also need experiment tracking.
-
-MLflow and Weights & Biases are common options.
-
-In private environments, both storage and network paths matter.
-
-Self-managed experiment tracking must answer:
+Training infrastructure is not only about pods and devices. Teams also need experiment tracking. MLflow and Weights & Biases are common options. In private environments, both storage and network paths matter. Self-managed experiment tracking must answer:
 
 * Where are metrics stored?
 * Where are artifacts stored?
@@ -1035,87 +442,25 @@ Self-managed experiment tracking must answer:
 * Can failed runs be tied to node, network, or storage incidents?
 * Can the platform enforce retention and budget policies?
 
-The strongest platform designs link experiment metadata to infrastructure metadata.
 
-When a run slows down, the team should be able to correlate the run with NCCL logs, GPU metrics, queue wait time, node placement, and checkpoint duration.
+
+The strongest platform designs link experiment metadata to infrastructure metadata. When a run slows down, the team should be able to correlate the run with NCCL logs, GPU metrics, queue wait time, node placement, and checkpoint duration.
 
 ## 6. Checkpoint Storage Is Part Of Training Infrastructure
 
-Long-running training jobs fail.
-
-A private cluster must assume failure.
-
-Hardware faults happen.
-
-Nodes reboot.
-
-NICs flap.
-
-ECC errors appear.
-
-A single rank can crash.
-
-A synchronous training job must then recover from a checkpoint or restart from the beginning.
-
-Checkpoint design affects both reliability and throughput.
-
-A checkpoint path that is durable but slow can waste huge amounts of GPU time.
-
-A checkpoint path that is fast but not durable can lose days of progress.
-
-The platform must balance both.
+Long-running training jobs fail. A private cluster must assume failure. Hardware faults happen. Nodes reboot. NICs flap. ECC errors appear. A single rank can crash. A synchronous training job must then recover from a checkpoint or restart from the beginning. Checkpoint design affects both reliability and throughput. A checkpoint path that is durable but slow can waste huge amounts of GPU time. A checkpoint path that is fast but not durable can lose days of progress. The platform must balance both.
 
 ### Why Checkpoint Bursts Hurt
 
-Training checkpoints often arrive in bursts.
+Training checkpoints often arrive in bursts. Many workers reach the checkpoint boundary at nearly the same time. Each worker writes model state, optimizer state, metadata, or shard files. If every worker writes to the same object storage endpoint through a slow path, the storage system becomes the bottleneck. If Rank 0 aggregates the whole model and writes it alone, Rank 0 can run out of memory or become a single-node bottleneck. If storage pauses are long, GPUs sit idle. If checkpoints are too infrequent, failure recovery loses too much progress.
 
-Many workers reach the checkpoint boundary at nearly the same time.
-
-Each worker writes model state, optimizer state, metadata, or shard files.
-
-If every worker writes to the same object storage endpoint through a slow path, the storage system becomes the bottleneck.
-
-If Rank 0 aggregates the whole model and writes it alone, Rank 0 can run out of memory or become a single-node bottleneck.
-
-If storage pauses are long, GPUs sit idle.
-
-If checkpoints are too infrequent, failure recovery loses too much progress.
-
-Storage design is therefore an economic decision.
-
-The question is not "can the job write a file?"
-
-The question is "can the job checkpoint often enough to recover without destroying useful GPU time?"
+Storage design is therefore an economic decision. The question is not "can the job write a file?" The question is "can the job checkpoint often enough to recover without destroying useful GPU time?"
 
 ### Checkpoint Design Patterns
 
-A simple pattern writes directly to shared storage.
+A simple pattern writes directly to shared storage. This is easy to operate. It may be too slow for large jobs. A more scalable pattern writes sharded checkpoints. Each rank writes its own shard. This avoids Rank 0 aggregation. It can work well with parallel file systems. Another pattern writes first to local NVMe and flushes asynchronously. The training process resumes quickly after the local write. A background process moves checkpoint data to durable object storage. This can reduce training stalls but increases operational complexity. You must monitor flush lag.
 
-This is easy to operate.
-
-It may be too slow for large jobs.
-
-A more scalable pattern writes sharded checkpoints.
-
-Each rank writes its own shard.
-
-This avoids Rank 0 aggregation.
-
-It can work well with parallel file systems.
-
-Another pattern writes first to local NVMe and flushes asynchronously.
-
-The training process resumes quickly after the local write.
-
-A background process moves checkpoint data to durable object storage.
-
-This can reduce training stalls but increases operational complexity.
-
-You must monitor flush lag.
-
-You must ensure local disks do not fill.
-
-You must define recovery behavior if a node fails before flush completes.
+You must ensure local disks do not fill. You must define recovery behavior if a node fails before flush completes.
 
 ```text
 +---------------------+      fast local write       +----------------------+
@@ -1131,21 +476,15 @@ You must define recovery behavior if a node fails before flush completes.
                                                      +----------------------+
 ```
 
-This pattern can be excellent when engineered carefully.
-
-It is risky when treated as a quick hack.
-
-A checkpoint that exists only on a failed node is not a recovery point.
-
-Your platform must label checkpoint states clearly.
-
-For example:
+This pattern can be excellent when engineered carefully. It is risky when treated as a quick hack. A checkpoint that exists only on a failed node is not a recovery point. Your platform must label checkpoint states clearly. For example:
 
 * `local-written`
 * `flush-in-progress`
 * `durable`
 * `verified`
 * `expired`
+
+
 
 Users should know which checkpoint is safe for restart.
 
@@ -1164,21 +503,13 @@ Before selecting checkpoint storage, ask:
 * How are checkpoints cleaned up?
 * How are checkpoints protected from cross-team access?
 
-For advanced infrastructure modules, storage should never be an afterthought.
 
-It is part of the training control plane.
+
+For advanced infrastructure modules, storage should never be an afterthought. It is part of the training control plane.
 
 ## 7. Build An Operational Runbook
 
-A private AI training platform should ship with a runbook before it ships with users.
-
-The runbook should not be a loose collection of commands.
-
-It should map symptoms to likely layers.
-
-That reduces incident time.
-
-It also helps platform engineers avoid blaming the wrong component.
+A private AI training platform should ship with a runbook before it ships with users. The runbook should not be a loose collection of commands. It should map symptoms to likely layers. That reduces incident time. It also helps platform engineers avoid blaming the wrong component.
 
 ### Symptom-To-Layer Map
 
@@ -1196,17 +527,11 @@ It also helps platform engineers avoid blaming the wrong component.
 +--------------------------------------+--------------------------------+
 ```
 
-This map is not exhaustive.
-
-It gives responders a starting path.
-
-A good incident process narrows the layer before changing settings.
+This map is not exhaustive. It gives responders a starting path. A good incident process narrows the layer before changing settings.
 
 ### Preflight Tests
 
-Run small tests before expensive jobs.
-
-A preflight should validate:
+Run small tests before expensive jobs. A preflight should validate:
 
 * GPU visibility,
 * RDMA interface visibility,
@@ -1216,45 +541,13 @@ A preflight should validate:
 * topology admission,
 * checkpoint write path.
 
-A preflight job should finish quickly.
 
-It should be cheap enough to run often.
 
-It should fail loudly when the platform contract is broken.
-
-For example, a two-node NCCL test can confirm that the intended interface is used.
-
-A small Indexed Job can confirm that headless Service DNS works.
-
-A write test can confirm checkpoint path latency.
-
-A queue test can confirm that Kueue or Volcano admits the whole group.
-
-The goal is not to prove model quality.
-
-The goal is to prove platform readiness.
+A preflight job should finish quickly. It should be cheap enough to run often. It should fail loudly when the platform contract is broken. For example, a two-node NCCL test can confirm that the intended interface is used. A small Indexed Job can confirm that headless Service DNS works. A write test can confirm checkpoint path latency. A queue test can confirm that Kueue or Volcano admits the whole group. The goal is not to prove model quality. The goal is to prove platform readiness.
 
 ### Air-Gapped And Regulated Environments
 
-Private AI clusters often exist because of data control, compliance, or network isolation.
-
-That changes operations.
-
-Images must be mirrored internally.
-
-Helm charts and manifests must be pinned and stored.
-
-GPU drivers must be staged.
-
-Model artifacts must remain inside approved storage.
-
-Experiment tracking must not call external services unless explicitly approved.
-
-License boundaries matter for proprietary serving and training components.
-
-The platform team should maintain an internal bill of materials.
-
-That bill of materials should include:
+Private AI clusters often exist because of data control, compliance, or network isolation. That changes operations. Images must be mirrored internally. Helm charts and manifests must be pinned and stored. GPU drivers must be staged. Model artifacts must remain inside approved storage. Experiment tracking must not call external services unless explicitly approved. License boundaries matter for proprietary serving and training components. The platform team should maintain an internal bill of materials. That bill of materials should include:
 
 * container images,
 * operator versions,
@@ -1266,15 +559,13 @@ That bill of materials should include:
 * training framework images,
 * approved model artifact locations.
 
-The bill of materials makes upgrades auditable.
 
-It also makes rollback possible.
+
+The bill of materials makes upgrades auditable. It also makes rollback possible.
 
 ## 8. Design Pattern: A Private Training Platform
 
-The pieces now fit together.
-
-A robust private AI training platform usually has separate pools and control loops.
+The pieces now fit together. A robust private AI training platform usually has separate pools and control loops.
 
 ```text
 +--------------------------------------------------------------------------------+
@@ -1310,27 +601,44 @@ A robust private AI training platform usually has separate pools and control loo
 +--------------------------------------------------------------------------------+
 ```
 
-Read this diagram from top to bottom.
+Read this diagram from top to bottom. Queue admission prevents partial jobs. The workload API creates deterministic workers. The headless Service supports rendezvous. Topology-aware placement keeps compute and network paths aligned. Multus and SR-IOV expose the high-performance fabric. NCCL uses that fabric for collectives. Checkpoint storage preserves progress. Observability ties the run back to infrastructure behavior. A failure in any box can look like a training problem. That is why senior platform engineers design for diagnosis, not only for happy-path launch.
 
-Queue admission prevents partial jobs.
+## Patterns & Anti-Patterns
 
-The workload API creates deterministic workers.
+The useful pattern across private training platforms is to make hardware intent explicit before the pod reaches the node. A validated training template should include the accelerator request, queue label, expected worker count, headless Service contract, topology assumptions, RDMA attachment, NCCL validation mode, checkpoint path, and experiment metadata labels in one reviewed shape. That pattern works because it removes guesswork from the user's submission path while still leaving the underlying Kubernetes objects visible during incidents.
 
-The headless Service supports rendezvous.
+| Pattern | When to Use It | Why It Works |
+| :--- | :--- | :--- |
+| Queue-first training submission | Multi-rank jobs that must start together | Kueue or Volcano prevents partial starts and turns capacity pressure into a visible admission state instead of idle allocated GPUs. |
+| Validated hardware shapes | GPU pools with NUMA, NIC, or full-node constraints | Users choose known-good request shapes, and platform engineers can enforce topology instead of debugging hidden slow placements later. |
+| Preflight collective tests | New node pools, driver upgrades, CNI changes, or fabric maintenance | A small job proves rendezvous, RDMA attachment, NCCL transport selection, and queue admission before an expensive run begins. |
 
-Topology-aware placement keeps compute and network paths aligned.
+The matching anti-pattern is treating private AI training as a collection of independent knobs. A team may install a GPU operator, add Multus, create a queue, and mount object storage, yet still produce a fragile platform if those components are not bound together by workload templates and runbooks. The better alternative is to define a platform contract for each training class, then test the contract with cheap jobs that exercise the same identity, admission, topology, network, and checkpoint path as the real workload.
 
-Multus and SR-IOV expose the high-performance fabric.
+| Anti-Pattern | Why It Fails | Better Alternative |
+| :--- | :--- | :--- |
+| GPU-only scheduling | A pod can see a GPU while using the wrong NIC, NUMA domain, or queue behavior | Require compute, fabric, topology, and checkpoint metadata in the same training template. |
+| Debugging from the framework outward | PyTorch often reports the final symptom after DNS, RDMA, or placement already failed | Start with the platform layer that matches the symptom, then move upward only after the contract is proven. |
+| One generic accelerator queue | Different hardware families require different images, libraries, resource names, and performance expectations | Use ResourceFlavors, labels, or separate queues that preserve hardware identity. |
 
-NCCL uses that fabric for collectives.
+## Decision Framework
 
-Checkpoint storage preserves progress.
+Choose the control plane by first naming the failure you are trying to prevent. If the failure is partial startup, add batch admission before tuning topology. If the failure is slow collectives, prove the RDMA path before changing the training code. If the failure is checkpoint stalls, measure storage burst behavior before changing queue policy. The framework below is deliberately operational: it maps the symptom to the control that changes the outcome.
 
-Observability ties the run back to infrastructure behavior.
+```text
++------------------------------+------------------------------+------------------------------+
+| Decision Question            | Choose This First            | Then Validate                |
++------------------------------+------------------------------+------------------------------+
+| Can every rank start now?     | Kueue or Volcano admission   | No partial pods consume GPUs |
+| Can every rank discover rank0?| Indexed Job + headless Svc   | DNS and rendezvous logs pass |
+| Is the fast fabric exposed?   | Multus + SR-IOV attachment   | Pod has RDMA interface       |
+| Is the fast fabric selected?  | NCCL debug/profile settings  | Logs show intended transport |
+| Is locality required?         | Topology Manager policy      | Bad shapes fail visibly      |
+| Can checkpoints recover work? | Sharded durable checkpointing| Latest safe checkpoint known |
++------------------------------+------------------------------+------------------------------+
+```
 
-A failure in any box can look like a training problem.
-
-That is why senior platform engineers design for diagnosis, not only for happy-path launch.
+When two controls appear relevant, pick the one that prevents wasted allocation earliest in the lifecycle. Admission controls act before workers run, topology controls act before kubelet admits the pod, network controls act before the process group performs useful work, and checkpoint controls act after training has produced valuable state. Earlier controls reduce blast radius, but later controls protect progress, so mature platforms need the chain rather than a single favorite scheduler or operator.
 
 ## Did You Know?
 
@@ -1339,15 +647,15 @@ That is why senior platform engineers design for diagnosis, not only for happy-p
 * **Did You Know?** `single-numa-node` topology policy intentionally rejects some pods because a visible pending failure is better than a hidden slow placement.
 * **Did You Know?** Sharded checkpointing reduces Rank 0 memory pressure by letting each rank write its own portion of model state instead of aggregating the entire model on one process.
 
+
+
 ## Common Mistakes & Practitioner Gotchas
 
 Before analyzing the table of common mistakes, consider the most prevalent networking race condition:
 
 ### Headless Service Propagation Delay
 
-**Context:** The K8s Indexed job creates Pods instantly. Rank 1 boots, resolves `pod-0.headless-svc`, and gets an NXDOMAIN because CoreDNS hasn't updated its cache yet. The elastic launch agent will crash immediately.
-
-**Fix:** Use an init container with a simple `until nslookup pod-0.headless-svc; do sleep 1; done` bash loop to ensure DNS propagation is complete before the main training container starts.
+**Context:** The K8s Indexed job creates Pods instantly. Rank 1 boots, resolves `pod-0.headless-svc`, and gets an NXDOMAIN because CoreDNS hasn't updated its cache yet. The elastic launch agent will crash immediately. **Fix:** Use an init container with a simple `until nslookup pod-0.headless-svc; do sleep 1; done` bash loop to ensure DNS propagation is complete before the main training container starts.
 
 | Mistake | Why It Happens | How to Fix It |
 | :--- | :--- | :--- |
@@ -1362,76 +670,112 @@ Before analyzing the table of common mistakes, consider the most prevalent netwo
 ## Quiz
 
 <details>
+
 <summary><b>1. A multi-node PyTorch job starts successfully, but training throughput is far below the platform baseline. Network dashboards show heavy traffic on the default CNI interface and almost no traffic on the RoCEv2 interfaces. What should you check first, and why?</b></summary>
+
+
 
 Start by checking whether NCCL fell back to TCP sockets and whether the pod actually received the RDMA attachment. The job can start even when the high-performance path is unused. Inspect `NCCL_DEBUG=INFO` logs for `NET/Socket` versus `NET/IB`, then verify the Multus network status annotation, container interfaces, and SR-IOV resource requests. This aligns the symptom with the network layer before changing PyTorch code.
 
+
+
 </details>
 
 <details>
+
 <summary><b>2. Your team submits a 32-rank training job. Twenty ranks start and hold GPUs, while the remaining ranks stay pending. The running ranks eventually time out at rendezvous. Which platform control should you add, and what behavior should it enforce?</b></summary>
+
+
 
 Add gang-style admission with Kueue or Volcano. The control should keep the job from starting until the full group can be admitted. For synchronous training, partial startup is wasteful because every rank depends on the others. Kueue can suspend a native Job until quota and capacity exist; Volcano can use batch scheduling concepts such as pod groups.
 
+
+
 </details>
 
 <details>
+
 <summary><b>3. A GPU node has 8 GPUs split evenly across two NUMA domains. A researcher requests 6 GPUs in one pod. The kubelet is configured with `topologyManagerPolicy: single-numa-node`. The pod fails with a topology admission error. Should the platform team relax the policy?</b></summary>
+
+
 
 Usually no. The failure is protecting the job from a poor placement. A 6-GPU request cannot fit inside one 4-GPU NUMA domain on that node shape. Relaxing the policy may allow the pod to run across host interconnects, creating hidden performance problems. Better options are to redesign the workload request, use full-node shapes, or schedule onto hardware that can satisfy the request locally.
 
+
+
 </details>
 
 <details>
+
 <summary><b>4. A team wants to run private training and private inference in the same cluster. They propose using Volcano for both queued training jobs and request-driven inference autoscaling. How would you evaluate that proposal?</b></summary>
+
+
 
 Volcano may be appropriate for queued batch training, but it is not the primary tool for request-driven inference autoscaling. Training needs all-or-nothing admission and queue fairness. Inference usually needs scaling based on request depth, latency, or external metrics. Use a batch scheduler or Kueue for training and an autoscaling mechanism such as KEDA or HPA-style scaling for inference metrics.
 
+
+
 </details>
 
 <details>
+
 <summary><b>5. A training job writes checkpoints through Rank 0. During larger runs, Rank 0 is OOMKilled during checkpoint creation even though normal training fits in memory. What infrastructure and framework pattern would you recommend?</b></summary>
+
+
 
 Recommend sharded checkpointing and storage that supports parallel writes. Rank 0 aggregation can require enough memory to hold large combined model state. Sharded checkpointing lets each rank write its own shard, reducing Rank 0 pressure. For large jobs, pair this with a parallel file system or a carefully monitored local NVMe plus asynchronous flush design.
 
+
+
 </details>
 
 <details>
+
 <summary><b>6. A RoCEv2 training fabric shows severe latency spikes during AllReduce. Pods have the right secondary interface, NCCL logs show the intended RDMA device, and there are no application errors. Switch counters show retransmission symptoms during congestion. What layer is most likely responsible?</b></summary>
+
+
 
 The fabric configuration is the likely problem. RoCEv2 depends on a lossless Ethernet design. Missing or incorrect Priority Flow Control and Explicit Congestion Notification can cause packet loss and retransmission behavior that stalls collectives. At this point, focus on switch QoS, MTU consistency, congestion handling, and fabric counters rather than pod YAML.
 
+
+
 </details>
 
 <details>
+
 <summary><b>7. A platform team wants to hide all hardware details from users by offering one generic `gpu-training` queue across NVIDIA and AMD nodes. What risk should you raise during design review?</b></summary>
+
+
 
 A single generic queue can hide incompatible runtime requirements. NVIDIA and AMD workloads may need different images, drivers, libraries, resource names, and performance assumptions. If the queue does not encode hardware differences, jobs may be admitted to nodes they cannot use correctly. Use explicit ResourceFlavors, node labels, validated templates, or separate queues unless workloads are proven portable.
 
+
+
 </details>
 
 <details>
+
 <summary><b>8. A job fails at startup because rank 1 cannot resolve the rank 0 rendezvous hostname, but a few seconds later the DNS record exists. How would you make this failure less likely without changing the training framework?</b></summary>
 
+
+
 Add startup gating around DNS readiness. For example, use an init container or entrypoint loop that waits until the rank 0 hostname resolves before launching the training process. This handles the race between pod creation and headless Service DNS propagation. Also verify that the Service selector, job name, subdomain, and rendezvous endpoint are consistent.
+
+
 
 </details>
 
 ## Hands-On Exercise: Gang Scheduling PyTorch DDP With Kueue
 
-This lab simulates a distributed PyTorch training job using standard Kubernetes Indexed Jobs and Kueue.
-
-You will force the job to use the CPU `gloo` backend so it runs entirely in `kind` without physical GPUs.
-
-The goal is not to benchmark training.
-
-The goal is to observe the platform pattern:
+This lab simulates a distributed PyTorch training job using standard Kubernetes Indexed Jobs and Kueue. You will force the job to use the CPU `gloo` backend so it runs entirely in `kind` without physical GPUs. The goal is not to benchmark training. The goal is to observe the platform pattern:
 
 * deterministic rank identity,
 * headless Service discovery,
 * queue-based admission,
 * simultaneous worker execution,
 * verification through logs.
+
+
 
 ### Prerequisites
 
@@ -1441,12 +785,12 @@ The goal is to observe the platform pattern:
 * Local access to pull the required container images
 * Enough local CPU and memory for a small two-worker job
 
-After the first command, this lab uses `k` as a shorthand alias for `kubectl`.
 
-Create it with:
+
+Before starting, verify that your terminal can reach the cluster with the full `kubectl` command. The lab intentionally avoids short interactive aliases so every command can be copied into a script or runbook without relying on shell startup files.
 
 ```bash
-alias k=kubectl
+kubectl version --client
 ```
 
 ### Step 1: Install Kueue
@@ -1455,30 +799,27 @@ Install Kueue to manage job admission and gang scheduling.
 
 ```bash
 VERSION="v0.9.1"
-kubectl apply --server-side -f https://github.com/kubernetes-sigs/kueue/releases/download/v0.9.1/manifests.yaml
-
+kubectl apply --server-side -f "https://github.com/kubernetes-sigs/kueue/releases/download/${VERSION}/manifests.yaml"
 kubectl rollout status deployment/kueue-controller-manager -n kueue-system
 ```
 
 Verify the controller is available before continuing.
 
 ```bash
-k get pods -n kueue-system
+kubectl get pods -n kueue-system
 ```
 
-Success criteria:
+Use this checklist to confirm the step behaved as intended before moving on to the next stage of the exercise.
 
 - [ ] The `kueue-controller-manager` Deployment reports a successful rollout.
 - [ ] The Kueue controller pod is `Running`.
 - [ ] `kubectl api-resources | grep kueue` shows Kueue resources.
 
+
+
 ### Step 2: Configure Cluster Resources
 
-Create a dummy `ResourceFlavor`, a `ClusterQueue`, and a `LocalQueue`.
-
-This lab models a cluster with four CPUs of queue capacity.
-
-That is enough to admit the two-worker job later.
+Create a dummy `ResourceFlavor`, a `ClusterQueue`, and a `LocalQueue`. This lab models a cluster with four CPUs of queue capacity. That is enough to admit the two-worker job later.
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -1511,26 +852,26 @@ spec:
 EOF
 ```
 
-Inspect the queue objects.
+Inspect the queue objects so you can connect each resource in the manifest to the queueing behavior you observe later.
 
 ```bash
-k get resourceflavor
-k get clusterqueue
-k get localqueue
+kubectl get resourceflavor
+kubectl get clusterqueue
+kubectl get localqueue
 ```
 
-Success criteria:
+Use this checklist to confirm the step behaved as intended before moving on to the next stage of the exercise.
 
 - [ ] `default-flavor` exists.
 - [ ] `cluster-queue` exists.
 - [ ] `user-queue` exists in the `default` namespace.
 - [ ] The `ClusterQueue` includes CPU quota.
 
+
+
 ### Step 3: Create The Headless Service
 
-PyTorch workers need a stable DNS name for rendezvous.
-
-The Service is headless because clients need pod DNS records rather than a load-balanced virtual IP.
+PyTorch workers need a stable DNS name for rendezvous. The Service is headless because clients need pod DNS records rather than a load-balanced virtual IP.
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -1546,27 +887,23 @@ spec:
 EOF
 ```
 
-Check the Service.
+Check the Service before creating workers because rendezvous failures are easier to diagnose before training starts.
 
 ```bash
-k get svc pytorch-ddp-svc
+kubectl get svc pytorch-ddp-svc
 ```
 
-Success criteria:
+Use this checklist to confirm the step behaved as intended before moving on to the next stage of the exercise.
 
 - [ ] The Service exists.
 - [ ] The Service has `CLUSTER-IP` set to `None`.
 - [ ] The Service selector is `job-name: pytorch-ddp`.
 
+
+
 ### Step 4: Deploy The Indexed Job
 
-This job runs `torchrun` for a two-node worker group.
-
-The `kueue.x-k8s.io/queue-name` label tells Kueue which queue should manage admission.
-
-The `completionMode: Indexed` field gives each pod a deterministic index.
-
-The `JOB_COMPLETION_INDEX` value becomes the node rank.
+This job runs `torchrun` for a two-node worker group. The `kueue.x-k8s.io/queue-name` label tells Kueue which queue should manage admission. The `completionMode: Indexed` field gives each pod a deterministic index. The `JOB_COMPLETION_INDEX` value becomes the node rank.
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -1608,66 +945,68 @@ spec:
 EOF
 ```
 
-Watch the job and pods.
+Watch the job and pods so you can distinguish Kueue admission from ordinary pod scheduling and container startup.
 
 ```bash
-k get workloads
-k get jobs
-k get pods -l job-name=pytorch-ddp -w
+kubectl get workloads
+kubectl get jobs
+kubectl get pods -l job-name=pytorch-ddp -w
 ```
 
-Success criteria:
+Use this checklist to confirm the step behaved as intended before moving on to the next stage of the exercise.
 
 - [ ] Kueue creates or recognizes a Workload for the Job.
 - [ ] The Workload is admitted by `cluster-queue`.
 - [ ] Two pods are created for the Indexed Job.
 - [ ] Both pods transition to `Running` and then `Completed`.
 
+
+
 ### Step 5: Verify Rank Rendezvous
 
-Check the worker logs.
+Check the worker logs to verify that deterministic rank assignment and rendezvous both worked in the same run.
 
 ```bash
 kubectl logs -l job-name=pytorch-ddp | grep SUCCESS
 ```
 
-Expected output:
+The expected output should show both ranks joining the process group before the job completes.
 
 ```text
 SUCCESS: Rank 0 of 2 initialized.
 SUCCESS: Rank 1 of 2 initialized.
 ```
 
-Success criteria:
+Use this checklist to confirm the step behaved as intended before moving on to the next stage of the exercise.
 
 - [ ] The logs show rank 0 initialized.
 - [ ] The logs show rank 1 initialized.
 - [ ] Both ranks report a world size of 2.
 - [ ] The job completes successfully.
 
+
+
 ### Step 6: Observe The Queue Contract
 
-Inspect the Workload after completion.
+Inspect the Workload after completion because the queue object is the evidence that admission, quota, and the Job were connected.
 
 ```bash
-k get workloads
-k describe workload "$(k get workload -o name | head -n 1)"
+kubectl get workloads
+kubectl describe workload "$(kubectl get workload -o name | head -n 1)"
 ```
 
-Look for admission details that connect the Job to the queue.
-
-Success criteria:
+Look for admission details that connect the Job to the queue. Use this checklist to confirm the step behaved as intended before moving on to the next stage of the exercise.
 
 - [ ] The Workload references `user-queue`.
 - [ ] The Workload shows admission through `cluster-queue`.
 - [ ] CPU requests are accounted for by the queue.
 - [ ] The completed Job did not start as unrelated standalone pods.
 
+
+
 ### Step 7: Create A Capacity Failure On Purpose
 
-Now create a larger job that requests more CPU than the queue allows.
-
-This shows why queue admission matters.
+Now create a larger job that requests more CPU than the queue allows. This shows why queue admission matters.
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -1698,18 +1037,20 @@ spec:
 EOF
 ```
 
-Inspect the Workload and pods.
+Inspect the Workload and pods to prove that the oversized job waits as a group instead of consuming a partial set of workers.
 
 ```bash
-k get workloads
-k get pods -l job-name=pytorch-ddp-too-large
+kubectl get workloads
+kubectl get pods -l job-name=pytorch-ddp-too-large
 ```
 
-Success criteria:
+Use this checklist to confirm the step behaved as intended before moving on to the next stage of the exercise.
 
 - [ ] The oversized job is not admitted while the queue lacks enough quota.
 - [ ] The platform does not start a partial set of six workers.
 - [ ] You can explain why this is better than starting only some ranks.
+
+
 
 ### Step 8: Clean Up
 
@@ -1723,29 +1064,26 @@ kubectl delete clusterqueue cluster-queue --ignore-not-found
 kubectl delete resourceflavor default-flavor --ignore-not-found
 ```
 
-Success criteria:
+Use this checklist to confirm the step behaved as intended before moving on to the next stage of the exercise.
 
 - [ ] Both Jobs are deleted.
 - [ ] The headless Service is deleted.
 - [ ] The Kueue queue objects created for the lab are deleted.
 - [ ] No lab pods remain in the `default` namespace.
 
+
+
 ### Troubleshooting
 
-**Pods stuck in Pending:**  
-Run `k describe workload job-pytorch-ddp` and verify that the `LocalQueue` and `ClusterQueue` have enough CPU quota for the sum of all pod requests.
+**Pods stuck in Pending:** Run `kubectl describe workload job-pytorch-ddp` and verify that the `LocalQueue` and `ClusterQueue` have enough CPU quota for the sum of all pod requests.
 
-**Connection refused in logs:**  
-Ensure the headless Service name exactly matches the pod `subdomain` and the `--rdzv_endpoint` flag.
+**Connection refused in logs:** Ensure the headless Service name exactly matches the pod `subdomain` and the `--rdzv_endpoint` flag.
 
-**DNS lookup fails:**  
-Check the Service selector and pod labels. If startup is racing DNS propagation, add an init container that waits for the rank 0 hostname.
+**DNS lookup fails:** Check the Service selector and pod labels. If startup is racing DNS propagation, add an init container that waits for the rank 0 hostname.
 
-**No Workload appears:**  
-Confirm that Kueue is installed, its controller is running, and the Job has the `kueue.x-k8s.io/queue-name` label.
+**No Workload appears:** Confirm that Kueue is installed, its controller is running, and the Job has the `kueue.x-k8s.io/queue-name` label.
 
-**Image pull is slow or blocked:**  
-Use an internally mirrored PyTorch image in private environments and update the Job image field accordingly.
+**Image pull is slow or blocked:** Use an internally mirrored PyTorch image in private environments and update the Job image field accordingly.
 
 ### Lab Reflection
 
@@ -1758,8 +1096,28 @@ After completing the lab, answer these questions in your notes:
 * Where would you add NCCL debug settings in the Job template?
 * How would you validate that a production job used RDMA rather than TCP?
 * How would checkpoint storage change for a long-running model training workload?
+
+
+
+## Sources
+
+- [Kubernetes Job completion mode](https://kubernetes.io/docs/concepts/workloads/controllers/job/#completion-mode)
+- [Kubernetes DNS for Services and Pods](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
+- [Kubernetes Topology Manager](https://kubernetes.io/docs/tasks/administer-cluster/topology-manager/)
+- [Kueue concepts](https://kueue.sigs.k8s.io/docs/concepts/)
+- [Kueue Jobs task guide](https://kueue.sigs.k8s.io/docs/tasks/run/jobs/)
+- [Volcano documentation](https://volcano.sh/en/docs/)
+- [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni)
+- [SR-IOV Network Device Plugin](https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin)
+- [NVIDIA GPU Operator documentation](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/index.html)
+- [NVIDIA Network Operator (Mellanox)](https://github.com/Mellanox/network-operator)
+- [NCCL environment variables](https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/env.html)
+- [PyTorch torchrun elastic launcher](https://docs.pytorch.org/docs/stable/elastic/run.html)
+- [PyTorch Distributed Checkpoint](https://docs.pytorch.org/docs/stable/distributed.checkpoint.html)
+- [PyTorch FSDP](https://docs.pytorch.org/docs/stable/fsdp.html)
+
+
+
 ## Next Module
 
-Now that you have established a resilient, topology-aware bare-metal cluster with kernel-bypass networking, it is time to move from training infrastructure into model serving.
-
-In the next module, **[Module 9.3: Private LLM Serving](/on-premises/ai-ml-infrastructure/module-9.3-private-llm-serving/)**, you will design optimized inference stacks for private workloads, compare serving runtimes, and operate model endpoints under latency, throughput, and isolation constraints.
+Now that you have established a resilient, topology-aware bare-metal cluster with kernel-bypass networking, it is time to move from training infrastructure into model serving. In the next module, **[Module 9.3: Private LLM Serving](/on-premises/ai-ml-infrastructure/module-9.3-private-llm-serving/)**, you will design optimized inference stacks for private workloads, compare serving runtimes, and operate model endpoints under latency, throughput, and isolation constraints.
