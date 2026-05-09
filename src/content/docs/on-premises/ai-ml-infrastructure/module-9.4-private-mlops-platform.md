@@ -4,28 +4,34 @@ description: "Architecting and operating a bare-metal MLOps stack for model trac
 slug: on-premises/ai-ml-infrastructure/module-9.4-private-mlops-platform
 sidebar:
   order: 94
+revision_pending: false
 ---
 
-# Private MLOps Platform
+> **Complexity**: Complex
+>
+> **Time to Complete**: 3-4 hours
+>
+> **Prerequisites**: Kubernetes 1.35+, Helm, persistent storage, basic PostgreSQL, object storage, and prior modules in the on-premises AI/ML infrastructure track
+
+---
+
+## Learning Outcomes
+
+* **Architect** a modular private MLOps stack on bare-metal Kubernetes using self-hosted storage, tracking, feature, orchestration, and serving components.
+* **Deploy** and configure MLflow with a PostgreSQL backend store, a MinIO artifact store, and explicit client-side S3 endpoint configuration.
+* **Implement** a Feast feature-store pattern that separates offline training data from Redis-backed online serving data.
+* **Design** controlled model-serving rollouts with KServe, traffic splitting, warm replicas, and GPU-aware failure boundaries.
+* **Diagnose** private MLOps failures involving artifact uploads, feature materialization, database connection pools, cold starts, and tenant isolation gaps.
 
 Operating machine learning infrastructure on bare metal requires replacing managed cloud services with self-hosted, scalable equivalents. A production-grade MLOps platform on Kubernetes is not a single monolithic application; it is a loosely coupled ecosystem of stateful data stores, stateless API servers, and workflow orchestrators.
 
 ## Why This Module Matters
 
-In early 2024, a major retail analytics firm named Zephyr Analytics suffered a catastrophic financial loss exceeding $5.2 million over a single holiday weekend. Their cloud-managed ML pipelines, relying on a fully managed feature store, silently failed due to an unannounced and unpinned API deprecation pushed by their cloud vendor. The models began serving predictions using stale, fallback data, leading to massive mispricing of inventory across their entire European market. The incident was not caught by standard Application Performance Monitoring tools because the managed service endpoints returned HTTP 200 OK statuses, completely masking the underlying data drift and schema resolution failures.
+Hypothetical scenario: your organization trains forecasting, fraud, and recommendation models on regulated data that cannot leave the data center, but the product teams still expect the ergonomics they had in a managed cloud platform. They want experiment tracking, repeatable pipelines, searchable artifacts, feature reuse, canary releases, drift alerts, and an audit trail that explains which model version made which decision. The hard part is that none of those requirements disappear just because the cluster is private; they become your responsibility instead of a vendor's responsibility.
 
-Following this disaster, the engineering organization made a strategic pivot: they migrated their entire predictive infrastructure to a bare-metal Kubernetes v1.35 environment. By utilizing open-source tools like MLflow, Feast, and KServe, they regained absolute control over their data plane and model execution environments. This transition required significant upfront engineering to replace managed components, but it eliminated vendor lock-in, reduced their monthly compute bill by over sixty percent, and most importantly, provided deterministic control over every layer of their MLOps stack. 
+A private MLOps platform therefore sits at an awkward but important boundary. It must feel simple enough for data scientists to use every day, yet it must expose enough operational truth that platform engineers can debug storage, networking, admission policy, database pressure, GPU scheduling, and inference latency when something breaks. If the platform only gives users notebooks and a bucket, every team reinvents deployment in a different way. If the platform hides too much behind a polished portal, the on-call engineer cannot reason about the actual Kubernetes resources during an incident.
 
-When you build a private MLOps platform, you are taking responsibility for the statefulness, the networking, and the lifecycle of the models. You are no longer renting an abstraction; you are operating the engine. This module equips you with the knowledge to architect, deploy, secure, and troubleshoot that engine from the ground up, ensuring you never fall victim to black-box vendor failures.
-
-## Learning Outcomes
-
-*   **Architect** a modular MLOps stack on bare-metal Kubernetes utilizing self-hosted components.
-*   **Deploy** and configure MLflow with a highly available PostgreSQL backend and MinIO artifact store.
-*   **Implement** Feast as a bare-metal feature store utilizing Redis for online serving and PostgreSQL for offline batching.
-*   **Design** model serving pipelines using KServe for A/B testing and canary rollouts.
-*   **Diagnose** common stateful ML component failures, including artifact sync errors and inference memory exhaustion.
-*   **Evaluate** orchestration tools like Kubeflow Pipelines and Argo Workflows for complex ML lifecycle management.
+This module builds the mental model for that boundary. You will map managed cloud services to self-hosted equivalents, wire MLflow to PostgreSQL and MinIO, reason about Feast's split offline and online stores, choose an orchestrator for training pipelines, and design KServe rollouts that can survive real traffic. The goal is not to memorize a tool catalog; it is to learn which state belongs where, which components are on the request path, and which failures should page a platform engineer versus a model owner.
 
 ## Architecting the Private MLOps Stack
 
@@ -546,7 +552,7 @@ spec:
     - mlops.kubedojo.io/signed-off-by
 ```
 
-The policy contains three independent `violation` rules. The first parses the `holdout-auc` annotation and rejects any promotion whose evaluation score is below the configured threshold (here `0.85`); a deploy that ships a regressed model will fail at admission with a human-readable message instead of silently degrading user experience. The second iterates the operator-supplied `requiredAnnotations` list and asserts every name resolves to a non-empty value, so a manifest that simply omits the model-card URL is rejected the same way as one with a deliberately wrong score. The third rule enforces the *shape* of the MLflow run ID — a 32-character hex string — which catches copy-paste errors and accidental promotion of a placeholder string like `"TODO"` or `"latest"`.
+The policy contains three independent `violation` rules. The first parses the `holdout-auc` annotation and rejects any promotion whose evaluation score is below the configured threshold (here `0.85`); a deploy that ships a regressed model will fail at admission with a human-readable message instead of silently degrading user experience. The second iterates the operator-supplied `requiredAnnotations` list and asserts every name resolves to a non-empty value, so a manifest that simply omits the model-card URL is rejected the same way as one with a deliberately wrong score. The third rule enforces the *shape* of the MLflow run ID — a 32-character hex string — which catches copy-paste errors and accidental promotion of a temporary value like `"replace-me"` or `"latest"`.
 
 Together these three rules close the gap between CI promotion (which any operator can bypass) and a cluster-side admission gate (which is the last line of defence). The Rego runs in milliseconds against every `InferenceService` apply, the deny message points the responsible engineer directly at the missing field, and the `K8sAuditLogs` Loki stream captures every rejection so a release retrospective can answer the question "which promotions did Gatekeeper block this quarter?" without spelunking through individual `kubectl describe` outputs. This is how a small platform team enforces model-promotion governance at scale without slowing down the data-science teams that consume the platform.
 
@@ -586,6 +592,34 @@ The clearest separation of concerns: platform engineers own the Gatekeeper const
 
 For specialized ML monitoring, tools like Evidently AI (v0.7.21, Apache 2.0) and ZenML (0.94.2, Apache 2.0) offer drift detection and pipeline management. If you prefer managed platforms, Weights & Biases (wandb) provides an MIT-licensed Python SDK, but the W&B platform itself is a commercial SaaS with no open-source self-hosted server edition.
 
+## Patterns & Anti-Patterns
+
+The most reliable private MLOps platforms are built as small, explicit contracts between components rather than as one enormous application. MLflow owns run metadata and artifact pointers, MinIO or Ceph owns object bytes, Feast owns feature definitions and materialization, Argo or KFP owns step orchestration, KServe owns the live inference resource, and Gatekeeper owns the admission-time rules. This separation makes the platform easier to debug because each failure has a narrower blast radius. When a model upload fails, you inspect the client pod's S3 endpoint and MinIO credentials; when a run disappears from the UI, you inspect the backend database and MLflow server logs.
+
+**Pattern: keep serving independent from experiment tracking.** A production InferenceService should pull immutable model artifacts from object storage and should not depend on the MLflow UI being healthy at request time. MLflow is the system of record for experiments and model registry metadata, but it is not a low-latency dependency for every prediction. This pattern works because it turns the serving path into a small chain: ingress, model server, feature lookup, and object storage during startup. It scales well when model promotion writes a new immutable artifact URI and the serving controller rolls pods against that URI.
+
+**Pattern: treat online stores as derived caches.** Redis, DragonflyDB, or another online feature store should be rebuilt from the offline store through materialization jobs, not treated as the only source of truth. The operational benefit is enormous: backup policy focuses on PostgreSQL, Parquet, and object storage, while Redis recovery becomes a repeatable rebuild procedure. This pattern also clarifies ownership during incidents. Platform engineers restore the service and materialization job, while model owners verify whether a recent feature definition change produced the wrong values.
+
+**Pattern: enforce promotion rules at admission time.** CI checks are useful, but they are not the last line of defense in a cluster where operators can apply Kubernetes manifests directly. Gatekeeper constraints on KServe resources let you require holdout scores, model-card URLs, run provenance, and resource limits before production objects are accepted by the API server. This pattern scales because policy becomes part of the control plane rather than a spreadsheet maintained by release managers. It also produces auditable denial events that can be routed to logs and reviewed after a failed promotion.
+
+**Anti-pattern: building the platform around notebooks.** Notebooks are excellent for exploration, but a notebook server is not an MLOps platform. Teams fall into this trap because early prototypes feel productive: a scientist can load data, fit a model, and upload a file in one place. The problem appears later when nobody can reproduce the environment, locate the exact training data, or prove which code generated a model in production. Keep notebooks as clients of the platform, then require experiments, artifacts, feature definitions, and serving manifests to flow through versioned interfaces.
+
+**Anti-pattern: using object storage as the online feature path.** Object storage is durable and cheap, so it is tempting to make every feature lookup read from MinIO or Ceph. That design fails under live traffic because object stores optimize throughput and durability, not one-key millisecond reads for every prediction request. The better design is to materialize current features into Redis and reserve object storage for batch datasets, model artifacts, and workflow outputs. You pay for memory where latency matters and use cheaper storage where scans and history matter.
+
+**Anti-pattern: sharing credentials across tenants.** A single MinIO access key, a single MLflow service account, and broad namespace permissions make a demo easier, but they destroy tenant isolation the moment multiple teams use the same cluster. The common excuse is operational simplicity, yet shared credentials make it impossible to prove which team accessed which artifact and impossible to revoke one team's access without rotating everyone. Use tenant-scoped service accounts, bucket or prefix policies, namespace-bound RBAC, and policy tests that deliberately attempt cross-tenant reads.
+
+## Decision Framework
+
+Start every private MLOps design with the request path, not the tool list. Ask what happens when a user sends a prediction request: which gateway receives it, which model server handles it, whether a feature lookup occurs, whether that lookup touches Redis or another online store, and whether any call reaches a database that was meant only for training. If the answer includes MLflow, PostgreSQL scans, a notebook server, or a human-controlled script on the live path, the design is not ready for production inference. Serving should be boring, narrow, and mostly independent of the experimentation plane.
+
+For experiment tracking, choose MLflow with PostgreSQL and MinIO when teams need a common registry, common metrics view, and artifact lineage across many frameworks. Add PgBouncer when parallel tuning or batch training can create more client connections than PostgreSQL should hold directly. Choose a separate MLflow deployment per tenant when isolation and chargeback matter more than centralized convenience; choose a shared deployment only if you also have an authorization layer that can enforce per-tenant experiment boundaries. MLflow's open API surface is valuable, but it does not remove the need for tenancy controls.
+
+For feature storage, choose the offline store based on history size and query shape, then choose the online store based on lookup latency and memory cost. PostgreSQL or Parquet on object storage is a reasonable offline start for moderate tabular data, while ClickHouse or another analytical store becomes attractive when feature history grows into very large event tables. Redis is the default online store because its operational model is familiar and its latency profile is appropriate for inference. Before running this in production, pause and predict: if Redis disappears at noon, can your team rebuild the online store from authoritative history without changing model code?
+
+For orchestration, choose Argo Workflows when platform engineers want Kubernetes-native YAML, explicit artifact wiring, and direct control over pod templates. Choose Kubeflow Pipelines when data science teams want a Python SDK, reusable components, experiment UI integration, and a pipeline abstraction that can compile beyond one backend. Choose KubeRay for distributed compute inside a training or preprocessing step, not as a replacement for the workflow orchestrator that sequences validation, training, evaluation, and promotion. The practical decision is about authoring experience and debugging visibility, not about which project has the longest feature list.
+
+For serving, choose KServe when you want Kubernetes-native model serving with runtime abstraction, traffic splitting, autoscaling, and integration with Istio or Knative. Use warm replicas for latency-sensitive services and reserve scale-to-zero for internal or batch endpoints whose callers can tolerate startup delay. Use Triton when the model format, GPU usage, batching, or multi-framework serving requirements justify its operational complexity. Which approach would you choose for a model that loads in 90 seconds but receives only one request per hour, and why? The correct answer depends on whether the caller values cost or latency more, and the platform should make that tradeoff explicit.
+
 ## Did You Know?
 
 *   Argo Workflows graduated from the CNCF on December 6, 2022, cementing its status in cloud-native orchestration.
@@ -593,7 +627,7 @@ For specialized ML monitoring, tools like Evidently AI (v0.7.21, Apache 2.0) and
 *   Kubeflow was accepted into the CNCF Incubator on July 25, 2023, transitioning away from standard Google governance.
 *   NVIDIA Triton v2.67.0 (NGC container release 26.03) integrates directly with the vLLM backend, offering massive throughput improvements for LLM serving.
 
-## Practitioner Gotchas and Common Mistakes
+## Common Mistakes
 
 | Mistake | Why It Happens | How to Fix It |
 | :--- | :--- | :--- |
@@ -605,7 +639,107 @@ For specialized ML monitoring, tools like Evidently AI (v0.7.21, Apache 2.0) and
 | **Mixing KFP SDKs** | Engineers attempt to compile KFP v2 Python code directly into Argo Workflow YAML manifests. | Use the KFP v2 compiler to generate IR YAML, as Argo YAML generation is deprecated. |
 | **Boto3 Silent Hangs** | Pods without correct MinIO routing attempt to reach public AWS and hang silently due to high default timeout limits. | Set `AWS_METADATA_SERVICE_TIMEOUT=1` to force early failures and surface the error. |
 
-## Hands-on Exercise: Deploy MLflow locally
+## Quiz
+
+<details>
+<summary>Question 1: Your team is architecting a modular private MLOps stack on Kubernetes. Training jobs can log MLflow parameters, but saving model artifacts times out after several minutes. Which component boundary do you inspect first?</summary>
+
+A) The MLflow tracking server's write access to PostgreSQL.
+
+B) The training pod's `MLFLOW_S3_ENDPOINT_URL` and S3 credentials.
+
+C) The default Kubernetes StorageClass used by PostgreSQL.
+
+D) The KServe InferenceService rollout status.
+
+**Answer:** B is the best first check because MLflow parameters are sent to the tracking server, while artifacts are commonly uploaded from the client pod to the object store using the S3-compatible endpoint. A is wrong for this symptom because the parameters already prove the server can write metadata to PostgreSQL. C could matter for database persistence, but it does not explain an artifact upload timeout from a training client. D is unrelated because KServe serving resources are not involved when a training pod logs an artifact.
+</details>
+
+<details>
+<summary>Question 2: A data engineering team proposes using MinIO as both the Feast offline store and the online store for real-time feature lookups. Why is this design unsafe for production serving?</summary>
+
+A) MinIO cannot store Parquet files used by training jobs.
+
+B) Object storage does not provide the low-latency keyed reads expected on the online inference path.
+
+C) Feast requires PostgreSQL as the online store in all bare-metal deployments.
+
+D) MinIO credentials cannot be mounted safely into Kubernetes jobs.
+
+**Answer:** B is correct because the online store serves one-key lookups during live inference and must respond in milliseconds under repeated access to hot entities. A is wrong because object storage is commonly used for Parquet and other batch artifacts. C is wrong because Redis or another low-latency key-value store is the usual online choice, while PostgreSQL is more appropriate for offline history or metadata. D is a security design concern, not the fundamental latency reason the architecture fails.
+</details>
+
+<details>
+<summary>Question 3: A KServe model loads a large GPU-backed runtime from MinIO. The first request after a quiet night returns a gateway timeout, but later requests are fast. What rollout setting most directly addresses this?</summary>
+
+A) Increase the gateway timeout until the model finishes loading.
+
+B) Set a minimum warm replica, such as `serving.knative.dev/minScale: "1"`.
+
+C) Move the model artifact from MinIO to PostgreSQL.
+
+D) Remove the readiness probe so the pod enters service sooner.
+
+**Answer:** B is correct because the symptom is a cold start: no pod is warm, so the first request waits for scheduling, image startup, artifact download, and model load. A hides the user-facing timeout but still violates a low-latency serving objective. C is wrong because PostgreSQL is not a model-weight artifact store. D is dangerous because it can route traffic to a pod before the model is ready, making failures less predictable rather than fixing them.
+</details>
+
+<details>
+<summary>Question 4: Two teams need different views of the same large image dataset. One team must filter blurry images while the other must keep the original. Which data-versioning approach avoids duplicating the whole dataset?</summary>
+
+A) Client-side DVC metadata files only.
+
+B) LakeFS server-side zero-copy branching over object storage.
+
+C) Converting all images into Feast online features.
+
+D) KServe traffic splitting between two model versions.
+
+**Answer:** B is the strongest fit because LakeFS creates branch and commit semantics over object storage without copying every underlying object. A can track dataset pointers, but it still relies heavily on client workflow discipline and does not give the same server-side branch isolation. C confuses training datasets with online feature serving and would be impractical for large image history. D controls prediction traffic after models are served; it does not version source datasets.
+</details>
+
+<details>
+<summary>Question 5: You need to route a small percentage of live inference traffic to a new model while most requests continue using the stable version. Which KServe mechanism should you design around?</summary>
+
+A) Two unrelated InferenceServices and a hand-written NGINX split.
+
+B) The `canaryTrafficPercent` field on the InferenceService.
+
+C) MLflow round-robin routing between registered models.
+
+D) Manually scaling old and new Deployments to different replica counts.
+
+**Answer:** B is correct because KServe exposes declarative traffic splitting through the InferenceService and translates the intent into the underlying serving and routing resources. A can work in a custom platform, but it discards the controller's native rollout behavior and creates more hand-managed ingress state. C is wrong because MLflow tracks and registers models; it is not the live request router. D is unreliable because replica ratios do not guarantee request ratios when load balancing, readiness, and autoscaling change over time.
+</details>
+
+<details>
+<summary>Question 6: A platform team wants Kubeflow Pipelines authoring, but security reviewers do not want teams hand-editing raw Argo Workflow manifests. How does KFP v2 change the discussion?</summary>
+
+A) KFP v2 submits pods directly and no longer needs any orchestrator.
+
+B) KFP v2 compiles pipeline definitions into a backend-agnostic intermediate representation.
+
+C) KFP v2 requires Tekton as the only supported execution engine.
+
+D) KFP v2 stores every artifact in the MLflow backend database.
+
+**Answer:** B is correct because the v2 SDK's intermediate representation separates authoring from a single YAML shape and gives platform teams a clearer boundary for validation, compilation, and execution. A is wrong because a real pipeline still needs a controller or backend to schedule steps and manage artifacts. C overstates the dependency; the point is portability of the compiled representation, not a single mandatory engine. D is wrong because artifacts should remain in object storage rather than the MLflow relational backend.
+</details>
+
+<details>
+<summary>Question 7: A Feast materialization job repeatedly crashes Redis, and the node hosting Redis becomes unstable during the batch load. What failure mode should you diagnose first?</summary>
+
+A) PostgreSQL rejecting historical reads because KServe is scaling down.
+
+B) Redis missing a memory limit and eviction policy during bulk materialization.
+
+C) MLflow refusing to log materialization metrics.
+
+D) Gatekeeper blocking the KServe canary rollout.
+
+**Answer:** B is correct because materialization pushes many feature values into the online store, and an unconstrained Redis pod can consume node memory until the kubelet intervenes. A mixes the offline store with serving autoscaling and does not explain Redis pressure. C might affect observability but not the online store's memory exhaustion. D is unrelated because this failure happens in the feature pipeline before an InferenceService rollout is evaluated.
+</details>
+
+## Hands-On Exercise: Deploy MLflow locally
 
 In this exercise, you will deploy a production-ready MLflow stack backed by PostgreSQL and MinIO, and log a test model. This simulates establishing the experimentation layer of a private platform.
 
@@ -616,7 +750,7 @@ In this exercise, you will deploy a production-ready MLflow stack backed by Post
 
 ### Task 1: Deploy MinIO (Artifact Store)
 
-Use Helm to deploy a single-node object store.
+Use Helm to deploy a single-node object store for lab purposes. A production installation would use stronger credentials, persistent capacity planning, network policy, and a backup design, but the single-node deployment keeps the exercise focused on the MLflow-to-object-storage contract.
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -629,14 +763,15 @@ helm install minio bitnami/minio \
   --set defaultBuckets=mlflow-artifacts
 ```
 
-Wait for the MinIO pod to become ready:
+Wait for the MinIO pod to become ready before installing the tracking server. This step matters because MLflow clients will later authenticate directly to the object store, so a partially initialized MinIO deployment can create misleading artifact errors that look like MLflow failures.
+
 ```bash
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=minio -n mlops --timeout=90s
 ```
 
 ### Task 2: Deploy PostgreSQL (Backend Store)
 
-Deploy the relational backend for tracking metrics.
+Deploy the relational backend for tracking metadata, parameters, metrics, and run state. PostgreSQL is not where large model artifacts belong; it is the durable index that lets the MLflow UI and API locate those artifacts and explain how they were produced.
 
 ```bash
 helm install mlflow-db bitnami/postgresql \
@@ -644,7 +779,8 @@ helm install mlflow-db bitnami/postgresql \
   --set global.postgresql.auth.postgresPassword=postgres \
   --set global.postgresql.auth.database=mlflow
 ```
-Wait for the PostgreSQL pod to become ready:
+Wait for the PostgreSQL pod to become ready before wiring the tracking server to it. If the service DNS name resolves before the database accepts connections, the first MLflow pod can crash-loop and hide the real timing issue behind generic connection errors.
+
 ```bash
 kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=postgresql -n mlops --timeout=90s
 ```
@@ -704,7 +840,8 @@ spec:
     targetPort: 5000
 ```
 
-Apply the deployment:
+Apply the deployment and wait for the tracking server to become ready. This gives you one stateless API pod connected to two stateful backends, which is the smallest useful slice of a private experimentation platform.
+
 ```bash
 kubectl apply -f mlflow-deployment.yaml
 kubectl wait --for=condition=ready pod -l app=mlflow -n mlops --timeout=90s
@@ -712,7 +849,7 @@ kubectl wait --for=condition=ready pod -l app=mlflow -n mlops --timeout=90s
 
 ### Task 4: Verify Logging
 
-Launch a temporary Python pod to act as a training job. 
+Launch a temporary Python pod to act as a training job. Notice that the client pod receives the tracking URI and the S3 endpoint; this is the critical detail that many first-time MLflow deployments miss, because artifact upload happens from the client environment rather than magically through the server for every backend.
 
 ```bash
 kubectl run mlflow-test -n mlops -i --tty --image=python:3.10-slim --rm \
@@ -723,7 +860,7 @@ kubectl run mlflow-test -n mlops -i --tty --image=python:3.10-slim --rm \
   -- sh
 ```
 
-Once inside the pod, install dependencies and run a test:
+Once inside the pod, install dependencies and run a test that writes both metadata and an artifact. If parameters appear in the UI but `model.txt` does not appear in the artifact pane, you have proven that metadata and artifact paths can fail independently.
 
 ```bash
 # Inside the pod
@@ -808,7 +945,7 @@ This challenge is intentionally open-ended — no single solution YAML is provid
 
 **Stretch goal — swap the storage backend.** Reproduce Tasks 1 through 5 with Ceph RGW (via the Rook operator) substituted for the bitnami MinIO chart. Document every place the manifests changed: which environment variables, which Service DNS names, which signature versions. The point of the stretch goal is to feel where MinIO assumptions are baked into the rest of the stack — many teams discover their "S3-compatible" tooling is actually MinIO-compatible only after they try a real swap.
 
-### Transfer Challenge
+### Task 7 — Extended Transfer Challenge
 
 You have just built and operated a single-tenant MLflow + MinIO + PostgreSQL stack inside one namespace. The transfer ask is harder: redesign the same MLflow tracking + Feast feature-store flow for a **multi-tenant on-prem cluster** where three independent ML teams (`fraud`, `pricing`, `forecast`) must each run experiments, register features, and serve models without ever seeing each other's experiments, runs, datasets, or model artifacts. The cluster has no internet egress and a single MLflow Tracking Server deployment must be shared across all three tenants for cost reasons.
 
@@ -824,91 +961,20 @@ There is no provided solution. Work this on paper for at least an hour before se
 
 The point of this exercise is not to produce a perfect manifest. It is to surface the gap between *plausible-sounding* multi-tenant designs and *actually adversary-resistant* ones — a gap that consumes most platform teams' second year.
 
-## Quiz
+## Sources
 
-**1. Your data scientists report that their training jobs successfully log parameters (like learning rate) to the MLflow UI, but fail with a connection timeout when attempting to save the final model weights. What is the most likely architectural misconfiguration?**
-- A) The MLflow tracking server does not have write access to the PostgreSQL database.
-- B) The training pod lacks the `MLFLOW_S3_ENDPOINT_URL` environment variable, defaulting to public AWS endpoints.
-- C) The MLflow tracking server pod lacks the `AWS_ACCESS_KEY_ID` environment variable.
-- D) The Kubernetes cluster default StorageClass is exhausted.
-
-<details>
-<summary>Answer</summary>
-**Correct Answer: B.** The client pod making the API call requires the S3 endpoint URL to push the artifact directly to MinIO. Parameters are sent via HTTP to the tracking server, which succeeds, but the artifact upload fails because the pod defaults to public AWS endpoints when `MLFLOW_S3_ENDPOINT_URL` is omitted. Without this specific environment variable injected into the training pod, the underlying `boto3` library attempts to route traffic to the public internet instead of your internal cluster service. This results in a silent hang and eventual connection timeout because the internal pod cannot reach AWS S3, or the bucket simply does not exist there.
-</details>
-
-**2. A data engineering team proposes using a single MinIO bucket to act as both the Feast offline store for batch training and the Feast online store for real-time model serving. Why will this architectural design fail in production?**
-- A) MinIO does not support the Apache Parquet file format required by Feast.
-- B) Object storage like MinIO cannot provide the millisecond latency required for the online serving of real-time features.
-- C) Feast requires a relational database like PostgreSQL for its online store on bare metal.
-- D) MinIO requires AWS credentials, which cannot be securely injected into Feast materialization jobs.
-
-<details>
-<summary>Answer</summary>
-**Correct Answer: B.** Feast relies on two distinct storage tiers to handle the fundamentally different access patterns of training and serving. While MinIO (Object Storage) is excellent for the batch offline store due to its high throughput for massive datasets, it cannot provide the millisecond latency required for the online serving of real-time features. The online store requires exclusively a low-latency key-value store like Redis on bare metal to achieve the instant lookups needed by live models during inference. Using an object store for both would result in unacceptable latency spikes during real-time prediction requests.
-</details>
-
-**3. You deploy a 4GB deep learning model via KServe. The service works during the day, but the first request sent at 3:00 AM times out with an HTTP 504 Gateway Timeout. Subsequent requests succeed. What is the standard practitioner fix for this?**
-- A) Increase the Istio Gateway timeout duration to 15 minutes.
-- B) Set the annotation `serving.knative.dev/minScale: "1"` on the InferenceService to prevent scale-to-zero.
-- C) Switch the underlying object storage from MinIO to Ceph.
-- D) Add a Redis cache sidecar to the KServe pod to keep the model in memory.
-
-<details>
-<summary>Answer</summary>
-**Correct Answer: B.** By default, when Knative Serving is used with KServe, it scales idle services to zero replicas to conserve cluster resources. When a request arrives after a period of inactivity, Knative must spin up a new pod, pull the multi-gigabyte neural network from storage, and load it into GPU memory. This cold-start penalty often exceeds the ingress gateway's timeout threshold, resulting in a 504 error. Setting a minimum scale of 1 (`serving.knative.dev/minScale: "1"`) ensures that at least one replica is always running in memory, providing instant responses at the cost of dedicated idle resources.
-</details>
-
-**4. Two data science teams are concurrently training models on the same 100TB image dataset stored in MinIO. Team A needs to aggressively filter out blurry images, while Team B needs the unfiltered original dataset. How does LakeFS solve this conflict without requiring an additional 100TB of physical storage?**
-- A) By utilizing Git hooks to track `.dvc` metadata files on the client side.
-- B) By providing server-side, zero-copy branching via an API gateway.
-- C) By converting the dataset into Parquet files and querying it via Feast.
-- D) By utilizing Knative Serving to scale the dataset access dynamically.
-
-<details>
-<summary>Answer</summary>
-**Correct Answer: B.** LakeFS provides server-side, zero-copy branching via an API gateway that sits in front of your object storage. This is highly efficient for massive datasets because branching takes milliseconds and requires no additional physical storage space to maintain multiple divergent states of the data concurrently. Instead of copying the actual image files, LakeFS simply creates a new metadata pointer to the existing objects. This allows Team A to logically 'delete' images in their branch without affecting Team B's view of the data, all while keeping storage costs identical to a single copy.
-</details>
-
-**5. You need to perform an A/B test routing exactly 10% of real-time inference traffic to a new model version (v2) while the rest goes to v1. How is this natively achieved in a KServe deployment?**
-- A) Deploying two separate InferenceServices and using a custom NGINX ingress controller script to split traffic based on headers.
-- B) Using the `canaryTrafficPercent: 10` spec in the InferenceService resource.
-- C) Configuring MLflow to intercept requests and round-robin the traffic.
-- D) Scaling the v2 deployment to 1 replica and the v1 deployment to 9 replicas manually.
-
-<details>
-<summary>Answer</summary>
-**Correct Answer: B.** KServe integrates deeply with Knative's native routing capabilities to handle traffic splitting at the ingress layer. You achieve this by configuring the `canaryTrafficPercent: 10` field within the InferenceService specification. KServe automatically translates this declarative specification into the underlying Knative and Istio routing rules, offloading the traffic split to the gateway automatically. This eliminates the need for manual replica scaling or custom NGINX proxy scripts to achieve weighted traffic distribution.
-</details>
-
-**6. Your platform team is deploying Kubeflow Pipelines (KFP) v2, but the security team explicitly forbids installing Argo Workflows in the cluster. How does the KFP v2 architecture allow you to proceed?**
-- A) KFP v2 bypasses orchestrators and submits raw Pods directly to the Kubernetes API.
-- B) KFP v2 SDK compiles pipelines to a backend-agnostic Intermediate Representation (IR) YAML format, allowing alternative orchestrators to execute them.
-- C) KFP v2 relies exclusively on Tekton Pipelines as its default execution engine.
-- D) You cannot proceed; KFP v2 still has a hard dependency on Argo Workflows.
-
-<details>
-<summary>Answer</summary>
-**Correct Answer: B.** The KFP v2 SDK fundamentally redesigns how pipelines are compiled by generating a backend-agnostic Intermediate Representation (IR) YAML format. This is a significant shift from the KFP v1 SDK, which had a hard dependency on generating Argo Workflow-specific YAML manifests. Because the output is now an agnostic IR, it allows alternative execution engines (like Vertex AI Pipelines or customized Kubernetes operators) to run the pipeline without relying on Argo Workflows. This decoupling provides enterprise teams the flexibility to choose their preferred orchestration layer while standardizing on the KFP SDK for authoring.
-</details>
-
-**7. A data science team complains that their Feast materialization jobs keep failing halfway through the process. Upon inspection, you notice the Kubernetes node hosting the Feast online store is experiencing heavy swapping and intermittent kubelet unresponsiveness. What architectural flaw is causing this?**
-- A) The Feast offline store in PostgreSQL is rejecting concurrent reads due to missing indexes.
-- B) The Redis pod lacks memory limits, allowing Feast batch materialization to consume all node memory and trigger an Out Of Memory (OOM) kill.
-- C) Knative Serving is autoscaling the Feast pods to zero during materialization.
-- D) The MLflow Tracking Server is rejecting the logged materialization metrics.
-
-<details>
-<summary>Answer</summary>
-**Correct Answer: B.** During batch materialization, data is moved in bulk from the offline store (like PostgreSQL or MinIO) into the online store (Redis). If the Redis pod lacks strictly defined Kubernetes resource limits, it will attempt to consume all available memory on the host node as it ingests the massive influx of feature data. To prevent node-level degradation or an Out Of Memory (OOM) kill by the kubelet, you must set a hard `memory.limit` on the Redis container and configure the `maxmemory-policy allkeys-lru` setting. This ensures Redis evicts older keys when full rather than crashing the node.
-</details>
-
-## Further Reading
-
-*   [MLflow Tracking on Kubernetes](https://mlflow.org/docs/latest/tracking.html#tracking-server)
-*   [Feast Architecture and Concepts](https://docs.feast.dev/getting-started/architecture-and-components)
-*   [KServe InferenceService Architecture](https://kserve.github.io/website/latest/modelserving/v1beta1/inferenceservice/)
-*   [LakeFS Object Storage Integration](https://docs.lakefs.io/understand/architecture.html)
+* [MLflow Tracking Server docs](https://mlflow.org/docs/latest/tracking.html#tracking-server)
+* [MLflow artifact stores](https://mlflow.org/docs/latest/tracking/artifacts-stores/)
+* [Feast architecture and components](https://docs.feast.dev/getting-started/architecture-and-components)
+* [Feast online stores](https://docs.feast.dev/reference/online-stores)
+* [KServe InferenceService architecture](https://kserve.github.io/website/latest/modelserving/v1beta1/inferenceservice/)
+* [KServe canary rollout docs](https://kserve.github.io/website/latest/modelserving/v1beta1/rollout/canary/)
+* [Argo Workflows artifact repository docs](https://argo-workflows.readthedocs.io/en/latest/configure-artifact-repository/)
+* [Kubeflow Pipelines v2 concepts](https://www.kubeflow.org/docs/components/pipelines/concepts/pipeline-v2/)
+* [MinIO Kubernetes documentation](https://min.io/docs/minio/kubernetes/upstream/)
+* [LakeFS architecture](https://docs.lakefs.io/understand/architecture.html)
+* [OPA Gatekeeper ConstraintTemplates](https://open-policy-agent.github.io/gatekeeper/website/docs/constrainttemplates/)
+* [NVIDIA Triton Inference Server user guide](https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/)
 
 ## Next Module
 
