@@ -82,9 +82,12 @@ def _gemini_rate_limited_text(text: str) -> bool:
 def _should_switch_to_subscription(text: str, use_subscription_auth: bool) -> bool:
     """Return True when an API-key quota hit should retry through OAuth.
 
-    Durable auth rule: Gemini bridge calls use API-key auth first. Only when
-    that path hits quota/rate-limit do we strip GEMINI_API_KEY/GOOGLE_API_KEY
-    for the retry, which makes the Gemini CLI fall through to OAuth creds.
+    Durable auth rule: Gemini bridge calls use API-key auth first. The legacy
+    ask/process path calls this from ``_run_gemini_attempt`` after a structured
+    runtime failure; ``ab discuss`` calls it after its direct runtime invocation
+    returns a failed Gemini result. Only when that path hits quota/rate-limit
+    do we strip GEMINI_API_KEY/GOOGLE_API_KEY for the retry, which makes the
+    Gemini CLI fall through to OAuth creds.
     """
     if use_subscription_auth or _force_gemini_subscription():
         return False

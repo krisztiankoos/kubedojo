@@ -1220,6 +1220,54 @@ def mark_delivery_delivered(
         conn.close()
 
 
+def mark_message_delivery_delivered(
+    message_id: str,
+    to_agent: str,
+    reply_message_id: str,
+    *,
+    now: str | None = None,
+) -> int:
+    """Mark a message delivery to one agent as terminally delivered.
+
+    ``ab discuss`` invokes agents inline instead of through the inbox
+    worker, so it has a reply message but no claimed delivery id. This
+    bridges that path without changing the delivery schema.
+    """
+    _validate_agent(to_agent)
+    now = now or _now_iso()
+    conn = get_db()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+
+        # reply_message_id is the caller's evidence that the delivery
+        # produced a channel reply. The schema still has no reply linkage
+        # column, so keep the argument for API symmetry with
+        # mark_delivery_delivered() and future migration compatibility.
+        _ = reply_message_id
+        cursor = conn.execute(
+            """
+            UPDATE deliveries
+            SET status='delivered',
+                delivered_at=?,
+                error=NULL,
+                lease_until=NULL,
+                retry_after=NULL,
+                last_error_kind=NULL
+            WHERE message_id=?
+              AND to_agent=?
+              AND status NOT IN ('delivered', 'failed')
+            """,
+            (now, message_id, to_agent),
+        )
+        conn.commit()
+        return cursor.rowcount
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def mark_delivery_failed(
     delivery_id: str,
     error_kind: str,
