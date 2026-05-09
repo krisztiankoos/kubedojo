@@ -3,6 +3,7 @@ title: "Module 3.8: Cluster Networking Data Path"
 slug: k8s/cka/part3-services-networking/module-3.8-cluster-networking-data-path
 sidebar:
   order: 9
+revision_pending: false
 lab:
   id: cka-3.8-cluster-networking
   url: https://killercoda.com/kubedojo/scenario/cka-3.8-cluster-networking
@@ -21,15 +22,11 @@ lab:
 
 ## Learning Outcomes
 
-After completing this module, you will be able to **trace** a request from a client pod through DNS, Service translation, conntrack, routing, and CNI delivery until it reaches a backend pod.
-
-You will be able to **differentiate** kube-proxy responsibilities from CNI responsibilities, then use that boundary to choose the correct diagnostic command instead of debugging the wrong layer.
-
-You will be able to **debug** cross-node and Service connectivity failures by comparing DNS results, Endpoints or EndpointSlices, iptables or nftables state, routes, tunnel interfaces, and packet captures.
-
-You will be able to **evaluate** overlay and native routing designs by explaining how encapsulation, MTU, routing complexity, source NAT, and policy enforcement change the data path.
-
-You will be able to **apply** a repeatable troubleshooting mental model to a concrete production-style failure before solving a similar packet-tracing challenge in the hands-on exercise.
+- **Trace** a request from a client pod through DNS, Service translation, conntrack, routing, and CNI delivery until it reaches a backend pod.
+- **Differentiate** kube-proxy responsibilities from CNI responsibilities, then use that boundary to choose the correct diagnostic command instead of debugging the wrong layer.
+- **Debug** cross-node and Service connectivity failures by comparing DNS results, Endpoints or EndpointSlices, iptables or nftables state, routes, tunnel interfaces, and packet captures.
+- **Evaluate** overlay and native routing designs by explaining how encapsulation, MTU, routing complexity, source NAT, and policy enforcement change the data path.
+- **Apply** a repeatable troubleshooting mental model to a concrete production-style failure before solving a similar packet-tracing challenge in the hands-on exercise.
 
 ---
 
@@ -41,13 +38,9 @@ That situation is exactly where Kubernetes networking changes from a set of defi
 
 This module teaches the data path as a sequence of decisions made by Linux and Kubernetes components. You will see the simple path first, then add Service load balancing, DNS, NodePort source NAT, hairpin flows, overlay encapsulation, and troubleshooting state. The goal is not to memorize every implementation detail of every CNI; the goal is to build a mental model strong enough to predict where evidence should appear when something breaks.
 
-> **War Story: The Silent Large-Packet Failure**
->
-> During a cluster migration, a team moved from native routed pod networking to an overlay CNI mode. Small health checks kept passing, readiness stayed green, and short API calls worked, but large responses from one service to another stalled until the client timed out. The broken requests were not random; they were the ones large enough to exceed the real path MTU after encapsulation overhead was added.
->
-> The fix was not in the application, the Service, or DNS. The platform team adjusted the CNI MTU, restarted the affected networking agents, and verified the data path with packet captures and direct pod-to-pod tests. The incident was painful because the symptom looked like an application timeout, but the evidence lived in the network path underneath Kubernetes abstractions.
+Hypothetical scenario: During a cluster migration, a team moves from native routed pod networking to an overlay CNI mode. Small health checks keep passing, readiness stays green, and short API calls work, but larger responses from one service to another stall until the client times out. The broken requests are not random; they are the ones large enough to exceed the real path MTU after encapsulation overhead is added, so the evidence sits below the application and below the Service abstraction.
 
-This module uses `k` as a shorthand for `kubectl` in commands. If your shell does not already define it, run `alias k=kubectl` before starting the examples, or replace `k` with `kubectl` everywhere you see it.
+In that scenario, the fix would not begin in DNS or in the Deployment manifest. The platform team would compare pod MTU, tunnel MTU, and underlay MTU, then verify the data path with packet captures and direct pod-to-pod tests before changing CNI settings. Kubernetes 1.35 still depends on the same fundamental Linux packet path, so the practical skill is learning where each abstraction stops and where the next layer starts.
 
 ---
 
@@ -122,11 +115,11 @@ When a Service has two ready backend pods, kube-proxy creates rules or equivalen
 
 ```bash
 # Check the kube-proxy mode configured for this cluster.
-k get configmap kube-proxy -n kube-system -o yaml | grep -E "mode:|strictARP|clusterCIDR"
+kubectl get configmap kube-proxy -n kube-system -o yaml | grep -E "mode:|strictARP|clusterCIDR"
 
 # Inspect kube-proxy health and recent logs.
-k get pods -n kube-system -l k8s-app=kube-proxy -o wide
-k logs -n kube-system -l k8s-app=kube-proxy --tail=40
+kubectl get pods -n kube-system -l k8s-app=kube-proxy -o wide
+kubectl logs -n kube-system -l k8s-app=kube-proxy --tail=40
 ```
 
 The command output is most useful when you connect it back to the symptom. If pod-to-pod traffic works by direct pod IP but Service traffic fails, kube-proxy state becomes a prime suspect. If both direct pod IP and Service traffic fail, kube-proxy might still be healthy, and the failure may sit lower in the CNI, policy, node firewall, or routing path.
@@ -212,8 +205,8 @@ Hairpin failures are confusing because the Service can work from other pods, and
 
 ```bash
 # Inspect the pod's network devices and routes from inside the pod.
-k exec <pod-name> -- ip link show
-k exec <pod-name> -- ip route
+kubectl exec <pod-name> -- ip link show
+kubectl exec <pod-name> -- ip route
 
 # On a node, hairpin settings are usually inspected through the veth or bridge path.
 # The exact interface name depends on the CNI and runtime, so find it before reading.
@@ -256,10 +249,10 @@ A good diagnostic question is not "is networking broken?" but "which promise is 
 
 | Symptom observed from a client pod | Direct next test | Layer most implicated if the test fails | Why that layer becomes suspicious |
 |---|---|---|---|
-| Service name does not resolve | `k exec client -- nslookup service` | DNS or CoreDNS reachability | The client cannot even obtain the virtual Service IP |
-| Service name resolves but curl to Service fails | `k get endpoints service` | Service selection or kube-proxy | DNS succeeded, so the failure moved past name resolution |
+| Service name does not resolve | `kubectl exec client -- nslookup service` | DNS or CoreDNS reachability | The client cannot even obtain the virtual Service IP |
+| Service name resolves but curl to Service fails | `kubectl get endpoints service` | Service selection or kube-proxy | DNS succeeded, so the failure moved past name resolution |
 | ClusterIP fails but endpoint pod IP works | Check kube-proxy rules and logs | kube-proxy or Service state | Pod routing works while virtual IP translation does not |
-| Endpoint pod IP fails across nodes | `k exec client -- curl http://pod-ip` | CNI, policy, route, MTU, or node firewall | The Service abstraction is no longer involved |
+| Endpoint pod IP fails across nodes | `kubectl exec client -- curl http://pod-ip` | CNI, policy, route, MTU, or node firewall | The Service abstraction is no longer involved |
 | Same-node pod IP works but cross-node fails | Compare node placement and routes | CNI tunnel, BGP, firewall, or MTU | Local veth delivery works while inter-node delivery fails |
 | DNS works but external names are slow | Inspect `/etc/resolv.conf` and query timing | resolver search behavior or CoreDNS upstreams | The network may work while name expansion causes latency |
 
@@ -271,13 +264,13 @@ A direct pod-IP test is the cleanest way to ask whether the pod network itself w
 
 ```bash
 # Get backend pod IPs and node placement so you know whether the test crosses nodes.
-k get pods -o wide
+kubectl get pods -o wide
 
 # Test direct pod-to-pod connectivity from a client pod.
-k exec <client-pod> -- wget -qO- --timeout=5 http://<backend-pod-ip>:<port>
+kubectl exec <client-pod> -- wget -qO- --timeout=5 http://<backend-pod-ip>:<port>
 
 # Compare the direct test with the Service test.
-k exec <client-pod> -- wget -qO- --timeout=5 http://<service-name>:<port>
+kubectl exec <client-pod> -- wget -qO- --timeout=5 http://<service-name>:<port>
 ```
 
 You should also check whether NetworkPolicy is intentionally changing the answer. A policy-capable CNI may drop the direct pod-IP test because policy denies the flow, not because routing is broken. The symptom still lives in the CNI and policy layer, but the fix is different from changing tunnels or node routes.
@@ -288,14 +281,14 @@ A Service object is only useful if it selects ready endpoints and every node has
 
 ```bash
 # Check whether the Service has a ClusterIP and which selector it uses.
-k get svc <service-name> -o wide
-k describe svc <service-name>
+kubectl get svc <service-name> -o wide
+kubectl describe svc <service-name>
 
 # Check EndpointSlices because modern clusters use them as the scalable endpoint source.
-k get endpointslice -l kubernetes.io/service-name=<service-name> -o wide
+kubectl get endpointslice -l kubernetes.io/service-name=<service-name> -o wide
 
 # The legacy Endpoints object is still a quick exam-friendly view in many clusters.
-k get endpoints <service-name>
+kubectl get endpoints <service-name>
 ```
 
 If endpoints are empty, stay at the Kubernetes API level before inspecting iptables. Confirm the Service selector matches pod labels, the pods are in the same namespace as the Service, and the pods are Ready. A pod can be Running and still excluded from endpoints because readiness failed, which is one of the most common Service troubleshooting traps.
@@ -332,7 +325,7 @@ Do not treat CNI names as complete explanations. Calico can run in different mod
 
 ```bash
 # Look at CNI pods and node placement.
-k get pods -n kube-system -o wide | grep -E "calico|cilium|flannel|weave|antrea"
+kubectl get pods -n kube-system -o wide | grep -E "calico|cilium|flannel|weave|antrea"
 
 # Inspect common tunnel interfaces on a node when your CNI uses overlays.
 ip link show | grep -E "vxlan|flannel|cilium|geneve|tunl"
@@ -393,17 +386,17 @@ The most important DNS troubleshooting split is between "the name did not resolv
 
 ```bash
 # Inspect the resolver configuration as the pod actually sees it.
-k exec <client-pod> -- cat /etc/resolv.conf
+kubectl exec <client-pod> -- cat /etc/resolv.conf
 
 # Resolve a short Service name from inside the pod.
-k exec <client-pod> -- nslookup <service-name>
+kubectl exec <client-pod> -- nslookup <service-name>
 
 # Resolve the fully qualified Service name to remove namespace ambiguity.
-k exec <client-pod> -- nslookup <service-name>.<namespace>.svc.cluster.local
+kubectl exec <client-pod> -- nslookup <service-name>.<namespace>.svc.cluster.local
 
 # Check CoreDNS pods and logs if resolution itself fails.
-k get pods -n kube-system -l k8s-app=kube-dns -o wide
-k logs -n kube-system -l k8s-app=kube-dns --tail=60
+kubectl get pods -n kube-system -l k8s-app=kube-dns -o wide
+kubectl logs -n kube-system -l k8s-app=kube-dns --tail=60
 ```
 
 ### 3.1 Search Domains and ndots Can Create Latency
@@ -412,11 +405,11 @@ Kubernetes pods commonly receive a search list and `ndots:5`, which means a name
 
 ```bash
 # Observe resolver configuration inside a pod.
-k exec <client-pod> -- cat /etc/resolv.conf
+kubectl exec <client-pod> -- cat /etc/resolv.conf
 
 # Compare an external name without and with a trailing dot.
-k exec <client-pod> -- nslookup api.example.com
-k exec <client-pod> -- nslookup api.example.com.
+kubectl exec <client-pod> -- nslookup api.example.com
+kubectl exec <client-pod> -- nslookup api.example.com.
 ```
 
 A trailing dot tells the resolver that the name is absolute, so it should not be expanded through the search list. For application configuration that repeatedly calls external services, a trailing dot or a lower `ndots` value can remove avoidable DNS work. The right choice depends on whether the workload primarily calls cluster-local Services, external names, or both.
@@ -456,11 +449,11 @@ When DNS is blocked by policy, direct pod-IP tests may still work if the policy 
 
 ```bash
 # Look for policies in both the client namespace and kube-system.
-k get networkpolicy -A
+kubectl get networkpolicy -A
 
 # Test DNS and direct connectivity separately.
-k exec <client-pod> -- nslookup kubernetes.default
-k exec <client-pod> -- wget -qO- --timeout=5 http://<backend-pod-ip>:<port>
+kubectl exec <client-pod> -- nslookup kubernetes.default
+kubectl exec <client-pod> -- wget -qO- --timeout=5 http://<backend-pod-ip>:<port>
 ```
 
 ---
@@ -513,14 +506,14 @@ The minimum sequence gathers one fact per layer. You can run it from a debug pod
 
 ```bash
 # Layer 1: Does the client resolve the intended Service name?
-k exec <client-pod> -- nslookup <service-name>.<namespace>.svc.cluster.local
+kubectl exec <client-pod> -- nslookup <service-name>.<namespace>.svc.cluster.local
 
 # Layer 2: Does the Service point to ready endpoints?
-k get svc <service-name> -n <namespace> -o wide
-k get endpointslice -n <namespace> -l kubernetes.io/service-name=<service-name> -o wide
+kubectl get svc <service-name> -n <namespace> -o wide
+kubectl get endpointslice -n <namespace> -l kubernetes.io/service-name=<service-name> -o wide
 
 # Layer 3: Can the client reach a selected endpoint by pod IP?
-k exec <client-pod> -- wget -qO- --timeout=5 http://<endpoint-pod-ip>:<port>
+kubectl exec <client-pod> -- wget -qO- --timeout=5 http://<endpoint-pod-ip>:<port>
 
 # Node state: inspect translation and connection state only after the layer tests justify it.
 iptables-save | grep -E "KUBE-SVC|KUBE-SEP|<service-name>"
@@ -537,48 +530,48 @@ The wrong approach is to start by changing the CNI or restarting CoreDNS. The di
 
 ```bash
 # Step 1: Test name resolution from the failing client context.
-k exec -n shop deploy/checkout -- nslookup inventory.shop.svc.cluster.local
+kubectl exec -n shop deploy/checkout -- nslookup inventory.shop.svc.cluster.local
 ```
 
 Assume the lookup returns `10.96.88.20`. That means the client can resolve the Service name, and CoreDNS plus the DNS Service path worked for this query. The next question is whether the Service has ready endpoints. A Service with no endpoints will accept a name lookup but has no backend destination for kube-proxy to choose.
 
 ```bash
 # Step 2: Inspect Service selection and ready endpoints.
-k get svc -n shop inventory -o wide
-k get endpointslice -n shop -l kubernetes.io/service-name=inventory -o wide
-k get pods -n shop -l app=inventory -o wide
+kubectl get svc -n shop inventory -o wide
+kubectl get endpointslice -n shop -l kubernetes.io/service-name=inventory -o wide
+kubectl get pods -n shop -l app=inventory -o wide
 ```
 
-Assume the EndpointSlice shows no ready endpoints, while `k get pods` shows two `inventory` pods in Running state with `0/1 READY`. That evidence changes the diagnosis. The failure is not a CNI tunnel, not kube-proxy, and not DNS; the Service has no ready backends because readiness is failing. You would inspect the readiness probe, pod logs, and application port rather than node packet forwarding.
+Assume the EndpointSlice shows no ready endpoints, while `kubectl get pods` shows two `inventory` pods in Running state with `0/1 READY`. That evidence changes the diagnosis. The failure is not a CNI tunnel, not kube-proxy, and not DNS; the Service has no ready backends because readiness is failing. You would inspect the readiness probe, pod logs, and application port rather than node packet forwarding.
 
 ```bash
 # Step 3: Confirm why the pods are excluded from endpoints.
-k describe pod -n shop -l app=inventory
-k logs -n shop -l app=inventory --tail=80
+kubectl describe pod -n shop -l app=inventory
+kubectl logs -n shop -l app=inventory --tail=80
 ```
 
 Now change the scenario slightly. Assume the EndpointSlice shows two ready endpoints, and one endpoint IP is `10.244.3.22`. The Service has backends, so the next test is direct endpoint reachability from the client. This removes Service translation from the test and asks whether the pod network and policy allow the flow.
 
 ```bash
 # Step 4: Test direct endpoint reachability.
-k exec -n shop deploy/checkout -- wget -qO- --timeout=5 http://10.244.3.22:8080
+kubectl exec -n shop deploy/checkout -- wget -qO- --timeout=5 http://10.244.3.22:8080
 ```
 
 If direct pod-IP access fails, inspect NetworkPolicy before assuming routing is broken, because the rollout added policy. A default-deny ingress policy selecting `inventory` may allow traffic from an old label such as `role=frontend`, while the `checkout` pods now use `app=checkout` and no longer match the allow rule. That is a data-path failure, but the fix is policy alignment rather than CNI repair.
 
 ```bash
 # Step 5: Inspect policies that select either side of the flow.
-k get networkpolicy -n shop
-k describe networkpolicy -n shop
-k get pods -n shop --show-labels
+kubectl get networkpolicy -n shop
+kubectl describe networkpolicy -n shop
+kubectl get pods -n shop --show-labels
 ```
 
 If direct pod-IP access succeeds but the Service still times out, inspect Service translation and conntrack. The endpoint can respond, so the lower pod network is capable of carrying the flow. The remaining suspects are kube-proxy rules, stale conntrack state, a mismatch between Service port and targetPort, or a local node-specific programming issue.
 
 ```bash
 # Step 6: Compare Service port configuration with the backend container port.
-k describe svc -n shop inventory
-k get pods -n shop -l app=inventory -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.podIP}{"\n"}{end}'
+kubectl describe svc -n shop inventory
+kubectl get pods -n shop -l app=inventory -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.podIP}{"\n"}{end}'
 
 # Step 7: On the node, inspect translation and connection state when justified.
 iptables-save | grep inventory
@@ -616,7 +609,7 @@ If you capture only inside the client pod, you see what the application sees bef
 
 ```bash
 # From a debug pod, generate a request with a short timeout.
-k exec <client-pod> -- curl -sS --connect-timeout 5 http://<service-name>:<port>
+kubectl exec <client-pod> -- curl -sS --connect-timeout 5 http://<service-name>:<port>
 
 # On a node, capture packets related to a client and backend test.
 tcpdump -i any -nn host <client-pod-ip> and port <port>
@@ -637,7 +630,7 @@ The first cross-node question is whether the failure is size-dependent. If tiny 
 
 ```bash
 # Check pod interface MTU from inside a pod.
-k exec <pod-name> -- ip link show eth0
+kubectl exec <pod-name> -- ip link show eth0
 
 # Check common node interfaces and tunnel devices.
 ip link show
@@ -650,7 +643,7 @@ The third question is whether source identity changed. NodePort and LoadBalancer
 
 | Cross-node clue | Most useful next check | Why it matters | Common repair direction |
 |---|---|---|---|
-| Same-node works, cross-node fails | Compare pod node placement with `k get pods -o wide` | Confirms the node boundary is the variable | Inspect CNI health, routes, firewalls, and tunnels |
+| Same-node works, cross-node fails | Compare pod node placement with `kubectl get pods -o wide` | Confirms the node boundary is the variable | Inspect CNI health, routes, firewalls, and tunnels |
 | Small responses work, large responses fail | Compare MTU on pod and tunnel interfaces | Encapsulation can reduce usable packet size | Tune CNI MTU and restart networking agents safely |
 | NodePort backend sees node IP | Inspect `externalTrafficPolicy` | SNAT may be expected behavior | Use `Local` only when endpoint placement supports it |
 | Only one node fails Service traffic | Inspect kube-proxy and CNI agent on that node | Node-local rule programming may be stale | Restart or repair the affected node agent after diagnosis |
@@ -660,6 +653,62 @@ The third question is whether source identity changed. NodePort and LoadBalancer
 You should now have a complete enough model to troubleshoot without memorizing every plugin implementation. Start by proving where the packet path stops matching expectation. Then choose the tool that sees that part of the path, whether it is `nslookup`, EndpointSlices, kube-proxy rules, `conntrack`, routes, interface MTU, CNI-specific status commands, or packet captures.
 
 ---
+
+## Patterns & Anti-Patterns
+
+Good Kubernetes network troubleshooting looks disciplined because each test removes a branch from the search tree. The strongest pattern is to keep the control-plane promise separate from the data-plane evidence: DNS answers names, Services select ready endpoints, kube-proxy or an eBPF replacement translates virtual IPs, and the CNI moves pod packets. When those responsibilities stay separate in your notes, you are less likely to restart CoreDNS for a Service selector problem or change CNI settings for an empty EndpointSlice.
+
+The second useful pattern is to compare two paths that differ by exactly one layer. A Service call and a direct endpoint-pod call differ mainly by Service translation; a same-node direct pod call and a cross-node direct pod call differ mainly by the inter-node CNI path; a short external DNS query and the same name with a trailing dot differ by resolver search expansion. This kind of paired comparison is how experienced engineers turn a vague timeout into a specific next command.
+
+| Pattern | When to use it | Why it works | Scaling consideration |
+|---|---|---|---|
+| Layered packet walk | Any Service or pod connectivity incident | It separates DNS, Service selection, translation, policy, CNI, and application behavior | Standardize the sequence in runbooks so teams collect comparable evidence |
+| Paired path comparison | Symptoms differ by node placement, name form, or Service versus pod IP | It isolates the one layer that changed between tests | Record pod IPs, node names, and endpoint readiness so comparisons are reproducible |
+| Endpoint-first Service debugging | A Service exists but traffic fails | It proves whether kube-proxy has real backends to translate toward | Prefer EndpointSlices in large clusters because they are the scalable endpoint API |
+| Targeted node-state inspection | Evidence points to one node or one Service VIP | It avoids broad packet captures and broad conntrack deletion | Scope inspection to one node, one Service IP, and one port before changing state |
+
+Anti-patterns usually come from treating "networking" as one large component. Restarting every networking pod may briefly hide the symptom, but it destroys evidence and can create a wider outage. A better response is to use the smallest test that can disprove a hypothesis, then move one layer deeper only when the previous layer behaves as expected.
+
+| Anti-pattern | What goes wrong | Better alternative |
+|---|---|---|
+| Restarting CoreDNS whenever a Service name fails | DNS may be healthy while kube-dns Service translation, egress policy, or the backend Service path is broken | Test `nslookup`, kube-dns endpoints, and DNS egress policy separately before restarting anything |
+| Treating direct pod-IP failure as a kube-proxy bug | kube-proxy is not responsible for creating pod interfaces or inter-node pod routing | Debug CNI health, NetworkPolicy, routes, MTU, and node firewalls when direct endpoint reachability fails |
+| Clearing all conntrack entries to "unstick" a Service | Active unrelated flows can be interrupted, and the original cause remains unknown | Inspect targeted entries for the Service IP and delete only scoped entries in controlled situations |
+| Assuming overlay and native routed clusters fail the same way | Encapsulation, MTU, firewall rules, route distribution, and observability tools differ | Evaluate the configured CNI mode before choosing MTU, route, or tunnel checks |
+
+## Decision Framework
+
+Use this framework when a client pod cannot reach a backend by Service name. Read it from top to bottom and stop as soon as the evidence identifies a layer. If a later command seems tempting, ask whether the earlier layer has already been proven healthy; that habit keeps the workflow fast during an exam and defensible during an incident.
+
+```ascii
++----------------------------------------------------------------------------+
+|                    Service Connectivity Decision Framework                  |
+|                                                                            |
+|  1. Resolve name from client pod                                            |
+|     fails -> inspect resolver config, DNS policy, kube-dns Service, CoreDNS |
+|     works -> record the returned ClusterIP and continue                     |
+|                                                                            |
+|  2. Inspect Service and EndpointSlices                                      |
+|     empty -> fix selector, namespace, readiness, or target workload health  |
+|     ready -> compare Service access with direct endpoint access             |
+|                                                                            |
+|  3. Compare Service call with endpoint pod-IP call                          |
+|     endpoint fails -> inspect NetworkPolicy, CNI, routes, MTU, node path    |
+|     endpoint works -> inspect Service port, kube-proxy or eBPF translation  |
+|                                                                            |
+|  4. Add node context only after the layer tests justify it                  |
+|     one node bad -> inspect that node's agent, rules, routes, conntrack     |
+|     cross-node bad -> inspect tunnel, BGP, firewall, or MTU evidence        |
++----------------------------------------------------------------------------+
+```
+
+| Decision point | Evidence that moves you forward | Most likely next tool | What not to do yet |
+|---|---|---|---|
+| DNS resolution fails | The client cannot obtain the expected ClusterIP | `kubectl exec -- nslookup`, CoreDNS logs, DNS policy review | Do not inspect application logs as the primary path evidence |
+| EndpointSlices are empty | Service has no ready backend addresses | `kubectl describe svc`, `kubectl get pods --show-labels`, readiness events | Do not debug iptables for a Service with no endpoints |
+| Direct endpoint access fails | Pod network path or policy fails without Service translation | NetworkPolicy review, CNI status, route and MTU checks, packet capture | Do not assume kube-proxy is broken |
+| Direct endpoint works but Service fails | Lower pod reachability is proven, but virtual IP translation is suspicious | Service port review, kube-proxy logs, nftables or iptables, conntrack | Do not change CNI MTU before proving cross-node size symptoms |
+| Only larger cross-node payloads fail | Tiny probes succeed while larger flows time out | MTU comparison and controlled packet-size tests | Do not treat the application timeout as random without size evidence |
 
 ## Did You Know?
 
@@ -675,7 +724,7 @@ You should now have a complete enough model to troubleshoot without memorizing e
 
 ## Common Mistakes
 
-| Mistake | Problem | Better Practice |
+| Mistake | Why It Happens | How to Fix It |
 |---|---|---|
 | Starting with tcpdump before checking DNS and endpoints | Packet captures become noisy when the failing layer has not been narrowed | First test name resolution, Service endpoints, and direct pod-IP reachability |
 | Treating kube-proxy as the component that creates pod networking | The wrong owner gets investigated when direct pod IP traffic fails | Use direct pod-IP tests to separate CNI reachability from Service translation |
@@ -690,7 +739,7 @@ You should now have a complete enough model to troubleshoot without memorizing e
 
 ## Quiz
 
-**1. Your team reports that `checkout` cannot call `http://inventory`, but `k exec checkout -- nslookup inventory` returns the expected ClusterIP. The Service has two ready EndpointSlices, and direct `wget` to one endpoint pod IP succeeds from the checkout pod. What layer is now most suspicious, and what would you inspect next?**
+**1. Your team reports that `checkout` cannot call `http://inventory`, but `kubectl exec checkout -- nslookup inventory` returns the expected ClusterIP. The Service has two ready EndpointSlices, and direct `wget` to one endpoint pod IP succeeds from the checkout pod. What layer is now most suspicious, and what would you inspect next?**
 
 <details>
 <summary>Answer</summary>
@@ -708,12 +757,12 @@ The likely mechanism is an MTU mismatch caused by encapsulation overhead. Same-n
 
 </details>
 
-**3. A developer creates a Service for `reports`, and DNS returns a ClusterIP, but `k get endpoints reports` shows no addresses. The selected pods are Running and have the expected labels. What should you evaluate before inspecting kube-proxy rules?**
+**3. A developer creates a Service for `reports`, and DNS returns a ClusterIP, but `kubectl get endpoints reports` shows no addresses. The selected pods are Running and have the expected labels. What should you evaluate before inspecting kube-proxy rules?**
 
 <details>
 <summary>Answer</summary>
 
-Evaluate readiness and namespace alignment before inspecting kube-proxy rules. Running pods are not added to EndpointSlices unless they are Ready, so a failing readiness probe can leave the Service with no usable backends. Also confirm the Service and pods are in the same namespace, and compare the exact selector with `k describe svc reports` and `k get pods --show-labels`. kube-proxy cannot route a Service to endpoints that the Kubernetes API does not mark ready.
+Evaluate readiness and namespace alignment before inspecting kube-proxy rules. Running pods are not added to EndpointSlices unless they are Ready, so a failing readiness probe can leave the Service with no usable backends. Also confirm the Service and pods are in the same namespace, and compare the exact selector with `kubectl describe svc reports` and `kubectl get pods --show-labels`. kube-proxy cannot route a Service to endpoints that the Kubernetes API does not mark ready.
 
 </details>
 
@@ -767,20 +816,20 @@ Create a backend Deployment, expose it with a Service, and create a long-running
 
 ```bash
 # Create a backend deployment and expose it with a ClusterIP Service.
-k create deployment trace-backend --image=nginx --replicas=2
-k expose deployment trace-backend --port=80 --name=trace-svc
+kubectl create deployment trace-backend --image=nginx --replicas=2
+kubectl expose deployment trace-backend --port=80 --name=trace-svc
 
 # Wait until both backend pods are ready and therefore eligible as endpoints.
-k wait --for=condition=ready pod -l app=trace-backend --timeout=90s
+kubectl wait --for=condition=ready pod -l app=trace-backend --timeout=90s
 
 # Create a debug client with networking tools.
-k run trace-client --image=nicolaka/netshoot --restart=Never -- sleep 3600
-k wait --for=condition=ready pod/trace-client --timeout=90s
+kubectl run trace-client --image=nicolaka/netshoot --restart=Never -- sleep 3600
+kubectl wait --for=condition=ready pod/trace-client --timeout=90s
 
 # Capture the objects you will inspect throughout the exercise.
-k get pods -o wide
-k get svc trace-svc -o wide
-k get endpointslice -l kubernetes.io/service-name=trace-svc -o wide
+kubectl get pods -o wide
+kubectl get svc trace-svc -o wide
+kubectl get endpointslice -l kubernetes.io/service-name=trace-svc -o wide
 ```
 
 ### Step 1: Test DNS Before Transport
@@ -789,16 +838,16 @@ Start at the name because real applications usually start there. Resolve the sho
 
 ```bash
 # Inspect resolver settings inside the client pod.
-k exec trace-client -- cat /etc/resolv.conf
+kubectl exec trace-client -- cat /etc/resolv.conf
 
 # Resolve the short Service name from the default namespace.
-k exec trace-client -- nslookup trace-svc
+kubectl exec trace-client -- nslookup trace-svc
 
 # Resolve the fully qualified name to remove search-domain ambiguity.
-k exec trace-client -- nslookup trace-svc.default.svc.cluster.local
+kubectl exec trace-client -- nslookup trace-svc.default.svc.cluster.local
 
 # Compare against the Service ClusterIP.
-k get svc trace-svc -o jsonpath='{.spec.clusterIP}{"\n"}'
+kubectl get svc trace-svc -o jsonpath='{.spec.clusterIP}{"\n"}'
 ```
 
 Record the Service ClusterIP and write one sentence explaining whether DNS succeeded. A correct answer should separate DNS resolution from application connectivity, because a successful lookup does not prove the Service path or backend application works.
@@ -809,14 +858,14 @@ Now check whether the Service has ready endpoints. The number of endpoint addres
 
 ```bash
 # Show Service selector and ports.
-k describe svc trace-svc
+kubectl describe svc trace-svc
 
 # Show endpoint addresses selected by the Service.
-k get endpoints trace-svc
-k get endpointslice -l kubernetes.io/service-name=trace-svc -o wide
+kubectl get endpoints trace-svc
+kubectl get endpointslice -l kubernetes.io/service-name=trace-svc -o wide
 
 # Show backend readiness, labels, pod IPs, and node placement.
-k get pods -l app=trace-backend -o wide --show-labels
+kubectl get pods -l app=trace-backend -o wide --show-labels
 ```
 
 Record how many endpoint addresses exist and which backend pod IPs they represent. Then explain whether a request through the Service should have a valid backend target according to the Kubernetes API state.
@@ -827,11 +876,11 @@ This step isolates Service translation from direct pod reachability. First call 
 
 ```bash
 # Call the Service by name from the client pod.
-k exec trace-client -- curl -sS --connect-timeout 5 http://trace-svc
+kubectl exec trace-client -- curl -sS --connect-timeout 5 http://trace-svc
 
 # Pick one endpoint IP and call it directly.
-ENDPOINT_IP="$(k get pod -l app=trace-backend -o jsonpath='{.items[0].status.podIP}')"
-k exec trace-client -- curl -sS --connect-timeout 5 "http://${ENDPOINT_IP}"
+ENDPOINT_IP="$(kubectl get pod -l app=trace-backend -o jsonpath='{.items[0].status.podIP}')"
+kubectl exec trace-client -- curl -sS --connect-timeout 5 "http://${ENDPOINT_IP}"
 ```
 
 Write down the result of both calls. Your explanation should identify which layer would be most suspicious if the Service call failed while the endpoint call succeeded, and which layer would be most suspicious if both calls failed.
@@ -856,11 +905,11 @@ Run a packet capture on the node while generating one request from the client po
 
 ```bash
 # In one terminal, start a capture filtered to the client pod and HTTP port.
-CLIENT_IP="$(k get pod trace-client -o jsonpath='{.status.podIP}')"
+CLIENT_IP="$(kubectl get pod trace-client -o jsonpath='{.status.podIP}')"
 docker exec kind-control-plane tcpdump -i any -nn "host ${CLIENT_IP} and port 80"
 
 # In another terminal, generate one request.
-k exec trace-client -- curl -sS --connect-timeout 5 http://trace-svc
+kubectl exec trace-client -- curl -sS --connect-timeout 5 http://trace-svc
 ```
 
 Before you stop the capture, identify whether you see the client pod IP, the Service IP, and a backend pod IP. Depending on timing and interface, you may not see every perspective in one capture, but you should be able to connect what you see to the packet walk from Part 1.
@@ -871,12 +920,12 @@ Conntrack inspection is easiest immediately after generating traffic. The exact 
 
 ```bash
 # Get the ClusterIP and inspect matching conntrack entries on a kind node.
-SVC_IP="$(k get svc trace-svc -o jsonpath='{.spec.clusterIP}')"
+SVC_IP="$(kubectl get svc trace-svc -o jsonpath='{.spec.clusterIP}')"
 docker exec kind-control-plane conntrack -L -d "${SVC_IP}" 2>/dev/null || true
 
 # If no entries appear, generate several requests and try again.
 for i in 1 2 3 4 5; do
-  k exec trace-client -- curl -sS --connect-timeout 5 http://trace-svc >/dev/null
+  kubectl exec trace-client -- curl -sS --connect-timeout 5 http://trace-svc >/dev/null
 done
 docker exec kind-control-plane conntrack -L -d "${SVC_IP}" 2>/dev/null || true
 ```
@@ -888,7 +937,7 @@ Explain what conntrack is doing for this flow. A strong answer mentions that the
 Now create a controlled failure that blocks ingress to the backend pods. This lets you practice distinguishing DNS success from transport failure. The Service name should still resolve because the policy selects backend pods, not CoreDNS, but the HTTP request should fail because ingress to the backend is denied.
 
 ```bash
-cat <<'EOF' | k apply -f -
+cat <<'EOF' | kubectl apply -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -903,14 +952,14 @@ spec:
 EOF
 
 # DNS should still resolve the Service name.
-k exec trace-client -- nslookup trace-svc
+kubectl exec trace-client -- nslookup trace-svc
 
 # HTTP should fail or time out because backend ingress is denied.
-k exec trace-client -- curl -sS --connect-timeout 5 http://trace-svc || true
+kubectl exec trace-client -- curl -sS --connect-timeout 5 http://trace-svc || true
 
 # Direct endpoint access should also fail because the policy blocks backend ingress.
-ENDPOINT_IP="$(k get pod -l app=trace-backend -o jsonpath='{.items[0].status.podIP}')"
-k exec trace-client -- curl -sS --connect-timeout 5 "http://${ENDPOINT_IP}" || true
+ENDPOINT_IP="$(kubectl get pod -l app=trace-backend -o jsonpath='{.items[0].status.podIP}')"
+kubectl exec trace-client -- curl -sS --connect-timeout 5 "http://${ENDPOINT_IP}" || true
 ```
 
 Use the three-layer model to explain the failure. DNS still works, the Service still has endpoints, and the direct endpoint test fails, so the evidence points toward policy or CNI enforcement rather than kube-proxy.
@@ -921,15 +970,15 @@ Remove the policy, verify the Service works again, and delete the exercise resou
 
 ```bash
 # Remove the controlled failure.
-k delete networkpolicy deny-trace-backend
+kubectl delete networkpolicy deny-trace-backend
 
 # Verify connectivity is restored.
-k exec trace-client -- curl -sS --connect-timeout 5 http://trace-svc
+kubectl exec trace-client -- curl -sS --connect-timeout 5 http://trace-svc
 
 # Cleanup exercise resources.
-k delete pod trace-client --force --grace-period=0
-k delete deployment trace-backend
-k delete svc trace-svc
+kubectl delete pod trace-client --force --grace-period=0
+kubectl delete deployment trace-backend
+kubectl delete svc trace-svc
 ```
 
 **Success Criteria**:
@@ -940,13 +989,10 @@ k delete svc trace-svc
 - [ ] You can observe packet evidence with tcpdump and connect the capture to the packet walk from Part 1.
 - [ ] You can inspect or reason about conntrack entries for a Service flow without treating conntrack as a black box.
 - [ ] You can explain why the NetworkPolicy failure blocks backend traffic while DNS resolution still works.
+- [ ] You can apply a repeatable troubleshooting mental model to the concrete packet-tracing challenge instead of jumping between unrelated commands.
 - [ ] You can articulate the troubleshooting order: DNS, Service selection, direct endpoint reachability, policy or CNI, then node-level state.
 
 ---
-
-## Next Module
-
-[Module 3.3: DNS in Kubernetes](../module-3.3-dns/) - Deep-dive into CoreDNS configuration, custom DNS policies, and advanced troubleshooting.
 
 ## Sources
 
@@ -955,3 +1001,14 @@ k delete svc trace-svc
 - [Cluster Networking](https://kubernetes.io/docs/concepts/cluster-administration/networking/) — Explains the Kubernetes network model and the pod, service, and node IP responsibilities behind the cluster data path.
 - [DNS for Services and Pods](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/) — Covers Service DNS records, pod resolver configuration, search domains, and the DNS behavior discussed in the module.
 - [Using Source IP](https://kubernetes.io/docs/tutorials/services/source-ip/) — Shows how source NAT and `externalTrafficPolicy` affect NodePort and LoadBalancer traffic in practice.
+- [Services, Load Balancing, and Networking](https://kubernetes.io/docs/concepts/services-networking/service/) — Defines Service types, selectors, ports, virtual IP behavior, and traffic policies used throughout the packet walk.
+- [EndpointSlices](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/) — Documents the scalable endpoint API that kube-proxy and replacements watch for Service backend state.
+- [Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) — Explains how policy-capable CNIs enforce ingress and egress decisions that can block direct pod or DNS traffic.
+- [Debug Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/) — Provides Kubernetes troubleshooting guidance for Services, selectors, endpoints, DNS, and proxy rules.
+- [CNI Specification](https://www.cni.dev/docs/spec/) — Defines the container network interface contract used by plugins to attach pod network interfaces and configure addresses.
+- [Cilium Kubernetes Without kube-proxy](https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/) — Vendor documentation for an eBPF Service data path that replaces kube-proxy behavior.
+- [Calico IP autodetection and node addressing](https://docs.tigera.io/calico/latest/networking/ipam/ip-autodetection) — Vendor documentation relevant to routed pod networking and node address selection in Calico clusters.
+
+## Next Module
+
+[Module 3.3: DNS in Kubernetes](../module-3.3-dns/) - Deep-dive into CoreDNS configuration, custom DNS policies, and advanced troubleshooting.
