@@ -3,16 +3,13 @@ title: "Module 1.2: Advanced GPU Scheduling & Sharing"
 slug: platform/disciplines/data-ai/ai-infrastructure/module-1.2-gpu-scheduling
 sidebar:
   order: 3
+revision_pending: false
 ---
-> **Discipline Module** | Complexity: `[COMPLEX]` | Time: 4 hours
-
-## Prerequisites
-
-Before starting this module:
-- **Required**: [Module 1.1: GPU Provisioning & Device Plugins](../module-1.1-gpu-provisioning/) — GPU Operator, Device Plugin API, DCGM
-- **Required**: Understanding of Kubernetes scheduling (affinity, taints, tolerations, topology)
-- **Recommended**: Familiarity with NVIDIA GPU architectures (Ampere, Hopper)
-- **Recommended**: Access to a cluster with at least one A100 or H100 GPU (for MIG exercises)
+> **Complexity**: `[COMPLEX]`
+>
+> **Time to Complete**: 4 hours
+>
+> **Prerequisites**: [Module 1.1: GPU Provisioning & Device Plugins](../module-1.1-gpu-provisioning/), Kubernetes scheduling fundamentals, taints and tolerations, node affinity, topology awareness, and basic NVIDIA GPU architecture terms such as A100, H100, CUDA, and VRAM.
 
 ---
 
@@ -20,57 +17,43 @@ Before starting this module:
 
 After completing this module, you will be able to:
 
-- **Implement GPU scheduling policies using resource quotas, priorities, and preemption rules**
-- **Design multi-tenant GPU sharing strategies — time-slicing, MIG, MPS — for cluster efficiency**
-- **Configure fractional GPU allocation to maximize utilization across training and inference workloads**
-- **Build scheduling workflows that prevent GPU starvation while maintaining fair resource distribution**
+- **Implement** GPU scheduling policies using resource quotas, priority classes, preemption rules, and renamed shared resources so teams can consume GPUs predictably.
+- **Design** multi-tenant GPU sharing strategies that choose between whole GPUs, MIG, time-slicing, MPS, and Dynamic Resource Allocation based on isolation and efficiency needs.
+- **Configure** fractional GPU allocation for development, inference, and batch workloads without hiding the operational risks of memory sharing and noisy neighbors.
+- **Diagnose** topology, starvation, and placement problems in multi-GPU Kubernetes clusters using `nvidia-smi`, Kubernetes events, and scheduler signals.
+- **Evaluate** when Kubernetes 1.35 Dynamic Resource Allocation should replace older device-plugin patterns for attribute-based GPU requests.
 
 ## Why This Module Matters
 
-Here is the dirty secret of GPU computing: **most GPUs in Kubernetes clusters are criminally underutilized**.
+Hypothetical scenario: your platform team has eight nodes, each with four A100-80GB GPUs, and every team insists its workload is different enough to deserve exclusive hardware. Four training jobs need stable multi-GPU throughput, a dozen inference services need predictable latency, and a group of researchers wants notebook access for experiments that run in short bursts. The scheduler sees only extended resources such as `nvidia.com/gpu`, so a small notebook can reserve the same kind of object as a distributed training job. The result is the uncomfortable combination every GPU platform eventually discovers: the cluster is fully allocated, the queue is growing, and the expensive accelerators are idle much of the day.
 
-Industry surveys consistently report average GPU utilization between 15% and 35%. That means for every dollar you spend on GPUs, 65 to 85 cents is wasted on silicon doing nothing.
+Module 1.1 showed how to expose GPUs to Kubernetes with the NVIDIA GPU Operator, device plugins, labels, health checks, and DCGM metrics. That is the foundation, but it is not yet a platform. A platform must decide who gets a whole GPU, who gets a hardware partition, who can tolerate time-sharing, and which workloads should be kept away from each other even when the utilization dashboard argues for consolidation. GPU scheduling is therefore not only a YAML exercise; it is a set of policy decisions about isolation, fairness, latency, throughput, blast radius, and operational recovery.
 
-Why? Because Module 1.1 taught you to allocate **whole GPUs**. A small inference model that needs 2GB of VRAM gets an entire 80GB A100. A Jupyter notebook running exploratory code gets a $30,000 GPU that sits idle 90% of the time.
+In this module, you will move from "a Pod can request a GPU" to "a cluster can allocate the right GPU shape for the right workload." You will compare Multi-Instance GPU, time-slicing, Multi-Process Service, Dynamic Resource Allocation, and topology-aware placement. You will also practice the day-two work: naming shared resources clearly, detecting overcommit failure modes, preserving multi-GPU locality, and using checklist-driven validation before a configuration reaches production users.
 
-This module teaches you the four strategies to fix this:
+## From Whole GPUs to Shared Capacity
 
-1. **Multi-Instance GPU (MIG)** — hardware-level partitioning
-2. **Time-Slicing** — software-level sharing via the device plugin
-3. **Multi-Process Service (MPS)** — CUDA-level sharing for concurrent kernels
-4. **Dynamic Resource Allocation (DRA)** — the next-generation Kubernetes API
+Whole-GPU allocation is the safest starting point because it gives each workload exclusive access to the device, its memory, its context, and its performance envelope. That simplicity is why the Kubernetes Device Plugin API represents GPUs as integer extended resources, but it also creates a blunt scheduling model. If a model server uses 6 GiB of VRAM on an 80 GiB accelerator, Kubernetes still treats that allocation as one full `nvidia.com/gpu`. The scheduler has done exactly what you asked, even though the platform has stranded most of the device.
 
-And then it goes deeper: **topology-aware scheduling** ensures that multi-GPU workloads get GPUs connected by the fastest interconnects, not random GPUs separated by slow PCIe hops.
-
-Master these techniques and you will 3-5x the effective capacity of your GPU fleet without buying a single new card.
-
----
-
-## The GPU Underutilization Problem
-
-### Measuring the Waste
-
-Let us quantify the problem with a realistic scenario:
+The basic waste pattern is easiest to see when you separate allocation from utilization. Allocation answers "who owns the resource right now," while utilization answers "how much useful work is the device performing." A cluster can be over-allocated and underutilized at the same time because reservations are coarse and demand is bursty. That is the reason GPU sharing is a platform discipline rather than a simple cost optimization: the scheduler needs better resource shapes, and the platform needs guardrails so density does not turn into instability.
 
 ```
 Cluster: 8 nodes x 4 A100-80GB GPUs = 32 GPUs total
 Cost: $3.06/GPU/hr x 32 GPUs x 730 hr/month = $71,482/month
 
 Workloads:
-  - 4 training jobs using 4 GPUs each (fully utilizing GPUs)     → 16 GPUs
-  - 12 inference services using 1 GPU each (avg 15% utilization)  → 12 GPUs
-  - 8 Jupyter notebooks using 1 GPU each (avg 5% utilization)     →  8 GPUs
+  - 4 training jobs using 4 GPUs each (fully utilizing GPUs)     -> 16 GPUs
+  - 12 inference services using 1 GPU each (avg 15% utilization) -> 12 GPUs
+  - 8 Jupyter notebooks using 1 GPU each (avg 5% utilization)    ->  8 GPUs
 
-Total allocated: 36 GPUs (exceeds capacity — 4 workloads queued!)
-Effective utilization: (16×95% + 12×15% + 8×5%) / 36 = 48%
+Total allocated: 36 GPUs (exceeds capacity, so 4 workloads queue)
+Effective utilization: (16x95% + 12x15% + 8x5%) / 36 = 48%
 Money wasted: ~$37,000/month
 ```
 
-The cluster is **oversubscribed** (36 requests for 32 GPUs) while simultaneously being **underutilized** (48% average). Notebooks and inference services each hold a full 80GB GPU hostage for trivial workloads.
+The important lesson in that model is not the exact cost number, because every cloud contract and hardware purchase looks different. The lesson is that "allocated" is not the same as "busy." When teams use a full accelerator as the scheduling unit for every workload class, the queue grows even while the devices have idle compute, free memory, and unserved demand. GPU sharing exists to create smaller or more flexible scheduling units, but every sharing method gives up some isolation in exchange.
 
-### The Sharing Spectrum
-
-Each sharing strategy trades off isolation for efficiency:
+The platform consequence is that GPU scheduling has to be designed around workload intent, not only around hardware inventory. A batch training job, an online model server, and a notebook all say "I need a GPU," but they mean different things by performance, interruption tolerance, memory safety, and fairness. If you expose only one generic resource, users encode those differences with tribal knowledge and Slack messages. If you expose intentional resource classes, the scheduler becomes an enforcement point for decisions the team has already made.
 
 ```mermaid
 flowchart LR
@@ -82,24 +65,19 @@ flowchart LR
     A --> B --> C --> D
 ```
 
----
+Read that spectrum from left to right as increasing efficiency and decreasing isolation. Whole GPUs are easiest to reason about and best for large training, but they waste capacity on small services. MIG creates hardware-backed slices that behave like smaller GPUs, which makes it a strong default for production inference on supported devices. Time-slicing and MPS can push density further, but they require honest communication with users because memory, latency, and failure behavior no longer look like exclusive hardware.
 
-## Strategy 1: Multi-Instance GPU (MIG)
+The shape you choose also changes how incidents are investigated. On an exclusive GPU, a memory error or utilization drop usually belongs to one workload owner. On a MIG node, you must inspect both the physical device and the affected profile instance. On a time-sliced or MPS node, several tenants may be involved in the same symptom, so Kubernetes events, per-Pod resource names, and DCGM labels need to be correlated. Good naming and observability are not polish; they are what make shared accelerators supportable.
 
-### What MIG Is
+Pause and predict: if your cluster has plenty of free GPU memory but users still complain that Pods are Pending, which Kubernetes object would you inspect first: a DCGM metric, a Pod event, or a node capacity field? The best answer is the Pod event, because scheduling failure is about requested resources and advertised capacity before it is about utilization. Metrics explain whether the platform is efficient; scheduler events explain why a particular Pod could not be placed.
 
-MIG is a **hardware-level** GPU partitioning technology available on NVIDIA A100, A30, H100, and newer GPUs. It physically divides a single GPU into up to 7 independent instances, each with:
+## Hardware Isolation with Multi-Instance GPU
 
-- **Dedicated compute resources** (Streaming Multiprocessors)
-- **Dedicated memory** (separate memory controllers and VRAM)
-- **Dedicated L2 cache**
-- **Separate error containment** (a fault in one instance doesn't affect others)
+Multi-Instance GPU, usually shortened to MIG, is the cleanest way to turn one supported NVIDIA accelerator into multiple smaller Kubernetes resources. On A100, A30, H100, H200, and later supported GPUs, MIG partitions the hardware into independent GPU instances with dedicated compute slices, memory slices, L2 cache capacity, and error containment. This is not a scheduler illusion. A Pod assigned to one MIG instance cannot see or allocate the memory assigned to another instance, which is why MIG is so attractive for production inference and managed notebook environments.
 
-This is not time-sharing. Each MIG instance is a genuinely isolated mini-GPU with guaranteed resources.
+MIG works best when workload shapes are predictable. If your inference services usually need about 10 GiB or 20 GiB of VRAM, standard profiles let you pack them tightly without turning the node into an overcommit experiment. If your training jobs sometimes need a full 80 GiB device and sometimes need four GPUs at once, MIG can become a constraint because a partitioned GPU is no longer available as an unpartitioned whole GPU until the node is reconfigured. The operational question is therefore not "is MIG good," but "which nodes should be profile-stable enough for MIG to pay off."
 
-### MIG Profiles
-
-An A100-80GB supports these partition profiles:
+Think of MIG as apartment walls rather than a room-booking calendar. Tenants in different apartments can run at the same time, have dedicated space, and cannot casually use each other's storage. That isolation is exactly why production inference teams like MIG, but it also means the building layout has to be chosen before tenants arrive. If the layout is wrong, moving walls requires a maintenance activity. The same is true for repartitioning a GPU: it is feasible, but it should be planned.
 
 | Profile | GPU Slices | Memory | Typical Use Case |
 |---------|-----------|---------|------------------|
@@ -111,25 +89,23 @@ An A100-80GB supports these partition profiles:
 | `1g.10gb+me` | 1/7 + media engine | 10 GB | Video transcoding |
 | `1g.20gb` | 1/7 | 20 GB | Memory-heavy small workloads |
 
-An H100-80GB supports similar profiles with higher compute per slice due to Hopper's architecture improvements.
+The profile names are compact, but they carry policy meaning. A `1g.10gb` instance says the workload gets one GPU slice and 10 GB of device memory on an A100-80GB, while `7g.80gb` represents the full device shape. A profile is not just a memory quota; it determines compute capacity, memory bandwidth, cache share, and the number of instances you can place on the card. Treat profile selection as part of your service tier, not as an afterthought in a deployment template.
 
-### Valid MIG Combinations
-
-You cannot combine profiles arbitrarily. Each GPU has 7 compute slices and 8 memory slices. Valid combinations for A100-80GB include:
+That service-tier framing helps with capacity planning. If a tenant asks for ten small inference slots, you can translate that request into two A100 cards configured with `1g.10gb` profiles plus spare room, or into a different profile if the model needs more memory. If another tenant asks for sporadic experiments, you can steer them away from the production MIG pool and toward a shared development tier. The resource name becomes a product boundary: it tells users what they are buying from the platform.
 
 ```
-Option A: 7 x 1g.10gb   (7 small instances — max density)
+Option A: 7 x 1g.10gb   (7 small instances, max density)
 Option B: 3 x 2g.20gb + 1 x 1g.10gb
 Option C: 2 x 3g.40gb   (leave 1 slice unused)
 Option D: 1 x 4g.40gb + 1 x 3g.40gb
-Option E: 1 x 7g.80gb   (full GPU — no partitioning)
+Option E: 1 x 7g.80gb   (full GPU, no partitioning)
 ```
 
-### Configuring MIG with the GPU Operator
+Those combinations also show a practical constraint that surprises new platform owners: MIG profiles do not compose like arbitrary fractions in a spreadsheet. The GPU has a finite layout of compute and memory slices, and only valid combinations can be created. If a team asks for one odd-sized profile on every node, that request might strand slices that no other workload can use. Good platform design therefore publishes a small catalog of supported profiles instead of accepting every possible shape.
 
-The GPU Operator supports two MIG strategies:
+The catalog should be small enough that operators can explain it under pressure. A common pattern is to offer one dense small-inference shape, one medium shape, and an unpartitioned training pool, then add more profiles only when measured demand justifies the operational cost. This is similar to offering a few VM instance sizes rather than letting every team choose arbitrary CPU and memory combinations. Standardization sacrifices some theoretical packing efficiency, but it improves documentation, alerting, quota design, and on-call diagnosis.
 
-**Single strategy** — all GPUs on a node use the same MIG profile:
+The NVIDIA GPU Operator exposes two broad MIG strategies. A single strategy keeps the node simpler because all GPUs use the same mode, which is helpful when you dedicate a node pool to one profile family. A mixed strategy allows different GPUs on the same node to use different profiles, which improves packing flexibility but also increases operational complexity. The choice should match how stable your workload mix is and how much scheduling entropy your support team can tolerate.
 
 ```yaml
 apiVersion: nvidia.com/v1
@@ -141,8 +117,6 @@ spec:
     strategy: single
 ```
 
-**Mixed strategy** — different GPUs on the same node can have different profiles:
-
 ```yaml
 apiVersion: nvidia.com/v1
 kind: ClusterPolicy
@@ -153,7 +127,7 @@ spec:
     strategy: mixed
 ```
 
-Configure MIG profiles via a ConfigMap:
+The MIG Manager component uses a configuration file to describe named layouts. Keeping these layouts in a ConfigMap gives operators a reviewable object that can be tied to maintenance windows, node labels, and rollout automation. The example below preserves three useful patterns: dense small instances, a balanced layout for mixed inference sizes, and a node shape that leaves one GPU unpartitioned while partitioning the rest. In production, you would usually bind these names to node pools and capacity planning documents so teams know which resource names are available.
 
 ```yaml
 apiVersion: v1
@@ -192,7 +166,9 @@ data:
             "1g.10gb": 1
 ```
 
-Apply a MIG configuration by labeling the node:
+Changing a node's MIG layout is disruptive because workloads using the device must leave before the hardware profile changes. The label command is simple, but the procedure around it matters more than the command. A safe runbook cordons the node, drains GPU workloads that can move, verifies there are no important local artifacts, applies the label, watches the MIG Manager, and then confirms the device plugin advertises the expected resources. If your platform reconfigures MIG profiles casually during business hours, users will experience surprise evictions and Pending Pods.
+
+MIG reconfiguration should also be treated as a capacity event. When one node leaves service for repartitioning, the remaining pool must absorb both new scheduling demand and any workloads evicted from the changing node. If the platform has only one node with a particular profile, the maintenance window is effectively a service outage for that resource class. Mature teams model this before applying labels, then use PodDisruptionBudgets, queue controls, and tenant communication to keep the change predictable.
 
 ```bash
 # Apply the "all-balanced" configuration
@@ -209,9 +185,7 @@ kubectl label node gpu-worker-01 nvidia.com/mig.config=all-balanced --overwrite
 kubectl -n gpu-operator logs -f -l app=nvidia-mig-manager
 ```
 
-### Requesting MIG Devices in Pods
-
-With MIG enabled, the device plugin advertises MIG instances as separate resource types:
+After the node is reconfigured, Kubernetes sees MIG instances as separate extended resources. This is an important usability boundary. Users should request the profile they actually need, such as `nvidia.com/mig-1g.10gb`, rather than requesting a generic full GPU and relying on a node selector to make the placement work. The resource name becomes a contract between the platform team and the workload owner.
 
 ```bash
 kubectl describe node gpu-worker-01 | grep nvidia.com
@@ -220,8 +194,6 @@ kubectl describe node gpu-worker-01 | grep nvidia.com
 # nvidia.com/mig-2g.20gb:           3
 # nvidia.com/mig-3g.40gb:           1
 ```
-
-Request a specific MIG instance:
 
 ```yaml
 apiVersion: v1
@@ -237,22 +209,20 @@ spec:
           nvidia.com/mig-1g.10gb: 1    # Request one 1g.10gb MIG instance
 ```
 
----
+Before running this in a shared cluster, what output do you expect from `kubectl describe node` after a full node moves into MIG mode? You should expect whole-GPU capacity to disappear or become unavailable for that node, and you should expect profile-specific resources to appear instead. If both whole GPUs and MIG profiles appear in a way you did not plan, stop and inspect the operator strategy before letting tenants schedule new workloads.
 
-## Strategy 2: GPU Time-Slicing
+## Software Sharing with Time-Slicing and MPS
 
-> **Stop and think**: If time-slicing provides no memory isolation, what happens if one Jupyter notebook allocates 95% of the VRAM on a shared GPU?
+Time-slicing solves a different problem than MIG. It is useful when workloads are bursty, interactive, or low priority, and the platform would rather give several users occasional access to one GPU than leave the device exclusive to one mostly idle process. The NVIDIA device plugin advertises more schedulable GPU resources than physically exist, and the driver interleaves access among containers. From the Kubernetes scheduler's point of view, a node has more extended resources; from the device's point of view, several processes are taking turns on the same hardware.
 
-### What Time-Slicing Is
-
-Time-slicing configures the NVIDIA device plugin to advertise **more GPU resources than physically exist**. Each container gets the full GPU for a time slice, then is preempted for the next container. It is essentially round-robin scheduling at the GPU driver level.
+This distinction creates a common communication trap. Users see a Pod transition to Running and assume the platform has delivered a private accelerator, because that is how whole-GPU scheduling behaved in the previous module. In reality, time-slicing gives them admission to a shared rotation. The workload may run well when neighbors are idle and slow down when neighbors become active. That variability is acceptable for development, but it must be documented before the first user files a performance ticket.
 
 ```mermaid
 gantt
     title GPU Time-Slicing
     dateFormat  X
     axisFormat %s
-    
+
     section GPU0
     Pod A (10ms) :a1, 0, 1
     Pod B (10ms) :b1, after a1, 1
@@ -262,32 +232,20 @@ gantt
     Pod C (10ms) :c2, after b2, 1
 ```
 
-### Key Characteristics
+The danger is that time-slicing is scheduling overcommit, not memory partitioning. Each container can still see the physical GPU and compete for the same VRAM pool unless the application or framework limits itself. That makes time-slicing a poor fit for untrusted production services with strict latency or memory guarantees. It can be an excellent fit for notebooks, tutorials, occasional debugging sessions, and low-priority batch work where users understand they are sharing.
+
+The memory point deserves extra attention because Kubernetes resource limits do not automatically limit GPU memory the way they limit container memory. A Pod with one shared GPU replica can still allocate a large portion of VRAM if the application asks for it and the driver allows it. Framework-level settings, model-server configuration, and workload conventions become part of the safety story. If you cannot trust tenants to respect those limits, choose MIG or exclusive devices instead of pretending a scheduler replica is a memory boundary.
 
 | Property | Behavior |
 |----------|----------|
-| Compute isolation | **None** — all containers share all SMs |
-| Memory isolation | **None** — all containers share all VRAM |
-| Overcommit factor | Configurable (e.g., 4x means 4 virtual GPUs per physical GPU) |
-| Context switching | ~1ms overhead per switch |
-| Failure blast radius | One container's OOM kills all containers on that GPU |
-| GPU support | Any NVIDIA GPU (no hardware requirement) |
+| Compute isolation | **None**: all containers share all SMs |
+| Memory isolation | **None**: all containers share all VRAM |
+| Overcommit factor | Configurable (for example, 4x means 4 virtual GPUs per physical GPU) |
+| Context switching | About 1ms overhead per switch |
+| Failure blast radius | One container's OOM can affect all containers on that GPU |
+| GPU support | Any NVIDIA GPU supported by the device plugin |
 
-### When to Use Time-Slicing
-
-Time-slicing is ideal for:
-- **Development environments** (Jupyter notebooks, interactive debugging)
-- **Low-priority batch jobs** that tolerate latency
-- **Multiple small inference models** that individually use <20% of GPU
-
-Time-slicing is terrible for:
-- **Training** (context switch overhead destroys throughput)
-- **Latency-sensitive inference** (unpredictable latency spikes during context switches)
-- **Memory-hungry workloads** (no memory isolation = OOM kills everything)
-
-### Configuring Time-Slicing
-
-Create a device plugin ConfigMap:
+The most important configuration choice is whether shared resources are renamed. If you leave shared devices advertised as `nvidia.com/gpu`, users may believe they are receiving exclusive devices because the resource name looks identical to the whole-GPU path. Setting `renameByDefault: true` exposes `nvidia.com/gpu.shared`, which is honest and operationally useful. A user who requests a shared resource has made an explicit choice, and your dashboards can separate exclusive and shared consumption.
 
 ```yaml
 apiVersion: v1
@@ -309,7 +267,7 @@ data:
             replicas: 4              # Each physical GPU appears as 4 virtual GPUs
 ```
 
-Apply via the ClusterPolicy:
+The ClusterPolicy connects the device plugin to that ConfigMap. This is the point where a small configuration review can prevent a large platform problem. Check that `failRequestsGreaterThanOne` is enabled unless you have a deliberate reason to let a Pod request several shared replicas, because multiple shared replicas do not guarantee a proportional share of compute. They mainly consume scheduler inventory and confuse fairness.
 
 ```yaml
 apiVersion: nvidia.com/v1
@@ -323,14 +281,10 @@ spec:
       default: default
 ```
 
-After applying, your node advertises 4x the physical GPUs:
-
 ```bash
 kubectl describe node gpu-worker-01 | grep nvidia.com/gpu
 # nvidia.com/gpu.shared: 16    (4 physical GPUs x 4 replicas)
 ```
-
-Pods request the shared resource:
 
 ```yaml
 apiVersion: v1
@@ -346,9 +300,9 @@ spec:
           nvidia.com/gpu.shared: 1   # Gets 1/4 of a physical GPU (time-sliced)
 ```
 
-### Per-Node Configuration
+Per-node configuration is how you avoid pretending every workload class has the same risk profile. Training nodes can keep exclusive GPUs, inference nodes can use moderate sharing, and development nodes can carry higher oversubscription because users expect occasional slowness. The device plugin config name becomes a scheduling tier. Pair it with taints, labels, ResourceQuotas, and user-facing documentation so a namespace cannot accidentally land on a tier it was not designed for.
 
-Different nodes can have different time-slicing configs. Label nodes and create multiple configs:
+A useful rollout pattern is to make the safest behavior the default and require explicit opt-in for sharing. New namespaces can receive quota for exclusive GPUs or MIG profiles first, while shared development access is granted to teams that acknowledge the tradeoffs. That sounds bureaucratic, but it prevents a quiet migration where old manifests suddenly receive weaker isolation because an operator changed device plugin configuration. Platform changes should be visible in resource names, quotas, and release notes.
 
 ```yaml
 apiVersion: v1
@@ -357,7 +311,7 @@ metadata:
   name: device-plugin-config
   namespace: gpu-operator
 data:
-  # For training nodes — no sharing
+  # For training nodes: no sharing
   training: |
     version: v1
     sharing:
@@ -365,7 +319,7 @@ data:
         resources:
           - name: nvidia.com/gpu
             replicas: 1
-  # For inference nodes — 4x sharing
+  # For inference nodes: 4x sharing
   inference: |
     version: v1
     sharing:
@@ -374,7 +328,7 @@ data:
         resources:
           - name: nvidia.com/gpu
             replicas: 4
-  # For dev nodes — 8x sharing (many small notebooks)
+  # For dev nodes: 8x sharing (many small notebooks)
   development: |
     version: v1
     sharing:
@@ -393,46 +347,36 @@ kubectl label node gpu-infer-01 nvidia.com/device-plugin.config=inference
 kubectl label node gpu-dev-01 nvidia.com/device-plugin.config=development
 ```
 
----
+NVIDIA Multi-Process Service, or MPS, offers another software-sharing model. Instead of rotating whole CUDA contexts, MPS lets multiple CUDA processes execute kernels concurrently through a shared server process. That can reduce context-switch overhead and improve aggregate throughput for many small, steady inference workloads. It is not a universal upgrade over time-slicing, because it still requires compatibility checks, careful memory limits, and a workload profile that benefits from concurrent kernel execution.
 
-## Strategy 3: Multi-Process Service (MPS)
-
-> **Pause and predict**: Which workload type would benefit most from MPS over time-slicing?
-
-### What MPS Is
-
-NVIDIA Multi-Process Service (MPS) allows multiple CUDA processes to **simultaneously** execute kernels on the same GPU. Unlike time-slicing (which round-robins entire contexts), MPS merges CUDA contexts into a single shared context, enabling true spatial sharing of the GPU's streaming multiprocessors.
+MPS is easiest to justify when you have measured evidence that individual processes leave meaningful GPU execution resources idle while running continuously. If traffic arrives in occasional bursts, time-slicing may be simpler and good enough. If each process already saturates the device, MPS only adds contention. Run a pilot with representative models, compare latency percentiles and throughput under load, and record the failure behavior before making MPS a shared production tier.
 
 ```mermaid
 gantt
     title Time-Slicing vs MPS
     dateFormat X
     axisFormat %s
-    
+
     section Time-Slicing
     Pod A (Entire GPU) :a1, 0, 10
     Pod B (Entire GPU) :b1, after a1, 10
     Pod A (Entire GPU) :a2, after b1, 10
-    
+
     section MPS
     Pod A (Shared SMs) :a3, 0, 30
     Pod B (Shared SMs) :b2, 0, 30
 ```
 
-### MPS vs Time-Slicing
-
 | Property | Time-Slicing | MPS |
 |----------|-------------|-----|
 | Compute sharing | Temporal (round-robin) | Spatial (simultaneous) |
-| Context overhead | ~1ms per switch | Near zero |
+| Context overhead | About 1ms per switch | Near zero |
 | Memory isolation | None | Configurable per-client limits |
 | Max clients | Limited by driver | 48 clients per GPU |
 | Failure isolation | None | Partial (client failures can be contained) |
 | Best for | Interactive, bursty workloads | Steady-state inference |
 
-### Configuring MPS with the GPU Operator
-
-The GPU Operator supports MPS sharing starting from v24.6.0:
+The practical decision is to start with workload behavior rather than with a feature preference. If a user launches a notebook, pauses, runs a cell, and then reads output for several minutes, time-slicing is usually good enough. If a fleet of small inference servers continuously sends kernels but each service leaves most SMs unused, MPS may produce better aggregate throughput and less jitter. If either workload can allocate most of VRAM unpredictably, neither software-sharing option is a substitute for MIG or whole-GPU placement.
 
 ```yaml
 apiVersion: v1
@@ -453,30 +397,15 @@ data:
             devices: all
 ```
 
-MPS is particularly effective for inference workloads where:
-- Multiple small models run simultaneously
-- Each model uses a small fraction of GPU compute
-- Latency consistency matters more than maximum throughput
-- You want higher aggregate throughput than time-slicing provides
+Which approach would you choose here and why: four production inference services with fixed 8 GiB memory footprints on an H100, or twenty exploratory notebooks on older T4 nodes? The first case points toward MIG if the device supports it, because production memory isolation and predictable latency are more valuable than maximum density. The second case points toward time-slicing, because the workloads are interactive, bursty, and less likely to justify hardware partitioning.
 
----
+## Dynamic Resource Allocation and Topology
 
-## Strategy 4: Dynamic Resource Allocation (DRA)
-
-### The Next Generation
-
-Dynamic Resource Allocation (DRA) is a Kubernetes API (beta since v1.32 and supported in v1.35) that reimagines how devices are managed. Instead of the Device Plugin API's simple "advertise N identical devices" model, DRA introduces:
-
-- **Structured parameters**: Pods describe device requirements (memory, compute), not just counts
-- **Claim-based allocation**: Similar to PersistentVolumeClaims for storage
-- **Admin-defined classes**: DeviceClasses define pools and policies
-- **Scheduler integration**: The scheduler understands device topology
-
-### DRA Architecture
+Dynamic Resource Allocation is the Kubernetes 1.35 stable direction for expressing device needs as claims rather than as simple integer counts. The older device-plugin model is easy to schedule but weak at describing attributes: a Pod asks for `nvidia.com/gpu: 1`, then node labels, affinity, and human convention do the rest. DRA introduces DeviceClasses, ResourceClaims, ResourceClaimTemplates, ResourceSlices, and scheduler integration so workloads can request devices through structured objects. It is conceptually similar to how storage moved from "mount something on this node" to PersistentVolumeClaims with classes and binding rules.
 
 ```mermaid
 flowchart TD
-    RC["<b>ResourceClaim</b><br/>'Give me a GPU with ≥40GB VRAM'"]
+    RC["<b>ResourceClaim</b><br/>'Give me a GPU with at least 40GB VRAM'"]
     DC["<b>DeviceClass</b><br/>'What GPU profiles are allowed'"]
     RS["<b>ResourceSlice</b><br/>(advertised by DRA driver)<br/>'Node X has 4 A100-80GB GPUs'"]
     Sched["<b>Scheduler</b><br/>(matches claims to available resources)"]
@@ -487,21 +416,23 @@ flowchart TD
     RS --> Sched
 ```
 
-### DRA Example
+DRA does not remove the need for platform policy; it gives you a better place to express that policy. DeviceClasses can define which device drivers and attributes are eligible, ResourceSlices describe the available devices, and ResourceClaims let workload authors request the class without encoding every node detail in a Pod spec. That shift is especially helpful when a cluster contains several GPU generations, several MIG profile families, or devices attached to different interconnect topologies. The scheduler can reason about the claim instead of treating hardware requirements as scattered labels.
+
+The adoption path should be incremental because DRA changes both user workflow and operator mental models. A team that understands `resources.limits.nvidia.com/gpu: 1` will need to learn claims, classes, and how those claims bind to Pods. Operators will need dashboards and runbooks that explain why a ResourceClaim is pending or allocated. Start where the old model is visibly painful, such as a heterogeneous training pool where label combinations have become fragile, and keep the first DeviceClasses narrow.
 
 ```yaml
 # Define a GPU class
-apiVersion: resource.k8s.io/v1beta1
+apiVersion: resource.k8s.io/v1
 kind: DeviceClass
 metadata:
   name: gpu-large
 spec:
   selectors:
     - cel:
-        expression: "device.driver == 'gpu.nvidia.com' && device.attributes['memory'] >= 40000"
+        expression: "device.driver == 'gpu.nvidia.com'"
 ---
 # Claim a GPU
-apiVersion: resource.k8s.io/v1beta1
+apiVersion: resource.k8s.io/v1
 kind: ResourceClaim
 metadata:
   name: training-gpu
@@ -531,31 +462,23 @@ spec:
       resourceClaimName: training-gpu
 ```
 
-### DRA vs Device Plugin API
-
 | Feature | Device Plugin API | DRA |
 |---------|------------------|-----|
-| Resource model | Count-based (`nvidia.com/gpu: 1`) | Attribute-based (memory, compute, model) |
-| Fractional allocation | No (requires MIG/time-slicing hacks) | Yes (native) |
-| Topology awareness | No | Yes (built-in) |
-| Admin policies | None | DeviceClasses define allowed configs |
-| API maturity | Stable (v1) | Beta (v1beta1 since K8s v1.32) |
-| NVIDIA support | Full | nvidia-dra-driver available |
+| Resource model | Count-based (`nvidia.com/gpu: 1`) | Attribute-based using claims and classes |
+| Fractional allocation | Indirect through MIG, time-slicing, or MPS | Expressed through driver-supported DRA models |
+| Topology awareness | Mostly external labels and kubelet hints | Integrated with ResourceSlices and scheduler decisions |
+| Admin policies | Convention, admission, quotas, and node pools | DeviceClasses define allowed device sets |
+| API maturity | Stable device plugin pattern | Stable DRA feature in Kubernetes 1.35 |
+| NVIDIA support | Mature GPU Operator and device plugin | NVIDIA DRA driver available for modern clusters |
 
-DRA is the future of GPU scheduling in Kubernetes. As it matures, expect it to replace the combination of Device Plugin + time-slicing + MIG management with a single, unified API.
+Topology is the other half of advanced GPU scheduling. Multi-GPU training does not only need the correct count of devices; it needs devices that communicate efficiently with each other and with local CPU and memory. On one server, two GPUs might share an NVSwitch fabric, while another pair might communicate across PCIe switches or even across CPU sockets. For collective operations such as gradient all-reduce, those differences can dominate runtime.
 
----
-
-## Topology-Aware GPU Scheduling
-
-### Why Topology Matters
-
-Not all GPU-to-GPU connections are equal. In a multi-GPU node, the bandwidth between GPUs depends on the physical interconnect:
+This is why GPU scheduling cannot be separated from node qualification. Two servers may advertise the same number of GPUs and the same GPU model while offering very different communication paths between devices. If you place them in the same pool with the same labels, the scheduler treats them as interchangeable, and users experience unexplained runtime variance. A disciplined platform records topology during provisioning and only groups nodes together when their performance-relevant characteristics match the promises made to tenants.
 
 ```mermaid
 flowchart TD
     NVS["NVSwitch Fabric (600 GB/s per GPU)"]
-    
+
     subgraph GPUs
         direction LR
         G0[GPU0]
@@ -592,9 +515,9 @@ flowchart TD
     G7 --- SW3
 ```
 
-For multi-GPU training, if two GPUs communicate over NVLink (600 GB/s), training runs ~30x faster than if they communicate over PCIe (16 GB/s). **Wrong GPU placement can slow training by an order of magnitude.**
+The `nvidia-smi topo -m` command gives you the fast first look. It will not make a scheduling decision for Kubernetes by itself, but it tells you whether the hardware layout matches the assumptions in your node pool design. A topology-aware platform records this output during node qualification, labels nodes by hardware family, uses kubelet Topology Manager where appropriate, and avoids mixing very different interconnect layouts behind one generic GPU resource name.
 
-### Checking GPU Topology
+When you debug a slow training job, topology checks should happen before deep framework tuning. It is tempting to start with batch size, dataloader workers, NCCL environment variables, or image versions because those are familiar to ML engineers. Those knobs matter, but they cannot overcome a placement decision that sends gradient traffic over a weak path. First prove that the job received the intended hardware arrangement, then tune the training stack inside that known-good envelope.
 
 ```bash
 # Inside a GPU node, run nvidia-smi topo
@@ -613,25 +536,18 @@ nvidia-smi topo -m
 #   SYS  = Different NUMA nodes (crosses CPU socket)
 ```
 
-### The Topology Manager
+Kubernetes Topology Manager is a kubelet component, stable since v1.27, that coordinates topology hints from CPU Manager, Memory Manager, and device plugins. For GPU-heavy nodes, `restricted` and `single-numa-node` policies can prevent Pods from being admitted when the node cannot provide aligned resources. This does not magically understand every NVLink detail, but it is a valuable guardrail for NUMA placement and PCIe locality.
 
-Kubernetes includes a **Topology Manager** (stable since v1.27) that aligns resource allocations with NUMA topology. Enable it in kubelet config:
+Topology Manager is also an admission mechanism, which means its failures can appear after the scheduler has selected a node. A Pod may be assigned to a node and then rejected by kubelet because the local resource hints cannot satisfy the policy. That can feel strange if you expect all scheduling failures to happen in the central scheduler. Teach operators to inspect both scheduler events and kubelet admission messages when diagnosing topology-sensitive workloads.
 
 ```yaml
-# /var/lib/kubelet/config.yaml
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 topologyManagerPolicy: best-effort    # or: restricted, single-numa-node
 topologyManagerScope: pod             # or: container
 ```
 
-Policies:
-- **`none`**: No topology alignment (default)
-- **`best-effort`**: Prefer aligned resources but don't reject if impossible
-- **`restricted`**: Reject pods that can't be aligned
-- **`single-numa-node`**: All resources must come from one NUMA node
-
-For GPU-intensive workloads, use `restricted` or `single-numa-node` to ensure GPUs share the same NUMA node and PCIe complex:
+The policy should match the workload. `best-effort` improves placement when possible but admits Pods even when alignment is weak, which is reasonable for development and lower-priority inference. `restricted` rejects Pods that cannot be aligned, which is appropriate when bad placement silently wastes expensive training time. `single-numa-node` is the strictest shape and should be tested carefully because it can reduce schedulable capacity if CPU, memory, and devices cannot all line up.
 
 ```yaml
 apiVersion: v1
@@ -648,14 +564,12 @@ spec:
           cpu: "32"
           memory: 128Gi
       # The Topology Manager ensures these 4 GPUs
-      # are on the same NUMA node / PCIe complex
+      # are on the same NUMA node / PCIe complex when policy allows it.
 ```
 
-### GKE and EKS Topology Features
+Cloud providers add another layer because node placement and network placement matter for multi-node training. GKE compact placement policies can keep VMs physically close, while EKS users often combine GPU node pools with placement groups and Elastic Fabric Adapter for high-performance networking. Those provider features do not replace Kubernetes scheduling, but they influence the hardware envelope Kubernetes is scheduling inside. If the node pool is physically scattered, the scheduler cannot recover the lost interconnect locality at Pod placement time.
 
-Cloud providers offer additional topology awareness:
-
-**GKE**: Compact Placement Policies ensure VMs (and their GPUs) are physically close:
+For multi-node jobs, think in two rings of topology. The inner ring is inside one node: GPU-to-GPU, GPU-to-CPU, NUMA locality, and PCIe layout. The outer ring is between nodes: rack placement, network adapter type, fabric bandwidth, and congestion. Kubernetes can help express both rings through node pools, labels, claims, and operators, but the platform team still has to design the underlying capacity. Scheduling policy is only as strong as the hardware pool it selects from.
 
 ```bash
 gcloud compute resource-policies create group-placement training-compact \
@@ -668,8 +582,6 @@ gcloud container node-pools create gpu-training \
   --num-nodes=8 \
   --placement-policy=training-compact
 ```
-
-**EKS**: EFA (Elastic Fabric Adapter) placement groups:
 
 ```yaml
 apiVersion: karpenter.sh/v1
@@ -687,112 +599,149 @@ spec:
         topologyManagerPolicy: restricted
 ```
 
----
+Exercise scenario: a four-GPU PyTorch job usually finishes in one evening on a validated NVSwitch node, but it takes much longer after moving into a general GPU node pool. The first checks are not the Python training loop or the container image. Inspect the Pod events, confirm which node was chosen, run `nvidia-smi topo -m` on that node, and compare the assigned GPU locality with the node pool's intended topology policy. Only after placement is verified should you tune NCCL, batch size, or framework settings.
+
+## Operating a Fair Multi-Tenant GPU Platform
+
+Advanced GPU scheduling fails when it is treated as a bag of independent features. MIG, time-slicing, MPS, DRA, quotas, preemption, topology policy, and node pool design must fit into one operating model. The platform should publish resource classes such as exclusive training GPUs, MIG inference profiles, shared development GPUs, and topology-aligned multi-GPU nodes. Each class should include eligibility, expected isolation, allowed namespaces, quota rules, and the support response when a workload misbehaves.
+
+Fairness starts with names and quotas. A namespace that can request unlimited `nvidia.com/gpu.shared` will eventually consume every shared slot, even if each slot maps to a tiny fraction of real capacity. A team that can request `nvidia.com/mig-1g.10gb` but not `nvidia.com/gpu` cannot accidentally starve training jobs. PriorityClasses and preemption can protect urgent workloads, but they should be reserved for clear service tiers because preemption is disruptive. The goal is to make the scheduler enforce policy before humans have to negotiate every incident.
+
+Quota design should follow the resource catalog. For example, a research namespace might receive generous `nvidia.com/gpu.shared` quota, a small number of `nvidia.com/mig-1g.10gb` instances, and no full-GPU quota. A training namespace might receive full GPUs and access to topology-aligned nodes, but no shared development replicas. Those boundaries reduce accidental misuse and make capacity conversations concrete. When a team asks for more, they are asking for a named service tier with known tradeoffs.
+
+Observability must also reflect the sharing model. DCGM metrics show device utilization, memory use, temperature, health, and error conditions, but they do not automatically explain tenant fairness. Combine DCGM with Kubernetes data: which Pod requested which resource name, which namespace owns it, which node profile is active, and whether a Pending Pod is blocked by capacity, affinity, taints, topology admission, or quota. A useful GPU dashboard separates exclusive, MIG, time-sliced, and MPS capacity instead of presenting one blended utilization line.
+
+Alerting should be similarly specific. "GPU utilization is low" is rarely actionable by itself, because low utilization may be normal for a development pool or a symptom of poor packing in a production pool. Better alerts connect symptoms to policy: shared pool VRAM pressure is high, MIG profile capacity is exhausted, full-GPU training queue time is rising, or topology admission is rejecting Pods on a specific node family. Those alerts lead directly to an operator decision instead of a dashboard hunt.
+
+When a platform introduces sharing, the rollout should be conservative. Start with a development node pool, rename shared resources, document the lack of memory isolation, and create a rollback path to exclusive GPU advertising. Then add MIG for stable inference profiles, because it provides a cleaner production story. MPS can follow when you have measured steady-state inference workloads that benefit from concurrent kernels. DRA should be piloted where claim-based device selection removes real label sprawl or makes topology decisions more explicit.
+
+The rollout should include a user migration plan. Existing manifests that request `nvidia.com/gpu` should not silently start landing on weaker isolation, and new manifests should include comments or templates that explain the requested resource. Give teams examples for each supported tier, publish expected failure modes, and show how to read Pending Pod events. The goal is not to make every user a GPU expert, but to make the platform behavior legible enough that users choose the right class most of the time.
+
+## Patterns & Anti-Patterns
+
+The strongest pattern is to separate GPU pools by risk profile before you optimize density. Keep exclusive or topology-aligned nodes for distributed training, MIG nodes for production inference with predictable memory sizes, shared nodes for development, and experimental nodes for MPS or DRA pilots. This keeps failure modes local. If a shared development GPU runs out of memory, production inference should not notice. If a multi-GPU training pool has strict topology admission, notebook users should not compete for those nodes.
+
+This separation does not require a different physical cluster for every class. It can be implemented with node pools, taints, labels, quotas, admission policy, and clear resource names inside one cluster. The important part is that each class has a support contract. When a notebook runs slowly on a shared GPU, the answer can be "that is expected for this tier." When a production inference Pod on MIG loses isolation, the answer should be "that is a platform incident."
+
+| Pattern | When to Use It | Why It Works | Scaling Consideration |
+|---------|----------------|--------------|-----------------------|
+| Dedicated training pool | Large training jobs need full GPUs and stable topology | Avoids context switching, MIG fragmentation, and noisy neighbors | Pair with queueing, PriorityClasses, and topology-aware node labels |
+| MIG inference catalog | Services have known VRAM footprints and need isolation | Hardware partitions provide predictable memory and compute slices | Limit the number of supported profiles to avoid stranded slices |
+| Renamed shared development GPUs | Notebook and debugging workloads are bursty | Users explicitly request `nvidia.com/gpu.shared` and accept shared behavior | Use quotas and moderate replica counts so one namespace cannot consume all slots |
+| DRA pilot for heterogeneous nodes | Teams need attributes such as model, memory, or topology | Claims and classes replace fragile label combinations | Keep old device-plugin paths until DRA driver behavior is operationally proven |
+
+The most damaging anti-pattern is presenting all GPU shapes as if they are equivalent. A shared virtual GPU, a MIG slice, and a full H100 are not interchangeable, even if each appears as one schedulable unit. Hiding that distinction creates support incidents because users cannot reason about performance or isolation. The better alternative is to expose honest resource names, publish examples, and make admission policies reject requests that do not match the namespace's intended tier.
+
+Another common anti-pattern is optimizing only for the aggregate utilization number. A cluster that drives utilization higher by mixing incompatible tenants may look cheaper for a week and then become more expensive through missed deadlines, incident response, and user workarounds. Healthy GPU platforms optimize for useful utilization: devices should be busy doing work that meets the workload's reliability and performance requirements. Capacity that is dense but unpredictable is not truly efficient.
+
+| Anti-Pattern | What Goes Wrong | Better Alternative |
+|--------------|-----------------|--------------------|
+| One generic GPU node pool | Training, inference, and notebooks fight for unrelated placement needs | Split pools by workload class and publish the supported resource names |
+| High time-slicing replicas by default | Pods schedule easily but latency and memory failures become unpredictable | Start with 2x or 4x sharing and increase only after measuring workload behavior |
+| Frequent MIG reconfiguration | Repartitioning drains nodes and surprises tenants with evictions | Treat MIG changes as maintenance and keep stable node profiles |
+| Topology as an afterthought | Multi-GPU jobs receive devices with poor locality and waste training time | Validate node topology and enable restrictive kubelet policy where appropriate |
+
+## Decision Framework
+
+Start every GPU scheduling decision with three questions: how much isolation does the workload need, how predictable is its memory footprint, and how sensitive is it to latency or interconnect bandwidth? A production model serving user traffic should not share unbounded memory with a notebook. A training job that synchronizes gradients across four devices should not land on a topology that forces slow cross-socket communication. A student notebook that runs occasional cells should not block an 80 GiB accelerator for a week.
+
+Those questions are deliberately workload-centered. Platform teams sometimes begin with the feature they want to exercise, such as "we should use MPS" or "we should adopt DRA," then search for a workload that justifies it. That reverses the design process. Start with the workload's failure modes, then choose the simplest mechanism that protects against the important failures. If whole GPUs solve the problem cleanly and capacity is sufficient, that may be the right answer even in an advanced module.
+
+```mermaid
+flowchart TD
+    Start["Workload needs GPU access"] --> Train{"Multi-GPU training<br/>or full-device throughput?"}
+    Train -- Yes --> Whole["Use whole GPUs<br/>plus topology-aware placement"]
+    Train -- No --> Memory{"Predictable VRAM need<br/>and supported MIG GPU?"}
+    Memory -- Yes --> MIG["Use MIG profile catalog"]
+    Memory -- No --> Burst{"Bursty interactive<br/>or low-priority work?"}
+    Burst -- Yes --> TS["Use time-slicing<br/>with renamed shared resource"]
+    Burst -- No --> MPS{"Many steady small<br/>CUDA processes?"}
+    MPS -- Yes --> MPSNode["Evaluate MPS on a measured node pool"]
+    MPS -- No --> DRA{"Need attribute-based<br/>device selection?"}
+    DRA -- Yes --> DRAPath["Pilot DRA DeviceClasses<br/>and ResourceClaims"]
+    DRA -- No --> Review["Keep exclusive GPU<br/>or redesign workload shape"]
+```
+
+| Requirement | Prefer | Avoid | Reason |
+|-------------|--------|-------|--------|
+| Highest training throughput | Whole GPU with topology policy | Time-slicing or MPS | Training is sensitive to context overhead and GPU-to-GPU bandwidth |
+| Production inference with fixed memory | MIG | Unnamed shared GPUs | MIG gives hardware isolation and predictable resource names |
+| Many exploratory notebooks | Time-slicing | Full GPU per notebook | Bursty users benefit from access more than exclusive performance |
+| Many small steady CUDA services | MPS pilot | Blind time-slicing | Concurrent kernels may improve aggregate utilization when memory is controlled |
+| Heterogeneous hardware requests | DRA | Fragile node selector chains | Claims and DeviceClasses express device requirements more directly |
+
+Use this framework as a review tool rather than as a rigid checklist. Some clusters will not have MIG-capable hardware, some teams will prefer queueing over sharing, and some regulated environments will choose isolation over utilization. The mature decision is the one that states its tradeoff clearly. "We use whole GPUs for this tenant because the operational blast radius of sharing is unacceptable" is just as valid as "we time-slice this development pool because queue time matters more than consistent latency."
+
+Revisit the decision whenever demand changes. A notebook tier that begins as a small convenience can become a major capacity consumer after a successful training program. An inference service that once fit a `1g.10gb` MIG profile may need a larger profile after model growth. A DRA pilot may become the standard once claim-based workflows are familiar. GPU scheduling is not a one-time architecture diagram; it is an operating loop that connects workload evidence back to the resource catalog.
 
 ## Did You Know?
 
-1. **MIG was born from frustration at NVIDIA's own data centers**. Before MIG, NVIDIA's internal AI platform team reported that A100 GPUs sitting idle in inference clusters had an average utilization of 12%. MIG was designed specifically to solve this problem, and it reduced their GPU fleet requirements by 40%.
-
-2. **The theoretical maximum GPU sharing via time-slicing is not infinite** — the NVIDIA driver limits the number of concurrent CUDA contexts per GPU to around 32. Beyond that, you get `CUDA_ERROR_OUT_OF_MEMORY` even if the GPU has free VRAM, because each context consumes a fixed overhead of 300-500MB.
-
-3. **NVLink 4.0 in the H100 provides 900 GB/s bidirectional bandwidth** — that is faster than the memory bandwidth of most CPUs. For comparison, a high-end DDR5 system tops out around 90 GB/s. This is why topology-aware scheduling matters so much: the difference between NVLink and PCIe is a 50x bandwidth gap.
-
----
-
-## War Story: The Training Job That Took 3x Longer
-
-An ML team at a fintech company submitted a 4-GPU training job to their Kubernetes cluster. The job usually took 8 hours on their bare-metal test machine. On Kubernetes, it took 26 hours.
-
-The platform team investigated. `nvidia-smi topo -m` revealed the problem: the 4 GPUs assigned to the Pod were spread across two NUMA nodes and connected only via PCIe (16 GB/s) instead of NVLink (600 GB/s).
-
-The fix:
-
-1. Enabled `topologyManagerPolicy: restricted` on GPU nodes
-2. Set `topologyManagerScope: pod` to align all GPU allocations
-3. Added `nodeAffinity` to target DGX nodes with NVSwitch
-
-Result: the same 4-GPU training job ran in 7.5 hours — slightly faster than bare metal due to better NCCL tuning.
-
-**Lesson**: Allocating the right number of GPUs is necessary but not sufficient. You must allocate the right **topology** of GPUs.
-
----
+1. **Kubernetes Dynamic Resource Allocation reached stable status in Kubernetes 1.35.** That matters because DRA moves device selection toward claims, classes, and scheduler-visible attributes instead of relying only on extended resource counts and node labels.
+2. **An A100-80GB can expose seven `1g.10gb` MIG instances from one physical GPU.** That turns one expensive accelerator into several hardware-isolated scheduling units when the workload profile fits the memory and compute shape.
+3. **NVIDIA GPU time-slicing intentionally provides no memory or fault isolation between replicas.** It improves access for bursty workloads, but a process that consumes too much VRAM can still affect its neighbors on the same physical device.
+4. **Topology Manager has been stable since Kubernetes 1.27, but it is a kubelet admission feature rather than a global optimizer.** It can reject poorly aligned Pods on a node, yet you still need correct node pools, labels, and scheduling policy.
 
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
-| Using time-slicing for training | Context switches destroy throughput; 30-50% overhead | Use whole GPUs or MIG for training workloads |
-| MIG on non-supported GPUs | MIG only works on A100, A30, H100, H200 | Use time-slicing on older GPUs (T4, V100) |
-| Ignoring topology for multi-GPU jobs | GPUs on different NUMA nodes communicate via slow PCIe | Enable Topology Manager with `restricted` policy |
-| Setting replicas too high | Time-slicing 16x means each container gets 1/16 of GPU time — unusably slow | Keep replicas at 2-4x for time-slicing; 4-8x for MPS |
-| Mixing MIG sizes on a node without mixed strategy | Device plugin cannot handle heterogeneous MIG configs with single strategy | Use `mig.strategy: mixed` or dedicate each node to one profile |
-| Not renaming shared resources | Users request `nvidia.com/gpu: 1` thinking they get a whole GPU | Set `renameByDefault: true` so shared GPUs appear as `nvidia.com/gpu.shared` |
-| Changing MIG config on live nodes | Reconfiguration requires draining workloads; surprise evictions | Always cordon/drain before changing MIG profiles; use maintenance windows |
+| Mistake | Why It Happens | How to Fix It |
+|---------|----------------|---------------|
+| Using time-slicing for training | Teams see higher advertised capacity and ignore context-switch overhead, memory contention, and collective communication needs | Use whole GPUs for training, and combine them with topology-aware node pools and kubelet Topology Manager policy |
+| Enabling MIG on unsupported GPUs | Operators assume every NVIDIA accelerator supports the same partitioning features | Check the NVIDIA MIG support matrix, then use time-slicing or exclusive allocation on older devices such as T4 or V100 |
+| Ignoring topology for multi-GPU jobs | The scheduler satisfies the GPU count while the hardware path between devices is slow | Validate `nvidia-smi topo -m`, label node pools by interconnect family, and use `restricted` or `single-numa-node` where appropriate |
+| Setting replicas too high | Shared capacity looks attractive during planning, but each workload receives less time and competes for the same VRAM | Start with conservative replicas such as 2x or 4x, measure latency and memory pressure, then raise density only with evidence |
+| Mixing MIG sizes without a profile catalog | Every team asks for a custom shape, leaving unusable slices on the card | Publish a small set of approved MIG profiles and require teams to fit one of those service tiers |
+| Not renaming shared resources | Users request `nvidia.com/gpu: 1` and assume they received exclusive hardware | Set `renameByDefault: true` so shared allocations appear as `nvidia.com/gpu.shared` or another explicit resource name |
+| Changing MIG config on live nodes | The label change looks harmless, but repartitioning requires workload drain and device plugin refresh | Treat MIG changes as maintenance, cordon and drain deliberately, and verify advertised resources before reopening the node |
 
----
-
-## Quiz: Check Your Understanding
-
-### Question 1
-Your company has 10 A100-80GB GPUs. The data science director demands support for: 4 critical, long-running training jobs that maximize GPU compute; 20 lightweight inference models that require strict latency guarantees and ~10GB VRAM each; and 30 interactive Jupyter notebooks used sporadically by interns. How would you partition this fleet to satisfy all constraints efficiently?
+## Quiz
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 1: Hypothetical scenario: a training namespace is Pending even though DCGM shows several GPUs below 20% utilization. What do you check first, and why?</summary>
 
-You must tailor the partitioning strategy to the specific isolation and compute needs of each workload. First, dedicate 4 full GPUs to the 4 training jobs (no sharing), as training requires maximum compute and memory bandwidth without context-switching overhead. Next, configure 3 GPUs with the MIG `1g.10gb` profile to yield 21 hardware-isolated instances. This provides the 20 inference models with the strict latency guarantees and dedicated VRAM they require, leaving 1 spare instance. Finally, configure the remaining 3 GPUs with time-slicing set to `replicas: 10`. This creates 30 virtual GPUs for the interns' notebooks, which is acceptable since interactive work is bursty and tolerates the lack of memory isolation and occasional latency spikes.
+Start with the Pod events and the node's advertised resources, not with the utilization graph. Kubernetes schedules against requested resources such as `nvidia.com/gpu`, `nvidia.com/mig-1g.10gb`, or `nvidia.com/gpu.shared`, so low utilization does not prove that the requested resource shape exists. If events show insufficient GPUs, inspect whether the node is partitioned into MIG profiles, whether shared resources were renamed, and whether quota or affinity blocks the namespace. DCGM helps explain efficiency after placement, but scheduler events explain why placement failed.
 </details>
-
-### Question 2
-You are tasked with providing GPU access to two different groups: a data science team running exploratory Jupyter notebooks, and a production engineering team deploying latency-sensitive inference services. The data science team frequently writes unoptimized code that leaks memory. How would you provision GPUs for these two teams, and why?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 2: Your team must design a multi-tenant GPU sharing strategy for production inference, notebooks, and four-GPU training. Which allocation model belongs to each class?</summary>
 
-For the production engineering team, you should use **MIG (Multi-Instance GPU)**. MIG provides hardware-level isolation for both compute and memory. This ensures their latency-sensitive inference services have guaranteed resources and are completely protected from other workloads on the same physical GPU. For the data science team, you should use **Time-Slicing** (or isolated full GPUs if budget allows). Time-slicing allows many notebooks to share a single GPU by rotating compute access, but provides zero memory isolation. Since the data science team frequently leaks memory, placing them on time-sliced GPUs means they will likely cause Out-Of-Memory (OOM) crashes that affect other notebooks sharing that specific GPU. By keeping them isolated from the production team, their memory leaks only impact their own exploratory environments, not the critical inference services.
+Use whole GPUs with topology-aware placement for four-GPU training because throughput and interconnect locality matter more than packing density. Use MIG for production inference when the GPU generation supports it and model memory footprints fit the catalog, because MIG gives hardware memory isolation and predictable resource names. Use time-slicing for notebooks because they are bursty and can tolerate slower or less predictable execution. Do not put all three classes behind the same `nvidia.com/gpu` request, because that hides the tradeoffs users need to understand.
 </details>
-
-### Question 3
-Your platform team currently relies on a fragile web of node selectors, taints, and labels to ensure specific Pods land on nodes with exactly 40GB of VRAM and NVLink support. How will transitioning to the Dynamic Resource Allocation (DRA) API change how your engineers request these GPUs?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 3: A namespace can request two `nvidia.com/gpu.shared` replicas on a time-sliced node, but latency becomes worse instead of better. What likely happened?</summary>
 
-Transitioning to DRA eliminates the need for node-level labeling hacks by moving device selection to the API level. Instead of requesting a generic `nvidia.com/gpu: 1` and hoping node selectors match the right hardware, engineers will create a `ResourceClaim` that specifies exactly what they need using structured attributes. The claim can explicitly state requirements like "I need a GPU with >= 40GB VRAM and NVLink enabled." The Kubernetes scheduler, working with the DRA driver, natively understands these attributes and handles the complex topology and placement logic automatically. This abstracts the hardware details away from the Pod specification and allows the platform team to define robust `DeviceClass` policies, resulting in a cleaner and more reliable scheduling workflow.
+Multiple time-sliced replicas do not guarantee twice the compute share, especially when the replicas point at the same physical device. The Pod may simply consume more scheduler inventory while still competing in the same rotation and sharing the same VRAM pool. The safer configuration is `failRequestsGreaterThanOne: true`, plus application-level concurrency and memory limits. If the workload truly needs stronger guarantees, move it to MIG or an exclusive GPU rather than trying to buy performance with more shared replicas.
 </details>
-
-### Question 4
-Your team purchased a cheaper 4-GPU server to run distributed training. When running a 4-GPU data-parallel PyTorch job on this server, the training takes twice as long as it does on a cloud instance with identical GPUs. You run `nvidia-smi topo -m` and see `PIX` between some pairs and `SYS` between others. Why is the job running so slowly, and how can Kubernetes help fix this?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 4: You configure an A100 node with `all-1g.10gb`, then a user complains that a full-GPU training job no longer schedules there. Is that a bug?</summary>
 
-The job is running slowly because the GPUs are communicating across inefficient hardware pathways. In data-parallel training, GPUs must constantly synchronize gradients using all-reduce operations. The `SYS` topology indicates that some GPUs are on completely different NUMA nodes, meaning their communication must cross the CPU socket at roughly 16 GB/s, which introduces massive latency. The `PIX` links are better (same PCIe switch) but still heavily bottlenecked compared to NVLink. To fix this, you should enable the Kubernetes Topology Manager with a `restricted` or `single-numa-node` policy. This forces the scheduler to allocate GPUs that share the same NUMA node and PCIe complex, drastically reducing the communication overhead and speeding up the training.
+It is expected behavior. Once the node is partitioned into MIG instances, the device plugin advertises profile-specific resources rather than a full `nvidia.com/gpu` on that device. A full-GPU job should target an unpartitioned training pool or a profile such as `7g.80gb` if that is how your platform represents the full device. The fix is not to weaken the job request, but to route the workload to a node pool whose advertised resources match the training requirement.
 </details>
-
-### Question 5
-You configured time-slicing with `replicas: 8` on a T4 GPU (16GB VRAM) to save money. An engineer reports that their inference service runs perfectly when it is the only Pod on the node, but it crashes with an OOM (Out Of Memory) error during peak hours when 6 other team members are running workloads on the same GPU. Why did this happen, and what are two ways to fix it?
 
 <details>
-<summary>Show Answer</summary>
+<summary>Question 5: A four-GPU job lands on a cheaper server and runs far slower than on a validated training node. How do you diagnose the topology problem?</summary>
 
-This happened because time-slicing provides no memory isolation at the hardware level. Even though the GPU compute is time-sliced into 8 virtual pieces, all 8 workloads share the exact same 16GB VRAM pool. When the engineer's service ran alone, it had access to the full 16GB. However, during peak hours, the combined memory allocations of all active workloads exceeded the 16GB physical limit, triggering an OOM crash that likely killed multiple processes. To fix this, you must limit how much memory each workload can allocate. One approach is to reduce the time-slicing `replicas` to 4, guaranteeing that if each workload uses up to 4GB, the VRAM won't overflow. Alternatively, you can have the engineers set framework-specific limits in their code (like `CUDA_MEM_FRACTION` in PyTorch) to restrict each Pod to a safe percentage of the GPU's memory.
+First identify the node selected for the Pod, then inspect GPU topology on that node with `nvidia-smi topo -m`. Look for whether the assigned GPUs communicate through NVLink or NVSwitch, through the same PCIe switch, or across CPU sockets. Then compare kubelet Topology Manager policy, node labels, and affinity rules with the intended training pool design. If the job requires fast collectives, enforce a stricter topology policy or move it to a node family built for multi-GPU training.
 </details>
 
----
+<details>
+<summary>Question 6: Your platform is considering Kubernetes 1.35 DRA because GPU node labels have become hard to maintain. What problem should DRA solve before you adopt it?</summary>
+
+DRA should solve a real device-selection problem, such as requesting a class of GPU by driver, memory, topology, or other attributes without encoding those requirements in fragile node selectors. It is not a magic utilization feature and it does not remove the need for quotas, admission control, or driver-specific validation. A good pilot starts with one DeviceClass and one workload family where ResourceClaims make the request clearer than the existing labels. Keep the device-plugin path available until the DRA driver and operational runbooks are proven.
+</details>
 
 ## Hands-On Exercise: GPU Time-Slicing with Multiple Inference Workloads
 
-### Objective
+In this exercise, you will configure GPU time-slicing on one node, deploy several small inference-like workloads, and observe how the shared resource behaves. The lab is intentionally focused on time-slicing because it works on many NVIDIA GPU generations and makes the isolation tradeoff visible. If you are using a production cluster, run this only in a maintenance-safe development pool, because changing device plugin configuration can affect how new Pods are scheduled.
 
-Configure GPU time-slicing on a node, deploy multiple inference workloads sharing a single GPU, and observe the sharing behavior through metrics.
+### Setup
 
-### Environment
+You need a Kubernetes cluster with at least one NVIDIA GPU node, the NVIDIA GPU Operator installed from Module 1.1, `kubectl` configured for the cluster, and permission to modify the GPU Operator `ClusterPolicy`. Prometheus and DCGM metrics are useful for the observation task, but the scheduling tasks still work without a full monitoring stack. If your organization requires change windows for GPU node configuration, treat this exercise as an exercise scenario and run it in a disposable lab cluster.
 
-- Kubernetes cluster with at least one GPU node (any NVIDIA GPU: T4, A10, A100, etc.)
-- GPU Operator installed (from Module 1.1 exercise)
-- Prometheus + Grafana (from Module 1.1 exercise)
+### Task 1: Configure Time-Slicing
 
-### Step 1: Configure Time-Slicing
+Create a device plugin configuration that advertises four shared replicas per physical GPU, then label one GPU node to use that configuration. Before applying the label, predict how the node capacity should change: if one node has four physical GPUs, you should expect sixteen `nvidia.com/gpu.shared` resources after the device plugin restarts.
 
 ```bash
 # Create device plugin configuration with 4x time-slicing
@@ -834,11 +783,19 @@ kubectl patch clusterpolicy cluster-policy --type=merge -p '{
 sleep 30
 kubectl -n gpu-operator rollout status daemonset nvidia-device-plugin-daemonset
 
-# Verify: node should now advertise 4x GPUs (e.g., 4 physical -> 16 shared)
+# Verify: node should now advertise 4x GPUs (for example, 4 physical -> 16 shared)
 kubectl describe node $GPU_NODE | grep nvidia.com/gpu
 ```
 
-### Step 2: Deploy Multiple Inference Workloads
+<details>
+<summary>Solution notes for Task 1</summary>
+
+The critical success signal is that the node advertises `nvidia.com/gpu.shared` rather than only `nvidia.com/gpu`. If the old resource name remains, inspect whether `renameByDefault` was applied and whether the device plugin picked up the intended config key. If the DaemonSet does not restart or node capacity does not change, check the GPU Operator logs and confirm the `ClusterPolicy` references the ConfigMap name and default key correctly.
+</details>
+
+### Task 2: Deploy Multiple Inference Workloads
+
+Deploy three small workloads that each request one shared GPU resource. These containers are simple demonstration workloads, not production inference servers, because the goal is to observe scheduling and device visibility. In a real inference deployment, you would use your model server image and set explicit CPU, memory, and application-level GPU memory limits.
 
 ```bash
 # Create a namespace
@@ -868,7 +825,7 @@ spec:
           command: ["bash", "-c"]
           args:
             - |
-              # Simulate inference workload — periodic GPU compute bursts
+              # Simulate inference workload with periodic GPU compute bursts.
               apt-get update -qq && apt-get install -y -qq cuda-demo-suite-12-5 2>/dev/null
               while true; do
                 /usr/local/cuda-12.5/extras/demo_suite/deviceQuery
@@ -884,7 +841,15 @@ done
 kubectl -n inference-test get pods -o wide
 ```
 
-### Step 3: Observe GPU Sharing
+<details>
+<summary>Solution notes for Task 2</summary>
+
+All three Pods should reach Running if the node has at least three shared replicas available and no taints, quotas, or image-pull issues block placement. If a Pod remains Pending, use `kubectl -n inference-test describe pod <pod-name>` and read the scheduler events. Do not assume a GPU problem until the event confirms insufficient shared GPU capacity or a relevant placement constraint.
+</details>
+
+### Task 3: Observe GPU Sharing
+
+Now verify that the Pods are sharing the same physical device. The exact output depends on your node and driver, but the GPU UUID is the key comparison. If all three Pods report the same UUID, they are not isolated hardware partitions; they are time-sharing one physical accelerator through the shared resource.
 
 ```bash
 # Check that all 3 pods see the same physical GPU
@@ -893,32 +858,48 @@ for pod in $(kubectl -n inference-test get pods -o name); do
   kubectl -n inference-test exec $pod -- nvidia-smi --query-gpu=gpu_name,gpu_uuid,memory.total --format=csv,noheader 2>/dev/null
 done
 
-# All pods should show the same GPU UUID — confirming they share one physical GPU
+# All pods should show the same GPU UUID, confirming they share one physical GPU.
 
-# Check GPU utilization (it should be higher than any single workload)
+# Check GPU utilization. It should be higher than any single workload.
 kubectl -n inference-test exec $(kubectl -n inference-test get pods -o name | head -1) -- \
   nvidia-smi --query-gpu=utilization.gpu,utilization.memory,memory.used --format=csv
 ```
 
-### Step 4: Observe via DCGM Metrics
+<details>
+<summary>Solution notes for Task 3</summary>
+
+Matching UUIDs confirm that time-slicing is providing shared access to one physical device. If the UUIDs differ, your cluster may have enough shared replicas across several physical GPUs, and the scheduler spread the Pods. That is not necessarily wrong, but it changes what you are observing. Use node capacity and Pod placement to decide whether the lab is showing one-device sharing or multi-device scheduling.
+</details>
+
+### Task 4: Observe DCGM Metrics
+
+Metrics make the sharing tradeoff visible. GPU utilization can rise as more workloads run, but memory remains a shared physical pool. This is why time-slicing should be paired with user education and application-level memory controls. A dashboard that shows only aggregate utilization can make sharing look successful even while one tenant is close to pushing others into an OOM failure.
 
 ```bash
 # Port-forward Prometheus
 kubectl port-forward -n monitoring svc/kube-prometheus-prometheus 9090:9090 &
 
-# Check GPU utilization — should reflect combined workload
-curl -s 'http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_GPU_UTIL' | \
+# Check GPU utilization. This should reflect combined workload activity.
+curl -s 'http://127.0.0.1:9090/api/v1/query?query=DCGM_FI_DEV_GPU_UTIL' | \
   jq '.data.result[] | {gpu: .metric.gpu, utilization: .value[1]}'
 
-# Check memory usage — all 3 workloads share the same VRAM
-curl -s 'http://localhost:9090/api/v1/query?query=DCGM_FI_DEV_FB_USED' | \
+# Check memory usage. All shared workloads consume from the same VRAM pool.
+curl -s 'http://127.0.0.1:9090/api/v1/query?query=DCGM_FI_DEV_FB_USED' | \
   jq '.data.result[] | {gpu: .metric.gpu, vram_mib: .value[1]}'
 ```
 
-### Step 5: Test the Limits
+<details>
+<summary>Solution notes for Task 4</summary>
+
+If Prometheus is not installed in your lab, use `nvidia-smi` from one of the Pods or from the node to observe memory and utilization instead. The conceptual result is the same: shared workloads appear against the same physical GPU. The platform decision is whether the improved access is worth the weaker isolation for that workload class.
+</details>
+
+### Task 5: Test the Limits
+
+Finally, prove that the scheduler enforces the advertised shared-resource count. With four replicas configured, a fourth workload should schedule if enough capacity remains. A fifth workload should remain Pending on a single-GPU node because there are no more `nvidia.com/gpu.shared` replicas to allocate. If your node has more than one physical GPU, adjust the expected count to match the node capacity.
 
 ```bash
-# Try to deploy a 4th workload (should succeed — 4 replicas configured)
+# Try to deploy a 4th workload. This should succeed when 4 replicas are available.
 cat <<'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: Pod
@@ -935,7 +916,7 @@ spec:
           nvidia.com/gpu.shared: 1
 EOF
 
-# Try a 5th workload (should be Pending — only 4 replicas per GPU)
+# Try a 5th workload. On a single physical GPU with 4 replicas, this should be Pending.
 cat <<'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: Pod
@@ -952,12 +933,20 @@ spec:
           nvidia.com/gpu.shared: 1
 EOF
 
-# Check: the 5th pod should be Pending
+# Check: the 5th pod should be Pending when no shared replica remains.
 kubectl -n inference-test get pods
 kubectl -n inference-test describe pod inference-worker-5 | grep -A 5 Events
 ```
 
-### Step 6: Cleanup
+<details>
+<summary>Solution notes for Task 5</summary>
+
+The expected failure is a scheduler event that references insufficient `nvidia.com/gpu.shared`. That event proves the resource name and advertised capacity are controlling placement. If the fifth Pod runs on a larger node, count the total shared replicas across physical GPUs and adjust the test. The point is to verify that Kubernetes enforces the advertised resource count even though each replica is backed by software sharing.
+</details>
+
+### Task 6: Cleanup
+
+Clean up the test namespace and decide whether to leave the device plugin configuration in place. In a real cluster, do not leave shared GPU advertising enabled unless your team has documented the tier, quotas, expected behavior, and rollback path.
 
 ```bash
 kubectl delete namespace inference-test
@@ -965,58 +954,36 @@ kubectl delete namespace inference-test
 # kubectl label node $GPU_NODE nvidia.com/device-plugin.config- --overwrite
 ```
 
+<details>
+<summary>Solution notes for Task 6</summary>
+
+Deleting the namespace removes the demonstration workloads, but it does not remove the device plugin configuration or node label. If this was a temporary exercise, remove the node label or return the node to its original device plugin config. Then re-check node capacity so future workloads do not accidentally land on a sharing tier.
+</details>
+
 ### Success Criteria
 
-You have completed this exercise when:
-- [ ] Node advertises 4x the physical GPU count as `nvidia.com/gpu.shared`
-- [ ] 3 inference workloads are Running, each requesting `nvidia.com/gpu.shared: 1`
-- [ ] All 3 pods report the same GPU UUID (confirming they share one physical GPU)
-- [ ] A 4th pod runs successfully (4 replicas per GPU)
-- [ ] A 5th pod is Pending with "Insufficient nvidia.com/gpu.shared" event
-- [ ] DCGM metrics show combined utilization from all shared workloads
+- [ ] Node advertises 4x the physical GPU count as `nvidia.com/gpu.shared`.
+- [ ] Three inference workloads are Running, each requesting `nvidia.com/gpu.shared: 1`.
+- [ ] All three Pods report the same GPU UUID when they share one physical GPU.
+- [ ] A fourth Pod runs successfully when four shared replicas are available.
+- [ ] A fifth Pod is Pending with an "Insufficient nvidia.com/gpu.shared" event on a single-GPU, four-replica node.
+- [ ] DCGM or `nvidia-smi` metrics show combined utilization and shared VRAM pressure from the workloads.
 
----
+## Sources
 
-## Key Takeaways
-
-1. **GPU underutilization is the norm** — average 15-35% across the industry. Sharing strategies can 3-5x your effective GPU capacity
-2. **MIG provides hardware-level isolation** — the gold standard for production inference on A100/H100, with dedicated memory and compute per instance
-3. **Time-slicing is the easiest sharing method** — works on any NVIDIA GPU, but offers no memory isolation and adds context-switch overhead
-4. **MPS enables true spatial sharing** — multiple processes execute simultaneously on the same GPU, ideal for many small inference models
-5. **DRA is the future** — attribute-based GPU allocation will eventually replace the combination of Device Plugin + time-slicing + MIG hacks
-6. **Topology awareness is critical for multi-GPU jobs** — wrong GPU placement can cause 3-30x slowdowns due to PCIe vs NVLink bandwidth differences
-7. **Match the sharing strategy to the workload** — training gets whole GPUs, inference gets MIG, development gets time-slicing
-
----
-
-## Further Reading
-
-**Documentation**:
-- **NVIDIA MIG User Guide**: docs.nvidia.com/datacenter/tesla/mig-user-guide/
-- **GPU Time-Slicing**: docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-sharing.html
-- **Kubernetes DRA**: kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/
-- **Topology Manager**: kubernetes.io/docs/tasks/administer-cluster/topology-manager/
-
-**Talks**:
-- **"GPU Sharing in Kubernetes"** — NVIDIA, KubeCon NA 2024
-- **"Dynamic Resource Allocation Deep Dive"** — Patrick Ohly, Intel, KubeCon EU 2024
-
-**Papers**:
-- **"Gandiva: Introspective Cluster Scheduling for Deep Learning"** — Microsoft Research (time-slicing analysis)
-
----
-
-## Summary
-
-GPU sharing is the single highest-leverage optimization a platform team can make. By matching the right sharing strategy to each workload type — MIG for production inference, time-slicing for development, MPS for high-concurrency inference, whole GPUs for training — you multiply the effective capacity of your cluster without additional hardware. Combine this with topology-aware scheduling for multi-GPU jobs, and you have a GPU platform that is both efficient and performant.
-
----
+- [NVIDIA Multi-Instance GPU User Guide](https://docs.nvidia.com/datacenter/tesla/mig-user-guide/)
+- [NVIDIA GPU Operator GPU sharing documentation](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-sharing.html)
+- [NVIDIA Kubernetes device plugin](https://github.com/NVIDIA/k8s-device-plugin)
+- [NVIDIA GPU Operator](https://github.com/NVIDIA/gpu-operator)
+- [NVIDIA mig-parted](https://github.com/NVIDIA/mig-parted)
+- [NVIDIA DRA driver for GPUs](https://github.com/NVIDIA/k8s-dra-driver)
+- [Kubernetes Dynamic Resource Allocation](https://kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/)
+- [Kubernetes DRA cluster setup](https://kubernetes.io/docs/tasks/configure-pod-container/assign-resources/set-up-dra-cluster/)
+- [Kubernetes v1.35 API reference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/)
+- [Kubernetes Topology Manager](https://kubernetes.io/docs/tasks/administer-cluster/topology-manager/)
+- [Google Cloud compact placement policies](https://cloud.google.com/compute/docs/instances/use-compact-placement-policies)
+- [Amazon EKS Elastic Fabric Adapter guidance](https://docs.aws.amazon.com/eks/latest/userguide/node-efa.html)
 
 ## Next Module
 
-Continue to [Module 1.3: Distributed Training Infrastructure](../module-1.3-distributed-training/) to learn how to run training jobs across multiple nodes using InfiniBand, NCCL, and Kubernetes operators.
-
----
-
-*"The fastest way to double your GPU fleet is to actually use the GPUs you already have."* — Overheard at a GPU cloud startup
----
+Continue to [Module 1.3: Distributed Training Infrastructure](../module-1.3-distributed-training/) to learn how multi-node training combines Kubernetes scheduling, NCCL, high-performance networking, and workload operators.
