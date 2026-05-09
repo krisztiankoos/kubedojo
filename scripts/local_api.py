@@ -5250,6 +5250,28 @@ def build_state_manifest() -> dict[str, Any]:
     }
 
 
+def serve_static_file(repo_root: Path, rel_path: str) -> tuple[int, Any, str]:
+    decoded = unquote(rel_path)
+    parts = decoded.split("/")
+    if not decoded or any(p in ("", ".", "..") for p in parts):
+        return 404, {"error": "not_found"}, "application/json; charset=utf-8"
+    static_dir = (repo_root / "static").resolve()
+    candidate = (static_dir / decoded).resolve()
+    try:
+        candidate.relative_to(static_dir)
+    except ValueError:
+        return 404, {"error": "not_found"}, "application/json; charset=utf-8"
+    if not candidate.is_file():
+        return 404, {"error": "not_found"}, "application/json; charset=utf-8"
+    ct = {".css": "text/css; charset=utf-8", ".js": "application/javascript; charset=utf-8"}.get(candidate.suffix.lower())
+    if ct is None:
+        return 404, {"error": "not_found"}, "application/json; charset=utf-8"
+    try:
+        return 200, candidate.read_bytes(), ct
+    except OSError:
+        return 404, {"error": "not_found"}, "application/json; charset=utf-8"
+
+
 def serve_artifact_file(repo_root: Path, rel_path: str) -> tuple[int, Any, str]:
     decoded = unquote(rel_path)
     candidate = _resolve_artifact_path(repo_root, decoded)
@@ -6983,21 +7005,8 @@ def render_dashboard_html(repo_root: Path = REPO_ROOT, *, issue_number: int = DE
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>KubeDojo Local Monitor</title>
+  <link rel="stylesheet" href="/static/design-system.css" />
   <style>
-    :root {{
-      --bg:#0a0f1a; --surface-0:#111827; --surface-1:#1a2332; --surface-2:#1f2b3d;
-      --text:#e5e7eb; --text-secondary:#9ca3af; --text-dim:#6b7280;
-      --accent:#38bdf8; --accent-muted:rgba(56,189,248,0.12);
-      --teal:#2dd4bf; --teal-muted:rgba(45,212,191,0.12);
-      --green:#4ade80; --green-muted:rgba(74,222,128,0.12);
-      --amber:#fbbf24; --amber-muted:rgba(251,191,36,0.10);
-      --red:#f87171; --red-muted:rgba(248,113,113,0.10);
-      --border:rgba(255,255,255,0.06); --radius:12px; --radius-sm:8px;
-    }}
-    *,*::before,*::after {{ box-sizing:border-box; }}
-    body {{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; -webkit-font-smoothing:antialiased; }}
-    .mono {{ font-family:'SF Mono','Fira Code','Cascadia Code',ui-monospace,monospace; }}
-{_TOP_NAV_CSS}
     .header {{ position:sticky; top:var(--topnav-h,45px); z-index:50; border-bottom:1px solid var(--border); background:rgba(10,15,26,0.96); backdrop-filter:blur(12px); }}
     .header-inner {{ max-width:1180px; margin:0 auto; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; }}
     .header-brand {{ display:flex; align-items:center; gap:12px; min-width:0; }}
@@ -8065,6 +8074,8 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
     path = parsed.path.rstrip("/") or "/"
     query = parse_qs(parsed.query)
 
+    if path.startswith("/static/"):
+        return serve_static_file(repo_root, path[len("/static/"):])
     if path in {"/", "/dashboard"}:
         return 200, render_dashboard_html(repo_root), "text/html; charset=utf-8"
     if path == "/operator":
