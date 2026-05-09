@@ -616,7 +616,11 @@ def invoke(
             outcome = "error"
 
         push_verify_error: str | None = None
-        if agent_name == "codex" and mode == "danger" and parse.ok:
+        if mode == "danger" and parse.ok:
+            # Defense in depth: any agent in danger mode that lands commits
+            # could silent-fail-push (e.g., sandbox env issue). Codex was the
+            # original observed case (PR #907 round-2), but the verify is
+            # cheap (one git ls-remote) and applies to all agents.
             push_ok, push_verify_error = verify_current_branch_pushed(effective_cwd)
             if not push_ok:
                 outcome = "error"
