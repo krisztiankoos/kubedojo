@@ -799,7 +799,7 @@ Install Kueue to manage job admission and gang scheduling.
 
 ```bash
 VERSION="v0.9.1"
-kubectl apply --server-side -f https://github.com/kubernetes-sigs/kueue/releases/download/v0.9.1/manifests.yaml
+kubectl apply --server-side -f "https://github.com/kubernetes-sigs/kueue/releases/download/${VERSION}/manifests.yaml"
 kubectl rollout status deployment/kueue-controller-manager -n kueue-system
 ```
 
@@ -1075,7 +1075,13 @@ Use this checklist to confirm the step behaved as intended before moving on to t
 
 ### Troubleshooting
 
-**Pods stuck in Pending:** Run `kubectl describe workload job-pytorch-ddp` and verify that the `LocalQueue` and `ClusterQueue` have enough CPU quota for the sum of all pod requests. **Connection refused in logs:** Ensure the headless Service name exactly matches the pod `subdomain` and the `--rdzv_endpoint` flag. **DNS lookup fails:** Check the Service selector and pod labels. If startup is racing DNS propagation, add an init container that waits for the rank 0 hostname. **No Workload appears:** Confirm that Kueue is installed, its controller is running, and the Job has the `kueue.x-k8s.io/queue-name` label.
+**Pods stuck in Pending:** Run `kubectl describe workload job-pytorch-ddp` and verify that the `LocalQueue` and `ClusterQueue` have enough CPU quota for the sum of all pod requests.
+
+**Connection refused in logs:** Ensure the headless Service name exactly matches the pod `subdomain` and the `--rdzv_endpoint` flag.
+
+**DNS lookup fails:** Check the Service selector and pod labels. If startup is racing DNS propagation, add an init container that waits for the rank 0 hostname.
+
+**No Workload appears:** Confirm that Kueue is installed, its controller is running, and the Job has the `kueue.x-k8s.io/queue-name` label.
 
 **Image pull is slow or blocked:** Use an internally mirrored PyTorch image in private environments and update the Job image field accordingly.
 
@@ -1104,7 +1110,7 @@ After completing the lab, answer these questions in your notes:
 - [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni)
 - [SR-IOV Network Device Plugin](https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin)
 - [NVIDIA GPU Operator documentation](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/index.html)
-- [NVIDIA Network Operator quick start](https://docs.nvidia.com/networking/display/kubernetes2570/quick-start)
+- [NVIDIA Network Operator (Mellanox)](https://github.com/Mellanox/network-operator)
 - [NCCL environment variables](https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/env.html)
 - [PyTorch torchrun elastic launcher](https://docs.pytorch.org/docs/stable/elastic/run.html)
 - [PyTorch Distributed Checkpoint](https://docs.pytorch.org/docs/stable/distributed.checkpoint.html)
