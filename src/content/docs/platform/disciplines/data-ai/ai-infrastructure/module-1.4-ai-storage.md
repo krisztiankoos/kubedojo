@@ -27,6 +27,8 @@ After completing this module, you will be able to:
 
 Hypothetical scenario: your platform team has just delivered a clean GPU pool for the machine learning group. The nodes have modern accelerators, the scheduler can place GPU jobs, and the team has confidence in quota enforcement because earlier modules covered provisioning and sharing. Then the first serious image-training job lands, eight GPUs light up for a few seconds, and the utilization graph flattens around forty percent because the workers spend most of each step waiting for the next batch to arrive from storage.
 
+Meta's Llama 3 training run is the same lesson at industrial scale. Meta reported that its storage system served **240 PB over 54 days**, which works out to about **4.4 PB per day** or **51 GB/s sustained**. That number is memorable because it is not a burst benchmark; it is the rate a training platform had to keep feeding the job for weeks so the accelerators did not starve.
+
 That situation is frustrating because it looks like a GPU problem from a distance, but it is usually a data path problem. A training loop cannot compute on examples it has not loaded, decoded, shuffled, transferred, and staged, so storage design directly determines how much expensive accelerator time turns into useful gradient updates. If the platform exposes only a generic network filesystem or a direct object-store mount, the job may be correct yet still waste more money than a scheduling bug would.
 
 This module teaches storage as an operational design problem rather than a shopping list of tools. You will start by recognizing the I/O shape of different AI workloads, then build up the storage tiers that Kubernetes can expose: local NVMe for hot data, distributed filesystems for shared warm data, object storage for durable cold data, and caching systems that move bytes closer to the GPUs. The goal is not to memorize one preferred product; the goal is to choose a path that matches the dataset, checkpoint cadence, fault-tolerance needs, and Kubernetes scheduling constraints in front of you.
@@ -71,7 +73,9 @@ Different ML workloads have radically different I/O profiles, and platform teams
 
 The key design move is to translate the workload into read size, randomness, concurrency, and write burst requirements before choosing storage. Image classification against millions of JPEG files may need local caching or dataset repackaging even when the total dataset is modest. Video training may tolerate higher latency per file because each read is large, but it can saturate network links if several jobs stream at once. Checkpointing flips the problem from reads to writes, and a fast read cache does not automatically make checkpoint saves safe or durable.
 
-Pause and predict: if a large language model and an image classifier both report low GPU utilization, which one would you expect to benefit more from packing data into larger sequential shards, and which one would you inspect first for metadata or small-file overhead? Write down the hypothesis before looking at metrics, because the habit of predicting forces you to connect symptoms to the workload shape rather than reaching for a favorite storage product.
+> **Pause and predict:** If a large language model and an image classifier both report low GPU utilization, which one would you expect to benefit more from packing data into larger sequential shards, and which one would you inspect first for metadata or small-file overhead?
+>
+> **Answer:** The image classifier usually benefits most from packing because millions of small random reads create metadata and request overhead; the LLM workload is more likely to need aggregate sequential throughput across already-sharded data.
 
 Before optimizing, measure the job that is actually slow. GPU utilization tells you whether accelerators are waiting, but it does not prove storage is the cause by itself. Correlate that signal with data-loader timing, CPU saturation, network throughput, filesystem latency, and pod placement, because a CPU-heavy augmentation pipeline can look similar to an I/O bottleneck from the GPU side.
 
@@ -94,7 +98,9 @@ kubectl exec -it training-pod -- watch -n 1 'nvidia-smi --query-gpu=utilization.
 
 The command is intentionally simple because the first measurement should be easy enough to run during an incident. If the GPU is below target utilization and the data loader repeatedly spends longer than the compute step, storage and preprocessing deserve immediate attention. If the data loader is fast but GPU memory utilization is high, you may be facing a model-memory or batch-size issue instead; the important skill is to avoid tuning storage when the evidence points somewhere else.
 
-Stop and think: if GPU utilization is around forty percent, what three metrics would you check before blaming the storage backend? A strong answer includes at least one GPU-side metric, one application-side timing signal, and one infrastructure-side signal such as filesystem latency, node network throughput, or cache hit rate.
+> **Stop and think:** If GPU utilization is around forty percent, what three metrics would you check before blaming the storage backend?
+>
+> **Answer:** Check GPU utilization and memory pressure, data-loader wait time per batch, and an infrastructure signal such as filesystem latency, node network throughput, or cache hit rate.
 
 ## Storage Tiers for AI
 
@@ -298,6 +304,12 @@ mountOptions:
 
 The `noatime` and `nodiratime` options are small settings with large consequences for read-heavy training. Traditional access-time updates create metadata writes when files are read, which means an apparently read-only workload can still pressure the metadata path. Disabling those updates is usually safe for datasets and checkpoint inputs because training jobs rarely depend on access times for correctness.
 
+RDMA-capable storage networks such as InfiniBand or RoCE can also help by reducing network latency and CPU overhead, but they cannot rescue a workload that turns every example into a serialized metadata operation. The storage path still has to match the workload shape.
+
+> **Stop and think:** Why can `noatime` or RDMA matter even when a storage benchmark shows acceptable sequential throughput?
+>
+> **Answer:** `noatime` removes metadata writes from read-heavy paths, while RDMA reduces network overhead; both matter because training bottlenecks often come from latency and metadata pressure rather than headline sequential bandwidth.
+
 JuiceFS targets the awkward space between object storage and filesystem expectations. It presents a POSIX client through FUSE and CSI, stores metadata in a separate engine such as Redis or PostgreSQL, stores data in object storage, and caches reads locally. That architecture lets a team keep the durable copy in S3-compatible storage while giving training code a familiar path-based interface.
 
 ```mermaid
@@ -357,7 +369,9 @@ volumeBindingMode: Immediate
 
 The mount options show where performance choices become explicit. A larger cache can reduce repeat reads but competes with other workloads for local disk. A larger read-ahead buffer can improve sequential scans but may waste bandwidth when the access pattern is random. `Retain` protects the filesystem from accidental PVC deletion, which is often appropriate when the volume represents a durable dataset namespace rather than a disposable scratch cache.
 
-Which approach would you choose here and why: a ReadWriteMany CephFS volume for a multi-node training job whose dataset changes daily, or a JuiceFS object-backed mount with local cache for many repeated experiments over immutable dataset versions? A defensible answer names the workload's sharing requirement, update pattern, cache reuse opportunity, and durability expectations.
+> **Pause and predict:** Which approach would you choose here and why: a ReadWriteMany CephFS volume for a multi-node training job whose dataset changes daily, or a JuiceFS object-backed mount with local cache for many repeated experiments over immutable dataset versions?
+>
+> **Answer:** CephFS is the better default for frequently updated shared POSIX data, while JuiceFS is stronger for immutable versions with repeated reads because the cache can turn object-backed storage into a fast warm path.
 
 ## Dataset Caching and Data-Aware Scheduling
 
@@ -383,7 +397,9 @@ Total: 500GB downloaded, 2 hours total wait, $1 in S3 egress
 
 Those numbers are illustrative, but the direction is real: repeated reads turn network traffic into local traffic when the cache is warm. The hard part is keeping the cache close to the jobs that need it. If Kubernetes schedules a pod on a node with no cached data, the pod experiences a cold read even though another node in the cluster has the dataset ready. That is why storage design and scheduling design cannot be separated for AI workloads.
 
-Stop and think: if fifty engineers repeatedly train against the same five-hundred-gigabyte dataset every day, what costs would you include in the cache business case besides object-store egress? A complete answer includes GPU idle time, experiment turnaround, network contention, cache disk cost, operational overhead, and the risk of stale data.
+> **Stop and think:** If fifty engineers repeatedly train against the same five-hundred-gigabyte dataset every day, what costs would you include in the cache business case besides object-store egress?
+>
+> **Answer:** Include GPU idle time, experiment turnaround, network contention, cache disk cost, operational overhead, and the risk of stale data.
 
 Fluid is a CNCF sandbox project that brings dataset-aware scheduling to Kubernetes. Instead of treating a dataset as just another PVC, Fluid models the dataset as a resource and coordinates cache engines such as Alluxio, JuiceFS, or JindoFS under the hood. That resource model lets the platform track cache placement and influence pod scheduling so jobs prefer nodes where the needed data is already warm.
 
@@ -566,7 +582,9 @@ from torch.distributed.checkpoint import save
 save(model.state_dict(), checkpoint_id=f"/checkpoints/step_{step}")
 ```
 
-Pause and predict: what is the risk of using asynchronous checkpointing if the node crashes exactly while the background thread is writing the checkpoint? The correct instinct is to think beyond speed: a fast checkpoint strategy must also make incomplete writes detectable, make restore points unambiguous, and decide which storage tier becomes the source of truth after failure.
+> **Pause and predict:** What is the risk of using asynchronous checkpointing if the node crashes exactly while the background thread is writing the checkpoint?
+>
+> **Answer:** The write may leave a partial or corrupt checkpoint that looks usable unless the design uses temporary paths, completion markers, atomic promotion, validation, and a durable source of truth.
 
 | Storage Type | Write Speed | Best For |
 |-------------|-------------|----------|
@@ -1068,6 +1086,14 @@ You have completed this exercise when:
 - [Alluxio open source Helm chart repository](https://alluxio-charts.storage.googleapis.com/openSource)
 - [PyTorch distributed checkpoint API](https://pytorch.org/docs/stable/distributed.checkpoint.html)
 - [MinIO Kubernetes documentation](https://min.io/docs/minio/kubernetes/upstream/index.html)
+
+## Key Takeaways
+
+- AI workloads are often bottlenecked by data-pipeline throughput before they are bottlenecked by GPU compute.
+- Storage choices must follow the workload shape: random small-file reads, sequential shard reads, and checkpoint writes need different paths.
+- Topology-aware storage placement matters as much as topology-aware GPU placement when local NVMe or warm caches are involved.
+- Cache designs need freshness rules, hit-rate metrics, and scheduler behavior, not just fast second-run benchmarks.
+- Checkpoint storage is a recoverability system, so speed only counts when incomplete writes are detectable and completed checkpoints are durable.
 
 ## Next Module
 
