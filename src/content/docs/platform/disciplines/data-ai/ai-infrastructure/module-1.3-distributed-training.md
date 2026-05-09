@@ -292,7 +292,7 @@ Installing Multus is straightforward, but production readiness depends on the se
 
 ```bash
 # Install Multus CNI (thick plugin — recommended)
-kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset-thick.yml
+kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/v4.1.4/deployments/multus-daemonset-thick.yml
 
 # Verify
 kubectl get pods -n kube-system -l app=multus
