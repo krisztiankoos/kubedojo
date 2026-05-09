@@ -28,11 +28,14 @@ def _write(path: Path, content: str) -> None:
 def test_artifacts_index_lists_seeded_html_by_category(tmp_path: Path) -> None:
     first = tmp_path / "audit" / "report.html"
     second = tmp_path / "docs" / "migrations" / "html-first" / "_design-system.html"
+    third = tmp_path / "docs" / "decisions" / "decision-card.md"
     _write(first, "<!doctype html><title>Audit Report</title><h1>Report</h1>")
     _write(second, "<!doctype html><title>Design System</title><h1>Design</h1>")
+    _write(third, "# Keep Markdown Browseable\n\nDecision body.")
     now = time.time()
     os.utime(first, (now - 7200, now - 7200))
     os.utime(second, (now - 60, now - 60))
+    os.utime(third, (now - 30, now - 30))
 
     status, body, content_type = local_api.route_request(tmp_path, "/artifacts")
 
@@ -40,21 +43,25 @@ def test_artifacts_index_lists_seeded_html_by_category(tmp_path: Path) -> None:
     assert content_type == "text/html; charset=utf-8"
     assert "Audit Report" in body
     assert "Design System" in body
+    assert "Keep Markdown Browseable" in body
     assert "/artifacts/audit/report.html" in body
     assert "/artifacts/docs/migrations/html-first/_design-system.html" in body
+    assert "/artifacts/docs/decisions/decision-card.md" in body
+    assert "Markdown files" in body
     assert '<a class="navlink active" href="/artifacts"' in body
 
 
 def test_api_artifacts_returns_json_shape(tmp_path: Path) -> None:
-    _write(tmp_path / "docs" / "session-state" / "handoff.html", "<title>Handoff</title>")
+    _write(tmp_path / "docs" / "session-state" / "handoff.md", "# Handoff\n\nNotes.")
 
     status, body, content_type = local_api.route_request(tmp_path, "/api/artifacts")
 
     assert status == 200
     assert content_type == "application/json; charset=utf-8"
     assert body["Handoffs"][0]["title"] == "Handoff"
-    assert body["Handoffs"][0]["path"] == "docs/session-state/handoff.html"
-    assert body["Handoffs"][0]["url"] == "/artifacts/docs/session-state/handoff.html"
+    assert body["Handoffs"][0]["path"] == "docs/session-state/handoff.md"
+    assert body["Handoffs"][0]["url"] == "/artifacts/docs/session-state/handoff.md"
+    assert body["Handoffs"][0]["format"] == "md"
     assert isinstance(body["Handoffs"][0]["mtime"], float)
     assert isinstance(body["Handoffs"][0]["size_bytes"], int)
 
@@ -70,6 +77,22 @@ def test_artifact_html_serves_with_html_content_type(tmp_path: Path) -> None:
     assert status == 200
     assert body == b"<title>Reference</title>"
     assert content_type == "text/html; charset=utf-8"
+
+
+def test_artifact_markdown_renders_with_html_content_type(tmp_path: Path) -> None:
+    _write(
+        tmp_path / "STATUS.md",
+        "# Session Status\n\n- First item\n\n```python\nprint('ok')\n```",
+    )
+
+    status, body, content_type = local_api.route_request(tmp_path, "/artifacts/STATUS.md")
+
+    assert status == 200
+    assert content_type == "text/html; charset=utf-8"
+    assert "<h1>Session Status</h1>" in body
+    assert "<li>First item</li>" in body
+    assert "print" in body
+    assert '<a class="navlink active" href="/artifacts"' in body
 
 
 def test_artifact_assets_serve_only_from_allowed_tree(tmp_path: Path) -> None:
