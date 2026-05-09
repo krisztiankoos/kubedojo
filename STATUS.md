@@ -3,14 +3,15 @@
 > **Read this first every session. Update before ending.**
 >
 > This file is an **index**, not a log. Per-session handoffs live in
-> [`docs/session-state/`](./docs/session-state/) as dated files (`.md` or
-> `.html`). **Default to `.md`** per the consumer-direction lens
-> (`feedback_html_over_markdown_for_artifacts.md`) — handoffs are AI→AI
-> (next-session agent reads first via `Read`), so Markdown wins. Use
-> `.html` only when a handoff is genuinely user-facing (rare). This file
-> just points at them. When you finish a session, **add a row to "Latest
-> handoff" and shift the previous Latest into "Predecessor chain" — do
-> NOT replace this whole file**.
+> [`docs/session-state/`](./docs/session-state/) as dated files (`.html` or `.md`).
+> **Default to `.html`** when the session clears the earn-it gate (≥8 PRs merged,
+> or ≥1 policy/contract change, or ≥1 incident, or ≥1 new pattern worth
+> memorializing) — the briefing API handles agent cold-start; the *file* is
+> primarily read by the user. **Trivial sessions: append a 5–10 line note to STATUS.md
+> instead of creating a separate file.** Dispatch briefs (AI→AI, pasted into agents)
+> stay `.md` regardless. This file just points at handoffs. When you finish a session,
+> **add a row to "Latest handoff" and shift the previous Latest into "Predecessor
+> chain" — do NOT replace this whole file**.
 
 ## Cold-start protocol
 
@@ -24,7 +25,7 @@
 
 | Date | Thread | File | Status |
 |------|--------|------|--------|
-| 2026-05-09 (Prereqs + AI/ML marathon) | **13 critical-rubric modules cleared in one session via `run_388_batch.py` + PR #1061 (codex-desktop's unified `/artifacts` browser) merged at session start.** User overrode briefing's CKA/CKAD-first ordering → went Prereqs → on-prem AI/ML (9.1-9.6) → platform data-ai/ai-infrastructure (1.1-1.6). 14 PRs merged on main (`8b4d69cd → ba944502`). 13 codex writer dispatches + 13 cross-family reviews (gemini failed 13/13 → claude-sonnet-4-6 fallback worked 13/13). 3 codex re-spins for structural pedagogical regressions (PRs #1062, #1066, #1072 — restore Stop-and-think callouts, war-story anchors, Key Takeaways, paragraph rhythm). 7 inline orchestrator fixes (URL repairs, version pins, hyperlink restorations). 3 direct merges. **Codex spark cap → gpt-5.5 escalation pattern confirmed** — after ~7 dispatches, `gpt-5.3-codex-spark` started silently rejecting 5-9s into invocation; explicit `--model gpt-5.5` worked 2/2. **Hallucinated-nits theme reaffirmed** — 4 distinct cases where reviewer/codex asserted URL or version "issues" that didn't exist on disk; deterministic curl/PyPI verification before applying any "fix" is mandatory. Cleanup: 14 stale remote branches deleted at session start, codex worktree leftover removed, 7 untracked PR-residual files cleared. ~3h05m wall. | [`docs/session-state/2026-05-09-prereqs-and-aiml-marathon.md`](./docs/session-state/2026-05-09-prereqs-and-aiml-marathon.md) | **Next: (1) user picks the next bucket explicitly — they bypassed the briefing's CKA/CKAD ordering this session, so don't auto-resume on a default track. Backlog at <2.0: Platform Disciplines 65, Toolkits 52, Foundations 31, CKS 29, CKAD 23, on-prem-other ~30, Linux 9. (2) `/artifacts` UI brief is now executed (PR #1061 shipped). Codex-desktop dispatch list is empty. (3) Standing blockers unchanged: branch-protection UI flag for Incident dedup gate, optional GH_TOKEN rotation. (4) Spark cap should clear overnight; if doing volume work next session, default `dispatch_smart edit --agent codex` will be back to spark — escalate to `--model gpt-5.5` again only if spark goes silent.** |
+| 2026-05-09 (Prereqs + AI/ML marathon) | **13 critical-rubric modules cleared in one session via `run_388_batch.py` + PR #1061 (codex-desktop's unified `/artifacts` browser) merged at session start.** User overrode briefing's CKA/CKAD-first ordering → went Prereqs → on-prem AI/ML (9.1-9.6) → platform data-ai/ai-infrastructure (1.1-1.6). 14 PRs merged on main (`8b4d69cd → ba944502`). 13 codex writer dispatches + 13 cross-family reviews (gemini failed 13/13 → claude-sonnet-4-6 fallback worked 13/13). 3 codex re-spins for structural pedagogical regressions (PRs #1062, #1066, #1072 — restore Stop-and-think callouts, war-story anchors, Key Takeaways, paragraph rhythm). 7 inline orchestrator fixes (URL repairs, version pins, hyperlink restorations). 3 direct merges. **Codex spark cap → gpt-5.5 escalation pattern confirmed** — after ~7 dispatches, `gpt-5.3-codex-spark` started silently rejecting 5-9s into invocation; explicit `--model gpt-5.5` worked 2/2. **Hallucinated-nits theme reaffirmed** — 4 distinct cases where reviewer/codex asserted URL or version "issues" that didn't exist on disk; deterministic curl/PyPI verification before applying any "fix" is mandatory. Cleanup: 14 stale remote branches deleted at session start, codex worktree leftover removed, 7 untracked PR-residual files cleared. ~3h05m wall. | [`docs/session-state/2026-05-09-prereqs-and-aiml-marathon.html`](./docs/session-state/2026-05-09-prereqs-and-aiml-marathon.html) | **Next: (1) user picks the next bucket explicitly — they bypassed the briefing's CKA/CKAD ordering this session, so don't auto-resume on a default track. Backlog at <2.0: Platform Disciplines 65, Toolkits 52, Foundations 31, CKS 29, CKAD 23, on-prem-other ~30, Linux 9. (2) `/artifacts` UI brief is now executed (PR #1061 shipped). Codex-desktop dispatch list is empty. (3) Standing blockers unchanged: branch-protection UI flag for Incident dedup gate, optional GH_TOKEN rotation. (4) Spark cap should clear overnight; if doing volume work next session, default `dispatch_smart edit --agent codex` will be back to spark — escalate to `--model gpt-5.5` again only if spark goes silent.** |
 
 ## Predecessor chain (most-recent first)
 

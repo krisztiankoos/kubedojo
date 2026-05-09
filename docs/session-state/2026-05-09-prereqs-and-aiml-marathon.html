@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>2026-05-09 — Prereqs + AI/ML Rubric-Critical Marathon (13 modules)</title>
+<link rel="stylesheet" href="/static/design-system.css" />
+<style>
+/* 6-tile KPI grid — shared design-system.css uses repeat(4,1fr); this handoff has 6 tiles, 3×2 fits better */
+.kpis { grid-template-columns: repeat(3, 1fr); }
+/* .value.neutral — not defined in shared design-system.css; needed for informational counts with no pass/fail signal */
+.kpi .value.neutral { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <h1>2026-05-09 — Prereqs + AI/ML Rubric-Critical Marathon (13 modules)</h1>
+    <div class="sub">13 rubric-critical modules cleared via <code class="inline">run_388_batch.py</code>. Prereqs → on-prem AI/ML 9.1–9.6 → Platform data-ai/ai-infra 1.1–1.6. User overrode briefing's CKA/CKAD-first ordering.</div>
+  </div>
+  <div class="meta">
+    <div><b>Date:</b> 2026-05-09</div>
+    <div><b>Wall clock:</b> ~3h 05m</div>
+    <div><b>Pipeline:</b> <code class="inline">dispatch_388_pilot.py</code></div>
+    <div><b>Writer:</b> codex gpt-5.5 (danger, --search)</div>
+    <div><b>Reviewer:</b> gemini → claude-sonnet-4-6 fallback</div>
+    <div><b>Predecessor:</b> <a href="/artifacts/docs/session-state/2026-05-10-overnight-html-migration-complete-and-cka-part2-marathon.html">2026-05-10 overnight HTML migration + CKA Part 2</a></div>
+  </div>
+</header>
+
+<!-- KPI tiles — 6 tiles in 3×2 grid (bespoke grid override above) -->
+<section class="kpis">
+  <div class="kpi">
+    <div class="label">Modules Cleared</div>
+    <div class="value ok">13</div>
+    <div class="sub">Prereqs 1 · on-prem AI/ML 6 · platform AI/ML 6</div>
+  </div>
+  <div class="kpi">
+    <div class="label">PRs Merged on Main</div>
+    <div class="value ok">14</div>
+    <div class="sub"><span class="sha">8b4d69cd</span> → <span class="sha">ba944502</span></div>
+  </div>
+  <div class="kpi">
+    <div class="label">Codex Re-Spins</div>
+    <div class="value warn">3</div>
+    <div class="sub">PRs #1062 · #1066 · #1072 — structural regressions</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Inline Orchestrator Fixes</div>
+    <div class="value neutral">7</div>
+    <div class="sub">2 × single-line NEEDS CHANGES + 5 × APPROVE_WITH_NITS mechanical</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Gemini Review Failures</div>
+    <div class="value fail">13 / 13</div>
+    <div class="sub">100% fallback rate — all ended <code class="inline">ok: False, elapsed: ~15s</code></div>
+  </div>
+  <div class="kpi">
+    <div class="label">Claude Fallback Successes</div>
+    <div class="value ok">13 / 13</div>
+    <div class="sub">dispatch_388_pilot.py:342 fallback path — marathon kept moving</div>
+  </div>
+</section>
+
+<!-- Review outcome summary -->
+<h2>Review Outcomes</h2>
+<p>
+  <span class="reviewer error">gemini</span>&nbsp;<span class="pill fail">0 / 13</span>
+  &nbsp;→ auto-fallback →&nbsp;
+  <span class="reviewer claude">claude-sonnet-4-6</span>&nbsp;<span class="pill ok">13 / 13</span>
+</p>
+<p>
+  <span class="pill warn">3 × APPROVE_WITH_NITS → merge (nits deferred)</span>&ensp;
+  <span class="pill warn">5 × APPROVE_WITH_NITS → inline-fix + merge</span>&ensp;
+  <span class="pill fail">2 × NEEDS CHANGES → inline-fix</span>&ensp;
+  <span class="pill fail">3 × NEEDS CHANGES → codex re-spin</span>
+</p>
+
+<div class="verdict-bar" title="Verdict distribution across all 13 modules">
+  <div class="b-ok"   style="flex: 3;">3 × NITS → direct merge</div>
+  <div class="b-warn" style="flex: 5;">5 × NITS → inline-fix</div>
+  <div class="b-fail" style="flex: 2;">2 × NC → inline-fix</div>
+  <div class="b-fail" style="flex: 3;">3 × NC → re-spin</div>
+</div>
+<div class="verdict-bar-legend">All 13 modules ultimately landed on <code class="inline">main</code>. 14 PRs total, including PR #1061 (<code class="inline">/artifacts</code> browser) merged at session start.</div>
+
+<!-- Timeline -->
+<h2>Session Timeline</h2>
+<section class="timeline">
+  <ol>
+    <li class="ok">
+      <span class="ts">Session start</span>
+      <span class="what">Hygiene pass</span>
+      <span class="detail">— 14 stale remote branches deleted · codex worktree leftover removed · 7 untracked PR-residual files cleared</span>
+    </li>
+    <li class="ok">
+      <span class="ts">~0h 05m</span>
+      <span class="what">PR #1061 merged</span>
+      <span class="detail">— codex-authored unified <code class="inline">/artifacts</code> HTML+MD browser; codex-desktop brief fully executed</span>
+    </li>
+    <li class="ok">
+      <span class="ts">~0h 10m</span>
+      <span class="what">Prereqs — module-1.2-kubectl-basics (PR #1062)</span>
+      <span class="detail">— NEEDS CHANGES structural regression → re-spin → merged · claude hallucinated <code class="inline">debug-running-pod</code> 404 (curl confirmed 200)</span>
+    </li>
+    <li class="ok">
+      <span class="ts">~0h 35m</span>
+      <span class="what">on-prem AI/ML 9.1–9.3 (PRs #1063–#1065)</span>
+      <span class="detail">— AMD <code class="inline">instinct.docs.amd.com</code> false-flag caught on #1063 · inline fixes on #1064 #1065</span>
+    </li>
+    <li class="warn">
+      <span class="ts">~7th dispatch</span>
+      <span class="what">Codex spark cap hit</span>
+      <span class="detail">— <code class="inline">gpt-5.3-codex-spark</code> began returning <code class="inline">OK: False, elapsed: 5–9s, resp_chars: 0</code> · escalated to <code class="inline">--model gpt-5.5</code></span>
+    </li>
+    <li class="ok">
+      <span class="ts">~1h 30m</span>
+      <span class="what">on-prem AI/ML 9.4–9.6 (PRs #1066–#1068)</span>
+      <span class="detail">— PR #1066: gpt-5.5 re-spin (330s) + orchestrator cleanup of 3 collateral regressions · #1068: ZenML/Evidently version hallucination caught via PyPI</span>
+    </li>
+    <li class="ok">
+      <span class="ts">~2h 00m</span>
+      <span class="what">Platform data-ai/ai-infra 1.1–1.6 (PRs #1069–#1074)</span>
+      <span class="detail">— PR #1072: gpt-5.5 re-spin (150s) · 5 inline orchestrator fixes across remaining PRs</span>
+    </li>
+    <li class="ok">
+      <span class="ts">~3h 05m</span>
+      <span class="what">Session end — all 13 modules on <code class="inline">main</code></span>
+      <span class="detail">— Rubric-critical backlog reduced by 13 · no new memories needed (all patterns already captured)</span>
+    </li>
+  </ol>
+</section>
+
+<!-- Per-module status table -->
+<h2>Per-Module Status</h2>
+<table class="modules">
+  <thead>
+    <tr>
+      <th>Module</th>
+      <th>PR</th>
+      <th>Round-1 verdict</th>
+      <th>Resolution</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="part-header"><td colspan="4">Prereqs (1 module)</td></tr>
+    <tr>
+      <td class="module">1.2 — kubectl basics
+        <span class="sub">module-1.2-kubectl-basics.md</span>
+      </td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1062" target="_blank">#1062</a></td>
+      <td><span class="pill fail">NEEDS CHANGES</span> structural regression — missing callouts, flattened hooks</td>
+      <td><span class="pill ok">Re-spin → merged</span></td>
+    </tr>
+    <tr class="part-header"><td colspan="4">on-prem AI/ML Infrastructure — modules 9.1–9.6 (6 modules)</td></tr>
+    <tr>
+      <td class="module">on-prem AI/ML 9.1</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1063" target="_blank">#1063</a></td>
+      <td><span class="pill warn">APPROVE_WITH_NITS</span> content additions — Key Takeaways, war story</td>
+      <td><span class="pill ok">Merged (nits deferred)</span></td>
+    </tr>
+    <tr>
+      <td class="module">on-prem AI/ML 9.2</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1064" target="_blank">#1064</a></td>
+      <td><span class="pill fail">NEEDS CHANGES</span> single-line restoration — CEL predicate / version mention</td>
+      <td><span class="pill ok">Inline-fix → merged</span></td>
+    </tr>
+    <tr>
+      <td class="module">on-prem AI/ML 9.3</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1065" target="_blank">#1065</a></td>
+      <td><span class="pill warn">APPROVE_WITH_NITS</span> mechanical — URL pin, hyperlink restoration</td>
+      <td><span class="pill ok">Inline-fix → merged</span></td>
+    </tr>
+    <tr>
+      <td class="module">on-prem AI/ML 9.4</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1066" target="_blank">#1066</a></td>
+      <td><span class="pill fail">NEEDS CHANGES</span> structural regression — semicolon-walls, missing war stories</td>
+      <td><span class="pill ok">Re-spin gpt-5.5 (330s) → merged</span>
+        <span class="sub">+ orchestrator cleanup commit for 3 collateral regressions</span>
+      </td>
+    </tr>
+    <tr>
+      <td class="module">on-prem AI/ML 9.5</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1067" target="_blank">#1067</a></td>
+      <td><span class="pill warn">APPROVE_WITH_NITS</span> mechanical — var substitution, paragraph break</td>
+      <td><span class="pill ok">Inline-fix → merged</span></td>
+    </tr>
+    <tr>
+      <td class="module">on-prem AI/ML 9.6</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1068" target="_blank">#1068</a></td>
+      <td><span class="pill warn">APPROVE_WITH_NITS</span> content additions — Q-explanation polish</td>
+      <td><span class="pill ok">Merged (nits deferred)</span></td>
+    </tr>
+    <tr class="part-header"><td colspan="4">Platform data-ai / ai-infrastructure — modules 1.1–1.6 (6 modules)</td></tr>
+    <tr>
+      <td class="module">platform AI/ML 1.1</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1069" target="_blank">#1069</a></td>
+      <td><span class="pill warn">APPROVE_WITH_NITS</span> mechanical — URL pin, version clarification</td>
+      <td><span class="pill ok">Inline-fix → merged</span></td>
+    </tr>
+    <tr>
+      <td class="module">platform AI/ML 1.2</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1070" target="_blank">#1070</a></td>
+      <td><span class="pill fail">NEEDS CHANGES</span> single-line restoration — broken URL, dead reference</td>
+      <td><span class="pill ok">Inline-fix → merged</span></td>
+    </tr>
+    <tr>
+      <td class="module">platform AI/ML 1.3</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1071" target="_blank">#1071</a></td>
+      <td><span class="pill warn">APPROVE_WITH_NITS</span> mechanical — hyperlink restoration, paragraph break</td>
+      <td><span class="pill ok">Inline-fix → merged</span></td>
+    </tr>
+    <tr>
+      <td class="module">platform AI/ML 1.4</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1072" target="_blank">#1072</a></td>
+      <td><span class="pill fail">NEEDS CHANGES</span> structural regression — missing Key Takeaways, merged LO bullets</td>
+      <td><span class="pill ok">Re-spin gpt-5.5 (150s) → merged</span></td>
+    </tr>
+    <tr>
+      <td class="module">platform AI/ML 1.5</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1073" target="_blank">#1073</a></td>
+      <td><span class="pill warn">APPROVE_WITH_NITS</span> mechanical — URL pin, var substitution</td>
+      <td><span class="pill ok">Inline-fix → merged</span></td>
+    </tr>
+    <tr>
+      <td class="module">platform AI/ML 1.6</td>
+      <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1074" target="_blank">#1074</a></td>
+      <td><span class="pill warn">APPROVE_WITH_NITS</span> content additions — Key Takeaways bullets</td>
+      <td><span class="pill ok">Merged (nits deferred)</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- Session patterns / narratives -->
+<h2>Session Patterns</h2>
+<div class="lessons">
+  <div class="lesson">
+    <h3>Codex spark cap → gpt-5.5 escalation (pattern confirmed)</h3>
+    <ul>
+      <li><b>Trigger:</b> After ~7 codex dispatches, <code class="inline">gpt-5.3-codex-spark</code> started returning <code class="inline">OK: False, elapsed: 5–9s, resp_chars: 0</code> — silent rejection at session-init, not a classic rate-limit error. Smoke-test on default codex model still passed → cap is spark-specific.</li>
+      <li><b>Resolution:</b> <code class="inline">dispatch_smart edit --agent codex --model gpt-5.5 --mode danger</code> succeeded 2/2: PR #1066 respin in 330s, PR #1072 respin in 150s.</li>
+      <li><b>Contract:</b> <code class="inline">dispatch_smart</code> does NOT auto-escalate. Orchestrator must override <code class="inline">--model</code> explicitly when spark goes silent. Confirms <code class="inline">feedback_spark_rate_limit_fallback_ladder.md</code>.</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>Hallucinated review nits — 4 confirmed cases</h3>
+    <ul>
+      <li><b>PR #1062:</b> claude claimed <code class="inline">debug-running-pod</code> was a 404 needing fix. curl confirmed 200 before AND after the respin.</li>
+      <li><b>PR #1063:</b> claude flagged <code class="inline">instinct.docs.amd.com</code> as suspect. curl confirmed 200; suggested <code class="inline">rocm.docs.amd.com</code> was the actual 404.</li>
+      <li><b>PR #1066:</b> codex claimed v0.4.2 → "200 redirect". v0.4.2 actually returns plain 200 (no redirect).</li>
+      <li><b>PR #1068:</b> claude flagged Evidently 0.7.21 / ZenML 0.94.2 as "potentially hallucinated, should be 0.4–0.5 era". PyPI confirmed both correct (latest 0.7.21 / 0.94.3).</li>
+      <li><b>Rule:</b> Always curl/PyPI-verify before applying any URL/version fix a reviewer asserts. <code class="inline">feedback_deterministic_over_hallucination.md</code> (TOP).</li>
+    </ul>
+  </div>
+</div>
+<div class="lessons" style="margin-top: 16px;">
+  <div class="lesson">
+    <h3>codex-desktop UI brief executed — PR #1061</h3>
+    <ul>
+      <li>The <code class="inline">docs/briefs/2026-05-09-codex-desktop-artifacts-ui-brief.md</code> brief was authored in the prior session and dispatched to codex-desktop.</li>
+      <li>PR #1061 (unified <code class="inline">/artifacts</code> HTML+MD browser, codex-authored) merged at session start. Codex-desktop dispatch list is now empty.</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>Codex re-spin collateral corruption — bulk regex artifact</h3>
+    <ul>
+      <li>PR #1066's gpt-5.5 respin (<span class="sha">e75d759c</span>) restored 4 requested fixes correctly but introduced 3 separate new regressions: filename <code class="inline">ollama-network-policy.yaml</code> → <code class="inline">ollama-network-policy; yaml</code>, link <code class="inline">module-9.6-edge-inference</code> → <code class="inline">module-9. 6-edge-inference</code> (literal space), 26 raw <code class="inline">&lt;p&gt;</code>/<code class="inline">&lt;ul&gt;</code>/<code class="inline">&lt;li&gt;</code> tags instead of markdown.</li>
+      <li><b>Cause:</b> Over-eager bulk-substitution pass (period→semicolon in unintended places). Required a 2nd orchestrator cleanup commit (<span class="sha">9bb4771a</span>) using a Python one-shot for HTML-stripping + targeted replacement.</li>
+      <li><b>Lesson:</b> When codex returns from a "broad mechanical edit" task, scan the full diff for collateral substitutions before declaring victory — not just the requested fixes.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Next session backlog -->
+<h2>Next Session</h2>
+<p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">User must pick the next bucket explicitly — they bypassed the briefing's CKA/CKAD ordering this session. Don't auto-resume on any default track. The ai/ track-aliases (11 modules at avg 4.20+) are NOT rubric-critical; user noted they're a separate polish-pass decision.</p>
+
+<table class="modules">
+  <thead>
+    <tr>
+      <th>Track</th>
+      <th>Modules remaining at &lt;2.0</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="module">Platform Disciplines</td>
+      <td><span class="pill warn">65</span></td>
+      <td class="metrics">Was 71 · <b>6 cleared this session</b></td>
+    </tr>
+    <tr>
+      <td class="module">Platform Toolkits</td>
+      <td><span class="pill warn">52</span></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td class="module">Platform Foundations</td>
+      <td><span class="pill warn">31</span></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td class="module">CKS</td>
+      <td><span class="pill warn">29</span></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td class="module">CKAD</td>
+      <td><span class="pill warn">23</span></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td class="module">On-Premises (other sub-sections)</td>
+      <td><span class="pill warn">~30</span></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td class="module">Linux Foundations + Operations</td>
+      <td><span class="pill warn">9</span></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- Standing blockers -->
+<h2>Standing Blockers (unchanged)</h2>
+<div class="lessons">
+  <div class="lesson">
+    <h3>Branch protection UI flag</h3>
+    <ul>
+      <li>Making the <code class="inline">Incident dedup gate</code> workflow check a <em>required</em> check via GitHub Settings → Branches needs a UI click (or admin API token). Cannot be done from orchestrator's PAT. Gate runs and reports pass/fail but doesn't formally block merges.</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>Minor blockers</h3>
+    <ul>
+      <li><b>GH_TOKEN rotation</b> — deferred; functional impact none.</li>
+      <li><b>dispatcher → <code class="inline">gh pr comment</code> 401</b> — known minor bug; review excerpts recoverable from JSONL even if not posted to PRs.</li>
+      <li><b>Spark cap</b> — clears overnight. Next session can start on default <code class="inline">dispatch_smart edit --agent codex</code>; escalate to <code class="inline">--model gpt-5.5</code> only if spark goes silent again.</li>
+    </ul>
+  </div>
+</div>
+
+<footer class="report-footer">
+  <div>2026-05-09 · ~3h 05m wall · 14 PRs merged (<span class="sha">8b4d69cd</span> → <span class="sha">ba944502</span>) · 13 codex dispatches + 3 re-spins</div>
+  <div>Predecessor: <a href="/artifacts/docs/session-state/2026-05-10-overnight-html-migration-complete-and-cka-part2-marathon.html">2026-05-10 overnight HTML migration + CKA Part 2 marathon</a></div>
+</footer>
+
+</div>
+</body>
+</html>
