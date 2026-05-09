@@ -103,19 +103,25 @@ class ClaudeAdapter:
             - ``output_format: str`` — defaults to "text"
             - ``use_bare: bool`` — explicit opt-out of --bare (default: auto-enable
               when no session + ANTHROPIC_API_KEY is set)
+            - ``use_path_claude: bool`` — opt in to a PATH-resolved ``claude``
+              binary when available; otherwise npx stays the default
         """
         tc: dict[str, Any] = tool_config or {}
 
-        # Command prefix — respect both the packaged npx path and a local
-        # `claude` binary if present. The bridge uses CLAUDE_CMD=["npx", "@anthropic-ai/claude-code@latest"]
-        # as the canonical prefix; we default to the same. Callers can
-        # override by passing ``tool_config={"cmd_prefix": [...]}``.
+        # Command prefix — default to the packaged npx invocation so we
+        # avoid drift from stale PATH installs. PATH `claude` is only used
+        # when callers explicitly opt in via ``use_path_claude`` or
+        # ``KUBEDOJO_CLAUDE_USE_PATH=1``. Full prefix overrides still win via
+        # ``tool_config={"cmd_prefix": [...]}``.
         cmd_prefix = tc.get("cmd_prefix")
         if cmd_prefix:
-            cmd: list[str] = list(cmd_prefix)
+            prefix: list[str] = list(cmd_prefix)
         else:
-            claude_bin = shutil.which("claude")
-            cmd = [claude_bin] if claude_bin else ["npx", "@anthropic-ai/claude-code@latest"]
+            use_path_claude = bool(tc.get("use_path_claude")) or os.environ.get("KUBEDOJO_CLAUDE_USE_PATH") == "1"
+            claude_bin = shutil.which("claude") if use_path_claude else None
+            prefix = [claude_bin] if claude_bin else ["npx", "@anthropic-ai/claude-code@latest"]
+
+        cmd: list[str] = list(prefix)
 
         cmd.append("-p")
 
@@ -161,12 +167,9 @@ class ClaudeAdapter:
         # Cache-warmth optimization (CC 2.1.98+)
         try:
             from utils.claude_version import supports_exclude_dynamic_system_prompt_sections
-            # Probe the prefix we're about to run (matches the actual binary)
-            probe_prefix = tuple(cmd[:1]) if len(cmd) >= 1 else tuple(cmd[:2] or ["claude"])
-            if cmd_prefix:
-                probe_prefix = tuple(cmd_prefix)
-            elif not shutil.which("claude"):
-                probe_prefix = ("npx", "@anthropic-ai/claude-code@latest")
+            # Probe the same prefix we're about to run so version gating
+            # stays aligned with the selected command.
+            probe_prefix = tuple(prefix)
             if supports_exclude_dynamic_system_prompt_sections(probe_prefix):
                 cmd.append("--exclude-dynamic-system-prompt-sections")
         except ImportError:
