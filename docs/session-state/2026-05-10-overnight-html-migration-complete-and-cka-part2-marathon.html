@@ -433,6 +433,13 @@ If user is back AND marathon is done:
       <td><span class="pill warn">merged WITH NITS</span></td>
       <td>Auto-merger first attempt (v1) reported "merge FAILED" because of local-branch-delete error, but origin actually merged at 02:08:09Z. Patched to v2 (worktree-remove first, then branch-delete). Repetitive Patterns section nit, otherwise approved.</td>
     </tr>
+    <tr>
+      <td>12/29</td>
+      <td class="module">module-3.3-dns</td>
+      <td class="pr"><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1039">#1039</a></td>
+      <td><span class="pill warn">merged WITH NITS</span></td>
+      <td>First clean auto-merger run (v2). Mild nit (no padding flagged). Then discovered dispatcher-merged PRs leave worktrees behind → batch-cleaned 7 stale worktrees from modules 2.1-2.7 + patched auto-merger to v3 (handles BOTH merged and merge_held_nits events).</td>
+    </tr>
   </tbody>
 </table>
 
