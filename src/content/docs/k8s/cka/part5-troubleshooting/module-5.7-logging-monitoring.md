@@ -1,5 +1,5 @@
 ---
-revision_pending: true
+revision_pending: false
 title: "Module 5.7: Logging & Monitoring"
 slug: k8s/cka/part5-troubleshooting/module-5.7-logging-monitoring
 sidebar:
@@ -22,46 +22,24 @@ lab:
 ## What You'll Be Able to Do
 
 After this module, you will be able to:
-- **Query** container logs using kubectl logs with container selection, previous logs, and follow mode
-- **Monitor** cluster resource usage with kubectl top (nodes and pods) and explain metrics-server
-- **Implement** sidecar-based logging for applications that write to files instead of stdout
-- **Debug** metrics-server issues and explain how resource metrics flow from kubelet to API server
 
----
+- **Debug** container log investigations using `kubectl logs` with container selection, previous logs, follow mode, timestamps, and label selectors.
+- **Evaluate** Kubernetes events to diagnose scheduling, mount, probe, restart, and eviction failures before event retention expires.
+- **Implement** sidecar-based logging for applications that write files instead of `stdout` and `stderr`.
+- **Monitor** resource usage with `kubectl top` by explaining how Metrics Server moves kubelet metrics into the `metrics.k8s.io` API.
+- **Correlate** node-level logs, container logs, events, and metrics to choose the next diagnostic action during a Kubernetes 1.35 troubleshooting session.
 
 ## Why This Module Matters
 
-Logs and metrics are your eyes into what's happening in a cluster. Without them, troubleshooting is guesswork. Understanding how to access container logs, interpret events, and use metrics to identify resource issues is fundamental to effective Kubernetes operations.
+Hypothetical scenario: a Deployment rolls out during a release window, the new pods alternate between `Running` and `CrashLoopBackOff`, the application team says their health endpoint passed in staging, and the platform team sees no obvious node failure. In that moment, the useful question is not "where are the logs?" but "which evidence source can still answer the current question?" Container logs may show an exception, previous container logs may show the line just before a restart, events may show an image pull or probe failure, and resource metrics may show that the pod is being throttled or killed under pressure.
 
-> **The Security Camera Analogy**
->
-> Logs are like security camera footage - they record what happened and when. Events are like a security guard's incident reports - notable occurrences written down. Metrics are like building sensors - temperature, occupancy, power usage. Together, they tell the complete story of what's happening in your cluster.
+Logging and monitoring in Kubernetes are deliberately split across layers because no single API can tell the whole story. The kubelet captures container `stdout` and `stderr`, the API server stores short-lived Events, Metrics Server exposes recent CPU and memory measurements, and node services such as kubelet and containerd keep their own journals. A strong troubleshooter moves across those layers with a sequence of hypotheses, rather than staring at one noisy log stream and hoping the important line appears.
 
----
+This module turns the quick commands from earlier troubleshooting lessons into an operational workflow. You will practice reading current and previous container logs, interpreting events, checking resource metrics, using a sidecar for file-based logs, and falling back to node logs when the Kubernetes API is unavailable or incomplete. The point is not to memorize every flag; the point is to know which observable can still contain evidence, what each tool cannot show, and how to narrow a failure without inventing a story.
 
-## What You'll Learn
+## Container Logs: Current, Previous, and Multi-Container Evidence
 
-By the end of this module, you'll be able to:
-- Access and filter container logs effectively
-- Understand Kubernetes events and their significance
-- Use kubectl top for resource metrics
-- Navigate log locations on nodes
-- Apply logging strategies for troubleshooting
-
----
-
-## Did You Know?
-
-- **Logs go to stdout/stderr**: Kubernetes captures whatever containers write to stdout and stderr - that's the main logging "magic"
-- **Events are stored in etcd**: Events are regular Kubernetes objects with a 1-hour default TTL
-- **Metrics Server is not installed by default**: kubectl top requires Metrics Server to be running
-- **Log rotation is kubelet's job**: kubelet rotates container logs based on size and count settings
-
----
-
-## Part 1: Container Logs
-
-### 1.1 How Container Logging Works
+Kubernetes logging starts with a simple contract: applications should write useful diagnostic output to `stdout` and `stderr`, and the node will make that output available through the kubelet. The container runtime writes the stream into log files on the node, kubelet exposes those files through its API, and `kubectl logs` retrieves the content through the Kubernetes API path. That design keeps application containers simple, but it also means a log line is scoped to a container instance, not to a Deployment, a Service, or a long-lived business process.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -87,66 +65,62 @@ By the end of this module, you'll be able to:
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 1.2 Basic Log Commands
+The practical consequence is that the first log command you run should match the failure mode you are testing. A stable single-container pod can usually be inspected directly, while a restarted container often needs `--previous`, and a multi-container pod needs explicit container selection. If you skip that choice, you may inspect the wrong stream and build the wrong diagnosis, especially when a sidecar, init container, or log forwarder is the component actually failing.
 
 ```bash
 # View logs from a pod (single container)
-k logs <pod>
+kubectl logs <pod>
 
 # View logs from specific container (multi-container pod)
-k logs <pod> -c <container>
+kubectl logs <pod> -c <container>
 
 # Follow logs in real-time
-k logs <pod> -f
+kubectl logs <pod> -f
 
 # Show last N lines
-k logs <pod> --tail=50
+kubectl logs <pod> --tail=50
 
 # Show logs since time
-k logs <pod> --since=1h
-k logs <pod> --since=30m
+kubectl logs <pod> --since=1h
+kubectl logs <pod> --since=30m
 
 # Show logs with timestamps
-k logs <pod> --timestamps
+kubectl logs <pod> --timestamps
 
 # Combine options
-k logs <pod> --tail=100 --timestamps -f
+kubectl logs <pod> --tail=100 --timestamps -f
 ```
 
-> **Stop and think**: If a pod has multiple containers and you run `kubectl logs <pod>`, what happens? How does Kubernetes know which container's logs to show?
+Pause and predict: if a pod has two containers and you run `kubectl logs <pod>` without `-c`, what evidence do you expect Kubernetes to return, and what risk does that create for your investigation? The important habit is to ask what object boundary the command is reading from. A pod is a scheduling unit, but logs belong to containers inside that pod, so a command that does not name a container can be ambiguous when more than one stream exists.
 
-### 1.3 Multi-Container Pod Logs
+Multi-container pods are common in production even when the application itself seems simple. A service mesh proxy, file tailer, authentication helper, or metrics exporter can all live beside the main application and fail independently. When the symptom involves traffic, logging, startup ordering, or shared volumes, inspect the container list before assuming the app container is the only useful source of evidence.
 
 ```bash
 # List containers in a pod
-k get pod <pod> -o jsonpath='{.spec.containers[*].name}'
+kubectl get pod <pod> -o jsonpath='{.spec.containers[*].name}'
 
 # Get logs from specific container
-k logs <pod> -c <container>
+kubectl logs <pod> -c <container>
 
 # Get logs from all containers
-k logs <pod> --all-containers=true
+kubectl logs <pod> --all-containers=true
 
 # Get logs from init containers
-k logs <pod> -c <init-container>
+kubectl logs <pod> -c <init-container>
 ```
 
-### 1.4 Previous Container Logs
-
-Crucial for CrashLoopBackOff troubleshooting:
+Previous container logs are essential for `CrashLoopBackOff` because the current container instance may not have reached the failing code path yet. `kubectl logs <pod>` reads the active instance by default, so it can show only a startup banner while the useful stack trace is attached to the instance that died moments earlier. The `--previous` flag changes the target from the current container to the last terminated instance, which is often the difference between seeing "starting application" and seeing the exception that caused the restart.
 
 ```bash
 # Get logs from previous container instance (after crash)
-k logs <pod> --previous
-k logs <pod> -c <container> --previous
+kubectl logs <pod> --previous
+kubectl logs <pod> -c <container> --previous
 
 # This shows what was logged before the container died
 # Essential for understanding why it crashed
 ```
 
-### 1.5 Sidecar-Based Logging
-
-When a legacy application writes to a file (e.g., `/var/log/app.log`) instead of `stdout`/`stderr`, Kubernetes won't capture its logs automatically. You can implement a streaming sidecar container to read the file and write it to its own `stdout`. An `emptyDir` volume acts as the bridge here, providing shared ephemeral storage that both containers can mount.
+File-based logging is the awkward case because Kubernetes does not automatically collect arbitrary files inside a container filesystem. A legacy process that writes only to `/var/log/app.log` can be perfectly chatty from the application's point of view and completely silent from `kubectl logs`. The usual bridge is a sidecar container that shares a volume with the application, tails the file, and writes the same content to its own `stdout`, where the kubelet can capture it normally.
 
 ```yaml
 apiVersion: v1
@@ -171,29 +145,29 @@ spec:
     emptyDir: {}
 ```
 
-You can then view the logs by querying the sidecar: `k logs legacy-app -c log-tailer`.
+You can then view the logs by querying the sidecar with `kubectl logs legacy-app -c log-tailer`. This pattern is useful when you cannot change the application quickly, but it has tradeoffs: the sidecar consumes resources, the shared `emptyDir` is node-local and ephemeral, and a naive `tail -f` can miss rotation behavior unless the application and tailer agree on file handling. Treat it as a compatibility pattern, not as an excuse to ignore modern `stdout` and structured logging practices.
 
-### 1.6 Logs from Labels/Selectors
+Label and controller log selection help when the failing behavior exists across replicas. `kubectl logs deployment/<name>` follows the controller relationship, while `kubectl logs -l app=nginx` selects pods by labels, which is useful when a Deployment, StatefulSet, or Job created several pods that share the same symptom. These commands are convenient, but they can also produce interleaved output, so combine them with timestamps, container names, and a small `--tail` when you are trying to reconstruct timing.
 
 ```bash
 # Logs from all pods with a label
-k logs -l app=nginx
+kubectl logs -l app=nginx
 
 # Logs from all pods in a deployment
-k logs deployment/my-deployment
+kubectl logs deployment/my-deployment
 
 # Follow logs from all matching pods
-k logs -l app=nginx -f
+kubectl logs -l app=nginx -f
 
 # With container name for multi-container pods
-k logs -l app=nginx -c <container>
+kubectl logs -l app=nginx -c <container>
 ```
 
----
+Before running this, what output do you expect if one selected pod is still pending and another is already running? The command can only return logs for containers that have produced logs, so missing output is not always evidence that an application is quiet. It may mean the container never started, the wrong namespace was selected, the label matched fewer pods than expected, or the useful evidence lives in Events rather than logs.
 
-## Part 2: Kubernetes Events
+## Kubernetes Events: Short-Lived Clues from the Control Plane
 
-### 2.1 Understanding Events
+Events are Kubernetes objects that record notable state changes and operational warnings. They are not application logs, and they are not a permanent audit trail; they are short-lived clues produced by components such as the scheduler, kubelet, controllers, and API server. In troubleshooting, Events are usually the first place to look when a pod is pending, cannot mount a volume, fails a probe, pulls an image slowly, gets evicted, or restarts before the application can write useful logs.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -214,34 +188,32 @@ k logs -l app=nginx -c <container>
 └──────────────────────────────────────────────────────────────┘
 ```
 
-> **Pause and predict**: If a pod was created 3 days ago and has been CrashLoopBackOff ever since, will `kubectl get events` show the original scheduling and creation events? Why or why not?
-
-### 2.2 Viewing Events
+The most important limitation is retention. The default API server event TTL is one hour, which means events are designed for near-real-time diagnosis rather than weekend forensics. If a batch job failed two days ago and no event export pipeline exists, `kubectl get events` may truthfully return nothing even though Kubernetes emitted useful warnings at the time. That is why production observability stacks often ship events into a log platform or event-specific collector before the API server garbage-collects them.
 
 ```bash
 # All events in current namespace
-k get events
+kubectl get events
 
 # All events cluster-wide
-k get events -A
+kubectl get events -A
 
 # Sort by time (most recent last)
-k get events --sort-by='.lastTimestamp'
+kubectl get events --sort-by='.lastTimestamp'
 
 # Sort by time (most recent first)
-k get events --sort-by='.lastTimestamp' | tac
+kubectl get events --sort-by='.lastTimestamp' | tac
 
 # Filter by type
-k get events --field-selector type=Warning
+kubectl get events --field-selector type=Warning
 
 # Events for specific object
-k get events --field-selector involvedObject.name=<pod-name>
+kubectl get events --field-selector involvedObject.name=<pod-name>
 
 # Watch events in real-time
-k get events -w
+kubectl get events -w
 ```
 
-### 2.3 Common Event Reasons
+Pause and predict: if a pod was created three days ago and has been restarting since then, which events can still be present, and which early events are probably gone? You should expect recent restart, backoff, probe, or image events to be available if they are still being emitted, but the original scheduling and creation events may have aged out. The age column is evidence too; it tells you whether you are looking at the beginning of the incident or only the latest repetition.
 
 | Reason | Type | What It Means |
 |--------|------|---------------|
@@ -258,25 +230,25 @@ k get events -w
 | Evicted | Warning | Pod evicted from node |
 | OOMKilling | Warning | Container killed for OOM |
 
-### 2.4 Events in Describe Output
+`kubectl describe` remains valuable because it places object state, configuration, and related events in one view. For a pending pod, the Events section often tells you whether the scheduler lacked CPU, memory, matching node labels, tolerations, or a bound volume. For a running-but-unhealthy pod, describe output can connect probe settings to `Unhealthy` events, showing whether a restart loop is caused by application crashes or by kubelet killing a container that fails liveness checks.
 
 ```bash
 # Events appear in describe output
-k describe pod <pod>
+kubectl describe pod <pod>
 # Look for the Events section at the bottom
 
-k describe node <node>
+kubectl describe node <node>
 # Shows node-level events
 
-k describe pvc <pvc>
+kubectl describe pvc <pvc>
 # Shows volume binding events
 ```
 
----
+Events and logs answer different questions. Logs tell you what a process wrote from inside a container, while Events tell you what Kubernetes components observed from outside that process. A pending pod has no useful application logs because the container has not started, but it can have rich scheduling Events. A crashing pod may have both: Events can show the restart and backoff behavior, while previous logs explain what the process did before termination.
 
-## Part 3: Resource Metrics
+## Resource Metrics: `kubectl top`, Metrics Server, and Pressure Signals
 
-### 3.1 Metrics Server
+Resource metrics are recent measurements of CPU and memory usage, not historical graphs and not capacity planning by themselves. In a Kubernetes 1.35 cluster, `kubectl top` talks to the `metrics.k8s.io` API, which is normally served by Metrics Server. Metrics Server scrapes the kubelet resource endpoint on each node, aggregates current usage, and exposes a lightweight API that supports quick operational checks and autoscaling inputs, but it is not a full monitoring database.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -299,47 +271,45 @@ k describe pvc <pvc>
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 3.2 Checking Metrics Server
+Because `kubectl top` depends on an aggregated API, a failure does not automatically mean the node stopped measuring resources. It may mean Metrics Server is not installed, the APIService registration is unavailable, TLS or kubelet authentication is failing, or RBAC blocks the request. The fastest check is to inspect the Metrics Server pod and the APIService registration before chasing application resource limits.
 
 ```bash
 # Check if Metrics Server is installed
-k -n kube-system get pods | grep metrics-server
+kubectl -n kube-system get pods | grep metrics-server
 
 # Check metrics API
-k get apiservices | grep metrics
+kubectl get apiservices | grep metrics
 
 # If not installed, top commands will fail
-k top nodes  # Error: Metrics API not available
+kubectl top nodes  # Error: Metrics API not available
 ```
 
-### 3.3 Using kubectl top
+`kubectl top` is deliberately small and immediate. It helps you identify hot pods, compare nodes, and decide whether a failure could be caused by memory pressure, CPU throttling, or extreme imbalance. It does not tell you what happened last night, and it does not replace Prometheus, OpenTelemetry, or a vendor monitoring platform for long-term trend analysis. Use it as a fast current-state instrument during diagnosis, especially on the CKA exam where built-in tools matter.
 
 ```bash
 # Node resource usage
-k top nodes
+kubectl top nodes
 
 # Pod resource usage (current namespace)
-k top pods
+kubectl top pods
 
 # Pod resource usage (all namespaces)
-k top pods -A
+kubectl top pods -A
 
 # Sort by CPU
-k top pods --sort-by=cpu
+kubectl top pods --sort-by=cpu
 
 # Sort by memory
-k top pods --sort-by=memory
+kubectl top pods --sort-by=memory
 
 # Per-container usage
-k top pods --containers
+kubectl top pods --containers
 
 # Specific pod
-k top pod <pod-name>
+kubectl top pod <pod-name>
 ```
 
-> **Stop and think**: If `kubectl top pods` shows a pod using 200m CPU, but its limit is 100m, what is likely happening to the application running inside that pod?
-
-### 3.4 Interpreting Metrics
+The units in `kubectl top` are compact but precise. CPU is usually shown in millicores, where `100m` is one tenth of a core and `1000m` is one full core. Memory is often shown in binary units such as `Mi` and `Gi`. The measurement becomes meaningful only when you compare it with requests, limits, node allocatable capacity, and the symptom you are investigating.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -361,25 +331,25 @@ k top pod <pod-name>
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 3.5 Resource Comparison
+Before running this, what output do you expect when a pod uses more CPU than its request but less than its limit? CPU requests influence scheduling, while CPU limits influence throttling, so a pod can legitimately use more than its request after it starts if spare CPU is available. Memory behaves differently because exceeding the memory limit can terminate the container, which is why memory spikes often need correlation with restart counts, `OOMKilled` status, and previous logs.
 
 ```bash
 # Compare actual usage vs requests
 # Step 1: Get requests
-k get pod <pod> -o jsonpath='{.spec.containers[0].resources.requests}'
+kubectl get pod <pod> -o jsonpath='{.spec.containers[0].resources.requests}'
 
 # Step 2: Get actual usage
-k top pod <pod>
+kubectl top pod <pod>
 
 # If actual >> requests, pod is under-requested
 # If actual << requests, pod is over-requested
 ```
 
----
+Metrics become especially useful when you pair them with Events. A pod that is pending with `FailedScheduling` may not need logs at all; it may need request tuning or additional node capacity. A running pod with high memory and a restart reason of `OOMKilled` needs previous logs and limit review. A pod with high CPU and slow responses might be throttled even though the process is not crashing, which changes the next action from "read stack trace" to "compare CPU limits, latency, and throttling metrics."
 
-## Part 4: Node-Level Logs
+## Node-Level and Control Plane Logs
 
-### 4.1 Log Locations on Nodes
+Most day-to-day troubleshooting should start with Kubernetes APIs, because they preserve object context and avoid unnecessary node access. Node-level logs matter when the API server is unavailable, kubelet behavior is the suspected failure, container runtime operations are broken, or the evidence you need is below the pod abstraction. On Linux nodes, container logs are typically reachable through `/var/log/containers`, while kubelet and container runtime logs are usually available through `journalctl` when systemd manages those services.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -405,7 +375,7 @@ k top pod <pod>
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 Accessing Node Logs
+Direct node inspection has higher operational risk than `kubectl` because you are leaving the normal API workflow. You need node access, you need to know the operating system layout, and you must avoid mutating files while investigating. Still, it is a legitimate fallback when `kubectl logs` cannot reach kubelet, when the API server is down, or when a node-specific issue such as disk pressure, kubelet certificate failure, or container runtime errors prevents normal object-level diagnosis.
 
 ```bash
 # SSH to node first
@@ -428,17 +398,15 @@ dmesg | tail -50
 journalctl -xe
 ```
 
-### 4.3 Control Plane Component Logs
-
-On control plane nodes:
+Control plane component logs depend on how the cluster was installed. In kubeadm-style clusters, core control plane components often run as static pods in `kube-system`, which makes their logs visible through `kubectl logs` when the API server is healthy enough to answer. In other distributions, components may be systemd services, managed containers, or hosted control plane processes that require provider-specific access. The diagnostic principle stays the same: find the component boundary first, then use the logging mechanism for that boundary.
 
 ```bash
 # If using static pods (kubeadm)
 # Logs available via kubectl
-k -n kube-system logs kube-apiserver-<node>
-k -n kube-system logs kube-scheduler-<node>
-k -n kube-system logs kube-controller-manager-<node>
-k -n kube-system logs etcd-<node>
+kubectl -n kube-system logs kube-apiserver-<node>
+kubectl -n kube-system logs kube-scheduler-<node>
+kubectl -n kube-system logs kube-controller-manager-<node>
+kubectl -n kube-system logs etcd-<node>
 
 # Or directly on node via journalctl (if systemd services)
 journalctl -u kube-apiserver
@@ -447,32 +415,32 @@ journalctl -u kube-controller-manager
 journalctl -u etcd
 ```
 
----
+Node logs also explain why log rotation matters. The kubelet manages container log files according to its configuration, which protects nodes from unbounded disk growth but also means old log content can disappear locally. If a noisy application fills logs quickly, your `kubectl logs --previous` window may be shorter than you expect. For production systems, node-local log retention should be treated as a buffer until logs are shipped to durable storage, not as the system of record.
 
-## Part 5: Logging Strategies for Troubleshooting
+## Correlating Logs, Events, and Metrics into a Workflow
 
-### 5.1 The Log Analysis Workflow
+Troubleshooting becomes faster when you ask one evidence question at a time. Start with the object state and recent Events because they tell you whether Kubernetes could schedule, pull, mount, start, and keep the container alive. Then inspect current or previous container logs depending on restart behavior. Use metrics when the symptom could be pressure, throttling, or imbalance. Finally, move to node-level logs only when the API view is missing, contradictory, or below the layer where the problem lives.
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │              LOG ANALYSIS WORKFLOW                            │
 │                                                               │
 │   1. Start with events                                        │
-│      k describe <resource> | grep -A 20 Events               │
+│      kubectl describe <resource> | grep -A 20 Events         │
 │                                                               │
 │   2. Check recent events cluster-wide                        │
-│      k get events --sort-by='.lastTimestamp' | tail          │
+│      kubectl get events --sort-by='.lastTimestamp' | tail    │
 │                                                               │
 │   3. Get container logs                                       │
-│      k logs <pod>                                             │
-│      k logs <pod> --previous  (if crashed)                   │
+│      kubectl logs <pod>                                       │
+│      kubectl logs <pod> --previous  (if crashed)             │
 │                                                               │
 │   4. Filter for errors                                        │
-│      k logs <pod> | grep -i error                            │
-│      k logs <pod> | grep -i exception                        │
+│      kubectl logs <pod> | grep -i error                      │
+│      kubectl logs <pod> | grep -i exception                  │
 │                                                               │
 │   5. Check timing                                             │
-│      k logs <pod> --timestamps --since=10m                   │
+│      kubectl logs <pod> --timestamps --since=10m             │
 │                                                               │
 │   6. Check related components                                 │
 │      If pod issues: check node                               │
@@ -482,202 +450,295 @@ journalctl -u etcd
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 5.2 Filtering Log Output
+Filtering is useful only after you understand the stream you are filtering. A `grep -i error` command can surface important lines, but it can also hide the context line before the error or miss applications that log failures as `fatal`, `exception`, `panic`, or structured JSON fields. Use filtering to reduce noise, not to outsource judgment. When timing matters, add `--timestamps` and narrow with `--since` or `--since-time` before searching.
 
 ```bash
 # Search for errors
-k logs <pod> | grep -i error
-k logs <pod> | grep -i exception
-k logs <pod> | grep -i fatal
+kubectl logs <pod> | grep -i error
+kubectl logs <pod> | grep -i exception
+kubectl logs <pod> | grep -i fatal
 
 # Exclude noise
-k logs <pod> | grep -v "INFO"
-k logs <pod> | grep -v "health check"
+kubectl logs <pod> | grep -v "INFO"
+kubectl logs <pod> | grep -v "health check"
 
 # Complex filters
-k logs <pod> | grep -E "error|warning|failed"
+kubectl logs <pod> | grep -E "error|warning|failed"
 
 # With timestamps and filtering
-k logs <pod> --timestamps | grep "2024-01-15T10:3"
+kubectl logs <pod> --timestamps | grep "2024-01-15T10:3"
 
 # Count error occurrences
-k logs <pod> | grep -c error
+kubectl logs <pod> | grep -c error
 ```
 
-### 5.3 Multi-Pod Log Analysis
+Multi-pod analysis is a correlation problem, not just a larger text stream. When several replicas fail, you want to know whether all pods fail the same way, whether only one node is affected, whether one version or label set is involved, and whether sidecars report a different sequence than application containers. Use controller and label selection for breadth, then narrow to a representative pod for precise timestamps and previous logs.
 
 ```bash
 # Logs from all pods in deployment
-k logs deployment/<name> --all-containers
+kubectl logs deployment/<name> --all-containers
 
 # Aggregate logs from multiple pods with labels
-k logs -l app=frontend --all-containers
+kubectl logs -l app=frontend --all-containers
 
 # Using stern (not built-in, but useful)
 # stern <pod-name-pattern>
 
 # Workaround: loop through pods
-for pod in $(k get pods -l app=nginx -o name); do
+for pod in $(kubectl get pods -l app=nginx -o name); do
   echo "=== $pod ==="
-  k logs $pod --tail=5
+  kubectl logs $pod --tail=5
 done
 ```
 
-### 5.4 Correlating Events and Logs
+Correlating Events and logs is where many investigations become decisive. If an Event says a liveness probe failed at a particular time, logs around that timestamp can show whether the application was still booting, waiting on a database, rejecting traffic, or deadlocked. If an Event says a container was killed, previous logs can show what happened before termination, while metrics can show whether memory pressure made the kill predictable.
 
 ```bash
 # Get event time
-k get events --field-selector involvedObject.name=my-pod
+kubectl get events --field-selector involvedObject.name=my-pod
 
 # Note the timestamp, then check logs around that time
-k logs my-pod --since-time="2024-01-15T10:30:00Z"
+kubectl logs my-pod --since-time="2024-01-15T10:30:00Z"
 
 # Or use relative time
-k logs my-pod --since=5m
+kubectl logs my-pod --since=5m
 ```
 
----
+Which approach would you choose here and why: start by following live logs, or first sort recent Warning Events across the namespace? If the symptom is "new pod never becomes Ready," Events usually have higher signal because they reveal pull, mount, scheduling, and probe failures that happen outside the app process. If the symptom is "Ready pod returns errors under traffic," live logs plus timestamps may be the better first move.
 
-## Part 6: Monitoring Patterns
+## Monitoring Patterns for Exam and Operations
 
-### 6.1 Proactive Monitoring Commands
+A quick cluster health pass should be small enough to run under pressure and broad enough to catch obvious failures. Start with nodes, non-running pods, current metrics, and warning Events. This does not replace deeper observability, but it gives you a consistent baseline before you chase a single component. On the CKA exam, this habit also prevents wasting time inside application logs when the real failure is a node condition or a scheduling constraint.
 
 ```bash
 # Quick cluster health check
-k get nodes
-k get pods -A | grep -v Running
-k top nodes
-k get events -A --field-selector type=Warning
+kubectl get nodes
+kubectl get pods -A | grep -v Running
+kubectl top nodes
+kubectl get events -A --field-selector type=Warning
 
 # Create a simple monitoring script
 watch -n 5 'kubectl get pods -A | grep -v Running | grep -v Completed'
 ```
 
-### 6.2 Resource Pressure Detection
+Resource pressure detection needs both object status and current measurements. Node conditions such as `MemoryPressure`, `DiskPressure`, and `PIDPressure` explain why kubelet may evict pods or reject work. Top commands show current consumers, while pending pods can reveal requests that no node can satisfy. The goal is to separate an application fault from a cluster capacity or node health fault before you change the wrong manifest.
 
 ```bash
 # Check for node pressure
-k describe nodes | grep -E "MemoryPressure|DiskPressure|PIDPressure"
+kubectl describe nodes | grep -E "MemoryPressure|DiskPressure|PIDPressure"
 
 # Check for pods using excessive resources
-k top pods -A --sort-by=memory | head -10
-k top pods -A --sort-by=cpu | head -10
+kubectl top pods -A --sort-by=memory | head -10
+kubectl top pods -A --sort-by=cpu | head -10
 
 # Check for pending pods (might indicate resource shortage)
-k get pods -A --field-selector=status.phase=Pending
+kubectl get pods -A --field-selector=status.phase=Pending
 ```
 
-### 6.3 Debugging with Temporary Pods
-
-Always use `--rm` to automatically delete the pod when you exit, and `--restart=Never` to create a bare Pod instead of a Deployment.
+Temporary debug pods are useful when you need tools inside the cluster network, but they should be created deliberately. Use `--rm` so the pod is deleted when the shell exits, and use `--restart=Never` so you create a bare Pod rather than a controller-managed workload. Choose the namespace and service account carefully, because a debug pod running with the wrong identity can prove only that the wrong identity has access.
 
 ```bash
 # Create debug pod with networking tools
-k run debug --image=nicolaka/netshoot --rm -it --restart=Never -- bash
+kubectl run debug --image=nicolaka/netshoot --rm -it --restart=Never -- bash
 
 # Simple debug pod
-k run debug --image=busybox:1.36 --rm -it --restart=Never -- sh
+kubectl run debug --image=busybox:1.36 --rm -it --restart=Never -- sh
 
 # Debug with specific service account
-k run debug --image=busybox:1.36 --rm -it --restart=Never --serviceaccount=<sa> -- sh
+kubectl run debug --image=busybox:1.36 --rm -it --restart=Never --serviceaccount=<sa> -- sh
 
 # Debug in specific namespace
-k run debug -n <namespace> --image=busybox:1.36 --rm -it --restart=Never -- sh
+kubectl run debug -n <namespace> --image=busybox:1.36 --rm -it --restart=Never -- sh
 ```
 
----
+The best monitoring pattern is a decision loop: observe, form a hypothesis, run the smallest command that can disprove it, then update your path. If the hypothesis is "the app crashed," previous logs are high value. If it is "the pod never scheduled," Events and describe output matter more. If it is "the node is unhealthy," node conditions and kubelet logs are more relevant than application output.
+
+## Worked Example: Building an Evidence Timeline
+
+Exercise scenario: a namespace named `payments` contains a Deployment whose new pods are not becoming healthy after a configuration change. The service is still partially available because older replicas remain ready, but the rollout is stalled and the on-call engineer needs to decide whether to roll back, fix configuration, or change resource settings. You are not told the root cause in advance, because the skill being practiced is evidence sequencing rather than command memorization.
+
+The first observation is the controller state, not the application log. A stalled Deployment tells you that some desired replicas are unavailable, but it does not explain whether the pods failed scheduling, image pull, startup, readiness, or steady-state execution. Starting with `kubectl describe deployment` and `kubectl get pods -n payments -o wide` gives you object names, node placement, restart counts, and status phases. That prevents a common mistake: reading one pod log and assuming it represents the whole rollout.
+
+Suppose the pod table shows two new pods in `Running` with restart counts increasing and one older pod still `Running` with zero restarts. That immediately narrows the problem toward the new ReplicaSet or configuration, not a universal node outage. The next useful move is to inspect one failing pod with `kubectl describe pod`, because the Events section can reveal whether kubelet is killing the container due to probes, whether the container exits on its own, or whether resource enforcement is involved.
+
+The describe output shows repeated `BackOff` Events and a container state of `Waiting` with reason `CrashLoopBackOff`. At this point, current logs are less useful than previous logs, because the container has already died at least once. You run `kubectl logs -n payments <pod> --previous` and see a configuration validation error near startup. That single line is useful, but it is not yet the full timeline, because you still need to connect it to the rollout and confirm that the same error appears on all new replicas.
+
+The next step is to query logs from the Deployment or label selector with a small tail and timestamps. If all new pods show the same validation error shortly after startup, you can treat the failure as a release configuration issue rather than a node-specific runtime issue. If only one pod shows the error and the others fail differently, the investigation branches. This is why broad selection and narrow inspection should alternate: breadth tells you pattern, while detail tells you mechanism.
+
+Now imagine that previous logs show no application error, but `describe pod` shows `Unhealthy` Events from a liveness probe. That changes the diagnosis. The application might be slow to start, the probe path might be wrong, or the dependency checked by the probe might be unavailable. In that branch, you inspect readiness and liveness settings, compare timestamps with application startup logs, and decide whether the probe is detecting a real failure or killing a process that would have become healthy with a longer startup window.
+
+Resource metrics create a third branch. If the pod restarts and Events show `OOMKilling`, `kubectl top pod` may or may not catch the spike because the container dies quickly and metrics are sampled. You still compare requests and limits, but you do not rely on `kubectl top` alone. Previous logs, termination reason, and Events carry the strongest evidence for a memory kill, while Metrics Server provides current context for surviving pods and node-level pressure.
+
+Node placement can also change the path. If every failing pod lands on the same node, check the node's conditions, kubelet Events, and container runtime logs before blaming the application. A bad image cache, disk pressure, broken CNI state, or kubelet problem can produce symptoms that look like application instability from the Deployment view. The pod table's `NODE` column is therefore not decoration; it is a correlation field that helps separate workload problems from infrastructure problems.
+
+Timing is the thread that ties these observations together. A useful timeline might say: the new ReplicaSet created pods at 10:12, kubelet started containers at 10:13, the application logged a configuration error at 10:13, kubelet recorded `BackOff` at 10:14, and the Deployment stayed unavailable afterward. That sequence supports a configuration rollback. A different timeline, where scheduling failed before any container started, would support a placement or capacity fix instead.
+
+Pause and predict: if the application team asks for "the logs from the failed rollout," which exact streams would you collect, and how would you label them so the team can reason about time? A high-quality answer includes previous logs for each failing container, current logs for any surviving replicas, relevant Events sorted by timestamp, and the Deployment or ReplicaSet status that shows which revision the pods belong to. Raw text without labels is hard to use during a handoff.
+
+This example also explains why log aggregation does not eliminate `kubectl` skills. A central log system may preserve history and improve search, but Kubernetes object state is still the fastest way to map a symptom to pods, containers, nodes, restart reasons, and Events. Conversely, `kubectl` may show only recent or node-local evidence, so durable logging remains essential for delayed investigations. Effective operators understand both views and move between them deliberately.
+
+When the evidence points to configuration, you still verify the fix with observability rather than assuming the rollout is healed. After applying a corrected ConfigMap, Secret, or Deployment environment variable, watch Events for new failures, read the first startup logs from the replacement pods, and confirm readiness. If metrics were part of the symptom, compare resource usage again after the fix. The closeout is not "command returned zero"; the closeout is "the previous failure mode no longer appears, and the workload reaches the expected state."
+
+When the evidence points to resources, the safest next step depends on whether the issue is scheduling, runtime memory, or CPU saturation. A `Pending` pod with `FailedScheduling` due to insufficient memory needs request changes or capacity, while a running pod killed with `OOMKilled` needs limit and memory behavior review. A CPU-heavy pod with no restarts may need limit adjustment, horizontal scaling, or application profiling. These cases all involve "resources," but each has a different first command and a different responsible layer.
+
+When the evidence points to node health, preserve the Kubernetes view before going deeper. Capture pod placement, node conditions, Warning Events, and affected workload names, then inspect kubelet or container runtime logs if needed. Node logs can be noisy, and without the object context you may not know which errors matter. The sequence matters because it lets you return from node-level evidence to a specific pod, namespace, and workload instead of collecting unrelated system messages.
+
+The same timeline habit applies on the CKA exam, even though the environment is smaller. You are often rewarded for choosing the shortest valid evidence path: Events for scheduling and mounts, previous logs for crashes, `kubectl top` for current pressure, and node journals for kubelet or runtime issues. The exam does not require a production observability platform, but it does require you to know why a command is relevant before running it. That keeps you fast without being random.
+
+The final lesson from the scenario is that observability data has freshness and scope. Events are fresh but short-lived, container logs are scoped to a container instance, metrics are recent and sampled, and node logs are local to a machine. A diagnosis is stronger when it names those limits directly. Instead of saying "the logs prove the deployment is broken," say "the previous logs for all new app containers show the same startup validation error after the new ReplicaSet was created." That statement is specific enough to act on.
+
+You should also think about audience when collecting evidence. An application developer often needs the exact exception, environment variable, or timestamped request failure. A platform engineer may need pod placement, node conditions, kubelet Events, and whether the same symptom appears across namespaces. A release manager may need a clear yes-or-no recommendation about rollback. The same raw observability data can support all three conversations, but only if you preserve enough context to connect evidence to action.
+
+Good evidence notes are compact and reproducible. Record the namespace, pod name, container name, command used, and the time window you inspected. If you used `--previous`, say so explicitly, because that distinguishes a terminated instance from the current one. If you filtered logs, keep the unfiltered command available as well, because another reviewer may need surrounding lines. This discipline matters during handoff, when a teammate must trust your conclusion without rerunning every command from memory.
+
+There is a subtle difference between "monitoring" and "debugging" in this module. Monitoring asks whether the system is healthy now and whether resource usage looks abnormal. Debugging asks why a specific symptom occurred. `kubectl top nodes` can support monitoring by showing current pressure, while previous logs support debugging by explaining a terminated container. Strong troubleshooters combine them, but they do not confuse a current measurement with a historical cause.
+
+The workflow also protects against overfitting to familiar failures. If you recently fixed an image pull problem, you may be tempted to assume the next rollout failure has the same cause. The evidence loop forces you to check state, Events, logs, metrics, and placement before committing to a fix. That is slower than guessing for the first minute, but faster than rolling back a healthy image when the real issue is a missing Secret, a failed mount, or a too-strict probe.
+
+Finally, treat cleanup as part of observability practice. Temporary debug pods, lab namespaces, and ad hoc scripts can create noise that confuses later investigations if they remain in the cluster. Deleting the lab namespace after this exercise is not just tidiness; it keeps future `kubectl get pods -A`, Events, and metrics output focused on real workloads. Clean environments make signal easier to find, which is exactly what logging and monitoring are supposed to provide.
+
+## Patterns & Anti-Patterns
+
+The patterns below are designed for operational use, where speed matters but premature certainty is dangerous. Each pattern works because it makes the evidence boundary explicit. Logs, Events, metrics, and node journals all describe different layers, so the right pattern is usually the one that narrows the layer before it narrows the command.
+
+| Pattern | When to Use | Why It Works | Scaling Consideration |
+|---------|-------------|--------------|-----------------------|
+| Events-first triage | Pods are `Pending`, `ContainerCreating`, failing probes, or recently restarted | Kubernetes components explain lifecycle failures before the app can log them | Export Events for retention because API-server event TTL is short |
+| Previous-log crash analysis | Containers restart quickly or show `CrashLoopBackOff` | The last terminated instance contains the failure that the current instance may not have reached | Include `-c <container>` in multi-container pods to avoid reading the wrong restart |
+| Timestamp correlation | Events, logs, and metrics all show symptoms near the same period | Matching time windows separates cause from follow-on noise | Use consistent time zones and ship logs centrally for long investigations |
+| Sidecar file tailing | Legacy apps write to files and cannot be changed immediately | A shared volume plus tailer converts file writes into kubelet-captured `stdout` | Plan migration to direct structured `stdout` to reduce sidecar overhead |
+
+Anti-patterns usually come from treating one observable as the whole truth. A log stream can be empty because the container never started, not because nothing failed. A `kubectl top` error can mean Metrics Server is down, not that the cluster has no resource usage. A lack of Events can mean retention expired, not that Kubernetes saw nothing. The safer alternative is to name what the tool can and cannot prove before acting on it.
+
+| Anti-Pattern | What Goes Wrong | Better Alternative |
+|--------------|-----------------|--------------------|
+| Following live logs before checking object state | You miss scheduling, image pull, mount, or probe failures outside the process | Run `kubectl describe` and recent Warning Events first for lifecycle issues |
+| Reading only the first container in a pod | Sidecar, init, or proxy failures stay invisible | List containers and use `-c` or `--all-containers=true` intentionally |
+| Treating Events as permanent history | Weekend or delayed incident analysis loses the original clues | Export Events to a durable log system and capture timelines during incidents |
+| Using node SSH as the first diagnostic step | You lose object context and increase operational risk | Start with Kubernetes APIs, then fall back to node logs when the API layer is insufficient |
+
+## Decision Framework
+
+Use this framework when the symptom is clear but the next command is not. The first decision is whether the container has started. If it has not, logs are secondary because there is no meaningful process output. The second decision is whether the container restarted. If it did, previous logs are more useful than current logs. The third decision is whether the symptom could be caused by resource pressure. If it could, metrics and node conditions should be checked before changing application code.
+
+| Symptom | First Evidence Source | Next Evidence Source | Common Fix Direction |
+|---------|----------------------|----------------------|----------------------|
+| Pod is `Pending` | `kubectl describe pod` Events | Node allocatable resources, PVC status, taints, affinity | Adjust requests, storage binding, tolerations, or placement rules |
+| Pod is `CrashLoopBackOff` | `kubectl logs --previous` | Events, restart reason, probes, resource limits | Fix app startup, configuration, dependency access, or limits |
+| Pod is `Running` but not `Ready` | Events and probe output | Current logs with timestamps | Fix readiness endpoint, startup timing, dependency checks, or probe configuration |
+| `kubectl top` fails | APIService and Metrics Server pod | Metrics Server logs and kubelet access | Install, repair, or reconfigure Metrics Server |
+| Node shows pressure | Node describe conditions | Top pods sorted by CPU or memory, kubelet logs | Tune requests and limits, evict noisy workloads, or add capacity |
+
+```
+┌───────────────────────────┐
+│ What is the visible state? │
+└──────────────┬────────────┘
+               │
+     ┌─────────▼─────────┐
+     │ Container started? │
+     └───────┬─────┬─────┘
+             │yes  │no
+             │     ▼
+             │  Check Events, scheduling, image pull, mounts
+             ▼
+   ┌─────────────────────┐
+   │ Restarted recently? │
+   └───────┬─────┬───────┘
+           │yes  │no
+           │     ▼
+           │  Check current logs with timestamps
+           ▼
+   Check previous logs, restart reason, Events
+           │
+           ▼
+   If pressure is plausible, compare top metrics with requests and limits
+```
+
+The framework is intentionally conservative. It avoids "read logs" as a universal first step because Kubernetes failures often happen before the application owns control. It also avoids treating metrics as a final answer, because a hot pod might be a symptom of retries caused by a dependency failure. The best next command is the one that can eliminate a branch of the decision tree with the least noise.
+
+## Did You Know?
+
+- **Kubernetes captures `stdout` and `stderr` by convention**: the kubelet exposes container streams from node log files, which is why applications that only write private files need a bridge such as a sidecar.
+- **Events have short default retention**: the API server's event TTL defaults to one hour, so cluster Events should be exported if your team needs incident timelines after the immediate troubleshooting window.
+- **`kubectl top` depends on an aggregated API**: the command needs Metrics Server and the `metrics.k8s.io` API, so a failure can be an observability pipeline problem rather than an application problem.
+- **Log rotation is node-local**: kubelet settings such as maximum log size and file count protect disk space, but they also mean node-local logs are not durable incident archives.
 
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
-| Forgetting `--previous` | Can't see crash logs | Use `--previous` for CrashLoopBackOff |
-| Not filtering logs | Too much noise | Use grep, `--since`, `--tail` |
-| Ignoring events | Miss obvious clues | Always check events first |
-| Missing multi-container | Logs from wrong container | Use `-c <container>` or `--all-containers` |
-| Events expired | No historical data | Check logs immediately after incident |
-| No Metrics Server | kubectl top fails | Install Metrics Server |
-
----
+| Mistake | Why It Happens | How to Fix It |
+|---------|----------------|---------------|
+| Forgetting `--previous` during `CrashLoopBackOff` | The current container instance starts cleanly and hides the line that killed the previous instance | Use `kubectl logs <pod> --previous`, and add `-c <container>` for multi-container pods |
+| Treating an empty log as proof that nothing happened | Pending pods, image pull failures, and mount failures can occur before application code runs | Check `kubectl describe pod` and Warning Events before relying on logs |
+| Reading the wrong container in a pod | Sidecars, init containers, and proxies create multiple log streams under one pod name | List container names and choose `-c <container>` or `--all-containers=true` deliberately |
+| Ignoring event retention | Events are short-lived and may disappear before delayed incident analysis begins | Export Events to durable logging and capture event output during the incident |
+| Assuming `kubectl top` is built in everywhere | Metrics Server is a separate component and can be absent or unhealthy | Check the Metrics Server pod and the `metrics.k8s.io` APIService before diagnosing app usage |
+| Comparing metrics only to limits | Requests affect scheduling, limits affect enforcement, and each answers a different question | Compare current usage against requests, limits, node capacity, and restart reasons |
+| Starting with node SSH for normal pod failures | Direct node access loses Kubernetes object context and can distract from simple lifecycle clues | Start with Events, describe output, and logs; use node logs when the API view is insufficient |
+| Filtering logs too early | `grep` can remove timing context or miss differently named failure messages | Narrow by time first, then search for error families such as exception, fatal, failed, and panic |
 
 ## Quiz
 
-### Q1: Investigating a Crash
-You deploy a new version of your application. The pod enters a `CrashLoopBackOff` state. When you run `kubectl logs my-app`, you only see a single line saying "Starting application...", but the application keeps crashing. How do you find the actual error that caused the crash, and why does the standard log command hide it?
-
 <details>
-<summary>Answer</summary>
+<summary>Question 1: Your team deploys a new image and the pod enters `CrashLoopBackOff`. `kubectl logs my-app` shows only a startup banner. What do you check next, and why?</summary>
 
-You must use the command `kubectl logs my-app --previous` to see the actual error. When a pod is in a `CrashLoopBackOff` state, it means the container is repeatedly dying and being restarted by the kubelet. The standard `kubectl logs` command only shows the output of the *currently running* container instance. Since the current instance just started and hasn't crashed yet, you only see the initial startup message. By appending the `--previous` flag, you instruct Kubernetes to retrieve the logs from the container instance that most recently terminated, which will contain the stack trace or error message explaining why it died.
+Use `kubectl logs my-app --previous`, adding `-c <container>` if the pod has more than one container. The normal logs command reads the current container instance, which may have only started and not yet reached the failing line. `--previous` asks kubelet for the last terminated instance, where the stack trace, missing configuration message, or fatal startup error is usually present. After reading it, correlate the timestamp with Events so you can separate application failure from probe or resource enforcement.
 
 </details>
 
-### Q2: Missing Historical Context
-A developer reports that their batch job failed sometime over the weekend, about 48 hours ago. They ask you to check the Kubernetes events to see if there were any node scheduling issues or image pull errors at that time. When you run `kubectl get events --field-selector involvedObject.name=batch-job`, it returns "No resources found". What happened to the events, and how could you have preserved them?
-
 <details>
-<summary>Answer</summary>
+<summary>Question 2: A pod is stuck in `Pending`, and a junior administrator wants to run `kubectl logs` to find the application complaint. What should you do instead?</summary>
 
-Kubernetes events have a default time-to-live (TTL) of exactly one hour. They are not designed for long-term auditing or historical logging; rather, they are transient objects stored in etcd to provide immediate feedback about cluster operations. After the one-hour window expires, the Kubernetes garbage collector automatically deletes them to prevent etcd from running out of storage space. To preserve events for long-term analysis, you must export them to an external logging system or observability platform using a dedicated event-shipping tool (like eventrouter or a fluentd plugin) before they expire.
+Start with `kubectl describe pod <pod>` and recent Warning Events for the namespace. A pending pod usually has not started a container, so there may be no application output to retrieve. Events can show `FailedScheduling`, unbound PVCs, taints, affinity mismatches, or insufficient CPU and memory. Once the pod reaches a container state, logs become useful, but before that the control plane is the evidence source.
 
 </details>
 
-### Q3: Missing Resource Metrics
-You are trying to determine if a specific deployment needs its memory limits increased. You run the command `kubectl top pods -n production`, but the API server returns an error stating "metrics not available". You verify that your kubeconfig is correct and you have the necessary RBAC permissions. What cluster component is likely missing or failing, and why does this command depend on it?
-
 <details>
-<summary>Answer</summary>
+<summary>Question 3: `kubectl top pods -n production` returns an error that metrics are unavailable. Your kubeconfig and RBAC are correct. What component is the likely focus?</summary>
 
-The cluster is likely missing the Metrics Server, or the Metrics Server deployment is currently unhealthy. The `kubectl top` command does not directly query the nodes or the kubelet for resource utilization data. Instead, it queries the `metrics.k8s.io` API, which must be served by an aggregation layer component. The Metrics Server acts as this component; it continuously polls the kubelet API on each node, aggregates the CPU and memory usage data, and exposes it through the metrics API. Without this server running and correctly registered with the main API server, the metrics endpoint will not exist, causing the command to fail.
+Inspect Metrics Server and the `metrics.k8s.io` APIService before changing application manifests. `kubectl top` does not read pod cgroups directly; it queries the aggregated metrics API served by Metrics Server. Metrics Server must be running, able to scrape kubelet resource endpoints, and registered as an available APIService. If that pipeline is broken, `kubectl top` fails even though workloads are consuming CPU and memory.
 
 </details>
 
-### Q4: Aggregating Sidecar Logs
-You have a pod named `web-app` that runs your main application container and a sidecar container running a log forwarding agent. You suspect the log forwarder is failing to authenticate, but you also want to see if the main application is logging any connection errors at the same time. How can you view the logs from both containers simultaneously in a single command, and why is this useful?
-
 <details>
-<summary>Answer</summary>
+<summary>Question 4: A pod has a main application container and a log-forwarder sidecar. You suspect both are involved in a failure. How do you avoid reading only half the evidence?</summary>
 
-You can view the combined output by using the command `kubectl logs web-app --all-containers=true`. By default, if you run `kubectl logs` against a multi-container pod without specifying a container, Kubernetes will either prompt you to specify one or just pick the first one listed in the pod spec. Using the `--all-containers` flag instructs the API server to fetch the logs from every container within the specified pod and interleave them in the output. This is highly useful for correlating events across tightly coupled containers, as it allows you to see the exact sequence of events occurring across both the main application and its sidecar.
+First list the containers with `kubectl get pod <pod> -o jsonpath='{.spec.containers[*].name}'`, then read the relevant streams with `kubectl logs <pod> -c <container>` or use `--all-containers=true` when correlation matters. The pod name alone does not guarantee that the stream you see belongs to the failing component. Sidecars can fail authentication, proxies can reject traffic, and init containers can leave setup clues that the main container never repeats. Container selection keeps the investigation tied to the component boundary.
 
 </details>
 
-### Q5: Bypassing the API Server
-The Kubernetes API server is currently unresponsive due to a certificate expiration issue. You have SSH access to the worker node where a critical database pod is running, and you need to check its logs immediately to ensure it hasn't corrupted its data volume. How do you view the logs for this specific container directly on the node, and what component manages these files?
-
 <details>
-<summary>Answer</summary>
+<summary>Question 5: A batch job failed two days ago, but `kubectl get events` returns no useful entries. Does that prove Kubernetes emitted no Events?</summary>
 
-You can view the logs directly by navigating to the `/var/log/containers/` directory on the worker node. Inside this directory, you will find log files named using the pattern `<pod-name>_<namespace>_<container-name>-<container-id>.log`. These files are actually symbolic links that point to the actual log files generated by the container runtime (such as containerd or CRI-O). The kubelet is responsible for managing these symlinks and also handles the log rotation based on its configured maximum size and file count limits, ensuring the node's disk does not fill up.
+No. Events are short-lived Kubernetes objects, and the default event TTL is one hour unless the API server is configured differently. By the time you investigate a two-day-old failure, the original scheduling, pull, mount, or probe Events may have been garbage-collected. For long incident timelines, ship Events to durable logging or observability storage while they are fresh. For the current investigation, rely on persisted application logs, job status, pod termination state, and external monitoring.
 
 </details>
 
-### Q6: Diagnosis Strategy
-A pod is stuck in the `Pending` state. A junior administrator suggests running `kubectl logs my-pending-pod` to see what the application is complaining about. Why is this the wrong approach, and what command should they run instead to understand why the pod is stuck?
-
 <details>
-<summary>Answer</summary>
+<summary>Question 6: A pod is running but slow, `kubectl top pod` shows high CPU, and there are no restarts. What is the next diagnostic direction?</summary>
 
-Running `kubectl logs` is the wrong approach because a pod in the `Pending` state has not yet been scheduled to a node, or its containers have not yet started executing. Since no container runtime is running the application process, there is absolutely no standard output or standard error to capture, meaning the logs command will return an error or nothing at all. Instead, the administrator should check the Kubernetes events by running `kubectl describe pod my-pending-pod` or `kubectl get events`. Events will reveal cluster-level scheduling issues, such as a lack of node resources, failed persistent volume claims, or unmet node affinity rules that are preventing the pod from starting.
+Compare current CPU usage with the pod's requests and limits, then check whether throttling or saturation explains the symptom. High CPU without restarts points less toward a crash and more toward performance, limits, dependency retries, or load imbalance. Events may still matter if probes are failing, but previous logs are unlikely to help unless the container restarted. The useful path is to connect metrics, latency, limits, and application logs for the same time window.
 
 </details>
 
----
+<details>
+<summary>Question 7: The API server is temporarily unreachable, but you have SSH access to the node running a critical pod. Where can you look for container logs, and what caution applies?</summary>
+
+On the node, inspect `/var/log/containers/` for symlinks named with the pod, namespace, container, and container ID, then follow the matching file carefully. Those files are managed by the kubelet and container runtime, so they are useful when the normal API path is unavailable. Avoid editing or deleting node log files during diagnosis, because you can destroy evidence or interfere with rotation. When API access returns, reconcile the node evidence with Kubernetes object state.
+
+</details>
 
 ## Hands-On Exercise: Log and Metric Analysis
 
-### Scenario
-
-Practice using logs and metrics for troubleshooting.
+Exercise scenario: you will create a namespace with one pod that continuously emits mixed info and error messages, one pod that repeatedly crashes, and an optional legacy-style file logger. The exercise forces you to use current logs, previous logs, filtering, Events, and metrics in a controlled environment before you need them during an exam or production incident. Run these commands in a disposable Kubernetes 1.35+ cluster where creating a namespace and temporary pods is allowed.
 
 ### Setup
 
 ```bash
 # Create test namespace
-k create ns logging-lab
+kubectl create ns logging-lab
 
 # Create a pod that generates logs
-cat <<'EOF' | k apply -f -
+cat <<'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -703,7 +764,7 @@ spec:
 EOF
 
 # Create a crashy pod for --previous demo
-cat <<'EOF' | k apply -f -
+cat <<'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -724,167 +785,255 @@ spec:
 EOF
 
 # Wait for log-generator to be ready before proceeding
-k wait --for=condition=Ready pod/log-generator -n logging-lab --timeout=60s
+kubectl wait --for=condition=Ready pod/log-generator -n logging-lab --timeout=60s
 ```
 
 ### Task 1: Basic Log Operations
 
+Use this task to prove that you can read the current stream, follow it briefly, limit the output, and add timestamps. Stop following with `Ctrl+C` after you have seen several lines; the goal is to confirm the stream and then move to targeted evidence gathering, not to watch logs indefinitely.
+
 ```bash
 # View logs
-k logs -n logging-lab log-generator
+kubectl logs -n logging-lab log-generator
 
 # Follow logs
-k logs -n logging-lab log-generator -f
+kubectl logs -n logging-lab log-generator -f
 # (Ctrl+C to stop)
 
 # Last 10 lines
-k logs -n logging-lab log-generator --tail=10
+kubectl logs -n logging-lab log-generator --tail=10
 
 # With timestamps
-k logs -n logging-lab log-generator --tail=10 --timestamps
+kubectl logs -n logging-lab log-generator --tail=10 --timestamps
 ```
+
+<details>
+<summary>Solution notes for Task 1</summary>
+
+You should see a repeating mix of `INFO` messages and occasional `ERROR` messages from the same container. The `--tail` flag should reduce the output to a small recent window, and `--timestamps` should add Kubernetes log timestamps before each line. If the pod is not ready yet, wait a few seconds and check `kubectl describe pod -n logging-lab log-generator` before assuming the log command is broken.
+
+</details>
 
 ### Task 2: Filtering Logs
 
+Filtering teaches you to reduce noise after you have confirmed the stream. Run the error searches, count the matching lines, and then exclude the info lines. Notice that each pipeline answers a different question: one finds examples, one measures rough frequency, and one shows everything that is not routine info output.
+
 ```bash
 # Find errors only
-k logs -n logging-lab log-generator | grep ERROR
+kubectl logs -n logging-lab log-generator | grep ERROR
 
 # Count errors
-k logs -n logging-lab log-generator | grep -c ERROR
+kubectl logs -n logging-lab log-generator | grep -c ERROR
 
 # Exclude INFO messages
-k logs -n logging-lab log-generator | grep -v INFO
+kubectl logs -n logging-lab log-generator | grep -v INFO
 ```
+
+<details>
+<summary>Solution notes for Task 2</summary>
+
+The error count should grow over time because the pod emits an error every few iterations. If the count is zero, the pod may have just started or your command may be reading the wrong namespace. In a real incident, you would usually combine filtering with `--since` or `--since-time` so the count reflects the incident window instead of the pod's whole lifetime.
+
+</details>
 
 ### Task 3: Previous Container Logs
 
+The crashing pod is designed to show why the current stream and the previous stream are different. Watch the pod until you see restarts or `CrashLoopBackOff`, then retrieve the previous instance. This is the same move you use when an application starts, prints a banner, exits, and restarts too quickly for the current log stream to reveal the fatal line.
+
 ```bash
 # Wait for crashy-pod to crash and restart
-k get pod -n logging-lab crashy-pod -w
+kubectl get pod -n logging-lab crashy-pod -w
 # (Press Ctrl+C to stop once you see CrashLoopBackOff)
 
 # When it shows CrashLoopBackOff or restarts, check previous logs
-k logs -n logging-lab crashy-pod --previous
+kubectl logs -n logging-lab crashy-pod --previous
 ```
+
+<details>
+<summary>Solution notes for Task 3</summary>
+
+The previous logs should include `Starting up...` followed by `About to crash!`. If `--previous` returns that no previous terminated container exists, wait for the first restart and try again. The key habit is to use pod status and restart count to decide whether current or previous logs match the failure instance.
+
+</details>
 
 ### Task 4: Events Analysis
 
+Events should show the lifecycle around the crashy pod, including creation, start, termination, and backoff behavior. Sort by timestamp so you can read the sequence rather than a random-looking table. Then use `describe` to see the Events section in context with pod status and container state.
+
 ```bash
 # All events in namespace
-k get events -n logging-lab --sort-by='.lastTimestamp'
+kubectl get events -n logging-lab --sort-by='.lastTimestamp'
 
 # Describe pod for events
-k describe pod -n logging-lab crashy-pod | grep -A 10 Events
+kubectl describe pod -n logging-lab crashy-pod | grep -A 10 Events
 
 # Watch for new events
-k get events -n logging-lab -w
+kubectl get events -n logging-lab -w
 ```
+
+<details>
+<summary>Solution notes for Task 4</summary>
+
+You should see Events that match the pod lifecycle and backoff behavior. The Event messages are not a replacement for application logs, but they explain what kubelet is doing from the outside. If no Events appear, confirm you are in the right namespace and remember that old Events expire, so recent activity is easier to observe than historical activity.
+
+</details>
 
 ### Task 5: Metrics (if Metrics Server installed)
 
+Run the metrics commands only if your lab cluster has Metrics Server installed and healthy. If they fail, treat the failure as a valid diagnostic branch: check whether Metrics Server exists, whether the metrics API is registered, and whether the cluster environment supports it. Do not rewrite application requests based on missing metrics until you know the metrics pipeline is working.
+
 ```bash
 # Node metrics
-k top nodes
+kubectl top nodes
 
 # Pod metrics
-k top pods -n logging-lab
+kubectl top pods -n logging-lab
 
 # All pods by memory
-k top pods -A --sort-by=memory | head
+kubectl top pods -A --sort-by=memory | head
 ```
 
-### Success Criteria
+<details>
+<summary>Solution notes for Task 5</summary>
 
-- [ ] Viewed live logs with follow
-- [ ] Filtered logs for errors
-- [ ] Retrieved previous container logs
-- [ ] Analyzed events for crash information
-- [ ] Used kubectl top (if Metrics Server available)
+If Metrics Server is present, you should see current CPU and memory usage for nodes and pods. The numbers may be small because the lab pods are lightweight. If the command fails with a metrics API error, inspect `kubectl -n kube-system get pods | grep metrics-server` and `kubectl get apiservices | grep metrics` rather than assuming the workload has no resource usage.
 
-### Cleanup
+</details>
+
+### Task 6: Sidecar File Logging Challenge
+
+This optional challenge implements the file-to-stdout bridge from the core lesson. The main container writes to a file on a shared `emptyDir`, and the sidecar tails that file to its own standard output. Query the sidecar logs, then explain why the main container's logs are less useful for file-only applications.
 
 ```bash
-k delete ns logging-lab
+cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  name: file-logger
+  namespace: logging-lab
+spec:
+  containers:
+  - name: main-app
+    image: busybox:1.36
+    command:
+    - sh
+    - -c
+    - |
+      i=0
+      while true; do
+        echo "$(date '+%Y-%m-%d %H:%M:%S') file log $i" >> /var/log/app.log
+        i=$((i+1))
+        sleep 2
+      done
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log
+  - name: log-tailer
+    image: busybox:1.36
+    command: ["sh", "-c", "tail -f /var/log/app.log"]
+    volumeMounts:
+    - name: shared-logs
+      mountPath: /var/log
+  volumes:
+  - name: shared-logs
+    emptyDir: {}
+EOF
+
+kubectl wait --for=condition=Ready pod/file-logger -n logging-lab --timeout=60s
+kubectl logs -n logging-lab file-logger -c log-tailer --tail=10
 ```
 
----
+<details>
+<summary>Solution notes for Task 6</summary>
 
-## Practice Drills
+The useful file log lines should appear from the `log-tailer` container, not from the main application container. This demonstrates why Kubernetes-native logging prefers direct `stdout` and `stderr`, and why a sidecar is only a bridge for legacy behavior. In production, you would also think about rotation, resource requests for the sidecar, and durable log shipping beyond the node.
+
+</details>
+
+### Practice Drills
+
+The drills below preserve the fast command patterns from the original module. Run them after the main tasks until you can choose the right command from the symptom without pausing. They are intentionally short, but the reasoning behind them should now be clear from the workflow sections above.
 
 ### Drill 1: View Last N Logs (30 sec)
 ```bash
 # Task: Show last 20 log lines
-k logs <pod> --tail=20
+kubectl logs <pod> --tail=20
 ```
 
 ### Drill 2: Logs with Timestamps (30 sec)
 ```bash
 # Task: Show logs with timestamps
-k logs <pod> --timestamps
+kubectl logs <pod> --timestamps
 ```
 
 ### Drill 3: Previous Container Logs (30 sec)
 ```bash
 # Task: Get logs from crashed container
-k logs <pod> --previous
+kubectl logs <pod> --previous
 ```
 
 ### Drill 4: Multi-Container Logs (1 min)
 ```bash
 # Task: Get logs from specific container
-k get pod <pod> -o jsonpath='{.spec.containers[*].name}'
-k logs <pod> -c <container-name>
+kubectl get pod <pod> -o jsonpath='{.spec.containers[*].name}'
+kubectl logs <pod> -c <container-name>
 ```
 
 ### Drill 5: Recent Events (30 sec)
 ```bash
 # Task: Show events sorted by time
-k get events --sort-by='.lastTimestamp'
+kubectl get events --sort-by='.lastTimestamp'
 ```
 
 ### Drill 6: Warning Events (30 sec)
 ```bash
 # Task: Show only warning events
-k get events --field-selector type=Warning
+kubectl get events --field-selector type=Warning
 ```
 
 ### Drill 7: Node Metrics (30 sec)
 ```bash
 # Task: Show node resource usage
-k top nodes
+kubectl top nodes
 ```
 
 ### Drill 8: Pod Metrics Sorted (30 sec)
 ```bash
 # Task: Show top memory-consuming pods
-k top pods -A --sort-by=memory | head
+kubectl top pods -A --sort-by=memory | head
 ```
 
----
+### Success Criteria
 
-## Part 5 Summary
+- [ ] Viewed live logs with follow and stopped the stream intentionally.
+- [ ] Filtered logs for errors and explained what the filter hides.
+- [ ] Retrieved previous container logs from a restarting pod.
+- [ ] Analyzed Events for crash, lifecycle, or backoff information.
+- [ ] Used `kubectl top` when Metrics Server was available, or diagnosed why it was unavailable.
+- [ ] Implemented sidecar-based logging for a file-writing application.
+- [ ] Correlated logs, Events, and metrics to choose the next diagnostic action.
 
-Congratulations on completing Part 5: Troubleshooting! You've learned:
+### Cleanup
 
-1. **Methodology**: Systematic approach to diagnosis
-2. **Application Failures**: Pod, container, and deployment issues
-3. **Control Plane**: API server, scheduler, controller manager, etcd
-4. **Worker Nodes**: kubelet, runtime, and node resources
-5. **Networking**: Pod connectivity, DNS, and CNI
-6. **Services**: ClusterIP, NodePort, LoadBalancer, Ingress
-7. **Logging & Monitoring**: Logs, events, and metrics
-
-With 30% of the CKA exam weight, troubleshooting is critical. Practice the drills until they're second nature.
-
----
-
-## Next Steps
-
-Continue to [Part 6: Mock Exams](/k8s/cka/part6-mock-exams/) to test your knowledge with realistic exam scenarios.
+```bash
+kubectl delete ns logging-lab
+```
 
 ## Sources
 
-- [Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/) — This is the primary upstream reference for stdout/stderr logging, sidecar log streaming, node log locations, and kubelet rotation behavior.
-- [kubectl logs](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/) — This reference covers the exact CLI flags used throughout the module, including `--previous`, `-c`, `--all-containers`, `--since`, and `--timestamps`.
-- [Resource Metrics Pipeline](https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/) — This explains how kubelet, Metrics Server, and the Metrics API work together to power `kubectl top`.
+- [Logging Architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/)
+- [kubectl logs](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/)
+- [Resource Metrics Pipeline](https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/)
+- [kubectl top](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/)
+- [kubectl top pod](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/kubectl_top_pod/)
+- [kubectl top node](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/kubectl_top_node/)
+- [Debug Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/)
+- [Debug Running Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/)
+- [Sidecar Containers](https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/)
+- [Event API](https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/event-v1/)
+- [Kubelet Configuration](https://kubernetes.io/docs/tasks/administer-cluster/kubelet-config-file/)
+- [Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
+
+## Next Module
+
+Continue to [Part 6: Mock Exams](/k8s/cka/part6-mock-exams/) to test these troubleshooting moves under exam-style time pressure.
