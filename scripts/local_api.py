@@ -4375,7 +4375,12 @@ _ARTIFACT_ALLOWED_DIRS = (
     "audit",
     "docs/migrations",
     "docs/session-state",
-    "docs/references/external",
+    "docs/decisions",
+    "docs/sessions",
+    "docs/research",
+    "docs/audits",
+    "docs/references",
+    "docs/briefs",
     "docs/bug-autopsies",
     "docs/dispatch-briefs",
 )
@@ -4390,14 +4395,24 @@ _ARTIFACT_ASSET_TYPES = {
     ".woff2": "font/woff2",
 }
 _ARTIFACT_SECTION_SPECS = (
-    ("Reports", "audit", "**/*.html"),
-    ("Migrations", "docs/migrations", "**/*.html"),
-    ("Handoffs", "docs/session-state", "*.html"),
-    ("References", "docs/references/external", "*.html"),
-    ("Bug autopsies", "docs/bug-autopsies", "**/*.html"),
-    ("Dispatch briefs", "docs/dispatch-briefs", "**/*.html"),
+    ("Reports", "audit", ("**/*.html", "**/*.md")),
+    ("Migrations", "docs/migrations", ("**/*.html", "**/*.md")),
+    ("Handoffs", "docs/session-state", ("*.html", "*.md")),
+    ("Decisions", "docs/decisions", ("**/*.html", "**/*.md")),
+    ("Sessions", "docs/sessions", ("**/*.html", "**/*.md")),
+    ("Research", "docs/research", ("**/*.html", "**/*.md")),
+    ("Audits", "docs/audits", ("**/*.html", "**/*.md")),
+    ("References", "docs/references", ("**/*.html", "**/*.md")),
+    ("Briefs", "docs/briefs", ("**/*.html", "**/*.md")),
+    ("Bug autopsies", "docs/bug-autopsies", ("**/*.html", "**/*.md")),
+    ("Dispatch briefs", "docs/dispatch-briefs", ("**/*.html", "**/*.md")),
+    ("Docs", "docs", ("*.md",)),
+    ("Repository root", ".", ("*.md",)),
 )
 _ARTIFACT_TITLE_RE = re.compile(r"<title[^>]*>([^<]+)</title>", re.IGNORECASE)
+_ARTIFACT_MARKDOWN_CACHE: dict[str, tuple[int, int, str]] = {}
+_MARKDOWN_LINK_RE = re.compile(r"\[([^\]]+)\]\(([^)\s]+)\)")
+_MARKDOWN_TABLE_SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|?\s*$")
 
 
 def _artifact_content_type(path: Path) -> str | None:
@@ -4411,6 +4426,14 @@ def _artifact_allowed_roots(repo_root: Path) -> list[Path]:
     return [(repo_root / rel).resolve() for rel in _ARTIFACT_ALLOWED_DIRS]
 
 
+def _artifact_allowed_top_level_markdown(repo_root: Path, candidate: Path) -> bool:
+    if candidate.suffix.lower() != ".md":
+        return False
+    repo = repo_root.resolve()
+    docs = (repo_root / "docs").resolve()
+    return candidate.parent in {repo, docs}
+
+
 def _resolve_artifact_path(repo_root: Path, rel_path: str) -> Path | None:
     if not rel_path or rel_path.startswith("/") or "\\" in rel_path:
         return None
@@ -4419,6 +4442,8 @@ def _resolve_artifact_path(repo_root: Path, rel_path: str) -> Path | None:
         return None
 
     candidate = (repo_root / rel_path).resolve()
+    if _artifact_allowed_top_level_markdown(repo_root, candidate):
+        return candidate
     for allowed_dir in _artifact_allowed_roots(repo_root):
         try:
             candidate.relative_to(allowed_dir)
@@ -4439,6 +4464,33 @@ def _extract_artifact_title(path: Path) -> str:
         return path.stem.replace("-", " ").replace("_", " ").title()
     title = " ".join(html.unescape(match.group(1)).split())
     return title or path.stem.replace("-", " ").replace("_", " ").title()
+
+
+def _extract_markdown_artifact_title(path: Path) -> str:
+    fallback = path.stem.replace("-", " ").replace("_", " ").title()
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return fallback
+
+    lines = text.splitlines()
+    if lines and lines[0].strip() == "---":
+        for line in lines[1:80]:
+            stripped = line.strip()
+            if stripped == "---":
+                break
+            if stripped.startswith("title:"):
+                title = stripped.split(":", 1)[1].strip().strip("\"'")
+                return title or fallback
+
+    title = _extract_markdown_h1(text)
+    return title or fallback
+
+
+def _extract_artifact_display_title(path: Path) -> str:
+    if path.suffix.lower() == ".md":
+        return _extract_markdown_artifact_title(path)
+    return _extract_artifact_title(path)
 
 
 def _relative_time(timestamp: float, *, now: float | None = None) -> str:
@@ -4462,75 +4514,405 @@ def _relative_time(timestamp: float, *, now: float | None = None) -> str:
 
 def build_artifacts_index(repo_root: Path) -> dict[str, list[dict[str, Any]]]:
     grouped: dict[str, list[dict[str, Any]]] = {}
-    for category, base_rel, pattern in _ARTIFACT_SECTION_SPECS:
+    allowed_suffixes = {".html", ".md"}
+    for category, base_rel, patterns in _ARTIFACT_SECTION_SPECS:
         base = repo_root / base_rel
         if not base.is_dir():
             if category in {"Reports", "Migrations", "Handoffs", "References"}:
                 grouped[category] = []
             continue
         items: list[dict[str, Any]] = []
-        for path in base.glob(pattern):
-            if not path.is_file() or path.suffix.lower() != ".html":
-                continue
-            try:
-                resolved = path.resolve()
-                resolved.relative_to(base.resolve())
-                stat = resolved.stat()
-                rel = resolved.relative_to(repo_root.resolve()).as_posix()
-            except (OSError, ValueError):
-                continue
-            items.append(
-                {
-                    "title": _extract_artifact_title(resolved),
-                    "path": rel,
-                    "url": f"/artifacts/{rel}",
-                    "mtime": stat.st_mtime,
-                    "size_bytes": stat.st_size,
-                }
-            )
-        if items or category not in {"Bug autopsies", "Dispatch briefs"}:
+        seen: set[Path] = set()
+        for pattern in patterns:
+            for path in base.glob(pattern):
+                if path in seen or not path.is_file() or path.suffix.lower() not in allowed_suffixes:
+                    continue
+                seen.add(path)
+                try:
+                    resolved = path.resolve()
+                    resolved.relative_to(base.resolve())
+                    stat = resolved.stat()
+                    rel = resolved.relative_to(repo_root.resolve()).as_posix()
+                except (OSError, ValueError):
+                    continue
+                items.append(
+                    {
+                        "title": _extract_artifact_display_title(resolved),
+                        "path": rel,
+                        "url": f"/artifacts/{rel}",
+                        "format": resolved.suffix.lower().lstrip("."),
+                        "mtime": stat.st_mtime,
+                        "size_bytes": stat.st_size,
+                    }
+                )
+        if items or category not in {"Briefs", "Bug autopsies", "Dispatch briefs"}:
             grouped[category] = sorted(items, key=lambda item: item["mtime"], reverse=True)
     return grouped
+
+
+def _strip_markdown_frontmatter(text: str) -> str:
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return text
+    for idx, line in enumerate(lines[1:120], start=1):
+        if line.strip() == "---":
+            return "\n".join(lines[idx + 1 :]).lstrip()
+    return text
+
+
+def _markdown_inline(text: str) -> str:
+    code_spans: list[str] = []
+
+    def stash_code(match: re.Match[str]) -> str:
+        code_spans.append(f"<code>{html.escape(match.group(1))}</code>")
+        return f"\0CODE{len(code_spans) - 1}\0"
+
+    protected = re.sub(r"`([^`]+)`", stash_code, text)
+    rendered = html.escape(protected)
+
+    def link(match: re.Match[str]) -> str:
+        label = match.group(1)
+        url = match.group(2)
+        return f'<a href="{html.escape(url, quote=True)}">{label}</a>'
+
+    rendered = _MARKDOWN_LINK_RE.sub(link, rendered)
+    rendered = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", rendered)
+    rendered = re.sub(r"(?<!\*)\*([^*\n]+)\*(?!\*)", r"<em>\1</em>", rendered)
+    for idx, code in enumerate(code_spans):
+        rendered = rendered.replace(f"\0CODE{idx}\0", code)
+    return rendered
+
+
+def _highlight_code_block(code: str, language: str) -> str:
+    lang_class = html.escape(language, quote=True)
+    try:
+        from pygments import highlight
+        from pygments.formatters import HtmlFormatter
+        from pygments.lexers import TextLexer, get_lexer_by_name
+    except ImportError:
+        return f'<pre><code class="language-{lang_class}">{html.escape(code)}</code></pre>'
+
+    try:
+        lexer = get_lexer_by_name(language) if language else TextLexer()
+    except Exception:
+        lexer = TextLexer()
+    formatter = HtmlFormatter(nowrap=True, noclasses=True)
+    highlighted = highlight(code, lexer, formatter)
+    return f'<pre><code class="language-{lang_class}">{highlighted}</code></pre>'
+
+
+def _split_markdown_table_row(line: str) -> list[str]:
+    stripped = line.strip().strip("|")
+    return [cell.strip() for cell in stripped.split("|")]
+
+
+def _render_markdown_table(lines: list[str], start: int) -> tuple[str, int] | None:
+    if start + 1 >= len(lines) or not _MARKDOWN_TABLE_SEPARATOR_RE.match(lines[start + 1]):
+        return None
+    header = _split_markdown_table_row(lines[start])
+    rows: list[list[str]] = []
+    idx = start + 2
+    while idx < len(lines) and "|" in lines[idx].strip():
+        rows.append(_split_markdown_table_row(lines[idx]))
+        idx += 1
+    header_html = "".join(f"<th>{_markdown_inline(cell)}</th>" for cell in header)
+    row_html = []
+    for row in rows:
+        cells = row + [""] * max(0, len(header) - len(row))
+        row_html.append("".join(f"<td>{_markdown_inline(cell)}</td>" for cell in cells[: len(header)]))
+    body = "".join(f"<tr>{row}</tr>" for row in row_html)
+    return f"<table><thead><tr>{header_html}</tr></thead><tbody>{body}</tbody></table>", idx
+
+
+def _render_markdown_fallback(text: str) -> str:
+    lines = _strip_markdown_frontmatter(text).splitlines()
+    out: list[str] = []
+    paragraph: list[str] = []
+    list_type: str | None = None
+    in_code = False
+    code_lang = ""
+    code_lines: list[str] = []
+
+    def flush_paragraph() -> None:
+        if paragraph:
+            out.append(f"<p>{_markdown_inline(' '.join(paragraph))}</p>")
+            paragraph.clear()
+
+    def close_list() -> None:
+        nonlocal list_type
+        if list_type is not None:
+            out.append(f"</{list_type}>")
+            list_type = None
+
+    idx = 0
+    while idx < len(lines):
+        raw = lines[idx]
+        line = raw.rstrip()
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            if in_code:
+                out.append(_highlight_code_block("\n".join(code_lines), code_lang))
+                code_lines = []
+                code_lang = ""
+                in_code = False
+            else:
+                flush_paragraph()
+                close_list()
+                code_lang = stripped[3:].strip().split(" ", 1)[0]
+                in_code = True
+            idx += 1
+            continue
+        if in_code:
+            code_lines.append(raw)
+            idx += 1
+            continue
+        if not stripped:
+            flush_paragraph()
+            close_list()
+            idx += 1
+            continue
+        if stripped in {"---", "***", "___"}:
+            flush_paragraph()
+            close_list()
+            out.append("<hr>")
+            idx += 1
+            continue
+        table = _render_markdown_table(lines, idx)
+        if table is not None:
+            flush_paragraph()
+            close_list()
+            table_html, idx = table
+            out.append(table_html)
+            continue
+        heading = re.match(r"^(#{1,6})\s+(.+)$", stripped)
+        if heading:
+            flush_paragraph()
+            close_list()
+            level = len(heading.group(1))
+            out.append(f"<h{level}>{_markdown_inline(heading.group(2).strip())}</h{level}>")
+            idx += 1
+            continue
+        if stripped.startswith(">"):
+            flush_paragraph()
+            close_list()
+            quote_lines = []
+            while idx < len(lines) and lines[idx].strip().startswith(">"):
+                quote_lines.append(lines[idx].strip().lstrip(">").strip())
+                idx += 1
+            out.append(f"<blockquote><p>{_markdown_inline(' '.join(quote_lines))}</p></blockquote>")
+            continue
+        unordered = re.match(r"^\s*[-*]\s+(.+)$", line)
+        ordered = re.match(r"^\s*\d+\.\s+(.+)$", line)
+        if unordered or ordered:
+            flush_paragraph()
+            wanted = "ul" if unordered else "ol"
+            if list_type != wanted:
+                close_list()
+                out.append(f"<{wanted}>")
+                list_type = wanted
+            body = (unordered or ordered).group(1)
+            out.append(f"<li>{_markdown_inline(body)}</li>")
+            idx += 1
+            continue
+        close_list()
+        paragraph.append(stripped)
+        idx += 1
+
+    if in_code:
+        out.append(_highlight_code_block("\n".join(code_lines), code_lang))
+    flush_paragraph()
+    close_list()
+    return "\n".join(out)
+
+
+def _render_markdown_body(text: str) -> str:
+    stripped = _strip_markdown_frontmatter(text)
+    try:
+        import markdown as markdown_lib
+    except ImportError:
+        return _render_markdown_fallback(text)
+
+    extensions = ["extra", "sane_lists", "toc"]
+    extension_configs: dict[str, Any] = {}
+    try:
+        import pygments  # noqa: F401
+    except ImportError:
+        pass
+    else:
+        extensions.append("codehilite")
+        extension_configs["codehilite"] = {"guess_lang": False, "noclasses": True}
+    return str(markdown_lib.markdown(stripped, extensions=extensions, extension_configs=extension_configs))
+
+
+def _cached_markdown_body(path: Path) -> str:
+    stat = path.stat()
+    cache_key = str(path.resolve())
+    cached = _ARTIFACT_MARKDOWN_CACHE.get(cache_key)
+    if cached is not None and cached[0] == stat.st_mtime_ns and cached[1] == stat.st_size:
+        return cached[2]
+    text = path.read_text(encoding="utf-8", errors="replace")
+    rendered = _render_markdown_body(text)
+    _ARTIFACT_MARKDOWN_CACHE[cache_key] = (stat.st_mtime_ns, stat.st_size, rendered)
+    return rendered
+
+
+def _render_artifact_breadcrumbs(rel_path: str) -> str:
+    parts = rel_path.split("/")
+    crumbs = ['<a href="/artifacts">Artifacts</a>']
+    for part in parts[:-1]:
+        crumbs.append(f"<span>/</span><span>{html.escape(part)}</span>")
+    crumbs.append(f"<span>/</span><span>{html.escape(parts[-1])}</span>")
+    return "".join(crumbs)
+
+
+def render_markdown_artifact_html(repo_root: Path, path: Path) -> str:
+    rel = path.relative_to(repo_root.resolve()).as_posix()
+    title = _extract_markdown_artifact_title(path)
+    stat = path.stat()
+    generated = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime())
+    body = _cached_markdown_body(path)
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{html.escape(title)} - KubeDojo Artifact</title>
+  <style>
+    :root {{
+      --bg:#0e1116; --panel:#161b22; --panel-2:#1c232c; --panel-3:#21262d;
+      --border:#30363d; --border-soft:#21262d; --fg:#e6edf3; --fg-dim:#8b949e; --fg-faint:#6e7681;
+      --green:#3fb950; --green-bg:#0f2c1a; --yellow:#d29922; --yellow-bg:#2d2206;
+      --red:#f85149; --red-bg:#2d0e0e; --blue:#58a6ff; --blue-bg:#0f1d2e;
+      --purple:#a371f7; --purple-bg:#1f1830; --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+      --text:var(--fg); --text-secondary:var(--fg-dim); --text-dim:var(--fg-faint);
+      --surface-0:var(--panel); --surface-1:var(--panel-2); --surface-2:var(--panel-3);
+      --accent:var(--blue); --accent-muted:var(--blue-bg); --radius-sm:8px;
+    }}
+    * {{ box-sizing:border-box; }}
+    html,body {{ margin:0; padding:0; background:var(--bg); color:var(--fg); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; line-height:1.58; }}
+{_TOP_NAV_CSS}
+    a {{ color:var(--blue); text-decoration:none; }}
+    a:hover {{ text-decoration:underline; }}
+    code,pre {{ font-family:var(--mono); font-size:0.92em; }}
+    .wrap {{ max-width:1100px; margin:0 auto; padding:28px 24px 64px; }}
+    .crumbs {{ display:flex; flex-wrap:wrap; gap:7px; color:var(--fg-faint); font-family:var(--mono); font-size:12px; margin-bottom:16px; }}
+    .crumbs a {{ color:var(--fg-dim); }}
+    .hero {{ display:flex; justify-content:space-between; gap:18px; align-items:flex-start; border-bottom:1px solid var(--border); padding-bottom:20px; margin-bottom:24px; }}
+    h1 {{ margin:0 0 8px; font-size:28px; letter-spacing:0; line-height:1.15; }}
+    .sub {{ color:var(--fg-dim); font-size:13px; overflow-wrap:anywhere; }}
+    .meta {{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; min-width:260px; }}
+    .pill {{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; letter-spacing:0; border:1px solid; white-space:nowrap; }}
+    .pill.neutral {{ color:var(--fg-dim); background:var(--panel-2); border-color:var(--border); }}
+    .pill.blue {{ color:var(--blue); background:var(--blue-bg); border-color:rgba(88,166,255,0.4); }}
+    article {{ max-width:860px; }}
+    article h1,article h2,article h3,article h4 {{ letter-spacing:0; line-height:1.25; }}
+    article h1 {{ font-size:26px; margin:28px 0 10px; }}
+    article h2 {{ font-size:21px; margin:32px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--border); }}
+    article h3 {{ font-size:17px; margin:24px 0 8px; }}
+    article h4 {{ font-size:15px; margin:20px 0 6px; }}
+    article p,article li {{ font-size:14px; color:var(--fg); }}
+    article ul,article ol {{ padding-left:24px; }}
+    article li {{ margin:5px 0; }}
+    article blockquote {{ margin:16px 0; padding:10px 16px; border-left:4px solid var(--blue); background:linear-gradient(135deg,var(--blue-bg),var(--panel)); color:var(--fg); border-radius:0 8px 8px 0; }}
+    article table {{ width:100%; border-collapse:collapse; margin:16px 0; background:var(--panel); border:1px solid var(--border); border-radius:8px; overflow:hidden; display:block; overflow-x:auto; }}
+    article th,article td {{ padding:9px 11px; border-bottom:1px solid var(--border-soft); text-align:left; vertical-align:top; font-size:13px; }}
+    article th {{ background:var(--panel-2); color:var(--fg-dim); font-size:11px; text-transform:uppercase; letter-spacing:0; }}
+    article tr:last-child td {{ border-bottom:0; }}
+    article code {{ background:var(--panel-2); border:1px solid var(--border); border-radius:4px; padding:1px 5px; }}
+    article pre {{ background:#070b12; border:1px solid var(--border); border-radius:8px; padding:13px 14px; overflow:auto; }}
+    article pre code {{ background:transparent; border:0; padding:0; display:block; }}
+    article hr {{ border:0; border-top:1px solid var(--border); margin:24px 0; }}
+    .codehilite {{ background:#070b12; border:1px solid var(--border); border-radius:8px; padding:13px 14px; overflow:auto; }}
+    @media (max-width:720px) {{
+      .wrap {{ padding:20px 14px 44px; }}
+      .hero {{ display:block; }}
+      .meta {{ justify-content:flex-start; margin-top:12px; min-width:0; }}
+      h1 {{ font-size:23px; }}
+    }}
+  </style>
+</head>
+<body>
+{_render_top_nav("artifacts")}
+<main class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumbs">{_render_artifact_breadcrumbs(rel)}</nav>
+  <header class="hero">
+    <div>
+      <h1>{html.escape(title)}</h1>
+      <div class="sub">{html.escape(rel)}</div>
+    </div>
+    <div class="meta" aria-label="Artifact metadata">
+      <span class="pill blue">Markdown</span>
+      <span class="pill neutral">{stat.st_size / 1024:.1f} KB</span>
+      <span class="pill neutral">Updated {_relative_time(stat.st_mtime)}</span>
+      <span class="pill neutral">Rendered {html.escape(generated)}</span>
+    </div>
+  </header>
+  <article>
+    {body}
+  </article>
+</main>
+</body></html>"""
+
+
+def _artifact_format_counts(artifacts: dict[str, list[dict[str, Any]]]) -> dict[str, int]:
+    counts = {"html": 0, "md": 0}
+    for items in artifacts.values():
+        for item in items:
+            fmt = str(item.get("format", ""))
+            if fmt in counts:
+                counts[fmt] += 1
+    return counts
+
+
+def _artifact_category_anchor(category: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", category.lower()).strip("-")
 
 
 def render_artifacts_index_html(repo_root: Path) -> str:
     artifacts = build_artifacts_index(repo_root)
     generated = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.localtime())
     total = sum(len(items) for items in artifacts.values())
+    format_counts = _artifact_format_counts(artifacts)
     section_html = []
     for category, items in artifacts.items():
-        if not items and category in {"Bug autopsies", "Dispatch briefs"}:
+        if not items and category in {"Briefs", "Bug autopsies", "Dispatch briefs"}:
             continue
         rows = []
         for item in items:
             title = html.escape(str(item["title"]))
             rel_path = html.escape(str(item["path"]))
             url = html.escape(str(item["url"]))
+            fmt = html.escape(str(item.get("format", "html")).upper())
+            fmt_class = "blue" if item.get("format") == "md" else "green"
             age = html.escape(_relative_time(float(item["mtime"])))
             size_kb = f"{item['size_bytes'] / 1024:.1f} KB"
             rows.append(
                 f"""<tr>
       <td><a href="{url}">{title}</a></td>
       <td class="mono path">{rel_path}</td>
+      <td><span class="pill {fmt_class}">{fmt}</span></td>
       <td><span class="pill neutral">{age}</span></td>
       <td class="num">{size_kb}</td>
     </tr>"""
             )
-        body = "\n".join(rows) if rows else '<tr><td colspan="4" class="empty">No HTML artifacts found.</td></tr>'
+        body = "\n".join(rows) if rows else '<tr><td colspan="5" class="empty">No artifacts found.</td></tr>'
+        anchor = _artifact_category_anchor(category)
         section_html.append(
-            f"""<section class="panel">
-  <div class="panel-head">
+            f"""<section class="panel" id="{html.escape(anchor)}">
+  <details open>
+  <summary class="panel-head">
     <h2>{html.escape(category)}</h2>
     <span class="pill neutral">{len(items)}</span>
-  </div>
+  </summary>
   <div class="table-wrap">
     <table class="matrix">
-      <thead><tr><th>Title</th><th>Path</th><th>Modified</th><th>Size</th></tr></thead>
+      <thead><tr><th>Title</th><th>Path</th><th>Type</th><th>Modified</th><th>Size</th></tr></thead>
       <tbody>
     {body}
       </tbody>
     </table>
   </div>
+  </details>
 </section>"""
         )
 
@@ -4561,16 +4943,24 @@ def render_artifacts_index_html(repo_root: Path) -> str:
     .wrap {{ max-width:1200px; margin:0 auto; padding:32px 24px 64px; }}
     .page-head {{ display:flex; justify-content:space-between; gap:20px; align-items:flex-end; margin-bottom:18px; }}
     h1 {{ margin:0; font-size:30px; letter-spacing:0; }}
-    .page-sub {{ margin-top:4px; color:var(--fg-dim); font-size:14px; }}
+    .page-sub {{ margin-top:4px; color:var(--fg-dim); font-size:14px; max-width:780px; }}
     .kpis {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin:18px 0; }}
     .kpi {{ border:1px solid var(--border); border-radius:8px; background:var(--panel); padding:14px 16px; }}
     .kpi .value {{ display:block; font-size:26px; font-weight:600; line-height:1; color:var(--blue); }}
     .kpi .label {{ display:block; margin-top:6px; color:var(--fg-dim); font-size:11px; font-weight:600; letter-spacing:0; text-transform:uppercase; }}
     .panel {{ border:1px solid var(--border); border-radius:8px; background:var(--panel); margin-top:14px; overflow:hidden; }}
+    details {{ display:block; }}
+    summary {{ cursor:pointer; list-style:none; }}
+    summary::-webkit-details-marker {{ display:none; }}
     .panel-head {{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid var(--border); }}
-    .panel-head h2 {{ margin:0; font-size:16px; letter-spacing:0; }}
+    .panel-head::before {{ content:"v"; color:var(--fg-faint); font-size:12px; }}
+    details:not([open]) .panel-head {{ border-bottom:0; }}
+    details:not([open]) .panel-head::before {{ content:">"; }}
+    .panel-head h2 {{ flex:1; margin:0; font-size:16px; letter-spacing:0; }}
     .pill {{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:600; letter-spacing:0; border:1px solid; white-space:nowrap; }}
     .pill.neutral {{ color:var(--fg-dim); background:var(--panel-2); border-color:var(--border); }}
+    .pill.green {{ color:var(--green); background:var(--green-bg); border-color:rgba(63,185,80,0.4); }}
+    .pill.blue {{ color:var(--blue); background:var(--blue-bg); border-color:rgba(88,166,255,0.4); }}
     .table-wrap {{ overflow-x:auto; }}
     table.matrix {{ width:100%; border-collapse:collapse; }}
     table.matrix th,table.matrix td {{ padding:10px 12px; border-bottom:1px solid var(--border-soft); text-align:left; vertical-align:top; font-size:13px; }}
@@ -4594,14 +4984,15 @@ def render_artifacts_index_html(repo_root: Path) -> str:
   <header class="page-head">
     <div>
       <h1>Artifacts</h1>
-      <div class="page-sub">HTML-first migration outputs served through the local API.</div>
+      <div class="page-sub">Unified browser for HTML and Markdown orchestrator artifacts served through the local API.</div>
     </div>
     <span class="pill neutral">Generated {html.escape(generated)}</span>
   </header>
   <section class="kpis" aria-label="Artifact summary">
-    <div class="kpi"><span class="value">{total}</span><span class="label">HTML artifacts</span></div>
+    <div class="kpi"><span class="value">{total}</span><span class="label">Total artifacts</span></div>
+    <div class="kpi"><span class="value">{format_counts["html"]}</span><span class="label">HTML files</span></div>
+    <div class="kpi"><span class="value">{format_counts["md"]}</span><span class="label">Markdown files</span></div>
     <div class="kpi"><span class="value">{len(artifacts)}</span><span class="label">Sections</span></div>
-    <div class="kpi"><span class="value">6</span><span class="label">Allowed roots</span></div>
   </section>
   {"".join(section_html)}
 </main>
@@ -4844,13 +5235,13 @@ def build_state_manifest() -> dict[str, Any]:
                     {
                         "name": "Artifacts index",
                         "path": "/artifacts",
-                        "purpose": "Browseable HTML artifact index, including current handoffs.",
+                        "purpose": "Browseable HTML and Markdown artifact index, including current handoffs.",
                         "type": "html_artifact",
                     },
                     {
                         "name": "Artifacts JSON",
                         "path": "/api/artifacts",
-                        "purpose": "JSON index of HTML artifacts served by the artifacts route.",
+                        "purpose": "JSON index of HTML and Markdown artifacts served by the artifacts route.",
                         "type": "api",
                     },
                 ],
@@ -4864,6 +5255,13 @@ def serve_artifact_file(repo_root: Path, rel_path: str) -> tuple[int, Any, str]:
     candidate = _resolve_artifact_path(repo_root, decoded)
     if candidate is None:
         return 404, {"error": "not_found", "path": decoded}, "application/json; charset=utf-8"
+    if candidate.suffix.lower() == ".md":
+        if not candidate.is_file():
+            return 404, {"error": "not_found", "path": decoded}, "application/json; charset=utf-8"
+        try:
+            return 200, render_markdown_artifact_html(repo_root, candidate), "text/html; charset=utf-8"
+        except OSError:
+            return 404, {"error": "not_found", "path": decoded}, "application/json; charset=utf-8"
     content_type = _artifact_content_type(candidate)
     if content_type is None:
         return 404, {"error": "not_found", "path": decoded}, "application/json; charset=utf-8"
@@ -7495,10 +7893,10 @@ def build_api_schema() -> dict[str, Any]:
         },
         "endpoints": [
             {"path": "/", "desc": "HTML dashboard", "content_type": "text/html"},
-            {"path": "/artifacts", "desc": "Browseable HTML artifact index", "content_type": "text/html"},
+            {"path": "/artifacts", "desc": "Browseable HTML and Markdown artifact index", "content_type": "text/html"},
             {
                 "path": "/artifacts/{rel-path}",
-                "desc": "Static HTML and sibling assets from approved artifact directories",
+                "desc": "Static HTML/assets and server-rendered Markdown from approved artifact directories",
                 "content_type": "text/html or asset MIME type",
             },
             {"path": "/quality", "desc": "Full-quality board and per-module summary table", "content_type": "text/html"},
@@ -7512,7 +7910,7 @@ def build_api_schema() -> dict[str, Any]:
                 "desc": "Pointer-only cold-start state index grouped by purpose",
                 "content_type": "application/json",
             },
-            {"path": "/api/artifacts", "desc": "JSON index of HTML artifacts served by /artifacts"},
+            {"path": "/api/artifacts", "desc": "JSON index of HTML and Markdown artifacts served by /artifacts"},
             {
                 "path": "/api/briefing/session",
                 "desc": "Agent cold-start orientation snapshot. First call for fresh agents.",
