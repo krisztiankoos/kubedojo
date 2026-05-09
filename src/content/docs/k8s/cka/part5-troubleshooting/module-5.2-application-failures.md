@@ -1,5 +1,5 @@
 ---
-revision_pending: true
+revision_pending: false
 title: "Module 5.2: Application Failures"
 slug: k8s/cka/part5-troubleshooting/module-5.2-application-failures
 sidebar:
@@ -22,51 +22,37 @@ lab:
 ## What You'll Be Able to Do
 
 After this module, you will be able to:
-- **Diagnose** CrashLoopBackOff, ImagePullBackOff, and CreateContainerConfigError systematically
-- **Fix** application failures caused by wrong images, missing ConfigMaps, incorrect probes, and resource limits
-- **Debug** multi-container pod failures by identifying which container is failing and why
-- **Trace** an application failure from symptom (pod not running) to root cause (specific configuration error)
+
+- **Diagnose** application failures by connecting Pod phase, container state, Events, logs, and exit codes to a specific root cause.
+- **Fix** application failures caused by wrong images, missing ConfigMaps, missing Secrets, incorrect probes, and resource limits.
+- **Debug** multi-container Pod failures by identifying the failing app container or init container before choosing a command.
+- **Trace** Deployment rollout failures from a stalled rollout symptom through ReplicaSet, Pod, and container evidence.
 
 ---
 
 ## Why This Module Matters
 
-Application failures are the most common issues you'll encounter - both in the exam and in production. A pod that won't start, a container that keeps crashing, or a deployment that won't roll out are daily occurrences. Mastering application troubleshooting is essential for any Kubernetes administrator.
+Hypothetical scenario: you are the administrator on duty during a release window, and a team tells you that their new web Deployment is "down" even though the YAML applied without errors. The first Pod shows `ImagePullBackOff`, the second Pod is stuck in `ContainerCreating`, and a third Pod briefly reaches `Running` before returning to `CrashLoopBackOff`. None of those states tells you the full answer by itself, but each one tells you where Kubernetes was in the startup path when the failure became visible.
 
-> **The Restaurant Kitchen Analogy**
->
-> Think of pods as dishes being prepared in a kitchen. Sometimes the dish fails because of a bad recipe (wrong image), sometimes the ingredients are missing (ConfigMap/Secret), sometimes the chef runs out of space (resources), and sometimes the dish just doesn't come out right (application bug). Each failure has different symptoms and different fixes.
+Application failure troubleshooting is where Kubernetes stops feeling like a collection of object definitions and starts behaving like an operating system for distributed processes. The scheduler, kubelet, container runtime, registry, volume plugins, probes, and controller loops all leave evidence in different places. If you jump straight to editing YAML, you may fix the symptom that happened to be visible first while missing the root cause that will return on the next rollout.
 
----
+This module teaches a repeatable diagnostic path for the failures you will meet most often in the CKA exam and in day-to-day operations. You will learn how to move from Pod phase to Events, from Events to container state, from container state to previous logs, and from logs to the exact configuration, image, resource, or probe mistake that needs correction. The goal is not to memorize every status string; the goal is to build a habit of asking which Kubernetes component was trying to do work, what it reported, and what object you should inspect next.
 
-## What You'll Learn
+The restaurant kitchen analogy is still useful, provided we use it carefully. A Pod is like an order moving through a kitchen: the order must be accepted, ingredients must be available, prep steps must complete, the dish must stay hot, and the waiter must know when it is ready to serve. A bad image is a bad recipe, a missing ConfigMap is a missing ingredient, an OOM kill is a cook running out of counter space, and a probe mistake is a waiter asking whether the dish is ready before it has finished cooking.
 
-By the end of this module, you'll be able to:
-- Troubleshoot pods that won't start
-- Diagnose CrashLoopBackOff containers
-- Fix image pull failures
-- Resolve configuration issues
-- Handle resource constraints and OOM kills
-- Debug deployment rollout problems
+The same analogy also explains why ordering matters during troubleshooting. If the kitchen never received the order, checking whether the chef seasoned the dish is wasted effort. If the ingredients never arrived, tasting the sauce is impossible. Kubernetes gives you similar checkpoints, and disciplined operators honor those checkpoints before chasing application-level theories. That discipline matters under exam pressure because each minute spent in the wrong layer reduces the time available for the simple fix.
 
----
+You should also notice the difference between repair and explanation. Repair gets the workload healthy again, but explanation proves why the chosen repair was correct. A strong administrator can say, "The Pod was scheduled, kubelet could not mount a ConfigMap volume, Events named `app-settings`, the ConfigMap was missing in this namespace, and creating it allowed the container to start." That sentence is more valuable than "I created a ConfigMap and it worked," because it can be reviewed, taught, and repeated.
 
-## Did You Know?
+## Reading the Pod Startup Path
 
-- **[CrashLoopBackOff has exponential backoff](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)**: It starts at 10s, then 20s, 40s, up to 5 minutes between restart attempts.
-- **[Init containers run first](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/)**: If init containers fail, main containers never start - many people forget to check them.
-- **Image pull failure statuses**: Kubernetes commonly surfaces image pull problems as `ErrImagePull` and/or `ImagePullBackOff`, depending on when you inspect the pod.
-- **OOMKilled doesn't always mean a memory leak**: It can simply mean [your `limits` are set lower than the application's baseline startup requirement](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/).
+Kubernetes surfaces application failures as status words, but those words are shorthand for checkpoints in a longer path. A Pod starts with scheduling, then kubelet preparation, then image pulls and volume setup, then init containers, then app containers, then readiness gates. Treating those checkpoints as a timeline prevents a common beginner mistake: looking at container logs when the container has never started, or editing a Deployment image when the scheduler never found a node.
 
----
+The startup sequence below is the first protected diagnostic asset from the original lesson. Keep it in mind as a map rather than as a list of commands. When the Pod is `Pending`, the scheduler and cluster capacity are the likely focus. When the Pod is stuck during creation, kubelet preparation, image pulling, volume mounting, ConfigMaps, Secrets, or CNI setup become more likely. When the Pod has a restart count, the application process or a liveness probe has entered the story.
 
-## Part 1: Pod Startup Failures
+This timeline also helps you interpret missing evidence. Empty application logs are meaningful only if the container actually started. No restart count is meaningful only if the Pod reached the stage where a process could restart. A Deployment with unavailable replicas is meaningful only after you connect it to the Pods created by the newest ReplicaSet. Absence of evidence is not the same thing as evidence of absence; it often means you are asking the wrong layer for information.
 
-### 1.1 The Pod Startup Sequence
-
-Understanding what happens when a pod starts:
-
-```
+```text
 ┌──────────────────────────────────────────────────────────────┐
 │                    POD STARTUP SEQUENCE                       │
 │                                                               │
@@ -94,16 +80,18 @@ Understanding what happens when a pod starts:
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 1.2 Pending - Scheduling Issues
+The fastest first command is usually `kubectl describe pod`, not because it is elegant, but because it joins several sources of truth in one place. It shows scheduling decisions, volume mount failures, image pull messages, probe failures, restart reasons, and recent Events. If the Pod is Pending, this command tells you whether the scheduler rejected every node because of requests, taints, selectors, affinity, or persistent volume constraints.
 
-When a pod is stuck in Pending:
+In Kubernetes 1.35 and current exam-style clusters, Events remain one of the highest-signal sources for startup failures because they are emitted by the components attempting the work. The scheduler explains why placement failed. Kubelet explains why preparation failed. The container runtime reports pull and start problems through kubelet. Controllers explain rollout progress at a higher level. Reading Events is not a beginner shortcut; it is how you ask the responsible component to describe what it just tried.
 
 ```bash
 # Check why pod is pending
-k describe pod <pod> | grep -A 10 Events
+kubectl describe pod <pod> | grep -A 10 Events
 ```
 
-**Common causes**:
+Pending is a scheduling problem until evidence proves otherwise. The scheduler does not ask whether a node has free memory in the casual sense; it evaluates declared requests, taints, affinity, selectors, and volume rules. That is why a node may have unused physical memory while the scheduler still reports `Insufficient memory`: previously scheduled Pods have already reserved the allocatable budget through their requests.
+
+The practical trap is to treat Pending as a reason to change container internals. An image tag, command, environment variable, or liveness probe does not matter until a node has accepted the Pod. If Events mention requests, the repair belongs to resource requests or cluster capacity. If Events mention taints, the repair belongs to tolerations or node selection. If Events mention PVC binding, the repair belongs to storage. This keeps the fix close to the layer that rejected the Pod.
 
 | Message | Cause | Solution |
 |---------|-------|----------|
@@ -115,32 +103,32 @@ k describe pod <pod> | grep -A 10 Events
 | `persistentvolumeclaim not found` | PVC missing | Create PVC |
 | `persistentvolumeclaim not bound` | No matching PV | Check StorageClass, create PV |
 
-**Investigation commands**:
+The supporting commands should match the hypothesis produced by Events. If Events mention insufficient resources, inspect node allocation and metrics. If Events mention taints or node selectors, inspect labels and taints. If Events mention PVC binding, inspect the claim and its StorageClass. Copying a generic command bundle into the terminal is slower than using the Event message as a searchlight.
 
 ```bash
 # Check node resources
-k describe nodes | grep -A 5 "Allocated resources"
-k top nodes
+kubectl describe nodes | grep -A 5 "Allocated resources"
+kubectl top nodes
 
 # Check node taints
-k get nodes -o custom-columns='NAME:.metadata.name,TAINTS:.spec.taints[*].key'
+kubectl get nodes -o custom-columns='NAME:.metadata.name,TAINTS:.spec.taints[*].key'
 
 # Check node labels (for nodeSelector)
-k get nodes --show-labels
+kubectl get nodes --show-labels
 ```
 
-### 1.3 ContainerCreating - Preparation Issues
+`ContainerCreating` means the scheduler has already placed the Pod on a node, so the investigation moves from the scheduler to kubelet preparation. At this stage kubelet may be pulling images, mounting volumes, reading ConfigMaps and Secrets, preparing the network namespace, and asking the container runtime to create containers. Logs are often empty here because the main process has not started yet.
 
-> **Stop and think**: If a pod is stuck in `ContainerCreating` for 5 minutes, what is the most likely external dependency causing the hang?
+Kubelet preparation failures are often caused by dependencies that look small in YAML but are mandatory at runtime. A single misspelled Secret name can prevent an otherwise perfect image from starting. A PVC that is not bound can block the volume mount. A private image without a usable pull Secret can stop the process before your application code exists. The YAML may be syntactically valid while still describing a workload that cannot be materialized on the node.
 
-When a pod is stuck in ContainerCreating:
+Pause and predict: if a Pod is stuck in `ContainerCreating` for several minutes and the application logs are empty, which external dependency is most likely blocking the transition from Pod specification to runnable container? Your answer should point to something kubelet must prepare before the process can exist, such as an image pull, a volume mount, a missing Secret, a missing ConfigMap, or a network setup failure.
 
 ```bash
 # Always check Events first
-k describe pod <pod> | grep -A 15 Events
+kubectl describe pod <pod> | grep -A 15 Events
 ```
 
-**Common causes**:
+The table below preserves the original preparation-failure map, but the important habit is to read the message as a component clue. `ImagePullBackOff` points toward the registry and image reference, while `MountVolume.SetUp failed` points toward storage or projected configuration. A missing ConfigMap or Secret is not an application bug yet; it is Kubernetes refusing to start the container because the declared dependency does not exist.
 
 | Message | Cause | Solution |
 |---------|-------|----------|
@@ -152,28 +140,30 @@ k describe pod <pod> | grep -A 15 Events
 | `secret not found` | Missing Secret | Create Secret |
 | `network not ready` | CNI issues | Check CNI pods |
 
-**Investigation commands**:
+The next commands verify the dependency named by the Event instead of guessing. Namespaces matter here: a ConfigMap or Secret with the same name in another namespace is invisible to the Pod. In the exam, this detail often separates a quick fix from a long detour, because `kubectl get configmap <name>` without `-n` may query the wrong namespace and create a false negative.
 
 ```bash
 # Check image pull issues
-k get events --field-selector involvedObject.name=<pod>
+kubectl get events --field-selector involvedObject.name=<pod>
 
 # Check if ConfigMap/Secret exists
-k get configmap <name>
-k get secret <name>
+kubectl get configmap <name>
+kubectl get secret <name>
 
 # Check PVC status
-k get pvc
-k describe pvc <name>
+kubectl get pvc
+kubectl describe pvc <name>
 ```
 
----
+## Diagnosing CrashLoopBackOff and Exit Evidence
 
-## Part 2: Container Crash Troubleshooting
+`CrashLoopBackOff` is not the root cause; it is Kubernetes protecting the node and registry from a container that repeatedly exits. The kubelet starts the container, observes the process terminate, waits with exponential backoff, and tries again while the Pod remains under the owning controller. Your job is to find the last terminated state and the previous logs before the next restart erases the most useful context from the current process view.
 
-### 2.1 Understanding CrashLoopBackOff
+A useful mental model is to separate "Kubernetes could not start the process" from "Kubernetes started the process and the process did not stay alive." `ImagePullBackOff`, missing volumes, and missing required Secrets usually sit in the first category. `CrashLoopBackOff` usually sits in the second category, though probes can blur the line by killing a process Kubernetes already started. That distinction tells you whether to inspect dependency Events or process evidence first.
 
-```
+The protected cycle diagram is worth reading slowly. The backoff starts small, grows after repeated crashes, and caps at five minutes between restart attempts. After a container runs successfully for about ten minutes, Kubernetes resets the restart backoff, which is why a newly fixed configuration may still appear delayed if the Pod has been failing for a long time.
+
+```text
 ┌──────────────────────────────────────────────────────────────┐
 │                   CRASHLOOPBACKOFF CYCLE                      │
 │                                                               │
@@ -193,33 +183,33 @@ k describe pvc <name>
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 CrashLoopBackOff Investigation
+The practical sequence is status, Events, current state, previous logs, and exit code. Status tells you whether a restart loop exists. Events often show probe kills, OOM kills, and image or mount messages. Current state tells you whether the container is waiting, running, or terminated now. Previous logs and `lastState` tell you what happened to the last process instance, which is usually the one that contains the real failure.
 
-> **Pause and predict**: If a pod has restarted 50 times but currently shows as `Running`, how can you find out why it crashed previously?
+The order matters because each command answers a narrower question than the one before it. `kubectl get pod` tells you that a restart loop exists, but it does not prove why. `kubectl describe pod` tells you whether Kubernetes observed OOM, probe, or scheduling evidence. Previous logs tell you whether the application reported its own reason before exiting. Exit code then helps classify that reason without replacing the logs. Skipping directly to the last command produces brittle conclusions.
 
-**Step-by-step approach**:
+Pause and predict: if a Pod has restarted many times but currently shows `Running`, where would you look for the failure that caused the earlier restart? The current logs may only show the newest process instance, so the stronger answer is previous logs plus the container's `lastState.terminated` details, with `-c` used when the Pod has multiple containers.
 
 ```bash
 # Step 1: Check pod status and restart count
-k get pod <pod>
+kubectl get pod <pod>
 # Look at RESTARTS column
 
 # Step 2: Check events
-k describe pod <pod> | grep -A 10 Events
+kubectl describe pod <pod> | grep -A 10 Events
 
 # Step 3: Check current container state
-k describe pod <pod> | grep -A 10 "State:"
+kubectl describe pod <pod> | grep -A 10 "State:"
 
 # Step 4: Check PREVIOUS container logs (crucial!)
 # For multi-container pods, identify the failing container and specify it with -c
-# k get pod <pod> -o jsonpath='{range .status.containerStatuses[*]}{.name}{"\t"}{.restartCount}{"\n"}{end}'
-k logs <pod> --previous # add -c <container-name> if multiple containers
+# kubectl get pod <pod> -o jsonpath='{range .status.containerStatuses[*]}{.name}{"\t"}{.restartCount}{"\n"}{end}'
+kubectl logs <pod> --previous # add -c <container-name> if multiple containers
 
 # Step 5: Check exit code
-k get pod <pod> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.exitCode}'
+kubectl get pod <pod> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.exitCode}'
 ```
 
-### 2.3 Exit Codes Decoded
+Exit codes are compact evidence, not magic answers. Code `1` usually means the application chose to exit with a generic error, so logs and configuration become important. Code `127` points toward a command or entrypoint that does not exist in the image. Code `137` means SIGKILL, which may be an OOM kill or another forced termination, so you must check the termination reason rather than assuming every `137` is a memory leak.
 
 | Exit Code | Signal | Meaning | Common Cause |
 |-----------|--------|---------|--------------|
@@ -234,25 +224,25 @@ k get pod <pod> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.
 | 143 | SIGTERM (15) | Graceful termination | Normal shutdown |
 | 255 | - | Unknown/Custom error | Application specific fatal error |
 
-### 2.4 OOMKilled Investigation
+OOMKilled is especially easy to misread because the visible symptom may look like an application crash. Kubernetes enforces the container memory limit through the node's container runtime and kernel memory controls; when the process exceeds that limit, it can be killed even if the node still has memory available. The fix might be increasing the limit, lowering the application baseline, changing startup behavior, or splitting a heavy workload from the request-serving container.
 
-When exit code is 137 or status shows OOMKilled:
+The CKA exam usually rewards the direct correction, but production work requires one more question: why was this limit wrong for this workload? A startup spike may call for a higher limit or smaller preload. A true leak may require rollback or code repair. A batch task placed in a request-serving Deployment may need a Job or separate worker. The Kubernetes symptom tells you the enforcement event; it does not automatically choose the long-term capacity design.
 
 ```bash
 # Check for OOMKilled status
-k describe pod <pod> | grep -i oom
+kubectl describe pod <pod> | grep -i oom
 
 # Check memory limits
-k get pod <pod> -o jsonpath='{.spec.containers[0].resources.limits.memory}'
+kubectl get pod <pod> -o jsonpath='{.spec.containers[0].resources.limits.memory}'
 
 # Check actual memory usage (if pod is running)
-k top pod <pod>
+kubectl top pod <pod>
 
 # Fix: Increase memory limit
-k patch deployment <name> -p '{"spec":{"template":{"spec":{"containers":[{"name":"<container>","resources":{"limits":{"memory":"512Mi"}}}]}}}}'
+kubectl patch deployment <name> -p '{"spec":{"template":{"spec":{"containers":[{"name":"<container>","resources":{"limits":{"memory":"512Mi"}}}]}}}}'
 ```
 
-### 2.5 Common CrashLoopBackOff Causes
+The most useful CrashLoop diagnosis combines three views: what the process logged, why Kubernetes says it terminated, and what the Pod spec asked Kubernetes to run. If the logs say a file is missing and the spec mounts that file from a ConfigMap key, you have a configuration dependency failure. If the exit code says command not found and the spec overrides `command`, you probably replaced the image entrypoint incorrectly.
 
 | Symptom | Diagnosis | Fix |
 |---------|-----------|-----|
@@ -264,13 +254,15 @@ k patch deployment <name> -p '{"spec":{"template":{"spec":{"containers":[{"name"
 | Logs show "file not found" | Missing ConfigMap/Secret | Verify mounts exist |
 | Logs show "permission denied" | Security context | Fix runAsUser or fsGroup |
 
----
+Multi-container Pods add one more layer: the failing container may not be the first container in the spec. Sidecars, init containers, and helper containers all have separate logs and restart counts. Before you run `kubectl logs`, list the container statuses and choose the container whose restart count or waiting reason matches the symptom. This avoids the misleading experience of reading healthy sidecar logs while the app container is failing beside it.
 
-## Part 3: Image Pull Failures
+## Fixing Image and Registry Failures
 
-### 3.1 Image Pull Error Types
+Image pull failures happen before the application process exists, so they leave evidence in Events rather than in application logs. Kubernetes first reports an immediate pull failure, commonly `ErrImagePull`, and then moves to `ImagePullBackOff` after repeated failures. The same status can come from a typoed tag, a private registry without credentials, a registry outage, or a rate limit, so the Event message is more important than the short Pod status.
 
-```
+This is also why deleting the Pod is rarely the first useful action. If the owning template still contains the same bad image reference or missing pull Secret, a new Pod repeats the same failure and may even reset the evidence you were about to read. Fix the reference, credentials, or registry path on the controller template, then let the controller create a new Pod from corrected desired state. The controller is the source of recurrence, so it is usually the source of repair.
+
+```text
 ┌──────────────────────────────────────────────────────────────┐
 │                  IMAGE PULL ERROR FLOW                        │
 │                                                               │
@@ -288,11 +280,11 @@ k patch deployment <name> -p '{"spec":{"template":{"spec":{"containers":[{"name"
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 3.2 Diagnosing Image Pull Issues
+Start with the exact error text from the pull attempt. `manifest unknown` means the repository or tag cannot be found. `unauthorized` means credentials are missing or invalid. Network timeouts point toward registry reachability, DNS, proxy, or node egress. `toomanyrequests` usually means the registry is rate limiting unauthenticated or high-volume pulls.
 
 ```bash
 # Check events for specific error
-k describe pod <pod> | grep -A 5 "Failed to pull"
+kubectl describe pod <pod> | grep -A 5 "Failed to pull"
 
 # Common error messages:
 # "manifest unknown" - Image tag doesn't exist
@@ -301,154 +293,150 @@ k describe pod <pod> | grep -A 5 "Failed to pull"
 # "toomanyrequests" - Rate limited
 ```
 
-### 3.3 Fixing Image Pull Issues
+For a wrong image name or tag, prefer updating the owning controller instead of editing the failed Pod. Standalone Pods are disposable in labs, but real workloads usually come from Deployments, StatefulSets, Jobs, or CronJobs. If you change only the created Pod, the controller may recreate the same failure from the original template.
 
-**Wrong image name/tag**:
+Image names carry several pieces of meaning at once: registry host, repository path, image name, tag, and sometimes digest. A typo in any part can produce a pull failure that looks similar at the Pod-status level. Before changing a tag, read the full reference from the Pod or controller and compare it with the intended release artifact. In clusters using admission policies or image mirrors, also remember that the reference you wrote may be transformed or validated before kubelet pulls it.
+
 ```bash
 # Check current image
-k get pod <pod> -o jsonpath='{.spec.containers[0].image}'
+kubectl get pod <pod> -o jsonpath='{.spec.containers[0].image}'
 
 # Fix with set image
-k set image deployment/<name> <container>=<correct-image>
+kubectl set image deployment/<name> <container>=<correct-image>
 
 # Or edit directly
-k edit deployment <name>
+kubectl edit deployment <name>
 ```
 
-**Registry authentication**:
+Private registry failures require matching the Secret, namespace, ServiceAccount, and Pod template. A Docker registry Secret in the wrong namespace is invisible to the Pod. A Secret that exists but is not referenced through `imagePullSecrets` is also invisible during the pull. Patching the default ServiceAccount can be a good namespace-level fix in a lab, while production teams often make that choice explicitly through workload-specific ServiceAccounts.
+
 ```bash
 # Create registry secret
-k create secret docker-registry regcred \
+kubectl create secret docker-registry regcred \
   --docker-server=registry.example.com \
   --docker-username=user \
-  --docker-password=pass \
+  --docker-password=your-registry-password-here \
   --docker-email=user@example.com
 
 # Add to pod spec
-k patch serviceaccount default -p '{"imagePullSecrets":[{"name":"regcred"}]}'
+kubectl patch serviceaccount default -p '{"imagePullSecrets":[{"name":"regcred"}]}'
 
 # Or add to specific deployment
-k patch deployment <name> -p '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"regcred"}]}}}}'
+kubectl patch deployment <name> -p '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"regcred"}]}}}}'
 ```
 
-**Docker Hub rate limiting**:
+Rate limiting is different from a bad image reference because the same image may work for one node and fail for another depending on pull history and credentials. Authentication, internal registries, pre-pulled images, and alternative public registries are all valid mitigations, but the right choice depends on cluster policy. In an exam environment, the most likely fix is a corrected image reference or an existing pull secret, not a registry architecture redesign.
+
 ```bash
 # Option 1: Use authenticated pulls
-k create secret docker-registry dockerhub \
+kubectl create secret docker-registry dockerhub \
   --docker-server=https://index.docker.io/v1/ \
   --docker-username=<username> \
-  --docker-password=<token>
+  --docker-password=<TOKEN>
 
 # Option 2: Use alternative registry (e.g., quay.io, public.ecr.aws)
 # nginx:latest -> public.ecr.aws/nginx/nginx:latest
 ```
 
----
+## Debugging Configuration, Secrets, and Runtime Inputs
 
-## Part 4: Configuration Issues
+Configuration failures sit on the boundary between Kubernetes and the application. Kubernetes can detect missing ConfigMaps, missing Secrets, missing volume sources, and invalid references before the container starts. It cannot always detect a wrong key name, an unexpected value, or an application-specific environment variable requirement; those may appear only after the process begins and exits with an application error.
 
-### 4.1 Missing ConfigMap/Secret
+That boundary is the reason configuration problems can produce different visible states. A missing mounted ConfigMap can leave the Pod stuck during container creation, while a present ConfigMap with a missing application key can let the container start and crash. An optional key reference might allow startup with an empty or absent value, shifting the failure into application behavior. Good debugging asks whether Kubernetes rejected the dependency or the application rejected the data.
 
-> **Pause and predict**: What exact pod status would you expect if a referenced Secret does not exist in the namespace?
+Pause and predict: what Pod status would you expect if a Pod references a Secret that does not exist in the namespace? The answer depends on how the Secret is consumed, but the usual sign is a container-creation failure with Events saying the Secret could not be found, because kubelet cannot materialize the environment or mounted volume promised by the Pod spec.
 
-**Symptoms**:
-- Pod status may show a container-creation failure or remain stuck creating the container
-- Events report that the referenced ConfigMap or Secret could not be found
+The diagnosis begins by reading the Pod spec for declared inputs and then checking whether those objects exist in the same namespace. For mounted ConfigMaps and Secrets, the failure may appear as a volume setup error. For environment variables sourced through `valueFrom`, Kubernetes may block startup if a required key reference cannot be resolved unless the reference is optional.
 
-**Diagnosis**:
 ```bash
 # Check what ConfigMaps/Secrets the pod needs
-k get pod <pod> -o yaml | grep -A 5 "configMap\|secret"
+kubectl get pod <pod> -o yaml | grep -A 5 "configMap\|secret"
 
 # Verify they exist
-k get configmap
-k get secret
+kubectl get configmap
+kubectl get secret
 
 # Check specific one
-k describe configmap <name>
+kubectl describe configmap <name>
 ```
 
-**Fix**:
+Creating the missing object can be a valid emergency fix when the desired data is known and safe to create. In a controlled exam lab, a literal key is often enough to prove you identified the dependency. In production, you should confirm ownership and data source before inventing values, because an application that starts with the wrong configuration may fail more quietly than one that refuses to start.
+
+Secrets deserve special caution because their presence can satisfy Kubernetes while their contents remain wrong. A Secret named correctly but containing an old password, wrong key name, or value encoded from the wrong source may let the Pod start and fail against the external dependency. Kubernetes does not authenticate your database password while creating the Pod. It only projects bytes into the container, so application logs and dependency telemetry may still be needed after Kubernetes accepts the object.
+
 ```bash
 # Create missing ConfigMap
-k create configmap <name> --from-literal=key=value
+kubectl create configmap <name> --from-literal=key=value
 
 # Create missing Secret
-k create secret generic <name> --from-literal=password=secret
+kubectl create secret generic <name> --from-literal=password=your-password-here
 
 # If you have the data file
-k create configmap <name> --from-file=config.yaml
-k create secret generic <name> --from-file=credentials.json
+kubectl create configmap <name> --from-file=config.yaml
+kubectl create secret generic <name> --from-file=credentials.json
 ```
 
-### 4.2 Incorrect ConfigMap/Secret Keys
+Wrong keys are subtler than missing objects. A ConfigMap named `app-settings` may exist and still lack the `REDIS_HOST` key that the container expects. If the application reads a mounted file path, logs might show `file not found`. If it reads an environment variable, logs might show a missing variable error and exit code `1`, which means Kubernetes successfully started the process but the application rejected its inputs.
 
-**Symptoms**:
-- Depending on how the configuration is consumed, the Pod may fail to start or the container may start and the application may fail at runtime
-- Logs show "file not found" or "key not found"
-
-**Diagnosis**:
 ```bash
 # Check what keys exist in ConfigMap
-k get configmap <name> -o yaml
+kubectl get configmap <name> -o yaml
 
 # Check pod's expected keys
-k get pod <pod> -o yaml | grep -A 10 configMapKeyRef
+kubectl get pod <pod> -o yaml | grep -A 10 configMapKeyRef
 
 # Compare expected vs actual
 ```
 
-**Fix**:
+Patching a ConfigMap changes the object, but it does not always update a running application immediately. Environment variables are captured when the container starts, so a Pod must be recreated to see changed values. Projected volumes can update on the node, but many applications read configuration only at startup. A good troubleshooting fix includes both correcting the data and ensuring the workload consumes the corrected data.
+
 ```bash
 # Add missing key to ConfigMap
-k patch configmap <name> -p '{"data":{"missing-key":"value"}}'
+kubectl patch configmap <name> -p '{"data":{"missing-key":"value"}}'
 
 # Or recreate
-k create configmap <name> --from-literal=key1=val1 --from-literal=key2=val2 --dry-run=client -o yaml | k apply -f -
+kubectl create configmap <name> --from-literal=key1=val1 --from-literal=key2=val2 --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-### 4.3 Environment Variable Issues
+Environment variable debugging is most useful after the container is running or briefly running. Compare the values inside the process environment with the values declared in the Pod template. If the Pod crashes too quickly for `exec`, use previous logs and the Pod spec instead. In multi-container Pods, remember that each container has its own environment and mounts.
 
 ```bash
 # Check environment variables in running container
-k exec <pod> -- env
+kubectl exec <pod> -- env
 
 # Check what's defined in spec
-k get pod <pod> -o jsonpath='{.spec.containers[0].env[*]}'
+kubectl get pod <pod> -o jsonpath='{.spec.containers[0].env[*]}'
 
 # Common issue: ConfigMap key name doesn't match env var name
 # Check with:
-k get pod <pod> -o yaml | grep -A 5 valueFrom
+kubectl get pod <pod> -o yaml | grep -A 5 valueFrom
 ```
 
----
+## Tracing Deployment Rollout Failures
 
-## Part 5: Deployment Rollout Failures
+A Deployment rollout failure is a controller-level symptom built from Pod-level causes. The Deployment controller creates a new ReplicaSet from the updated Pod template, scales it up, and waits for the new Pods to become available while preserving availability according to the rollout strategy. If the new Pods never become Ready, the rollout stalls even though the old ReplicaSet may keep serving traffic.
 
-### 5.1 Stuck Deployments
+The Deployment controller is intentionally conservative because availability is part of the API contract. During a rolling update, it can keep old Pods running while trying to create new Pods, and this gives you room to diagnose without immediately taking the service completely offline. That same behavior can make failures look confusing: the Service still works for some users, the Deployment says progress is incomplete, and only the newest Pods show the actual broken template.
 
-> **Stop and think**: If `kubectl rollout status` hangs indefinitely, [what object should you describe next to find the actual pod creation errors?](https://kubernetes.io/docs/tasks/run-application/update-deployment-rolling/)
+Stop and think: if `kubectl rollout status deployment/<name>` hangs, what object should you describe next to find the actual creation errors? The Deployment conditions are useful, but the newest ReplicaSet and its Pods usually contain the concrete image, mount, probe, scheduling, or crash evidence that explains why availability is not progressing.
 
-**Symptoms**:
-- `k rollout status deployment/<name>` hangs
-- Old and new ReplicaSets both exist
-- Pods not reaching Ready state
+The first pass is to read the Deployment, then its ReplicaSets, then the Pods owned by the newest ReplicaSet. Do not assume the Deployment itself has the root cause. It often reports a high-level condition such as `ProgressDeadlineExceeded`, while the Pod Events show the exact missing Secret, bad image tag, or failing readiness probe.
 
 ```bash
 # Check deployment status
-k get deployment <name>
-k describe deployment <name>
+kubectl get deployment <name>
+kubectl describe deployment <name>
 
 # Check ReplicaSets
-k get rs -l app=<name>
+kubectl get rs -l app=<name>
 
 # Check pods from new ReplicaSet
-k get pods -l app=<name>
+kubectl get pods -l app=<name>
 ```
 
-### 5.2 Common Rollout Issues
+The rollout-state diagram from the original module captures the operational risk. A rollout can be partially successful, with old Pods still carrying traffic while new Pods fail. That is a safer failure mode than replacing everything at once, but it can still leave you under capacity. Your decision is whether to fix forward quickly, rollback, or pause and investigate while the previous version remains available.
 
-```
+```text
 ┌──────────────────────────────────────────────────────────────┐
 │                  DEPLOYMENT ROLLOUT STATES                    │
 │                                                               │
@@ -470,62 +458,65 @@ k get pods -l app=<name>
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Investigation**:
+Finding the newest ReplicaSet is a practical shortcut when labels are consistent. The command below sorts ReplicaSets by creation timestamp, describes the newest one, and then inspects failing Pods. In real clusters, label hygiene matters: if a selector is broad or inconsistent, the command may include more than the Deployment you intended, so always confirm names before making changes.
+
+ReplicaSets are valuable because they preserve rollout history in object form. The old ReplicaSet represents the previous Pod template, and the new ReplicaSet represents the attempted template. Comparing their images, environment references, probes, and resource settings can reveal the exact change that introduced the failure. You do not need to diff every line during a timed task, but noticing that the new ReplicaSet alone contains a bad tag or new probe often shortens the investigation dramatically.
+
 ```bash
 # Check deployment conditions
-k describe deployment <name> | grep -A 10 Conditions
+kubectl describe deployment <name> | grep -A 10 Conditions
 
 # Check new ReplicaSet's pods
-NEW_RS=$(k get rs -l app=<name> --sort-by='.metadata.creationTimestamp' -o name | tail -1)
-k describe $NEW_RS
+NEW_RS=$(kubectl get rs -l app=<name> --sort-by='.metadata.creationTimestamp' -o name | tail -1)
+kubectl describe "$NEW_RS"
 
 # Check why pods aren't ready
-k get pods -l app=<name> | grep -v Running
-k describe pod <failing-pod>
+kubectl get pods -l app=<name> | grep -v Running
+kubectl describe pod <failing-pod>
 ```
 
-### 5.3 Rollback
-
-When new version is broken:
+Rollback is a service-restoration tool, not an admission of defeat. If the new revision is breaking capacity and the old revision is known good, `kubectl rollout undo` moves the Deployment back to the previous Pod template while preserving the controller's normal behavior. After service is stable, you can investigate the failed revision with less pressure and build a corrected forward fix.
 
 ```bash
 # Check rollout history
-k rollout history deployment/<name>
+kubectl rollout history deployment/<name>
 
 # Rollback to previous version
-k rollout undo deployment/<name>
+kubectl rollout undo deployment/<name>
 
 # Rollback to specific revision
-k rollout undo deployment/<name> --to-revision=2
+kubectl rollout undo deployment/<name> --to-revision=2
 
 # Verify rollback
-k rollout status deployment/<name>
+kubectl rollout status deployment/<name>
 ```
 
-### 5.4 Fixing Stuck Rollouts
+Fix-forward is appropriate when the root cause is obvious and safe to correct, such as a typoed image tag or a missing ConfigMap key. Rollback is better when the failure is ambiguous, customer-facing capacity is low, or the fix requires application code. Forced restarts and scale-down operations are powerful, but they can hide evidence and interrupt healthy Pods, so keep them as deliberate choices rather than reflexes.
 
 ```bash
 # Option 1: Fix the issue and let rollout continue
-k set image deployment/<name> <container>=<fixed-image>
+kubectl set image deployment/<name> <container>=<fixed-image>
 
 # Option 2: Rollback
-k rollout undo deployment/<name>
+kubectl rollout undo deployment/<name>
 
 # Option 3: Force restart (deletes and recreates pods)
-k rollout restart deployment/<name>
+kubectl rollout restart deployment/<name>
 
 # Option 4: Scale down then up (nuclear option)
-k scale deployment/<name> --replicas=0
-k scale deployment/<name> --replicas=3
+kubectl scale deployment/<name> --replicas=0
+kubectl scale deployment/<name> --replicas=3
 ```
 
----
+## Readiness, Liveness, and Probe-Caused Failures
 
-## Part 6: Readiness and Liveness Probe Failures
+Probes are health contracts between Kubernetes and your container, and a wrong contract can create a failure that looks like an application bug. Liveness answers, "Should kubelet restart this container?" Readiness answers, "Should Services send traffic to this Pod?" Startup probes answer, "Should liveness wait while this slow-starting process becomes alive enough to evaluate?" Mixing these meanings is one of the fastest ways to create self-inflicted outages.
 
-### 6.1 Probe Types Review
+Health endpoints should be designed with their Kubernetes action in mind. A liveness endpoint should fail only when restarting the container is likely to improve the situation. A readiness endpoint can be stricter because its failure merely removes the Pod from traffic. A startup probe can be patient because its purpose is to give slow initialization a fair chance. When all three endpoints point to the same expensive dependency check, a dependency outage can trigger restarts instead of graceful traffic removal.
 
-```
+The preserved probe diagram shows the two most common probe consequences. A failed liveness probe restarts the container, which can cause CrashLoopBackOff when the probe is too aggressive. A failed readiness probe removes the Pod from Service endpoints, which can make the application appear down even though the process is running and logs look healthy.
+
+```text
 ┌──────────────────────────────────────────────────────────────┐
 │                     PROBE TYPES                               │
 │                                                               │
@@ -539,27 +530,29 @@ k scale deployment/<name> --replicas=3
 │   • Deadlock detection          • Startup dependencies        │
 │   • Hung processes              • Warming caches              │
 │                                                               │
-│   ⚠️ Wrong liveness config      ⚠️ Wrong readiness config     │
+│   Bad liveness config          Bad readiness config           │
 │      = crash loops                 = no traffic               │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### 6.2 Diagnosing Probe Failures
+Probe diagnosis starts with the configured path, port, command, timing, and Events. If Events show repeated liveness failures followed by restarts, the probe may be killing the container before the application is actually broken. If readiness fails without restarts, traffic may be blocked because the readiness endpoint returns an error, the port is wrong, or the app depends on a backend that is not ready yet.
+
+Manual probe testing should happen from the same network perspective as the probe whenever possible. Executing a command inside the container and calling `127.0.0.1` checks the local listener and path, which is close to what an HTTP probe against the Pod IP is trying to validate. If the manual check works but Events still show failures, compare port names, container ports, scheme, timeout, and whether the endpoint sometimes exceeds the configured timeout under load.
 
 ```bash
 # Check probe configuration
-k get pod <pod> -o yaml | grep -A 10 "livenessProbe\|readinessProbe"
+kubectl get pod <pod> -o yaml | grep -A 10 "livenessProbe\|readinessProbe"
 
 # Check for probe failures in events
-k describe pod <pod> | grep -i "unhealthy\|probe"
+kubectl describe pod <pod> | grep -i "unhealthy\|probe"
 
 # Test probe manually
-k exec <pod> -- wget -qO- http://localhost:8080/health
-k exec <pod> -- cat /tmp/healthy
+kubectl exec <pod> -- wget -qO- http://127.0.0.1:8080/health
+kubectl exec <pod> -- cat /tmp/healthy
 ```
 
-### 6.3 Common Probe Issues
+Probe timing is where many otherwise correct configurations fail. A Java service, database migration, cache warmup, or model-loading application may need time before it can answer `/health`. If liveness begins too early, Kubernetes restarts the container during normal startup and guarantees it never reaches readiness. A startup probe or a longer initial delay allows slow startup without weakening the long-term liveness contract.
 
 | Issue | Symptom | Fix |
 |-------|---------|-----|
@@ -569,7 +562,8 @@ k exec <pod> -- cat /tmp/healthy
 | Missing initialDelaySeconds | Fails during startup | Add initialDelaySeconds |
 | App slow to start | CrashLoop at startup | Use startupProbe |
 
-**Fix probe timing**:
+The YAML below keeps the original liveness timing example, and the numbers are intentionally readable rather than universal. The right timing depends on startup distribution, endpoint cost, and failure tolerance. Use `startupProbe` when startup is slow, use readiness for dependency and warmup gates, and reserve liveness for conditions where restart is genuinely the safest recovery action.
+
 ```yaml
 livenessProbe:
   httpGet:
@@ -581,105 +575,126 @@ livenessProbe:
   failureThreshold: 3       # Restart after 3 failures
 ```
 
----
+Which approach would you choose here and why: a service takes thirty seconds to load data before it can answer health checks, but after startup it can deadlock under a rare bug. A strong answer uses a startup probe to protect the normal startup window, a readiness probe to keep traffic away until the service is actually ready, and a liveness probe that detects the deadlock only after startup has completed.
+
+## Patterns & Anti-Patterns
+
+Good application troubleshooting patterns reduce the number of moving parts you inspect at once. You start with the lifecycle checkpoint, then pick the evidence source that matches that checkpoint, then make the smallest correction at the owning object. This is slower than guessing for the first few minutes, but it is much faster across a real incident because each observation either confirms or eliminates a class of causes.
+
+| Pattern | When to Use It | Why It Works | Scaling Consideration |
+|---------|----------------|--------------|-----------------------|
+| Phase-first triage | A Pod is not healthy and the cause is unclear | Pod phase narrows the responsible component before you inspect logs or YAML | Teach the whole team the same phase-to-evidence map so handoffs are consistent |
+| Previous-log capture | Restart count is greater than zero | The previous process instance usually contains the crash message | Centralized logging is helpful, but `kubectl logs --previous` remains a fast local check |
+| Controller-first repair | A failed Pod belongs to a Deployment or other controller | Editing the controller template prevents the same bad Pod from being recreated | Use rollout history and GitOps records to keep emergency fixes auditable |
+| Probe separation | A service has distinct alive, ready, and startup states | Each probe type has a different Kubernetes action and should test a different promise | Standardize endpoint semantics across teams without forcing identical timing |
+
+Anti-patterns usually come from treating a status as an answer rather than as a pointer. `CrashLoopBackOff` does not say whether the process crashed because of missing configuration, bad code, OOM, or an aggressive probe. `ImagePullBackOff` does not say whether the repository is private, typoed, unreachable, or rate limited. Reliable troubleshooting keeps asking what evidence would distinguish the likely causes.
+
+| Anti-Pattern | What Goes Wrong | Better Alternative |
+|--------------|-----------------|--------------------|
+| Reading only current logs in a CrashLoop | The current process may be too new or empty, while the previous instance held the error | Use `kubectl logs --previous` and inspect `lastState.terminated` |
+| Editing a failed Pod from a Deployment | The Deployment recreates the same bad template on the next reconciliation | Patch or edit the Deployment, then watch the rollout |
+| Treating every `137` as a memory leak | SIGKILL can come from OOM or an external kill path | Check the termination reason and Events before changing limits |
+| Using liveness as a readiness test | Kubernetes restarts containers that merely need more time or dependencies | Put traffic gating in readiness and slow-start protection in startup probes |
+
+## Decision Framework
+
+The decision framework below is a compact way to choose the next inspection point without memorizing every possible message. First ask whether the Pod was scheduled. Then ask whether kubelet prepared the container. Then ask whether the process started and terminated. Then ask whether the process is running but not receiving traffic. Each step changes the evidence source and the likely fix.
+
+Use the framework as a loop rather than a one-time flowchart. After you make a fix, watch the workload move to the next checkpoint and be ready for the next failure to appear. A Pod can move from `ImagePullBackOff` to `CrashLoopBackOff` after you fix the tag, because pulling the image only reveals the next problem in the application process. That is not a failed fix; it is normal layered debugging in a system with several startup gates.
+
+| Visible Symptom | First Evidence Source | Likely Root Cause Family | Safer First Action |
+|-----------------|-----------------------|--------------------------|--------------------|
+| `Pending` | `kubectl describe pod` Events | Requests, taints, selectors, affinity, PVC binding | Inspect scheduler message before changing the workload |
+| `ContainerCreating` | Pod Events and referenced objects | Image pull, volume mount, ConfigMap, Secret, CNI | Verify the named dependency in the same namespace |
+| `ImagePullBackOff` | Failed pull Event text | Bad tag, auth, reachability, rate limit | Correct image or pull secret on the owning controller |
+| `CrashLoopBackOff` | Previous logs and `lastState` | App error, command error, OOM, probe kill | Capture previous logs before deleting the Pod |
+| Running but not Ready | Probe Events and endpoint state | Readiness path, port, dependency, warmup | Test the readiness endpoint from inside the container |
+| Deployment rollout stalled | Deployment, newest ReplicaSet, failing Pods | New template creates unhealthy Pods | Fix forward if obvious, rollback if capacity is at risk |
+
+Use this framework during an exam by speaking the path to yourself: "phase, Events, state, logs, owning controller." That small script keeps you from skipping to an attractive command too early. In production, the same path helps you write a clear incident note because you can show what the system reported, what object owned the failing template, and why the chosen fix addressed the root cause.
+
+## Did You Know?
+
+- **CrashLoopBackOff has exponential backoff**: Kubernetes commonly starts retries around 10 seconds, then 20 seconds, then 40 seconds, and eventually caps repeated container restart delays at about 5 minutes.
+- **Init containers run before app containers**: if an init container fails, the main container never starts, so ordinary `kubectl logs <pod>` output can be empty until you select the init container explicitly.
+- **Image pull failure statuses change over time**: a Pod can show `ErrImagePull` after an immediate pull failure and later show `ImagePullBackOff` as kubelet spaces out repeated attempts.
+- **OOMKilled does not always mean a memory leak**: a container can exceed a limit during normal startup if its baseline memory requirement is higher than the configured limit.
 
 ## Common Mistakes
 
-| Mistake | Problem | Solution |
-|---------|---------|----------|
-| Not checking `--previous` | Can't see crash reason | Always check previous logs for CrashLoop |
-| Ignoring init containers | Main container never starts | Check init container logs too |
-| Fixing symptoms not cause | Problem recurs | Investigate root cause before fixing |
-| Wrong resource units | Unexpected OOM or throttling | Use correct units: Mi, Gi, m |
-| Liveness probe too aggressive | Healthy containers killed | Increase timeouts and failure threshold |
-| Forgetting imagePullSecrets | Private images fail | Add secrets at ServiceAccount or pod level |
-| Using `restartPolicy: Never` for Deployments | Pods won't restart on failure | [Deployments require `Always`.](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) [Use Jobs for run-once tasks.](https://kubernetes.io/docs/concepts/workloads/controllers/job/) |
-| Overlooking namespace | "Pod not found" errors | Always add `-n <namespace>` or set default namespace context |
-
----
+| Mistake | Why It Happens | How to Fix It |
+|---------|----------------|---------------|
+| Not checking `--previous` | The current container instance hides the crash message from the prior instance | Always inspect previous logs and `lastState.terminated` for CrashLoopBackOff |
+| Ignoring init containers | The main container never starts, so its logs look empty and misleading | List init container statuses and read logs with `-c <init-container-name>` |
+| Fixing symptoms instead of root cause | A visible status string feels like the answer, especially under time pressure | Use phase, Events, state, logs, and owning controller before editing |
+| Using wrong resource units | CPU and memory units are easy to mistype, causing unexpected scheduling or OOM behavior | Use `m` for millicores and `Mi` or `Gi` for memory, then verify requests and limits |
+| Making liveness probes too aggressive | Teams reuse readiness checks and accidentally restart slow-starting healthy containers | Add startup protection and tune delay, timeout, period, and failure threshold |
+| Forgetting imagePullSecrets | Private images fail even though the Secret exists somewhere in the cluster | Put the Secret in the workload namespace and reference it from the Pod or ServiceAccount |
+| Using `restartPolicy: Never` for Deployments | Run-once semantics are confused with long-running workload semantics | Use Deployments with `Always`; use Jobs for run-to-completion tasks |
+| Overlooking namespace context | Commands query the default namespace and report objects missing incorrectly | Add `-n <namespace>` or set a deliberate namespace context before debugging |
 
 ## Quiz
 
-### Q1: Exit Code Analysis
-> **Stop and think**: You deploy a new version of your application. The pod immediately goes into CrashLoopBackOff. When you check the status, the container shows exit code 1, and the logs end with "Error: REDIS_HOST not set". What exactly happened and how do you fix it?
-
 <details>
-<summary>Answer</summary>
-The application is missing a required environment variable, which causes the application process to terminate with a generic error (exit code 1). Kubernetes sees the main process exit and restarts the container, leading to CrashLoopBackOff. You can fix this by adding the variable directly using `k set env` or by verifying that the referenced ConfigMap/Secret exists and contains the correct key.
+<summary>Question 1: A new Deployment enters CrashLoopBackOff, the previous logs end with `Error: REDIS_HOST not set`, and the last exit code is `1`. What exactly failed, and where should you fix it?</summary>
+
+The container process started successfully enough to run application code, then the application exited because a required runtime input was missing. Exit code `1` is generic, so the decisive evidence is the log message naming `REDIS_HOST`. Fix the Deployment template or the referenced ConfigMap or Secret so the environment variable exists, then restart or roll out the workload so the new container receives the corrected environment. This is not an image pull issue or a scheduler issue because the process reached application startup.
 </details>
 
-### Q2: Image Pull Sequence
-> **Pause and predict**: A developer typoed an image name as `nginx:1.255` in a new Deployment. You decide to watch the pod status. What sequence of statuses will you observe over the next 5 minutes?
-
 <details>
-<summary>Answer</summary>
-The pod will first show `ErrImagePull`, and then transition to `ImagePullBackOff`. 
-Why? `ErrImagePull` is the immediate status after the first failed attempt to pull the non-existent image tag. After Kubernetes retries and fails again, it enters `ImagePullBackOff` which uses exponential backoff to space out retry attempts, preventing registry hammering.
+<summary>Question 2: A developer updates a Deployment image to `nginx:1.255`, and the Pod first shows `ErrImagePull` and later `ImagePullBackOff`. What should you inspect before changing anything?</summary>
+
+Inspect the Pod Events for the exact failed pull message, because the short status does not distinguish a nonexistent tag from registry authentication, reachability, or rate limiting. If the Event says the manifest is unknown, fix the image tag on the Deployment with a valid nginx tag. If it says unauthorized, verify the image pull Secret and its namespace. The key is that no application logs exist yet, because the container image was never pulled and the process never started.
 </details>
 
-### Q3: Pending Diagnosis
-> **Stop and think**: You apply a pod manifest and it remains stuck in Pending state. `kubectl describe pod` reveals the message: "0/3 nodes are available: 3 Insufficient memory". You know all 3 nodes have 8GB RAM physically available. What is actually preventing the pod from scheduling?
-
 <details>
-<summary>Answer</summary>
-The Kubernetes scheduler cannot find a node with enough unallocated memory to satisfy the pod's memory `requests`. Even if nodes have physical memory available, the scheduler only looks at what has been formally requested by other running pods. To fix this, you must either reduce the memory requests of the pending pod, delete other pods to free up allocated capacity, or add a new node to the cluster.
+<summary>Question 3: A Pod remains Pending and Events say `0/3 nodes are available: 3 Insufficient memory`, but the nodes appear to have physical memory free. What is blocking scheduling?</summary>
+
+The scheduler is evaluating allocatable capacity against declared memory requests, not casual free memory observed from the operating system. Existing Pods may have reserved enough memory through requests that no node has sufficient unallocated requested capacity for the new Pod. Reduce the pending Pod's request if it is too high, move or remove other workloads, or add capacity. Do not treat this as an OOMKilled problem because the container has not run yet.
 </details>
 
-### Q4: CrashLoopBackOff Max
-> **Pause and predict**: A pod has been in CrashLoopBackOff for 2 hours due to a bad configuration. You finally locate the issue and fix the ConfigMap it depends on. How long might you have to wait for Kubernetes to automatically restart the container, and why?
-
 <details>
-<summary>Answer</summary>
-You might have to wait up to **5 minutes (300 seconds)**. 
-Why? Kubernetes uses an exponential backoff delay for crashing containers (10s, 20s, 40s, 80s, 160s, up to a maximum of 300s). Since the pod has been crashing for 2 hours, it has hit the 5-minute maximum cap and will only retry once every 5 minutes. You can manually delete the pod to force an immediate restart instead of waiting.
+<summary>Question 4: A Pod has been crashing for hours, you correct the ConfigMap it depends on, and nothing restarts immediately. How long might Kubernetes wait, and what can you do if you need a faster retry?</summary>
+
+The restart backoff may already be at the five-minute cap, so kubelet might not start the container again until the next scheduled retry. That delay protects the node from tight restart loops, but it can make a successful fix look ineffective for a short time. If an immediate retry is safe, delete the Pod and let the owning controller recreate it from the corrected template or dependency. Preserve logs first if you still need evidence from the failed instance.
 </details>
 
-### Q5: Init Container Failure
-> **Stop and think**: A new Deployment scales up, but the pod's main container never starts. You run `kubectl logs <pod>` and the output is completely empty. What hidden component should you investigate next?
-
 <details>
-<summary>Answer</summary>
-You need to check the logs of the pod's **init containers** using `kubectl logs <pod> -c <init-container-name>`. 
-By design, Kubernetes executes init containers sequentially before any app containers are started. If an init container exits with an error or gets stuck, the pod remains in an initialization phase and the main container's process is never launched. Therefore, its logs will be entirely empty.
+<summary>Question 5: A Deployment creates a Pod, but the main container never starts and `kubectl logs <pod>` is empty. What hidden component should you investigate?</summary>
+
+Investigate init containers first, because Kubernetes runs them sequentially before app containers. If an init container fails or hangs, the app container process is never launched, so ordinary app logs are empty by design. Describe the Pod to see init container state, then run `kubectl logs <pod> -c <init-container-name>` for the failing init container. Fixing the main container image or command would miss the actual gate.
 </details>
 
-### Q6: Rollback Decision
-> **Pause and predict**: You trigger an image update on a critical Deployment. The rollout gets stuck midway. You see that the old ReplicaSet still has 2 running pods, but the new ReplicaSet has 1 pod stuck in CrashLoopBackOff. What is the fastest way to restore full capacity safely?
-
 <details>
-<summary>Answer</summary>
-Executing `kubectl rollout undo deployment/<name>` is the quickest and safest fix. 
-Executing this command will start reverting the deployment to its previous stable revision. This scales the old ReplicaSet back up to full capacity and terminates the failing pods in the new ReplicaSet, restoring service availability rapidly. Once the system is stable, you can investigate the root cause of the CrashLoopBackOff in the failed revision without impacting production traffic.
+<summary>Question 6: A rollout is stuck midway, old Pods still serve traffic, and the newest ReplicaSet has one Pod in CrashLoopBackOff. What is the fastest safe capacity restoration?</summary>
+
+If the service is at risk and the old revision is known good, `kubectl rollout undo deployment/<name>` is the fastest safe restoration path. It returns the Deployment template to the previous revision and lets the Deployment controller scale healthy Pods normally. After capacity is stable, inspect the failed new ReplicaSet and Pod evidence to decide whether the next fix should be image, configuration, resource, or probe related. Fix-forward is reasonable only when the cause is obvious and the remaining capacity is acceptable.
 </details>
 
-### Q7: Readiness vs Liveness
-> **Stop and think**: Your Java application takes 30 seconds to load data into memory before it can serve requests. You configure a liveness probe that checks the `/health` endpoint immediately on startup. What happens to the pod?
-
 <details>
-<summary>Answer</summary>
-The container will likely enter a CrashLoopBackOff state before it ever finishes loading. 
-Why? Because the liveness probe starts checking immediately (without an `initialDelaySeconds`) and fails because the app isn't ready. A failed liveness probe instructs Kubernetes to restart the container, actively interrupting the 30-second initialization. To fix this, you should use a `startupProbe` to cover the loading period, or add an `initialDelaySeconds` to the liveness probe.
-</details>
+<summary>Question 7: A Java service needs thirty seconds to warm caches, but liveness checks `/health` immediately and restarts the container repeatedly. Which probe design should replace that setup?</summary>
 
----
+Use a startup probe to protect the warmup period, readiness to keep traffic away until the service can answer real requests, and liveness only after startup has completed. The current liveness probe is acting too early, so Kubernetes interrupts normal initialization and creates a CrashLoopBackOff. An `initialDelaySeconds` can help, but startup probes express the intent more clearly for slow-starting containers. Readiness alone would not restart the container, and liveness alone cannot distinguish warmup from a dead process.
+</details>
 
 ## Hands-On Exercise: Application Failure Scenarios
 
-### Scenario
-
-Practice diagnosing and fixing various application failures.
+Exercise scenario: you will create a small namespace with four intentionally broken workloads, diagnose each failure, and apply the smallest correction that proves the root cause. The scenarios are deliberately simple, but the path mirrors real troubleshooting: describe the Pod, read Events, choose the relevant logs or state field, and then fix the object or missing dependency. Run these commands in a disposable cluster or lab environment because several examples intentionally create failing Pods.
 
 ### Setup
 
 ```bash
 # Create namespace
-k create ns app-debug-lab
+kubectl create ns app-debug-lab
 ```
 
 ### Scenario 1: CrashLoopBackOff
 
+This Pod starts a BusyBox container, prints one line, and exits with code `1`. That makes it a clean example of a process-level failure rather than an image, scheduling, or volume problem. Your goal is to prove the exit code and then replace the one-shot command with a long-running command so the Pod can stay alive.
+
 ```bash
-cat <<'EOF' | k apply -f -
+cat <<'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -693,31 +708,33 @@ spec:
 EOF
 ```
 
-**Task**: Find why it's crashing and what exit code it has.
+**Task**: Find why it is crashing and what exit code it has.
 
 <details>
 <summary>Solution</summary>
 
 ```bash
-k logs crash-app -n app-debug-lab --previous
-k get pod crash-app -n app-debug-lab -o jsonpath='{.status.containerStatuses[0].lastState.terminated.exitCode}'
+kubectl logs crash-app -n app-debug-lab --previous
+kubectl get pod crash-app -n app-debug-lab -o jsonpath='{.status.containerStatuses[0].lastState.terminated.exitCode}'
 # Exit code 1 - the command explicitly exits with error
 
 # Fix: update the command to sleep instead of exit
-k get pod crash-app -n app-debug-lab -o yaml > crash.yaml
+kubectl get pod crash-app -n app-debug-lab -o yaml > crash.yaml
 sed -i 's/exit 1/sleep 3600/g' crash.yaml
-k replace --force -f crash.yaml
+kubectl replace --force -f crash.yaml
 
 # Verify
-k get pod crash-app -n app-debug-lab
+kubectl get pod crash-app -n app-debug-lab
 ```
 
 </details>
 
 ### Scenario 2: Missing ConfigMap
 
+This Pod references a ConfigMap volume named `app-settings`, but the ConfigMap does not exist yet. The container image is valid, so image pull is not the likely cause. The evidence should appear in Events as a volume setup or missing ConfigMap problem, and the fix is to create the named object in the same namespace.
+
 ```bash
-cat <<'EOF' | k apply -f -
+cat <<'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -737,29 +754,31 @@ spec:
 EOF
 ```
 
-**Task**: Find why it's stuck in ContainerCreating and fix it.
+**Task**: Find why it is stuck in ContainerCreating and fix it.
 
 <details>
 <summary>Solution</summary>
 
 ```bash
 # Diagnose
-k describe pod config-app -n app-debug-lab | grep -A 5 Events
+kubectl describe pod config-app -n app-debug-lab | grep -A 5 Events
 # "configmap "app-settings" not found"
 
 # Fix
-k create configmap app-settings -n app-debug-lab --from-literal=key=value
+kubectl create configmap app-settings -n app-debug-lab --from-literal=key=value
 
 # Verify
-k get pod config-app -n app-debug-lab
+kubectl get pod config-app -n app-debug-lab
 ```
 
 </details>
 
 ### Scenario 3: Wrong Image Tag
 
+This Pod uses an nginx tag that does not exist, so kubelet cannot create the container. There should be no useful application logs because the process never starts. The correct evidence is the failed pull Event, and the quickest lab fix is to recreate the standalone Pod with a valid image tag.
+
 ```bash
-cat <<'EOF' | k apply -f -
+cat <<'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -779,23 +798,25 @@ EOF
 
 ```bash
 # Diagnose
-k describe pod image-app -n app-debug-lab | grep -A 5 "Failed\|Error"
+kubectl describe pod image-app -n app-debug-lab | grep -A 5 "Failed\|Error"
 # "manifest for nginx:v99.99.99 not found"
 
 # Fix - delete and recreate with correct image
-k delete pod image-app -n app-debug-lab --force
-k run image-app -n app-debug-lab --image=nginx:1.25
+kubectl delete pod image-app -n app-debug-lab --force
+kubectl run image-app -n app-debug-lab --image=nginx:1.25
 
 # Verify
-k get pod image-app -n app-debug-lab
+kubectl get pod image-app -n app-debug-lab
 ```
 
 </details>
 
 ### Scenario 4: Resource Constraint (OOM)
 
+This Pod intentionally asks the stress process to allocate more memory than the container limit allows. The result should be an OOMKilled termination, which is different from a generic application exit. Your goal is to prove the termination reason and then increase the limit enough for this synthetic workload to run.
+
 ```bash
-cat <<'EOF' | k apply -f -
+cat <<'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -819,98 +840,100 @@ EOF
 
 ```bash
 # Diagnose
-k describe pod oom-app -n app-debug-lab | grep -i oom
-k get pod oom-app -n app-debug-lab -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}'
+kubectl describe pod oom-app -n app-debug-lab | grep -i oom
+kubectl get pod oom-app -n app-debug-lab -o jsonpath='{.status.containerStatuses[0].lastState.terminated.reason}'
 # "OOMKilled"
 
 # The container tries to use 500MB but only has 100Mi limit
 # Fix: increase memory limit by replacing the pod
-k get pod oom-app -n app-debug-lab -o yaml > oom.yaml
+kubectl get pod oom-app -n app-debug-lab -o yaml > oom.yaml
 sed -i 's/100Mi/600Mi/g' oom.yaml
-k replace --force -f oom.yaml
+kubectl replace --force -f oom.yaml
 
 # Verify
-k get pod oom-app -n app-debug-lab
+kubectl get pod oom-app -n app-debug-lab
 ```
 
 </details>
 
 ### Success Criteria
 
-- [ ] Identified crash-app exit code as 1
-- [ ] Created missing ConfigMap for config-app
-- [ ] Fixed wrong image tag for image-app
-- [ ] Identified OOMKilled status for oom-app
+- [ ] Diagnose application failures by identifying `crash-app` exit code as `1` using previous logs and container state.
+- [ ] Fix application failures caused by missing ConfigMaps by creating `app-settings` in the correct namespace.
+- [ ] Debug image-based Pod failures by correcting the wrong `image-app` tag and confirming the Pod starts.
+- [ ] Trace resource-limit failure evidence by identifying `OOMKilled` for `oom-app` before increasing the memory limit.
 
 ### Cleanup
 
 ```bash
-k delete ns app-debug-lab
+kubectl delete ns app-debug-lab
 ```
 
----
+### Practice Drills
 
-## Practice Drills
+These drills preserve the original quick-command practice while using full runnable `kubectl` commands. Treat them as timed recall only after you understand the evidence path, because speed without diagnosis can make you confidently wrong. The goal is to make the correct next command feel automatic once the Pod phase and Events have pointed you in the right direction.
 
 ### Drill 1: Quick Pod Status (30 sec)
+
 ```bash
 # Task: Show all pods with restart count > 0
-k get pods -A -o custom-columns='NAME:.metadata.name,RESTARTS:.status.containerStatuses[0].restartCount' | awk '$2 > 0'
+kubectl get pods -A -o custom-columns='NAME:.metadata.name,RESTARTS:.status.containerStatuses[0].restartCount' | awk '$2 > 0'
 ```
 
 ### Drill 2: Previous Logs (30 sec)
+
 ```bash
 # Task: Get last 50 lines from previous container instance
-k logs <pod> --previous --tail=50
+kubectl logs <pod> --previous --tail=50
 ```
 
 ### Drill 3: Exit Code Check (1 min)
+
 ```bash
 # Task: Get exit code from crashed container
-k get pod <pod> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.exitCode}'
+kubectl get pod <pod> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.exitCode}'
 # Or from describe:
-k describe pod <pod> | grep "Exit Code"
+kubectl describe pod <pod> | grep "Exit Code"
 ```
 
 ### Drill 4: Image Fix (1 min)
+
 ```bash
 # Task: Update image in deployment
-k set image deployment/<name> <container>=<new-image>
+kubectl set image deployment/<name> <container>=<new-image>
 ```
 
 ### Drill 5: Create Missing ConfigMap (1 min)
+
 ```bash
 # Task: Create ConfigMap from literal
-k create configmap <name> --from-literal=key=value
+kubectl create configmap <name> --from-literal=key=value
 # From file
-k create configmap <name> --from-file=<filename>
+kubectl create configmap <name> --from-file=<filename>
 ```
 
 ### Drill 6: Environment Variable Debug (1 min)
+
 ```bash
 # Task: Check all env vars in running container
-k exec <pod> -- env | sort
+kubectl exec <pod> -- env | sort
 ```
 
 ### Drill 7: Rollback Deployment (1 min)
+
 ```bash
 # Task: Rollback to previous version
-k rollout undo deployment/<name>
-k rollout status deployment/<name>
+kubectl rollout undo deployment/<name>
+kubectl rollout status deployment/<name>
 ```
 
 ### Drill 8: Check Probe Config (1 min)
+
 ```bash
 # Task: View probe configuration
-k get pod <pod> -o yaml | grep -A 15 livenessProbe
-k get pod <pod> -o yaml | grep -A 15 readinessProbe
+kubectl get pod <pod> -o yaml | grep -A 15 livenessProbe
+kubectl get pod <pod> -o yaml | grep -A 15 readinessProbe
 ```
-
----
-
-## Next Module
-
-Continue to [Module 5.3: Control Plane Failures](../module-5.3-control-plane/) to learn how to troubleshoot API server, scheduler, controller manager, and etcd issues.
 
 ## Sources
 
@@ -924,3 +947,7 @@ Continue to [Module 5.3: Control Plane Failures](../module-5.3-control-plane/) t
 - [Debug Running Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/) — Covers the core troubleshooting workflow for describe, logs, events, exec, and pod inspection.
 - [Images](https://kubernetes.io/docs/concepts/containers/images/) — Documents image pull policy, private-registry authentication context, and ImagePullBackOff behavior.
 - [Liveness, Readiness, and Startup Probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) — Provides the authoritative semantics behind probe-triggered restarts, readiness gating, and startup protection.
+
+## Next Module
+
+Continue to [Module 5.3: Control Plane Failures](../module-5.3-control-plane/) to learn how to troubleshoot API server, scheduler, controller manager, and etcd issues.
