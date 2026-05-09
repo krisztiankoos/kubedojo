@@ -57,7 +57,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-REPO = Path("/Users/krisztiankoos/projects/kubedojo")
+REPO = Path(__file__).resolve().parents[1]
 LOG_PATH = REPO / "logs" / "smart_dispatch.jsonl"
 
 

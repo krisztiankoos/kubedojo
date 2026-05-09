@@ -39,6 +39,7 @@ from agent_runtime.errors import (  # noqa: E402
     AgentUnavailableError,
     RateLimitedError,
 )
+from lib.pr_merge import PrMergeError, merge_when_green  # noqa: E402
 
 
 def log(event: dict) -> None:
@@ -274,11 +275,12 @@ def post_review_comment(pr_num: int, body: str) -> None:
     )
 
 
-def merge_pr(pr_num: int) -> None:
-    subprocess.run(
-        ["gh", "pr", "merge", str(pr_num), "--squash", "--delete-branch"],
-        cwd=REPO, check=False,
-    )
+def merge_pr(pr_num: int) -> str | None:
+    try:
+        return merge_when_green(pr_num, repo=REPO)
+    except PrMergeError as exc:
+        log({"event": "merge_failed", "pr": pr_num, "error": str(exc)})
+        return None
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -343,8 +345,11 @@ def main(argv: list[str] | None = None) -> int:
         if review_text:
             post_review_comment(pr_num, review_text)
         if verdict == "APPROVE":
-            merge_pr(pr_num)
-            log({"event": "merged", "pr": pr_num, "module": module_path})
+            merge_sha = merge_pr(pr_num)
+            if merge_sha:
+                log({"event": "merged", "pr": pr_num, "module": module_path, "merge_sha": merge_sha})
+            else:
+                log({"event": "merge_held", "pr": pr_num, "module": module_path, "verdict": "MERGE_FAILED"})
         elif verdict == "APPROVE_WITH_NITS":
             # C3 fix-up lane: orchestrator triages inline (trivial nits) or
             # re-dispatches codex (semantic). Do NOT auto-merge — the
