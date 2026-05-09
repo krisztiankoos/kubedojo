@@ -28,39 +28,62 @@ By the end of this module, you will be able to perform the same design, evaluati
 - **Configure** Robusta to enrich Prometheus alerts with Kubernetes context and a local OpenAI-compatible LLM endpoint.
 - **Evaluate** predictive scaling decisions against reactive HPA behavior, resource limits, and dirty historical data.
 
-<ul>
-<li><strong>Implement</strong> human-in-the-loop guardrails that prevent automated remediation from turning a local incident into a wider outage.</li>
-<li><strong>Diagnose</strong> latency, timeout, and resource-isolation failures when local inference runs beside production workloads.</li>
-</ul>
+- **Implement** human-in-the-loop guardrails that prevent automated remediation from turning a local incident into a wider outage.
+- **Diagnose** latency, timeout, and resource-isolation failures when local inference runs beside production workloads.
 
 ## Why This Module Matters
 
-<p>Hypothetical scenario: a platform team in a regulated manufacturing company receives a severe incident report at 02:13.</p>
-<p>A critical internal API is returning intermittent errors.</p>
-<p>The on-call engineer opens the alert, copies recent logs, pastes a stack trace into a public AI assistant, and asks for a root cause.</p>
-<p>The assistant gives a useful answer.</p>
-<p>The incident is resolved faster than usual.</p>
-<p>The security team is not relieved.</p>
-<p>The copied logs contained customer identifiers, private service names, internal hostnames, and a database error that exposed part of the schema.</p>
-<p>The team did not intend to leak sensitive operational data.</p>
-<p>They were trying to recover service.</p>
-<p>This is the central tension of AIOps.</p>
-<p>AI-assisted investigation can shorten mean time to understanding.</p>
-<p>It can summarize noisy alerts, correlate events, and propose the next command to run.</p>
-<p>It can also export the exact data that regulated teams are forbidden to send outside their environment.</p>
-<p>Bare-metal Kubernetes makes this tension sharper.</p>
-<p>The cluster often exists because the organization needs control over hardware, networking, compliance boundaries, latency, or data residency.</p>
-<p>Sending Alertmanager payloads, Pod logs, and incident timelines to an external SaaS API can violate the same constraints that justified bare metal in the first place.</p>
-<p>Private AIOps changes the shape of the system.</p>
-<p>Instead of sending operational data to an external intelligence service, the team brings the intelligence to the operational data.</p>
-<p>Prometheus, Alertmanager, Robusta, local LLM endpoints, and guarded automation run inside the same trust boundary as the workloads they inspect.</p>
-<p>That shift does not make the system automatically safe.</p>
-<p>A private model can still hallucinate.</p>
-<p>A statistical alert can still flap.</p>
-<p>A predictive scaler can still overreact to a past load test.</p>
-<p>A remediation playbook can still delete the wrong thing if it is granted too much access.</p>
-<p>The goal of this module is not to make AI sound magical.</p>
-<p>The goal is to teach a disciplined architecture for using AI and anomaly detection without weakening the reliability and security posture of the cluster.</p>
+Hypothetical scenario: a platform team in a regulated manufacturing company receives a severe incident report at 02:13.
+
+A critical internal API is returning intermittent errors.
+
+The on-call engineer opens the alert, copies recent logs, pastes a stack trace into a public AI assistant, and asks for a root cause.
+
+The assistant gives a useful answer.
+
+The incident is resolved faster than usual.
+
+The security team is not relieved.
+
+The copied logs contained customer identifiers, private service names, internal hostnames, and a database error that exposed part of the schema.
+
+The team did not intend to leak sensitive operational data.
+
+They were trying to recover service.
+
+This is the central tension of AIOps.
+
+AI-assisted investigation can shorten mean time to understanding.
+
+It can summarize noisy alerts, correlate events, and propose the next command to run.
+
+It can also export the exact data that regulated teams are forbidden to send outside their environment.
+
+Bare-metal Kubernetes makes this tension sharper.
+
+The cluster often exists because the organization needs control over hardware, networking, compliance boundaries, latency, or data residency.
+
+Sending Alertmanager payloads, Pod logs, and incident timelines to an external SaaS API can violate the same constraints that justified bare metal in the first place.
+
+Private AIOps changes the shape of the system.
+
+Instead of sending operational data to an external intelligence service, the team brings the intelligence to the operational data.
+
+Prometheus, Alertmanager, Robusta, local LLM endpoints, and guarded automation run inside the same trust boundary as the workloads they inspect.
+
+That shift does not make the system automatically safe.
+
+A private model can still hallucinate.
+
+A statistical alert can still flap.
+
+A predictive scaler can still overreact to a past load test.
+
+A remediation playbook can still delete the wrong thing if it is granted too much access.
+
+The goal of this module is not to make AI sound magical.
+
+The goal is to teach a disciplined architecture for using AI and anomaly detection without weakening the reliability and security posture of the cluster.
 
 ## 1. Private AIOps as a Control Loop
 
@@ -1010,7 +1033,7 @@ Evaluate the output; do not only check whether text exists; check whether the mo
 
 ### Task 8: Add a NetworkPolicy Boundary
 
-If your cluster uses a CNI that enforces NetworkPolicy, add a policy that allows only selected monitoring Pods to reach Ollama; create `ollama-network-policy; yaml`.
+If your cluster uses a CNI that enforces NetworkPolicy, add a policy that allows only selected monitoring Pods to reach Ollama; create `ollama-network-policy.yaml`.
 
 ```yaml
 apiVersion: networking.k8s.io/v1
@@ -1112,4 +1135,4 @@ Answer these questions before considering the design production-ready, because a
 
 ## Next Module
 
-Ready to take your bare-metal clusters to the next level; in the next module, [Module 9; 6: Edge Inference and Hardware Acceleration](/on-premises/ai-ml-infrastructure/module-9. 6-edge-inference), you will explore how to configure SR-IOV, MIG, and optimized scheduling to get reliable inference performance from local hardware.
+Ready to take your bare-metal clusters to the next level; in the next module, [Module 9.6: Edge Inference and Hardware Acceleration](/on-premises/ai-ml-infrastructure/module-9.6-edge-inference), you will explore how to configure SR-IOV, MIG, and optimized scheduling to get reliable inference performance from local hardware.
