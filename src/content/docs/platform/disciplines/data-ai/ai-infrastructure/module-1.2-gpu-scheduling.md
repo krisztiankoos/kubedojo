@@ -378,6 +378,8 @@ gantt
 
 The practical decision is to start with workload behavior rather than with a feature preference. If a user launches a notebook, pauses, runs a cell, and then reads output for several minutes, time-slicing is usually good enough. If a fleet of small inference servers continuously sends kernels but each service leaves most SMs unused, MPS may produce better aggregate throughput and less jitter. If either workload can allocate most of VRAM unpredictably, neither software-sharing option is a substitute for MIG or whole-GPU placement.
 
+The GPU Operator supports MPS sharing starting from v24.6.0:
+
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -429,7 +431,7 @@ metadata:
 spec:
   selectors:
     - cel:
-        expression: "device.driver == 'gpu.nvidia.com'"
+        expression: "device.driver == 'gpu.nvidia.com' && device.attributes['memory'] >= 40000"
 ---
 # Claim a GPU
 apiVersion: resource.k8s.io/v1
