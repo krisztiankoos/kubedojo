@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>2026-05-09 — HTML policy correction + tech-debt sweep</title>
+<link rel="stylesheet" href="/static/design-system.css" />
+<style>
+/* 6-tile KPI grid — shared design-system.css uses repeat(4,1fr); this handoff has 6 tiles, 3×2 fits better */
+.kpis { grid-template-columns: repeat(3, 1fr); }
+/* .value.neutral — not defined in shared design-system.css; needed for informational counts with no pass/fail signal */
+.kpi .value.neutral { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div>
+    <h1>2026-05-09 — HTML policy correction + tech-debt sweep</h1>
+    <div class="sub">5 PRs merged. HTML matrix reclassified. Bridge bugs durable-fixed. <code class="inline">ab discuss</code> converged 3-of-3.</div>
+  </div>
+  <div class="meta">
+    <div><b>Date:</b> 2026-05-09</div>
+    <div><b>Wall clock:</b> ~5h</div>
+    <div><b>Phase 1:</b> HTML policy correction</div>
+    <div><b>Phase 2:</b> tech-debt sweep (3 PRs)</div>
+    <div><b>Agents:</b> claude orchestration · codex gpt-5.5 + gpt-5.4-mini · gemini-3-flash-preview · sonnet HTML/CSS</div>
+    <div><b>Predecessor:</b> <a href="/artifacts/docs/session-state/2026-05-09-prereqs-and-aiml-marathon.html">2026-05-09 Prereqs + AI/ML marathon</a></div>
+  </div>
+</header>
+
+<!-- KPI tiles — 6 tiles in 3×2 grid (bespoke grid override above) -->
+<section class="kpis">
+  <div class="kpi">
+    <div class="label">PRs Merged</div>
+    <div class="value ok">5</div>
+    <div class="sub">#1075 #1076 #1077 #1078 #1079</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Stale Deliveries Cleared</div>
+    <div class="value neutral">18</div>
+    <div class="sub">5 channels, direct SQLite UPDATE</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Memory Files Updated</div>
+    <div class="value ok">7</div>
+    <div class="sub">matrix reclassification + 4 durable-fix refs + 2 calibrations</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Spark Caps Recovered</div>
+    <div class="value warn">2</div>
+    <div class="sub">lateral to mini #1078, gpt-5.5 already on #1077</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Round-2 Fix from Cross-Family Review</div>
+    <div class="value ok">1</div>
+    <div class="sub">gemini caught codex-only narrow scope on PR #1079</div>
+  </div>
+  <div class="kpi">
+    <div class="label">Incidents on Main</div>
+    <div class="value ok">0</div>
+    <div class="sub">all PRs merged green; helpers smoke-tested live</div>
+  </div>
+</section>
+
+<!-- Session outcome pills -->
+<h2>Session Outcomes</h2>
+<p>
+  <span class="pill ok">gemini APPROVE × 5</span>&ensp;all 5 PRs reviewed cross-family&ensp;
+  <span class="pill warn">spark cap × 2</span>&ensp;recovered laterally&ensp;
+  <span class="pill warn">round-2 fix × 1</span>&ensp;gemini caught codex-only scope on PR #1079&ensp;
+  <span class="pill warn">STATUS.md miss × 1</span>&ensp;same class as PR #580; caught via <code class="inline">git status --short</code>
+</p>
+
+<!-- Timeline -->
+<h2>Session Timeline</h2>
+<section class="timeline">
+  <ol>
+    <li class="ok">
+      <span class="ts">Session start</span>
+      <span class="what">HTML policy debate opened</span>
+      <span class="detail">— user flagged morning handoff was authored as <code class="inline">.md</code> again despite HTML-first policy adopted two sessions earlier</span>
+    </li>
+    <li class="warn">
+      <span class="ts">~0h 30m</span>
+      <span class="what">Orchestrator pushed back twice on consumer-direction lens</span>
+      <span class="detail">— argued handoffs are AI→AI (next-agent reads via <code class="inline">Read</code> tool) → MD correct; user's live <code class="inline">/artifacts</code> demo disproved it</span>
+    </li>
+    <li class="fail">
+      <span class="ts">~1h 00m</span>
+      <span class="what">Gemini API-key quota exhausted mid <code class="inline">ab discuss html-migration-strategy</code></span>
+      <span class="detail">— surfaced bridge bug 1: OAuth auto-fallback not wired on the discuss code path; forced <code class="inline">KUBEDOJO_GEMINI_SUBSCRIPTION=1</code> workaround mid-discussion</span>
+    </li>
+    <li class="ok">
+      <span class="ts">~1h 15m</span>
+      <span class="what"><code class="inline">ab discuss</code> resumed — 3-of-3 [AGREE] on Option C (Hybrid)</span>
+      <span class="detail">— shared CSS as first reach, bespoke as opt-in with rationale; channel <code class="inline">html-migration-strategy</code> converged without Decision Card</span>
+    </li>
+    <li class="ok">
+      <span class="ts">~1h 45m</span>
+      <span class="what">PR #1075 merged — shared design-system.css live at <code class="inline">/static/design-system.css</code></span>
+      <span class="detail">— 87% inline-CSS reduction across dashboard + 2 audit reports; sonnet authored after spark cap lateral fallback; gemini APPROVE 5/5 dimensions (+210/-216, 4 files)</span>
+    </li>
+    <li class="warn">
+      <span class="ts">~2h 15m</span>
+      <span class="what">PR #1076 — sonnet missed STATUS.md in initial commit (caught + fixed)</span>
+      <span class="detail">— morning handoff authored as HTML cleanly; STATUS.md edit in working tree, never staged; orchestrator caught via <code class="inline">git status --short</code>; follow-up commit <span class="sha">d422067c</span>; gemini APPROVE round-1 post-fix (+353/-89, 2 files)</span>
+    </li>
+    <li class="ok">
+      <span class="ts">~2h 30m</span>
+      <span class="what">18 stale channel deliveries cleared via direct SQLite</span>
+      <span class="detail">— CLI gap confirmed: <code class="inline">ab ack-all</code> / <code class="inline">ab cleanup</code> only touch the legacy DM <code class="inline">messages</code> table; 5 obsolete channels cleared</span>
+    </li>
+    <li class="ok">
+      <span class="ts">~3h 00m</span>
+      <span class="what">PR #1077 merged — bridge bugs 1+2 durable-fixed</span>
+      <span class="detail">— codex gpt-5.5, 8 min wall; new <code class="inline">test_discuss_bridge_bugs.py</code>; gemini APPROVE 5/5 substantive (+272/-7, 4 files)</span>
+    </li>
+    <li class="warn">
+      <span class="ts">~3h 45m</span>
+      <span class="what">PR #1078 spark capped at 5s / 0 chars — lateral to gpt-5.4-mini</span>
+      <span class="detail">— multi-file mechanical refactor confirmed in scope for mini (fallback ladder calibration updated); merged clean in 6.5 min (+63/-13, 3 new hermetic tests)</span>
+    </li>
+    <li class="warn">
+      <span class="ts">~4h 30m</span>
+      <span class="what">PR #1079 round-1 NEEDS CHANGES — gemini caught codex-only narrow scope</span>
+      <span class="detail">— FINDING: <code class="inline">runner.py:619</code> hardcoded <code class="inline">agent_name == "codex"</code> exempting other agents; round-2 fix <span class="sha">4e902eca</span> broadened condition; APPROVE round-2 (+406/-11, 7 files, 170 tests)</span>
+    </li>
+    <li class="ok">
+      <span class="ts">~5h 00m</span>
+      <span class="what">Eat-your-own-dogfood: PR #1079 merged via direct <code class="inline">gh pr merge --squash</code></span>
+      <span class="detail">— head-SHA verified before merge; exactly the PR #906 race the new <code class="inline">merge_when_green</code> helper closes, avoided in real time</span>
+    </li>
+  </ol>
+</section>
+
+<!-- Narrative: Phase 1 -->
+<h2>Phase 1 — HTML Policy Correction</h2>
+<section>
+  <p>The session opened with user flagging that the morning handoff (<code class="inline">2026-05-09-prereqs-and-aiml-marathon.html</code>) had been committed as <code class="inline">.md</code> despite the HTML-first policy adopted two sessions earlier. The orchestrator initially pushed back: the consumer-direction lens classified session handoffs as AI→AI (next-agent reads via the <code class="inline">Read</code> tool) and concluded that Markdown was correct. Two rounds of user pushback with evidence forced a rethink.</p>
+  <p>The decisive data point was a live demo of the <code class="inline">/artifacts</code> route on a sister project — the renderer produces a generic Markdown-to-HTML conversion (KubeDojo dark chrome wrapping standard <code class="inline">&lt;h2&gt;/&lt;p&gt;/&lt;table&gt;</code> structure), not Thariq-grade purpose-built HTML with KPI tiles, status pills, and timelines. The reframe: handoffs are read primarily by the <em>user</em>, not by next-agent — the briefing API at <code class="inline">/api/briefing/session</code> covers the AI cold-start path entirely. Therefore handoffs belong in the AI→Human row → HTML.</p>
+  <p>A 3-way <code class="inline">ab discuss</code> on channel <code class="inline">html-migration-strategy</code> settled the architecture. Gemini's API-key quota exhausted mid-discussion (bridge bug 1 — OAuth auto-fallback wasn't wired on the discuss code path), requiring <code class="inline">KUBEDOJO_GEMINI_SUBSCRIPTION=1</code> to re-enter. After the switch, all three agents converged 3-of-3 [AGREE] on <b>Option C: shared CSS as first reach, bespoke as opt-in with rationale</b>. No Decision Card emitted — pure convergence.</p>
+  <p>PR #1075 extracted the shared design-system.css from <code class="inline">audit/388-cka-part1-batch/index.html</code>, added a <code class="inline">/static/</code> route to the local API, and applied it to the dashboard and 2 audit reports (87% inline-CSS reduction, +210/-216, 4 files). PR #1076 authored the morning handoff as purpose-built HTML using the shared CSS, deleted the source MD, reclassified session handoffs AI→AI → AI→Human in the memory matrix, and flipped STATUS.md's cold-start prose default to <code class="inline">.html</code>. Sonnet authored the HTML cleanly but missed staging STATUS.md in the initial commit — caught by orchestrator via <code class="inline">git status --short</code> and fixed in follow-up commit <span class="sha">d422067c</span>. The same class as <code class="inline">feedback_verify_aids_after_branch.md</code> (PR #580 lost Ch05 aids during <code class="inline">checkout -b</code>).</p>
+</section>
+
+<!-- Narrative: Phase 2 -->
+<h2>Phase 2 — Tech-Debt Sweep</h2>
+<section>
+  <p>User wanted all non-content tech debt cleared before resuming the rubric-critical content marathon. Eight items were enumerated; six were actioned in code, one was a user action (branch protection flag — done in browser), and one was a stale memory update. Three PRs shipped with different model tiers matched to task complexity, each reviewed cross-family by gemini.</p>
+</section>
+<div class="lessons">
+  <div class="lesson">
+    <h3>PR #1077 — Bridge bugs 1+2 (codex gpt-5.5, 8 min)</h3>
+    <ul>
+      <li><b>Bug 1 — OAuth auto-fallback missing on discuss path:</b> The classifier already existed at <code class="inline">_gemini.py:72-79</code> matching <code class="inline">"exhausted your capacity"</code> but wasn't wired on the <code class="inline">ab discuss</code> code path. A sticky <code class="inline">gemini_use_subscription_auth</code> flag prevents re-failure on subsequent rounds in the same discussion.</li>
+      <li><b>Bug 2 — Channel deliveries never auto-acked:</b> New <code class="inline">mark_message_delivery_delivered()</code> in <code class="inline">_channels.py:1223</code> uses <code class="inline">BEGIN IMMEDIATE</code> lock + idempotent <code class="inline">NOT IN ('delivered','failed')</code> guard. +272/-7, 4 files, new <code class="inline">test_discuss_bridge_bugs.py</code>.</li>
+      <li><b>Review:</b> Gemini APPROVE 5/5 — traced env stripping through <code class="inline">agent_runtime/adapters/gemini.py</code>, verified the SQLite race guard.</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>PR #1078 — Claude adapter npx default (gpt-5.4-mini after spark cap, 6.5 min)</h3>
+    <ul>
+      <li>Spark capped at 5s/0 chars — lateral to mini per calibration update (multi-file mechanical refactors confirmed in scope for mini). Two opt-in paths: <code class="inline">tool_config={"use_path_claude": True}</code> per-call OR <code class="inline">KUBEDOJO_CLAUDE_USE_PATH=1</code> env. Version-gate at line 167-173 probes the same prefix that gets executed.</li>
+      <li>3 new tests using <code class="inline">monkeypatch</code> on <code class="inline">shutil.which</code> (hermetic). +63/-13.</li>
+      <li><b>Review:</b> Gemini APPROVE 5/5 — named the existing <code class="inline">KUBEDOJO_CODEX_SEARCH</code> / <code class="inline">KUBEDOJO_GEMINI_SUBSCRIPTION</code> for env-var convention check.</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>PR #1079 — gh merge race + codex push silent-failure (codex gpt-5.5, 7.5 min)</h3>
+    <ul>
+      <li><code class="inline">scripts/lib/pr_merge.py::merge_when_green</code> — polls <code class="inline">gh pr view --json statusCheckRollup</code> until green, then direct <code class="inline">gh pr merge --squash</code>. Replaces the racy <code class="inline">--auto --squash</code> from PR #906 lost-commit incident.</li>
+      <li><code class="inline">scripts/lib/git_verify.py::verify_pushed_to_remote</code> — compares <code class="inline">git ls-remote origin &lt;branch&gt;</code> to expected SHA. Addresses PR #907 codex silent-push.</li>
+      <li>Runner guard at <code class="inline">runner.py:619</code> fires after every <code class="inline">mode == "danger" and parse.ok</code> dispatch — broadened from codex-only per gemini round-1. 7 files, +406/-11, 170 tests total.</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>Other sweep items (non-PR)</h3>
+    <ul>
+      <li><b>GH_TOKEN rotation (item 6):</b> Awaiting user. Orchestrator provided one-liner to update <code class="inline">.envrc</code> + <code class="inline">.claude/settings.local.json</code> together.</li>
+      <li><b>GH_TOKEN auto-load (item 7):</b> Mirrored 93-char token into <code class="inline">.claude/settings.local.json</code> env block (mode 0600, gitignored). Effective from next Claude Code session start. Memory <code class="inline">reference_gh_token_from_envrc.md</code> updated.</li>
+      <li><b>Branch protection UI flag (item 8):</b> User did it in browser. Orchestrator's PAT cannot auto-verify (HTTP 403). Trusting user confirmation.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Narrative: Patterns -->
+<h2>Patterns Reinforced</h2>
+<div class="lessons">
+  <div class="lesson">
+    <h3>Spark→mini lateral calibration updated</h3>
+    <ul>
+      <li>PR #1078 confirmed gpt-5.4-mini handles "extract + wire into N callers" multi-file mechanical refactors cleanly. Prior scope was "search-like only."</li>
+      <li>Rule: don't reflex to gpt-5.5 on spark cap when the task is mechanical, not judgmental. Check task class first.</li>
+      <li>Memory <code class="inline">feedback_spark_rate_limit_fallback_ladder.md</code> updated: mini scope expanded + visual/HTML authoring lane added (sonnet via dispatch_smart draft).</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>Cross-family review saves the day — PR #1079</h3>
+    <ul>
+      <li>Codex's round-1 narrowed the runner guard to codex-only dispatches — a subtle regression that would have exempted all non-codex agents from the push-verify guard.</li>
+      <li>Gemini's round-1 review caught it with a specific FINDING and file:line citation. Round-2 broadened the condition. Defense in depth + cross-family review = regression blocked before shipping.</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>Eat-your-own-dogfood validation</h3>
+    <ul>
+      <li>PR #1079 was a multi-round PR. Merged via direct <code class="inline">gh pr merge --squash</code> after head-SHA verify, NOT <code class="inline">--auto --squash</code>.</li>
+      <li>Exactly the PR #906 race the new <code class="inline">merge_when_green</code> helper closes — avoided in real time. The PR #906 lost-commit incident cannot recur on this PR.</li>
+    </ul>
+  </div>
+  <div class="lesson">
+    <h3>Sonnet-misses-STATUS.md class — PR #1076</h3>
+    <ul>
+      <li>Sonnet authored the HTML cleanly but the STATUS.md edit was in the working tree, never staged. Same class as PR #580 (Ch05 aids lost during <code class="inline">checkout -b</code>).</li>
+      <li>Rule: always run <code class="inline">git status --short</code> and <code class="inline">git show --stat HEAD</code> before closing any PR that touches both a primary artifact and STATUS.md. Memory <code class="inline">feedback_verify_aids_after_branch.md</code> applies to handoff dispatches.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Narrative: Bridge cleanup -->
+<h2>Bridge Cleanup</h2>
+<section>
+  <p>At session start, 18 stale channel deliveries were found pending in the <code class="inline">.bridge/messages.db</code> deliveries table. The <code class="inline">ab</code> CLI tools (<code class="inline">ab ack-all</code>, <code class="inline">ab cleanup</code>) only manage the legacy DM <code class="inline">messages</code> table — they do not touch the channel <code class="inline">deliveries</code> table. A direct <code class="inline">UPDATE deliveries SET status='delivered' WHERE status='pending'</code> via SQLite cleared all 18.</p>
+  <p>Five obsolete channels were identified and closed: <code class="inline">day3-388</code> (last activity May 2), <code class="inline">persistent-agent-listeners</code> (issue #983 shipped May 8), <code class="inline">deliberation-ui-roadmap</code> (PRs #961/#962 shipped), <code class="inline">html-migration-strategy</code> (resolved this session). PR #1077 closes the recurrence by adding proper delivery ack on round completion via <code class="inline">mark_message_delivery_delivered()</code> with an idempotent <code class="inline">BEGIN IMMEDIATE</code> guard.</p>
+</section>
+
+<!-- Memory updates -->
+<h2>Memory Updates Landed</h2>
+<section>
+  <p>Seven memory files updated this session:</p>
+  <ul style="font-size: 13px; color: var(--text-secondary);">
+    <li><code class="inline">feedback_html_over_markdown_for_artifacts.md</code> — session handoffs reclassified AI→AI → AI→Human; earn-it gate added (≥8 PRs / policy change / incident / new pattern); ab discuss thread <code class="inline">ab2e0d1f...</code> as rationale anchor.</li>
+    <li><code class="inline">feedback_ab_discuss_two_bridge_bugs.md</code> — durable fix → PR #1077; both Bug 1 + Bug 2 sections updated with file:line citations.</li>
+    <li><code class="inline">feedback_claude_invoke_npx_not_path.md</code> — durable fix → PR #1078; "patch before next #388 batch" pending note removed.</li>
+    <li><code class="inline">feedback_gh_pr_merge_auto_squash_race.md</code> — durable fix → PR #1079 + <code class="inline">scripts/lib/pr_merge.py::merge_when_green</code>.</li>
+    <li><code class="inline">feedback_codex_push_silent_failure.md</code> — durable fix → PR #1079 + <code class="inline">scripts/lib/git_verify.py::verify_pushed_to_remote</code> + runner guard.</li>
+    <li><code class="inline">reference_gh_token_from_envrc.md</code> — <code class="inline">settings.local.json</code> env block is now the preferred path; recovery one-liner included.</li>
+    <li><code class="inline">feedback_spark_rate_limit_fallback_ladder.md</code> — gpt-5.4-mini scope expanded to multi-file mechanical refactors; visual/HTML authoring lane added (sonnet).</li>
+  </ul>
+</section>
+
+<!-- Next session -->
+<h2>Next Session</h2>
+<p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">User direction: "in new session we do 1 2 3 4 5 6 7 utilizing ALL agents." Multi-agent collaboration via <code class="inline">ab discuss</code> for EPICs (5-7); codex dispatches + gemini cross-family review for small items (1-4).</p>
+
+<table class="modules">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Item</th>
+      <th>Size</th>
+      <th>Agent routing</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr class="part-header"><td colspan="4">Small / mechanical (1-4)</td></tr>
+    <tr>
+      <td class="module">1</td>
+      <td>Pipeline Supervisor stopped — investigate <code class="inline">.pids/pipeline.pid</code> + logs, restart if appropriate</td>
+      <td><span class="pill neutral">small</span></td>
+      <td>Orchestrator inline</td>
+    </tr>
+    <tr>
+      <td class="module">2</td>
+      <td>Close GH #740 — Decision Card pattern adopted in practice (<code class="inline">.claude/rules/decision-card.md</code> + today's <code class="inline">ab discuss</code> thread)</td>
+      <td><span class="pill neutral">small</span></td>
+      <td>Orchestrator inline</td>
+    </tr>
+    <tr>
+      <td class="module">3</td>
+      <td>Rename <code class="inline">needs_human</code> → <code class="inline">residuals_filed</code> (GH #342, pipeline-v4 outcomes)</td>
+      <td><span class="pill neutral">small</span></td>
+      <td>codex dispatch + gemini review</td>
+    </tr>
+    <tr>
+      <td class="module">4</td>
+      <td>Update stale memory <code class="inline">feedback_codex_review_danger_mode.md</code> — bug described is fixed by <code class="inline">dispatch_smart.py:270-279</code> codex auto-bump</td>
+      <td><span class="pill neutral">small</span></td>
+      <td>Orchestrator inline</td>
+    </tr>
+    <tr class="part-header"><td colspan="4">EPICs (5-7) — <code class="inline">ab discuss</code> first, then codex + gemini</td></tr>
+    <tr>
+      <td class="module">5</td>
+      <td>GH #373 — composite K8s-style liveness probes for LLM-dispatch subprocesses</td>
+      <td><span class="pill warn">EPIC</span></td>
+      <td><code class="inline">ab discuss</code> → codex + gemini</td>
+    </tr>
+    <tr>
+      <td class="module">6</td>
+      <td>GH #375 — Quality Pipeline v2 EPIC (rebuild after v1 codex reject)</td>
+      <td><span class="pill warn">EPIC</span></td>
+      <td><code class="inline">ab discuss</code> → codex + gemini</td>
+    </tr>
+    <tr>
+      <td class="module">7</td>
+      <td>GH #341 — Citation residuals auto-resolver EPIC</td>
+      <td><span class="pill warn">EPIC</span></td>
+      <td><code class="inline">ab discuss</code> → codex + gemini</td>
+    </tr>
+  </tbody>
+</table>
+
+<footer class="report-footer">
+  <div>2026-05-09 · ~5h wall · 5 PRs merged (#1075–#1079) · 2 spark caps recovered · 1 round-2 cross-family fix · 18 stale deliveries cleared</div>
+  <div>Predecessor: <a href="/artifacts/docs/session-state/2026-05-09-prereqs-and-aiml-marathon.html">2026-05-09 Prereqs + AI/ML marathon</a></div>
+</footer>
+
+</div>
+</body>
+</html>
