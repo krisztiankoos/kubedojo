@@ -4740,7 +4740,7 @@ def _render_markdown_body(text: str) -> str:
         pass
     else:
         extensions.append("codehilite")
-        extension_configs["codehilite"] = {"guess_lang": False, "noclasses": False}
+        extension_configs["codehilite"] = {"guess_lang": False, "noclasses": True}
     return str(markdown_lib.markdown(stripped, extensions=extensions, extension_configs=extension_configs))
 
 
@@ -4759,10 +4759,8 @@ def _cached_markdown_body(path: Path) -> str:
 def _render_artifact_breadcrumbs(rel_path: str) -> str:
     parts = rel_path.split("/")
     crumbs = ['<a href="/artifacts">Artifacts</a>']
-    for idx, part in enumerate(parts[:-1], start=1):
-        prefix = "/".join(parts[:idx])
-        anchor = html.escape(prefix, quote=True)
-        crumbs.append(f'<span>/</span><a href="/artifacts#{anchor}">{html.escape(part)}</a>')
+    for part in parts[:-1]:
+        crumbs.append(f"<span>/</span><span>{html.escape(part)}</span>")
     crumbs.append(f"<span>/</span><span>{html.escape(parts[-1])}</span>")
     return "".join(crumbs)
 
