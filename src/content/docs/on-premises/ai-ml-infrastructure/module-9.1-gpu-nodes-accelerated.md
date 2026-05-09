@@ -4,9 +4,8 @@ description: "Architecture, provisioning, and operational management of GPU reso
 slug: on-premises/ai-ml-infrastructure/module-9.1-gpu-nodes-accelerated
 sidebar:
   order: 91
+revision_pending: false
 ---
-
-# GPU Nodes & Accelerated Computing
 
 > **Complexity**: `[COMPLEX]`
 >
@@ -16,139 +15,33 @@ sidebar:
 >
 > **Track**: On-Premises AI/ML Infrastructure
 
+---
+
 ## Learning Outcomes
 
 By the end of this module, you will be able to:
 
-* Design an on-premises GPU node architecture that connects host drivers, container runtimes, device plugins, operators, monitoring, and Kubernetes scheduling.
-* Evaluate accelerator placement strategies for heterogeneous fleets using taints, tolerations, Node Feature Discovery labels, node affinity, MIG, Time-Slicing, and Dynamic Resource Allocation.
-* Debug GPU scheduling failures by separating API admission errors, scheduler placement failures, kubelet allocation failures, runtime injection problems, and host driver faults.
-* Compare legacy device plugin allocation with Kubernetes Dynamic Resource Allocation and justify when each model is appropriate for senior platform design.
-* Implement and validate a GPU Operator Time-Slicing configuration while explaining the operational risks it introduces.
+- Design an on-premises GPU node architecture that connects host drivers, container runtimes, device plugins, operators, monitoring, and Kubernetes scheduling.
+- Evaluate accelerator placement strategies for heterogeneous fleets using taints, tolerations, Node Feature Discovery labels, node affinity, MIG, Time-Slicing, and Dynamic Resource Allocation.
+- Debug GPU scheduling failures by separating API admission errors, scheduler placement failures, kubelet allocation failures, runtime injection problems, and host driver faults.
+- Compare legacy device plugin allocation with Kubernetes Dynamic Resource Allocation and justify when each model is appropriate for senior platform design.
+- Implement and validate a GPU Operator Time-Slicing configuration while explaining the operational risks it introduces.
 
 ## Why This Module Matters
 
-The platform team at a private AI lab had already bought the expensive part.
+Hypothetical scenario: an on-premises AI platform team has already finished the expensive work. The GPU servers are racked, the power and cooling upgrades are complete, the procurement review is over, and the finance team expects a credible utilization story. Then training jobs start missing their scheduled windows even though dashboards show installed accelerator capacity, notebooks compete with multi-day training jobs, and a small inference pod lands on premium hardware because the manifest only requested `nvidia.com/gpu: 1`. The hardware is not the first failure. The platform contract around the hardware is the failure.
 
-The cluster had rows of on-premises GPU servers.
+Kubernetes does not treat a GPU like CPU. CPU requests can be fractional, throttled, and overcommitted within well-known scheduler and cgroup semantics, but a legacy GPU request is an exclusive integer claim unless the platform deliberately exposes a different sharing or partitioning model. A successful GPU workload also depends on host kernel drivers, container runtime integration, device plugin registration, kubelet allocation, node labels, taints, telemetry, and application image compatibility. Each layer can be correct in isolation while the complete path still fails for the workload.
 
-The purchase order was signed.
+This module teaches the boundaries between those layers. You will begin with the classic device plugin model, where a node-local plugin advertises an extended resource such as `nvidia.com/gpu` to the kubelet. You will then add the operational pieces that make the model production-grade: the NVIDIA GPU Operator, Node Feature Discovery, scheduling policy, MIG, Time-Slicing, DCGM Exporter, and vendor alternatives such as AMD ROCm and Intel Gaudi. Finally, you will compare that mature integer-resource model with Kubernetes Dynamic Resource Allocation, which is stable in Kubernetes v1.35 and gives platform teams a richer way to request devices through claims and attributes.
 
-The data center power work was complete.
+The goal is not to memorize one chart value or one Helm flag. The goal is to reason from a symptom to the failing layer. When a pod is pending, you should know whether to inspect admission errors, scheduler events, taints, node labels, allocatable resources, MIG profiles, or quota. When a pod is scheduled but stuck in `ContainerCreating`, you should shift away from scheduler theory and inspect kubelet allocation, runtime injection, CDI, device plugin logs, and host driver state. That diagnostic discipline is what separates a cluster that merely contains accelerators from a platform that safely operates accelerated compute.
 
-The finance team expected a clear utilization story.
+## Foundations of Accelerated Computing in Kubernetes
 
-Then the training jobs started missing their windows.
+A Kubernetes cluster does not automatically understand every device attached to a server. The kubelet has native knowledge of CPU, memory, ephemeral storage, pods, and operating-system-level capacity, but it does not ship with built-in logic for every GPU, FPGA, AI accelerator, SmartNIC, or vendor-specific PCIe device. That design keeps Kubernetes extensible. Instead of requiring every hardware vendor to merge device-specific code into Kubernetes core, the platform provides extension points that translate host hardware into scheduler-visible resources.
 
-The problem was not that the hardware was slow.
-
-The problem was that Kubernetes saw every GPU as a small integer.
-
-A debugging notebook used the same scheduler resource name as a multi-day model training job.
-
-A low-priority inference pod landed on a high-memory training node because the pod requested only `nvidia.com/gpu: 1`.
-
-A node carried four physical accelerators, but one failed silently, and the dashboard kept showing the same installed capacity because the alert watched `Capacity` instead of `Allocatable`.
-
-The visible symptom was a queue of pending jobs.
-
-The deeper cause was that the platform treated accelerators like ordinary CPU.
-
-That mistake is expensive.
-
-A CPU request can be throttled, packed, or overcommitted.
-
-A legacy GPU request is an exclusive integer claim unless you deliberately configure a sharing or partitioning layer.
-
-A container runtime can start a normal web service without special kernel modules.
-
-A GPU workload needs host drivers, runtime hooks or CDI specifications, kubelet registration, health reporting, device injection, scheduling constraints, and telemetry.
-
-Each layer can be correct on its own and still fail as a system if the boundaries are misunderstood.
-
-This module teaches that system boundary.
-
-You will start with the simple model: a device plugin advertises `nvidia.com/gpu` to the kubelet.
-
-Then you will add the operational layers that make the model production-grade: the NVIDIA GPU Operator, Node Feature Discovery, taints, MIG, Time-Slicing, DCGM Exporter, and vendor alternatives.
-
-Finally, you will compare that legacy integer model with Kubernetes Dynamic Resource Allocation, which is stable in Kubernetes v1.35 and gives platform teams a richer way to request devices by attributes rather than by opaque counts.
-
-The goal is not to memorize a chart value.
-
-The goal is to reason from a symptom to the failing layer.
-
-When a pod is pending, you should know whether to inspect scheduler events, node labels, allocatable resources, MIG profiles, runtime configuration, or driver logs.
-
-When a tenant asks for “one GPU,” you should know whether that phrase means one full device, one MIG slice, one time-shared replica, or one DRA claim with specific attributes.
-
-That distinction is what separates a cluster that merely has accelerators from a platform that can safely operate accelerated compute.
-
-## The Foundations of Accelerated Computing
-
-A Kubernetes cluster does not automatically understand every device attached to a server.
-
-The kubelet has native knowledge of CPU, memory, ephemeral storage, and some operating-system-level capacity.
-
-It does not ship with built-in logic for every GPU, FPGA, AI accelerator, SmartNIC, or vendor-specific device that might appear on a PCIe bus.
-
-That design is intentional.
-
-Kubernetes would not scale as an open ecosystem if every hardware vendor had to merge device-specific code into the core scheduler or kubelet.
-
-Instead, Kubernetes exposes extension points.
-
-Hardware vendors and platform teams use those extension points to translate host-level hardware into scheduler-visible resources.
-
-For classic GPU scheduling, the most important extension point is the device plugin framework.
-
-The device plugin runs on each node that owns the hardware.
-
-It discovers devices.
-
-It reports healthy devices.
-
-It registers a resource name with the kubelet.
-
-It participates in allocation when the kubelet prepares a container that requested the resource.
-
-The scheduler does not talk directly to the physical GPU.
-
-The scheduler sees the node status that the kubelet publishes.
-
-That status includes an extended resource such as `nvidia.com/gpu`.
-
-That indirection is powerful because Kubernetes can schedule workloads without learning vendor-specific driver APIs.
-
-It is also dangerous because the abstraction hides details that matter in production.
-
-A request for `nvidia.com/gpu: 1` does not say which model of GPU is required.
-
-It does not say how much VRAM the workload needs.
-
-It does not say whether hardware isolation is required.
-
-It does not say whether the workload can share a device with another tenant.
-
-It only says that the container needs one integer unit of that extended resource.
-
-A senior platform engineer must therefore design the surrounding policy.
-
-The device plugin exposes capacity.
-
-Node Feature Discovery exposes hardware labels.
-
-Taints repel generic workloads.
-
-Affinity steers workloads to the right hardware.
-
-The GPU Operator manages the host software stack.
-
-MIG and Time-Slicing change what “one unit” means.
-
-Dynamic Resource Allocation offers a newer claim-based model for cases where labels and integer counts are too blunt.
-
-Here is the basic mental model.
+For classic GPU scheduling, the key extension point is the device plugin framework. A device plugin runs on each node that owns the hardware, discovers devices, reports device health, registers a resource name with the kubelet, and participates in allocation when the kubelet prepares a container that requested that resource. The scheduler does not talk directly to a physical GPU or a vendor driver. It consumes node status published by the kubelet, and that status includes extended resources such as `nvidia.com/gpu`, `amd.com/gpu`, or `habana.ai/gaudi`.
 
 ```text
 +----------------------+       +----------------------+       +----------------------+
@@ -168,39 +61,13 @@ Here is the basic mental model.
                                                             +------------------+
 ```
 
-The scheduler makes placement decisions from declared state.
+That indirection is powerful because Kubernetes can schedule workloads without learning vendor-specific driver APIs, but it also hides details that matter in production. A request for `nvidia.com/gpu: 1` does not say which GPU model is required, how much VRAM the workload needs, whether hardware isolation is required, whether the workload can share a physical device, or whether a specific interconnect topology is needed. It only says that the container needs one integer unit of the advertised extended resource, so platform engineers must design the surrounding policy.
 
-The kubelet makes local admission and container preparation decisions from node-local state.
-
-The device plugin bridges those two worlds.
-
-When a GPU workload fails, you debug by locating the broken bridge.
+The surrounding policy is where most production quality lives. Device plugins expose capacity, Node Feature Discovery exposes hardware labels, taints repel generic workloads, affinity selects suitable hardware, quotas constrain tenants, operators reconcile driver and runtime components, MIG and Time-Slicing change what one schedulable unit means, and Dynamic Resource Allocation can model richer device selection through claims. The scheduler can only honor the intent that the platform and workload authors actually declare.
 
 ### Resource Semantics and Capacity Handling
 
-A device plugin resource name must follow the extended resource naming pattern.
-
-The format is `vendor-domain/resource`.
-
-For NVIDIA GPUs, the common resource is `nvidia.com/gpu`.
-
-For AMD GPUs, the common resource is `amd.com/gpu`.
-
-For Intel Gaudi accelerators, the common resource is `habana.ai/gaudi`.
-
-The domain prefix prevents collisions.
-
-Without it, two vendors might both advertise `gpu`, and the scheduler would have no reliable way to distinguish their devices.
-
-Extended resources also have stricter scheduling semantics than CPU.
-
-CPU requests can be fractional.
-
-Memory can be requested in quantities such as `512Mi`.
-
-A legacy extended resource request must be an integer.
-
-The following manifest is valid if a device plugin advertises `nvidia.com/gpu` on at least one node.
+Device plugin resource names follow the extended resource naming pattern `vendor-domain/resource`. The domain prefix prevents collisions between vendors and platform-specific resources, which matters in heterogeneous clusters where NVIDIA, AMD, Intel, or internal accelerator drivers might all be present. A pod that requests a legacy extended resource must request a whole number. CPU can be fractional and memory can use quantities such as `512Mi`, but an extended device resource such as `nvidia.com/gpu` cannot be requested as `0.5` in the legacy model.
 
 ```yaml
 apiVersion: v1
@@ -217,7 +84,7 @@ spec:
           nvidia.com/gpu: 1
 ```
 
-The following manifest is not valid in the legacy model.
+The following manifest is intentionally invalid for the legacy extended resource model. It is useful as a teaching example because it exposes a common misconception: fractional GPU scheduling is not created by writing a decimal into the pod specification. If a team wants several pods to share a physical device, the platform must expose a different schedulable abstraction through Time-Slicing, MIG-backed resources, or a DRA-capable driver.
 
 ```yaml
 apiVersion: v1
@@ -234,72 +101,17 @@ spec:
           nvidia.com/gpu: 0.5
 ```
 
-The API server rejects the fractional extended resource.
-
-This is not a GPU Operator limitation.
-
-It is a Kubernetes extended resource rule.
-
-If a team wants several pods to share a physical device, the platform must expose a different abstraction.
-
-Time-Slicing can advertise multiple replicas for a physical GPU.
-
-MIG can expose hardware-isolated slices on supported GPUs.
-
-DRA can model device requests through ResourceClaims and device attributes.
-
-Those are platform choices, not magic side effects of writing `0.5`.
-
-> **Pause and predict**: A node has four installed GPUs. One physical GPU fails and the device plugin marks it unhealthy. What do you expect `Capacity` and `Allocatable` to show after the kubelet updates node status?
-
-When a managed device becomes unhealthy, the kubelet decreases `Allocatable` for scheduling.
-
-The total `Capacity` remains unchanged.
-
-That behavior surprises many operators.
-
-`Capacity` is the installed or reported physical resource count.
-
-`Allocatable` is the usable count available for new scheduling decisions.
-
-A monitoring rule that only checks `Capacity` can miss a failed device.
-
-A rule that compares `Capacity` and `Allocatable` can detect a node that still has hardware installed but no longer has all of it usable.
-
-A useful diagnostic command is:
+Pause and predict: a node has four installed GPUs, and one physical GPU fails after the device plugin has registered all devices. What should `Capacity` and `Allocatable` show after kubelet receives the health update? The expected answer is that total `Capacity` can remain at the installed or reported count while `Allocatable` drops for new scheduling decisions. This is why a capacity-only dashboard can look healthy while the scheduler has already stopped using a failed accelerator.
 
 ```bash
 kubectl describe node <gpu-node-name>
 ```
 
-After you use `kubectl` a few times, many Kubernetes operators define the short alias `k` for speed.
-
-```bash
-alias k=kubectl
-k describe node <gpu-node-name>
-```
-
-This module continues to use `kubectl` in most examples so commands are copyable without depending on your shell aliases.
+Many Kubernetes operators use short interactive shell shortcuts for `kubectl`, but curriculum examples and operational runbooks should use the full binary name so copy-paste commands work in non-interactive shells and CI jobs. This module keeps all runnable shell examples explicit for that reason.
 
 ### Where GPU Requests Fit in Pod Scheduling
 
-A GPU request usually appears under container `resources.limits`.
-
-For extended resources, Kubernetes expects the request and limit to match.
-
-In common GPU manifests, specifying the limit is enough because Kubernetes treats the extended resource as the request as well.
-
-The scheduler then searches for a node where all constraints can be satisfied.
-
-Those constraints include ordinary resources, labels, taints, affinity, topology spread rules, and extended resource availability.
-
-A pod that requests one GPU but lacks a matching toleration will not land on a GPU node if that node is tainted.
-
-A pod that requests one GPU but selects the wrong product label will remain pending even if other GPU nodes are idle.
-
-A pod that requests one GPU and has no product selector can land on any compatible node with one allocatable GPU, even if that wastes a premium accelerator.
-
-The scheduling path is easier to reason about as a sequence.
+A GPU request usually appears under container `resources.limits`. For extended resources, Kubernetes expects requests and limits to match, and common GPU manifests specify only the limit because Kubernetes treats the extended resource limit as the request as well. The scheduler then filters nodes against ordinary resources, extended resource availability, labels, taints, affinity, topology spread constraints, priority, and other scheduling policy. A pod that requests one GPU but lacks a matching toleration will not land on a tainted GPU node, and a pod that requests one GPU with the wrong product label will remain pending even while other GPU nodes are idle.
 
 ```text
 +-------------------------------+
@@ -335,47 +147,17 @@ The scheduling path is easier to reason about as a sequence.
 +-------------------------------+
 ```
 
-This flow is your first debugging tool.
+Use that path as your first debugging tool. If the API server rejects the manifest, do not inspect driver logs; fix the invalid resource request or schema error. If the pod is pending, inspect pod events and scheduler constraints. If the pod is assigned but stuck in `ContainerCreating`, inspect kubelet, the device plugin, CDI or runtime configuration, and driver state. If the container starts but the application cannot see CUDA or ROCm, inspect image compatibility, runtime injection, library paths, and the application framework.
 
-If the API rejects the manifest, do not inspect driver logs.
+## Device Plugin and Runtime Integration
 
-If the pod is pending, inspect events and scheduler constraints.
-
-If the pod is scheduled but stuck in `ContainerCreating`, inspect kubelet, device plugin, CDI, runtime, and driver state.
-
-If the container starts but the application cannot see CUDA or ROCm libraries, inspect image compatibility and runtime injection.
-
-## The Device Plugin Framework Deep Dive
-
-The device plugin framework is stable and widely used.
-
-It exists so vendors can integrate special hardware without patching Kubernetes core.
-
-The kubelet exposes a registration service over a UNIX socket.
-
-A device plugin connects to that socket and registers the resource it manages.
-
-The canonical kubelet socket path is under:
+The device plugin framework is stable and widely used because it lets vendors integrate special hardware without patching Kubernetes core. The kubelet exposes a registration service over a UNIX socket, and a device plugin connects to that socket to register the resource it manages. The canonical kubelet socket path sits under the node filesystem path shown below, and plugins commonly create their own sockets in the same directory so kubelet can call plugin methods for device listing, health watching, and allocation.
 
 ```text
 /var/lib/kubelet/device-plugins/kubelet.sock
 ```
 
-The plugin also creates its own socket in the same directory.
-
-The kubelet then calls the plugin to list devices, watch health changes, and allocate devices to containers.
-
-This explains why most device plugins run as privileged DaemonSets.
-
-They need host access.
-
-They need to mount the kubelet device plugin directory.
-
-They often need access to device files under `/dev`.
-
-They may need host PID, host filesystem paths, or driver-specific libraries depending on the vendor.
-
-A simplified DaemonSet mount looks like this.
+This explains why most device plugins run as privileged DaemonSets. They need host access, a mount of the kubelet device plugin directory, and often access to device files under `/dev`. Some vendors also need host PID visibility, driver libraries, firmware utilities, or runtime configuration paths. A simplified DaemonSet mount looks like the example below; the placeholder image is not meant to be applied, but the hostPath and local-agent pattern are the protected idea.
 
 ```yaml
 apiVersion: apps/v1
@@ -407,107 +189,11 @@ spec:
             type: Directory
 ```
 
-This example uses a placeholder image, so do not apply it as-is.
+After registration, the plugin streams device health through `ListAndWatch`, kubelet publishes healthy resource counts in node status, and the scheduler uses that status for placement. When kubelet admits a container that requested the resource on that node, it calls the plugin allocation endpoint. The plugin responds with the device files, environment variables, mounts, annotations, or CDI device references needed by the container runtime. The API server does not know the low-level character device names, and the scheduler does not know the CUDA library path. That local allocation boundary is why scheduling success does not prove runtime success.
 
-The structure is what matters.
+The Container Device Interface, usually shortened to CDI, standardizes how devices are described for OCI runtimes. Historically, device injection relied on runtime hooks, wrapper runtimes, bind mounts, custom environment variables, and vendor-specific configuration. CDI moves more of that contract into a specification that describes device nodes, mounts, hooks, and environment requirements. `DevicePluginCDIDevices` became generally available in Kubernetes v1.31, allowing device plugins to return CDI device references instead of relying only on legacy runtime mutation paths.
 
-The DaemonSet pattern ensures that each hardware node has a local agent.
-
-The hostPath mount gives that local agent access to the kubelet registration socket.
-
-The privileged context gives it enough permission to inspect and prepare host devices.
-
-### Registration and Allocation
-
-The registration flow is small but important.
-
-The plugin tells kubelet three things.
-
-It provides the plugin socket name.
-
-It provides the device plugin API version.
-
-It provides the resource name to advertise.
-
-After registration, the plugin streams device health through `ListAndWatch`.
-
-The kubelet publishes healthy resource counts in node status.
-
-When a container that requests the resource is admitted on the node, the kubelet calls the plugin allocation endpoint.
-
-The plugin responds with the device files, environment variables, mounts, CDI devices, or annotations needed by the container runtime.
-
-That allocation response is local to the node.
-
-The API server does not know the low-level character devices used by the container.
-
-The scheduler does not know the CUDA library path.
-
-The device plugin and runtime handle that local injection.
-
-This is why a pod can be scheduled correctly and still fail to start.
-
-Scheduling only proves that the control plane found a node with allocatable resources.
-
-It does not prove that the runtime could inject the device.
-
-It does not prove that the kernel driver is healthy.
-
-It does not prove that the container image has compatible user-space libraries.
-
-### The Rise of Container Device Interface
-
-Historically, device injection was runtime-specific.
-
-Operators relied on runtime hooks, custom environment variables, bind mounts, and vendor-specific wrapper runtimes.
-
-That worked, but it created fragile coupling between Kubernetes, containerd, CRI-O, and the vendor stack.
-
-The Container Device Interface, usually shortened to CDI, standardizes how devices are described for OCI runtimes.
-
-A CDI specification describes the device, the required device nodes, mounts, hooks, and environment required for access.
-
-The kubelet can pass CDI device references to the runtime rather than relying on a vendor-specific runtime class path.
-
-`DevicePluginCDIDevices` became generally available in Kubernetes v1.31.
-
-For modern GPU operations, CDI matters because it reduces the amount of hand-maintained runtime mutation.
-
-It also makes the same conceptual device injection model work across different runtimes.
-
-This does not eliminate runtime compatibility checks.
-
-It changes where the contract lives.
-
-Instead of asking, “Did my runtime class invoke the right vendor hook?” you ask, “Can my runtime consume the CDI specification and can the operator generate it correctly?”
-
-NVIDIA GPU Operator v26.3 also supports an NRI plugin path when CDI is enabled.
-
-NRI stands for Node Resource Interface.
-
-It lets plugins hook into OCI-compatible runtime lifecycle events.
-
-In the GPU Operator v26.3 documentation, the NRI plugin requires containerd v1.7.30 or newer in the supported v1.7 line, or supported containerd v2.1 and v2.2 lines.
-
-It is not supported with CRI-O.
-
-That one sentence should change your rollout plan.
-
-If staging runs containerd and production runs CRI-O, you do not enable the NRI plugin everywhere.
-
-You enable it only where the runtime compatibility contract is satisfied.
-
-> **Stop and think**: A pod is scheduled to a GPU node, but it stays in `ContainerCreating`. The scheduler already did its job. Which layer would you inspect next: node affinity, runtime injection, or Prometheus scraping?
-
-The next layer is runtime injection and local kubelet allocation.
-
-Node affinity influenced placement before the pod reached the node.
-
-Prometheus scraping is observability after the stack is running.
-
-`ContainerCreating` usually means the kubelet or runtime cannot complete the local preparation step.
-
-Useful commands include:
+NVIDIA GPU Operator v26.3 also documents an NRI plugin path when CDI is enabled. NRI, the Node Resource Interface, lets plugins participate in OCI-compatible runtime lifecycle events, but its compatibility matrix is narrower than basic GPU Operator deployment. NVIDIA documents that the NRI plugin requires supported containerd versions and is not supported with CRI-O. Before running this in a mixed-runtime estate, what output do you expect from a node inventory that includes both containerd and CRI-O nodes? You should expect the runtime family to become a rollout gate, not a minor implementation detail.
 
 ```bash
 kubectl describe pod <pod-name> -n <namespace>
@@ -515,51 +201,11 @@ kubectl logs daemonset/nvidia-device-plugin-daemonset -n gpu-operator
 kubectl get events -n <namespace> --sort-by=.lastTimestamp
 ```
 
-On the node, an operator may also inspect kubelet logs and runtime logs through the host logging system.
-
-The exact host commands differ by operating system, but the debugging principle is consistent.
-
-Scheduling and local allocation are different stages.
+Those commands map to the boundary between scheduling and local allocation. Pod events tell you whether the scheduler found a node. Device plugin logs tell you whether the node-local plugin could discover and allocate devices. Kubelet and runtime logs, collected through the host logging system, tell you whether device injection and container creation completed. A pod stuck in `ContainerCreating` has already passed scheduler placement, so continuing to tweak node affinity is usually working on the wrong layer.
 
 ## Operator-Driven GPU Management
 
-You can deploy a GPU device plugin by hand.
-
-For a small lab, that can be acceptable.
-
-For a production on-premises fleet, hand assembly becomes fragile.
-
-A GPU node needs the correct kernel driver.
-
-It needs a compatible container runtime configuration.
-
-It needs the device plugin.
-
-It needs GPU feature labels.
-
-It needs health checks.
-
-It needs telemetry.
-
-It may need MIG management.
-
-It may need validator pods that catch configuration drift.
-
-The NVIDIA GPU Operator packages those responsibilities into a Kubernetes-native control loop.
-
-The operator watches cluster state and reconciles the node software stack.
-
-When a GPU node joins, Node Feature Discovery and GPU Feature Discovery identify the hardware.
-
-The operator deploys the driver manager, container toolkit, device plugin, DCGM Exporter, MIG Manager, and validators as needed.
-
-This is the difference between “install a driver” and “operate a GPU fleet.”
-
-A one-time install script can make one node work.
-
-A reconciler can keep a fleet aligned as nodes are replaced, rebooted, patched, or drained.
-
-### Architecture Topology
+You can deploy a GPU device plugin by hand, and in a small lab that may be enough. In production, hand assembly becomes fragile because a GPU node needs a compatible kernel driver, container runtime configuration, device plugin, hardware labels, health checks, telemetry, validators, and sometimes MIG management. The NVIDIA GPU Operator packages those responsibilities into Kubernetes control loops. When a GPU node joins, Node Feature Discovery and GPU Feature Discovery identify hardware, and operator-managed components reconcile drivers, runtime integration, device plugins, DCGM Exporter, MIG Manager, and validators as needed.
 
 ```mermaid
 graph TD
@@ -569,34 +215,14 @@ graph TD
     A -->|Manages| E(Device Plugin)
     A -->|Manages| F(DCGM Exporter)
     A -->|Manages| G(MIG Manager)
-    
+
     B -->|Labels Node| H[Kubelet]
     E -->|Advertises nvidia.com/gpu| H
     C -->|Compiles/Loads Module| I[Host Kernel]
     D -->|Configures| J[containerd / CRI-O]
 ```
 
-This diagram is worth reading from bottom to top as well as top to bottom.
-
-The operator manages components.
-
-Those components mutate host state.
-
-The host state affects kubelet registration and runtime behavior.
-
-The kubelet publishes allocatable GPU resources.
-
-The scheduler consumes that published state.
-
-A broken host kernel module can therefore appear to the platform as a scheduling problem.
-
-A broken runtime configuration can appear as a pod startup problem.
-
-A missing NFD label can appear as a placement problem.
-
-The operator reduces toil, but it does not remove the need to understand the layers.
-
-### Core Components Analysis
+Read the diagram from bottom to top as well as top to bottom. The operator manages Kubernetes operands, those operands mutate host state, host state affects kubelet registration and runtime behavior, kubelet publishes allocatable GPU resources, and the scheduler consumes that published state. A broken host kernel module can look like a scheduling shortage, a broken runtime configuration can look like a pod startup problem, and a missing NFD label can look like bad placement. The operator reduces toil, but it does not remove the need to understand the layers.
 
 | Component | Function in the Cluster | Practitioner Notes |
 | :--- | :--- | :--- |
@@ -607,65 +233,9 @@ The operator reduces toil, but it does not remove the need to understand the lay
 | **DCGM Exporter** | Exposes GPU metrics such as temperature, power draw, memory usage, and SM utilization in Prometheus format. | High-cardinality metric source. Scrape and label design matter in large clusters. |
 | **MIG Manager** | Reconfigures supported GPUs into smaller hardware instances based on configured profiles. | Changing profiles can require draining workloads and coordinating with node maintenance. |
 
-The table is not a list to memorize.
+Treat that table as a failure map rather than a checklist. If NFD is broken, the operator may not target nodes correctly. If the driver is broken, the device plugin cannot discover usable GPUs. If the runtime injection path is broken, pods may be scheduled but unable to start. If DCGM Exporter is broken, workloads can run while the platform is blind to thermal pressure, memory saturation, ECC errors, and utilization. If MIG Manager is misconfigured, allocatable resources may not match tenant expectations.
 
-It is a failure map.
-
-If NFD is broken, the operator may not target the node correctly.
-
-If the driver is broken, the device plugin cannot discover usable GPUs.
-
-If the runtime injection path is broken, the pod may be scheduled but unable to start.
-
-If DCGM Exporter is broken, workloads might run while the platform is blind to thermal or utilization signals.
-
-If MIG Manager is misconfigured, allocatable resources may not match tenant expectations.
-
-### Strict Versioning and Runtime Compatibility
-
-GPU operations have a tighter compatibility surface than ordinary stateless workloads.
-
-A web container can usually move from one patched node to another without caring about the host kernel version.
-
-A GPU driver is a kernel module.
-
-The container runtime needs to expose device files and libraries correctly.
-
-The device plugin expects a working driver API.
-
-Monitoring libraries expect compatible management interfaces.
-
-The operator must align these pieces.
-
-NVIDIA GPU Operator uses calendar-style versioning in the form `YY.MM.PP`.
-
-For example, v26.3.0 is a release in that style.
-
-NVIDIA documents a component matrix for each operator release.
-
-For GPU Operator v26.3.0, the matrix includes NVIDIA Container Toolkit 1.19.0 and NVIDIA Kubernetes Device Plugin 0.19.0.
-
-That matrix matters because overriding one component image independently can create unsupported combinations.
-
-The Kubernetes support matrix also matters.
-
-For GPU Operator v26.3, the documented operating system and Kubernetes support includes Kubernetes v1.32 through v1.35 for supported platforms.
-
-A cluster targeting Kubernetes v1.35 fits that current support window, but the operating system, runtime, and driver branch still need to match the vendor matrix.
-
-Runtime compatibility needs the same care.
-
-GPU Operator v26.3 validates containerd and CRI-O on supported operating systems for the core operator workflow.
-
-Advanced NRI plugin support is narrower.
-
-The NRI plugin requires CDI and supported containerd versions.
-
-It is not supported with CRI-O.
-
-A production rollout plan should therefore record runtime family and version as a first-class compatibility item, not as an afterthought.
-
-A practical preflight inventory looks like this.
+GPU operations also have a tighter compatibility surface than ordinary stateless workloads. A web container can often move from one patched node to another without caring about the host kernel version, but a GPU driver is a kernel module, the runtime must expose device files and libraries correctly, and monitoring libraries expect compatible management interfaces. NVIDIA GPU Operator uses calendar-style versioning such as `26.3.0`, and each release has a component matrix. For GPU Operator v26.3.0, the documented matrix includes NVIDIA Container Toolkit 1.19.0 and NVIDIA Kubernetes Device Plugin 0.19.0, so overriding one image independently can create unsupported combinations.
 
 ```bash
 kubectl get nodes -o wide
@@ -674,57 +244,7 @@ kubectl get pods -n gpu-operator
 kubectl get clusterpolicy cluster-policy -o yaml
 ```
 
-The first command shows the container runtime in the `CONTAINER-RUNTIME` column.
-
-The second command shows whether GPU labels are present.
-
-The third command checks operator-managed pods.
-
-The fourth command exposes the operator policy that defines the desired GPU stack.
-
-### The Pre-compiled vs. Dynamic Driver Trade-off
-
-The driver is often the most operationally sensitive part of the stack.
-
-The operator can manage driver installation through containers.
-
-That management path usually falls into two strategies.
-
-The first strategy is dynamic compilation.
-
-The driver container compiles the kernel module on the node.
-
-This can work across a range of kernel versions.
-
-It also means node readiness depends on compiler tooling, kernel headers, package repositories, and exact host/kernel alignment.
-
-If the operating system patches the kernel but does not install matching headers, dynamic compilation fails.
-
-The node may join the cluster but never advertise usable GPU capacity.
-
-The second strategy is pre-compiled drivers.
-
-The platform team builds or obtains a driver container that already contains the module for the exact kernel version.
-
-This makes node boot more deterministic.
-
-It also creates a release engineering responsibility.
-
-Every kernel patch that changes the module interface requires a matching driver artifact.
-
-For on-premises clusters with immutable images or tightly controlled OS updates, pre-compiled drivers are often easier to reason about.
-
-For development clusters where kernel versions vary, dynamic compilation can be more convenient.
-
-The key is to choose deliberately.
-
-Do not discover the strategy during an outage.
-
-tip
-For on-premises environments with strict OS lifecycle management, pre-compiled drivers usually provide more predictable node recovery. Dynamic compilation can be acceptable for development and test clusters, but only if matching kernel headers and build dependencies are part of the node image contract.
-
-
-A simple decision table helps.
+The driver strategy deserves explicit design review because it controls how nodes recover after OS patching. Dynamic compilation lets the driver container build the module on the node, which can be flexible across kernel versions but depends on matching kernel headers, compiler tooling, package availability, and host/kernel alignment. Pre-compiled drivers make node boot more deterministic when the platform uses immutable images or tightly controlled OS versions, but they create a release engineering duty for every approved kernel build. Host-installed drivers may fit organizations with existing bare-metal operations teams, but ownership boundaries must be written down before rollback is needed.
 
 | Driver Strategy | Best Fit | Operational Risk | Senior Review Question |
 | :--- | :--- | :--- | :--- |
@@ -734,27 +254,11 @@ A simple decision table helps.
 
 ## Advanced Workload Placement
 
-GPU hardware is too expensive to schedule casually.
-
-A generic CPU workload should not occupy a GPU node just because the node has free CPU.
-
-A small inference workload should not consume a high-memory training accelerator if a cheaper accelerator is available.
-
-A distributed training job should not land across nodes with incompatible interconnect topology.
-
-The first scheduling control is a taint.
-
-A taint repels pods unless they explicitly tolerate it.
-
-For GPU nodes, a common pattern is:
+GPU hardware is too expensive to schedule casually. A generic CPU workload should not occupy a GPU node just because the node has free CPU, and a small inference service should not consume a high-memory training accelerator if cheaper hardware is available. A distributed training job may also need compatible interconnect topology, not just a free device count. The first scheduling control is a taint, which repels pods unless they explicitly tolerate it. Taints protect the hardware pool from accidental placement.
 
 ```bash
 kubectl taint nodes gpu-node-1 nvidia.com/gpu=present:NoSchedule
 ```
-
-This says that pods cannot schedule on `gpu-node-1` unless they tolerate the `nvidia.com/gpu` taint.
-
-A GPU workload then declares a matching toleration.
 
 ```yaml
 apiVersion: v1
@@ -775,33 +279,11 @@ spec:
           nvidia.com/gpu: 1
 ```
 
-The toleration allows the pod to enter the hardware zone.
-
-It does not choose the right GPU model.
-
-For that, you need labels and affinity.
-
-### Precise Targeting with Node Feature Discovery
-
-Manual labels rot.
-
-A human might label a node during installation and forget to update it after a hardware replacement.
-
-A node image might be reused across different server models.
-
-An accelerator might be moved between slots.
-
-Node Feature Discovery solves part of this by discovering host features and applying labels automatically.
-
-For GPU fleets, the operator ecosystem can also apply GPU-specific labels such as product names, MIG capability, and GPU count.
-
-An example label might look like this:
+The toleration allows the pod to enter the hardware zone; it does not choose the right accelerator. For that, you need labels and affinity. Manual labels rot when hardware is replaced, node images are reused, or accelerators move between server models. Node Feature Discovery solves part of this by discovering host features and applying labels automatically, while GPU-specific discovery can add labels for product names, MIG capability, GPU count, and driver stack.
 
 ```text
 nvidia.com/gpu.product=NVIDIA-A100-SXM4-40GB
 ```
-
-A workload that specifically requires that product can use node affinity.
 
 ```yaml
 apiVersion: v1
@@ -831,55 +313,7 @@ spec:
           nvidia.com/gpu: 1
 ```
 
-The scheduler now needs both conditions.
-
-The node must have one allocatable `nvidia.com/gpu`.
-
-The node must also carry the product label.
-
-This is a simple but powerful distinction.
-
-The resource request asks, “Does the node have a GPU allocation unit?”
-
-The affinity asks, “Is it the kind of GPU I need?”
-
-> **Stop and think**: If a cluster contains both A100 nodes and H100 nodes, and a deployment requests only `nvidia.com/gpu: 1` without node affinity, how does the scheduler decide where to place the pod?
-
-The scheduler does not optimize for accelerator cost or model suitability by default.
-
-It filters nodes that can satisfy the declared constraints.
-
-If both an A100 node and an H100 node have one allocatable `nvidia.com/gpu`, either can be selected.
-
-That may be technically correct and financially wrong.
-
-Cost-aware placement must be expressed through labels, affinity, quotas, admission policy, queueing systems, or a higher-level workload platform.
-
-### Scheduling Controls as Layers
-
-Do not treat placement as one YAML field.
-
-Production placement is layered.
-
-Taints protect the hardware pool.
-
-Tolerations let legitimate workloads enter the pool.
-
-Node labels describe hardware.
-
-Affinity selects required hardware properties.
-
-Resource requests reserve allocatable device units.
-
-Priority classes influence who waits and who preempts.
-
-Quotas control tenant consumption.
-
-Admission policy can reject underspecified manifests.
-
-Queueing systems can enforce fairness for batch training.
-
-A concise placement stack looks like this.
+Pause and predict: if a cluster contains both A100 nodes and H100 nodes, and a deployment requests only `nvidia.com/gpu: 1` without node affinity, how does the scheduler decide where to place it? The scheduler filters nodes that can satisfy the declared constraints; it does not understand accelerator cost, memory size, generation, or business priority unless those ideas are expressed through labels, affinity, quotas, admission policy, queueing systems, or a higher-level workload platform.
 
 ```text
 +-------------------------------------------------------------+
@@ -912,43 +346,13 @@ A concise placement stack looks like this.
 +-------------------------------------------------------------+
 ```
 
-A beginner often asks, “Why is my pod pending?”
+Production placement is layered, not a single YAML field. Taints protect the pool, tolerations admit legitimate GPU workloads, labels describe hardware, affinity selects required properties, resource requests reserve allocatable units, priority influences preemption, quotas constrain tenants, and admission policy rejects underspecified manifests. A beginner asks why the pod is pending. A senior engineer asks which layer rejected the workload and whether that rejection was intentional.
 
-A senior engineer asks, “Which layer rejected the workload, and was that rejection intentional?”
+## GPU Sharing, Partitioning, and Telemetry
 
-## GPU Sharing Strategies
+Modern accelerators are powerful enough that many workloads do not need an entire physical device, which creates a utilization problem. If every notebook, small batch job, and inference test receives exclusive access to a data center GPU, the platform wastes money. Sharing a GPU is not like sharing CPU, however, because the isolation boundary matters. A trusted debugging notebook has different requirements from a regulated tenant workload, and a batch inference job with predictable memory use has different requirements from an experimental training script.
 
-Modern accelerators are powerful enough that one workload often does not need an entire physical device.
-
-That creates a utilization problem.
-
-If every notebook, inference service, and small batch job receives exclusive access to a full data center GPU, the platform wastes money.
-
-However, sharing a GPU is not like sharing CPU.
-
-The isolation boundary matters.
-
-A trusted debugging notebook has different requirements from a regulated tenant workload.
-
-A batch inference job with predictable VRAM usage has different requirements from an experimental training script.
-
-The two most common NVIDIA sharing strategies in Kubernetes are Time-Slicing and MIG.
-
-They solve different problems.
-
-### Time-Slicing as Software Concurrency
-
-Time-Slicing allows multiple pods to share the same physical GPU by advertising multiple schedulable replicas.
-
-The device plugin presents more logical allocation units than physical devices.
-
-If a node has one physical GPU and the Time-Slicing config advertises ten replicas, Kubernetes can schedule up to ten pods that each request `nvidia.com/gpu: 1`.
-
-The Kubernetes API still sees integer resources.
-
-The sharing happens below the scheduler abstraction.
-
-A representative ConfigMap looks like this.
+Time-Slicing allows multiple pods to share a physical GPU by advertising multiple schedulable replicas. If a node has one physical GPU and the device plugin advertises ten replicas, Kubernetes can schedule up to ten pods that each request `nvidia.com/gpu: 1`. The API still sees integer resources; the sharing happens below the scheduler abstraction. That makes Time-Slicing useful for trusted workloads with modest and predictable usage, but it is not strong isolation and does not provide hardware-level memory separation.
 
 ```yaml
 apiVersion: v1
@@ -968,51 +372,7 @@ data:
           replicas: 4
 ```
 
-This is useful for trusted workloads with modest and predictable GPU usage.
-
-It is not strong isolation.
-
-Time-Slicing does not provide hardware-level memory isolation between pods.
-
-If one workload consumes most of the physical VRAM, other workloads sharing the same device can fail.
-
-Time-Slicing is therefore a density tool, not a security boundary.
-
-Use it when workloads are controlled by the same team, profiled, and monitored.
-
-Avoid it when tenants are untrusted or when memory isolation is required.
-
-### Multi-Instance GPU as Hardware Partitioning
-
-MIG stands for Multi-Instance GPU.
-
-On supported NVIDIA GPUs, including Ampere and newer data center models, MIG partitions a physical GPU into hardware-isolated instances.
-
-Each instance receives dedicated slices of compute and memory resources.
-
-From the platform perspective, MIG changes the allocatable resource surface.
-
-Instead of advertising only full GPUs, the node can advertise specific MIG profiles.
-
-A mixed MIG strategy can expose multiple profile sizes.
-
-That flexibility is powerful.
-
-It is also operationally heavier.
-
-The scheduler must understand which profile a workload needs.
-
-The platform must manage profile configuration.
-
-Changing MIG layouts can require workload eviction, node drain, or maintenance coordination.
-
-MIG is the right tool when isolation and predictable quality of service matter.
-
-Time-Slicing is the right tool when utilization matters more than isolation.
-
-The difference is not subtle.
-
-It is a platform contract.
+MIG, or Multi-Instance GPU, solves a different problem on supported NVIDIA data center GPUs. It partitions a physical GPU into hardware-isolated instances with dedicated slices of compute and memory resources. From the platform perspective, MIG changes the allocatable resource surface because the node can advertise specific profile sizes rather than only full GPUs. That stronger isolation comes with operational weight: profiles must be planned, profile changes can require draining workloads, and driver lifecycle issues can affect the available partitioning modes.
 
 | Requirement | Time-Slicing | MIG |
 | :--- | :--- | :--- |
@@ -1023,51 +383,7 @@ It is a platform contract.
 | Simple configuration | Easier | More complex |
 | Precise QoS boundary | Weak | Strong |
 
-**War Story: The Mixed MIG Deadlock**
-
-A platform team enabled mixed MIG profiles to support both small inference jobs and larger training jobs on the same node pool.
-
-The design made sense on paper.
-
-Then a driver branch with a known mixed MIG and full-GPU scheduling issue caused workloads to remain pending indefinitely.
-
-The pods were not failing admission.
-
-They were not obviously crashing.
-
-They were stuck because the driver and device allocation path could not safely satisfy the mixed mode.
-
-The fix was not a YAML tweak in the workload.
-
-The fix was upgrading to a driver version where the vendor had resolved the issue and then draining affected nodes in a controlled sequence.
-
-The lesson is direct.
-
-MIG is hardware partitioning, and hardware partitioning is part of the driver lifecycle.
-
-Treat MIG profile changes and driver upgrades as coordinated platform changes.
-
-### Choosing a Sharing Model
-
-A useful decision process starts with the tenant boundary.
-
-If workloads belong to different teams with different trust levels, prefer hardware isolation.
-
-If workloads belong to the same team and are well profiled, Time-Slicing might be acceptable.
-
-If workloads need exact VRAM guarantees, avoid Time-Slicing.
-
-If workloads are short-lived notebooks, Time-Slicing can keep utilization high.
-
-If workloads run multi-day training jobs, reserve full GPUs or carefully sized MIG slices.
-
-If the platform has Kubernetes v1.35 and a DRA-capable device driver, consider whether ResourceClaims can express the requirement better than labels and integer resources.
-
-The question is not “Which feature is best?”
-
-The question is “Which abstraction matches the operational promise we are making?”
-
-A tenant-facing platform promise might be:
+Sourced compatibility note: NVIDIA has documented driver and operator constraints around MIG mode, device plugin configuration, and runtime integration, so mixed partitioning choices belong in the same change plan as driver upgrades and node maintenance. Treat MIG profile changes as platform changes, not tenant-level tuning. A practical tenant contract might expose bronze shared GPU replicas for notebooks, silver MIG-backed isolated slices for inference, and gold full GPUs or DRA-selected devices for training workloads with stronger requirements.
 
 ```text
 Bronze: shared GPU replicas for notebooks and tests.
@@ -1075,29 +391,7 @@ Silver: MIG-backed isolated slices for inference services.
 Gold: full GPUs or DRA-selected devices for training and regulated workloads.
 ```
 
-That tiering lets the platform match cost, isolation, and complexity.
-
-## GPU Telemetry with DCGM Exporter
-
-Accelerator platforms need observability because the expensive failure modes are often invisible from ordinary pod metrics.
-
-A pod can be Running while GPU utilization is zero.
-
-A node can be Ready while one GPU is unhealthy.
-
-A model can be slow because GPU memory bandwidth is saturated rather than because CPU is throttled.
-
-A thermal problem can reduce performance before workloads fail.
-
-The NVIDIA Data Center GPU Manager, or DCGM, exposes low-level GPU telemetry.
-
-DCGM Exporter publishes that telemetry in Prometheus format.
-
-The GPU Operator can deploy DCGM Exporter as part of the managed stack.
-
-Common metric categories include GPU temperature, power draw, memory usage, memory bandwidth, SM utilization, ECC errors, and per-process usage.
-
-Prometheus can scrape DCGM Exporter through a `ServiceMonitor` when the Prometheus Operator is installed.
+Accelerator telemetry closes the loop because the expensive failure modes are often invisible from ordinary pod metrics. A pod can be Running while GPU utilization is zero, a node can be Ready while one device is unhealthy, and a model can be slow because GPU memory bandwidth is saturated rather than because CPU is throttled. NVIDIA DCGM Exporter publishes GPU metrics such as temperature, power draw, memory usage, memory bandwidth, SM utilization, ECC errors, and per-process usage in Prometheus format.
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
@@ -1114,127 +408,13 @@ spec:
       interval: 15s
 ```
 
-A short scrape interval gives better visibility during incidents.
+A short scrape interval gives better incident visibility, but it also increases metric volume. In Time-Slicing environments, process-level metrics can create high cardinality because many pods share the same physical GPU. A useful GPU dashboard separates at least four questions: whether the node advertises expected allocatable capacity, whether assigned workloads are using the device, whether the hardware is healthy, and whether the platform is wasting capacity. Low utilization is not automatically bad; it can mean expected idle time, bad placement, data pipeline bottlenecks, failed injection, or oversized allocations.
 
-It also increases metric volume.
+## Alternative Ecosystems and Dynamic Resource Allocation
 
-In Time-Slicing environments, process-level metrics can create high cardinality because many pods share the same physical GPU.
+NVIDIA dominates many Kubernetes GPU examples, but on-premises AI infrastructure is increasingly heterogeneous. Supply constraints, cost, power efficiency, workload framework support, procurement relationships, and existing data center standards can all drive a platform toward AMD ROCm, Intel Gaudi, or multiple accelerator families. The Kubernetes pattern remains familiar: a node needs host drivers, a device plugin or DRA driver advertises resources, runtime integration exposes devices, an exporter publishes telemetry, and labels plus policy steer workloads. The vendor details change, and those details matter.
 
-High cardinality is not just a storage problem.
-
-It can slow queries, increase Prometheus memory usage, and make dashboards unreliable during the incident where you need them most.
-
-A good GPU dashboard separates at least four questions.
-
-Is the node advertising expected allocatable GPU capacity?
-
-Are assigned workloads actually using the device?
-
-Is the hardware healthy?
-
-Is the platform wasting capacity?
-
-Those questions map to different signals.
-
-`Allocatable` comes from Kubernetes node status.
-
-Pod assignment comes from Kubernetes workload metadata and kubelet pod resources.
-
-Hardware health comes from DCGM and device plugin health reporting.
-
-Waste analysis comes from correlating scheduled GPU requests with actual utilization.
-
-A senior platform team does not stop at “GPU utilization is low.”
-
-It asks whether low utilization is expected idle time, bad placement, data pipeline bottleneck, failed device injection, or an oversized allocation.
-
-## Alternative Ecosystems: AMD ROCm and Intel Gaudi
-
-NVIDIA dominates many Kubernetes GPU examples, but on-premises AI infrastructure is increasingly heterogeneous.
-
-Supply constraints, cost, power efficiency, existing procurement relationships, and workload framework support can all drive a platform toward alternative accelerators.
-
-The Kubernetes pattern remains familiar.
-
-A node needs host drivers.
-
-A device plugin advertises an extended resource.
-
-A runtime integration exposes devices to containers.
-
-A monitoring exporter publishes hardware telemetry.
-
-Labels and scheduling policy steer workloads.
-
-The vendor details change.
-
-### AMD ROCm
-
-AMD ROCm is the software stack for AMD Instinct accelerators.
-
-The Kubernetes resource name is commonly `amd.com/gpu`.
-
-AMD provides a device plugin for exposing GPUs to Kubernetes.
-
-The AMD GPU Operator exists and continues to mature, but many on-premises teams still separate responsibilities.
-
-They may install host drivers through image build pipelines or configuration management.
-
-They may deploy the device plugin through Kubernetes.
-
-They may use `amd_smi_exporter` or similar telemetry components for Prometheus integration.
-
-The main operational challenge is ecosystem alignment.
-
-Application images must be built for ROCm.
-
-Framework versions must match the supported ROCm version.
-
-Not every CUDA-oriented workload has a drop-in ROCm equivalent.
-
-A platform that supports both NVIDIA and AMD should expose that difference clearly to tenants.
-
-A generic “GPU” class is often too vague.
-
-A better platform API says whether a workload requires CUDA, ROCm, a specific memory size, or a specific accelerator generation.
-
-### Intel Gaudi
-
-Intel Gaudi accelerators, originally from Habana Labs, are purpose-built for deep learning workloads.
-
-The Kubernetes resource name is commonly `habana.ai/gaudi`.
-
-Gaudi operations shift some complexity toward the network.
-
-Multi-node training depends heavily on high-performance Ethernet and RoCEv2 designs.
-
-That means the next module, on topology and RDMA fabrics, becomes directly relevant.
-
-For Gaudi clusters, a pod that can see its local device may still underperform if the network fabric is misconfigured.
-
-Lossless networking, Priority Flow Control, ECN, NIC firmware, and topology-aware scheduling become part of the accelerator platform.
-
-This is a recurring lesson.
-
-The accelerator is not the platform.
-
-The platform is the accelerator, host, runtime, scheduler, network, observability, and tenant contract working together.
-
-### Multi-Vendor Platform Design
-
-A multi-vendor accelerator platform should avoid pretending that all accelerators are equivalent.
-
-The scheduler can expose multiple resource names.
-
-Tenants can request the right one.
-
-Admission policy can require workload metadata.
-
-Node labels can describe vendor, model, memory, interconnect, and driver stack.
-
-DRA can eventually help express richer device selection where a DRA-capable driver exists.
-
-A simple vendor comparison helps set expectations.
+AMD ROCm is the software stack for AMD Instinct accelerators, and the Kubernetes resource name is commonly `amd.com/gpu`. AMD provides a device plugin and GPU Operator, while some on-premises teams still split responsibilities between host image pipelines for drivers and Kubernetes manifests for the device plugin. Intel Gaudi accelerators commonly expose `habana.ai/gaudi`, and scale-out training can shift complexity toward RoCEv2 networking, NIC firmware, lossless Ethernet behavior, and topology-aware placement. The accelerator is never the whole platform; the host, runtime, scheduler, network, telemetry, and tenant contract are part of the product.
 
 | Ecosystem | Common Resource Name | Kubernetes Integration Pattern | Senior Design Concern |
 | :--- | :--- | :--- | :--- |
@@ -1242,64 +422,9 @@ A simple vendor comparison helps set expectations.
 | AMD ROCm | `amd.com/gpu` | AMD device plugin, AMD GPU Operator or host-managed drivers, AMD telemetry exporter | ROCm framework compatibility and image supply chain |
 | Intel Gaudi | `habana.ai/gaudi` | Habana device plugin and vendor runtime stack | RoCEv2 fabric, scale-out training topology, framework support |
 
-Do not choose a vendor integration only by device price.
+The legacy device plugin framework remains simple and durable, but heterogeneous AI clusters expose its limits. A workload can request `nvidia.com/gpu: 1`, yet that request does not naturally express an 80GB memory requirement, a tensor core generation, a hardware isolation requirement, a topology relationship between two devices, or an auditable claim object. Platform teams can work around those gaps with node labels, affinity, admission controllers, queueing systems, and naming conventions, and those workarounds are sometimes enough. They can also become brittle as the fleet grows.
 
-Choose by total platform fit.
-
-That includes workload framework support, driver lifecycle, security model, observability, operator maturity, and staff experience.
-
-## Evolution to Dynamic Resource Allocation
-
-The legacy device plugin framework is simple and durable.
-
-It also exposes a limitation that becomes painful in heterogeneous AI clusters.
-
-A workload can request `nvidia.com/gpu: 1`.
-
-That tells Kubernetes the count.
-
-It does not naturally express:
-
-* I need at least 80GB of memory.
-* I need a specific tensor core generation.
-* I need devices connected through a particular topology.
-* I need a hardware-isolated partition.
-* I need two devices that satisfy a shared constraint.
-* I need the claim to be visible and auditable as a separate object.
-
-Platform teams work around those gaps with node labels, affinity, admission controllers, queueing systems, and naming conventions.
-
-Those workarounds are sometimes enough.
-
-They can also become brittle.
-
-Dynamic Resource Allocation, or DRA, is Kubernetes' newer model for requesting and allocating devices.
-
-DRA is stable in Kubernetes v1.35 and enabled by default.
-
-DRA introduces API objects in the `resource.k8s.io/v1` API group.
-
-The most important concepts are `DeviceClass`, `ResourceClaim`, `ResourceClaimTemplate`, and `ResourceSlice`.
-
-A `DeviceClass` defines a category of devices and how they can be selected.
-
-A `ResourceSlice` is published by a DRA driver to describe available devices attached to nodes.
-
-A `ResourceClaim` asks for access to a device.
-
-A `ResourceClaimTemplate` lets a workload create per-pod claims automatically.
-
-The model is intentionally similar to persistent storage.
-
-With storage, you do not usually ask for “one disk.”
-
-You ask for a PersistentVolumeClaim with size, class, and access properties.
-
-With DRA, the same idea applies to devices.
-
-You can request a device through a claim and use selectors, including Common Expression Language where supported, to match device attributes.
-
-A simplified DRA mental model looks like this.
+Dynamic Resource Allocation is Kubernetes' newer model for requesting and allocating devices. In Kubernetes v1.35, DRA is stable and enabled by default, with APIs in `resource.k8s.io/v1`. The core objects are `DeviceClass`, `ResourceSlice`, `ResourceClaim`, and `ResourceClaimTemplate`. A DRA driver publishes available devices through ResourceSlices, an administrator defines DeviceClasses, and workloads request devices through claims. The model is intentionally similar to storage: instead of asking for one anonymous disk, a workload asks for a claim with class and properties.
 
 ```text
 +---------------------+       +---------------------+
@@ -1327,16 +452,6 @@ A simplified DRA mental model looks like this.
 +---------------------------------------------------+
 ```
 
-DRA does not mean the legacy device plugin model disappears.
-
-Many production platforms will run both models for some time.
-
-The legacy model is proven and widely supported.
-
-DRA is valuable when the platform needs richer device semantics and the vendor driver supports it.
-
-### Legacy Device Plugin vs. DRA
-
 | Design Question | Legacy Device Plugin | Dynamic Resource Allocation |
 | :--- | :--- | :--- |
 | How does a workload ask for a device? | Integer extended resource such as `nvidia.com/gpu: 1`. | ResourceClaim or ResourceClaimTemplate referencing a DeviceClass. |
@@ -1345,23 +460,7 @@ DRA is valuable when the platform needs richer device semantics and the vendor d
 | How mature is ecosystem support? | Broad and established. | Stable in Kubernetes v1.35, but vendor driver maturity varies. |
 | Best fit | Standard GPU scheduling, established operator workflows, simpler fleets. | Heterogeneous fleets, rich device attributes, future-facing platform APIs. |
 
-A senior design rarely says, “DRA is better, so replace everything.”
-
-A better answer is:
-
-Use the legacy model where the vendor operator and tenant requirements are already satisfied.
-
-Use DRA where you need claim-based device selection, richer attributes, or a cleaner platform contract.
-
-Plan migration by workload class, not by ideology.
-
-### DRA Placement Example as a Platform Contract
-
-A DRA-capable GPU platform might expose a `DeviceClass` for high-memory training accelerators.
-
-The exact attributes depend on the DRA driver.
-
-The following example shows the shape of the contract rather than a universal vendor manifest.
+Do not turn DRA into an ideology. Use the legacy model where the vendor operator and tenant requirements are already satisfied, and use DRA where claim-based device selection, richer attributes, or cleaner platform APIs justify the new driver dependency. Decision prompt: your platform has older 16GB inference GPUs and newer 80GB training GPUs. Would you start with node affinity on product labels, DRA claims, or both? A pragmatic transition often uses both: legacy resources for today's supported path, admission policy to protect premium hardware, and DRA where the driver can publish the attributes the platform wants tenants to request.
 
 ```yaml
 apiVersion: resource.k8s.io/v1
@@ -1373,8 +472,6 @@ spec:
     - cel:
         expression: "device.driver == 'gpu.example.com' && device.attributes['gpu.example.com'].memoryGiB >= 80"
 ```
-
-A workload can then claim a matching device.
 
 ```yaml
 apiVersion: resource.k8s.io/v1
@@ -1388,8 +485,6 @@ spec:
         - name: gpu
           deviceClassName: high-memory-gpu
 ```
-
-A pod template can reference that claim template.
 
 ```yaml
 apiVersion: v1
@@ -1409,45 +504,11 @@ spec:
           - name: training-gpu
 ```
 
-These manifests require a DRA-capable driver that publishes matching device data.
-
-Without that driver, the objects do not create working GPU access.
-
-That is the correct mental model.
-
-DRA is not just YAML.
-
-It is an API contract between the workload, scheduler, kubelet, and device driver.
-
-> **Decision prompt**: Your platform has two GPU node pools: older 16GB inference GPUs and newer 80GB training GPUs. Would you start with node affinity on `nvidia.com/gpu.product`, DRA claims, or both?
-
-A pragmatic answer is often both during transition.
-
-Use node affinity and existing device plugin resources for today's supported operator path.
-
-Introduce DRA for workloads that need richer device selection and only where the driver stack is ready.
-
-Admission policy can prevent generic `nvidia.com/gpu: 1` requests from landing on premium training hardware.
-
-Over time, the platform can move tenant-facing APIs toward claims while keeping legacy resources available for simple workloads.
+Those manifests show the shape of the contract, not a universal working vendor deployment. They require a DRA-capable driver that publishes matching device data. Without that driver, the objects can exist but will not provide GPU access. That is the right mental model: DRA is not just YAML; it is an API contract among the workload, scheduler, kubelet, and device driver.
 
 ## Worked Example: Debugging a Pending GPU Training Pod
 
-### Problem Scenario
-
-A team submits a training pod to an on-premises cluster.
-
-The pod stays pending for fifteen minutes.
-
-The cluster has GPU nodes.
-
-The team says, “Kubernetes is broken because there are free GPUs.”
-
-You are the platform engineer on call.
-
-You need to identify whether the problem is capacity, taints, affinity, driver health, or a manifest error.
-
-The pod manifest is:
+Exercise scenario: a team submits a training pod to an on-premises Kubernetes v1.35 cluster, and the pod remains pending for fifteen minutes. The cluster has GPU nodes, and the team says, “Kubernetes is broken because there are free GPUs.” You are the platform engineer on call, and your job is to separate capacity, taints, affinity, driver health, and manifest intent before changing anything. The original pod manifest selects an H100 product label and requests one NVIDIA GPU.
 
 ```yaml
 apiVersion: v1
@@ -1474,9 +535,7 @@ spec:
           nvidia.com/gpu: 1
 ```
 
-The cluster has a GPU node named `gpu-a100-1`.
-
-`kubectl describe node gpu-a100-1` shows this relevant state:
+The visible free GPU node is named `gpu-a100-1`. Its node description shows a GPU taint, an A100 product label, and four allocatable NVIDIA GPUs. This state is important because it proves the driver and device plugin are advertising capacity on at least one node, but it does not prove the submitted pod is allowed to use that node.
 
 ```text
 Taints:             nvidia.com/gpu=present:NoSchedule
@@ -1487,17 +546,11 @@ Allocatable:
   nvidia.com/gpu:   4
 ```
 
-### Step 1: Start with the Pod Events
-
-Do not begin by restarting the operator.
-
-Start with the scheduler's explanation.
+Start with the scheduler explanation rather than restarting the operator. `kubectl describe pod` usually gives the fastest signal because it names the constraints the scheduler could not satisfy. In this example, the event says one node had an untolerated taint, one node did not match affinity, and other nodes lacked free GPU capacity. That is enough to avoid a blind driver investigation.
 
 ```bash
 kubectl describe pod image-classifier-train -n ml-team-a
 ```
-
-The relevant event might read:
 
 ```text
 Warning  FailedScheduling  default-scheduler  0/6 nodes are available:
@@ -1506,35 +559,7 @@ Warning  FailedScheduling  default-scheduler  0/6 nodes are available:
 4 node(s) didn't have free nvidia.com/gpu.
 ```
 
-This event already tells you there are multiple constraints.
-
-The pod lacks a toleration for the GPU taint.
-
-The pod requires an H100 product label, but the visible free node is an A100.
-
-Other nodes either lack free GPU capacity or do not match the request.
-
-### Step 2: Separate Intent from Accident
-
-Ask what the workload actually needs.
-
-If the model truly needs 80GB H100 memory, the A100 node is not an acceptable target.
-
-In that case, adding a toleration is necessary but not sufficient.
-
-The correct answer is to wait for H100 capacity or change the workload requirement.
-
-If the product label was copied from another job and the workload can run on A100, the affinity is too narrow.
-
-In this worked example, the team confirms the job can run on A100.
-
-The H100 selector was accidental.
-
-The team also confirms this is a legitimate GPU workload, so it should tolerate the GPU taint.
-
-### Step 3: Fix the Manifest
-
-The corrected manifest adds the toleration and updates the affinity to the available product class.
+Now separate intent from accident. If the model truly requires an 80GB H100, the A100 node is not an acceptable target, and adding a toleration would still not make the workload correct. If the H100 selector was copied from another job and the workload can run on A100, the affinity is too narrow and the pod also needs a toleration. The team confirms that A100 is acceptable and this is a legitimate GPU workload, so the corrected manifest expresses both requirements.
 
 ```yaml
 apiVersion: v1
@@ -1565,64 +590,64 @@ spec:
           nvidia.com/gpu: 1
 ```
 
-Apply the corrected manifest.
-
 ```bash
 kubectl apply -f image-classifier-train.yaml
-```
-
-### Step 4: Verify Scheduling
-
-Check the pod's node assignment.
-
-```bash
 kubectl get pod image-classifier-train -n ml-team-a -o wide
 ```
 
-If the pod moves from `Pending` to `ContainerCreating`, the scheduler problem is resolved.
-
-If it then fails at container creation, move to local allocation and runtime debugging.
-
-Do not continue changing affinity after the pod is already assigned.
-
-The failure stage has changed.
-
-### Step 5: Verify Device Access
-
-For a real CUDA image that runs to completion, inspect the pod logs.
+If the pod moves from `Pending` to `ContainerCreating`, the scheduler problem is resolved and the failure stage has changed. Do not keep changing affinity after node assignment. Inspect logs and events to verify device access, and move to runtime injection or driver compatibility only if the workload reaches the node and still cannot start or see the GPU.
 
 ```bash
 kubectl logs image-classifier-train -n ml-team-a
-```
-
-A successful CUDA sample should report that the test passed.
-
-If the pod starts but the application cannot see the GPU, inspect runtime injection and driver compatibility.
-
-If the pod never starts, inspect device plugin logs and kubelet events.
-
-```bash
 kubectl logs daemonset/nvidia-device-plugin-daemonset -n gpu-operator
 kubectl get events -n ml-team-a --sort-by=.lastTimestamp
 ```
 
-### Step 6: Write the Incident Note
+The incident note should not say only “GPU scheduling failed.” A useful note says the pod had two unsatisfied scheduler constraints: it lacked a toleration for the GPU node taint, and it selected an H100 product label while available capacity was on an A100 node. After confirming workload intent with the tenant, the manifest was corrected to tolerate the GPU taint and select the intended product class. That language points toward durable follow-up, such as templates or admission policy that reject GPU pods without a hardware class and toleration.
 
-The incident note should not say “GPU scheduling failed.”
+## Patterns & Anti-Patterns
 
-It should say:
+| Pattern | When to Use It | Why It Works | Scaling Consideration |
+| :--- | :--- | :--- | :--- |
+| Tainted GPU pools with required tolerations | Any shared cluster where non-GPU workloads could otherwise land on accelerator nodes | Protects scarce hardware from accidental CPU-only placement | Pair with admission policy so legitimate GPU workloads include the toleration consistently |
+| Hardware labels plus affinity | Heterogeneous fleets with different GPU generations, memory sizes, or vendors | Separates “needs a GPU” from “needs this kind of GPU” | Prefer discovered labels over hand-maintained labels, and document supported workload classes |
+| Operator-managed driver and runtime stack | Production fleets where nodes are replaced, patched, or drained regularly | Reconciliation reduces drift across driver, toolkit, device plugin, telemetry, and validators | Version matrices become part of release planning, especially across runtime families |
+| Claim-based DRA for rich device selection | Workloads need attributes that opaque integer resources cannot express | ResourceClaims make device intent visible and scheduler-aware where drivers support it | Migrate by workload class; do not strand stable legacy workloads without a driver-backed reason |
 
-The pod was pending because it had two unsatisfied scheduler constraints.
+| Anti-Pattern | What Goes Wrong | Better Alternative |
+| :--- | :--- | :--- |
+| Generic `nvidia.com/gpu: 1` for every workload | Premium accelerators become interchangeable with cheaper devices, creating cost and performance mistakes | Require a workload class, product label, DeviceClass, or queue policy that expresses hardware intent |
+| Time-Slicing as a tenant isolation feature | One workload can consume shared memory or disrupt neighbors because Time-Slicing is not hardware isolation | Use MIG or full-device allocation for untrusted or regulated tenants |
+| Capacity-only health dashboards | Failed devices can disappear from `Allocatable` while total `Capacity` still looks normal | Alert on allocatable counts, device health, and inventory-to-usable-resource mismatches |
+| Runtime feature enablement without inventory | CDI or NRI paths can fail in clusters whose runtimes do not meet vendor support requirements | Gate advanced runtime integration by runtime family and version before rollout |
 
-It lacked the required toleration for the GPU node taint.
+## Decision Framework
 
-It also selected an H100 product label while available capacity was on an A100 node.
+Use the decision process below when designing an on-premises accelerated node pool. Start with the tenant promise, not the YAML field. If workloads are untrusted or regulated, prefer full devices or MIG-backed hardware partitioning. If workloads are trusted and profiled, Time-Slicing can improve utilization. If workloads need a specific model, memory size, generation, or topology, express that through labels and affinity today, and consider DRA claims where a capable driver is available. If the fleet is homogeneous and the vendor operator path already meets requirements, the legacy device plugin model may be the simplest reliable answer.
 
-After confirming workload requirements with the tenant, the manifest was corrected to tolerate the GPU taint and select the intended A100 product label.
+| Decision Point | Prefer This | Avoid This |
+| :--- | :--- | :--- |
+| Need basic proven scheduling for one vendor | Legacy device plugin plus operator | Premature DRA migration without driver support |
+| Need hardware memory isolation | MIG or full GPU allocation | Time-Slicing as an isolation boundary |
+| Need notebook density for trusted users | Time-Slicing with monitoring and quotas | Fractional legacy resource requests |
+| Need rich attributes such as memory and generation | DRA claims where supported, or strict labels and admission policy | Bare `nvidia.com/gpu: 1` requests on premium pools |
+| Need predictable node recovery after OS patches | Pre-compiled drivers tied to node image lifecycle | Dynamic compilation without kernel header preflight |
 
-This distinction prevents the same mistake from returning.
-
-The team can now add admission policy that rejects GPU pods without a hardware class label or toleration.
+```text
+Start
+  |
+  v
+Is the tenant boundary untrusted or regulated?
+  |-- yes --> Full GPU or MIG-backed isolated slice
+  |
+  |-- no --> Is density more important than isolation?
+               |-- yes --> Time-Slicing with quotas and telemetry
+               |
+               |-- no --> Does workload require specific attributes?
+                            |-- yes --> Labels/affinity now, DRA where driver supports it
+                            |
+                            |-- no --> Legacy device plugin request with pool protection
+```
 
 ## Did You Know?
 
@@ -1633,300 +658,138 @@ The team can now add admission policy that rejects GPU pods without a hardware c
 
 ## Common Mistakes
 
-| Mistake | Why | Fix |
+| Mistake | Why It Happens | How to Fix It |
 | :--- | :--- | :--- |
-| **Fractional GPU Requests** | Requesting `nvidia.com/gpu: 0.5` treats an extended resource like CPU, but legacy extended resources must be whole integers. | Configure Time-Slicing, MIG, or DRA-backed claims so the platform exposes the right schedulable unit, then request an integer or claim. |
+| **Fractional GPU Requests** | Teams treat extended resources like CPU and write values such as `nvidia.com/gpu: 0.5`, but legacy extended resources must be whole integers. | Configure Time-Slicing, MIG, or DRA-backed claims so the platform exposes the right schedulable unit, then request an integer or claim. |
 | **Ignoring the `nouveau` Driver** | The open-source host driver can bind to NVIDIA hardware before the NVIDIA driver loads, preventing the expected driver stack from owning the device. | Blacklist `nouveau` in the host image or use an approved node image where the GPU Operator driver path is validated. |
 | **Missing Privileged Mounts** | A manually deployed device plugin cannot register with kubelet if it cannot access `/var/lib/kubelet/device-plugins/kubelet.sock`. | Run the plugin through the vendor-supported DaemonSet or verify privileged access and the required hostPath mount. |
 | **Capacity vs. Allocatable Confusion** | A failed GPU may leave `Capacity` unchanged while `Allocatable` drops, so capacity-only alerts miss degraded nodes. | Alert on allocatable GPU count and on mismatches between expected hardware inventory and usable resources. |
 | **Using Time-Slicing for Untrusted Tenants** | Time-Slicing improves density but does not provide hardware memory isolation, so one workload can disrupt others sharing the device. | Use MIG or full-device allocation for untrusted or regulated workloads that require isolation. |
 | **Overfitting Node Affinity** | A copied product label can make pods pending even when suitable GPU capacity exists under a different label. | Treat affinity as a requirement, review workload intent, and use admission policy or templates for common classes. |
 | **Enabling NRI on CRI-O** | GPU Operator v26.3 NRI plugin support is documented for supported containerd versions and is not supported with CRI-O. | Gate NRI enablement by runtime inventory; keep CRI-O clusters on supported non-NRI paths. |
-| **Letting DCGM Metrics Explode** | Per-process and per-pod GPU metrics can create high Prometheus cardinality in shared GPU environments. | Tune DCGM exporter metrics and scrape intervals around the operational questions the platform actually needs to answer. |
+| **Letting DCGM Metrics Explode** | Per-process and per-pod GPU metrics can create high Prometheus cardinality in shared GPU environments. | Tune DCGM Exporter metrics and scrape intervals around the operational questions the platform actually needs to answer. |
 
 ## Quiz
 
-**Question 1**
-
-Your team deploys a GPU notebook service on a node pool protected by the taint `nvidia.com/gpu=present:NoSchedule`.
-
-The pod requests `nvidia.com/gpu: 1`, but it remains pending.
-
-The node has one allocatable GPU.
-
-The pod has no tolerations.
-
-What should you change first, and why?
+**Question 1:** Your team deploys a GPU notebook service on a node pool protected by the taint `nvidia.com/gpu=present:NoSchedule`. The pod requests `nvidia.com/gpu: 1`, the node has one allocatable GPU, and the pod has no tolerations. What should you change first, and why?
 
 A) Add a matching toleration, because the scheduler must be allowed to place the pod on tainted GPU nodes.
-
 B) Restart the device plugin, because allocatable GPU capacity should bypass taints.
-
 C) Change the request to `nvidia.com/gpu: 0.5`, because notebooks need only half a device.
-
 D) Remove the taint from every GPU node, because taints are incompatible with extended resources.
 
 <details>
 <summary>View Answer</summary>
 
-**Correct Answer: A**.
-
-The pod already requests an integer GPU resource, and the node has allocatable capacity.
-
-The blocking constraint is the taint.
-
-A GPU taint is a deliberate protection mechanism that prevents ordinary workloads from landing on expensive hardware.
-
-Legitimate GPU workloads must tolerate it.
-
-Removing the taint weakens the node pool boundary, and fractional GPU requests are invalid in the legacy extended resource model.
+**Correct Answer: A**. The pod already requests an integer GPU resource, and the node has allocatable capacity, so the blocking scheduler constraint is the taint. A GPU taint is a deliberate protection mechanism that prevents ordinary workloads from landing on expensive hardware. Restarting the plugin does not bypass taints, fractional legacy GPU requests are invalid, and removing the taint weakens the node pool boundary for every workload.
 
 </details>
 
-**Question 2**
-
-A training pod requests `nvidia.com/gpu: 1` and uses node affinity for `nvidia.com/gpu.product=NVIDIA-H100-80GB-HBM3`.
-
-The only free GPU node is labeled `nvidia.com/gpu.product=NVIDIA-A100-SXM4-40GB`.
-
-The pod is pending.
-
-The data science team says the job was tested on A100 and does not require H100.
-
-What is the best fix?
+**Question 2:** A training pod requests `nvidia.com/gpu: 1` and uses node affinity for `nvidia.com/gpu.product=NVIDIA-H100-80GB-HBM3`. The only free GPU node is labeled `nvidia.com/gpu.product=NVIDIA-A100-SXM4-40GB`, and the data science team confirms the job was tested on A100. What is the best fix?
 
 A) Delete the device plugin DaemonSet so the scheduler recalculates GPU capacity.
-
-B) Change the affinity to the correct accepted product class and keep the GPU request.
-
+B) Change the affinity to the accepted product class and keep the GPU request.
 C) Remove the GPU request and rely only on the product label.
-
 D) Add a ServiceMonitor for DCGM Exporter.
 
 <details>
 <summary>View Answer</summary>
 
-**Correct Answer: B**.
-
-The scheduler is honoring the manifest.
-
-The workload requested a product label that the available node does not have.
-
-If the workload can run on A100, the affinity should express that intent.
-
-The GPU request should remain because it reserves the allocatable device unit.
-
-Removing the request would allow placement without reserving a GPU and would not provide device access.
+**Correct Answer: B**. The scheduler is honoring the manifest by refusing a node that does not match the declared product label. If A100 is acceptable, the affinity should express that accepted class while the GPU request remains in place to reserve the device unit. Deleting the device plugin damages capacity advertisement, relying only on a label does not allocate a GPU, and telemetry does not fix placement intent.
 
 </details>
 
-**Question 3**
-
-After an operating system patch, GPU nodes rejoin the cluster as Ready, but they no longer advertise `nvidia.com/gpu`.
-
-The GPU Operator uses dynamic driver compilation.
-
-The driver pod is in `CrashLoopBackOff`.
-
-What is the most likely investigation path?
+**Question 3:** After an operating system patch, GPU nodes rejoin as Ready but no longer advertise `nvidia.com/gpu`. The GPU Operator uses dynamic driver compilation, and the driver pod is in `CrashLoopBackOff`. Which investigation path best matches the symptom?
 
 A) Check whether matching kernel headers and build dependencies exist for the new kernel.
-
 B) Increase the DCGM Exporter scrape interval.
-
 C) Replace node affinity with DRA claims.
-
 D) Remove all GPU taints from the node pool.
 
 <details>
 <summary>View Answer</summary>
 
-**Correct Answer: A**.
-
-Dynamic driver compilation depends on the running kernel and matching build inputs.
-
-If the OS patch changed the kernel but the corresponding headers are missing or incompatible, the driver module cannot compile.
-
-Without a loaded driver, the device plugin cannot discover healthy GPUs, so the node will not advertise the expected resource.
+**Correct Answer: A**. Dynamic driver compilation depends on the running kernel and matching build inputs. If the OS patch changed the kernel but the corresponding headers are missing or incompatible, the driver module cannot compile, and the device plugin cannot discover healthy GPUs. Scrape intervals, DRA objects, and taints do not repair a missing kernel module.
 
 </details>
 
-**Question 4**
-
-A platform team wants to let several trusted developer notebooks share a single physical GPU during office hours.
-
-The workloads are from the same team, memory use is predictable, and strict tenant isolation is not required.
-
-Which approach is most appropriate?
+**Question 4:** A platform team wants several trusted developer notebooks to share one physical GPU during office hours. The workloads come from the same team, memory use is predictable, and strict tenant isolation is not required. Which approach is most appropriate?
 
 A) Time-Slicing with a clear replica count and monitoring for VRAM pressure.
-
 B) MIG only, because Time-Slicing always provides stronger isolation.
-
 C) A fractional request such as `nvidia.com/gpu: 0.25`.
-
 D) No resource request, because notebooks can discover GPUs automatically.
 
 <details>
 <summary>View Answer</summary>
 
-**Correct Answer: A**.
-
-Time-Slicing is useful for trusted, profiled workloads where density is the goal and hardware isolation is not required.
-
-It still needs monitoring because VRAM is not isolated between replicas.
-
-Fractional extended resource requests are invalid in the legacy model.
-
-Running without a GPU request does not reserve the device and can produce unpredictable access.
+**Correct Answer: A**. Time-Slicing is useful when density is the goal and workloads are trusted and profiled. It still needs monitoring because VRAM is not hardware-isolated between replicas. MIG provides stronger isolation but may be more operationally complex than needed, fractional extended resource requests are invalid, and omitting the request prevents reliable scheduling and allocation.
 
 </details>
 
-**Question 5**
-
-A regulated tenant wants two workloads from different business units to share the same physical accelerator node, but each workload must have hardware-guaranteed memory and compute isolation.
-
-Which design should you recommend?
+**Question 5:** A regulated tenant wants workloads from different business units to share an accelerator node, but each workload must have hardware-guaranteed memory and compute isolation. Which design should you recommend?
 
 A) Time-Slicing with more replicas.
-
 B) MIG-backed slices on supported hardware, or full-device allocation if MIG profiles do not match.
-
 C) A lower Prometheus scrape interval.
-
 D) A node selector without a GPU resource request.
 
 <details>
 <summary>View Answer</summary>
 
-**Correct Answer: B**.
-
-MIG provides hardware-level partitioning on supported NVIDIA GPUs.
-
-Time-Slicing multiplexes access but does not provide hardware memory isolation.
-
-Monitoring is necessary but does not create isolation.
-
-A node selector chooses a node but does not allocate a device or enforce tenant boundaries.
+**Correct Answer: B**. MIG provides hardware-level partitioning on supported NVIDIA GPUs, and full-device allocation is the fallback when the required profile does not exist. Time-Slicing multiplexes access but does not create a hardware memory boundary. Monitoring is valuable but cannot create isolation, and a node selector chooses a node without allocating a device.
 
 </details>
 
-**Question 6**
-
-Your cluster runs Kubernetes v1.35 and has a DRA-capable accelerator driver.
-
-A workload needs a device with at least 80GB of memory and a specific accelerator generation.
-
-The old workload template only requests `nvidia.com/gpu: 1`.
-
-What is the strongest reason to consider DRA for this workload class?
+**Question 6:** Your Kubernetes v1.35 cluster has a DRA-capable accelerator driver. A workload needs at least 80GB of device memory and a specific accelerator generation, while the old template only requests `nvidia.com/gpu: 1`. What is the strongest reason to consider DRA for this workload class?
 
 A) DRA lets the workload express device attributes through claims rather than relying only on opaque integer counts and node labels.
-
 B) DRA automatically makes every old device plugin obsolete.
-
 C) DRA removes the need for host drivers.
-
 D) DRA allows fractional legacy extended resource requests.
 
 <details>
 <summary>View Answer</summary>
 
-**Correct Answer: A**.
-
-DRA is valuable when device attributes matter.
-
-A ResourceClaim can select devices from a DeviceClass using driver-published attributes, including CEL where supported.
-
-The legacy integer request only asks for a count.
-
-DRA does not remove the need for drivers, and it does not make every existing device plugin deployment disappear overnight.
+**Correct Answer: A**. DRA is valuable when device attributes matter because a ResourceClaim can select devices from a DeviceClass using driver-published attributes. The legacy integer request only asks for a count and leaves richer intent to labels or policy. DRA does not remove drivers, does not obsolete every established operator workflow, and does not change legacy extended resource quantity rules.
 
 </details>
 
-**Question 7**
-
-A GPU node has four installed GPUs.
-
-One device fails and the device plugin reports it unhealthy.
-
-New pods stop scheduling to that failed device, but your dashboard still shows four GPUs under total capacity.
-
-What alerting improvement should you make?
+**Question 7:** A GPU node has four installed GPUs, one device fails, and the device plugin reports it unhealthy. New pods stop scheduling to the failed device, but your dashboard still shows four GPUs under total capacity. What alerting improvement should you make?
 
 A) Alert on `Allocatable` GPU count and on differences between expected capacity and allocatable resources.
-
 B) Alert only on total `Capacity`, because it always reflects usable devices.
-
 C) Disable device health reporting so the node remains schedulable.
-
 D) Increase the pod CPU request for GPU workloads.
 
 <details>
 <summary>View Answer</summary>
 
-**Correct Answer: A**.
-
-Kubernetes keeps total capacity unchanged when a device is marked unhealthy, but it reduces allocatable count.
-
-New workloads rely on allocatable resources for scheduling.
-
-A capacity-only dashboard can hide degraded nodes.
-
-Alerting should include allocatable GPU resources and inventory-to-usable-resource mismatches.
+**Correct Answer: A**. Kubernetes can keep total capacity unchanged while reducing allocatable count for unhealthy devices, and new scheduling decisions rely on allocatable resources. A capacity-only dashboard can therefore hide degraded nodes. Disabling health reporting makes scheduling less safe, and CPU requests do not describe GPU device health.
 
 </details>
 
-**Question 8**
+**Question 8:** Staging runs a supported containerd version, production runs CRI-O, and the platform team wants to enable the NVIDIA GPU Operator v26.3 NRI plugin everywhere to simplify runtime injection. What deployment decision avoids a production compatibility failure?
 
-Staging runs containerd v1.7.31.
-
-Production runs CRI-O.
-
-The platform team wants to enable the NVIDIA GPU Operator v26.3 NRI plugin everywhere to simplify runtime injection.
-
-What deployment decision avoids a production compatibility failure?
-
-A) Enable NRI in staging only and keep it disabled on the CRI-O production cluster.
-
+A) Enable NRI only where the documented runtime compatibility contract is satisfied, and keep it disabled on the CRI-O production cluster.
 B) Enable NRI globally because all OCI runtimes support the same NRI path.
-
 C) Disable CDI because NRI does not require it.
-
 D) Replace DCGM Exporter with NRI.
 
 <details>
 <summary>View Answer</summary>
 
-**Correct Answer: A**.
-
-GPU Operator v26.3 NRI plugin support requires CDI and supported containerd versions.
-
-It is not supported with CRI-O.
-
-A runtime-aware rollout enables the feature only where the compatibility contract is satisfied.
-
-CDI and NRI are runtime integration mechanisms; DCGM Exporter is telemetry and does not replace them.
+**Correct Answer: A**. NVIDIA documents NRI plugin support for supported containerd versions with CDI and does not support it with CRI-O in that operator release. A runtime-aware rollout prevents a staging-only success from becoming a production outage. CDI and NRI are runtime integration mechanisms, while DCGM Exporter is telemetry and cannot replace either path.
 
 </details>
 
 ## Hands-On Exercise: Configuring Time-Slicing
 
-This lab configures the NVIDIA GPU Operator for Time-Slicing.
-
-You can apply the operator configuration objects on a non-GPU test cluster by disabling driver and toolkit management, but capacity verification requires real NVIDIA GPU hardware.
-
-The purpose is to practice the operator configuration path and the reasoning behind it.
-
-You will create a Time-Slicing ConfigMap, patch the `ClusterPolicy`, and verify the intended state.
+This lab configures the NVIDIA GPU Operator for Time-Slicing. You can apply the operator configuration objects on a non-GPU test cluster by disabling driver and toolkit management, but capacity verification requires real NVIDIA GPU hardware. The purpose is to practice the operator configuration path, not to pretend that Time-Slicing creates isolated hardware. Keep the production lesson in mind: every command changes a platform contract about what one requested GPU unit means.
 
 ### Task 1: Install the NVIDIA GPU Operator
 
-Add the NVIDIA Helm repository and install the operator into its own namespace.
-
-This lab disables driver and toolkit management so the control plane pieces can run in clusters without physical GPUs.
-
-On a real GPU cluster, do not blindly disable those components unless your host image already provides the required driver and runtime integration.
+Add the NVIDIA Helm repository and install the operator into its own namespace. This lab disables driver and toolkit management so control plane pieces can run in clusters without physical GPUs. On a real GPU cluster, do not blindly disable those components unless your host image already provides the required driver and runtime integration.
 
 ```bash
 helm repo add nvidia https://helm.ngc.nvidia.com/nvidia
@@ -1938,8 +801,6 @@ helm install gpu-operator nvidia/gpu-operator \
   --set toolkit.enabled=false
 ```
 
-Verify the operator namespace.
-
 ```bash
 kubectl get pods -n gpu-operator
 ```
@@ -1947,23 +808,13 @@ kubectl get pods -n gpu-operator
 <details>
 <summary>Solution Details</summary>
 
-The operator deployment should become Running.
-
-Some hardware-specific operands may not become meaningful on a non-GPU cluster.
-
-That is acceptable for the configuration portion of this lab.
-
-On a real GPU cluster, failed driver, validator, or device plugin pods must be investigated before declaring the stack ready.
+The operator deployment should become Running. Some hardware-specific operands may not become meaningful on a non-GPU cluster, and that is acceptable for the configuration portion of this lab. On a real GPU cluster, failed driver, validator, or device plugin pods must be investigated before declaring the stack ready.
 
 </details>
 
 ### Task 2: Create the Time-Slicing ConfigMap
 
-Create a ConfigMap that instructs the device plugin to advertise ten replicas for the `nvidia.com/gpu` resource.
-
-This does not create hardware isolation.
-
-It changes the scheduling abstraction.
+Create a ConfigMap that instructs the device plugin to advertise ten replicas for the `nvidia.com/gpu` resource. This does not create hardware isolation. It changes the scheduling abstraction so Kubernetes sees more logical allocation units than physical devices.
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -1985,8 +836,6 @@ data:
 EOF
 ```
 
-Verify the ConfigMap.
-
 ```bash
 kubectl get configmap time-slicing-config -n gpu-operator -o yaml
 ```
@@ -1994,19 +843,13 @@ kubectl get configmap time-slicing-config -n gpu-operator -o yaml
 <details>
 <summary>Solution Details</summary>
 
-The ConfigMap should contain a key named `any`.
-
-The `ClusterPolicy` patch in the next task references that key as the default configuration.
-
-If the key names do not match, the device plugin will not use the expected Time-Slicing configuration.
+The ConfigMap should contain a key named `any`. The `ClusterPolicy` patch in the next task references that key as the default configuration. If the key names do not match, the device plugin will not use the expected Time-Slicing configuration.
 
 </details>
 
 ### Task 3: Apply the Configuration via ClusterPolicy
 
-The GPU Operator manages the stack through a `ClusterPolicy`.
-
-Patch the device plugin configuration so it references the Time-Slicing ConfigMap.
+The GPU Operator manages the stack through a `ClusterPolicy`. Patch the device plugin configuration so it references the Time-Slicing ConfigMap, then inspect the resulting object rather than assuming the patch was accepted.
 
 ```bash
 kubectl patch clusterpolicy cluster-policy --type='json' -p='[{
@@ -2019,8 +862,6 @@ kubectl patch clusterpolicy cluster-policy --type='json' -p='[{
 }]'
 ```
 
-Verify the patch.
-
 ```bash
 kubectl get clusterpolicy cluster-policy -o yaml
 ```
@@ -2028,17 +869,13 @@ kubectl get clusterpolicy cluster-policy -o yaml
 <details>
 <summary>Solution Details</summary>
 
-Inspect the `spec.devicePlugin.config` path.
-
-It should reference `time-slicing-config` and the `any` default.
-
-If the patch fails because the path does not exist in your installed chart version, inspect the current `ClusterPolicy` schema and apply the equivalent supported field for that release.
+Inspect the `spec.devicePlugin.config` path. It should reference `time-slicing-config` and the `any` default. If the patch fails because the path does not exist in your installed chart version, inspect the current `ClusterPolicy` schema and apply the equivalent supported field for that release.
 
 </details>
 
 ### Task 4: Restart the Device Plugin on a GPU Cluster
 
-If you are running on a real GPU cluster, restart the device plugin DaemonSet so it reloads configuration.
+If you are running on a real GPU cluster, restart the device plugin DaemonSet so it reloads configuration. This is also a reminder that node-local agents turn cluster policy into kubelet-visible resources; a ConfigMap sitting in the API is not useful until the component that consumes it has reconciled the change.
 
 ```bash
 kubectl rollout restart daemonset nvidia-device-plugin-daemonset -n gpu-operator
@@ -2048,29 +885,21 @@ kubectl rollout status daemonset nvidia-device-plugin-daemonset -n gpu-operator
 <details>
 <summary>Solution Details</summary>
 
-The DaemonSet should roll out successfully.
-
-If it does not, inspect the logs.
+The DaemonSet should roll out successfully. If it does not, inspect the logs because parsing errors usually indicate malformed ConfigMap content or a mismatch between the `ClusterPolicy` reference and the ConfigMap key.
 
 ```bash
 kubectl logs daemonset/nvidia-device-plugin-daemonset -n gpu-operator
 ```
 
-A parsing error usually indicates malformed ConfigMap content or a mismatch between the `ClusterPolicy` reference and the ConfigMap key.
-
 </details>
 
 ### Task 5: Verify Advertised Capacity on a Real GPU Node
 
-On a node with one physical GPU and `replicas: 10`, the advertised logical capacity can show ten `nvidia.com/gpu` units.
-
-Use `kubectl describe node` to inspect the result.
+On a node with one physical GPU and `replicas: 10`, the advertised logical capacity can show ten `nvidia.com/gpu` units. Use `kubectl describe node` to inspect the result, and compare `Capacity` with `Allocatable` rather than trusting one line in isolation.
 
 ```bash
 kubectl describe node <your-gpu-node-name>
 ```
-
-You can narrow the output with standard shell tools.
 
 ```bash
 kubectl describe node <your-gpu-node-name> | sed -n '/Capacity:/,/Allocatable:/p'
@@ -2080,19 +909,13 @@ kubectl describe node <your-gpu-node-name> | sed -n '/Allocatable:/,/System Info
 <details>
 <summary>Solution Details</summary>
 
-Look for `nvidia.com/gpu: 10` in the relevant resource sections on a single-GPU node configured with ten replicas.
-
-On nodes with multiple physical GPUs, the advertised count depends on the number of physical devices and the replica configuration.
-
-Remember that Time-Slicing changes schedulable units.
-
-It does not create ten isolated physical GPUs.
+Look for `nvidia.com/gpu: 10` in the relevant resource sections on a single-GPU node configured with ten replicas. On nodes with multiple physical GPUs, the advertised count depends on the number of physical devices and the replica configuration. Remember that Time-Slicing changes schedulable units, not physical isolation.
 
 </details>
 
 ### Task 6: Run a Small GPU Workload on a Real GPU Cluster
 
-Apply a CUDA sample pod that requests one logical GPU unit.
+Apply a CUDA sample pod that requests one logical GPU unit. If it completes, inspect the logs. If it fails, classify the failure stage before changing the manifest: pending means scheduler constraints, `ContainerCreating` means local allocation or runtime injection, and application-level CUDA errors mean the container started but the GPU user-space path still failed.
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -2115,19 +938,13 @@ spec:
 EOF
 ```
 
-Watch the pod.
-
 ```bash
 kubectl get pod gpu-timeslicing-check -w
 ```
 
-Inspect the logs after completion.
-
 ```bash
 kubectl logs gpu-timeslicing-check
 ```
-
-Clean up the pod.
 
 ```bash
 kubectl delete pod gpu-timeslicing-check
@@ -2136,19 +953,18 @@ kubectl delete pod gpu-timeslicing-check
 <details>
 <summary>Solution Details</summary>
 
-A successful sample should run to completion and report a passing CUDA vector addition test.
-
-If the pod is pending, inspect taints, affinity, and allocatable GPU count.
-
-If it is stuck in `ContainerCreating`, inspect the device plugin, CDI/runtime injection, and driver stack.
-
-If it starts but cannot access CUDA, inspect image compatibility and runtime configuration.
+A successful sample should run to completion and report a passing CUDA vector addition test. If the pod is pending, inspect taints, affinity, and allocatable GPU count. If it is stuck in `ContainerCreating`, inspect the device plugin, CDI or runtime injection, and driver stack. If it starts but cannot access CUDA, inspect image compatibility and runtime configuration.
 
 </details>
 
 <details>
 <summary>Success Checklist</summary>
 
+- [ ] You can design a GPU node architecture by naming the driver, runtime, device plugin, kubelet, scheduler, operator, and monitoring responsibilities.
+- [ ] You can evaluate placement strategy by explaining how taints, tolerations, labels, affinity, MIG, Time-Slicing, and DRA affect a workload.
+- [ ] You can debug GPU scheduling failures by separating API admission, scheduler filtering, kubelet allocation, runtime injection, and driver faults.
+- [ ] You can compare legacy device plugin allocation with DRA and explain when each model is the better platform contract.
+- [ ] You can implement and validate Time-Slicing through a ConfigMap, `ClusterPolicy` patch, DaemonSet restart, node capacity check, and test workload.
 - [ ] Operator Helm chart deployed into the `gpu-operator` namespace.
 - [ ] Time-Slicing ConfigMap exists in the `gpu-operator` namespace.
 - [ ] `ClusterPolicy` references the ConfigMap and the correct default key.
@@ -2161,39 +977,42 @@ If it starts but cannot access CUDA, inspect image compatibility and runtime con
 
 ### Troubleshooting
 
-If the capacity does not update, inspect the device plugin logs.
+If capacity does not update, inspect the device plugin logs and the current `ClusterPolicy` before changing workload manifests. If the pod is pending, inspect scheduling events. If the pod is assigned but does not start, inspect runtime and device allocation symptoms. The point of the lab is not only to make a sample run; it is to practice moving to the correct layer as the symptom changes.
 
 ```bash
 kubectl logs daemonset/nvidia-device-plugin-daemonset -n gpu-operator
 ```
 
-If the patch fails, inspect the current `ClusterPolicy`.
-
 ```bash
 kubectl get clusterpolicy cluster-policy -o yaml
 ```
-
-If the pod is pending, inspect scheduling events.
 
 ```bash
 kubectl describe pod gpu-timeslicing-check
 kubectl get events --sort-by=.lastTimestamp
 ```
 
-If the pod is assigned but does not start, inspect runtime and device allocation symptoms.
-
 ```bash
 kubectl describe pod gpu-timeslicing-check
 kubectl logs daemonset/nvidia-device-plugin-daemonset -n gpu-operator
 ```
 
-If the node reports unexpected `Capacity` and `Allocatable`, remember the distinction.
+## Sources
 
-`Capacity` describes installed or reported total resources.
+- https://v1-35.docs.kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/
+- https://v1-35.docs.kubernetes.io/docs/concepts/scheduling-eviction/dynamic-resource-allocation/
+- https://v1-35.docs.kubernetes.io/docs/concepts/configuration/manage-resources-containers/#extended-resources
+- https://v1-35.docs.kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+- https://kubernetes-sigs.github.io/node-feature-discovery/stable/usage/features.html
+- https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/26.3/getting-started.html
+- https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/26.3/platform-support.html
+- https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/26.3/cdi.html
+- https://github.com/NVIDIA/k8s-device-plugin
+- https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/26.3/gpu-operator-mig.html
+- https://docs.nvidia.com/datacenter/cloud-native/gpu-telemetry/latest/dcgm-exporter.html
+- https://instinct.docs.amd.com/projects/gpu-operator/en/main/device_plugin/device-plugin.html
+- https://docs.habana.ai/en/latest/Orchestration/Gaudi_Kubernetes/index.html
 
-`Allocatable` describes what new workloads can use.
-
-For unhealthy devices, allocatable can drop while capacity remains stable.
 ## Next Module
 
 Now that you can reason about GPU node provisioning, device plugin allocation, Time-Slicing, MIG, telemetry, and DRA, continue to **[Module 9.2: Advanced Topology and RDMA Fabrics](/on-premises/ai-ml-infrastructure/module-9.2-advanced-topology-rdma-fabrics/)**. The next module moves from single-node accelerator operations to multi-node training fabrics, covering InfiniBand, RoCEv2, topology-aware placement, and the network constraints that decide whether large AI training jobs scale cleanly or stall under communication overhead.
