@@ -552,11 +552,10 @@ If a pod fails to mount the PVC, ensure the `csi-nodeplugin-fluid` DaemonSet is 
 - [Kubernetes dynamic volume provisioning](https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/)
 - [NVIDIA GPUDirect Storage overview](https://docs.nvidia.com/gpudirect-storage/overview-guide/)
 - [NVIDIA GPU Operator GPUDirect Storage](https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/gpu-operator-gds.html)
-- [Fluid project documentation](https://fluid-cloudnative.github.io/docs/)
+- [Fluid project repository](https://github.com/fluid-cloudnative/fluid)
 - [Fluid Helm chart repository](https://fluid-cloudnative.github.io/charts)
 - [Alluxio on Kubernetes documentation](https://documentation.alluxio.io/os/user/stable/en/kubernetes/Running-Alluxio-On-Kubernetes.html)
 - [BeeGFS CSI driver](https://github.com/ThinkParQ/beegfs-csi-driver)
-- [Lustre CSI driver](https://github.com/kubernetes-sigs/lustre-csi-driver)
 - [Apache archive source used in the lab](https://archive.apache.org/dist/spark/)
 
 ## Next Module
