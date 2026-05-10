@@ -32,5 +32,5 @@ Do not use it for per-PR review, one-line fixes, single-module choices, or decis
 ## References
 
 - Canonical agent rule: [`.claude/rules/decision-card.md`](../../.claude/rules/decision-card.md)
-- Project memory: `~/.claude/projects/-Users-krisztiankoos-projects-kubedojo/memory/feedback_ab_discuss_for_decisions.md`
+- Project memory key: `feedback_ab_discuss_for_decisions.md`
 - Adoption issue: [kube-dojo/kube-dojo.github.io#740](https://github.com/kube-dojo/kube-dojo.github.io/issues/740)
