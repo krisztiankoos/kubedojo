@@ -16,10 +16,11 @@
 ## Cold-start protocol
 
 1. Hit `curl -s http://127.0.0.1:8768/api/briefing/session?compact=1` (the API parses the `## TODO` and `## Blockers` sections of this file).
-2. Read the row in **Latest handoff** below — that's the only file you need for current state.
-3. Skim **Cross-thread notes (still active)** for stuff that spans sessions.
-4. If picking up a long-running thread, click into the relevant **Predecessor chain** row.
-5. Pre-2026-04-28 sessions (29 of them, going back to session 1) live in [`docs/session-state/archive-pre-2026-04-28.md`](./docs/session-state/archive-pre-2026-04-28.md) — kept for spelunking only, not actively maintained.
+2. Scan [`docs/decisions/pending/`](./docs/decisions/pending/) for outstanding Decision Cards and surface any pending user decision before unrelated work.
+3. Read the row in **Latest handoff** below — that's the only file you need for current state.
+4. Skim **Cross-thread notes (still active)** for stuff that spans sessions.
+5. If picking up a long-running thread, click into the relevant **Predecessor chain** row.
+6. Pre-2026-04-28 sessions (29 of them, going back to session 1) live in [`docs/session-state/archive-pre-2026-04-28.md`](./docs/session-state/archive-pre-2026-04-28.md) — kept for spelunking only, not actively maintained.
 
 ## Latest handoff
 
@@ -259,7 +260,7 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 **Next session — 1-7 list (2026-05-09 evening handoff, "utilizing ALL agents"):**
 
 - [ ] 1. Pipeline Supervisor stopped — investigate `.pids/pipeline.pid` + logs, restart if appropriate.
-- [ ] 2. Close GH #740 (Decision Card pattern adopted: `.claude/rules/decision-card.md` + `html-migration-strategy` ab discuss thread).
+- [x] 2. Close GH #740 (Decision Card pattern adopted: `.claude/rules/decision-card.md`, `docs/decisions/` convention docs, `day3-388` and `html-migration-strategy` ab discuss threads).
 - [ ] 3. Rename `needs_human` → `residuals_filed` (GH #342, pipeline-v4 outcomes — mechanical change; codex dispatch + gemini review).
 - [ ] 4. Update stale memory `feedback_codex_review_danger_mode.md` (bug fixed by `dispatch_smart.py:270-279` codex auto-bump).
 - [ ] 5. GH #373 — composite K8s-style liveness probes for LLM-dispatch subprocesses (large EPIC; `ab discuss` first).
