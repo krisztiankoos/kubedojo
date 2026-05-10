@@ -69,5 +69,5 @@ Future cold-start agents must scan `docs/decisions/pending/` for outstanding dec
 ## References
 
 - Issue: kube-dojo/kube-dojo.github.io#740
-- Memory: `~/.claude/projects/-Users-krisztiankoos-projects-kubedojo/memory/feedback_ab_discuss_for_decisions.md`
+- Memory key: `feedback_ab_discuss_for_decisions.md`
 - Convention source: Claude on the learn-ukrainian project (2026-05-02). KubeDojo imports rather than reinvents.
