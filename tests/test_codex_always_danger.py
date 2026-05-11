@@ -120,6 +120,14 @@ def _codex_invocation_cmd(
     search_env: str | None,
     session_id: str | None = None,
 ) -> list[str]:
+    return _codex_invocation_plan(search_env=search_env, session_id=session_id).cmd
+
+
+def _codex_invocation_plan(
+    search_env: str | None,
+    session_id: str | None = None,
+    prompt: str = "x",
+):
     import os
 
     adapter_module = _load_codex_adapter()
@@ -132,14 +140,14 @@ def _codex_invocation_cmd(
         else:
             os.environ["KUBEDOJO_CODEX_SEARCH"] = search_env
         return adapter.build_invocation(
-            prompt="x",
+            prompt=prompt,
             mode="danger",
             cwd=REPO_ROOT,
             model=None,
             task_id=None,
             session_id=session_id,
             tool_config=None,
-        ).cmd
+        )
     finally:
         if old is None:
             os.environ.pop("KUBEDOJO_CODEX_SEARCH", None)
@@ -232,6 +240,41 @@ def test_codex_adapter_uses_resume_action():
     assert cmd[1] == "exec"
     assert cmd[2] == "resume"
     assert cmd[3] == "stored-codex-session"
+
+
+def test_codex_adapter_resume_includes_output_file():
+    cmd = _codex_invocation_cmd(None, session_id="stored-codex-session")
+    assert "-o" in cmd
+    output_index = cmd.index("-o")
+    assert output_index + 1 < len(cmd), (
+        f"Expected resume cmd include output path after -o, got: {cmd}"
+    )
+    assert cmd[output_index + 1], (
+        f"Expected non-empty output path after -o, got: {cmd[output_index + 1:]}"
+    )
+
+
+def test_codex_adapter_resume_includes_model_and_mode_flags():
+    cmd = _codex_invocation_cmd(None, session_id="stored-codex-session")
+    assert "-m" in cmd
+    assert "--dangerously-bypass-approvals-and-sandbox" in cmd
+
+
+def test_codex_adapter_resume_uses_stdin_for_prompt():
+    plan = _codex_invocation_plan(
+        None,
+        session_id="stored-codex-session",
+        prompt="x",
+    )
+    assert plan.cmd[-1] == "-"
+    assert plan.stdin_payload == "x"
+
+
+def test_codex_adapter_resume_search_flag_order():
+    cmd = _codex_invocation_cmd("1", session_id="stored-codex-session")
+    assert cmd[1] == "--search"
+    assert cmd[2] == "exec"
+    assert cmd[3] == "resume"
 
 
 def test_dispatch_smart_codex_sets_search_for_draft():

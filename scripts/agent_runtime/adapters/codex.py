@@ -180,19 +180,24 @@ class CodexAdapter:
             use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
         cmd: list[str] = [codex_bin]
         if session_id:
+            if use_search:
+                cmd.append("--search")
             cmd.extend(
                 [
                     "exec",
                     "resume",
                     session_id,
+                    "--skip-git-repo-check",
+                    "-o", str(output_path),
+                    "-m", model or self.default_model,
                 ]
             )
-            if prompt:
-                cmd.extend(["--", prompt])
+            cmd.extend(self._mode_flags(mode))
+            cmd.append("-")
             return InvocationPlan(
                 cmd=cmd,
                 cwd=cwd,
-                stdin_payload="",
+                stdin_payload=prompt,
                 output_file=output_path,
                 env_overrides={},
                 liveness_paths=(output_path,),
