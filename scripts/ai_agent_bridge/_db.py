@@ -45,6 +45,12 @@ CREATE TABLE IF NOT EXISTS sessions (
     claude_session_id TEXT,
     gemini_session_id TEXT,
     codex_session_id TEXT,
+    claude_cwd TEXT,
+    claude_sandbox_mode TEXT,
+    gemini_cwd TEXT,
+    gemini_sandbox_mode TEXT,
+    codex_cwd TEXT,
+    codex_sandbox_mode TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -216,6 +222,21 @@ def get_db():
         if "codex_session_id" not in session_columns:
             print("🔧 Migrating database: adding 'codex_session_id' column to 'sessions' table")
             conn.execute("ALTER TABLE sessions ADD COLUMN codex_session_id TEXT")
+        new_session_columns = [
+            "claude_cwd",
+            "claude_sandbox_mode",
+            "gemini_cwd",
+            "gemini_sandbox_mode",
+            "codex_cwd",
+            "codex_sandbox_mode",
+        ]
+        for column in new_session_columns:
+            if column not in session_columns:
+                print(
+                    "🔧 Migrating database: adding '{0}' column to 'sessions' table"
+                    .format(column)
+                )
+                conn.execute(f"ALTER TABLE sessions ADD COLUMN {column} TEXT")
 
         # --- Channel bridge tables (#1190) ---
         # GATED by table-existence check. Running executescript() on
@@ -309,12 +330,25 @@ def get_session(task_id: str) -> dict:
             "claude_session_id": None,
             "gemini_session_id": None,
             "codex_session_id": None,
+            "claude_cwd": None,
+            "claude_sandbox_mode": None,
+            "gemini_cwd": None,
+            "gemini_sandbox_mode": None,
+            "codex_cwd": None,
+            "codex_sandbox_mode": None,
         }
 
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT claude_session_id, gemini_session_id, codex_session_id FROM sessions WHERE task_id = ?",
+        (
+            "SELECT "
+            "claude_session_id, gemini_session_id, codex_session_id, "
+            "claude_cwd, claude_sandbox_mode, "
+            "gemini_cwd, gemini_sandbox_mode, "
+            "codex_cwd, codex_sandbox_mode "
+            "FROM sessions WHERE task_id = ?"
+        ),
         (task_id,),
     )
     row = cursor.fetchone()
@@ -322,14 +356,26 @@ def get_session(task_id: str) -> dict:
 
     if row:
         return {
-            "claude_session_id": row[0],
-            "gemini_session_id": row[1],
-            "codex_session_id": row[2],
+            "claude_session_id": row["claude_session_id"],
+            "gemini_session_id": row["gemini_session_id"],
+            "codex_session_id": row["codex_session_id"],
+            "claude_cwd": row["claude_cwd"],
+            "claude_sandbox_mode": row["claude_sandbox_mode"],
+            "gemini_cwd": row["gemini_cwd"],
+            "gemini_sandbox_mode": row["gemini_sandbox_mode"],
+            "codex_cwd": row["codex_cwd"],
+            "codex_sandbox_mode": row["codex_sandbox_mode"],
         }
     return {
         "claude_session_id": None,
         "gemini_session_id": None,
         "codex_session_id": None,
+        "claude_cwd": None,
+        "claude_sandbox_mode": None,
+        "gemini_cwd": None,
+        "gemini_sandbox_mode": None,
+        "codex_cwd": None,
+        "codex_sandbox_mode": None,
     }
 
 
@@ -354,6 +400,12 @@ def set_session(
     claude_session_id: None = None,
     gemini_session_id: None = None,
     codex_session_id: None = None,
+    claude_cwd: str | None = None,
+    claude_sandbox_mode: str | None = None,
+    gemini_cwd: str | None = None,
+    gemini_sandbox_mode: str | None = None,
+    codex_cwd: str | None = None,
+    codex_sandbox_mode: str | None = None,
 ) -> None:
     ...
 
@@ -379,6 +431,12 @@ def set_session(
     claude_session_id: str | None = None,
     gemini_session_id: str | None = None,
     codex_session_id: str | None = None,
+    claude_cwd: str | None = None,
+    claude_sandbox_mode: str | None = None,
+    gemini_cwd: str | None = None,
+    gemini_sandbox_mode: str | None = None,
+    codex_cwd: str | None = None,
+    codex_sandbox_mode: str | None = None,
 ):
     """Set session IDs for one or more agents on a task."""
     if not task_id:
@@ -390,40 +448,59 @@ def set_session(
     updates: dict[str, str] = {}
 
     if agent is not None:
-        if session_id is None:
-            return
-        updates[_session_column(agent)] = session_id
+        if session_id is not None:
+            if isinstance(session_id, str):
+                updates[_session_column(agent)] = session_id
+        for key in ("cwd", "sandbox_mode"):
+            col = f"{agent}_{key}"
+            if key == "cwd":
+                value = {
+                    "claude": claude_cwd,
+                    "gemini": gemini_cwd,
+                    "codex": codex_cwd,
+                }[agent]
+            else:
+                value = {
+                    "claude": claude_sandbox_mode,
+                    "gemini": gemini_sandbox_mode,
+                    "codex": codex_sandbox_mode,
+                }[agent]
+            if isinstance(value, str):
+                updates[col] = value
 
     legacy_aliases = {
         "claude_session_id": claude_session_id,
         "gemini_session_id": gemini_session_id,
         "codex_session_id": codex_session_id,
+        "claude_cwd": claude_cwd,
+        "claude_sandbox_mode": claude_sandbox_mode,
+        "gemini_cwd": gemini_cwd,
+        "gemini_sandbox_mode": gemini_sandbox_mode,
+        "codex_cwd": codex_cwd,
+        "codex_sandbox_mode": codex_sandbox_mode,
     }
     for column, value in legacy_aliases.items():
-        if value is not None:
+        if isinstance(value, str):
             updates[column] = value
 
     if not updates:
         return
 
     # Upsert session
-    cursor.execute("SELECT task_id FROM sessions WHERE task_id = ?", (task_id,))
-    if cursor.fetchone():
-        cursor.execute(
-            (
-                "UPDATE sessions "
-                f"SET {', '.join(f'{column} = ?' for column in updates)}, updated_at = ? "
-                "WHERE task_id = ?"
-            ),
-            (*updates.values(), timestamp, task_id),
-        )
-    else:
-        columns = ", ".join(["task_id", *updates.keys(), "created_at", "updated_at"])
-        placeholders = ", ".join(["?"] * (len(updates) + 3))
-        cursor.execute(
-            f"INSERT INTO sessions ({columns}) VALUES ({placeholders})",
-            [task_id, *updates.values(), timestamp, timestamp],
-        )
+    update_clause = ", ".join(
+        f"{column} = excluded.{column}"
+        for column in updates
+    )
+    columns = ", ".join(["task_id", *updates.keys(), "created_at", "updated_at"])
+    placeholders = ", ".join(["?"] * (len(updates) + 3))
+    cursor.execute(
+        (
+            f"INSERT INTO sessions ({columns}) VALUES ({placeholders}) "
+            "ON CONFLICT(task_id) DO UPDATE SET "
+            f"{update_clause}, updated_at = excluded.updated_at"
+        ),
+        [task_id, *updates.values(), timestamp, timestamp],
+    )
 
     conn.commit()
     conn.close()
