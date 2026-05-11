@@ -265,7 +265,9 @@ def test_discuss_claude_round1_round2_session_resume(mock_invoke, monkeypatch, c
     )
 
     assert exit_code == 0
-    assert seen_session_ids == [None, "uuid-1"]
+    assert seen_session_ids[0] is not None
+    assert seen_session_ids[0] != "uuid-1"
+    assert seen_session_ids[1] == "uuid-1"
     assert (
         _db.get_session("discuss:discuss-resume-0001")["claude_session_id"] == "uuid-1"
     )
@@ -353,7 +355,9 @@ def test_discuss_gemini_round1_round2_session_resume(mock_invoke, monkeypatch):
     )
 
     assert exit_code == 0
-    assert seen_session_ids == [None, "gemini-session-01"]
+    assert seen_session_ids[0] is not None
+    assert seen_session_ids[0] != "gemini-session-01"
+    assert seen_session_ids[1] == "gemini-session-01"
     assert (
         _db.get_session("discuss:discuss-gemini-0001")["gemini_session_id"]
         == "gemini-session-02"
@@ -509,10 +513,12 @@ def test_discuss_agent_stored_cwd_missing_starts_fresh(
     )
 
     assert exit_code == 0
-    assert [call.kwargs["session_id"] for call in mock_invoke.call_args_list] == [
-        None,
-        f"{session_key}-session-2",
-    ]
+    observed_sessions = [call.kwargs["session_id"] for call in mock_invoke.call_args_list]
+    if agent == "gemini":
+        assert observed_sessions[0] is not None
+    else:
+        assert observed_sessions[0] is None
+    assert observed_sessions[1] == f"{session_key}-session-2"
     assert (
         f"bridge: stored cwd {missing} for {agent}/{task_key} "
         "no longer exists; starting fresh" in capsys.readouterr().out
@@ -580,10 +586,12 @@ def test_discuss_agent_missing_stored_cwd_starts_fresh(
     )
 
     assert exit_code == 0
-    assert [call.kwargs["session_id"] for call in mock_invoke.call_args_list] == [
-        None,
-        f"{session_key}-session-2",
-    ]
+    observed_sessions = [call.kwargs["session_id"] for call in mock_invoke.call_args_list]
+    if agent == "gemini":
+        assert observed_sessions[0] is not None
+    else:
+        assert observed_sessions[0] is None
+    assert observed_sessions[1] == f"{session_key}-session-2"
     assert (
         f"bridge: stored session for {agent}/{task_key} has no cwd; starting fresh"
         in capsys.readouterr().out
@@ -667,7 +675,13 @@ def test_discuss_agent_resume_error_falls_back_to_fresh(
     )
 
     assert exit_code == 0
-    assert attempts == [f"{agent}-stored", None, f"{agent}-session-2"]
+    assert attempts[0] == f"{agent}-stored"
+    if agent == "gemini":
+        assert attempts[1] is not None
+        assert attempts[1] != f"{agent}-stored"
+    else:
+        assert attempts[1] is None
+    assert attempts[2] == f"{agent}-session-2"
     assert mock_invoke.call_count == 3
     captured = capsys.readouterr()
     assert (
@@ -858,6 +872,84 @@ def test_discuss_resume_reuses_thread_and_trace(
     assert mock_invoke.call_args_list[0].kwargs["task_id"].startswith(
         "discuss-resumabl-r1-claude"
     )
+
+
+@patch("agent_runtime.runner.invoke")
+def test_discuss_round1_round2_all_agents_persists_sessions_and_metadata(
+    mock_invoke,
+    monkeypatch,
+):
+    _channels.create_channel("discuss-warmresume")
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    ids = itertools.count(1)
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        lambda: f"discuss-warmresume-{next(ids):04d}",
+    )
+
+    seen_calls: list[tuple[str, str | None]] = []
+    attempts: dict[str, int] = {}
+
+    def _discuss_result(agent_name: str, *_, **kwargs) -> Result:
+        seen_calls.append((agent_name, kwargs.get("session_id")))
+        attempts[agent_name] = attempts.get(agent_name, 0) + 1
+        return Result(
+            ok=True,
+            agent=agent_name,
+            model="test-model",
+            mode="danger" if agent_name == "codex" else "read-only",
+            response=f"{agent_name} reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id=f"{agent_name}-session-{attempts[agent_name]:02d}",
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    exit_code = _run_cli(
+        [
+            "discuss",
+            "discuss-warmresume",
+            "topic",
+            "--with",
+            "claude,codex,gemini",
+            "--max-rounds",
+            "2",
+        ]
+    )
+
+    by_agent: dict[str, list[str | None]] = {
+        "claude": [],
+        "codex": [],
+        "gemini": [],
+    }
+    for agent_name, session_id in seen_calls:
+        by_agent[agent_name].append(session_id)
+
+    assert exit_code == 0
+    assert len(mock_invoke.call_args_list) == 6
+    assert by_agent["claude"][0] is not None
+    assert by_agent["codex"][0] is None
+    assert by_agent["gemini"][0] is not None
+    assert by_agent["claude"][1] == "claude-session-01"
+    assert by_agent["codex"][1] == "codex-session-01"
+    assert by_agent["gemini"][1] == "gemini-session-01"
+
+    row = _db.get_session("discuss:discuss-warmresume-0001")
+    assert row["claude_session_id"]
+    assert row["claude_cwd"]
+    assert row["claude_sandbox_mode"]
+    assert row["gemini_session_id"]
+    assert row["gemini_cwd"]
+    assert row["gemini_sandbox_mode"]
+    assert row["codex_session_id"]
+    assert row["codex_cwd"]
+    assert row["codex_sandbox_mode"]
 
 
 @patch("agent_runtime.runner.invoke")

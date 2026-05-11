@@ -35,11 +35,13 @@ commands handle the agent-calling side.
 from __future__ import annotations
 
 import json
+import tempfile
 import os
 import shlex
 import subprocess
 import sys
 import time
+import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -51,6 +53,143 @@ from ._config import REPO_ROOT
 from agent_runtime.result import Result
 
 # ── argparse registration ────────────────────────────────────────────
+
+_DISCUSSION_CLARIFICATION_MODES = {
+    "claude": "bypass",
+    "gemini": "yolo",
+    "codex": "danger",
+}
+
+_DISCUSSION_RUNTIME_MODES = {
+    "claude": "read-only",
+    "gemini": "workspace-write",
+    "codex": "danger",
+}
+
+_DISCUSSION_MCP_EXCLUDE_TOKENS: tuple[str, ...] = (
+    "gmail",
+    "calendar",
+    "drive",
+    "claude-in-chrome",
+)
+
+
+def _normalize_mcp_server_name(server_name: str) -> str:
+    return server_name.lower().replace("_", "-")
+
+
+def _should_exclude_mcp_server(server_name: str) -> bool:
+    normalized = _normalize_mcp_server_name(server_name)
+    return any(token in normalized for token in _DISCUSSION_MCP_EXCLUDE_TOKENS)
+
+
+def _prepare_discuss_mcp_artifacts(
+    cwd: Path,
+    *,
+    cleanup_paths: list[Path],
+) -> tuple[Path | None, list[str]]:
+    """Return (mcp_config_path, allowed_server_names) for investigative discuss.
+
+    The helper keeps the explicit MCP allow-list explicit and small:
+    - load `.mcp.json` from cwd if present;
+    - exclude auth-heavy or side-effect-heavy servers (gmail/calendar/drive/chrome);
+    - copy the filtered config to a temp file when filtering changes the
+      server list; return that path to be passed as `--mcp-config`.
+
+    If filtering removes all servers, returns `(None, [])`.
+    """
+    source = cwd / ".mcp.json"
+    if not source.exists():
+        return None, []
+
+    try:
+        raw = json.loads(source.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        return None, []
+
+    mcp_servers = raw.get("mcpServers")
+    if not isinstance(mcp_servers, dict):
+        return None, []
+
+    filtered = {}
+    filtered_names: list[str] = []
+    for name, config in mcp_servers.items():
+        if not isinstance(name, str):
+            continue
+        if _should_exclude_mcp_server(name):
+            continue
+        filtered[name] = config
+        filtered_names.append(name)
+
+    if not filtered:
+        return None, []
+
+    if set(filtered.keys()) == set(mcp_servers.keys()):
+        # No change needed; keep the repo-root mcp file.
+        return source, sorted(filtered_names)
+
+    filtered_payload = dict(raw)
+    filtered_payload["mcpServers"] = filtered
+    with tempfile.NamedTemporaryFile(
+        prefix="bridge-discuss-mcp-",
+        suffix=".json",
+        delete=False,
+        mode="w",
+        encoding="utf-8",
+    ) as fp:
+        json.dump(filtered_payload, fp, ensure_ascii=False, indent=2)
+        path = Path(fp.name)
+    cleanup_paths.append(path)
+    return path, sorted(filtered_names)
+
+
+def _agent_discuss_defaults(agent_name: str) -> tuple[str, str]:
+    """Return `(runtime_mode, sandbox_mode)` pair for first-run discuss invocation."""
+    return _DISCUSSION_RUNTIME_MODES[agent_name], _DISCUSSION_CLARIFICATION_MODES[agent_name]
+
+
+def _agent_runtime_mode(agent_name: str, sandbox_mode: str | None) -> str:
+    """Map persisted `*_sandbox_mode` into runtime `mode`."""
+    if agent_name == "codex":
+        return "danger"
+    if agent_name == "claude":
+        # Claude uses a permission-mode override, not a dedicated mode value.
+        return "read-only"
+    if sandbox_mode == "read-only":
+        return "read-only"
+    return "workspace-write"
+
+
+def _agent_tool_config(
+    agent_name: str,
+    sandbox_mode: str | None,
+    mcp_config_path: Path | None,
+    mcp_server_names: list[str] | None = None,
+) -> dict | None:
+    """Return agent-specific tool_config for bridge-mode investigations."""
+    allowed_tools = None
+    if mcp_server_names:
+        allowed_tools = ",".join(mcp_server_names)
+
+    if agent_name == "claude":
+        if not mcp_config_path and sandbox_mode != "bypass":
+            return None
+        tc: dict[str, str] = {}
+        if mcp_config_path:
+            tc["mcp_config_path"] = str(mcp_config_path)
+        if allowed_tools:
+            tc["allowed_tools"] = allowed_tools
+        if sandbox_mode == "bypass":
+            tc["permission_mode"] = "bypassPermissions"
+        return tc or None
+    if agent_name == "gemini":
+        tc: dict[str, object] = {}
+        if mcp_server_names:
+            tc["mcp_server_names"] = mcp_server_names
+        return tc or None
+    if agent_name == "codex":
+        return {"enable_search": True}
+    return None
 
 
 def register_channel_commands(subparsers: Any) -> None:
@@ -1043,6 +1182,15 @@ def _handle_discuss(args) -> int:
             )
             return 1
 
+    mcp_cleanup_paths: list[Path] = []
+    mcp_config_path: Path | None = None
+    mcp_server_names: list[str] = []
+    if any(agent in with_agents for agent in {"claude", "gemini"}):
+        mcp_config_path, mcp_server_names = _prepare_discuss_mcp_artifacts(
+            REPO_ROOT,
+            cleanup_paths=mcp_cleanup_paths,
+        )
+
     gemini_use_subscription_auth = os.environ.get("KUBEDOJO_GEMINI_SUBSCRIPTION") == "1"
 
     def _invoke_one(
@@ -1057,53 +1205,95 @@ def _handle_discuss(args) -> int:
         """
         nonlocal gemini_use_subscription_auth
 
-        default_agent_mode = "danger" if agent_name == "codex" else "read-only"
+        default_agent_mode = _agent_runtime_mode(agent_name, None)
+        default_sandbox_mode = _DISCUSSION_CLARIFICATION_MODES[agent_name]
         default_agent_cwd = REPO_ROOT
         stored_session = _get_session(task_key)
         session_field, cwd_field, sandbox_field = session_field_map[agent_name]
 
-        resumed_session = stored_session.get(session_field)
-        resumed_cwd = stored_session.get(cwd_field)
-        resumed_mode = stored_session.get(sandbox_field)
+        stored_session_id = stored_session.get(session_field)
+        stored_cwd = stored_session.get(cwd_field)
+        stored_sandbox_mode = stored_session.get(sandbox_field)
 
-        agent_mode = default_agent_mode
-        agent_cwd = default_agent_cwd
-        should_resume = False
+        resume_session = None
+        attempt_mode = default_agent_mode
+        attempt_sandbox_mode = default_sandbox_mode
+        attempt_cwd = default_agent_cwd
 
-        if resumed_session is not None:
-            should_resume = True
-            if resumed_cwd is None:
+        if stored_session_id is not None:
+            if stored_cwd is None:
                 print(
                     f"bridge: stored session for {agent_name}/{task_key} has no cwd; "
                     "starting fresh"
                 )
-                should_resume = False
-                resumed_session = None
             else:
-                resumed_path = Path(resumed_cwd)
-                if not resumed_path.exists():
+                stored_path = Path(stored_cwd)
+                if not stored_path.exists():
                     print(
-                        f"bridge: stored cwd {resumed_path} for {agent_name}/{task_key} "
+                        f"bridge: stored cwd {stored_path} for {agent_name}/{task_key} "
                         "no longer exists; starting fresh"
                     )
-                    should_resume = False
-                    resumed_session = None
                 else:
-                    agent_mode = resumed_mode or default_agent_mode
-                    agent_cwd = resumed_path
+                    resume_session = stored_session_id
+                    attempt_mode = _agent_runtime_mode(agent_name, stored_sandbox_mode)
+                    attempt_sandbox_mode = stored_sandbox_mode or default_sandbox_mode
+                    attempt_cwd = stored_path
+
+        use_resume = resume_session is not None
+
+        if not use_resume:
+            attempt_mode = default_agent_mode
+            attempt_sandbox_mode = default_sandbox_mode
+            attempt_cwd = default_agent_cwd
+            if agent_name in {"claude", "gemini"}:
+                attempt_session = str(uuid.uuid4())
+                attempt_is_new_session = True
+                _set_session(
+                    task_key,
+                    agent=agent_name,
+                    session_id=attempt_session,
+                    **{
+                        f"{agent_name}_cwd": str(attempt_cwd),
+                        f"{agent_name}_sandbox_mode": attempt_sandbox_mode,
+                    },
+                )
+            else:
+                attempt_session = None
+                attempt_is_new_session = False
+        else:
+            attempt_session = resume_session
+            attempt_is_new_session = False
+
+        tool_config = _agent_tool_config(
+            agent_name,
+            attempt_sandbox_mode,
+            mcp_config_path,
+            mcp_server_names,
+        )
+
+        if agent_name == "gemini" and tool_config is None:
+            tool_config = {}
 
         def _invoke_runtime(
-            *, use_subscription_auth: bool = False, session_id: str | None, mode: str, cwd: Path
+            *,
+            use_subscription_auth: bool = False,
+            session_id: str | None,
+            mode: str,
+            cwd: Path,
+            is_new_session: bool,
         ) -> tuple[Result | None, str | None]:
             """Run one agent invocation.
 
             Returns ``(result, None)`` on completion, or ``(None, reason)``
             on failure.
             """
-            tool_config = None
+            nonlocal gemini_use_subscription_auth
             skip_headroom_check = False
+            runtime_tool_config = dict(tool_config)
+            if is_new_session and agent_name in {"claude", "gemini"}:
+                runtime_tool_config["is_new_session"] = True
             if agent_name == "gemini" and use_subscription_auth:
-                tool_config = {"use_subscription_auth": True}
+                runtime_tool_config["use_subscription_auth"] = True
                 skip_headroom_check = True
             try:
                 result = runtime_invoke(
@@ -1113,7 +1303,7 @@ def _handle_discuss(args) -> int:
                     cwd=cwd,
                     task_id=f"discuss-{correlation_id[:8]}-r{round_idx}-{agent_name}",
                     session_id=session_id,
-                    tool_config=tool_config,
+                    tool_config=runtime_tool_config or None,
                     entrypoint="bridge",
                     hard_timeout=900,
                     skip_headroom_check=skip_headroom_check,
@@ -1138,7 +1328,10 @@ def _handle_discuss(args) -> int:
                             cwd=cwd,
                             task_id=f"discuss-{correlation_id[:8]}-r{round_idx}-{agent_name}",
                             session_id=session_id,
-                            tool_config={"use_subscription_auth": True},
+                            tool_config={
+                                **runtime_tool_config,
+                                "use_subscription_auth": True,
+                            },
                             entrypoint="bridge",
                             hard_timeout=900,
                             skip_headroom_check=True,
@@ -1184,7 +1377,10 @@ def _handle_discuss(args) -> int:
                         cwd=cwd,
                         task_id=f"discuss-{correlation_id[:8]}-r{round_idx}-{agent_name}",
                         session_id=session_id,
-                        tool_config={"use_subscription_auth": True},
+                        tool_config={
+                            **runtime_tool_config,
+                            "use_subscription_auth": True,
+                        },
                         entrypoint="bridge",
                         hard_timeout=900,
                         skip_headroom_check=True,
@@ -1203,32 +1399,45 @@ def _handle_discuss(args) -> int:
 
             return result, None
 
-        resumed = should_resume
-        attempt_session = resumed_session
-        attempt_mode = agent_mode
-        attempt_cwd = agent_cwd
-
         result, err = _invoke_runtime(
             use_subscription_auth=gemini_use_subscription_auth,
             session_id=attempt_session,
             mode=attempt_mode,
             cwd=attempt_cwd,
+            is_new_session=attempt_is_new_session,
         )
 
-        if resumed and err is not None:
+        if use_resume and err is not None:
             print(
                 f"bridge: stored session {attempt_session} for {agent_name}/{task_key} "
                 f"failed: {err}; starting fresh"
             )
-            attempt_session = None
             attempt_mode = default_agent_mode
+            attempt_sandbox_mode = default_sandbox_mode
             attempt_cwd = default_agent_cwd
+            attempt_session = None
+            if agent_name in {"claude", "gemini"}:
+                attempt_session = str(uuid.uuid4())
+                attempt_is_new_session = True
+                _set_session(
+                    task_key,
+                    agent=agent_name,
+                    session_id=attempt_session,
+                    **{
+                        f"{agent_name}_cwd": str(attempt_cwd),
+                        f"{agent_name}_sandbox_mode": attempt_sandbox_mode,
+                    },
+                )
+            else:
+                attempt_is_new_session = False
             result, err = _invoke_runtime(
                 use_subscription_auth=gemini_use_subscription_auth,
-                session_id=None,
+                session_id=attempt_session,
                 mode=attempt_mode,
                 cwd=attempt_cwd,
+                is_new_session=attempt_is_new_session,
             )
+            use_resume = False
 
         if err is not None:
             return (agent_name, f"[failed: {err}]", False)
@@ -1240,245 +1449,237 @@ def _handle_discuss(args) -> int:
             )
 
         if result is not None:
-            if agent_name == "claude":
-                _set_session(
-                    task_key,
-                    agent=agent_name,
-                    session_id=result.session_id,
-                    claude_cwd=str(attempt_cwd),
-                    claude_sandbox_mode=attempt_mode,
-                )
-            elif agent_name == "gemini":
-                _set_session(
-                    task_key,
-                    agent=agent_name,
-                    session_id=result.session_id,
-                    gemini_cwd=str(attempt_cwd),
-                    gemini_sandbox_mode=attempt_mode,
-                )
-            else:
-                _set_session(
-                    task_key,
-                    agent=agent_name,
-                    session_id=result.session_id,
-                    codex_cwd=str(attempt_cwd),
-                    codex_sandbox_mode=attempt_mode,
-                )
+            _set_session(
+                task_key,
+                agent=agent_name,
+                session_id=result.session_id or attempt_session,
+                **{
+                    f"{agent_name}_cwd": str(attempt_cwd),
+                    f"{agent_name}_sandbox_mode": attempt_sandbox_mode,
+                },
+            )
 
         return (agent_name, result.response.strip(), True)
 
     completed_rounds = 0
-    for round_idx in range(1, max_rounds + 1):
-        completed_rounds = round_idx
-        print(f"── round {round_idx}/{max_rounds} ──────────────────────")
+    try:
+        for round_idx in range(1, max_rounds + 1):
+            completed_rounds = round_idx
+            print(f"── round {round_idx}/{max_rounds} ──────────────────────")
 
-        # Every agent sees the full channel history (pinned context +
-        # monitor state + recent posts including the root). The per-
-        # round directive tells them what to produce.
-        #
-        # Round-1 vs round-2+ semantics differ structurally:
-        #
-        # - Round 1 is parallel fan-out — every agent answers the root
-        #   question independently, NONE of them have seen any other
-        #   agent's reply yet. So `[AGREE]` in round 1 cannot mean
-        #   "I agree with the other agents" (no replies to agree with).
-        #   It can only mean "I'm satisfied with my own first take."
-        #   The convergence check below explicitly disallows round-1
-        #   short-circuit because of this — see comment there.
-        #
-        # - Round 2+ is where agents see each other's round-1 (and
-        #   later) replies via the channel history, and `[AGREE]` /
-        #   `[DISAGREE]` becomes meaningful as cross-agent assent or
-        #   pushback.
-        #
-        # This was originally a single uniform directive; that produced
-        # false convergence in the собака-gender deliberation 2026-05-05
-        # in the learn-ukrainian project (3 agents disagreed substantively
-        # but all signed [AGREE] in round 1, short-circuiting before any
-        # agent saw the disagreements). Ported to kubedojo from learn-
-        # ukrainian commit 872d8376b0.
-        if round_idx == 1:
-            directive = (
-                f"You are participating in a bounded multi-agent discussion "
-                f"on #{args.channel}. This is round 1 of at most "
-                f"{max_rounds}. The other participants are answering this "
-                f"same root question in parallel right now — you have NOT "
-                f"seen their replies. Produce your independent first take.\n\n"
-                f"- Be concise but substantive. Cite file:line when relevant.\n"
-                f"- Quote authoritative sources with specific entries; do "
-                f"not paraphrase from memory.\n"
-                f"- End your response with one of:\n"
-                f"    [DISAGREE]  — your default in round 1; you have a "
-                f"substantive position and want round 2 to compare it "
-                f"against the other agents' first takes.\n"
-                f"    [AGREE]     — only if your reading of the channel "
-                f"context (pinned rules) makes the question trivially "
-                f"resolved before any cross-agent comparison is needed. "
-                f"Rare; default is [DISAGREE] in round 1.\n"
-                f"- Even if all agents sign [AGREE] in round 1, the "
-                f"protocol will NOT short-circuit until round 2+ — round 2 "
-                f"is where you read each other and either confirm or push back."
-            )
-        else:
-            directive = (
-                f"You are participating in a bounded multi-agent discussion "
-                f"on #{args.channel}. This is round {round_idx} of at most "
-                f"{max_rounds}. Read the prior-round replies in the history "
-                f"above (they are posted as replies to the root). Compare "
-                f"them to your own prior position and decide.\n\n"
-                f"- Be concise but substantive. Cite file:line when relevant.\n"
-                f"- Push back on any other agent's claim you disagree with — "
-                f"name the agent, quote the claim, give the counter-evidence.\n"
-                f"- End your response with one of:\n"
-                f"    [AGREE]     — you have read the other agents' prior "
-                f"replies and you accept the converging position (or yours "
-                f"is unchanged and the others now match it).\n"
-                f"    [DISAGREE]  — you still have open substantive objections "
-                f"after reading the others.\n"
-                f"- If every agent ends with [AGREE], the discussion "
-                f"short-circuits and stops before round {max_rounds}."
-            )
-
-        # history_tail must be big enough to preserve the root
-        # question across every round. `tail` truncates from the
-        # OLDEST end, so older messages can never push the root out —
-        # we just need the window to span (1 root + all in-discussion
-        # replies). The +10 is headroom for some pre-root channel
-        # context so agents see recent project activity too.
-        needed_history = 1 + len(with_agents) * max_rounds + 10
-        try:
-            prompt_obj = _channels.build_agent_prompt(
-                args.channel, directive, history_tail=needed_history
-            )
-        except ValueError as e:
-            print(f"❌ prompt build failed: {e}", file=sys.stderr)
-            return 1
-        prompt_text = prompt_obj["prompt"]
-        print(
-            f"   prompt {len(prompt_text)} chars "
-            f"(history_tail={needed_history}, "
-            f"dropped {prompt_obj.get('history_dropped', 0)})"
-        )
-
-        # ── parallel fan-out ──────────────────────────────────────
-        # The `with` block calls pool.shutdown(wait=True) on exit. If
-        # the user hits Ctrl+C mid-round we catch KeyboardInterrupt,
-        # cancel all queued futures, and re-raise so the process
-        # exits promptly instead of blocking on in-flight invocations
-        # (which could be hold for up to hard_timeout=900 seconds).
-        responses: dict[str, tuple[str, bool]] = {}
-        pool = ThreadPoolExecutor(max_workers=len(with_agents))
-        try:
-            futures = {
-                pool.submit(_invoke_one, agent, prompt_text, round_idx): agent
-                for agent in with_agents
-            }
-            try:
-                for fut in as_completed(futures):
-                    agent, text, ok = fut.result()
-                    responses[agent] = (text, ok)
-                    status = "✅" if ok else "⚠️ "
-                    preview = text.replace("\n", " ")[:80]
-                    print(f"   {status} {agent}: {preview}")
-            except KeyboardInterrupt:
-                print(
-                    "\n⚠️  interrupted — cancelling pending agent invocations",
-                    file=sys.stderr,
+            # Every agent sees the full channel history (pinned context +
+            # monitor state + recent posts including the root). The per-
+            # round directive tells them what to produce.
+            #
+            # Round-1 vs round-2+ semantics differ structurally:
+            #
+            # - Round 1 is parallel fan-out — every agent answers the root
+            #   question independently, NONE of them have seen any other
+            #   agent's reply yet. So `[AGREE]` in round 1 cannot mean
+            #   "I agree with the other agents" (no replies to agree with).
+            #   It can only mean "I'm satisfied with my own first take."
+            #   The convergence check below explicitly disallows round-1
+            #   short-circuit because of this — see comment there.
+            #
+            # - Round 2+ is where agents see each other's round-1 (and
+            #   later) replies via the channel history, and `[AGREE]` /
+            #   `[DISAGREE]` becomes meaningful as cross-agent assent or
+            #   pushback.
+            #
+            # This was originally a single uniform directive; that produced
+            # false convergence in the собака-gender deliberation 2026-05-05
+            # in the learn-ukrainian project (3 agents disagreed substantively
+            # but all signed [AGREE] in round 1, short-circuiting before any
+            # agent saw the disagreements). Ported to kubedojo from learn-
+            # ukrainian commit 872d8376b0.
+            if round_idx == 1:
+                directive = (
+                    f"You are participating in a bounded multi-agent discussion "
+                    f"on #{args.channel}. This is round 1 of at most "
+                    f"{max_rounds}. The other participants are answering this "
+                    f"same root question in parallel right now — you have NOT "
+                    f"seen their replies. Produce your independent first take.\n\n"
+                    f"- Be concise but substantive. Cite file:line when relevant.\n"
+                    f"- Quote authoritative sources with specific entries; do "
+                    f"not paraphrase from memory.\n"
+                    f"- End your response with one of:\n"
+                    f"    [DISAGREE]  — your default in round 1; you have a "
+                    f"substantive position and want round 2 to compare it "
+                    f"against the other agents' first takes.\n"
+                    f"    [AGREE]     — only if your reading of the channel "
+                    f"context (pinned rules) makes the question trivially "
+                    f"resolved before any cross-agent comparison is needed. "
+                    f"Rare; default is [DISAGREE] in round 1.\n"
+                    f"- Even if all agents sign [AGREE] in round 1, the "
+                    f"protocol will NOT short-circuit until round 2+ — round 2 "
+                    f"is where you read each other and either confirm or push back."
                 )
-                for pending in futures:
-                    pending.cancel()
-                raise
-        finally:
-            # cancel_futures is Py3.9+. Tasks already running cannot
-            # be cancelled mid-flight, but queued ones will be.
-            pool.shutdown(wait=False, cancel_futures=True)
-
-        # ── post each response as a reply to root ─────────────────
-        # auto_snapshot=False here — the root message captured the
-        # state of the world for the discussion; re-snapshotting on
-        # every reply would mean N*max_rounds redundant Monitor API
-        # fetches + context file reads + extra storage. The reply's
-        # context is implicit from its parent_id anyway.
-        for agent in with_agents:
-            text, ok = responses[agent]
-            reply_recipients = [name for name in with_agents if name != agent]
-            try:
-                reply = _channels.post(
-                    args.channel,
-                    agent,
-                    text,
-                    to_agents=reply_recipients,
-                    parent_id=root_id,
-                    correlation_id=correlation_id,
-                    kind="reply",
-                    auto_snapshot=False,
-                    pre_delivered=True,
+            else:
+                directive = (
+                    f"You are participating in a bounded multi-agent discussion "
+                    f"on #{args.channel}. This is round {round_idx} of at most "
+                    f"{max_rounds}. Read the prior-round replies in the history "
+                    f"above (they are posted as replies to the root). Compare "
+                    f"them to your own prior position and decide.\n\n"
+                    f"- Be concise but substantive. Cite file:line when relevant.\n"
+                    f"- Push back on any other agent's claim you disagree with — "
+                    f"name the agent, quote the claim, give the counter-evidence.\n"
+                    f"- End your response with one of:\n"
+                    f"    [AGREE]     — you have read the other agents' prior "
+                    f"replies and you accept the converging position (or yours "
+                    f"is unchanged and the others now match it).\n"
+                    f"    [DISAGREE]  — you still have open substantive objections "
+                    f"after reading the others.\n"
+                    f"- If every agent ends with [AGREE], the discussion "
+                    f"short-circuits and stops before round {max_rounds}."
                 )
-                _channels.mark_message_delivery_delivered(
-                    root_id,
-                    agent,
-                    reply["message_id"],
+
+            # history_tail must be big enough to preserve the root
+            # question across every round. `tail` truncates from the
+            # OLDEST end, so older messages can never push the root out —
+            # we just need the window to span (1 root + all in-discussion
+            # replies). The +10 is headroom for some pre-root channel
+            # context so agents see recent project activity too.
+            needed_history = 1 + len(with_agents) * max_rounds + 10
+            try:
+                prompt_obj = _channels.build_agent_prompt(
+                    args.channel, directive, history_tail=needed_history
                 )
             except ValueError as e:
+                print(f"❌ prompt build failed: {e}", file=sys.stderr)
+                return 1
+            prompt_text = prompt_obj["prompt"]
+            print(
+                f"   prompt {len(prompt_text)} chars "
+                f"(history_tail={needed_history}, "
+                f"dropped {prompt_obj.get('history_dropped', 0)})"
+            )
+
+            # ── parallel fan-out ──────────────────────────────────────
+            # The `with` block calls pool.shutdown(wait=True) on exit. If
+            # the user hits Ctrl+C mid-round we catch KeyboardInterrupt,
+            # cancel all queued futures, and re-raise so the process
+            # exits promptly instead of blocking on in-flight invocations
+            # (which could be hold for up to hard_timeout=900 seconds).
+            responses: dict[str, tuple[str, bool]] = {}
+            pool = ThreadPoolExecutor(max_workers=len(with_agents))
+            try:
+                futures = {
+                    pool.submit(_invoke_one, agent, prompt_text, round_idx): agent
+                    for agent in with_agents
+                }
+                try:
+                    for fut in as_completed(futures):
+                        agent, text, ok = fut.result()
+                        responses[agent] = (text, ok)
+                        status = "✅" if ok else "⚠️ "
+                        preview = text.replace("\n", " ")[:80]
+                        print(f"   {status} {agent}: {preview}")
+                except KeyboardInterrupt:
+                    print(
+                        "\n⚠️  interrupted — cancelling pending agent invocations",
+                        file=sys.stderr,
+                    )
+                    for pending in futures:
+                        pending.cancel()
+                    raise
+            finally:
+                # cancel_futures is Py3.9+. Tasks already running cannot
+                # be cancelled mid-flight, but queued ones will be.
+                pool.shutdown(wait=False, cancel_futures=True)
+
+            # ── post each response as a reply to root ─────────────────
+            # auto_snapshot=False here — the root message captured the
+            # state of the world for the discussion; re-snapshotting on
+            # every reply would mean N*max_rounds redundant Monitor API
+            # fetches + context file reads + extra storage. The reply's
+            # context is implicit from its parent_id anyway.
+            for agent in with_agents:
+                text, ok = responses[agent]
+                reply_recipients = [name for name in with_agents if name != agent]
+                try:
+                    reply = _channels.post(
+                        args.channel,
+                        agent,
+                        text,
+                        to_agents=reply_recipients,
+                        parent_id=root_id,
+                        correlation_id=correlation_id,
+                        kind="reply",
+                        auto_snapshot=False,
+                        pre_delivered=True,
+                    )
+                    _channels.mark_message_delivery_delivered(
+                        root_id,
+                        agent,
+                        reply["message_id"],
+                    )
+                except ValueError as e:
+                    print(
+                        f"⚠️  failed to store {agent} response: {e}",
+                        file=sys.stderr,
+                    )
+
+            # ── convergence check ─────────────────────────────────────
+            # All agents must (1) have succeeded, and (2) end their
+            # response with the literal `[AGREE]` token at the tail.
+            # Strict endswith() — substring match would false-positive on
+            # "I don't [AGREE] with that. [DISAGREE]".
+            #
+            # CRITICAL: round 1 cannot short-circuit, even if every agent
+            # signs [AGREE]. Round 1 is parallel fan-out — no agent has
+            # seen any other agent's reply yet, so [AGREE] in round 1 is
+            # an "I'm done with my own answer" signal, not cross-agent
+            # assent. Forcing round 2 ensures at least one pass where
+            # agents read each other's first takes and can surface
+            # disagreement. Discovered 2026-05-05 in the собака-gender
+            # deliberation in learn-ukrainian: Gemini hallucinated a
+            # claim, Claude and Codex contradicted it, but all three
+            # signed [AGREE] in round 1 and the protocol short-circuited
+            # without any cross-agent comparison. Hallucination would have
+            # shipped to curriculum if the transcript were taken at face
+            # value. Ported from learn-ukrainian commit 872d8376b0.
+            all_ok = all(ok for (_, ok) in responses.values())
+            all_agreed = all_ok and all(
+                text.strip().endswith("[AGREE]") for (text, _) in responses.values()
+            )
+            if all_agreed and round_idx >= 2:
+                print()
+                print(f"✅ converged at round {round_idx} — all agents signed off [AGREE]")
+                break
+            elif all_agreed and round_idx == 1:
+                print()
                 print(
-                    f"⚠️  failed to store {agent} response: {e}",
-                    file=sys.stderr,
+                    "ℹ️  all agents signed [AGREE] in round 1, but round 1 cannot "
+                    "short-circuit (parallel fan-out — agents have not seen each "
+                    "other's replies). Forcing round 2 for cross-agent comparison."
                 )
 
-        # ── convergence check ─────────────────────────────────────
-        # All agents must (1) have succeeded, and (2) end their
-        # response with the literal `[AGREE]` token at the tail.
-        # Strict endswith() — substring match would false-positive on
-        # "I don't [AGREE] with that. [DISAGREE]".
-        #
-        # CRITICAL: round 1 cannot short-circuit, even if every agent
-        # signs [AGREE]. Round 1 is parallel fan-out — no agent has
-        # seen any other agent's reply yet, so [AGREE] in round 1 is
-        # an "I'm done with my own answer" signal, not cross-agent
-        # assent. Forcing round 2 ensures at least one pass where
-        # agents read each other's first takes and can surface
-        # disagreement. Discovered 2026-05-05 in the собака-gender
-        # deliberation in learn-ukrainian: Gemini hallucinated a
-        # claim, Claude and Codex contradicted it, but all three
-        # signed [AGREE] in round 1 and the protocol short-circuited
-        # without any cross-agent comparison. Hallucination would have
-        # shipped to curriculum if the transcript were taken at face
-        # value. Ported from learn-ukrainian commit 872d8376b0.
-        all_ok = all(ok for (_, ok) in responses.values())
-        all_agreed = all_ok and all(
-            text.strip().endswith("[AGREE]") for (text, _) in responses.values()
-        )
-        if all_agreed and round_idx >= 2:
-            print()
-            print(f"✅ converged at round {round_idx} — all agents signed off [AGREE]")
-            break
-        elif all_agreed and round_idx == 1:
-            print()
-            print(
-                "ℹ️  all agents signed [AGREE] in round 1, but round 1 cannot "
-                "short-circuit (parallel fan-out — agents have not seen each "
-                "other's replies). Forcing round 2 for cross-agent comparison."
-            )
-
-        if round_idx == max_rounds:
-            # Tell the caller WHY we stopped so escalation is obvious.
-            # Same strict endswith check as convergence — substring
-            # match would false-positive on "I don't [AGREE] with
-            # that. [DISAGREE]" and report no disagreements.
-            disagreeing = [
-                a
-                for a, (t, _) in responses.items()
-                if not t.strip().endswith("[AGREE]")
-            ]
-            print()
-            print(
-                f"⚠️  hit max_rounds={max_rounds} without convergence. "
-                f"Still disagreeing: {', '.join(disagreeing) or '(none? see errors)'}"
-            )
-            print(
-                "   Escalate to a human or re-open the discussion with a "
-                "tighter brief."
-            )
+            if round_idx == max_rounds:
+                # Tell the caller WHY we stopped so escalation is obvious.
+                # Same strict endswith check as convergence — substring
+                # match would false-positive on "I don't [AGREE] with
+                # that. [DISAGREE]" and report no disagreements.
+                disagreeing = [
+                    a
+                    for a, (t, _) in responses.items()
+                    if not t.strip().endswith("[AGREE]")
+                ]
+                print()
+                print(
+                    f"⚠️  hit max_rounds={max_rounds} without convergence. "
+                    f"Still disagreeing: {', '.join(disagreeing) or '(none? see errors)'}"
+                )
+                print(
+                    "   Escalate to a human or re-open the discussion with a "
+                    "tighter brief."
+                )
+    finally:
+        for temp_mcp_path in mcp_cleanup_paths:
+            try:
+                temp_mcp_path.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     print()
     print(

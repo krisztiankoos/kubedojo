@@ -116,6 +116,20 @@ def test_gemini_adapter_build_invocation_includes_resume(tmp_path):
     assert plan.cmd[1:3] == ["--resume", "resume-session"]
 
 
+def test_gemini_adapter_build_invocation_uses_session_id_for_new_sessions(tmp_path):
+    plan = GeminiAdapter().build_invocation(
+        prompt="hello",
+        mode="workspace-write",
+        cwd=tmp_path,
+        model="gemini-test",
+        task_id="task-1",
+        session_id="new-session-uuid",
+        tool_config={"is_new_session": True},
+    )
+
+    assert plan.cmd[1:3] == ["--session-id", "new-session-uuid"]
+
+
 def test_ask_gemini_cached_unavailable_model_uses_fallback(monkeypatch):
     seen_models: list[str] = []
     _gemini._MODEL_CACHE.clear()
