@@ -5,6 +5,7 @@ import sqlite3
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
@@ -314,6 +315,58 @@ def test_discuss_codex_round1_round2_session_resume(mock_invoke, monkeypatch, tm
     assert (
         _db.get_session("discuss:discuss-codex-0001")["codex_session_id"]
         == "codex-session-02"
+    )
+
+
+@patch("agent_runtime.runner.invoke")
+def test_discuss_codex_round1_persists_session_id_from_stdout_header(mock_invoke, monkeypatch):
+    _channels.create_channel("discuss-codex-header")
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    ids = iter(range(1, 1000))
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        lambda: f"discuss-codex-header-{next(ids):04d}",
+    )
+
+    session_id = "019e192b-2c12-78f2-a97c-c684706891ff"
+    codex_stdout = (
+        "approval: never\n"
+        "sandbox: danger-full-access\n"
+        "reasoning effort: high\n"
+        "reasoning summaries: none\n"
+        f"session id: {session_id}\n"
+        "--------\n"
+        "user\n"
+    )
+
+    def _discuss_result(agent: str, *_, **kwargs) -> SimpleNamespace:
+        return SimpleNamespace(
+            ok=True,
+            agent=agent,
+            model="test-model",
+            mode="danger",
+            response="codex reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id=None,
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+            stdout=codex_stdout,
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    exit_code = _run_cli(
+        ["discuss", "discuss-codex-header", "topic", "--with", "codex", "--max-rounds", "2"]
+    )
+
+    assert exit_code == 0
+    assert (
+        _db.get_session("discuss:discuss-codex-header-0001")["codex_session_id"]
+        == session_id
     )
 
 

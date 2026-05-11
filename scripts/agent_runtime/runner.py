@@ -661,6 +661,7 @@ def invoke(
             response=parse.response,
             stderr_excerpt=push_verify_error or parse.stderr_excerpt,
             duration_s=duration_s,
+            stderr=stderr_text,
             session_id=parse.session_id,
             rate_limited=parse.rate_limited,
             stalled=False,

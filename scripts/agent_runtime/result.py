@@ -88,4 +88,5 @@ class Result:
     rate_limited: bool
     stalled: bool
     returncode: int | None
+    stderr: str | None = None
     usage_record: dict[str, Any] = field(default_factory=dict)
