@@ -10,7 +10,7 @@
 
 | PR | What | Status |
 |---|---|---|
-| #1087 | Resume branch of `CodexAdapter.build_invocation` now passes `-o <output_path>`, `-m <model>`, `--skip-git-repo-check`, `--search`, `--dangerously-bypass-approvals-and-sandbox`, and uses stdin for prompt. Tests added: 18/18 pass with `PYTHONPATH=<repo>/scripts`. | **OPEN — awaiting cross-family review** |
+| #1087 | Resume branch of `CodexAdapter.build_invocation` now passes `-o <output_path>`, `-m <model>`, `--skip-git-repo-check`, `--search`, `--dangerously-bypass-approvals-and-sandbox`, and uses stdin for prompt. Tests added: 18/18 pass with `PYTHONPATH=<repo>/scripts`. | **MERGED `d6118c80`** — cross-family review (headless claude-sonnet, gemini-fallback) returned APPROVE with 2 non-blocking test-coverage nits (`--skip-git-repo-check` presence + `--color never` absence — file as follow-up if you want them). Worktree + branch cleaned up. |
 
 ## The bug and the fix (one-paragraph)
 

@@ -261,10 +261,10 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 
 **Next session — top priorities (2026-05-12 session 2 — codex resume cmd flags):**
 
-- [ ] **PR #1087 cross-family review** — `fix/bridge-codex-resume-output`. Background review dispatch killed by reboot; re-dispatch via `python scripts/dispatch_smart.py review --agent claude --worktree .worktrees/codex-resume-output --mode read-only --timeout 600 --task-id review-pr-1087 - < prompt.md`. After APPROVE, `gh pr merge --squash` (not `--auto`).
+- [x] ~~**PR #1087 cross-family review**~~ — APPROVE from headless claude-sonnet. Merged `d6118c80`. Branch + worktree cleaned up.
 - [ ] **Post-merge smoketest** — verify codex round-2 actually appends to round-1 rollout file (one file, not two). Smoketest in `docs/session-state/2026-05-12-codex-resume-output-flags.md`.
 - [ ] **Memory: flip `reference_session_resume_per_agent.md`** codex column ❌→✅ once smoketest passes.
-- [ ] **Worktree cleanup post-merge:** `git worktree remove .worktrees/codex-resume-output`. `goal-consult` stays (PR #1082). `codex-interactive` stays (pre-existing).
+- [ ] **(Optional follow-up)** Add tests for `--skip-git-repo-check` presence + `--color never` absence on resume cmd (cross-family reviewer's two non-blocking nits).
 - [ ] **Test `/goal` rule (PR #1082)** on a real bounded queue. If status-line convention holds, squash-merge. If it surfaces gotchas, refine before merge.
 - [ ] **Release-notes review item 3:** hook `args: string[]` exec form + `continueOnBlock` for PostToolUse. Check `.claude/settings.json` for hooks that benefit.
 
