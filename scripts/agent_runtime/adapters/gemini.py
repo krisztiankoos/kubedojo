@@ -13,11 +13,8 @@ flag requirements in the codebase:
 - Rate-limit detection: Gemini returns ``RESOURCE_EXHAUSTED``, ``quota
   exceeded``, and occasionally ``No capacity available`` depending on
   backend. Patterns match dispatch.py prior art.
-- No session IDs. Gemini CLI doesn't expose them, so ``parse_response``
-  returns ``session_id=None`` always. Resume policy is ``bridge_only``
-  for cost economics, but session IDs come from the bridge's own SQLite
-  ``sessions`` table and are passed in as ``session_id=...`` — we just
-  ignore it here because the CLI has no ``--resume`` equivalent anyway.
+- Gemini CLI supports ``--resume <id>``. The adapter passes
+  ``session_id`` through when provided; if absent, it starts fresh.
 
 Key differences from CodexAdapter:
 - Output to stdout (no ``-o <file>``); ``output_file`` stays None.
@@ -96,10 +93,8 @@ class GeminiAdapter:
     ) -> InvocationPlan:
         """Build the ``gemini`` CLI invocation.
 
-        Defensively ignores ``session_id``: Gemini CLI has no ``--resume``
-        equivalent. The bridge tracks session IDs in its own SQLite table
-        and uses them for conversation-context injection into the prompt,
-        not for CLI-level resume. We silently drop it here.
+        Uses ``session_id`` as ``--resume <id>`` when provided.
+        Otherwise starts a new Gemini session.
 
         Supports ``tool_config``:
             - ``{"mcp_server_names": ["rag", "other"]}`` → appended as
@@ -108,10 +103,10 @@ class GeminiAdapter:
         """
         gemini_bin = shutil.which("gemini") or "gemini"
 
-        cmd: list[str] = [
-            gemini_bin,
-            "-m", model or self.default_model,
-        ]
+        cmd: list[str] = [gemini_bin]
+        if session_id:
+            cmd.extend(["--resume", session_id])
+        cmd.extend(["-m", model or self.default_model])
 
         # Approval mode: read-only is the default; yolo for write modes.
         # "danger" is treated identically to "workspace-write" because
@@ -185,6 +180,7 @@ class GeminiAdapter:
         recover the work-in-progress up to the last flush.
         """
         _ = output_file  # unused — Gemini doesn't use -o
+        file_session_id: str | None = None
 
         combined = f"{stdout}\n{stderr}"
         hard_limit_hit = bool(_RATE_LIMIT_RE.search(combined))
@@ -231,7 +227,7 @@ class GeminiAdapter:
             # recovery logic — leave the file_response empty.
             file_response = ""
             if plan is not None:
-                file_response = self._read_latest_session_response(
+                file_response, file_session_id = self._read_latest_session_response_with_session_id(
                     plan, call_start_time=call_start_time,
                 )
             if file_response:
@@ -273,7 +269,7 @@ class GeminiAdapter:
             response=response,
             stderr_excerpt=stderr_excerpt,
             rate_limited=rate_limited,
-            session_id=None,  # Gemini CLI doesn't expose session IDs.
+            session_id=file_session_id,
             tokens=None,      # Nor tokens.
         )
 
@@ -287,6 +283,17 @@ class GeminiAdapter:
         *,
         call_start_time: float | None = None,
     ) -> str:
+        return self._read_latest_session_response_with_session_id(
+            plan,
+            call_start_time=call_start_time,
+        )[0]
+
+    def _read_latest_session_response_with_session_id(
+        self,
+        plan: InvocationPlan,
+        *,
+        call_start_time: float | None = None,
+    ) -> tuple[str, str | None]:
         """Extract the assistant's response from the newest Gemini session file.
 
         Gemini CLI writes a file at ``~/.gemini/tmp/<cwd-basename>/chats/
@@ -321,9 +328,10 @@ class GeminiAdapter:
         import time as _time
 
         try:
+            session_id: str | None = None
             chats_dir = Path.home() / ".gemini" / "tmp" / plan.cwd.name / "chats"
             if not chats_dir.exists():
-                return ""
+                return "", None
 
             candidates = sorted(
                 chats_dir.glob("session-*.json"),
@@ -331,7 +339,7 @@ class GeminiAdapter:
                 reverse=True,
             )
             if not candidates:
-                return ""
+                return "", None
 
             # Pick the newest file whose mtime is after the call start.
             # If call_start_time is unknown, trust the newest file.
@@ -352,12 +360,17 @@ class GeminiAdapter:
                         break
 
             if newest is None:
-                return ""
+                return "", None
 
             data = _json.loads(newest.read_text("utf-8"))
+            session_id = (
+                data.get("sessionId")
+                if isinstance(data.get("sessionId"), str)
+                else None
+            )
             messages = data.get("messages", [])
             if not isinstance(messages, list):
-                return ""
+                return "", session_id
 
             # Concatenate every gemini message's text content. Skip user
             # messages, skip info/system messages, skip tool-call
@@ -381,9 +394,9 @@ class GeminiAdapter:
                             if isinstance(text, str) and text.strip():
                                 parts.append(text)
 
-            return "\n\n".join(parts).strip()
+            return "\n\n".join(parts).strip(), session_id
         except Exception:
-            return ""
+            return "", None
 
     def liveness_signal_paths(self, plan: InvocationPlan) -> tuple[Path, ...]:
         """Return filesystem paths the watchdog should poll for mtime bumps.

@@ -52,7 +52,7 @@ AGENTS: dict[str, AgentEntry] = {
             "adversarial_review",
         }),
         "cli_available": True,
-        "resume_policy": "never",
+        "resume_policy": "bridge_only",
     },
     "claude": {
         "adapter": "scripts.agent_runtime.adapters.claude:ClaudeAdapter",

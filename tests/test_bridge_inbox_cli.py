@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import sqlite3
 import sys
 from datetime import UTC, datetime, timedelta
@@ -271,7 +272,7 @@ def test_discuss_claude_round1_round2_session_resume(mock_invoke, monkeypatch, c
 
 
 @patch("agent_runtime.runner.invoke")
-def test_discuss_cannot_resume_codex_even_with_stale_row(mock_invoke, monkeypatch):
+def test_discuss_codex_round1_round2_session_resume(mock_invoke, monkeypatch, tmp_path):
     _channels.create_channel("discuss-codex")
     monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
     ids = iter(range(1, 1000))
@@ -280,7 +281,6 @@ def test_discuss_cannot_resume_codex_even_with_stale_row(mock_invoke, monkeypatc
         "_new_id",
         lambda: f"discuss-codex-{next(ids):04d}",
     )
-    _db.set_session("discuss:discuss-codex-0001", codex_session_id="codex-uuid")
 
     def _discuss_result(agent: str, *_, **kwargs) -> Result:
         return Result(
@@ -291,7 +291,7 @@ def test_discuss_cannot_resume_codex_even_with_stale_row(mock_invoke, monkeypatc
             response="codex reply [AGREE]",
             stderr_excerpt=None,
             duration_s=0.1,
-            session_id=None,
+            session_id="codex-session-02",
             rate_limited=False,
             stalled=False,
             returncode=0,
@@ -305,15 +305,400 @@ def test_discuss_cannot_resume_codex_even_with_stale_row(mock_invoke, monkeypatc
     )
 
     assert exit_code == 0
-    assert all(call.kwargs["session_id"] is None for call in mock_invoke.call_args_list)
+    assert [call.kwargs["session_id"] for call in mock_invoke.call_args_list] == [
+        None,
+        "codex-session-02",
+    ]
+    assert (
+        _db.get_session("discuss:discuss-codex-0001")["codex_session_id"]
+        == "codex-session-02"
+    )
+
+
+@patch("agent_runtime.runner.invoke")
+def test_discuss_gemini_round1_round2_session_resume(mock_invoke, monkeypatch):
+    _channels.create_channel("discuss-gemini")
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    ids = iter(range(1, 1000))
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        lambda: f"discuss-gemini-{next(ids):04d}",
+    )
+
+    seen_session_ids: list[str | None] = []
+
+    def _discuss_result(agent: str, *_, **kwargs) -> Result:
+        seen_session_ids.append(kwargs.get("session_id"))
+        session_id = f"gemini-session-{len(seen_session_ids):02d}"
+        return Result(
+            ok=True,
+            agent=agent,
+            model="test-model",
+            mode="read-only",
+            response="gemini reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id=session_id,
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    exit_code = _run_cli(
+        ["discuss", "discuss-gemini", "topic", "--with", "gemini", "--max-rounds", "2"]
+    )
+
+    assert exit_code == 0
+    assert seen_session_ids == [None, "gemini-session-01"]
+    assert (
+        _db.get_session("discuss:discuss-gemini-0001")["gemini_session_id"]
+        == "gemini-session-02"
+    )
+
+
+@pytest.mark.parametrize("agent,mode,session_key", [
+    ("codex", "danger", "codex"),
+    ("gemini", "read-only", "gemini"),
+])
+@patch("agent_runtime.runner.invoke")
+def test_discuss_agent_stored_resume_uses_saved_cwd_and_sandbox(
+    mock_invoke,
+    monkeypatch,
+    tmp_path,
+    agent: str,
+    mode: str,
+    session_key: str,
+):
+    channel = f"discuss-{agent}-reuse"
+    _channels.create_channel(channel)
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    thread_id = f"{channel}-root"
+    ids = itertools.count(1)
+
+    def _new_id() -> str:
+        idx = next(ids)
+        return thread_id if idx == 1 else f"{thread_id}-{idx:03d}"
+
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        _new_id,
+    )
+
+    def _discuss_result(agent_name: str, *_, **kwargs) -> Result:
+        return Result(
+            ok=True,
+            agent=agent_name,
+            model="test-model",
+            mode=mode,
+            response=f"{agent_name} reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id=f"{agent}-session-2",
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    task_key = f"discuss:{thread_id}"
+    if agent == "codex":
+        _db.set_session(
+            task_key,
+            codex_session_id="codex-stored",
+            codex_cwd=str(tmp_path),
+            codex_sandbox_mode=mode,
+        )
+    else:
+        _db.set_session(
+            task_key,
+            gemini_session_id="gemini-stored",
+            gemini_cwd=str(tmp_path),
+            gemini_sandbox_mode=mode,
+        )
+
+    exit_code = _run_cli(
+        ["discuss", channel, "topic", "--with", agent, "--max-rounds", "2"]
+    )
+
+    assert exit_code == 0
+    assert [call.kwargs["session_id"] for call in mock_invoke.call_args_list] == [
+        f"{session_key}-stored",
+        f"{session_key}-session-2",
+    ]
+    assert mock_invoke.call_args_list[1].kwargs["cwd"] == tmp_path
+    assert [call.kwargs["mode"] for call in mock_invoke.call_args_list] == [
+        "danger" if agent == "codex" else "read-only",
+        mode,
+    ]
+
+
+@pytest.mark.parametrize("agent,mode,session_key", [
+    ("codex", "danger", "codex"),
+    ("gemini", "read-only", "gemini"),
+])
+@patch("agent_runtime.runner.invoke")
+def test_discuss_agent_stored_cwd_missing_starts_fresh(
+    mock_invoke,
+    monkeypatch,
+    tmp_path,
+    capsys,
+    agent: str,
+    mode: str,
+    session_key: str,
+):
+    channel = f"discuss-{agent}-missing-cwd"
+    _channels.create_channel(channel)
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    thread_id = f"{channel}-root"
+    ids = itertools.count(1)
+
+    def _new_id() -> str:
+        idx = next(ids)
+        return thread_id if idx == 1 else f"{thread_id}-{idx:03d}"
+
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        _new_id,
+    )
+
+    def _discuss_result(agent_name: str, *_, **kwargs) -> Result:
+        return Result(
+            ok=True,
+            agent=agent_name,
+            model="test-model",
+            mode=mode,
+            response=f"{agent_name} reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id=f"{agent}-session-2",
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    task_key = f"discuss:{thread_id}"
+    missing = tmp_path / "missing-worktree"
+    if agent == "codex":
+        _db.set_session(
+            task_key,
+            codex_session_id=f"{agent}-stored",
+            codex_cwd=str(missing),
+            codex_sandbox_mode=mode,
+        )
+    else:
+        _db.set_session(
+            task_key,
+            gemini_session_id=f"{agent}-stored",
+            gemini_cwd=str(missing),
+            gemini_sandbox_mode=mode,
+        )
+
+    exit_code = _run_cli(
+        ["discuss", channel, "topic", "--with", agent, "--max-rounds", "2"]
+    )
+
+    assert exit_code == 0
+    assert [call.kwargs["session_id"] for call in mock_invoke.call_args_list] == [
+        None,
+        f"{session_key}-session-2",
+    ]
+    assert (
+        f"bridge: stored cwd {missing} for {agent}/{task_key} "
+        "no longer exists; starting fresh" in capsys.readouterr().out
+    )
+    assert (
+        _db.get_session(task_key)[f"{session_key}_session_id"] == f"{agent}-session-2"
+    )
+
+
+@pytest.mark.parametrize("agent,mode,session_key", [
+    ("codex", "danger", "codex"),
+    ("gemini", "read-only", "gemini"),
+])
+@patch("agent_runtime.runner.invoke")
+def test_discuss_agent_missing_stored_cwd_starts_fresh(
+    mock_invoke,
+    monkeypatch,
+    capsys,
+    agent: str,
+    mode: str,
+    session_key: str,
+):
+    channel = f"discuss-{agent}-null-cwd"
+    _channels.create_channel(channel)
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    thread_id = f"{channel}-root"
+    ids = itertools.count(1)
+
+    def _new_id() -> str:
+        idx = next(ids)
+        return thread_id if idx == 1 else f"{thread_id}-{idx:03d}"
+
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        _new_id,
+    )
+
+    def _discuss_result(agent_name: str, *_, **kwargs) -> Result:
+        return Result(
+            ok=True,
+            agent=agent_name,
+            model="test-model",
+            mode=mode,
+            response=f"{agent_name} reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id=f"{agent}-session-2",
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    task_key = f"discuss:{thread_id}"
+    if agent == "codex":
+        _db.set_session(task_key, codex_session_id=f"{agent}-stored")
+    else:
+        _db.set_session(task_key, gemini_session_id=f"{agent}-stored")
+
+    exit_code = _run_cli(
+        ["discuss", channel, "topic", "--with", agent, "--max-rounds", "2"]
+    )
+
+    assert exit_code == 0
+    assert [call.kwargs["session_id"] for call in mock_invoke.call_args_list] == [
+        None,
+        f"{session_key}-session-2",
+    ]
+    assert (
+        f"bridge: stored session for {agent}/{task_key} has no cwd; starting fresh"
+        in capsys.readouterr().out
+    )
+    assert (
+        _db.get_session(task_key)[f"{session_key}_session_id"] == f"{agent}-session-2"
+    )
+
+
+@pytest.mark.parametrize("agent,mode,session_key", [
+    ("codex", "danger", "codex"),
+    ("gemini", "read-only", "gemini"),
+])
+@patch("agent_runtime.runner.invoke")
+def test_discuss_agent_resume_error_falls_back_to_fresh(
+    mock_invoke,
+    monkeypatch,
+    tmp_path,
+    capsys,
+    agent: str,
+    mode: str,
+    session_key: str,
+):
+    channel = f"discuss-{agent}-resume-error"
+    _channels.create_channel(channel)
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+    thread_id = f"{channel}-root"
+    ids = itertools.count(1)
+
+    def _new_id() -> str:
+        idx = next(ids)
+        return thread_id if idx == 1 else f"{thread_id}-{idx:03d}"
+
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        _new_id,
+    )
+
+    attempts: list[str | None] = []
+
+    def _discuss_result(agent_name: str, *_, **kwargs) -> Result:
+        attempts.append(kwargs.get("session_id"))
+        if kwargs.get("session_id") == f"{agent}-stored":
+            raise RuntimeError("stored session invalid")
+        return Result(
+            ok=True,
+            agent=agent_name,
+            model="test-model",
+            mode=mode,
+            response=f"{agent_name} reply [AGREE]",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id=f"{agent}-session-2",
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    task_key = f"discuss:{thread_id}"
+    if agent == "codex":
+        _db.set_session(
+            task_key,
+            codex_session_id=f"{agent}-stored",
+            codex_cwd=str(tmp_path),
+            codex_sandbox_mode=mode,
+        )
+    else:
+        _db.set_session(
+            task_key,
+            gemini_session_id=f"{agent}-stored",
+            gemini_cwd=str(tmp_path),
+            gemini_sandbox_mode=mode,
+        )
+
+    exit_code = _run_cli(
+        ["discuss", channel, "topic", "--with", agent, "--max-rounds", "2"]
+    )
+
+    assert exit_code == 0
+    assert attempts == [f"{agent}-stored", None, f"{agent}-session-2"]
+    assert mock_invoke.call_count == 3
+    captured = capsys.readouterr()
+    assert (
+        f"bridge: stored session {agent}-stored for {agent}/{task_key} "
+        "failed: [error: RuntimeError: stored session invalid]; starting fresh"
+        in captured.out
+    )
+    assert (
+        _db.get_session(task_key)[f"{session_key}_session_id"] == f"{agent}-session-2"
+    )
 
 
 @patch("agent_runtime.runner.invoke")
 def test_discuss_resume_rejects_missing_session(mock_invoke, monkeypatch, capsys):
     _channels.create_channel("resume-missing")
     monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
-    ids = iter(["pre-tier2-thread", "pre-tier2-reply"])
-    monkeypatch.setattr(_channels, "_new_id", lambda: next(ids))
+    ids = iter(range(1, 1000))
+    first = True
+
+    def _new_id() -> str:
+        nonlocal first
+        if first:
+            first = False
+            return "pre-tier2-thread"
+        return f"pre-tier2-{next(ids):04d}"
+
+    monkeypatch.setattr(
+        _channels,
+        "_new_id",
+        _new_id,
+    )
     _channels.post(
         "resume-missing",
         "user",
@@ -345,11 +730,20 @@ def test_discuss_resume_rejects_missing_session(mock_invoke, monkeypatch, capsys
 def test_discuss_resume_rejects_codex_only_session(mock_invoke, monkeypatch, capsys):
     _channels.create_channel("resume-codex-only")
     monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
-    ids = iter(["codex-only-thread", "codex-only-thread-reply"])
+    ids = iter(range(1, 1000))
+    first = True
+
+    def _new_id() -> str:
+        nonlocal first
+        if first:
+            first = False
+            return "codex-only-thread"
+        return f"codex-only-{next(ids):04d}"
+
     monkeypatch.setattr(
         _channels,
         "_new_id",
-        lambda: next(ids),
+        _new_id,
     )
     _channels.post(
         "resume-codex-only",
@@ -381,7 +775,12 @@ def test_discuss_resume_rejects_codex_only_session(mock_invoke, monkeypatch, cap
 
 
 @patch("agent_runtime.runner.invoke")
-def test_discuss_resume_reuses_thread_and_trace(mock_invoke, monkeypatch, capsys):
+def test_discuss_resume_reuses_thread_and_trace(
+    mock_invoke,
+    monkeypatch,
+    tmp_path,
+    capsys,
+):
     _channels.create_channel("resume-threaded")
     monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
     ids = iter(
@@ -407,6 +806,13 @@ def test_discuss_resume_reuses_thread_and_trace(mock_invoke, monkeypatch, capsys
         auto_snapshot=False,
     )
     _db.set_session("discuss:resumable-thread", claude_session_id="claude-uuid")
+    # Newer resume behavior requires cwd + sandbox metadata to resume.
+    # Seed it explicitly so this case validates true session restore.
+    _db.set_session(
+        "discuss:resumable-thread",
+        claude_cwd=str(tmp_path),
+        claude_sandbox_mode="read-only",
+    )
 
     seen_session_ids: list[str | None] = []
 
@@ -557,3 +963,57 @@ def test_backlog_banner_does_not_trigger_for_fresh_pending_delivery(monkeypatch,
     assert exit_code == 0
     captured = capsys.readouterr()
     assert captured.err == ""
+
+
+def test_get_db_adds_cwd_and_sandbox_columns_to_legacy_sessions(tmp_path: Path) -> None:
+    db_file = tmp_path / "legacy-messages.db"
+    created_at = datetime.now(UTC).isoformat()
+
+    conn = sqlite3.connect(db_file)
+    conn.execute(
+        """
+        CREATE TABLE sessions (
+            task_id TEXT PRIMARY KEY,
+            claude_session_id TEXT,
+            gemini_session_id TEXT,
+            codex_session_id TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.execute(
+        """
+        INSERT INTO sessions
+            (task_id, claude_session_id, gemini_session_id, codex_session_id, created_at, updated_at)
+        VALUES
+            ('legacy-task', 'legacy-claude', 'legacy-gemini', 'legacy-codex', ?, ?)
+        """,
+        (created_at, created_at),
+    )
+    conn.commit()
+    conn.close()
+
+    with patch("ai_agent_bridge._config.DB_PATH", db_file), patch("ai_agent_bridge._db.DB_PATH", db_file):
+        migrated = _db.get_db()
+        try:
+            columns = [
+                row[1]
+                for row in migrated.execute("PRAGMA table_info(sessions)").fetchall()
+            ]
+            assert "claude_cwd" in columns
+            assert "claude_sandbox_mode" in columns
+            assert "gemini_cwd" in columns
+            assert "gemini_sandbox_mode" in columns
+            assert "codex_cwd" in columns
+            assert "codex_sandbox_mode" in columns
+
+            row = _db.get_session("legacy-task")
+            assert row["claude_session_id"] == "legacy-claude"
+            assert row["gemini_session_id"] == "legacy-gemini"
+            assert row["codex_session_id"] == "legacy-codex"
+            assert row["claude_cwd"] is None
+            assert row["gemini_cwd"] is None
+            assert row["codex_cwd"] is None
+        finally:
+            migrated.close()

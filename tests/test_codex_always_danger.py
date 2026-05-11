@@ -116,7 +116,10 @@ def _capture_cmd(dispatch_fn, *args, **kwargs) -> list[str]:
     return captured_cmd
 
 
-def _codex_invocation_cmd(search_env: str | None) -> list[str]:
+def _codex_invocation_cmd(
+    search_env: str | None,
+    session_id: str | None = None,
+) -> list[str]:
     import os
 
     adapter_module = _load_codex_adapter()
@@ -134,7 +137,7 @@ def _codex_invocation_cmd(search_env: str | None) -> list[str]:
             cwd=REPO_ROOT,
             model=None,
             task_id=None,
-            session_id=None,
+            session_id=session_id,
             tool_config=None,
         ).cmd
     finally:
@@ -222,6 +225,12 @@ def test_codex_adapter_respects_search_env_on():
     assert "--search" in _codex_invocation_cmd("1"), (
         f"Expected --search when KUBEDOJO_CODEX_SEARCH=1: {_codex_invocation_cmd('1')}"
     )
+
+
+def test_codex_adapter_uses_resume_action():
+    cmd = _codex_invocation_cmd(None, session_id="stored-codex-session")
+    assert cmd[1] == "resume"
+    assert cmd[2] == "stored-codex-session"
 
 
 def test_dispatch_smart_codex_sets_search_for_draft():

@@ -81,7 +81,10 @@ def test_discuss_routes_cold_warm_and_fresh_session_modes(
         None,
         "claude-session",
     ]
-    assert all(call.kwargs["session_id"] is None for call in codex_calls)
+    assert [call.kwargs["session_id"] for call in codex_calls] == [
+        None,
+        "codex-session",
+    ]
     assert all(call.kwargs["mode"] == "danger" for call in codex_calls)
     assert (
         _db.get_session("discuss:session-mode-0001")["claude_session_id"]

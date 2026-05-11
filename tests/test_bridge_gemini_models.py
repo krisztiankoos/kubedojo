@@ -102,6 +102,20 @@ def test_resolve_gemini_model_does_not_check_async_or_fallback(monkeypatch):
     )
 
 
+def test_gemini_adapter_build_invocation_includes_resume(tmp_path):
+    plan = GeminiAdapter().build_invocation(
+        prompt="hello",
+        mode="workspace-write",
+        cwd=tmp_path,
+        model="gemini-test",
+        task_id="task-1",
+        session_id="resume-session",
+        tool_config=None,
+    )
+
+    assert plan.cmd[1:3] == ["--resume", "resume-session"]
+
+
 def test_ask_gemini_cached_unavailable_model_uses_fallback(monkeypatch):
     seen_models: list[str] = []
     _gemini._MODEL_CACHE.clear()

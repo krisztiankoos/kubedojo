@@ -41,11 +41,14 @@ import subprocess
 import sys
 import time
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from . import _channels
 from ._channels_watch import watch_channel_events
 from ._config import REPO_ROOT
+
+from agent_runtime.result import Result
 
 # ── argparse registration ────────────────────────────────────────────
 
@@ -282,8 +285,7 @@ def register_channel_commands(subparsers: Any) -> None:
         default=None,
         help=(
             "Attach this discussion to an existing thread instead of starting a new one. "
-            "Reuses persisted session_id rows from the sessions table; rejects threads with "
-            "no resumable session (codex-only or pre-Tier-2 threads have no trace)."
+            "Reuses persisted row-level session state from the sessions table if available."
         ),
     )
 
@@ -972,19 +974,6 @@ def _handle_discuss(args) -> int:
             )
             return 1
         task_key = f"discuss:{args.resume_thread}"
-        stored = _get_session(task_key)
-        has_trace = stored and (
-            stored.get("claude_session_id") or stored.get("gemini_session_id")
-        )
-        if not has_trace:
-            print(
-                f"❌ thread {args.resume_thread} has no resumable session — only "
-                f"claude/gemini traces qualify (codex resume_policy='never'), "
-                f"and pre-Tier-2 threads have no stored session",
-                file=sys.stderr,
-            )
-            return 1
-
         correlation_id = args.resume_thread
         thread_messages = _channels.read(args.channel, thread_id=correlation_id)
 
@@ -1033,6 +1022,27 @@ def _handle_discuss(args) -> int:
         print(f"   root message: {root_id[:12]} / thread {correlation_id[:12]}")
         print()
 
+    session_field_map = {
+        "claude": ("claude_session_id", "claude_cwd", "claude_sandbox_mode"),
+        "gemini": ("gemini_session_id", "gemini_cwd", "gemini_sandbox_mode"),
+        "codex": ("codex_session_id", "codex_cwd", "codex_sandbox_mode"),
+    }
+    resume_thread_session: dict[str, str | None] = {}
+    if args.resume_thread:
+        resume_thread_session = _get_session(task_key)
+        missing_resumable: list[str] = []
+        for agent_name in with_agents:
+            session_field = session_field_map[agent_name][0]
+            if not resume_thread_session.get(session_field):
+                missing_resumable.append(agent_name)
+
+        if missing_resumable:
+            print(
+                f"❌ no resumable session for {', '.join(missing_resumable)}",
+                file=sys.stderr,
+            )
+            return 1
+
     gemini_use_subscription_auth = os.environ.get("KUBEDOJO_GEMINI_SUBSCRIPTION") == "1"
 
     def _invoke_one(
@@ -1047,52 +1057,117 @@ def _handle_discuss(args) -> int:
         """
         nonlocal gemini_use_subscription_auth
 
-        # Codex.supported_modes drops read-only (PR #981 — codex always
-        # runs in danger mode; read-only starves codex of network/spawn
-        # and produces garbage). Other agents stay read-only because they
-        # only generate text + post back via the bridge — no fs/network
-        # writes needed. Codex's cwd anchors at REPO_ROOT (danger mode
-        # requires cwd; the discussion participant doesn't actually write
-        # files, so any in-repo path satisfies the runner's invariant).
-        agent_mode = "danger" if agent_name == "codex" else "read-only"
-        agent_cwd = REPO_ROOT if agent_mode == "danger" else None
+        default_agent_mode = "danger" if agent_name == "codex" else "read-only"
+        default_agent_cwd = REPO_ROOT
         stored_session = _get_session(task_key)
-        if agent_name == "claude":
-            session_id = stored_session.get("claude_session_id")
-        elif agent_name == "gemini":
-            session_id = stored_session.get("gemini_session_id")
-        else:
-            # Codex is intentionally never resumable under registry policy;
-            # never read stale codex rows even if present.
-            session_id = None
+        session_field, cwd_field, sandbox_field = session_field_map[agent_name]
 
-        def _invoke_runtime(*, use_subscription_auth: bool = False):
+        resumed_session = stored_session.get(session_field)
+        resumed_cwd = stored_session.get(cwd_field)
+        resumed_mode = stored_session.get(sandbox_field)
+
+        agent_mode = default_agent_mode
+        agent_cwd = default_agent_cwd
+        should_resume = False
+
+        if resumed_session is not None:
+            should_resume = True
+            if resumed_cwd is None:
+                print(
+                    f"bridge: stored session for {agent_name}/{task_key} has no cwd; "
+                    "starting fresh"
+                )
+                should_resume = False
+                resumed_session = None
+            else:
+                resumed_path = Path(resumed_cwd)
+                if not resumed_path.exists():
+                    print(
+                        f"bridge: stored cwd {resumed_path} for {agent_name}/{task_key} "
+                        "no longer exists; starting fresh"
+                    )
+                    should_resume = False
+                    resumed_session = None
+                else:
+                    agent_mode = resumed_mode or default_agent_mode
+                    agent_cwd = resumed_path
+
+        def _invoke_runtime(
+            *, use_subscription_auth: bool = False, session_id: str | None, mode: str, cwd: Path
+        ) -> tuple[Result | None, str | None]:
+            """Run one agent invocation.
+
+            Returns ``(result, None)`` on completion, or ``(None, reason)``
+            on failure.
+            """
             tool_config = None
             skip_headroom_check = False
             if agent_name == "gemini" and use_subscription_auth:
                 tool_config = {"use_subscription_auth": True}
                 skip_headroom_check = True
-            return runtime_invoke(
-                agent_name,
-                prompt_text,
-                mode=agent_mode,
-                cwd=agent_cwd,
-                task_id=f"discuss-{correlation_id[:8]}-r{round_idx}-{agent_name}",
-                session_id=session_id,
-                tool_config=tool_config,
-                entrypoint="bridge",
-                hard_timeout=900,
-                skip_headroom_check=skip_headroom_check,
-            )
+            try:
+                result = runtime_invoke(
+                    agent_name,
+                    prompt_text,
+                    mode=mode,
+                    cwd=cwd,
+                    task_id=f"discuss-{correlation_id[:8]}-r{round_idx}-{agent_name}",
+                    session_id=session_id,
+                    tool_config=tool_config,
+                    entrypoint="bridge",
+                    hard_timeout=900,
+                    skip_headroom_check=skip_headroom_check,
+                )
+            except RateLimitedError as exc:
+                if (
+                    agent_name == "gemini"
+                    and _should_switch_after_rate_limit_exception(
+                        gemini_use_subscription_auth,
+                    )
+                ):
+                    gemini_use_subscription_auth = True
+                    print(
+                        "   🔁 gemini API-key quota exhausted — retrying via OAuth/subscription.",
+                        flush=True,
+                    )
+                    try:
+                        result = runtime_invoke(
+                            agent_name,
+                            prompt_text,
+                            mode=mode,
+                            cwd=cwd,
+                            task_id=f"discuss-{correlation_id[:8]}-r{round_idx}-{agent_name}",
+                            session_id=session_id,
+                            tool_config={"use_subscription_auth": True},
+                            entrypoint="bridge",
+                            hard_timeout=900,
+                            skip_headroom_check=True,
+                        )
+                    except RateLimitedError as retry_exc:
+                        return None, f"[rate-limited: {retry_exc}]"
+                    except (AgentStalledError, AgentTimeoutError) as retry_exc:
+                        return None, f"[timeout: {retry_exc}]"
+                    except AgentUnavailableError as retry_exc:
+                        return None, f"[unavailable: {retry_exc}]"
+                    except Exception as retry_exc:
+                        return None, f"[error: {type(retry_exc).__name__}: {retry_exc}]"
+                else:
+                    return None, f"[rate-limited: {exc}]"
+            except (AgentStalledError, AgentTimeoutError) as exc:
+                return None, f"[timeout: {exc}]"
+            except AgentUnavailableError as exc:
+                return None, f"[unavailable: {exc}]"
+            except Exception as exc:  # defensive — never let one agent's
+                # crash take down the whole discussion. KeyboardInterrupt
+                # is BaseException, not Exception, so Ctrl+C still bubbles
+                # up to the pool-shutdown branch in the main loop.
+                return None, f"[error: {type(exc).__name__}: {exc}]"
 
-        try:
-            result = _invoke_runtime(
-                use_subscription_auth=gemini_use_subscription_auth,
-            )
-        except RateLimitedError as exc:
             if (
                 agent_name == "gemini"
-                and _should_switch_after_rate_limit_exception(
+                and not result.ok
+                and _should_switch_to_subscription(
+                    result.stderr_excerpt or "",
                     gemini_use_subscription_auth,
                 )
             ):
@@ -1102,59 +1177,61 @@ def _handle_discuss(args) -> int:
                     flush=True,
                 )
                 try:
-                    result = _invoke_runtime(use_subscription_auth=True)
-                except RateLimitedError as retry_exc:
-                    return (agent_name, f"[rate-limited: {retry_exc}]", False)
-                except (AgentStalledError, AgentTimeoutError) as retry_exc:
-                    return (agent_name, f"[timeout: {retry_exc}]", False)
-                except AgentUnavailableError as retry_exc:
-                    return (agent_name, f"[unavailable: {retry_exc}]", False)
-                except Exception as retry_exc:
-                    return (
+                    result = runtime_invoke(
                         agent_name,
-                        f"[error: {type(retry_exc).__name__}: {retry_exc}]",
-                        False,
+                        prompt_text,
+                        mode=mode,
+                        cwd=cwd,
+                        task_id=f"discuss-{correlation_id[:8]}-r{round_idx}-{agent_name}",
+                        session_id=session_id,
+                        tool_config={"use_subscription_auth": True},
+                        entrypoint="bridge",
+                        hard_timeout=900,
+                        skip_headroom_check=True,
                     )
-            else:
-                return (agent_name, f"[rate-limited: {exc}]", False)
-        except (AgentStalledError, AgentTimeoutError) as exc:
-            return (agent_name, f"[timeout: {exc}]", False)
-        except AgentUnavailableError as exc:
-            return (agent_name, f"[unavailable: {exc}]", False)
-        except Exception as exc:  # defensive — never let one agent's
-            # crash take down the whole discussion. KeyboardInterrupt
-            # is BaseException, not Exception, so Ctrl+C still bubbles
-            # up to the pool-shutdown branch in the main loop.
-            return (agent_name, f"[error: {type(exc).__name__}: {exc}]", False)
+                except RateLimitedError as exc:
+                    return None, f"[rate-limited: {exc}]"
+                except (AgentStalledError, AgentTimeoutError) as exc:
+                    return None, f"[timeout: {exc}]"
+                except AgentUnavailableError as exc:
+                    return None, f"[unavailable: {exc}]"
+                except Exception as exc:
+                    return None, f"[error: {type(exc).__name__}: {exc}]"
 
-        if (
-            agent_name == "gemini"
-            and not result.ok
-            and _should_switch_to_subscription(
-                result.stderr_excerpt or "",
-                gemini_use_subscription_auth,
-            )
-        ):
-            gemini_use_subscription_auth = True
+            if not result.ok:
+                return result, result.stderr_excerpt or "no response"
+
+            return result, None
+
+        resumed = should_resume
+        attempt_session = resumed_session
+        attempt_mode = agent_mode
+        attempt_cwd = agent_cwd
+
+        result, err = _invoke_runtime(
+            use_subscription_auth=gemini_use_subscription_auth,
+            session_id=attempt_session,
+            mode=attempt_mode,
+            cwd=attempt_cwd,
+        )
+
+        if resumed and err is not None:
             print(
-                "   🔁 gemini API-key quota exhausted — retrying via OAuth/subscription.",
-                flush=True,
+                f"bridge: stored session {attempt_session} for {agent_name}/{task_key} "
+                f"failed: {err}; starting fresh"
             )
-            try:
-                result = _invoke_runtime(use_subscription_auth=True)
-            except RateLimitedError as exc:
-                return (agent_name, f"[rate-limited: {exc}]", False)
-            except (AgentStalledError, AgentTimeoutError) as exc:
-                return (agent_name, f"[timeout: {exc}]", False)
-            except AgentUnavailableError as exc:
-                return (agent_name, f"[unavailable: {exc}]", False)
-            except Exception as exc:
-                return (
-                    agent_name,
-                    f"[error: {type(exc).__name__}: {exc}]",
-                    False,
-                )
+            attempt_session = None
+            attempt_mode = default_agent_mode
+            attempt_cwd = default_agent_cwd
+            result, err = _invoke_runtime(
+                use_subscription_auth=gemini_use_subscription_auth,
+                session_id=None,
+                mode=attempt_mode,
+                cwd=attempt_cwd,
+            )
 
+        if err is not None:
+            return (agent_name, f"[failed: {err}]", False)
         if not result.ok:
             return (
                 agent_name,
@@ -1162,8 +1239,31 @@ def _handle_discuss(args) -> int:
                 False,
             )
 
-        if result.ok and result.session_id and agent_name == "claude":
-            _set_session(task_key, claude_session_id=result.session_id)
+        if result is not None:
+            if agent_name == "claude":
+                _set_session(
+                    task_key,
+                    agent=agent_name,
+                    session_id=result.session_id,
+                    claude_cwd=str(attempt_cwd),
+                    claude_sandbox_mode=attempt_mode,
+                )
+            elif agent_name == "gemini":
+                _set_session(
+                    task_key,
+                    agent=agent_name,
+                    session_id=result.session_id,
+                    gemini_cwd=str(attempt_cwd),
+                    gemini_sandbox_mode=attempt_mode,
+                )
+            else:
+                _set_session(
+                    task_key,
+                    agent=agent_name,
+                    session_id=result.session_id,
+                    codex_cwd=str(attempt_cwd),
+                    codex_sandbox_mode=attempt_mode,
+                )
 
         return (agent_name, result.response.strip(), True)
 

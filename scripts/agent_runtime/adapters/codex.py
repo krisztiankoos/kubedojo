@@ -7,10 +7,9 @@ routed through the unified runtime.
 
 Key design points:
 
-- **Fresh session always.** CodexAdapter has ``resume_policy="never"`` in
-  the registry AND defensively ignores ``session_id`` even if passed.
-  Belt + suspenders against the cross-worktree contamination footgun that
-  Codex flagged in his own consultation (msg #28506).
+- **CLI resume support.** CodexAdapter follows the registry resume
+  policy and accepts ``session_id`` for bridge sessions by invoking
+  ``codex resume <id>`` when provided.
 - **One mode: danger only.** read-only and workspace-write are forbidden —
   Codex needs network + filesystem to fact-check and to use the live web
   tool. See PR #981 (mode=danger mandatory) and this PR (workspace-write
@@ -20,8 +19,8 @@ Key design points:
   goes into ``liveness_signal_paths`` so the runner's mtime poller catches
   Codex writing progress even when stdout is quiet.
 - **Session ID parsed from stdout.** The CLI prints "session id: <uuid>"
-  somewhere in stdout; we extract it for the usage record even though
-  we never resume it.
+  somewhere in stdout; we extract it for the usage record and may reuse it
+  for subsequent bridge rounds.
 
 Issue: #1184
 """
@@ -131,16 +130,12 @@ class CodexAdapter:
     ) -> InvocationPlan:
         """Build the codex exec invocation.
 
-        Defensively ignores ``session_id`` regardless of value — Codex
-        is always fresh-session (registry resume_policy="never").
+        Uses ``session_id`` as ``codex resume <id>`` when present.
         Defensively ignores ``tool_config`` — Codex doesn't support MCP
         tool restrictions the way Claude/Gemini do; any keys passed are
         silently dropped.
         """
-        # Defensively drop session_id and tool_config — Codex adapter ignores
-        # both by design (see class docstring). Local `_ =` rebinds silence
-        # the "unused parameter" linter without changing semantics.
-        _ = session_id
+        # Defensively ignore tool_config — Codex adapter doesn't use it today.
         _ = tool_config
 
         # Reset per-invocation state so _read_latest_rollout_task_complete
@@ -180,8 +175,10 @@ class CodexAdapter:
         cmd: list[str] = [codex_bin]
         if use_search:
             cmd.append("--search")
+        base_action = "resume" if session_id else "exec"
         cmd.extend([
-            "exec",
+            base_action,
+            *( [session_id] if session_id else []),
             "--skip-git-repo-check",
             "-C", str(cwd),
             "--color", "never",

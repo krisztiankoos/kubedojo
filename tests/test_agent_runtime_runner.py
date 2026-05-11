@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-
 import sys
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
@@ -103,3 +104,35 @@ def test_build_usage_record_session_mode_none_codex():
     )
 
     assert record["session_mode"] == "none"
+
+
+def test_invoke_rejects_codex_resume_from_delegate_entrypoint():
+    from agent_runtime.runner import invoke
+
+    with pytest.raises(ValueError, match="resume_policy='bridge_only'"):
+        invoke(
+            "codex",
+            "x",
+            mode="danger",
+            cwd=Path("/tmp"),
+            model=None,
+            task_id="task-1",
+            session_id="codex-previous",
+            entrypoint="delegate",
+        )
+
+
+def test_invoke_rejects_codex_resume_from_dispatch_entrypoint():
+    from agent_runtime.runner import invoke
+
+    with pytest.raises(ValueError, match="resume_policy='bridge_only'"):
+        invoke(
+            "codex",
+            "x",
+            mode="danger",
+            cwd=Path("/tmp"),
+            model=None,
+            task_id="task-1",
+            session_id="codex-previous",
+            entrypoint="dispatch",
+        )
