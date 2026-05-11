@@ -144,6 +144,13 @@ class ClaudeAdapter:
             else:
                 cmd.extend(["--resume", session_id])
 
+        # Explicit permission mode (bridge passes through bypassPermissions
+        # to keep tool calls enabled while still allowing non-destructive
+        # runs by default).
+        permission_mode = tc.get("permission_mode")
+        if isinstance(permission_mode, str) and permission_mode:
+            cmd.extend(["--permission-mode", permission_mode])
+
         # Model override
         if model:
             cmd.extend(["--model", model])

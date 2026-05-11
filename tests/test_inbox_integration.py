@@ -77,10 +77,9 @@ def test_discuss_routes_cold_warm_and_fresh_session_modes(
     codex_calls = [
         call for call in mock_invoke.call_args_list if call.args[0] == "codex"
     ]
-    assert [call.kwargs["session_id"] for call in claude_calls] == [
-        None,
-        "claude-session",
-    ]
+    assert claude_calls[0].kwargs["session_id"] is not None
+    assert claude_calls[0].kwargs["session_id"] != "claude-session"
+    assert claude_calls[1].kwargs["session_id"] == "claude-session"
     assert [call.kwargs["session_id"] for call in codex_calls] == [
         None,
         "codex-session",

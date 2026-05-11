@@ -13,8 +13,10 @@ flag requirements in the codebase:
 - Rate-limit detection: Gemini returns ``RESOURCE_EXHAUSTED``, ``quota
   exceeded``, and occasionally ``No capacity available`` depending on
   backend. Patterns match dispatch.py prior art.
-- Gemini CLI supports ``--resume <id>``. The adapter passes
-  ``session_id`` through when provided; if absent, it starts fresh.
+  - Gemini CLI supports ``--resume <id>`` and ``--session-id <id>``.
+    The adapter uses ``session_id`` directly when provided, and switches
+    between ``--resume`` and ``--session-id`` based on
+    ``tool_config["is_new_session"]``.
 
 Key differences from CodexAdapter:
 - Output to stdout (no ``-o <file>``); ``output_file`` stays None.
@@ -93,19 +95,26 @@ class GeminiAdapter:
     ) -> InvocationPlan:
         """Build the ``gemini`` CLI invocation.
 
-        Uses ``session_id`` as ``--resume <id>`` when provided.
-        Otherwise starts a new Gemini session.
+        Supports ``session_id`` persistence:
+        - If ``tool_config["is_new_session"]`` is True and ``session_id``
+          is set, the adapter uses ``--session-id <session_id>``.
+        - Otherwise, when ``session_id`` is set, uses ``--resume <session_id>``.
 
         Supports ``tool_config``:
+            - ``{"is_new_session": bool}`` — explicit first-run named session flag.
             - ``{"mcp_server_names": ["rag", "other"]}`` → appended as
               ``--allowed-mcp-server-names rag,other``
             - Any other keys are ignored (forward-compatible).
         """
         gemini_bin = shutil.which("gemini") or "gemini"
+        tc: dict[str, object] = tool_config or {}
 
         cmd: list[str] = [gemini_bin]
         if session_id:
-            cmd.extend(["--resume", session_id])
+            if tc.get("is_new_session"):
+                cmd.extend(["--session-id", session_id])
+            else:
+                cmd.extend(["--resume", session_id])
         cmd.extend(["-m", model or self.default_model])
 
         # Approval mode: read-only is the default; yolo for write modes.
@@ -116,16 +125,16 @@ class GeminiAdapter:
 
         # MCP tool restriction via tool_config.
         env_overrides: dict[str, str | None] = {}
-        if tool_config:
+        if tc:
             # API-key auth is the default. When the bridge detects API-key
             # quota exhaustion, it retries with this flag so the child process
             # sees no Gemini API keys and the CLI falls through to OAuth creds
             # in ~/.gemini/oauth_creds.json.
-            if tool_config.get("use_subscription_auth"):
+            if tc.get("use_subscription_auth"):
                 env_overrides["GEMINI_API_KEY"] = None
                 env_overrides["GOOGLE_API_KEY"] = None
 
-            mcp_server_names = tool_config.get("mcp_server_names")
+            mcp_server_names = tc.get("mcp_server_names")
             if mcp_server_names:
                 if isinstance(mcp_server_names, (list, tuple)):
                     joined = ",".join(mcp_server_names)
@@ -133,11 +142,11 @@ class GeminiAdapter:
                     joined = str(mcp_server_names)
                 cmd.extend(["--allowed-mcp-server-names", joined])
 
-        # Silently ignore session_id (CLI has no equivalent) and task_id
+        # Silently ignore task_id (runner already logs it via usage record).
+        # session_id is now mapped to CLI flags above.
         # (runner already logs it via usage record). cwd IS stamped into
         # the plan — liveness_signal_paths() needs it to derive the
         # ~/.gemini/tmp/<basename>/ project dir without reading os.getcwd().
-        _ = session_id
         _ = task_id
 
         return InvocationPlan(

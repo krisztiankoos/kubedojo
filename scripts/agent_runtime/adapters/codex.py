@@ -26,6 +26,7 @@ Issue: #1184
 """
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import os
@@ -37,6 +38,7 @@ from .base import InvocationPlan
 
 # Matches the session id line in Codex stdout. Case-insensitive.
 _SESSION_RE = re.compile(r"session id:\s*([0-9a-f-]{8,})", re.IGNORECASE)
+_UUID_RE = re.compile(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")
 
 # Stderr phrases that indicate the provider rate-limited us. Ordered
 # roughly by specificity — specific phrases first, generic last.
@@ -131,12 +133,12 @@ class CodexAdapter:
         """Build the codex exec invocation.
 
         Uses ``session_id`` as ``codex resume <id>`` when present.
-        Defensively ignores ``tool_config`` — Codex doesn't support MCP
-        tool restrictions the way Claude/Gemini do; any keys passed are
-        silently dropped.
+        Supports ``tool_config`` flags from bridge:
+
+        - ``{"enable_search": True}`` enables web grounding in `codex`.
+        - Any other keys are ignored.
         """
-        # Defensively ignore tool_config — Codex adapter doesn't use it today.
-        _ = tool_config
+        tc = tool_config or {}
 
         # Reset per-invocation state so _read_latest_rollout_task_complete
         # uses a fresh rollout snapshot (prevents cross-contamination
@@ -170,8 +172,12 @@ class CodexAdapter:
         # --search enables Codex's live web tool. Top-level flag, not an
         # exec subflag. Driven by KUBEDOJO_CODEX_SEARCH so dispatch_smart
         # can set it per task class.
-        # Default OFF: callers that need web grounding must opt in.
-        use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
+        # Default OFF for non-bridge callers; explicit tool_config from
+        # bridge enables web grounding for investigation.
+        if "enable_search" in tc:
+            use_search = bool(tc.get("enable_search"))
+        else:
+            use_search = os.environ.get("KUBEDOJO_CODEX_SEARCH", "0") == "1"
         cmd: list[str] = [codex_bin]
         if use_search:
             cmd.append("--search")
@@ -308,6 +314,11 @@ class CodexAdapter:
         session_match = _SESSION_RE.search(stdout or "")
         if session_match:
             session_id = session_match.group(1)
+        if session_id is None and plan is not None:
+            session_id = self._read_latest_rollout_session_id(
+                plan,
+                call_start_time=call_start_time,
+            )
 
         # Success classification: we have content (from either -o or the
         # rollout fallback) AND we're not rate-limited. Note that a
@@ -512,40 +523,13 @@ class CodexAdapter:
 
         Returns ``last_agent_message`` or ''.
         """
-        _ = call_start_time  # reserved; currently using snapshot-based binding
-        _ = plan  # plan.task_id could be used for tighter matching in future
-        import json as _json
-
         try:
-            # 1. The snapshot was taken at build_invocation time (see
-            #    _reset_per_invocation_state). If somehow it's missing
-            #    — e.g. an adapter instance used directly without
-            #    build_invocation, or a race during test setup — fall
-            #    back to an empty snapshot so that ALL current files
-            #    are treated as candidates (degraded to newest-wins).
-            snapshot: set[Path] = getattr(self, "_rollout_snapshot", None) or set()
-
-            # 2. If we already bound a specific rollout for this
-            #    invocation, reuse it.
-            bound: Path | None = getattr(self, "_bound_rollout", None)
-            if bound is not None and bound.exists():
-                rollout_to_scan = bound
-            else:
-                # 3. Find new rollout files (not in snapshot)
-                all_candidates: list[Path] = []
-                for d in self._candidate_rollout_dirs():
-                    try:
-                        all_candidates.extend(d.glob("rollout-*.jsonl"))
-                    except OSError:
-                        continue
-                new_candidates = [p for p in all_candidates if p not in snapshot]
-                if not new_candidates:
-                    return ""
-                # Newest of the NEW ones is ours
-                rollout_to_scan = max(
-                    new_candidates, key=lambda p: p.stat().st_mtime,
-                )
-                self._bound_rollout = rollout_to_scan
+            rollout_to_scan = self._latest_rollout_file_for_invocation(
+                plan,
+                call_start_time=call_start_time,
+            )
+            if rollout_to_scan is None:
+                return ""
 
             # 4. Scan our bound rollout for task_complete
             last_message = ""
@@ -555,8 +539,8 @@ class CodexAdapter:
                     if not line:
                         continue
                     try:
-                        event = _json.loads(line)
-                    except _json.JSONDecodeError:
+                        event = json.loads(line)
+                    except json.JSONDecodeError:
                         continue
                     if event.get("type") != "event_msg":
                         continue
@@ -573,6 +557,86 @@ class CodexAdapter:
             # bubble out of parse_response. Swallow everything and
             # fall back to the primary code path.
             return ""
+
+    def _latest_rollout_file_for_invocation(
+        self,
+        plan: InvocationPlan,
+        *,
+        call_start_time: float | None = None,
+    ) -> Path | None:
+        """Return the bound rollout file for this invocation."""
+        _ = call_start_time  # call window narrowing handled by check_early_reap.
+        _ = plan  # reserved for future tighter matching by plan.task_id.
+
+        try:
+            snapshot: set[Path] = getattr(self, "_rollout_snapshot", None) or set()
+
+            bound: Path | None = getattr(self, "_bound_rollout", None)
+            if bound is not None and bound.exists():
+                return bound
+
+            all_candidates: list[Path] = []
+            for d in self._candidate_rollout_dirs():
+                try:
+                    all_candidates.extend(d.glob("rollout-*.jsonl"))
+                except OSError:
+                    continue
+
+            new_candidates = [p for p in all_candidates if p not in snapshot]
+            if not new_candidates:
+                return None
+
+            rollout_to_scan = max(
+                new_candidates,
+                key=lambda p: p.stat().st_mtime,
+            )
+            self._bound_rollout = rollout_to_scan
+            return rollout_to_scan
+        except Exception:
+            return None
+
+    def _read_latest_rollout_session_id(
+        self,
+        plan: InvocationPlan,
+        *,
+        call_start_time: float | None = None,
+    ) -> str | None:
+        """Extract session_id from this invocation's rollout JSONL."""
+        rollout_to_scan = self._latest_rollout_file_for_invocation(
+            plan,
+            call_start_time=call_start_time,
+        )
+        if rollout_to_scan is None:
+            return None
+
+        try:
+            with open(rollout_to_scan, encoding="utf-8", errors="replace") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        event = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+
+                    for key in ("session_id", "sessionId", "id", "sid"):
+                        value = event.get(key)
+                        if isinstance(value, str) and _UUID_RE.fullmatch(value):
+                            return value
+
+                    payload = event.get("payload")
+                    if isinstance(payload, dict):
+                        for key in ("session_id", "sessionId", "id"):
+                            value = payload.get(key)
+                            if isinstance(value, str) and _UUID_RE.fullmatch(value):
+                                return value
+            filename_match = _UUID_RE.search(rollout_to_scan.name)
+            if filename_match:
+                return filename_match.group(0)
+        except Exception:
+            return None
+        return None
 
     def liveness_signal_paths(self, plan: InvocationPlan) -> tuple[Path, ...]:
         """Return paths the runner should poll for mtime changes.
