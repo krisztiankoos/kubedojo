@@ -35,6 +35,7 @@ commands handle the agent-calling side.
 from __future__ import annotations
 
 import json
+import re
 import tempfile
 import os
 import shlex
@@ -71,6 +72,11 @@ _DISCUSSION_MCP_EXCLUDE_TOKENS: tuple[str, ...] = (
     "calendar",
     "drive",
     "claude-in-chrome",
+)
+
+_CODEX_HEADER_SESSION_ID_RE = re.compile(
+    r"^session id:\s+([0-9a-f-]{36})",
+    re.MULTILINE,
 )
 
 
@@ -1449,10 +1455,24 @@ def _handle_discuss(args) -> int:
             )
 
         if result is not None:
+            persist_session_id = result.session_id
+            if agent_name == "codex" and not persist_session_id:
+                header_payload = getattr(result, "stdout", None) or getattr(
+                    result,
+                    "stderr",
+                    None,
+                )
+                if isinstance(header_payload, str):
+                    match = _CODEX_HEADER_SESSION_ID_RE.search(header_payload)
+                    if match is not None:
+                        persist_session_id = match.group(1)
+                if not persist_session_id:
+                    print("bridge: codex session id not in stdout header; not persisting")
+
             _set_session(
                 task_key,
                 agent=agent_name,
-                session_id=result.session_id or attempt_session,
+                session_id=persist_session_id or attempt_session,
                 **{
                     f"{agent_name}_cwd": str(attempt_cwd),
                     f"{agent_name}_sandbox_mode": attempt_sandbox_mode,
