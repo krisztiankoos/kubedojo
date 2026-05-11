@@ -229,8 +229,9 @@ def test_codex_adapter_respects_search_env_on():
 
 def test_codex_adapter_uses_resume_action():
     cmd = _codex_invocation_cmd(None, session_id="stored-codex-session")
-    assert cmd[1] == "resume"
-    assert cmd[2] == "stored-codex-session"
+    assert cmd[1] == "exec"
+    assert cmd[2] == "resume"
+    assert cmd[3] == "stored-codex-session"
 
 
 def test_dispatch_smart_codex_sets_search_for_draft():

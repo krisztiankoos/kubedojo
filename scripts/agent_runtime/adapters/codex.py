@@ -182,6 +182,7 @@ class CodexAdapter:
         if session_id:
             cmd.extend(
                 [
+                    "exec",
                     "resume",
                     session_id,
                 ]
