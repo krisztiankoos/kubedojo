@@ -1,0 +1,133 @@
+{
+  "module_key": "ai-ml-engineering/ai-native-development/module-1.9-building-with-ai-coding-assistants",
+  "module_path": "src/content/docs/ai-ml-engineering/ai-native-development/module-1.9-building-with-ai-coding-assistants.md",
+  "research_run_id": "2026-05-12T18:24:40+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A healthcare platform team adopted AI coding assistants across every repository in one quarter and saw early productivity gains.",
+      "claim_class": "war_story",
+      "span_hint": "line 28",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A platform team at a healthcare software company adopted AI coding assistants across every repository in one quarter. At first, the story looked like a success. Small endpoints appeared faster, unit tests grew overnight, and junior engineers could navigate unfamiliar services with less waiting. Leadership saw the first metrics and assumed the organization had simply become more productive.",
+      "suggested_rewrite": "Many teams adopt AI coding assistants quickly and see early wins: small endpoints appear faster, test scaffolding grows quickly, and engineers can navigate unfamiliar services with less waiting. Early productivity signals are real, but they do not by themselves prove that the workflow is safe or sustainable.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed war story presented as a real organizational event, so the false specifics should be removed rather than hedged."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "An AI-generated caching decorator caused a production outage and contractual penalties, and an incident review quoted, \"The assistant wrote it, and we trusted it.\"",
+      "claim_class": "incident",
+      "span_hint": "line 30",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Then an incident review told a different story. An AI-generated caching decorator had been accepted during a rushed performance fix, and nobody noticed that it had no eviction policy, no size limit, and no monitoring. The service behaved well in staging, where data volume was small, but production traffic turned the cache into an unbounded memory sink. The outage lasted long enough to trigger contractual penalties, and the most uncomfortable sentence in the review was not technical at all: \"The assistant wrote it, and we trusted it.\"",
+      "suggested_rewrite": "A common failure pattern appears when a team accepts an AI-generated caching change during a rushed performance fix without noticing missing bounds, eviction, or monitoring. The code may behave well in staging but turn into an unbounded memory sink under production traffic. The operational lesson is simple: generated code still needs explicit design review, operational limits, and observability.",
+      "lesson_point_url": null,
+      "rationale": "This is an unsourced outage anecdote with fabricated-seeming operational details and an unattributed quote, so it should be rewritten to keep the lesson while removing false specificity."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "GitHub Copilot provides in-editor code-suggestion and autocomplete workflows.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 42",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.github.com/en/copilot/get-started/what-is-github-copilot",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a real vendor capability claim backed by GitHub's own docs, but `docs.github.com` is off the current allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Cursor provides editor-native codebase-context and indexing/search workflows.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 44",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.cursor.com/context/codebase-indexing",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a real product-capability claim backed by Cursor's own documentation, but the official docs host is off the current allowlist."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Claude Code is a terminal-native coding assistant that can inspect code, edit files, and run commands in a coding workflow.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 46 and table rows at lines 77-81",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.anthropic.com/en/docs/claude-code/overview",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Anthropic's own Claude Code overview supports this capability description, but the official docs host is off the current allowlist."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Aider is a terminal-based coding assistant built around editing repository files in a Git-oriented workflow.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 46 and Aider example at lines 213-221",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://aider.chat/docs/usage.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Aider's own usage docs back this capability claim, but `aider.chat` is off the current allowlist."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Interpolating user-controlled input directly into a SQL string is unsafe, and parameterized queries are the safer pattern.",
+      "claim_class": "security_claim",
+      "span_hint": "lines 398-415",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://owasp.org/www-community/attacks/SQL_Injection",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OWASP directly documents SQL injection risk from dynamic query construction and the need for safer query handling."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://www.nist.gov/itl/ai-risk-management-framework",
+      "title": "NIST AI Risk Management Framework",
+      "tier": "standards",
+      "why_relevant": "Useful for grounding the module's workflow, governance, and risk-boundary advice in a formal AI risk framework."
+    },
+    {
+      "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+      "title": "OWASP Top 10 for Large Language Model Applications",
+      "tier": "standards",
+      "why_relevant": "Provides a practical security lens for AI-assisted development workflows, especially around prompt, tool, and data-handling risk."
+    },
+    {
+      "url": "https://kubernetes.io/docs/reference/kubectl/",
+      "title": "kubectl Reference",
+      "tier": "standards",
+      "why_relevant": "Relevant because the module explicitly references later Kubernetes practice and shorthand `kubectl` usage."
+    }
+  ],
+  "notes": "Seeded only the unsourced opening anecdote, concrete vendor-capability claims, and the explicit SQL-injection example. Generic pedagogy, analogies, tables without external facts, quiz/exercise content, and code blocks themselves were intentionally excluded.",
+  "_schema_issues": [
+    "claim[2]:needs_allowlist_expansion_but_url_is_already_allowlisted",
+    "claim[4]:needs_allowlist_expansion_but_url_is_already_allowlisted"
+  ],
+  "rejected_urls": []
+}
