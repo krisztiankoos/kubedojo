@@ -20,7 +20,7 @@ After this module, you will be able to:
 
 - **Compare** declarative and imperative infrastructure workflows, including the operational consequences of each choice.
 - **Design** an Infrastructure as Code repository layout that separates environments while still reusing shared modules.
-- **Implement** a Kubernetes declarative change with the standard `k` CLI alias, then verify idempotent reconciliation.
+- **Implement** a Kubernetes declarative change with the full `kubectl` CLI, then verify idempotent reconciliation.
 - **Diagnose** configuration drift by tracing whether production state came from code, a manual change, or a pipeline run.
 - **Evaluate** Terraform, OpenTofu, Ansible, Pulumi, and Kubernetes-native tools for a realistic provisioning or configuration problem.
 
@@ -131,7 +131,7 @@ This is also why IaC should not be treated as a collection of clever text files.
 
 IaC is not one tool, and choosing badly can create a new kind of complexity. Some tools are strongest at provisioning infrastructure that exists outside a machine, such as VPCs, subnets, databases, buckets, and load balancers. Some tools are strongest at configuring operating systems after machines exist. Kubernetes-native tools manage cluster objects, package Kubernetes applications, or use Kubernetes itself as the control plane for external infrastructure.
 
-For Kubernetes commands later in this module, define alias k=kubectl in your shell; after that, examples use `k` because it is the standard short form many operators use during daily work. The alias does not change the API call or the safety model. It simply makes repeated commands easier to read while keeping the lesson focused on declarative files, reviewable changes, and reconciliation.
+For Kubernetes commands later in this module, examples use the full `kubectl` binary name so every block can be copied into a non-interactive shell, CI job, or troubleshooting note without relying on local shell configuration. Many operators shorten `kubectl` during interactive work, but shared curriculum and runbooks should prefer the explicit command because it reduces hidden assumptions while keeping the lesson focused on declarative files, reviewable changes, and reconciliation.
 
 ```mermaid
 flowchart LR
@@ -262,11 +262,10 @@ One practical way to compare tools is to ask what a new teammate must learn befo
 
 Kubernetes is not just a place where IaC tools deploy applications; Kubernetes itself is an IaC system. You send objects to the API server, and controllers reconcile desired state with actual state. A Deployment does not merely start pods once. It declares a rollout strategy, a replica count, a selector, and a pod template, then the Deployment controller and ReplicaSet controller keep working to maintain that state.
 
-For the rest of this module, use the standard shortcut `alias k=kubectl` so commands stay readable while still targeting the Kubernetes CLI. The course target is Kubernetes 1.35+, but the basic declarative workflow shown here is stable across modern clusters. The important habit is to keep manifests in files and use `k apply` for desired state, rather than relying on one-off imperative commands that vanish from review history.
+For the rest of this module, use the full `kubectl` command so the examples remain runnable in scripts, terminals, and CI jobs without depending on an interactive shell alias. The course target is Kubernetes 1.35+, but the basic declarative workflow shown here is stable across modern clusters. The important habit is to keep manifests in files and use `kubectl apply` for desired state, rather than relying on one-off imperative commands that vanish from review history.
 
 ```bash
-alias k=kubectl
-k version --client
+kubectl version --client
 ```
 
 ```yaml
@@ -292,7 +291,7 @@ spec:
 
 ```bash
 # Apply desired state
-k apply -f deployment.yaml
+kubectl apply -f deployment.yaml
 
 # Kubernetes reconciles actual state to match desired state
 # This is IaC in action.
@@ -302,7 +301,7 @@ Notice what the manifest does not say. It does not tell Kubernetes which node sh
 
 That distinction becomes useful during failure. If a node dies, the desired state still says 3 replicas should exist, so Kubernetes schedules replacement pods. If someone deletes a pod by hand, the controller creates another one because the Deployment still demands it. If you apply the same manifest again, Kubernetes sees that the desired and actual states already match, so the command becomes a safe confirmation rather than a duplicate deployment.
 
-Kubernetes can still be used in a non-IaC way. Commands such as `k run`, `k edit`, and direct console changes can be appropriate for learning or emergency diagnosis, but they are dangerous as the normal path to production. The object may exist in the cluster, yet the repository does not explain it. The mature workflow is to convert discoveries into manifests, review those manifests, and let automation apply them consistently.
+Kubernetes can still be used in a non-IaC way. Commands such as `kubectl run`, `kubectl edit`, and direct console changes can be appropriate for learning or emergency diagnosis, but they are dangerous as the normal path to production. The object may exist in the cluster, yet the repository does not explain it. The mature workflow is to convert discoveries into manifests, review those manifests, and let automation apply them consistently.
 
 There is another Kubernetes-specific reason to prefer files: many objects interact through labels and selectors. A Service finds pods through labels, a Deployment manages pods through selectors, and NetworkPolicies often depend on labels as well. When those relationships are stored in separate hand-entered commands, it is easy to create a resource that looks valid but does not connect to anything. Keeping the objects together in code lets reviewers see the relationships before the cluster has to reveal the mistake.
 
@@ -465,7 +464,7 @@ When choosing an IaC approach, start with the lifecycle of the resource rather t
 | Multi-cloud provisioning | Terraform or OpenTofu | Provider ecosystem and plan/apply workflow | State locking, module governance, provider upgrades |
 | AWS-only infrastructure | CloudFormation or Terraform/OpenTofu | Native AWS integration or broader ecosystem | Portability versus native service coverage |
 | VM package and service setup | Ansible | Agentless SSH configuration and readable playbooks | Inventory drift and non-idempotent shell tasks |
-| Kubernetes workloads | YAML with Kustomize, Helm, or GitOps | Kubernetes already reconciles desired state | Template complexity and unreviewed `k edit` changes |
+| Kubernetes workloads | YAML with Kustomize, Helm, or GitOps | Kubernetes already reconciles desired state | Template complexity and unreviewed `kubectl edit` changes |
 | Platform self-service | Crossplane or higher-level modules | Teams request abstractions instead of raw resources | API design, ownership, and policy boundaries |
 | Infrastructure tied to app code abstractions | Pulumi | Real languages and testable libraries | Hidden resource graphs and language-specific complexity |
 
@@ -508,9 +507,9 @@ Do not approve the change just because the syntax is valid. A replacement means 
 
 </details>
 
-<details><summary>2. A developer says Kubernetes cannot satisfy the audit rule because they use `k run` and `k edit` during normal releases. How do you correct the workflow?</summary>
+<details><summary>2. A developer says Kubernetes cannot satisfy the audit rule because they use `kubectl run` and `kubectl edit` during normal releases. How do you correct the workflow?</summary>
 
-The problem is not Kubernetes; the problem is using imperative commands as the release mechanism. Kubernetes supports declarative Infrastructure as Code when Deployments, Services, ConfigMaps, and policies are stored as manifests and applied through a reviewed pipeline. The corrected workflow is to implement Kubernetes changes in files, review them in Git, apply them with `k apply`, and verify the rollout. That gives the organization a durable audit trail and makes the cluster rebuildable from code.
+The problem is not Kubernetes; the problem is using imperative commands as the release mechanism. Kubernetes supports declarative Infrastructure as Code when Deployments, Services, ConfigMaps, and policies are stored as manifests and applied through a reviewed pipeline. The corrected workflow is to implement Kubernetes changes in files, review them in Git, apply them with `kubectl apply`, and verify the rollout. That gives the organization a durable audit trail and makes the cluster rebuildable from code.
 
 </details>
 
@@ -546,13 +545,12 @@ The manual change should be treated as an emergency exception, not as the new no
 
 ## Hands-On Exercise
 
-In this exercise, you will implement a small Kubernetes IaC workflow with declarative files, repeated applies, a controlled change, and a drift check. You need access to any Kubernetes 1.35+ compatible practice cluster, such as a local cluster or a shared training namespace where you are allowed to create Deployments and ConfigMaps. Use the `k` alias introduced earlier so your commands match the rest of the module.
+In this exercise, you will implement a small Kubernetes IaC workflow with declarative files, repeated applies, a controlled change, and a drift check. You need access to any Kubernetes 1.35+ compatible practice cluster, such as a local cluster or a shared training namespace where you are allowed to create Deployments and ConfigMaps. Use the full `kubectl` command so your commands match the rest of the module and remain portable.
 
 ### Setup
 
 ```bash
-alias k=kubectl
-k get namespace default
+kubectl get namespace default
 mkdir -p iac-demo
 cd iac-demo
 ```
@@ -582,13 +580,13 @@ spec:
         image: nginx:1.27
 EOF
 
-k apply -f deployment.yaml
-k rollout status deployment/iac-demo
+kubectl apply -f deployment.yaml
+kubectl rollout status deployment/iac-demo
 ```
 
 <details><summary>Solution notes for Task 1</summary>
 
-The important result is not only that the Deployment exists. You should also be able to point to the file that defines the Deployment, explain why the replica count is 2, and rerun the apply command without creating a second Deployment. If rollout status does not complete, use `k describe deployment iac-demo` and `k get pods -l app=iac-demo` to inspect scheduling, image pull, or readiness problems.
+The important result is not only that the Deployment exists. You should also be able to point to the file that defines the Deployment, explain why the replica count is 2, and rerun the apply command without creating a second Deployment. If rollout status does not complete, use `kubectl describe deployment iac-demo` and `kubectl get pods -l app=iac-demo` to inspect scheduling, image pull, or readiness problems.
 
 </details>
 
@@ -597,10 +595,10 @@ The important result is not only that the Deployment exists. You should also be 
 Apply the same file again, then change the replica count from 2 to 4 in the file and apply the updated desired state. You are proving that the file, not your terminal history, controls the target shape.
 
 ```bash
-k apply -f deployment.yaml
+kubectl apply -f deployment.yaml
 sed 's/replicas: 2/replicas: 4/' deployment.yaml > temp.yaml && mv temp.yaml deployment.yaml
-k apply -f deployment.yaml
-k get deployment iac-demo
+kubectl apply -f deployment.yaml
+kubectl get deployment iac-demo
 ```
 
 <details><summary>Solution notes for Task 2</summary>
@@ -625,11 +623,11 @@ data:
   theme: "dark"
 EOF
 
-k apply -f config.yaml
-k get configmap app-settings -o yaml
+kubectl apply -f config.yaml
+kubectl get configmap app-settings -o yaml
 ```
 
-This solution keeps the configuration in a file rather than creating it with a one-off imperative command. The `k get` command is for verification, not for making the change. If you changed the value to `"light"` in the file and applied again, Kubernetes would update the object to match the new desired state.
+This solution keeps the configuration in a file rather than creating it with a one-off imperative command. The `kubectl get` command is for verification, not for making the change. If you changed the value to `"light"` in the file and applied again, Kubernetes would update the object to match the new desired state.
 
 </details>
 
@@ -638,10 +636,10 @@ This solution keeps the configuration in a file rather than creating it with a o
 Patch the live ConfigMap to a different value, then use the file to restore the declared value. This reproduces a small version of a production console edit that must be brought back under IaC control.
 
 ```bash
-k patch configmap app-settings --type merge -p '{"data":{"theme":"light"}}'
-k get configmap app-settings -o jsonpath='{.data.theme}'; echo
-k apply -f config.yaml
-k get configmap app-settings -o jsonpath='{.data.theme}'; echo
+kubectl patch configmap app-settings --type merge -p '{"data":{"theme":"light"}}'
+kubectl get configmap app-settings -o jsonpath='{.data.theme}'; echo
+kubectl apply -f config.yaml
+kubectl get configmap app-settings -o jsonpath='{.data.theme}'; echo
 ```
 
 <details><summary>Solution notes for Task 4</summary>
@@ -655,8 +653,8 @@ The patch changes the live object without changing `config.yaml`, so the cluster
 Remove the resources using the manifests you created, then remove the local exercise directory. Cleanup is still part of the IaC habit because the same files that created the resources can identify what should be removed.
 
 ```bash
-k delete -f deployment.yaml
-k delete -f config.yaml
+kubectl delete -f deployment.yaml
+kubectl delete -f config.yaml
 cd ..
 rm -rf iac-demo
 ```
@@ -669,7 +667,7 @@ Deleting from the files makes the cleanup explicit and reduces the chance of rem
 
 ### Success criteria
 
-- [ ] You implemented Kubernetes declarative changes with `k apply -f deployment.yaml` and `k apply -f config.yaml`.
+- [ ] You implemented Kubernetes declarative changes with `kubectl apply -f deployment.yaml` and `kubectl apply -f config.yaml`.
 - [ ] You verified idempotent reconciliation by applying an unchanged manifest and observing that no duplicate resource was created.
 - [ ] You changed the Deployment replica count in code first, then verified the cluster followed the declared state.
 - [ ] You diagnosed configuration drift by patching a live ConfigMap and repairing it from the manifest.
