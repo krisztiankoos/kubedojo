@@ -29,6 +29,18 @@ Write body sections as flowing instructional prose, not punchy note blocks. Most
 
 Do not create sequences of standalone transition lines, thesis lines, warning lines, or recap lines. If two adjacent paragraphs are under 18 words, merge them into the surrounding explanation unless one is a heading, table row, list item, quiz option, code comment, or source entry.
 
+## NO RESTATEMENT ACROSS H2 SECTIONS
+
+Every core `## ` body section must contribute a **net-new** mechanism, example, comparison, or decision rule. Later sections may not restate the same thesis in different prose. If a section can be deleted without losing a concrete artifact (a command, a YAML, a worked decision-rule, an ASCII diagram, a table comparison, a quiz scenario), it is restatement padding — cut it before finalizing.
+
+Specifically:
+
+- **`Patterns & Anti-Patterns`, `Decision Framework`, `Senior Judgment`, `From Beginner to Senior`, `Worked Example` synthesis tails, and "best practices" closings** are allowed only if they introduce net-new criteria or examples not in the earlier teaching sections. If they would just rephrase the prior sections in more philosophical language, omit them.
+- **Worked Example tails:** end the worked example at the first complete walked-through outcome. Do not append a paragraph or three of "stepping back, the lesson here is..." synthesis prose. The reader either understood the example or did not — the synthesis adds words, not understanding.
+- **Theme rehashing:** scan every body paragraph before finalizing. If you find a paragraph that repeats the same engineering point made in an earlier section using different vocabulary, delete the later occurrence. The point is made; the reader does not need it again.
+
+This rule does not ban legitimate conceptual build-up. The section is valid only if it teaches a thing the reader did not already know from the prior section. If it only paraphrases or re-emphasizes, remove it.
+
 ## SYNTHESIZE COVERAGE BULLETS
 
 The topic coverage bullets in the dispatch brief are inputs, not an outline. Do not create one section or one paragraph per bullet. Combine related bullets into a coherent teaching arc with cause, consequence, tradeoff, and operational decision-making in the same paragraphs.
@@ -44,6 +56,7 @@ Before finalizing, scan every consecutive body-prose paragraph. If three paragra
 ## DEPTH TARGET (REPLACES "600+ CONTENT LINES")
 
 Target substantial depth: 5,000-7,000 words of original instructional content. Do not satisfy depth by adding short lines, fragmented paragraphs, or decorative structure. Word count is the floor; density gates are the ceiling on how those words can be packaged.
+The 5,000-7,000 target is a depth budget, not a quota. If a topic naturally fits in 4,500 words of substantive teaching, write 4,500 words. Padding to hit 5,000 with restated content is a hard failure of this contract (see NO RESTATEMENT ACROSS H2 SECTIONS above).
 
 ## RUNNABILITY, FABRICATION, AND PRACTICE QUESTIONS
 
