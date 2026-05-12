@@ -138,12 +138,11 @@ flowchart LR
 
 When a junior engineer says "Kubernetes removed Docker, so we must rewrite every Dockerfile," your response should be calm and precise. Kubernetes runs OCI images. Docker builds OCI-compatible images. The node runtime changed; the image contract did not. In a Kubernetes 1.35 cluster, you should expect containerd or CRI-O underneath kubelet, but your build pipeline may still run `docker build`, BuildKit, Buildah, Kaniko, or another image builder depending on your security and platform constraints.
 
-Here is the operator-facing habit this module expects in later Kubernetes labs. If you use kubectl enough that repeated typing slows you down, define the standard `k` alias once in your shell and use it consistently for interactive inspection. The alias is convenience, not magic, and scripts should still be clear about the tool they require.
+Here is the operator-facing habit this module expects in later Kubernetes labs. Use explicit `kubectl` commands in shared notes, runbooks, and copy-paste examples so the command still works in non-interactive shells and on a teammate's machine. Many engineers use shorter personal shell conveniences interactively, but production documentation should show the full binary because clarity beats keystroke savings when someone is debugging under pressure.
 
 ```bash
-alias k=kubectl
-k get nodes
-k get pods --all-namespaces
+kubectl get nodes
+kubectl get pods --all-namespaces
 ```
 
 The deeper lesson is that technology evaluation requires vocabulary hygiene. "Docker is dead" is false. "Docker Engine as the Kubernetes runtime path is gone after dockershim" is true. "Docker Compose is bad" is false. "Docker Compose is insufficient as a single-node production orchestrator for a multi-service system that needs self-healing and failover" is true. Precise language prevents teams from overcorrecting and throwing away useful tools while still avoiding obsolete platform bets.
@@ -410,12 +409,11 @@ Start by writing a short risk memo. Do not list every possible weakness; focus o
 
 ### Suggested Workspace
 
-Use a plain text file or notebook for your audit. If you have access to a disposable Kubernetes cluster, you can also inspect the cluster shape with the `k` alias after defining it, but the exercise is primarily architectural judgment rather than command memorization.
+Use a plain text file or notebook for your audit. If you have access to a disposable Kubernetes cluster, you can also inspect the cluster shape with explicit `kubectl` commands, but the exercise is primarily architectural judgment rather than command memorization.
 
 ```bash
-alias k=kubectl
-k get nodes
-k get deploy --all-namespaces
+kubectl get nodes
+kubectl get deploy --all-namespaces
 ```
 
 ### Solution Guide
