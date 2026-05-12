@@ -13,8 +13,6 @@ revision_pending: false
 
 ---
 
-# Module 1.3: What We Don't Cover (and Why)
-
 ## Learning Outcomes
 
 After this module, you will be able to:
@@ -51,15 +49,15 @@ The chart is intentionally simple because the decision is intentionally practica
 
 Think of the exam like a driving test rather than a mechanical engineering degree. The examiner cares whether you can operate the vehicle safely, interpret road conditions, recover from common problems, and follow the rules under pressure. They do not ask you to design a transmission, tune a racing suspension, or compare every commercial GPS system. Those deeper topics can make you a better specialist later, but studying them before you can pass the road test is a sequencing error.
 
-This is also why our examples prefer vanilla Kubernetes and Kubernetes 1.35+ semantics unless a certification objective says otherwise. The exam environment rewards knowledge that travels across clusters: API objects, control plane concepts, RBAC, scheduling, workload management, observability basics, security primitives, and troubleshooting with standard tools. When we use command examples, we introduce the shorthand once with `alias k=kubectl`, then use `k` because speed matters in timed environments and because the alias is common in Kubernetes study labs.
+This is also why our examples prefer vanilla Kubernetes and Kubernetes 1.35+ semantics unless a certification objective says otherwise. The exam environment rewards knowledge that travels across clusters: API objects, control plane concepts, RBAC, scheduling, workload management, observability basics, security primitives, and troubleshooting with standard tools. When we use command examples, we write the full `kubectl` command because examples should be safe to paste into non-interactive shells and scripts, even though many engineers use a shorter alias interactively during timed practice.
 
 ```bash
-alias k=kubectl
-k version --client
-k get pods --all-namespaces
+kubectl version --client
+kubectl get pods --all-namespaces
+kubectl auth can-i list pods --all-namespaces
 ```
 
-Pause and predict: if you spend one evening practicing `k describe`, `k logs`, `k auth can-i`, and `k get events`, then spend another evening reading a cloud provider's managed node group documentation, which evening is more likely to improve your exam score next week, and why? The answer is not that cloud infrastructure is unimportant. The answer is that the exam can directly measure your native troubleshooting workflow, while provider-specific infrastructure knowledge belongs to a different learning objective.
+Pause and predict: if you spend one evening practicing `kubectl describe`, `kubectl logs`, `kubectl auth can-i`, and `kubectl get events`, then spend another evening reading a cloud provider's managed node group documentation, which evening is more likely to improve your exam score next week, and why? The answer is not that cloud infrastructure is unimportant. The answer is that the exam can directly measure your native troubleshooting workflow, while provider-specific infrastructure knowledge belongs to a different learning objective.
 
 The tradeoff is real. A focused curriculum can feel incomplete when your workplace uses tools we deliberately do not teach in depth, and it can feel conservative when a new project becomes popular faster than exam objectives change. We accept that discomfort because certification learning has a different job than production onboarding. KubeDojo teaches the portable layer first, then points you toward credible sources for role-specific depth after the exam pressure is gone.
 
