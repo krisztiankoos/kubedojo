@@ -3904,7 +3904,7 @@ def build_tracks_readiness(repo_root: Path) -> dict[str, Any]:
     docs_root = repo_root / "src" / "content" / "docs"
     from status import TRACK_ORDER, _extract_frontmatter, _iter_en_modules, _track_for_key
 
-    parse_errors = 0
+    read_errors = 0
 
     # track_slug -> section_slug -> counts
     grid: dict[str, dict[str, dict[str, int]]] = {}
@@ -3915,10 +3915,16 @@ def build_tracks_readiness(repo_root: Path) -> dict[str, Any]:
     for path in _iter_en_modules(docs_root):
         rel = path.relative_to(docs_root).as_posix()
         module_key = rel[:-3] if rel.endswith(".md") else rel
+        try:
+            path.read_text(encoding="utf-8")
+        except OSError:
+            read_errors += 1
+            continue
         frontmatter = _extract_frontmatter(path)
-        if not isinstance(frontmatter, dict):
-            parse_errors += 1
-            frontmatter = {}
+        # Non-bool values produce spec-correct but surprising behavior:
+        #   revision_pending: "yes" → not True → counts as cleared
+        #   citations_verified: 1   → not True → counts as uncleared
+        # This is intentional: only literal True/False/absent are valid frontmatter states.
         cleared = (
             frontmatter.get("revision_pending") is not True
             and frontmatter.get("citations_verified") is True
@@ -4006,8 +4012,8 @@ def build_tracks_readiness(repo_root: Path) -> dict[str, Any]:
         round(100.0 * grand["cleared"] / grand["total"], 1) if grand["total"] else 0.0
     )
     errors: dict[str, int] = {}
-    if parse_errors:
-        errors["frontmatter_parse_errors"] = parse_errors
+    if read_errors:
+        errors["frontmatter_read_errors"] = read_errors
     return {
         "generated_at": int(time.time()),
         "duration_ms": round(1000.0 * (time.perf_counter() - started_at), 3),
@@ -8450,8 +8456,10 @@ def _v_quality_board(repo_root: Path) -> tuple:
 
 def _v_docs_frontmatter(repo_root: Path) -> tuple:
     docs_root = repo_root / "src" / "content" / "docs"
+    from status import _iter_en_modules
+
     sig = hashlib.sha1()
-    for path in sorted(docs_root.glob("**/module-*.md")):
+    for path in _iter_en_modules(docs_root):
         try:
             rel = path.relative_to(repo_root).as_posix()
             stat = path.stat()

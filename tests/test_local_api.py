@@ -3068,6 +3068,33 @@ def test_tracks_readiness_frontmatter_aggregate_counts(tmp_path: Path) -> None:
     assert cka["readiness_pct"] == 33.3
 
 
+def test_v_docs_frontmatter_changes_on_module_edit(tmp_path: Path) -> None:
+    """The cache version key must change when ANY EN module's frontmatter changes."""
+    _init_repo(tmp_path)
+    _seed_module(
+        tmp_path,
+        "k8s/cka/module-1.1-alpha",
+        frontmatter={"revision_pending": False, "citations_verified": True},
+    )
+    v1 = local_api._v_docs_frontmatter(tmp_path)
+
+    _seed_module(
+        tmp_path,
+        "k8s/cka/module-1.1-alpha",
+        frontmatter={"revision_pending": True, "citations_verified": True},
+    )
+    v2 = local_api._v_docs_frontmatter(tmp_path)
+    assert v1 != v2, "version key must change when frontmatter changes"
+
+    _seed_module(
+        tmp_path,
+        "k8s/cka/module-1.2-beta",
+        frontmatter={"revision_pending": False, "citations_verified": True},
+    )
+    v3 = local_api._v_docs_frontmatter(tmp_path)
+    assert v2 != v3, "version key must change when a new module is added"
+
+
 def test_tracks_readiness_cache_invalidation_from_frontmatter_change(tmp_path: Path) -> None:
     """Changes to module frontmatter invalidate the readiness cache key."""
     _init_repo(tmp_path)
