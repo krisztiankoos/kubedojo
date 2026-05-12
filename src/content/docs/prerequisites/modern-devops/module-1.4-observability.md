@@ -6,7 +6,6 @@ sidebar:
   order: 5
 ---
 
-# Module 1.4: Observability Fundamentals
 
 > **Complexity**: `[MEDIUM]` - Critical operational skill
 >
@@ -30,7 +29,7 @@ On August 10, 2021, an edge-case slow query from a high-traffic internal applica
 
 Kubernetes v1.35+ platforms make this lesson more urgent because the thing you are operating is rarely a single long-lived server. A request may pass through a cloud load balancer, ingress controller, API gateway, authentication service, feature flag client, message broker, cache, database, and third-party provider before the user sees a response. Every hop is independently deployed, scaled, restarted, and owned. The operational question changes from "is the server up?" to "which part of this request path changed, how much user pain did it create, and what should we do first?"
 
-Observability is the discipline that lets you answer those questions from external outputs: metrics, logs, traces, events, and the relationships between them. It does not replace good testing, safe deployment, or simple architecture, but it changes the incident from guesswork into investigation. In this module, you will build the mental model behind observability, learn when each telemetry signal is useful, practice Kubernetes-native inspection with the `k` alias for `kubectl`, and design alerts that protect users rather than merely describing busy infrastructure.
+Observability is the discipline that lets you answer those questions from external outputs: metrics, logs, traces, events, and the relationships between them. It does not replace good testing, safe deployment, or simple architecture, but it changes the incident from guesswork into investigation. In this module, you will build the mental model behind observability, learn when each telemetry signal is useful, practice Kubernetes-native inspection with explicit `kubectl` commands, and design alerts that protect users rather than merely describing busy infrastructure.
 
 ## What Observability Adds Beyond Monitoring
 
@@ -62,15 +61,12 @@ Pause and predict: a web application's Prometheus metrics show a stable memory g
 The practical answer is to add Kubernetes events, restart counters, and application logs that record shutdown context. Metrics are sampled, so they can miss fast spikes when the scrape interval is wider than the failure. Events and logs are discrete records, so they preserve the fact that the kubelet killed a container even if the resource graph looks calm. The lesson is not that metrics are weak; it is that every signal has a shape, and observability comes from combining shapes intelligently.
 
 ```bash
-# CLI convention for this module:
-alias k=kubectl
-
 # Confirm the client and server are available before starting the lab.
-k version
-k cluster-info
+kubectl version
+kubectl cluster-info
 ```
 
-Using the short alias keeps commands readable, but it does not change the underlying tool. In production documentation, teams should state aliases explicitly before using them, because an alias that feels obvious to one engineer may be invisible to another. Throughout the rest of the module, `k` means `kubectl`, and the Kubernetes examples assume a v1.35+ cluster or a local cluster with compatible API behavior.
+Using the full command keeps examples copy-pasteable in terminals, CI jobs, runbooks, and incident notes. Many engineers create a short interactive alias for their own shell, but shared curriculum and production runbooks should avoid assuming that alias exists. The Kubernetes examples in this module assume a v1.35+ cluster or a local cluster with compatible API behavior.
 
 ## The Three Pillars and Their Tradeoffs
 
@@ -225,7 +221,7 @@ Events are adjacent to logs but not the same thing. Kubernetes events describe c
 
 The most useful logging architecture enriches records at collection time. A collector can add namespace, pod, container, node, labels, annotations, and cluster name before shipping logs to storage. That enrichment lets responders ask operational questions even when application code forgot to include the right fields. The application should still emit `trace_id`, request route, and domain context, because collectors cannot infer business meaning from stdout alone.
 
-Before running this in a real cluster, what output do you expect from `k logs --previous` when a pod has never restarted? You should expect Kubernetes to report that no previous terminated container exists. That answer is useful because it tells you the failure is probably not hidden in an earlier container instance. If the pod has restarted, previous logs become the first place to look for startup exceptions, failed migrations, missing environment variables, or dependency timeouts.
+Before running this in a real cluster, what output do you expect from `kubectl logs --previous` when a pod has never restarted? You should expect Kubernetes to report that no previous terminated container exists. That answer is useful because it tells you the failure is probably not hidden in an earlier container instance. If the pod has restarted, previous logs become the first place to look for startup exceptions, failed migrations, missing environment variables, or dependency timeouts.
 
 ## Traces, Context Propagation, and OpenTelemetry
 
@@ -305,7 +301,7 @@ flowchart TD
 
 This architecture is powerful because it avoids turning one tool into everything. Prometheus is excellent at metrics and alert rules, but it is not a general log store. Loki can make Kubernetes logs cheaper by indexing labels rather than every word, but it does not replace histograms for latency objectives. Jaeger and Tempo help visualize traces, but they do not tell you whether a service violated its error budget across a month. The stack works when each component does its job and shares enough context with the others.
 
-Kubernetes adds its own native signals. `metrics-server` provides current CPU and memory through the resource metrics API, which powers commands such as `k top`. It is useful for quick checks and autoscaling inputs, but it does not provide historical analysis. `kube-state-metrics` watches the Kubernetes API and exports desired-state and actual-state metrics, such as available replicas, pod phases, and deployment status. Together, they help connect workload symptoms to control-plane state.
+Kubernetes adds its own native signals. `metrics-server` provides current CPU and memory through the resource metrics API, which powers commands such as `kubectl top`. It is useful for quick checks and autoscaling inputs, but it does not provide historical analysis. `kube-state-metrics` watches the Kubernetes API and exports desired-state and actual-state metrics, such as available replicas, pod phases, and deployment status. Together, they help connect workload symptoms to control-plane state.
 
 ```bash
 # First, install metrics-server (kind clusters don't include it by default)
@@ -323,14 +319,14 @@ node-1        250m         1024Mi
 node-2        100m         512Mi
 ```
 
-The original long-form commands above are common in official examples, but the lab uses the declared alias for day-to-day operation. The distinction is useful in real teams: documentation can show canonical `kubectl` for clarity and still teach engineers to use `k` interactively. What matters operationally is that the cluster state can be inspected quickly and that the command output is interpreted correctly. `k top` shows current resource usage, not a root cause by itself.
+The long-form commands above match official examples and remain safe inside copied scripts, shared runbooks, and automated lab checks. Real teams can still let individuals use personal shell shortcuts interactively, but shared documentation should show the canonical command so nobody has to translate during an incident. What matters operationally is that the cluster state can be inspected quickly and that the command output is interpreted correctly. `kubectl top` shows current resource usage, not a root cause by itself.
 
 ```bash
-# Same check using the module alias after metrics-server is ready.
-k top nodes
-k top pods
-k get pods -A
-k get events -A --sort-by='.lastTimestamp'
+# Same check after metrics-server is ready, using explicit commands suitable for runbooks.
+kubectl top nodes
+kubectl top pods
+kubectl get pods -A
+kubectl get events -A --sort-by='.lastTimestamp'
 ```
 
 | Metric | What It Tells You |
@@ -424,6 +420,10 @@ Finally, observability should be tested like any other production feature. If a 
 
 The healthiest teams also review telemetry after quiet periods, not only after outages. If an alert has not fired in months, it may be protecting an important invariant, or it may be dead configuration that nobody trusts. If a dashboard is never opened during incidents, it may need redesign or removal. Regular review keeps the observability system aligned with the services it is supposed to explain.
 
+Release readiness is another place where observability becomes practical rather than decorative. Before a service is promoted to production, the team should be able to name the SLI it affects, the dashboard that shows that SLI by version, the log fields that identify failed work, and the trace boundary where downstream latency becomes visible. That checklist is not bureaucracy; it prevents a common failure pattern where a new service launches successfully but becomes impossible to diagnose during its first real incident. A deployment is not truly complete until responders can see both healthy and unhealthy behavior in the same language the service owners use to make rollback or mitigation decisions.
+
+Ownership also needs to be encoded in telemetry, because unlabeled evidence slows every handoff. If an alert says only that an HTTP error ratio rose, the incident starts with routing confusion; if it names the service, namespace, owning team, affected route, deployment version, and runbook, the first responder can begin with a concrete hypothesis. The same principle applies to logs and traces: consistent service names and environment labels make cross-tool pivots reliable, while inconsistent labels force responders to translate between systems during the highest-pressure part of the outage. Observability is therefore partly an information architecture problem, not only a data collection problem.
+
 ## Patterns & Anti-Patterns
 
 Strong observability patterns share a theme: they preserve context while controlling cost. Instrument application boundaries, not only infrastructure. Emit bounded labels for metrics, structured fields for logs, and trace context across service calls. Put user-facing SLIs at the center of dashboards, then use infrastructure signals as supporting evidence. This design lets responders start with impact, move toward cause, and stop once the recovery action is clear.
@@ -469,7 +469,7 @@ flowchart TD
 |-----------|------------|---------------|-------|
 | Users report slow checkout | Latency histogram and SLO dashboard | Trace for a slow checkout request, then logs for the slow span | Restarting infrastructure before locating the slow dependency |
 | Error rate rises after deploy | Error ratio by version and route | Logs and traces filtered by new version | Searching all logs without labels or version context |
-| Pods are unavailable | Deployment and pod state metrics | Events, `k describe`, and previous container logs | Treating CPU as the only health signal |
+| Pods are unavailable | Deployment and pod state metrics | Events, `kubectl describe`, and previous container logs | Treating CPU as the only health signal |
 | Storage cost explodes | Ingestion volume by signal and label | Retention policy, sampling, and cardinality review | Turning off telemetry globally during incidents |
 
 This framework is intentionally operational. It does not ask which vendor you bought or which dashboard looks most impressive. It asks what evidence will narrow the decision. During a real incident, the next action might be rollback, traffic shift, dependency failover, rate limiting, queue draining, or feature disablement. Observability is successful when it makes that choice faster and more defensible.
@@ -519,8 +519,8 @@ Standardize correlation fields across the telemetry stack, especially `trace_id`
 The team should treat the depleted error budget as a signal to reduce risk and prioritize reliability work before the release. Even if the dependency caused the outage, the SLI measures user experience, so users experienced checkout as unreliable. The team can discuss mitigations such as fallback providers, asynchronous acceptance, timeouts, or circuit breakers. SLOs exist to make this tradeoff explicit instead of turning it into an opinion fight.
 </details>
 
-<details><summary>7. Scenario: A pod is crash looping, and `k logs` only shows the current startup attempt. Which Kubernetes evidence should you gather next?</summary>
-Use previous container logs with `k logs --previous` and inspect events with `k get events --sort-by='.lastTimestamp'`. The previous logs may contain the exception or configuration error from the last failed container instance. Events can show image pull failures, probe failures, evictions, or scheduling issues that application logs do not explain. Combining logs and events gives a more complete diagnosis than repeatedly watching the current container restart.
+<details><summary>7. Scenario: A pod is crash looping, and `kubectl logs` only shows the current startup attempt. Which Kubernetes evidence should you gather next?</summary>
+Use previous container logs with `kubectl logs --previous` and inspect events with `kubectl get events --sort-by='.lastTimestamp'`. The previous logs may contain the exception or configuration error from the last failed container instance. Events can show image pull failures, probe failures, evictions, or scheduling issues that application logs do not explain. Combining logs and events gives a more complete diagnosis than repeatedly watching the current container restart.
 </details>
 
 ## Hands-On Exercise
@@ -539,12 +539,12 @@ kubectl expose deployment web --port=80
 kubectl wait --for=condition=available deployment/web --timeout=90s
 ```
 
-Using the module alias, the same workflow is:
+The same workflow remains explicit for copy-paste practice:
 
 ```bash
-k create deployment web --image=nginx:1.27 --replicas=3
-k expose deployment web --port=80
-k wait --for=condition=available deployment/web --timeout=90s
+kubectl create deployment web --image=nginx:1.27 --replicas=3
+kubectl expose deployment web --port=80
+kubectl wait --for=condition=available deployment/web --timeout=90s
 ```
 </details>
 
@@ -557,11 +557,11 @@ kubectl logs -l app=web --all-containers
 kubectl logs -l app=web -f  # Follow logs (Press Ctrl+C to exit)
 ```
 
-Using the module alias, the same workflow is:
+The same workflow remains explicit for copy-paste practice:
 
 ```bash
-k logs -l app=web --all-containers
-k logs -l app=web -f
+kubectl logs -l app=web --all-containers
+kubectl logs -l app=web -f
 ```
 </details>
 
@@ -582,15 +582,15 @@ kubectl top pods
 kubectl top nodes
 ```
 
-Using the module alias, the same workflow is:
+The same workflow remains explicit for copy-paste practice:
 
 ```bash
-k apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-k patch deployment metrics-server -n kube-system --type=json \
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl patch deployment metrics-server -n kube-system --type=json \
   -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
-k rollout status deployment/metrics-server -n kube-system
-k top pods
-k top nodes
+kubectl rollout status deployment/metrics-server -n kube-system
+kubectl top pods
+kubectl top nodes
 ```
 </details>
 
@@ -606,11 +606,11 @@ kubectl scale deployment web --replicas=0
 kubectl get events --sort-by='.lastTimestamp'
 ```
 
-Using the module alias, the same workflow is:
+The same workflow remains explicit for copy-paste practice:
 
 ```bash
-k scale deployment web --replicas=0
-k get events --sort-by='.lastTimestamp'
+kubectl scale deployment web --replicas=0
+kubectl get events --sort-by='.lastTimestamp'
 ```
 </details>
 
@@ -625,13 +625,13 @@ kubectl get pods -o wide
 kubectl describe pod -l app=web
 ```
 
-Using the module alias, the same workflow is:
+The same workflow remains explicit for copy-paste practice:
 
 ```bash
-k scale deployment web --replicas=1
-k wait --for=condition=ready pod -l app=web --timeout=60s
-k get pods -o wide
-k describe pod -l app=web
+kubectl scale deployment web --replicas=1
+kubectl wait --for=condition=ready pod -l app=web --timeout=60s
+kubectl get pods -o wide
+kubectl describe pod -l app=web
 ```
 </details>
 
@@ -647,12 +647,12 @@ kubectl exec $(kubectl get pod -l app=web -o name | head -1) -- \
 kubectl logs -l app=web | tail
 ```
 
-Using the module alias, the same workflow is:
+The same workflow remains explicit for copy-paste practice:
 
 ```bash
-k exec $(k get pod -l app=web -o name | head -1) -- \
+kubectl exec $(kubectl get pod -l app=web -o name | head -1) -- \
   curl -s localhost > /dev/null
-k logs -l app=web | tail
+kubectl logs -l app=web | tail
 ```
 </details>
 
@@ -664,10 +664,10 @@ k logs -l app=web | tail
 kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}'
 ```
 
-Using the module alias, the same workflow is:
+The same workflow remains explicit for copy-paste practice:
 
 ```bash
-k get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}'
+kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}'
 ```
 </details>
 
@@ -680,11 +680,11 @@ kubectl delete deployment web
 kubectl delete service web
 ```
 
-Using the module alias, the same workflow is:
+The same workflow remains explicit for copy-paste practice:
 
 ```bash
-k delete deployment web
-k delete service web
+kubectl delete deployment web
+kubectl delete service web
 ```
 </details>
 
@@ -692,14 +692,10 @@ k delete service web
 
 - [ ] Deployed the NGINX deployment and verified pod creation.
 - [ ] Successfully installed and patched the `metrics-server` component.
-- [ ] Verified `k top pods` returns current CPU and memory values.
-- [ ] Verified `k get events` displays recent scaling activities.
+- [ ] Verified `kubectl top pods` returns current CPU and memory values.
+- [ ] Verified `kubectl get events` displays recent scaling activities.
 - [ ] Executed the JSONPath query to list pod phases correctly.
 - [ ] Cleaned up the deployment and service after the exercise.
-
-## Next Module
-
-Ready to automate the provisioning of the observability stacks you just learned about? Proceed to [Module 1.5: Platform Engineering Concepts](../module-1.5-platform-engineering/) to learn how Internal Developer Platforms deliver complex toolchains as a reliable service for application teams.
 
 ## Sources
 
@@ -715,3 +711,7 @@ Ready to automate the provisioning of the observability stacks you just learned 
 - [W3C Trace Context](https://www.w3.org/TR/trace-context/)
 - [Google SRE Book: Service Level Objectives](https://sre.google/sre-book/service-level-objectives/)
 - [CNCF: Prometheus graduation announcement](https://www.cncf.io/announcements/2018/08/09/prometheus-graduates/)
+
+## Next Module
+
+Ready to automate the provisioning of the observability stacks you just learned about? Proceed to [Module 1.5: Platform Engineering Concepts](../module-1.5-platform-engineering/) to learn how Internal Developer Platforms deliver complex toolchains as a reliable service for application teams.
