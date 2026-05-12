@@ -430,6 +430,16 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
 
     inject = _run_citation_subcommand(module_key, "inject", agent=agent)
     if not inject["ok"]:
+        # `nothing_to_do` means verification ran but there were no
+        # actionable citation changes; for backfill, this is a success
+        # path (frontmatter can still be marked verified).
+        if inject.get("error") == "nothing_to_do" or "nothing_to_do" in (inject.get("stdout") or ""):
+            set_citations_verified_frontmatter(_REPO_ROOT / st["module_path"], verified=True)
+            return {
+                "done": True, "ok": True, "no_op": True,
+                "reason": "nothing_to_do",
+                "module_key": module_key,
+            }
         # Best-effort: discard any partial write so primary stays clean.
         _git(repo, "restore", st["module_path"], check=False)
         return {

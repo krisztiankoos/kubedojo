@@ -1686,17 +1686,22 @@ def test_backfill_pending_refuses_when_foreign_changes_appear(fake_repo, monkeyp
     assert "## Sources" not in (fake_repo / module_rel).read_text()
 
 
-def test_backfill_pending_inject_no_op_marks_done(fake_repo, monkeypatch):
-    """Inject succeeds but produces no diff (e.g. seed had no actionable
-    claims) → mark done=True, ok=True, no_op=True. The module is
-    considered backfilled and won't be retried."""
+def test_backfill_pending_inject_nothing_to_do_marks_done(fake_repo, monkeypatch):
+    """Inject returns production `nothing_to_do` → mark done=True, ok=True,
+    no_op=True, reason=nothing_to_do and write citations_verified=true."""
     slug, st = _seed_committed_state(fake_repo, monkeypatch)
-    queue.set_citations_verified_frontmatter(fake_repo / st["module_path"], verified=True)
-    subprocess.run(["git", "add", st["module_path"]], cwd=fake_repo, check=True)
-    subprocess.run(["git", "commit", "-m", "seed citations_verified"], cwd=fake_repo, check=True)
 
     def fake_subcmd(module_key, sub, *, agent=None):
-        return {"ok": True, "stdout": '{"ok": true}', "stderr": "", "returncode": 0}
+        if sub == "research":
+            return {"ok": True, "stdout": '{"ok": true}', "stderr": "", "returncode": 0}
+        return {
+            "ok": False,
+            "error": "nothing_to_do",
+            "detail": "seed has no cited, rewrite, or further_reading actions",
+            "stdout": "",
+            "stderr": "",
+            "returncode": 0,
+        }
 
     monkeypatch.setattr(pipeline, "_run_citation_subcommand", fake_subcmd)
     rc = pipeline.cmd_backfill_pending(
@@ -1707,13 +1712,14 @@ def test_backfill_pending_inject_no_op_marks_done(fake_repo, monkeypatch):
     st2 = state.load_state(slug)
     bf = st2["backfill"]
     assert bf["done"] is True and bf["ok"] is True and bf.get("no_op") is True
+    assert bf.get("reason") == "nothing_to_do"
     assert "sha" not in bf, "no_op should not record a sha"
     assert _read_frontmatter(fake_repo / st["module_path"])["citations_verified"] is True
 
 
 def test_backfill_pending_inject_failure_does_not_set_citations_verified(fake_repo, monkeypatch):
-    """Inject failure (non-zero return code) keeps ``citations_verified`` unset
-    in frontmatter so readiness treats the module as not cleared."""
+    """Inject hard failures (non-`nothing_to_do`) keep ``citations_verified``
+    unset in frontmatter so readiness treats the module as not cleared."""
     slug, st = _seed_committed_state(fake_repo, monkeypatch)
     module_rel = st["module_path"]
     module_path = fake_repo / module_rel
@@ -1721,7 +1727,14 @@ def test_backfill_pending_inject_failure_does_not_set_citations_verified(fake_re
     def fake_subcmd(module_key, sub, *, agent=None):
         if sub == "research":
             return {"ok": True, "stdout": '{"ok": true}', "stderr": "", "returncode": 0}
-        return {"ok": False, "stdout": "", "stderr": "inject boom", "returncode": 1}
+        return {
+            "ok": False,
+            "error": "agent_timeout",
+            "detail": "agent call timed out",
+            "stdout": "",
+            "stderr": "agent timeout",
+            "returncode": 1,
+        }
 
     monkeypatch.setattr(pipeline, "_run_citation_subcommand", fake_subcmd)
     rc = pipeline.cmd_backfill_pending(
@@ -1732,7 +1745,7 @@ def test_backfill_pending_inject_failure_does_not_set_citations_verified(fake_re
     bf = st2["backfill"]
     assert bf["done"] is False and bf["ok"] is False
     assert bf["stage_failed"] == "inject"
-    assert "inject boom" in bf["error"]
+    assert "inject" in bf["error"].lower()
     assert _read_frontmatter(module_path).get("citations_verified") is None
 
 
