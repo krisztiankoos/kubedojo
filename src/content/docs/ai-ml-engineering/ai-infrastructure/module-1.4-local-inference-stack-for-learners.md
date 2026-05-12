@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Local Inference Stack for Learners"
 slug: ai-ml-engineering/ai-infrastructure/module-1.4-local-inference-stack-for-learners
 sidebar:
@@ -143,11 +144,11 @@ Ollama is best understood as a convenience-first local model runner with a usefu
 
 Ollama becomes a poor fit only when you expect it to behave like a full serving platform. If the workload requires deliberate batching experiments, deep serving controls, or advanced structured generation workflows, the learner has moved beyond the problem Ollama is optimized to solve. The mistake is not using Ollama; the mistake is asking a convenience tool to prove concepts that belong to serving architecture.
 
-`llama.cpp` is best understood as the direct local runtime path for learners who want to see more of the machinery. It is especially useful when GGUF model files, quantization choices, CPU execution, and mixed CPU/GPU behavior are part of what you want to understand. The price of that control is that the learner must manage more details, and those details are productive only when they serve the learning goal.
+`llama.cpp` is best understood as the direct local runtime path for learners who want to see more of the machinery. It is especially useful when [GGUF model files, quantization choices, CPU execution, and mixed CPU/GPU behavior](https://github.com/ggml-org/llama.cpp) are part of what you want to understand. The price of that control is that the learner must manage more details, and those details are productive only when they serve the learning goal.
 
-vLLM is best understood as a serving engine that teaches throughput-oriented behavior. It becomes worthwhile when repeated API traffic, batching, cache behavior, and OpenAI-compatible serving semantics are the subject of the experiment. If one person is sending occasional prompts, vLLM may still run, but the learner is paying a complexity cost without exercising the feature set that makes the tool interesting.
+vLLM is best understood as a serving engine that teaches throughput-oriented behavior. It becomes worthwhile when [repeated API traffic, batching, cache behavior, and OpenAI-compatible serving semantics](https://github.com/vllm-project/vllm/blob/main/README.md) are the subject of the experiment. If one person is sending occasional prompts, vLLM may still run, but the learner is paying a complexity cost without exercising the feature set that makes the tool interesting.
 
-sglang is best understood as an advanced serving framework for workflow-oriented and structured generation scenarios. It becomes more relevant when the learner is exploring agentic flows, structured outputs, or serving patterns where control over generation behavior matters. For most learners, it is not the first stack; it is a later stack that makes more sense after the local runner and local service tiers are understood.
+sglang is best understood as [an advanced serving framework for workflow-oriented and structured generation scenarios](https://github.com/sgl-project/sglang). It becomes more relevant when the learner is exploring agentic flows, structured outputs, or serving patterns where control over generation behavior matters. For most learners, it is not the first stack; it is a later stack that makes more sense after the local runner and local service tiers are understood.
 
 | Tool | Optimizes For | Learner Value | Avoid When |
 |---|---|---|---|
@@ -253,7 +254,7 @@ The hardware changes the feasible tier, but it does not automatically decide the
 
 The first recommendation is to begin with a local service baseline, then graduate to vLLM if the repeated-call test exposes throughput or queueing pressure. This sequencing prevents the learner from debugging a serving engine before they have confirmed model compatibility and prompt behavior. It also creates a baseline that makes the serving engine meaningful: if vLLM improves repeated request handling, the learner can observe the difference instead of assuming it.
 
-A baseline service can be tested with Ollama's local API. The point is not that Ollama is the final architecture; the point is to validate the model, prompt shape, and client behavior with minimal moving parts.
+A baseline service can be tested with [Ollama's local API](https://github.com/ollama/ollama/blob/main/docs/api.md). The point is not that Ollama is the final architecture; the point is to validate the model, prompt shape, and client behavior with minimal moving parts.
 
 ```bash
 curl http://127.0.0.1:11434/api/tags
@@ -285,7 +286,7 @@ The recommendation for this workstation is conditional: local service first, vLL
 
 Once a local model is useful, learners often want to connect it to applications. This is the point where "it runs" becomes "other software can depend on it." The distinction matters because applications need more than a clever response in a terminal; they need predictable endpoints, stable request formats, reasonable error behavior, and output that can be parsed or validated.
 
-Ollama and some `llama.cpp` builds can provide local HTTP interfaces, which is enough for many learner projects. A notebook, editor helper, or tiny web app can call `127.0.0.1` and receive responses without exposing anything to the public internet. This local-only boundary is useful while learning because it keeps the blast radius small and makes failures easier to reason about.
+Ollama and some [`llama.cpp` builds can provide local HTTP interfaces](https://github.com/ggml-org/llama.cpp), which is enough for many learner projects. A notebook, editor helper, or tiny web app can call `127.0.0.1` and receive responses without exposing anything to the public internet. This local-only boundary is useful while learning because it keeps the blast radius small and makes failures easier to reason about.
 
 ```bash
 curl http://127.0.0.1:11434/api/tags
@@ -758,6 +759,7 @@ Success criteria:
 
 ## Sources
 
-- [github.com: api.md](https://github.com/ollama/ollama/blob/main/docs/api.md) — The upstream API reference explicitly documents model pull endpoints and the REST API for running and managing local models.
-- [github.com: README.md](https://github.com/vllm-project/vllm/blob/main/README.md) — The upstream README explicitly lists serving throughput, continuous batching, prefix caching, and an OpenAI-compatible API server.
-- [github.com: sglang](https://github.com/sgl-project/sglang) — The upstream README describes SGLang as a high-performance serving framework and lists structured outputs plus OpenAI API compatibility among its core features.
+- [github.com: api.md](https://github.com/ollama/ollama/blob/main/docs/api.md) — The upstream API reference explicitly documents generation endpoints plus local model listing and pull operations.
+- [github.com: llama.cpp](https://github.com/ggml-org/llama.cpp) — The upstream README states that `llama.cpp` requires GGUF format and documents multiple hardware backends including Apple silicon, CUDA, and Vulkan.
+- [github.com: README.md](https://github.com/vllm-project/vllm/blob/main/README.md) — The upstream README explicitly lists continuous batching, prefix caching, structured outputs, and an OpenAI-compatible API server among vLLM's core serving features.
+- [github.com: sglang](https://github.com/sgl-project/sglang) — The upstream README describes SGLang as a high-performance serving framework and explicitly lists structured outputs plus OpenAI API compatibility.
