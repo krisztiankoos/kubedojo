@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Tools, Retrieval, and Boundaries"
 slug: ai/ai-building/module-1.3-tools-retrieval-and-boundaries
 sidebar:
@@ -24,7 +25,7 @@ By the end of this module you will be able to:
 4. **Debug** an over-empowered assistant by identifying which capability layer, such as knowledge, read tool, write tool, or autonomy, is responsible for a given failure.
 5. **Compare** the operational cost of retrieval versus tool use for a given workload and recommend the smallest capability that solves the task.
 
-These outcomes target Bloom Level 3 (Apply), Level 4 (Analyze), and Level 5 (Evaluate). The quiz and exercise test the same skills under unfamiliar scenarios, so treat the module as a design rehearsal rather than a vocabulary lesson.
+These outcomes target [Bloom Level 3 (Apply), Level 4 (Analyze), and Level 5 (Evaluate)](https://en.wikipedia.org/wiki/Bloom%27s_taxonomy). The quiz and exercise test the same skills under unfamiliar scenarios, so treat the module as a design rehearsal rather than a vocabulary lesson.
 
 ## Why This Module Matters
 
@@ -244,10 +245,10 @@ The framework deliberately pushes many ideas downward. A customer-support assist
 
 ## Did You Know?
 
-1. The 2020 retrieval-augmented generation paper by Lewis and coauthors framed retrieval as a way to combine parametric model memory with non-parametric external memory, which is the same architectural separation this module uses: the model reasons, while the index supplies grounded evidence.
-2. Anthropic's "Building Effective Agents" guidance distinguishes workflows from agents and argues that fixed orchestration patterns are often more reliable than broad autonomous loops for business tasks, which reinforces the ladder's bias toward staged control.
+1. The 2020 retrieval-augmented generation paper by Lewis and coauthors framed retrieval as a way to [combine parametric model memory with non-parametric external memory](https://arxiv.org/abs/2005.11401), which is the same architectural separation this module uses: the model reasons, while the index supplies grounded evidence.
+2. Anthropic's "Building Effective Agents" guidance [distinguishes workflows from agents and argues that fixed orchestration patterns are often more reliable than broad autonomous loops for business tasks](https://www.anthropic.com/research/building-effective-agents), which reinforces the ladder's bias toward staged control.
 3. OpenAI's current tool guidance treats file search, web search, code execution, and custom function tools as different hosted or developer-defined capabilities, which is why tool descriptions should include side effects, retry safety, and error modes rather than only happy-path names.
-4. Kubernetes role-based access control is additive: permissions come from matching RoleBindings and ClusterRoleBindings, so a generic cluster tool inherits the full combined authority of its credential unless the credential is deliberately scoped before the model can call it.
+4. Kubernetes [role-based access control is additive: permissions come from matching RoleBindings and ClusterRoleBindings](https://kubernetes.io/docs/reference/access-authn-authz/rbac/), so a generic cluster tool inherits the full combined authority of its credential unless the credential is deliberately scoped before the model can call it.
 
 ## Common Mistakes
 
@@ -356,19 +357,9 @@ When you are done, give the document to a colleague and ask them to find the wea
 
 ## Sources
 
-- [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401)
-- [Building Effective Agents](https://www.anthropic.com/engineering/building-effective-agents)
-- [OpenAI: Function calling](https://platform.openai.com/docs/guides/function-calling)
-- [OpenAI: File search](https://platform.openai.com/docs/guides/tools-file-search)
-- [OpenAI: Web search](https://platform.openai.com/docs/guides/tools-web-search)
-- [OpenAI: Structured outputs](https://platform.openai.com/docs/guides/structured-outputs)
-- [OWASP Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
-- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)
-- [Kubernetes RBAC good practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/)
-- [Kubernetes authorization overview](https://kubernetes.io/docs/reference/access-authn-authz/authorization/)
-- [Google Cloud Vertex AI: Grounding overview](https://cloud.google.com/vertex-ai/generative-ai/docs/grounding/overview)
-- [Microsoft Azure OpenAI: Use your data](https://learn.microsoft.com/azure/ai-services/openai/concepts/use-your-data)
-
-## Next Module
-
-Continue to [Evaluation, Iteration, and Shipping v1](./module-1.4-evaluation-iteration-and-shipping-v1/), where we take the design you just wrote and turn it into an evaluation harness, a shipping plan, and a feedback loop that survives contact with real users.
+- [en.wikipedia.org: Bloom%27s taxonomy](https://en.wikipedia.org/wiki/Bloom%27s_taxonomy) — The cited page directly lists the revised cognitive-order levels as Apply, Analyze, and Evaluate.
+- [arxiv.org: 2005.11401](https://arxiv.org/abs/2005.11401) — The arXiv paper abstract explicitly describes RAG in terms of parametric and non-parametric memory.
+- [anthropic.com: building effective agents](https://www.anthropic.com/research/building-effective-agents) — Anthropic's article directly defines workflows versus agents and says workflows are preferable for many well-defined tasks.
+- [kubernetes.io: rbac](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) — The Kubernetes RBAC documentation explicitly states that permissions are purely additive and explains RoleBinding versus ClusterRoleBinding scope.
+- [New tools for building agents](https://openai.com/index/new-tools-for-building-agents/) — OpenAI's main-domain overview of built-in tools, agent-building primitives, and custom-tool examples.
+- [Role Based Access Control Good Practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/) — Concrete upstream guidance for least-privilege scoping and why broad generic cluster tools are risky.
