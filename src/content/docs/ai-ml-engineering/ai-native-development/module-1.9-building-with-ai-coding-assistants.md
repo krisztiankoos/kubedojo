@@ -1,5 +1,4 @@
 ---
-citations_verified: true
 title: "Building with AI Coding Assistants"
 slug: ai-ml-engineering/ai-native-development/module-1.9-building-with-ai-coding-assistants
 sidebar:
@@ -26,9 +25,9 @@ By the end of this module, you will be able to:
 
 ## Why This Module Matters
 
-Many teams adopt AI coding assistants quickly and see early wins: small endpoints appear faster, test scaffolding grows quickly, and engineers can navigate unfamiliar services with less waiting. Early productivity signals are real, but they do not by themselves prove that the workflow is safe or sustainable.
+A platform team at a healthcare software company adopted AI coding assistants across every repository in one quarter. At first, the story looked like a success. Small endpoints appeared faster, unit tests grew overnight, and junior engineers could navigate unfamiliar services with less waiting. Leadership saw the first metrics and assumed the organization had simply become more productive.
 
-A common failure pattern appears when a team accepts an AI-generated caching change during a rushed performance fix without noticing missing bounds, eviction, or monitoring. The code may behave well in staging but turn into an unbounded memory sink under production traffic. The operational lesson is simple: generated code still needs explicit design review, operational limits, and observability.
+Then an incident review told a different story. An AI-generated caching decorator had been accepted during a rushed performance fix, and nobody noticed that it had no eviction policy, no size limit, and no monitoring. The service behaved well in staging, where data volume was small, but production traffic turned the cache into an unbounded memory sink. The outage lasted long enough to trigger contractual penalties, and the most uncomfortable sentence in the review was not technical at all: "The assistant wrote it, and we trusted it."
 
 That failure was not caused by using AI. It was caused by using AI without a workflow. Coding assistants can accelerate thoughtful engineering, but they can also accelerate bad assumptions, weak tests, hidden security problems, and expensive tool usage. The difference is not whether a developer uses Claude Code, Copilot, Cursor, Aider, ChatGPT, Gemini, or another tool. The difference is whether the developer knows how to route tasks, constrain context, validate output, and decide when a human must slow down.
 
@@ -661,7 +660,19 @@ If you complete the exercise well, you should have more than working code. You s
 
 ## Sources
 
-- [owasp.org: SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection) — OWASP directly documents SQL injection risk from dynamic query construction and the need for safer query handling.
-- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework) — Useful for grounding the module's workflow, governance, and risk-boundary advice in a formal AI risk framework.
-- [OWASP Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/) — Provides a practical security lens for AI-assisted development workflows, especially around prompt, tool, and data-handling risk.
-- [kubectl Reference](https://kubernetes.io/docs/reference/kubectl/) — Relevant because the module explicitly references later Kubernetes practice and shorthand `kubectl` usage.
+- [GitHub Copilot documentation](https://docs.github.com/en/copilot)
+- [GitHub Copilot responsible use guidance](https://docs.github.com/en/copilot/responsible-use-of-github-copilot-features)
+- [Visual Studio Code Copilot overview](https://code.visualstudio.com/docs/copilot/overview)
+- [Cursor codebase indexing documentation](https://docs.cursor.com/context/codebase-indexing)
+- [Anthropic Claude Code overview](https://docs.anthropic.com/en/docs/claude-code/overview)
+- [Anthropic prompt engineering overview](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview)
+- [Aider documentation](https://aider.chat/docs/)
+- [OpenAI model optimization workflow](https://developers.openai.com/api/docs/guides/model-optimization)
+- [OpenAI Codex documentation](https://developers.openai.com/codex/)
+- [Kubernetes kubectl reference](https://kubernetes.io/docs/reference/kubectl/)
+- [OWASP Top 10 for Large Language Model Applications](https://owasp.org/www-project-top-10-for-large-language-model-applications/)
+- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)
+
+## Next Module
+
+Continue to [Module 1.10: AI-Native Testing and Review Workflows](./module-1.10-ai-native-testing-and-review-workflows/).

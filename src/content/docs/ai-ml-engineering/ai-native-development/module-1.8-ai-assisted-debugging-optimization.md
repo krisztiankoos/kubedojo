@@ -1,5 +1,4 @@
 ---
-citations_verified: true
 title: "AI-Assisted Debugging & Optimization"
 slug: ai-ml-engineering/ai-native-development/module-1.8-ai-assisted-debugging-optimization
 sidebar:
@@ -650,7 +649,7 @@ Explain whether joined loading, select-in loading, or a manual aggregate query i
 Include a test or instrumentation check that prevents the query count from returning.
 ```
 
-Performance work in Kubernetes adds another layer because process-level measurements and cluster-level measurements answer different questions. [`kubectl top` can show CPU and memory usage, but it depends on Metrics Server and is not a high-resolution profiler](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/). Application profiling tells you where code spends time. Distributed tracing tells you whether time is local, remote, or waiting. AI can help interpret all three, but you should not substitute one for another.
+Performance work in Kubernetes adds another layer because process-level measurements and cluster-level measurements answer different questions. `kubectl top` can show CPU and memory usage, but it depends on Metrics Server and is not a high-resolution profiler. Application profiling tells you where code spends time. Distributed tracing tells you whether time is local, remote, or waiting. AI can help interpret all three, but you should not substitute one for another.
 
 After `kubectl` has been introduced, this module uses `k` as the common alias for `kubectl`. You can define it in a shell with `alias k=kubectl` if your environment uses that convention. The alias is convenient during incident work, but scripts and documentation should remain clear enough that another engineer can follow the commands without guessing.
 
@@ -686,7 +685,7 @@ flowchart TD
     J -->|Yes| K[Fix, test, and document]
 ```
 
-A distroless container makes this especially clear. You may not have a shell, package manager, or diagnostic tools inside the application image, and that is a good production-hardening choice. The debugging move is not to rebuild the image with `curl` and `bash` under pressure. The debugging move is to [use Kubernetes debug workflows, such as an ephemeral container or a copied Pod, to inspect the environment without changing the application image contract](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/).
+A distroless container makes this especially clear. You may not have a shell, package manager, or diagnostic tools inside the application image, and that is a good production-hardening choice. The debugging move is not to rebuild the image with `curl` and `bash` under pressure. The debugging move is to use Kubernetes debug workflows, such as an ephemeral container or a copied Pod, to inspect the environment without changing the application image contract.
 
 ```bash
 k debug -n payments pod/checkout-api-abc123 -it --image=busybox:1.36 --target=checkout-api
@@ -714,7 +713,7 @@ Please:
 3. Suggest the next safest verification command.
 ```
 
-Control-plane and node debugging require additional skepticism. A model can explain common failure modes, but it should not be asked to guess cluster health from a single timeout. You need events, component status, node conditions, and relevant endpoint responses. [Kubernetes v1.35+ structured diagnostic endpoints can be especially useful because machine-parseable output is easier for AI to inspect consistently](https://kubernetes.io/docs/reference/instrumentation/zpages/).
+Control-plane and node debugging require additional skepticism. A model can explain common failure modes, but it should not be asked to guess cluster health from a single timeout. You need events, component status, node conditions, and relevant endpoint responses. Kubernetes v1.35+ structured diagnostic endpoints can be especially useful because machine-parseable output is easier for AI to inspect consistently.
 
 ```bash
 k get events -A --sort-by=.lastTimestamp
@@ -747,7 +746,7 @@ Please:
 
 This prompt style catches a common problem: the Service selector does not match the Pod labels, or `targetPort` points to a name that the container does not define. AI is good at comparing structured snippets when you ask it to perform a specific comparison. It is less reliable when you ask a vague question such as “why is my Kubernetes app broken?”
 
-Kubernetes metrics need interpretation as well. [`kubectl top` depends on Metrics Server and can lag shortly after Pod creation](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/kubectl_top_pod/). If the model tells you that missing metrics prove the Pod is idle, challenge that conclusion. Missing metrics might mean the metrics pipeline is not installed, not ready, delayed, or blocked. The absence of data is itself a debugging signal, not proof of health.
+Kubernetes metrics need interpretation as well. `kubectl top` depends on Metrics Server and can lag shortly after Pod creation. If the model tells you that missing metrics prove the Pod is idle, challenge that conclusion. Missing metrics might mean the metrics pipeline is not installed, not ready, delayed, or blocked. The absence of data is itself a debugging signal, not proof of health.
 
 ```bash
 k top pod -n payments
@@ -978,8 +977,8 @@ This prompt is different from a normal debugging prompt because it prioritizes s
 
 ## Did You Know?
 
-- The word “debugging” became famous in computing culture partly because [engineers documented a real moth found in the Harvard Mark II, but software faults existed long before that anecdote](https://en.wikipedia.org/wiki/Debugging).
-- [The Therac-25 accidents showed that software defects, weak interfaces, and inadequate safety engineering can combine into catastrophic real-world harm](https://cacm.acm.org/opinion/what-have-we-learned-about-software-engineering/).
+- The word “debugging” became famous in computing culture partly because engineers documented a real moth found in the Harvard Mark II, but software faults existed long before that anecdote.
+- The Therac-25 accidents showed that software defects, weak interfaces, and inadequate safety engineering can combine into catastrophic real-world harm.
 - See *Infrastructure as Code* for the Knight Capital 2012 incident, where rollout safety, rollback strategy, and feature-flag hygiene are taught as production-first debugging fundamentals. <!-- incident-xref: knight-capital-2012 -->
 - The Mars Climate Orbiter loss remains a classic reminder that interface contracts must include units, assumptions, and validation, not just field names.
 
@@ -1301,6 +1300,14 @@ You have learned how to diagnose failures, challenge model-generated fixes, prot
 
 ## Sources
 
-- [Debug Running Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/) — Official Kubernetes guidance for logs, `exec`, ephemeral containers, and copied-Pod debugging workflows.
-- [Kubernetes z-pages](https://kubernetes.io/docs/reference/instrumentation/zpages/) — Explains the structured `/statusz` and `/flagz` endpoints that make control-plane diagnostics easier to inspect programmatically.
-- [What Have We Learned About Software Engineering?](https://cacm.acm.org/opinion/what-have-we-learned-about-software-engineering/) — Provides concise incident-driven lessons from Therac-25 and other failures that reinforce the module’s debugging discipline.
+- [kubectl debug reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_debug/) — Official `kubectl debug` reference covering pod copies, ephemeral containers, and node-debug workflows.
+- [Debug Running Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/) — Kubernetes task guide with practical debugging patterns for running Pods and ephemeral containers.
+- [Debugging Kubernetes Nodes with Kubectl](https://kubernetes.io/docs/tasks/debug/debug-cluster/kubectl-node-debug/) — Kubernetes documentation for node-level debugging prerequisites and usage.
+- [Kubernetes zPages](https://kubernetes.io/docs/reference/instrumentation/zpages/) — Reference for structured z-page endpoints and negotiated response formats such as JSON output.
+- [kubectl top reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top) — Official `kubectl top` reference describing its dependency on Metrics Server.
+- [Metrics Server](https://github.com/kubernetes-sigs/metrics-server) — Upstream project documentation explaining Metrics Server's autoscaling focus and default 15-second scrape interval.
+- [kubectl top pod reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/kubectl_top_pod/) — Kubernetes reference noting Pod metrics availability details and common timing caveats.
+- [OpenAI Function Calling Guide](https://platform.openai.com/docs/guides/function-calling?api-mode=respon) — Primary OpenAI guide for tool-calling flow, strict mode, and structured argument validation.
+- [New tools and features in the Responses API](https://openai.com/index/new-tools-and-features-in-the-responses-api/) — OpenAI announcement summarizing Responses API support for remote MCP servers, image generation, Code Interpreter, and file search.
+- [OpenAI Docs MCP](https://platform.openai.com/docs/docs-mcp) — OpenAI documentation for the public read-only MCP server used to access developer docs.
+- [OpenAI Web Search Guide](https://platform.openai.com/docs/guides/tools-web-search?api-mode=responses) — OpenAI guide for Responses web-search tool behavior, supported modes, and model availability constraints.
