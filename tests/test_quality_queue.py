@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from scripts.quality import queue, state
+from conftest import _read_frontmatter
 
 
 @pytest.fixture
@@ -108,6 +109,48 @@ def test_ensure_queued_is_idempotent_in_writer_choice(tmp_repo):
     p.write_text(p.read_text().replace("title: T\n", "title: T\ncomplexity: complex\n"))
     second = queue.ensure_queued(slug, p, set_banner=False)
     assert first["assigned_writer"] == second["assigned_writer"]
+
+
+def test_set_citations_verified_frontmatter_sets_and_removes(tmp_repo):
+    p = _seed_module(tmp_repo, "src/content/docs/ai/foundations/m.md")
+    queue.set_citations_verified_frontmatter(p)
+    fm = _read_frontmatter(p)
+    assert fm["citations_verified"] is True
+
+    queue.set_citations_verified_frontmatter(p, verified=False)
+    fm = _read_frontmatter(p)
+    assert "citations_verified" not in fm
+
+
+def test_set_citations_verified_frontmatter_keeps_other_frontmatter_keys(tmp_repo):
+    p = tmp_repo / "src/content/docs/ai/foundations/m.md"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("""---
+title: M
+sidebar:
+  order: 4
+complexity: quick
+---
+
+body
+""")
+    queue.set_citations_verified_frontmatter(p)
+    fm = _read_frontmatter(p)
+    assert fm["title"] == "M"
+    assert fm["sidebar"] == {"order": 4}
+    assert fm["complexity"] == "quick"
+    assert fm["citations_verified"] is True
+
+
+def test_set_citations_verified_frontmatter_is_idempotent_for_true(tmp_repo):
+    p = _seed_module(tmp_repo, "src/content/docs/ai/foundations/m.md")
+    first = p.read_bytes()
+    queue.set_citations_verified_frontmatter(p)
+    second = p.read_bytes()
+    queue.set_citations_verified_frontmatter(p)
+    third = p.read_bytes()
+    assert first != second
+    assert second == third
 
 
 # ---- claim ------------------------------------------------------------

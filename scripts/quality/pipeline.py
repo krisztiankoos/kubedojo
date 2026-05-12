@@ -35,6 +35,7 @@ from . import density, queue, state, stages
 from .dispatchers import DispatcherUnavailable
 from .prompts import assert_required_docs_exist
 from .worktree import has_uncommitted, primary_checkout_root
+from .queue import set_citations_verified_frontmatter
 
 
 _REPO_ROOT = primary_checkout_root(Path(__file__).resolve().parents[2])
@@ -436,6 +437,10 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
             "error": (inject["stderr"] or inject["stdout"])[-500:],
             "module_key": module_key,
         }
+    # A4 prereq #1: backfill success (including no-op inject) means
+    # citations were verified for readiness purposes, so mark as verified
+    # in frontmatter.
+    set_citations_verified_frontmatter(_REPO_ROOT / st["module_path"], verified=True)
 
     # The research step writes (or refreshes) the seed JSON; both
     # artifacts (module + seed) must land in the same commit so the
@@ -444,6 +449,7 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
     seed_rel = f"docs/citation-seeds/{module_key.replace('/', '-')}.json"
     rc, status_all, _ = _git(repo, "status", "--porcelain", check=False)
     if rc != 0:
+        _git(repo, "restore", st["module_path"], check=False)
         return {
             "done": False, "ok": False, "stage_failed": "git_status",
             "error": "git status failed after inject",
