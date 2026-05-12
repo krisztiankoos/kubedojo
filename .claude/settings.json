@@ -8,7 +8,10 @@
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "hooks": [{"type": "command", "command": ".claude/hooks/enforce-venv.sh"}]
+        "hooks": [
+          {"type": "command", "command": ".claude/hooks/enforce-venv.sh"},
+          {"type": "command", "command": ".claude/hooks/block-branch-create-in-primary.sh"}
+        ]
       }
     ],
     "PostToolUse": [
