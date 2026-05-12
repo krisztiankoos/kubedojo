@@ -6,11 +6,13 @@ sidebar:
 revision_pending: false
 ---
 
-# Module 1.5: Platform Engineering Concepts
+> **Complexity**: [MEDIUM]
+>
+> **Time to Complete**: 60-75 minutes
+>
+> **Prerequisites**: Modules 1.1-1.4 (IaC, GitOps, CI/CD, Observability)
 
-**Complexity**: [MEDIUM]
-**Time to Complete**: 60-75 minutes
-**Prerequisites**: Modules 1.1-1.4 (IaC, GitOps, CI/CD, Observability)
+---
 
 ## Learning Outcomes
 
@@ -24,7 +26,7 @@ By the end of this module, you will be able to:
 
 ## Why This Module Matters
 
-At a mid-sized payments company, a critical dependency vulnerability landed on a Tuesday afternoon and the security team asked every service team to patch before the end of the week. The code change was a boring version bump, but the rollout became a five-day coordination failure across 120 engineers and 15 microservice teams. Developers had to edit Dockerfiles, adjust Jenkins stages, update Helm values, wait for database migration help, find the right PagerDuty schedule, and debug Terraform state locks before a single customer-facing fix could reach production.
+Hypothetical scenario: at a mid-sized payments company, a critical dependency vulnerability lands on a Tuesday afternoon and the security team asks every service team to patch before the end of the week. The code change is a boring version bump, but the rollout becomes a five-day coordination failure across 120 engineers and 15 microservice teams. Developers have to edit Dockerfiles, adjust Jenkins stages, update Helm values, wait for database migration help, find the right PagerDuty schedule, and debug Terraform state locks before a single customer-facing fix can reach production.
 
 The company believed it had adopted DevOps because every product team owned its services in production. In practice, "you build it, you run it" had turned into "you build it, you become a part-time infrastructure specialist." The organization had no old operations wall, but it had created a maze of cloud consoles, YAML fragments, dashboards, and tribal knowledge that slowed urgent work. A one-line patch took days because the delivery system demanded expertise that most feature teams did not have time to build or maintain.
 
@@ -44,7 +46,7 @@ Three anti-patterns show up repeatedly when organizations push "run it" responsi
 
 The platform response is not to centralize every decision again. The better contract is: product teams own the behavior of their services, while the platform team owns the paved interfaces that make routine operational work safe and repeatable. Developers should still understand the basic shape of Kubernetes 1.35+ workloads, resource limits, health checks, and observability signals, but they should not need to handcraft every manifest, policy, and pipeline every time they create a standard service.
 
-This course uses `kubectl` directly in later modules, and the shorthand alias is `alias k=kubectl`; when you see a command such as `k get deployments`, read it as a Kubernetes 1.35+ command using that alias. Platform Engineering does not eliminate the need to learn Kubernetes, but it changes which details are part of everyday work. The platform should make common operations boring while leaving a documented escape hatch for teams that truly need lower-level control.
+This course uses `kubectl` directly in later modules so copied commands remain runnable in scripts and non-interactive shells. Platform Engineering does not eliminate the need to learn Kubernetes 1.35+ concepts, but it changes which details are part of everyday work. The platform should make common operations boring while leaving a documented escape hatch for teams that truly need lower-level control.
 
 ## What Platform Engineering Is
 
@@ -421,12 +423,6 @@ The platform team should shadow product developers during real service creation 
 - [ ] Formulate a Golden Path for transactional APIs with clear support boundaries and an escape hatch.
 - [ ] Measure adoption, workflow speed, and developer satisfaction with metrics that can guide product decisions.
 
-## Next Module
-
-You have learned how Platform Engineering turns scattered infrastructure work into a product interface for developers, how Golden Paths reduce cognitive load without banning autonomy, and how to decide whether an organization is ready for the investment. The next module moves into security as a continuous delivery concern rather than a late review gate.
-
-[Proceed to Module 1.6: DevSecOps](/prerequisites/modern-devops/module-1.6-devsecops/) - Learn how to build security checks directly into CI/CD, platform workflows, and production delivery practices.
-
 ## Sources
 
 - [CNCF Platforms White Paper](https://tag-app-delivery.cncf.io/whitepapers/platforms/)
@@ -440,3 +436,9 @@ You have learned how Platform Engineering turns scattered infrastructure work in
 - [Kubernetes Documentation](https://kubernetes.io/docs/home/)
 - [DORA Research Program](https://dora.dev/research/)
 - [Team Topologies Key Concepts](https://teamtopologies.com/key-concepts)
+
+## Next Module
+
+You have learned how Platform Engineering turns scattered infrastructure work into a product interface for developers, how Golden Paths reduce cognitive load without banning autonomy, and how to decide whether an organization is ready for the investment. The next module moves into security as a continuous delivery concern rather than a late review gate.
+
+[Proceed to Module 1.6: DevSecOps](/prerequisites/modern-devops/module-1.6-devsecops/) - Learn how to build security checks directly into CI/CD, platform workflows, and production delivery practices.
