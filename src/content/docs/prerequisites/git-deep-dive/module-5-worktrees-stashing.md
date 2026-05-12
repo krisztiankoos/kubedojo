@@ -9,11 +9,15 @@ sidebar:
   order: 5
 ---
 
-# Module 5: Multi-Tasking Mastery - Worktrees and Stashing
+> **Complexity**: [MEDIUM]
+>
+> **Time to Complete**: 60 minutes
+>
+> **Prerequisites**: Module 4 of Git Deep Dive
 
-Complexity: **MEDIUM**. Time to complete: **60 minutes**. Prerequisites: **Module 4 of Git Deep Dive**.
+---
 
-## Learning Outcomes
+## What You'll Be Able to Do
 
 By the end of this module, you will be able to:
 
@@ -25,9 +29,9 @@ By the end of this module, you will be able to:
 
 ## Why This Module Matters
 
-It was late afternoon at a regional payments company during a planned Kubernetes platform upgrade. A senior engineer was halfway through refactoring an ingress controller deployment for Kubernetes 1.35, with modified YAML files, half-written Go tests for a custom admission webhook, and a local cluster tuned to reproduce a routing edge case. Then security paged the team: a vulnerable production image had to be replaced immediately, before the next merchant settlement window opened. The change itself was tiny, but the operational risk was not tiny at all, because a broken hotfix would block payment authorization and the company estimated that a fifteen-minute outage during that window could put more than six figures of revenue at risk.
+Hypothetical scenario: it is late afternoon at a regional payments company during a planned Kubernetes platform upgrade. A senior engineer is halfway through refactoring an ingress controller deployment for Kubernetes 1.35, with modified YAML files, half-written Go tests for a custom admission webhook, and a local cluster tuned to reproduce a routing edge case. Then security pages the team: a vulnerable production image has to be replaced immediately, before the next merchant settlement window opens. The change itself is tiny, but the operational risk is not tiny at all, because a broken hotfix could block payment authorization and put revenue at risk during a narrow production window.
 
-The engineer reached for `git stash`, switched to the production branch, made the image update, and pushed the hotfix. That first part looked successful, but the return trip was painful. The stash did not include a newly created manifest because the file was still untracked, and `git stash pop` collided with the same deployment block that the emergency patch had changed. The fix prevented customer-visible impact, yet the team paid for the rushed context switch with hours of conflict resolution, repeated local cluster resets, and a delayed review of the original ingress refactor.
+In that hypothetical, the engineer reaches for `git stash`, switches to the production branch, makes the image update, and pushes the hotfix. That first part looks successful, but the return trip is painful. The stash does not include a newly created manifest because the file is still untracked, and `git stash pop` collides with the same deployment block that the emergency patch changed. The fix prevents customer-visible impact, yet the team pays for the rushed context switch with hours of conflict resolution, repeated local cluster resets, and a delayed review of the original ingress refactor.
 
 This module is about preventing that class of avoidable disruption. Git branches are cheap, but a normal clone gives you only one working directory, and real engineering work rarely arrives one task at a time. You will learn when a stash is the right short-term scratchpad, when a linked worktree is the safer architecture, and when a second clone is still justified. By the end, you should be able to leave unfinished work exactly where it is, handle an interruption in a clean directory, and return without relying on memory or luck.
 
@@ -258,7 +262,7 @@ git worktree prune
 
 Worktrees become especially valuable in Kubernetes repositories because the source files are only part of the local state. A change to a Deployment may be tied to a running KinD cluster, a port-forward, generated manifests, and a failing integration test. Stashing the source files does not reset those external systems, and carrying dirty YAML into a production hotfix branch can produce misleading tests. A separate worktree gives the hotfix a clean file view while allowing you to decide separately how to isolate the cluster.
 
-Suppose you are developing a reliability upgrade for a Deployment that targets Kubernetes 1.35. In your normal shell profile, you can introduce the common `alias k=kubectl` once, then use commands such as `k version --client` and `k apply --dry-run=client -f deployment.yaml` during validation. The alias is not required for Git itself, but KubeDojo examples use it consistently after the first introduction so commands stay compact without hiding that `k` means `kubectl`.
+Suppose you are developing a reliability upgrade for a Deployment that targets Kubernetes 1.35. Git itself does not require Kubernetes tooling, but platform repositories often mix Git operations with manifest validation, so command examples should be explicit rather than dependent on interactive shell configuration.
 
 For a local test, the unfinished feature might include probes, resource requests, and image changes. Those are exactly the fields an emergency hotfix might also need to touch. If you stash the feature, switch to `main`, update the image, and return later, you are betting that the same manifest regions did not drift in incompatible ways. If you create a worktree from `main`, the hotfix starts from the production file while the feature file stays physically open in the original directory. That physical separation is useful when your editor has multiple tabs open, your terminal history is full of feature-specific commands, and your local notes refer to paths in the original directory.
 
@@ -266,7 +270,7 @@ The worktree does not automatically give you a second Kubernetes cluster, so des
 
 The strongest teams write this separation into their runbooks. An incident runbook can say, "Create a worktree from `main`, create or select a clean namespace, validate only the hotfix diff, and remove the worktree after the fix merges." That procedure reduces the chance that an engineer improvises while under pressure. It also makes reviews calmer because the pull request can be judged as an isolated production change rather than a mixture of emergency edits and unrelated feature residue.
 
-A realistic operator team uses this split during incident response. Alice is building automated backup support for a database operator, with many modified Go files, new CustomResourceDefinition manifests, and a local cluster configured to test backup scheduling. Production then reports a leader-election crash. The stash approach asks Alice to package a complex feature as a patch, change branch context, run a different investigation in the same directory, and later reapply the patch over a branch that may have moved. The worktree approach asks Alice to open a clean sibling directory from `main`, fix the leader-election code there, and leave the backup work untouched.
+Exercise scenario: a realistic operator team can use this split during incident response. Alice is building automated backup support for a database operator, with many modified Go files, new CustomResourceDefinition manifests, and a local cluster configured to test backup scheduling. Production then reports a leader-election crash. The stash approach asks Alice to package a complex feature as a patch, change branch context, run a different investigation in the same directory, and later reapply the patch over a branch that may have moved. The worktree approach asks Alice to open a clean sibling directory from `main`, fix the leader-election code there, and leave the backup work untouched.
 
 The difference is not merely comfort. During an incident, reducing accidental coupling is an operational control. A clean hotfix worktree makes it easier to see which files changed, easier to run focused tests, and easier to produce a reviewable commit. The original feature directory remains dirty, but that dirtiness is contained. When the incident ends, Alice does not need to remember whether a local manifest belonged to the feature or the hotfix; the directory boundary preserves that answer.
 
@@ -515,10 +519,6 @@ Success criteria:
 - [ ] The original `feature/reliability-upgrade` directory still has uncommitted reliability changes.
 - [ ] No stash entry was required to survive the interruption.
 
-## Next Module
-
-Continue to [Module 6: The Digital Detective](../module-6-troubleshooting/) to learn how to diagnose broken history, failed merges, and repository states that do not match your expectations.
-
 ## Sources
 
 - [Git documentation: git-worktree](https://git-scm.com/docs/git-worktree)
@@ -534,3 +534,7 @@ Continue to [Module 6: The Digital Detective](../module-6-troubleshooting/) to l
 - [Pro Git book: Branches in a Nutshell](https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell)
 - [Kubernetes documentation: Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
 - [Kubernetes documentation: Liveness, readiness, and startup probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+
+## Next Module
+
+Continue to [Module 6: The Digital Detective](../module-6-troubleshooting/) to learn how to diagnose broken history, failed merges, and repository states that do not match your expectations.
