@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -18,7 +18,9 @@
   h2 { margin: 40px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
        font-size: 22px; }
   h3 { margin: 24px 0 8px; font-size: 17px; }
+  h4 { margin: 20px 0 8px; font-size: 15px; color: var(--accent); }
   .meta { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  .footer-meta { margin-top: 48px; text-align: center; }
   .tldr { background: var(--card); border-left: 4px solid var(--accent);
           padding: 14px 18px; margin: 16px 0 28px; border-radius: 0 6px 6px 0; }
   table { width: 100%; border-collapse: collapse; margin: 12px 0;
@@ -64,7 +66,7 @@
   <code>engineer.kodekloud.com/curriculum</code> + kubedojo content tree
   (<code>src/content/docs/</code>, 648 EN files). Analyst: claude (KK pull,
   kubedojo grep, classification per cluster). Tracks: MLOps (this version),
-  Cloud-AWS · Cloud-Azure · DevOps · CNCF Landscape.
+  Cloud-AWS · Cloud-Azure · DevOps · CNCF Landscape · cert blueprints.
 </p>
 
 <div class="tldr">
@@ -87,6 +89,7 @@
   <a href="#azure">Cloud-Azure (pending)</a>
   <a href="#devops">DevOps (pending)</a>
   <a href="#cncf">CNCF Landscape</a>
+  <a href="#certs">Cert blueprints</a>
   <a href="#expansion">Expansion plan</a>
 </div>
 
@@ -716,17 +719,152 @@ each dominant project to kubedojo mentions and dedicated module-grain coverage.<
 </div>
 </section>
 
-<section id="expansion">
-<h2>Expansion plan (interim — KodeKloud + CNCF; awaiting cert blueprint augmentation)</h2>
+<section id="certs">
+<h2>Industry cert blueprints (AWS SAA-C03 · Azure AZ-104 · Terraform Assoc)</h2>
+<p>Snapshot pulled 2026-05-13 from official guides:
+<a href="https://aws.amazon.com/certification/certified-solutions-architect-associate/">AWS SAA-C03 certification page</a>
+and <a href="https://docs.aws.amazon.com/aws-certification/latest/solutions-architect-associate-03/solutions-architect-associate-03.html">exam guide</a>,
+<a href="https://learn.microsoft.com/en-us/credentials/certifications/resources/study-guides/az-104">Microsoft AZ-104 study guide</a>, and
+<a href="https://developer.hashicorp.com/terraform/tutorials/certification-003">HashiCorp Terraform Associate prep path</a>
+(the requested Terraform 003 URL now redirects to Associate 004 pages; this map preserves the Terraform Associate objectives relevant to kubedojo's IaC track).
+Kubernetes certs are intentionally excluded because they already drive <code>src/content/docs/k8s/</code>.</p>
 
-<p>This section is interim — it now captures gaps from <strong>KodeKloud and
-CNCF Landscape (2 of 3 sources)</strong>. Triangulation with cert blueprints
-(Step 3) will reorder and refine. Per the protocol from
+<h3>AWS Solutions Architect — Associate (SAA-C03)</h3>
+<table>
+<thead>
+<tr><th>Domain</th><th>Exam-guide task</th><th>kubedojo coverage</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td class="days">Secure 30%</td><td>Secure access to AWS resources</td><td><code>cloud/aws-essentials/module-1.1-iam.md</code>, <code>cloud/architecture-patterns/module-4.3-cloud-iam.md</code>, <code>cloud/advanced-operations/module-8.1-multi-account.md</code>. IAM Identity Center = 23 hits; Control Tower = 19; SCPs = 66.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Secure 30%</td><td>Secure workloads and applications</td><td>VPC, WAF, Shield, GuardDuty, Secrets Manager, VPN, and Direct Connect are covered across AWS essentials, secrets, VPC topologies, and transit hubs. Cognito = 2 hits and Macie = 0, so app identity/data-classification service selection is thin.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Secure 30%</td><td>Data security controls</td><td><code>cloud/aws-essentials/module-1.9-secrets.md</code>, <code>cloud/managed-services/module-9.8-secrets-deep.md</code>, <code>cloud/enterprise-hybrid/module-10.3-compliance.md</code>. KMS = 147 hits; ACM/TLS = 9; lifecycle/backup patterns appear in S3 and DR modules.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Resilient 26%</td><td>Scalable and loosely coupled architectures</td><td><code>cloud/managed-services/module-9.2-message-brokers.md</code>, <code>module-9.3-serverless.md</code>, <code>module-9.5-caching.md</code>, <code>module-9.9-api-gateways.md</code>, plus ECS/Fargate and EKS modules. API Gateway = 59 hits; SQS/SNS/EventBridge = 236; Step Functions = 16.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Resilient 26%</td><td>Highly available and fault-tolerant architectures</td><td><code>cloud/advanced-operations/module-8.5-disaster-recovery.md</code>, <code>module-8.6-active-active.md</code>, <code>cloud/architecture-patterns/module-4.4-vpc-topologies.md</code>, and EKS production coverage teach AZ/Region placement, failover, backups, and RPO/RTO tradeoffs.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Performance 24%</td><td>High-performing storage solutions</td><td><code>cloud/managed-services/module-9.4-object-storage.md</code>, <code>cloud/aws-essentials/module-1.4-s3.md</code>, <code>cloud/eks-deep-dive/module-5.4-eks-storage.md</code>. Object/file/block tradeoffs and S3 lifecycle are covered.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Performance 24%</td><td>High-performing elastic compute</td><td><code>cloud/aws-essentials/module-1.3-ec2.md</code>, <code>module-1.7-ecs-fargate.md</code>, <code>module-1.8-lambda.md</code>, EKS, Auto Scaling, and serverless patterns cover compute selection, scaling metrics, and container/serverless decisions.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Performance 24%</td><td>High-performing databases</td><td><code>cloud/managed-services/module-9.1-databases.md</code> and <code>module-9.5-caching.md</code> cover RDS, DynamoDB, caching, read replicas, and engine choice. RDS Proxy = 0 hits and Aurora = 6, so AWS-specific proxy/capacity edge cases are thin.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Performance 24%</td><td>Scalable network architectures</td><td><code>cloud/aws-essentials/module-1.2-vpc.md</code>, <code>module-1.5-route53.md</code>, <code>cloud/architecture-patterns/module-4.4-vpc-topologies.md</code>, <code>cloud/advanced-operations/module-8.2-transit-hubs.md</code>. PrivateLink = 27 hits; Direct Connect = 39.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Performance 24%</td><td>Data ingestion and transformation</td><td><code>cloud/managed-services/module-9.7-streaming.md</code> and <code>module-9.10-analytics.md</code> cover the concept, but AWS-specific services are sparse: Glue = 0 hits; DataSync/Storage Gateway/Transfer Family = 1; Kinesis = 7; Athena/Lake Formation/QuickSight = 8.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Cost 20%</td><td>Cost-optimized storage</td><td><code>cloud/advanced-operations/module-8.8-cloud-cost.md</code>, <code>cloud/enterprise-hybrid/module-10.10-enterprise-finops.md</code>, object-storage coverage, and platform FinOps modules cover tiering, lifecycle, archival, and data-transfer cost decisions.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Cost 20%</td><td>Cost-optimized compute</td><td>Cloud cost, FinOps, EC2, Lambda, ECS/Fargate, and scaling modules cover right-sizing, elastic compute, and purchasing tradeoffs. Cost Explorer/Budgets/Savings Plans/Spot/Reserved Instances = 117 hits.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Cost 20%</td><td>Cost-optimized databases</td><td>Managed database and cloud-cost modules cover engine choice, retention, caching, and capacity planning, but AWS-specific Aurora/RDS Proxy/serverless database cost patterns are not deep.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Cost 20%</td><td>Cost-optimized networks</td><td>Transit hubs, VPC topology, Route 53, CDN/edge, and cloud cost modules cover NAT, peering, endpoints, bandwidth, and CDN tradeoffs. NAT Gateway/NAT instance = 159 hits.</td><td class="status covered">✅ Covered</td></tr>
+</tbody>
+</table>
+
+<h4>Net gaps from AWS SAA</h4>
+<ol class="gaps">
+<li><strong>AWS data ingestion and transformation services</strong> — Glue, DataSync, Storage Gateway, Transfer Family, Lake Formation, and QuickSight are sparse despite SAA task 3.5. <em>Tier 2.</em></li>
+<li><strong>AWS security-service selector</strong> — WAF/Shield/GuardDuty are present, but Cognito and Macie are too thin for the secure-workload/data-governance decision tree. <em>Tier 3.</em></li>
+<li><strong>AWS database edge patterns</strong> — RDS Proxy, Aurora variants, read-replica sizing, and database cost/performance tradeoffs need AWS-specific depth beyond the generic database module. <em>Tier 3.</em></li>
+</ol>
+<div class="well-covered">
+  <strong>Well-covered (AWS SAA):</strong> IAM and multi-account access, VPC,
+  EC2, S3/object storage, Lambda, ECS/Fargate, EKS, API gateways, SQS/SNS/EventBridge,
+  serverless patterns, DR, active-active design, Route 53, transit hubs,
+  CloudFormation, KMS/secrets, monitoring, and FinOps.
+  <br><br>
+  <strong>Intentional deviations:</strong> kubedojo teaches cloud-agnostic
+  analytics and managed-service patterns before AWS service memorization; missing
+  single-service mentions are only gaps when the service changes the operator
+  decision model.
+</div>
+
+<h3>Microsoft Azure Administrator (AZ-104)</h3>
+<table>
+<thead>
+<tr><th>Skill area</th><th>Exam-guide objective</th><th>kubedojo coverage</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td class="days">Identity 20–25%</td><td>Manage Microsoft Entra users and groups</td><td><code>cloud/azure-essentials/module-3.1-entra-id.md</code> and AKS identity coverage. Microsoft Entra/Entra ID = 156 hits; SSPR = 22.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Identity 20–25%</td><td>Manage access to Azure resources</td><td>Entra ID, AKS identity, and enterprise identity modules cover RBAC concepts and scope. Azure RBAC/role assignments = 57 hits.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Identity 20–25%</td><td>Manage subscriptions and governance</td><td><code>cloud/enterprise-hybrid/module-10.2-governance.md</code>, <code>module-10.10-enterprise-finops.md</code>, and Azure essentials cover policy, tags, groups, and cost. Azure Policy = 51 hits; management groups = 14; resource locks = 0.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Storage 15–20%</td><td>Configure access to storage</td><td><code>cloud/azure-essentials/module-3.4-blob.md</code> covers Blob basics and access patterns; storage firewall/SAS/stored policy/access key terms = 67 hits, but not as an operator playbook.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Storage 15–20%</td><td>Configure and manage storage accounts</td><td>Blob coverage is dedicated, but AZ-104 operator tooling is thin: object replication = 0; Storage Explorer/AzCopy = 0.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Storage 15–20%</td><td>Configure Azure Files and Blob Storage</td><td><code>cloud/azure-essentials/module-3.4-blob.md</code> covers Blob; Azure Files = 21 hits; blob lifecycle/versioning/soft delete/storage tiers = 30 hits.</td><td class="status partial">⚠️ Partial — Azure Files is mention-level</td></tr>
+<tr><td class="days">Compute 20–25%</td><td>Automate deployments with ARM templates or Bicep</td><td><code>cloud/azure-essentials/module-3.12-bicep.md</code> and <code>platform/.../iac-tools/module-7.6-bicep.md</code> are dedicated. ARM template = 22 hits but no classic ARM module.</td><td class="status partial">⚠️ Partial — modern path covered</td></tr>
+<tr><td class="days">Compute 20–25%</td><td>Create and configure virtual machines</td><td><code>cloud/azure-essentials/module-3.3-vms.md</code> covers VM creation, disks, sizing, and scale sets. VMSS/Virtual Machine Scale Sets = 79 hits.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Compute 20–25%</td><td>Provision and manage containers in the Azure portal</td><td><code>cloud/azure-essentials/module-3.6-acr.md</code>, <code>module-3.7-aci-aca.md</code>, and AKS deep dive cover registry, ACI, ACA, and scaling. ACI/Container Instances = 430 hits; ACA = 36.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Compute 20–25%</td><td>Create and configure Azure App Service</td><td>App Service = 31 hits, mostly comparative or passing references; no dedicated App Service plan, slots, TLS, custom DNS, backup, and networking module.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Networking 15–20%</td><td>Configure and manage virtual networks</td><td><code>cloud/azure-essentials/module-3.2-vnet.md</code> and AKS networking cover VNets, subnets, peering, IPs, routes, and troubleshooting.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">Networking 15–20%</td><td>Configure secure access to virtual networks</td><td>NSG/application security group terms = 97 hits and private endpoints = 32, but Azure Bastion = 4 and there is no focused secure-access operator module.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Networking 15–20%</td><td>Configure name resolution and load balancing</td><td><code>cloud/azure-essentials/module-3.5-dns.md</code> covers Azure DNS; load balancer terms are frequent but not Azure-load-balancer-specific. Application Gateway remains 3 hits from the earlier KK sweep.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Monitor 10–15%</td><td>Monitor resources in Azure</td><td><code>cloud/azure-essentials/module-3.10-monitor.md</code> covers Azure Monitor. Network Watcher/Connection Monitor = 1 hit, so network troubleshooting telemetry is weak.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td class="days">Monitor 10–15%</td><td>Implement backup and recovery</td><td>Recovery Services vault / Backup vault / Azure Backup / Site Recovery = 1 hit across <code>src/content/docs/cloud/</code>, and no dedicated Azure backup/ASR module.</td><td class="status gap">❌ Gap</td></tr>
+</tbody>
+</table>
+
+<h4>Net gaps from AZ-104</h4>
+<ol class="gaps">
+<li><strong>Azure Backup + Site Recovery operator module</strong> — AZ-104 makes backup, restore, ASR, failover, and backup alerting explicit; kubedojo has only 1 hit. <em>Tier 2.</em></li>
+<li><strong>Azure App Service operations module</strong> — plans, scaling, TLS, custom DNS, backups, networking, and deployment slots are no dedicated module today. <em>Tier 2.</em></li>
+<li><strong>Azure storage access and operator tooling</strong> — SAS, stored access policies, access keys, identity-based Azure Files access, object replication, Storage Explorer, and AzCopy need a hands-on operator path. <em>Tier 3.</em></li>
+<li><strong>Azure governance mechanics</strong> — resource locks, management groups, budgets, Advisor recommendations, and subscription operations are present conceptually but not taught as AZ-104 operator tasks. <em>Tier 3.</em></li>
+<li><strong>Azure network troubleshooting and secure access</strong> — Network Watcher, Connection Monitor, Bastion, service endpoints, private endpoints, and load-balancer troubleshooting need consolidation. <em>Tier 3.</em></li>
+<li><strong>Classic ARM Templates + Bicep migration map</strong> — Bicep is the right default, but AZ-104 still expects ARM-template interpretation and conversion. <em>Tier 3.</em></li>
+</ol>
+<div class="well-covered">
+  <strong>Well-covered (AZ-104):</strong> Entra ID, Azure RBAC, Azure Policy,
+  VNet, VMs, VM scale sets, Blob Storage, ACR, ACI, Azure Container Apps,
+  Azure Functions, Key Vault, Azure Monitor, Bicep, DNS, AKS networking and
+  identity.
+</div>
+
+<h3>HashiCorp Terraform Associate (003)</h3>
+<table>
+<thead>
+<tr><th>Topic</th><th>Exam-guide objective</th><th>kubedojo coverage</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td class="days">1</td><td>Infrastructure as Code concepts</td><td><code>platform/disciplines/delivery-automation/iac/module-6.1-iac-fundamentals.md</code> and the prerequisite IaC module cover declarative vs imperative, versioning, idempotency, drift, and IaC maturity. IaC = 503 platform hits.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">2</td><td>Terraform purpose versus other tools</td><td><code>module-6.1-iac-fundamentals.md</code>, <code>platform/toolkits/infrastructure-networking/iac-tools/module-7.1-terraform.md</code>, and neighboring OpenTofu, Pulumi, CloudFormation, Bicep, Crossplane, and Ansible modules cover tool selection.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">3</td><td>Terraform basics: providers, plugins, versions</td><td><code>module-7.1-terraform.md</code> teaches provider configuration, aliases, locks, and plugin/provider boundaries. Provider/plugin terms are abundant in the platform corpus.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">4</td><td>Core workflow: init, plan, apply, destroy, fmt, validate</td><td><code>module-7.1-terraform.md</code> includes plan review, CLI workflow, JSON plans, apply safety, and destroy/refactor cautions; <code>module-6.2-iac-testing.md</code> covers validation strategy.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">5</td><td>Configuration language</td><td><code>module-7.1-terraform.md</code> covers resources, variables, outputs, locals, providers, lifecycle rules, moved blocks, and module arguments. Resource/data block terms = 26; variables/outputs/locals = 488.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">6</td><td>Modules</td><td><code>module-7.1-terraform.md</code> and <code>platform/disciplines/delivery-automation/iac/module-6.4-iac-at-scale.md</code> cover local modules, registry modules, versioning, composition, and private registries.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">7</td><td>State management</td><td><code>module-7.1-terraform.md</code>, <code>module-6.4-iac-at-scale.md</code>, and <code>module-6.5-drift-remediation.md</code> cover state, backends, locking, moved blocks, imports, refresh-only planning, drift, and remediation.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">8</td><td>Maintain infrastructure outside the first apply</td><td>Import, state inspection, verbose logging, drift, refactors, and troubleshooting are covered through Terraform deep dive and drift remediation. Import/drift/state terms are very frequent, with dedicated drift content.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td class="days">9</td><td>HCP Terraform / Terraform Cloud / Enterprise</td><td>Terraform Cloud = 13 hits and Terraform Enterprise = 1 in the IaC roots; HCP Terraform, remote operations, variable sets, run triggers, and dynamic provider credentials have 0 hits. Private registry is covered, but hosted workflow operations are not.</td><td class="status partial">⚠️ Partial</td></tr>
+</tbody>
+</table>
+
+<h4>Net gaps from Terraform Assoc</h4>
+<ol class="gaps">
+<li><strong>HCP Terraform / Terraform Cloud workflow module</strong> — workspaces, projects, remote operations, CLI-driven and VCS-driven workflows, variable sets, run triggers, policy, dynamic credentials, and state migration need a dedicated module. <em>Tier 2.</em></li>
+</ol>
+<div class="well-covered">
+  <strong>Well-covered (Terraform Associate):</strong> IaC fundamentals,
+  Terraform mental model, providers/plugins, core workflow, HCL basics, modules,
+  state, backends, imports, drift, refactoring, testing, cost management, and
+  IaC at organizational scale.
+  <br><br>
+  <strong>Intentional deviations:</strong> kubedojo teaches Terraform alongside
+  OpenTofu, Pulumi, Crossplane, CloudFormation, Bicep, and Ansible. That broader
+  IaC comparison is a feature, not a cert-alignment gap.
+</div>
+
+<div class="well-covered">
+  <strong>Well-covered across all three certs:</strong> cloud identity and RBAC,
+  virtual networking, compute selection, container registries and managed
+  containers, object/blob storage, serverless fundamentals, monitoring basics,
+  cost/FinOps principles, DR concepts, and Terraform/IaC foundations are already
+  strong. The cert signal mainly adds provider-operator edges: AWS analytics and
+  database service selection, Azure backup/recovery and App Service, Azure
+  storage/network troubleshooting mechanics, and HCP Terraform.
+</div>
+</section>
+
+<section id="expansion">
+<h2>Expansion plan (interim — KodeKloud + CNCF + cert blueprints)</h2>
+
+<p>This section is interim — it now captures gaps from <strong>KodeKloud,
+CNCF Landscape, and the three industry cert blueprints</strong>. Full Step-4
+triangulation will reorder and refine. Per the protocol from
 <code>content-gaps-2026-05.md</code>, NO module drafting starts until Stage 2
 (<code>ab discuss</code> pressure-test) and the critical-rubric count drops
 below ~50.</p>
 
-<h3>Aggregate gap list — KodeKloud + CNCF sources (interim top 17)</h3>
+<h3>Aggregate gap list — KodeKloud + CNCF + cert sources (interim top 27)</h3>
 <table>
 <thead>
 <tr><th>#</th><th>Gap</th><th>Track</th><th>Tier</th><th>Sources</th></tr>
@@ -743,7 +881,7 @@ below ~50.</p>
 <tr><td>5</td><td>ML repo hygiene module (uv + Makefile + pre-commit + cookiecutter + packaging)</td>
     <td>MLOps</td><td>Tier 2</td><td>KK (9 days)</td></tr>
 <tr><td>6</td><td>Azure Application Gateway module</td><td>Azure</td>
-    <td>Tier 2</td><td>KK (3 days)</td></tr>
+    <td>Tier 2</td><td>KK (3 days) + Cert (AZ-104 networking)</td></tr>
 <tr><td>7</td><td>Azure Event Hub / Event Grid module</td><td>Azure</td>
     <td>Tier 2</td><td>KK (2 days)</td></tr>
 <tr><td>8</td><td>Azure SQL Database module</td><td>Azure</td>
@@ -759,22 +897,38 @@ below ~50.</p>
 <tr><td>13</td><td>Dapr + Buildpacks application-definition module</td>
     <td>Platform / App Dev</td><td>Tier 2</td><td>CNCF</td></tr>
 <tr><td>14</td><td>NATS / Strimzi / CloudEvents streaming operations module</td>
-    <td>Platform / Messaging</td><td>Tier 2</td><td>CNCF</td></tr>
+    <td>Platform / Messaging</td><td>Tier 2</td><td>CNCF + Cert (AWS SAA event/streaming signal)</td></tr>
 <tr><td>15</td><td>gRPC + Envoy service-to-service communication module</td>
     <td>Platform / Networking</td><td>Tier 2</td><td>CNCF</td></tr>
 <tr><td>16</td><td>Cloud Custodian governance / policy-as-code module</td>
-    <td>Cloud / Governance</td><td>Tier 3</td><td>CNCF</td></tr>
+    <td>Cloud / Governance</td><td>Tier 3</td><td>CNCF + Cert (AWS/Azure governance signal)</td></tr>
 <tr><td>17</td><td>CNCF edge/bare-metal control plane module (KubeEdge, OpenYurt, metal3)</td>
     <td>On-Premises / Edge</td><td>Tier 3</td><td>CNCF</td></tr>
+<tr><td>18</td><td>AWS data ingestion and transformation services (Glue, Kinesis, DataSync, Storage Gateway, Lake Formation, QuickSight)</td>
+    <td>AWS / Data Platform</td><td>Tier 2</td><td>Cert (SAA-C03 task 3.5)</td></tr>
+<tr><td>19</td><td>HCP Terraform / Terraform Cloud workflow module</td>
+    <td>Platform / IaC</td><td>Tier 2</td><td>Cert (Terraform Associate)</td></tr>
+<tr><td>20</td><td>Azure Backup + Site Recovery operator module</td>
+    <td>Azure</td><td>Tier 2</td><td>Cert (AZ-104 monitor/maintain)</td></tr>
+<tr><td>21</td><td>Azure App Service operations module</td>
+    <td>Azure</td><td>Tier 2</td><td>KK + Cert (AZ-104 compute)</td></tr>
+<tr><td>22</td><td>AWS security-service selector (Cognito, Macie, GuardDuty, Shield, WAF)</td>
+    <td>AWS / Security</td><td>Tier 3</td><td>Cert (SAA-C03 secure architectures)</td></tr>
+<tr><td>23</td><td>Azure storage access and operator tooling (SAS, stored policies, AzCopy, object replication)</td>
+    <td>Azure</td><td>Tier 3</td><td>Cert (AZ-104 storage)</td></tr>
+<tr><td>24</td><td>Azure governance mechanics (locks, management groups, budgets, Advisor)</td>
+    <td>Azure / Governance</td><td>Tier 3</td><td>Cert (AZ-104 identity/governance)</td></tr>
+<tr><td>25</td><td>Azure network troubleshooting and secure access (Network Watcher, Bastion, private endpoints)</td>
+    <td>Azure / Networking</td><td>Tier 3</td><td>Cert (AZ-104 networking)</td></tr>
+<tr><td>26</td><td>AWS database edge patterns (RDS Proxy, Aurora variants, read replicas, cost/perf tuning)</td>
+    <td>AWS / Databases</td><td>Tier 3</td><td>Cert (SAA-C03 performance/cost)</td></tr>
+<tr><td>27</td><td>Classic ARM Templates + Bicep migration map</td>
+    <td>Azure / IaC</td><td>Tier 3</td><td>KK + Cert (AZ-104 compute)</td></tr>
 </tbody>
 </table>
 
 <h3>Next steps</h3>
 <ol>
-<li><strong>Cert blueprint augmentation</strong> — AWS SAA-C03, Azure AZ-104,
-    Terraform Associate. K8s certs already drive our k8s/ track. Goal:
-    "must-know" signal for cloud + IaC, complementing the KodeKloud
-    tool-task signal.</li>
 <li><strong>Triangulation</strong> — gaps appearing in ≥2 sources →
     Tier 1 (high confidence). 1 source → Tier 2 candidate (needs
     <code>ab discuss</code> Stage 2 per protocol). Outputs a single
@@ -799,7 +953,7 @@ below ~50.</p>
 </div>
 </section>
 
-<p class="meta" style="margin-top: 48px; text-align: center;">
+<p class="meta footer-meta">
   Generated 2026-05-12. Updated incrementally as remaining tracks are captured.
   Per HTML-first artifact policy, view via local API
   (<code>http://127.0.0.1:8910/docs/research/kodekloud-gap-analysis-2026-05-12.html</code>),
