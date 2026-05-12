@@ -2920,14 +2920,23 @@ def test_activity_feed_accepts_iso_since(tmp_path: Path) -> None:
 # ---- Phase D: per-section track readiness ----
 
 
-def _seed_module(repo: Path, rel: str) -> None:
+def _seed_module(
+    repo: Path,
+    rel: str,
+    *,
+    frontmatter: dict[str, object] | None = None,
+) -> None:
     """Create a minimal ``module-*.md`` under ``src/content/docs/<rel>.md``.
 
     ``rel`` is the docs-relative path without the ``.md`` suffix, e.g.
     ``k8s/cka/module-1.1-foo``.
     """
     path = repo / "src" / "content" / "docs" / f"{rel}.md"
-    _write(path, "---\ntitle: t\n---\n\nbody\n")
+    fm: dict[str, object] = {"title": "t"}
+    if frontmatter:
+        fm.update(frontmatter)
+    payload = yaml.safe_dump(fm, sort_keys=False).strip()
+    _write(path, f"---\n{payload}\n---\n\nbody\n")
 
 
 def _seed_v2_job(
@@ -2999,7 +3008,7 @@ def _seed_v2_event(
 
 
 def test_tracks_readiness_empty_repo(tmp_path: Path) -> None:
-    """No docs directory, no v2.db — returns zeroed totals and no tracks."""
+    """No docs directory, no frontmatter-based readiness data — returns zeroed totals and no tracks."""
     _init_repo(tmp_path)
     result = local_api.build_tracks_readiness(tmp_path)
     assert result["tracks"] == []
@@ -3007,122 +3016,95 @@ def test_tracks_readiness_empty_repo(tmp_path: Path) -> None:
     assert result["totals"]["readiness_pct"] == 0.0
 
 
-def test_tracks_readiness_buckets_cleared_vs_notenq(tmp_path: Path) -> None:
-    """A module with a ``completed`` job (the pipeline's real state
-    vocabulary — not ``done``) is cleared; a module with no job at all
-    is ``not_yet_enqueued``. Readiness % = cleared / total."""
-    _init_repo(tmp_path)
-    _seed_module(tmp_path, "k8s/cka/module-1.1-foo")
-    _seed_module(tmp_path, "k8s/cka/module-1.2-bar")
+def test_tracks_readiness_frontmatter_predicate_cleared_states(tmp_path: Path) -> None:
+    """A module is cleared iff ``revision_pending`` is falsey and
+    ``citations_verified`` is true."""
+    cases = (
+        ("k8s/cka/module-1.1-foo", {"revision_pending": False, "citations_verified": True}, True),
+        ("k8s/cka/module-1.2-bar", {"revision_pending": True, "citations_verified": True}, False),
+        ("k8s/cka/module-1.3-baz", {"revision_pending": False}, False),
+        ("k8s/cka/module-1.4-qux", {"citations_verified": True}, True),
+        ("k8s/cka/module-1.5-quux", {}, False),
+        ("k8s/cka/module-1.6-quuz", {"revision_pending": True}, False),
+    )
+    for rel, frontmatter_data, should_clear in cases:
+        case_root = tmp_path / f"case-{rel.replace('/', '-')}"
+        case_root.mkdir(parents=True, exist_ok=True)
+        _init_repo(case_root)
+        _seed_module(case_root, rel, frontmatter=frontmatter_data)
+        result = local_api.build_tracks_readiness(case_root)
+        k8s = next(t for t in result["tracks"] if t["slug"] == "k8s")
+        cka = next(s for s in k8s["sections"] if s["slug"] == "cka")
+        assert cka["cleared"] == (1 if should_clear else 0)
+        assert cka["not_yet_enqueued"] == (0 if should_clear else 1)
 
-    db = tmp_path / ".pipeline" / "v2.db"
-    _init_v2_db(db, module_key="k8s/cka/seed")
-    _seed_v2_job(db, module_key="k8s/cka/module-1.1-foo", queue_state="completed")
+
+def test_tracks_readiness_frontmatter_aggregate_counts(tmp_path: Path) -> None:
+    """Three modules in one track/section aggregate with mixed states."""
+    _init_repo(tmp_path)
+    _seed_module(
+        tmp_path,
+        "k8s/cka/module-1.1-alpha",
+        frontmatter={"revision_pending": False, "citations_verified": True},
+    )
+    _seed_module(
+        tmp_path,
+        "k8s/cka/module-1.2-beta",
+        frontmatter={"revision_pending": True, "citations_verified": True},
+    )
+    _seed_module(
+        tmp_path,
+        "k8s/cka/module-1.3-gamma",
+        frontmatter={"revision_pending": False},
+    )
 
     result = local_api.build_tracks_readiness(tmp_path)
     k8s = next(t for t in result["tracks"] if t["slug"] == "k8s")
-    assert k8s["total"] == 2
+    cka = next(s for s in k8s["sections"] if s["slug"] == "cka")
+    assert k8s["total"] == 3
     assert k8s["cleared"] == 1
-    assert k8s["not_yet_enqueued"] == 1
-    assert k8s["readiness_pct"] == 50.0
-    cka = next(s for s in k8s["sections"] if s["slug"] == "cka")
-    assert cka["total"] == 2
-    assert cka["readiness_pct"] == 50.0
+    assert k8s["not_yet_enqueued"] == 2
+    assert cka["total"] == 3
+    assert cka["readiness_pct"] == 33.3
 
 
-def test_tracks_readiness_completed_plus_pending_counts_in_flight(tmp_path: Path) -> None:
-    """Codex Phase D review: the readiness grid must reuse the same
-    ``_module_status`` reducer as ``/api/pipeline/v2/status``. A module
-    that has BOTH a ``completed`` row and a fresh ``pending`` row must
-    count as in_flight (work has been re-enqueued), not cleared — that's
-    what the reducer says."""
+def test_tracks_readiness_cache_invalidation_from_frontmatter_change(tmp_path: Path) -> None:
+    """Changes to module frontmatter invalidate the readiness cache key."""
     _init_repo(tmp_path)
-    _seed_module(tmp_path, "k8s/ckad/module-2.1-quiz")
-
-    db = tmp_path / ".pipeline" / "v2.db"
-    _init_v2_db(db, module_key="k8s/ckad/seed")
-    _seed_v2_job(db, module_key="k8s/ckad/module-2.1-quiz",
-                 queue_state="completed", phase="write")
-    _seed_v2_job(db, module_key="k8s/ckad/module-2.1-quiz",
-                 queue_state="pending", phase="review")
-
-    result = local_api.build_tracks_readiness(tmp_path)
-    k8s = next(t for t in result["tracks"] if t["slug"] == "k8s")
-    ckad = next(s for s in k8s["sections"] if s["slug"] == "ckad")
-    assert ckad["cleared"] == 0
-    assert ckad["in_flight"] == 1
-
-
-def test_tracks_readiness_leased_job_counts_in_flight(tmp_path: Path) -> None:
-    """A ``leased`` job row (worker actively holding the module) must
-    bucket as in_flight via the reducer's ``in_progress`` status."""
-    _init_repo(tmp_path)
-    _seed_module(tmp_path, "k8s/cka/module-3.1-lease")
-
-    db = tmp_path / ".pipeline" / "v2.db"
-    _init_v2_db(db, module_key="k8s/cka/seed")
-    _seed_v2_job(
-        db,
-        module_key="k8s/cka/module-3.1-lease",
-        queue_state="leased",
-        phase="review",
-        lease_id="lease-abc",
-        leased_by="claude",
-        leased_at=1,
+    _seed_module(
+        tmp_path,
+        "k8s/cka/module-1.1-alpha",
+        frontmatter={"revision_pending": True, "citations_verified": True},
     )
-    result = local_api.build_tracks_readiness(tmp_path)
-    k8s = next(t for t in result["tracks"] if t["slug"] == "k8s")
-    cka = next(s for s in k8s["sections"] if s["slug"] == "cka")
-    assert cka["in_flight"] == 1
-    assert cka["cleared"] == 0
-
-
-def test_tracks_readiness_dead_letter_from_event(tmp_path: Path) -> None:
-    """Codex Phase D review: the live pipeline surfaces dead-letter
-    state via an EVENT (``module_dead_lettered``), not a ``queue_state``
-    row. A ``module_dead_lettered`` event with no later
-    ``dead_letter_recovered`` must bucket as dead_letter — not
-    in_flight — and a recovered one must revert."""
-    _init_repo(tmp_path)
-    _seed_module(tmp_path, "platform/foundations/module-1.1-zzz")
-    _seed_module(tmp_path, "platform/foundations/module-1.2-recovered")
-
-    db = tmp_path / ".pipeline" / "v2.db"
-    _init_v2_db(db, module_key="platform/foundations/seed")
-    # Unresolved dead-letter.
-    _seed_v2_event(
-        db,
-        module_key="platform/foundations/module-1.1-zzz",
-        event_type="module_dead_lettered",
-        at=10,
+    first_status, first_payload, _ = local_api.route_request(
+        tmp_path, "/api/tracks/readiness"
     )
-    # Dead-lettered then recovered -> should NOT count as dead_letter.
-    _seed_v2_event(
-        db,
-        module_key="platform/foundations/module-1.2-recovered",
-        event_type="module_dead_lettered",
-        at=20,
-    )
-    _seed_v2_event(
-        db,
-        module_key="platform/foundations/module-1.2-recovered",
-        event_type="dead_letter_recovered",
-        at=30,
-    )
+    assert first_status == 200
+    k8s_first = next(t for t in first_payload["tracks"] if t["slug"] == "k8s")
+    assert k8s_first["cleared"] == 0
 
-    result = local_api.build_tracks_readiness(tmp_path)
-    platform = next(t for t in result["tracks"] if t["slug"] == "platform")
-    assert platform["dead_letter"] == 1
-    # Recovered module falls back to "pending_write" via the reducer's
-    # default branch -> in_flight. Never dead_letter.
-    assert platform["in_flight"] >= 1
+    _seed_module(
+        tmp_path,
+        "k8s/cka/module-1.1-alpha",
+        frontmatter={"revision_pending": False, "citations_verified": True},
+    )
+    second_status, second_payload, _ = local_api.route_request(
+        tmp_path, "/api/tracks/readiness"
+    )
+    assert second_status == 200
+    k8s_second = next(t for t in second_payload["tracks"] if t["slug"] == "k8s")
+    assert k8s_second["cleared"] == 1
 
 
 def test_tracks_readiness_top_level_module_uses_root_section(tmp_path: Path) -> None:
     """``prerequisites/module-*.md`` has no intermediate section directory
     — it must land in a ``_root`` bucket rather than crashing."""
     _init_repo(tmp_path)
-    _seed_module(tmp_path, "prerequisites/module-0-welcome")
+    _seed_module(
+        tmp_path,
+        "prerequisites/module-0-welcome",
+        frontmatter={"revision_pending": False, "citations_verified": True},
+    )
     result = local_api.build_tracks_readiness(tmp_path)
     prereq = next(t for t in result["tracks"] if t["slug"] == "prerequisites")
     root = next(s for s in prereq["sections"] if s["slug"] == "_root")
