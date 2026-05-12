@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 6 handoff — 2026-05-12 — Citation-backfill incident + harness hardening pilot + KodeKloud gap sweep</title>
+<style>
+  :root {
+    --bg: #fafbfc; --fg: #1a1d23; --muted: #5b6573; --accent: #0057B7;
+    --good: #0d8a4a; --warn: #b45c00; --bad: #b8001f; --card: #ffffff;
+    --border: #e2e6eb; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { margin: 0 0 8px; font-size: 26px; }
+  h2 { margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+       font-size: 20px; }
+  h3 { margin: 20px 0 8px; font-size: 16px; }
+  .meta { color: var(--muted); margin: 0 0 24px; font-size: 13px; }
+  .tldr { background: var(--card); border-left: 4px solid var(--accent);
+          padding: 14px 18px; margin: 16px 0 28px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0;
+          background: var(--card); border: 1px solid var(--border); }
+  th, td { padding: 9px 11px; border-bottom: 1px solid var(--border);
+           text-align: left; vertical-align: top; font-size: 13.5px; }
+  th { background: #eef2f6; font-weight: 600; }
+  td.col-id { white-space: nowrap; font-family: var(--mono); font-size: 12.5px; }
+  code { background: #eef2f6; padding: 1px 6px; border-radius: 3px;
+         font-family: var(--mono); font-size: 12.5px; }
+  ol li, ul li { margin: 6px 0; }
+  .pill { display: inline-block; padding: 1px 7px; border-radius: 10px;
+          font-size: 11.5px; font-weight: 600; margin-right: 6px; }
+  .pill.merged { background: #eef9f1; color: var(--good); }
+  .pill.inflight { background: #fff7e6; color: var(--warn); }
+  .pill.incident { background: #fbe9eb; color: var(--bad); }
+  .pill.contract { background: #e8f0fc; color: var(--accent); }
+  .smoke { background: #1a1d23; color: #e8eaed; padding: 12px 16px;
+           border-radius: 6px; font-family: var(--mono); font-size: 12.5px;
+           overflow-x: auto; }
+  .smoke .comment { color: #9aa0a6; }
+  .toc { background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+         padding: 10px 16px; margin: 16px 0 28px; font-size: 13.5px; }
+  .toc a { color: var(--accent); text-decoration: none; margin-right: 14px; }
+  .toc a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 6 — Citation-backfill incident + harness hardening pilot + KodeKloud gap sweep</h1>
+<p class="meta">
+  2026-05-12 (session 6, continued from session 5's overnight backfill state).
+  Wall: ~5h. <strong>4 PRs merged + 1 in-flight at handoff time</strong>
+  (PR #1180 awaiting claude opus review verdict at write time);
+  <strong>5 GH issues filed</strong> (#1173 / #1174 / #1175 / #1176 / #1178);
+  <strong>2 incidents</strong> (citation_backfill prose damage; dispatch_smart cwd trap);
+  <strong>3 contract changes</strong> (citation_backfill is append-only; first
+  pre-tool-use hook live; Jenkins out of scope); <strong>3 memories saved</strong>.
+</p>
+
+<div class="tldr">
+  <strong>TL;DR for cold-start.</strong>
+  (1) <strong>Citation backfill was damaging modules</strong> — orphan pronouns,
+  lost Sources, broken Next-Module nav. Killed the batch, restored 3 modules to
+  pre-damage state, fixed the script (PR #1172): rewrites disabled, Sources
+  merged additively. The remaining ~735-module catchup is safe to re-enable but
+  has not been re-started.
+  (2) <strong>Harness hardening pilot landed.</strong> PR #1177 (hook 1/5 of
+  epic #1175): blocks <code>git checkout -b</code> / <code>git switch -c</code>
+  when CWD is the primary repo dir. PR #1179: extracted
+  <code>.claude/hooks/_lib.sh</code> + retroactive nits. 4 remaining hooks of
+  #1175 not started.
+  (3) <strong>KodeKloud × kubedojo gap analysis</strong> at
+  <code>docs/research/kodekloud-gap-analysis-2026-05-12.html</code>. All 4 KK
+  tracks classified; CNCF augmentation in PR #1180 (in flight);
+  cert-blueprint augmentation queued (brief at <code>/tmp/cert-blueprints-brief.md</code>).
+  (4) Two new memories: <code>feedback_dispatch_smart_cwd_trap.md</code>,
+  <code>feedback_skip_jenkins_prefer_modern_cicd.md</code>.
+</div>
+
+<div class="toc">
+  <strong>Sections:</strong>
+  <a href="#shipped">What shipped</a>
+  <a href="#in-flight">In flight at handoff</a>
+  <a href="#decisions">Key decisions / contract changes</a>
+  <a href="#lessons">Lessons learned</a>
+  <a href="#next">Cold-start next-priorities</a>
+  <a href="#smoketests">Smoketests</a>
+  <a href="#refs">Cross-references</a>
+</div>
+
+<section id="shipped">
+<h2>What shipped this session</h2>
+
+<h3>4 PRs merged on <code>main</code></h3>
+<table>
+<thead><tr><th>PR</th><th>Subject</th><th>Tag</th></tr></thead>
+<tbody>
+<tr><td class="col-id">#1172</td>
+    <td><code>fix(citation-backfill): disable destructive prose rewrites + merge Sources additively</code> — root-cause fix for the prose-damage incident below</td>
+    <td><span class="pill incident">incident-fix</span></td></tr>
+<tr><td class="col-id">#1177</td>
+    <td><code>feat(hooks): block branch creation in primary repo dir (1/5 of #1175)</code> — first pre-tool-use hook live</td>
+    <td><span class="pill contract">contract</span></td></tr>
+<tr><td class="col-id">#1179</td>
+    <td><code>refactor(hooks): extract _lib.sh + retroactive nits on hook 1 (pre-req for #1175 hook 2)</code> — shared hook helpers + nits</td>
+    <td><span class="pill merged">merged</span></td></tr>
+<tr><td class="col-id">—</td>
+    <td><code>fix(backfill): restore prose damaged by citation_backfill in 1.2/1.8/1.9</code> — direct-to-main restore (commit <code>5feca490</code>) of the 3 damaged modules before the PR #1172 fix</td>
+    <td><span class="pill incident">incident</span></td></tr>
+</tbody>
+</table>
+
+<h3>5 GH issues filed</h3>
+<table>
+<thead><tr><th>#</th><th>Title</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td class="col-id">#1173</td>
+    <td>Curriculum gap: AI-native engineering / harness engineering module</td>
+    <td>Stage-2 trigger (<code>ab discuss</code> pressure-test) for the Tier-1 gap from <code>docs/research/harness-symphony-gap.md</code></td></tr>
+<tr><td class="col-id">#1174</td>
+    <td>Pressure-test content-gaps-2026-05 Tier 1+2 rows via ab discuss</td>
+    <td>Stage-2 trigger for the broader 2026-05 gap inventory</td></tr>
+<tr><td class="col-id">#1175</td>
+    <td>Epic: harness hardening — encode advisory rules as pre-tool-use hooks</td>
+    <td>5 sub-issues; only hook 1 (#1176) and lib extract (#1178) closed this session; 4 remain</td></tr>
+<tr><td class="col-id">#1176</td>
+    <td>Hook 1/5: block <code>git checkout -b</code> / <code>switch -c</code> in primary dir</td>
+    <td>Closed by PR #1177</td></tr>
+<tr><td class="col-id">#1178</td>
+    <td>Hook lib extraction + retroactive nits on hook 1/5</td>
+    <td>Closed by PR #1179</td></tr>
+</tbody>
+</table>
+
+<h3>3 memories saved</h3>
+<table>
+<thead><tr><th>Name</th><th>Driver</th></tr></thead>
+<tbody>
+<tr><td><code>feedback_dispatch_smart_cwd_trap.md</code></td>
+    <td>Bash <code>cd</code> leaks across tool calls; <code>--worktree</code> path resolves relative to current Bash cwd → if cwd is already a worktree, path doubles to <code>.worktrees/X/.worktrees/X</code> and dispatch fails with <code>FileNotFoundError</code>. Always cd back to primary repo root before dispatching. Hit on PR #1172 review dispatch.</td></tr>
+<tr><td><code>feedback_skip_jenkins_prefer_modern_cicd.md</code></td>
+    <td>User direction 2026-05-12: kubedojo will NOT teach Jenkins. CI/CD canon = GitHub Actions + GitLab CI + ArgoCD. Filter Jenkins out of any future gap analysis.</td></tr>
+<tr><td>(also indexed in <code>MEMORY.md</code>)</td><td>Both entries added to TOP PRIORITY section of the memory index.</td></tr>
+</tbody>
+</table>
+
+<h3>Research artifact landed</h3>
+<p><code>docs/research/kodekloud-gap-analysis-2026-05-12.html</code> — multi-source
+gap analysis (KodeKloud sweep complete for MLOps / Cloud-AWS / Cloud-Azure /
+DevOps; CNCF Landscape augmentation in flight as PR #1180; cert blueprints
+queued as Step 3; triangulation + roadmap as Step 4).</p>
+</section>
+
+<section id="in-flight">
+<h2>In flight at handoff time</h2>
+
+<table>
+<thead><tr><th>Item</th><th>State</th><th>Where to pick up</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>PR #1180</strong> — CNCF Landscape augmentation of the gap-analysis artifact + Jenkins-out-of-scope fixup</td>
+  <td>Claude opus cross-family review running (background task <code>b23eiql15</code>). 2 commits: <code>1e3b4ce0</code> (codex CNCF, +20k YAML snapshot + section) and <code>d8cb4eb5</code> (claude fixup for the Jenkins steer).</td>
+  <td>First action next session: <code>gh pr view 1180 --json reviews,state</code>. If APPROVE/APPROVE_WITH_NITS, merge via <code>gh pr merge 1180 --squash --delete-branch</code>. If NEEDS_CHANGES, dispatch codex fix on the same worktree (<code>.worktrees/cncf-gap-augmentation</code>). Review brief at <code>/tmp/cncf-review-brief.md</code>.</td>
+</tr>
+<tr>
+  <td><strong>Step 3</strong> — Cert blueprint augmentation (AWS SAA-C03 + Azure AZ-104 + Terraform Associate)</td>
+  <td>Brief ready at <code>/tmp/cert-blueprints-brief.md</code>. Dispatch fires after #1180 merges (sequential codex policy).</td>
+  <td>Command: <code>.venv/bin/python scripts/dispatch_smart.py architect --agent codex --mode danger --new-branch fix/cert-blueprint-augmentation --worktree .worktrees/cert-blueprint-augmentation - &lt; /tmp/cert-blueprints-brief.md</code> (run in background).</td>
+</tr>
+<tr>
+  <td><strong>Step 4</strong> — Triangulation + roadmap</td>
+  <td>Pending Steps 2 + 3. Triangulation: gaps in ≥2 sources → Tier 1 (high confidence); 1 source → Tier 2 candidate (needs <code>ab discuss</code> Stage 2). Cross-cut with quality-board for depth gaps. Output: per-tier module specs, prerequisite chain, sidebar placement, unlock criteria.</td>
+  <td>After Step 3 PR merges, do triangulation inline (analysis, no agent dispatch needed). Output appends to the same artifact.</td>
+</tr>
+<tr>
+  <td><strong>Citation backfill catchup</strong> — ~735 modules still queued; only 4 successfully backfilled (1.4/1.5/1.6/1.10), 3 damaged-then-restored (1.2/1.8/1.9)</td>
+  <td>Safe to re-enable now that PR #1172 fix is live. NOT re-enabled at session end.</td>
+  <td>Pilot first: <code>.venv/bin/python -m scripts.quality.pipeline backfill-pending --limit 3</code> on a known-state sample. Verify diffs are append-only (Sources merged, no body prose rewrites). If clean, run <code>--limit 50</code> batches in series.</td>
+</tr>
+<tr>
+  <td><strong>Harness hardening hooks 2-5 of #1175</strong></td>
+  <td>Not started.</td>
+  <td>Hook 2: block <code>git commit</code> on <code>main</code> without PR ref (exceptions: backfill/handoff prefixes). Hook 3: block <code>Edit</code>/<code>Write</code> on <code>src/content/docs/**</code> unless <code>KUBEDOJO_DISPATCHED=1</code>. Hook 4: block <code>Agent</code> with <code>isolation=worktree</code> (per <code>feedback_no_parallel_agent_fanout.md</code>). Hook 5: auto-inject <code>--mode danger</code> when codex dispatch contains <code>git push</code> / <code>gh pr create</code>. Each = own PR; mirror PR #1177's shape; source <code>_lib.sh</code>.</td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<section id="decisions">
+<h2>Key decisions / contract changes</h2>
+
+<h3>D1 — <code>citation_backfill.py</code> is now append-only</h3>
+<p>Two root causes diagnosed during the audit (live in
+<code>scripts/citation_backfill.py</code> at the time of the incident):</p>
+<ol>
+<li><strong>REWRITE_DISPOSITIONS</strong> (<code>soften_to_illustration</code>,
+    <code>cannot_be_salvaged</code>) caused substring-swap of body prose
+    (line 1555 of pre-fix version). The seed JSON authorized the rewrites;
+    the diff linter <code>_verify_diff_is_additive</code> trusted the seed.
+    Codex's <code>suggested_rewrite</code> text routinely stripped concrete
+    claims (numbers, names, hard requirements) to make them un-citable instead
+    of finding a citation. <strong>Mechanism:</strong> module-1.2 had its
+    "Marcus" narrative opening stripped but kept "He was trying..." as an
+    orphan pronoun; concrete RAM/model-size table replaced with vague labels;
+    duplicate Ollama-install sentence introduced.</li>
+<li><strong>Sources rebuilt wholesale from seed, not merged.</strong>
+    <code>_strip_sources_section(new_body)</code> removed the existing
+    <code>## Sources</code> heading <strong>AND everything after it</strong>
+    (which is how module-1.9's <code>## Next Module</code> heading vanished).
+    Then <code>_build_sources_section_from_seed</code> appended only seed-listed
+    URLs. <strong>Result:</strong> module-1.8 Sources 10 → 3; module-1.9 12 → 4
+    + broken nav chain.</li>
+</ol>
+<p>Fix shipped in PR #1172: rewrite-disposition claims are now skipped (recorded
+as <code>{status: "skipped", reason: "rewrites_disabled_pending_redesign"}</code>);
+Sources are merged additively via new <code>_merge_sources_section</code> that
+parses existing URLs and only appends non-duplicates. Three regression tests
+plus a fail-closed-on-missing-jq test. Existing 6 tests + 4 new tests pass.
+Claude opus review: APPROVE_WITH_NITS (4 non-blocking nits).</p>
+
+<h3>D2 — First pre-tool-use hook is live (epic #1175)</h3>
+<p>PR #1177 shipped the block-branch-create hook. Combined with the
+<code>_lib.sh</code> extraction in PR #1179, the harness now has a working
+pattern for hooks 2-5. Lib functions: <code>detect_primary_dir</code> /
+<code>normalize_path</code> / <code>is_inside_primary</code> /
+<code>read_tool_payload</code> / <code>deny</code>. The denial template is
+3-line: rule name + allowlist hint + memory-file reference.</p>
+<p>Reviewer pattern notes for hooks 2-5: (a) source <code>_lib.sh</code>;
+(b) <code>set -euo pipefail</code> at top of every hook; (c) reuse the
+<code>deny</code> template verbatim so stderr is consistent; (d) for hooks
+guarding more dangerous ops than branch-creation (commit-without-PR-ref,
+content writes, agent fanout, codex git-push), explicitly route jq/JSON
+failure through <code>deny</code> (exit 2) — Claude Code's PreToolUse contract
+only treats <strong>exit 2</strong> as a true block; other non-zero exits show
+errors but the tool proceeds.</p>
+
+<h3>D3 — Jenkins is out of scope; CI/CD canon is GitHub Actions + GitLab CI + ArgoCD</h3>
+<p>User direction 2026-05-12 (mid-gap-analysis): kubedojo will NOT teach
+Jenkins. Saved as <code>feedback_skip_jenkins_prefer_modern_cicd.md</code>.
+Future gap analyses should filter Jenkins out as an "intentional deviation,"
+not promote it as a candidate. Coverage check at write time: ArgoCD = 144
+corpus hits + dedicated <code>module-2.1-argocd.md</code> ✅; GitLab = 29 hits
++ <code>module-11.1-gitlab.md</code> ("The Complete DevOps Platform") ✅;
+GitHub Actions = 80 hits across multiple cicd sub-modules, <strong>no dedicated
+module</strong> — this is the actual modern-CI/CD gap (Tier 1 in the artifact's
+aggregate gap table).</p>
+
+<h3>D4 — Multi-source gap discovery (KodeKloud + CNCF + cert blueprints + quality-board) replaces single-source roadmap planning</h3>
+<p>Triangulation method: gaps in ≥2 sources → Tier 1 (high confidence); 1
+source → Tier 2 candidate (needs <code>ab discuss</code> Stage 2 per
+<code>content-gaps-2026-05.md</code> protocol). Coverage gaps (missing tools)
+vs depth gaps (shallow modules, rubric &lt; 2.0) are separated — KodeKloud
+surfaces only coverage gaps; the <code>/quality-board</code> already flags
+depth.</p>
+</section>
+
+<section id="lessons">
+<h2>Lessons learned (saved as memory)</h2>
+
+<h3>L1 — dispatch_smart.py <code>--worktree</code> resolves relative to Bash cwd</h3>
+<p>Bash cwd leaks across tool calls (only shell state resets between calls).
+If an earlier <code>cd .worktrees/X</code> for a <code>pytest</code> run
+leaves the cwd inside a worktree, the next
+<code>dispatch_smart.py --worktree .worktrees/X ...</code> resolves to
+<code>.worktrees/X/.worktrees/X</code> and fails with
+<code>FileNotFoundError</code>. <strong>Always cd back to primary repo root
+before dispatching</strong> (or pass an absolute path). Verify with
+<code>--dry-run</code> first — the <code>[dry-run] cwd=...</code> and
+<code>[dry-run] worktree=...</code> lines reveal the doubled-path bug instantly.
+Hit on the PR #1172 review dispatch. Memory:
+<code>feedback_dispatch_smart_cwd_trap.md</code>.</p>
+<p>Secondary note: <code>dispatch_smart.py review --agent claude</code> defaults
+to <code>claude-sonnet-4-6</code>, not opus. Pass
+<code>--model claude-opus-4-7</code> explicitly when opus review is required.
+Captured in the same memory.</p>
+
+<h3>L2 — Untracked artifact + concurrent codex dispatch → divergence requires manual reconcile</h3>
+<p>The KodeKloud gap analysis HTML was created untracked on local main BEFORE
+codex was dispatched to augment it. Codex's worktree (based off a prior tracked
+commit) created its own version of the artifact from scratch (it had no
+tracked file to start from). When mid-session direction arrived to flip a
+section (Jenkins removal), the local untracked version diverged from codex's
+in-flight version. <strong>Recovery:</strong> apply the fixup edits in codex's
+worktree (after codex pushed), commit + push as a second commit on the same
+branch, delete the local untracked version. Pattern: <strong>for research
+artifacts that codex will modify, commit the initial version to the codex
+branch first</strong>, or accept the two-commit recovery shape.</p>
+</section>
+
+<section id="next">
+<h2>Cold-start: next-session top priorities</h2>
+
+<ol>
+<li><strong>Check PR #1180 review verdict.</strong>
+    <code>gh pr view 1180 --json reviews,state</code>. If APPROVE/APPROVE_WITH_NITS,
+    merge + delete-branch. If NEEDS_CHANGES, dispatch codex fix on the existing
+    worktree. The brief codex used is at <code>/tmp/cncf-review-brief.md</code>.</li>
+<li><strong>Dispatch Step 3 (cert blueprints).</strong> Brief at
+    <code>/tmp/cert-blueprints-brief.md</code>. Use the same
+    <code>dispatch_smart.py architect --agent codex --mode danger ...</code>
+    pattern; new worktree <code>fix/cert-blueprint-augmentation</code>.</li>
+<li><strong>After Step 3 merges, do Step 4 (triangulation) inline.</strong>
+    Read the three sections (KK + CNCF + certs) in the artifact, build the
+    cross-source gap table, surface Tier 1 (gaps in ≥2 sources) and Tier 2
+    (single-source candidates needing Stage-2 <code>ab discuss</code>).
+    Output appends to the same artifact.</li>
+<li><strong>Re-enable citation backfill</strong> after the gap-analysis flow
+    finishes. <em>Pilot first on 3 known-state modules</em>
+    (<code>--limit 3</code> on a queue of 1.2/1.8/1.9 if you re-queue them, or
+    just the next 3 in the regular queue). Verify diffs are append-only.
+    Then resume in <code>--limit 50</code> batches.</li>
+<li><strong>Hook 2 of #1175.</strong> Block <code>git commit</code> on
+    <code>main</code> when commit message has no PR ref. Allowlist:
+    <code>backfill</code>/<code>handoff</code>/<code>docs(status)</code>
+    prefixes (pipeline-owned per <code>feedback_ai_gate_is_the_gate.md</code>).
+    Mirror PR #1177's shape exactly; source <code>_lib.sh</code> for shared
+    helpers.</li>
+<li><strong>Cold-start ritual</strong> (carryover):
+    <code>/bin/ps aux | grep dispatch_388_pilot</code>. Should be empty.
+    Session-3 chain-orphan precedent.</li>
+<li><strong>Carryovers from session 5</strong>: GH #1144 branch-protection
+    hardening; stale git hygiene (55 prunable branches + 53 prunable worktrees);
+    Option F calibration before next 100+ module #388 sweep.</li>
+</ol>
+</section>
+
+<section id="smoketests">
+<h2>Executable smoketests</h2>
+
+<div class="smoke">
+<span class="comment"># 1. Briefing API (cold-start canonical)</span><br>
+curl -s http://127.0.0.1:8768/api/briefing/session?compact=1<br>
+<br>
+<span class="comment"># 2. PR #1180 verdict (in-flight at handoff)</span><br>
+gh pr view 1180 --json reviews,mergeable,state<br>
+<br>
+<span class="comment"># 3. Verify hook 1 is live + blocking</span><br>
+echo '{"tool_input":{"command":"git checkout -b foo","cwd":"/Users/krisztiankoos/projects/kubedojo"}}' \
+  | bash .claude/hooks/block-branch-create-in-primary.sh; echo "exit=$?"<br>
+<span class="comment"># expect: exit=2 + denial stderr citing feedback_never_branch_in_primary_dir.md</span><br>
+<br>
+<span class="comment"># 4. Verify citation_backfill is append-only</span><br>
+.venv/bin/pytest tests/test_citation_backfill.py -x<br>
+<span class="comment"># expect: 12 passed</span><br>
+<br>
+<span class="comment"># 5. Verify _lib.sh is sourceable</span><br>
+bash -c 'source .claude/hooks/_lib.sh &amp;&amp; type deny &amp;&amp; type is_inside_primary'<br>
+<span class="comment"># expect: deny is a function; is_inside_primary is a function</span><br>
+<br>
+<span class="comment"># 6. Cold-start orphan check</span><br>
+/bin/ps aux | grep -E "dispatch_388_pilot|backfill-pending" | grep -v grep<br>
+<span class="comment"># expect: empty</span><br>
+<br>
+<span class="comment"># 7. Verify Jenkins-out-of-scope memory is loaded</span><br>
+ls -la ~/.claude/projects/-Users-krisztiankoos-projects-kubedojo/memory/feedback_skip_jenkins_prefer_modern_cicd.md
+</div>
+</section>
+
+<section id="refs">
+<h2>Cross-references</h2>
+<ul>
+<li>Prior handoff: <code>docs/session-state/2026-05-12-session-5-no-restatement-shipped.md</code></li>
+<li>Research artifact (this session's primary output):
+    <code>docs/research/kodekloud-gap-analysis-2026-05-12.html</code></li>
+<li>CNCF snapshot (in flight on PR #1180):
+    <code>docs/research/cncf-landscape-snapshot-2026-05-12.yaml</code> (20k lines)</li>
+<li>Memory updates:
+    <code>memory/feedback_dispatch_smart_cwd_trap.md</code>,
+    <code>memory/feedback_skip_jenkins_prefer_modern_cicd.md</code>;
+    <code>memory/MEMORY.md</code> index updated.</li>
+<li>Related prior research:
+    <code>docs/research/harness-symphony-gap.md</code> (Stage 1 brief for
+    AI-native engineering — now tracked as #1173),
+    <code>docs/research/content-gaps-2026-05.md</code> (Stage 0 inventory —
+    now tracked as #1174).</li>
+<li>PRs in this session: #1172, #1177, #1179. In flight: #1180.</li>
+<li>Issues filed: #1173, #1174, #1175, #1176, #1178.</li>
+<li>Briefs (durable, in <code>/tmp/</code> until session end — re-stage if
+    re-using next session):
+    <code>/tmp/citation-backfill-fix-brief.md</code>,
+    <code>/tmp/citation-backfill-fix-review-brief.md</code>,
+    <code>/tmp/hook-block-branch-create-brief.md</code>,
+    <code>/tmp/hook-block-branch-create-review-brief.md</code>,
+    <code>/tmp/hook-lib-extract-brief.md</code>,
+    <code>/tmp/hook-lib-extract-review-brief.md</code>,
+    <code>/tmp/cncf-augment-brief.md</code>,
+    <code>/tmp/cncf-review-brief.md</code>,
+    <code>/tmp/cert-blueprints-brief.md</code> (queued for next session).</li>
+</ul>
+</section>
+
+</main>
+</body>
+</html>
