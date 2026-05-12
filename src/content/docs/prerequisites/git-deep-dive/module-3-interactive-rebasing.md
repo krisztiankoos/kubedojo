@@ -1,15 +1,18 @@
 ---
 title: "Module 3: History as a Choice — Interactive Rebasing"
+slug: prerequisites/git-deep-dive/module-3-interactive-rebasing
 sidebar:
   order: 3
 revision_pending: false
 ---
 
-# Module 3: History as a Choice — Interactive Rebasing
+> **Complexity**: [MEDIUM]
+>
+> **Time to Complete**: 90 minutes
+>
+> **Prerequisites**: Module 2 of Git Deep Dive
 
-**Complexity**: [MEDIUM]
-**Time to Complete**: 90 minutes
-**Prerequisites**: Module 2 of Git Deep Dive
+---
 
 ## Learning Outcomes
 
@@ -21,7 +24,7 @@ revision_pending: false
 
 ## Why This Module Matters
 
-An infrastructure engineer at a mid-sized e-commerce platform was migrating a legacy authentication service onto Kubernetes 1.35+ while also preparing a pull request for a platform team review. For local testing, they added a `configmap.yaml` file and temporarily placed an AWS IAM access key with broad database permissions into the file. The key was removed three commits later, the final manifest used a Secret reference, and the pull request looked clean in the web interface. Two weeks after the branch merged, a credential scanner found the original historical commit, attackers used the exposed key to launch expensive compute in several regions, and the team spent the weekend containing a cloud bill of about eighty thousand dollars.
+Hypothetical scenario: an infrastructure engineer is migrating a legacy authentication service onto Kubernetes 1.35+ while also preparing a pull request for a platform team review. For local testing, they add a `configmap.yaml` file and temporarily place a broad cloud credential into the file, expecting to remove it before review. The key is removed three commits later, the final manifest uses a Secret reference, and the pull request looks clean in the web interface. A scanner later finds the original historical commit, and the team must assume the credential may have escaped even though the final file state was corrected.
 
 The engineer made a common but dangerous assumption: deleting a line and committing the deletion does not erase the line from the branch's earlier commits. Git stores snapshots connected by immutable object identifiers, so the final tree can be correct while the old history still carries a secret, a broken manifest, or a misleading explanation of why a change exists. Reviewers also pay for messy history even when no secret is involved. A pull request made of "WIP", "fix tests", and "try again" commits forces every future maintainer to reconstruct the author's thinking from noise instead of reading a small sequence of purposeful changes.
 
@@ -70,7 +73,7 @@ flowchart LR
 
 The tradeoff is that rebasing converts a historical fact into a reviewed story. The original chronological order may have been "ConfigMap, Deployment, service, fix Deployment", while the reviewed order should probably be "Deployment, service, configuration". That is acceptable when the branch is private because no one else has relied on the discarded chronology. It is not acceptable when the branch has become a collaboration point, because the rewritten commits will not match the commits your teammates have already fetched.
 
-In Kubernetes work, this distinction is especially practical. A reviewer looking at a Deployment commit wants to evaluate selectors, labels, probes, resources, and rollout behavior as one coherent unit. If the liveness probe lands three commits later with a message like "fix stuff", the reviewer has to jump through history to decide whether the Deployment was ever intentionally incomplete. Before running Kubernetes examples in this module, define the conventional shortcut `alias k=kubectl`; after that, commands like `k apply -f deployment.yaml` and `k get deploy web-app` refer to the same `kubectl` client, targeting Kubernetes 1.35+ clusters.
+In Kubernetes work, this distinction is especially practical. A reviewer looking at a Deployment commit wants to evaluate selectors, labels, probes, resources, and rollout behavior as one coherent unit. If the liveness probe lands three commits later with a message like "fix stuff", the reviewer has to jump through history to decide whether the Deployment was ever intentionally incomplete. Any runnable Kubernetes examples in KubeDojo should use the full `kubectl` command name for copy-paste safety, targeting Kubernetes 1.35+ clusters when cluster behavior is part of the exercise.
 
 Pause and predict: what do you think happens if a merge conflict occurs during a rebase? It does not wait until the end like a single final reconciliation. Because Git replays commits one by one, it can pause on the first conflicting commit, ask you to resolve that exact historical step, continue, and then pause again if a later commit touches the same region differently. That iterative conflict model is the main pain point of rebasing and the main reason a tidy local history lowers review risk.
 
