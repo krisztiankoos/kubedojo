@@ -449,7 +449,7 @@ Append this step to your `build-and-test` job:
 
 ```yaml
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@v0.36.0
       with:
         image-ref: 'kubedojo-app:test'
         format: 'table'
@@ -553,7 +553,7 @@ jobs:
       run: docker build -t kubedojo-app:test .
 
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@v0.36.0
       with:
         image-ref: 'kubedojo-app:test'
         format: 'table'
