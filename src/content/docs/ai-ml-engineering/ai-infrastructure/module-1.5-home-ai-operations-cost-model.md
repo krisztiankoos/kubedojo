@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Home AI Operations and Cost Model"
 slug: ai-ml-engineering/ai-infrastructure/module-1.5-home-ai-operations-cost-model
 sidebar:
@@ -463,5 +464,6 @@ Success criteria:
 
 ## Sources
 
-- [AI and ML perspective: Cost optimization](https://cloud.google.com/architecture/framework/perspectives/ai-ml/cost-optimization) — Covers how to measure training, inference, storage, and operational costs for AI/ML workloads and compare them against business value.
-- [Design storage for AI and ML workloads in Google Cloud](https://cloud.google.com/architecture/ai-ml/storage-for-ai-ml) — Useful background for the module's storage-growth discussion, especially lifecycle planning across training, serving, and archiving.
+- [AI and ML Perspective: Cost Optimization](https://cloud.google.com/architecture/framework/perspectives/ai-ml/cost-optimization) — Supports the module's overall framing around measuring training, inference, storage, and operational costs instead of treating AI infrastructure cost as a single number.
+- [Design Storage for AI and ML Workloads in Google Cloud](https://cloud.google.com/architecture/ai-ml/storage-for-ai-ml) — Useful background for the module's storage-lifecycle discussion, especially separating active, archival, and reproducible data concerns.
+- [AWS Well-Architected Framework: Cost Optimization Pillar](https://docs.aws.amazon.com/wellarchitected/latest/cost-optimization-pillar/welcome.html) — Provides a second major-cloud reference for cost-model thinking, resource right-sizing, and recurring operational cost discipline.
