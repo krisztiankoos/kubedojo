@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KubeDojo gap triangulation roadmap (2026-05)</title>
+<style>
+  :root {
+    --bg: #fafbfc; --fg: #1a1d23; --muted: #5b6573; --accent: #0057B7;
+    --good: #0d8a4a; --partial: #b45c00; --gap: #b8001f; --card: #ffffff;
+    --border: #e2e6eb; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { margin: 0 0 8px; font-size: 28px; }
+  h2 { margin: 40px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+       font-size: 22px; }
+  h3 { margin: 24px 0 8px; font-size: 17px; }
+  .meta { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  .footer-meta { margin-top: 48px; text-align: center; }
+  .tldr { background: var(--card); border-left: 4px solid var(--accent);
+          padding: 14px 18px; margin: 16px 0 28px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0;
+          background: var(--card); border: 1px solid var(--border); }
+  th, td { padding: 10px 12px; border-bottom: 1px solid var(--border);
+           text-align: left; vertical-align: top; }
+  th { background: #eef2f6; font-weight: 600; font-size: 13px; }
+  td { font-size: 13px; }
+  td.days { white-space: nowrap; font-family: var(--mono); font-size: 12px;
+            color: var(--muted); }
+  .status { font-weight: 600; }
+  .status.covered { color: var(--good); }
+  .status.partial { color: var(--partial); }
+  .status.gap { color: var(--gap); }
+  ol.gaps { padding-left: 24px; }
+  ol.gaps li { margin: 8px 0; }
+  ol.gaps strong { color: var(--accent); }
+  code { background: #eef2f6; padding: 1px 6px; border-radius: 3px;
+         font-family: var(--mono); font-size: 13px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 0 16px;
+            font-size: 13px; }
+  .legend span { padding: 2px 8px; border-radius: 3px; background: var(--card);
+                 border: 1px solid var(--border); }
+  .toc { background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+         padding: 12px 18px; margin: 16px 0 32px; }
+  .toc a { color: var(--accent); text-decoration: none; margin-right: 16px; }
+  .toc a:hover { text-decoration: underline; }
+  .well-covered { background: #eef9f1; border: 1px solid #c4e3ce;
+                  padding: 12px 16px; border-radius: 6px; margin: 12px 0; font-size: 14px; }
+  .caveat { background: #fff7e6; border: 1px solid #f0d9a8; padding: 12px 16px;
+            border-radius: 6px; margin: 12px 0; font-size: 14px; }
+  .badge { display: inline-block; border: 1px solid var(--border); border-radius: 999px;
+           padding: 1px 8px; margin: 0 4px 4px 0; background: #fff; font-size: 12px; }
+  .nowrap { white-space: nowrap; }
+  .small { color: var(--muted); font-size: 12px; }
+  .tree ul { margin: 4px 0 10px 22px; padding: 0; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>KubeDojo gap triangulation roadmap</h1>
+<p class="meta">
+  Captured 2026-05. Scope: Step 4 of the gap-analysis pipeline. This is a
+  planning artifact only; it does not authorize module drafting.
+</p>
+
+<div class="tldr">
+  <strong>Decision rule.</strong> The primary input is the aggregate top-27 table
+  in <code>docs/research/kodekloud-gap-analysis-2026-05-12.html#expansion</code>.
+  Tier 1 requires a gap to surface in at least two of KK, CNCF, and Cert, unless
+  it is deliberately excluded, replaced by a modern default, or deferred by
+  <code>docs/research/content-gaps-2026-05.md</code>. The live quality board
+  currently reports <strong>249</strong> critical-rubric modules, so the
+  quality-floor gate is <strong>closed</strong>.
+</div>
+
+<div class="toc">
+  <strong>Sections:</strong>
+  <a href="#summary">Summary</a>
+  <a href="#tier-1">Tier 1</a>
+  <a href="#tier-2">Tier 2</a>
+  <a href="#tier-3">Tier 3</a>
+  <a href="#quality-cross-cut">Quality cross-cut</a>
+  <a href="#dependencies">Dependencies</a>
+  <a href="#quality-gate">Quality gate</a>
+  <a href="#actions">Next actions</a>
+</div>
+
+<section id="summary">
+<h2>Triangulation roadmap summary</h2>
+<table>
+<tbody>
+<tr><th>Total gaps after triangulation</th><td><strong>51</strong> rows: Tier 1: <strong>4</strong>, Tier 2: <strong>20</strong>, Tier 3: <strong>27</strong>.</td></tr>
+<tr><th>Depth flags</th><td><strong>DEPTH-FIRST: 23</strong>, <strong>BREADTH: 20</strong>, <strong>MIXED: 8</strong>.</td></tr>
+<tr><th>Critical-rubric module count</th><td><strong>249</strong> of 754 scored modules are critical (&lt;2.0), from live <code>/api/quality/scores</code>. Average score: 3.84.</td></tr>
+<tr><th>Tracks at or above 10 critical modules</th><td>Platform Disciplines 65; Platform Toolkits 52; Platform Foundations 31; CKS 29; CKAD 23.</td></tr>
+<tr><th>Quality-floor unlock status</th><td><span class="status gap">GATE CLOSED</span> - drafting unlocks only when the relevant track critical-count is below 50 and the global quality floor is trending below the &lt;50 target.</td></tr>
+</tbody>
+</table>
+<p class="small">
+  Source paths used: <code>docs/research/kodekloud-gap-analysis-2026-05-12.html</code>,
+  <code>docs/research/content-gaps-2026-05.md</code>,
+  <code>docs/research/harness-symphony-gap.md</code>,
+  <code>memory/project_topical_gap_analysis.md</code>,
+  <code>memory/project_expansion_plan.md</code>,
+  <code>memory/project_onprem_vision.md</code>, live <code>/api/quality/scores</code>,
+  and spot checks under <code>src/content/docs/</code>.
+</p>
+</section>
+
+<section id="tier-1">
+<h2>Tier 1 - high-confidence gaps (&gt;=2 sources)</h2>
+<table>
+<thead>
+<tr>
+  <th>Gap title</th><th>Sources</th><th>Tier</th><th>Depth flag</th>
+  <th>Track placement and prerequisite chain</th><th>Stage</th>
+  <th>Unlock criteria</th><th>Estimated child-module count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>Azure Application Gateway operator path</td>
+  <td>KK Azure net gap in <a href="kodekloud-gap-analysis-2026-05-12.html#azure">#azure</a>; Cert AZ-104 networking row and aggregate row 6 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td>
+  <td><span class="status gap">Tier 1</span></td>
+  <td><span class="status covered">BREADTH</span></td>
+  <td><code>src/content/docs/cloud/azure-essentials/</code>. Unlock after VNet, DNS, Azure Monitor, and AKS networking modules score &gt;=3.</td>
+  <td class="days">0</td>
+  <td>Unlocks when (a) brief written + ab-discuss-validated, (b) Azure/cloud critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td>
+  <td class="nowrap">1</td>
+</tr>
+<tr>
+  <td>Azure App Service operations</td>
+  <td>KK Azure signal in <a href="kodekloud-gap-analysis-2026-05-12.html#azure">#azure</a>; Cert AZ-104 compute row and aggregate row 21 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td>
+  <td><span class="status gap">Tier 1</span></td>
+  <td><span class="status covered">BREADTH</span></td>
+  <td><code>src/content/docs/cloud/azure-essentials/</code>. Unlock after ACI/ACA, Azure Functions, DNS, Key Vault, Monitor, and CI/CD score &gt;=3.</td>
+  <td class="days">0</td>
+  <td>Unlocks when (a) brief written + ab-discuss-validated, (b) Azure/cloud critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td>
+  <td class="nowrap">1</td>
+</tr>
+<tr>
+  <td>Streaming operations with NATS, Strimzi, and CloudEvents</td>
+  <td>CNCF streaming row in <a href="kodekloud-gap-analysis-2026-05-12.html#cncf">#cncf</a>; AWS SAA event/streaming signal and aggregate row 14 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td>
+  <td><span class="status gap">Tier 1</span></td>
+  <td><span class="status gap">DEPTH-FIRST</span></td>
+  <td><code>src/content/docs/platform/disciplines/data-ai/data-engineering/</code> or <code>platform/toolkits/</code>. Unlock after Kafka/managed broker, observability, and platform messaging prerequisites score &gt;=3.</td>
+  <td class="days">0</td>
+  <td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Disciplines critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td>
+  <td class="nowrap">2-3</td>
+</tr>
+<tr>
+  <td>Cloud Custodian policy-as-code governance</td>
+  <td>CNCF automation/governance row in <a href="kodekloud-gap-analysis-2026-05-12.html#cncf">#cncf</a>; AWS/Azure governance cert signal and aggregate row 16 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td>
+  <td><span class="status gap">Tier 1</span></td>
+  <td><span class="status covered">BREADTH</span></td>
+  <td><code>src/content/docs/cloud/enterprise-hybrid/</code> or cloud governance. Unlock after governance, FinOps, Terraform/OpenTofu, and policy modules score &gt;=3.</td>
+  <td class="days">0</td>
+  <td>Unlocks when (a) brief written + ab-discuss-validated, (b) cloud/governance critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td>
+  <td class="nowrap">1</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Build order proposal</h3>
+<ol class="gaps">
+  <li><strong>Azure Application Gateway operator path</strong> - smallest provider-specific Tier 1 gap. Prereqs: Azure VNet, DNS, Monitor, AKS networking score &gt;=3.</li>
+  <li><strong>Azure App Service operations</strong> - follows the Azure Essentials chain after ACI/ACA, Functions, DNS, Key Vault, Monitor, and CI/CD are green enough.</li>
+  <li><strong>Cloud Custodian policy-as-code governance</strong> - depends on governance and IaC quality first; should not become a tool catalog module.</li>
+  <li><strong>Streaming operations with NATS, Strimzi, and CloudEvents</strong> - defer until Platform Disciplines drops below 50 critical modules; current quality debt makes this a rewrite-first unlock.</li>
+</ol>
+</section>
+
+<section id="tier-2">
+<h2>Tier 2 - single-source candidates (ab discuss-pending)</h2>
+<table>
+<thead>
+<tr>
+  <th>Gap title</th><th>Sources</th><th>Tier</th><th>Depth flag</th>
+  <th>Track placement and prerequisite chain</th><th>Stage</th>
+  <th>Unlock criteria</th><th>Estimated child-module count</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>Harness engineering and Symphony orchestration</td><td>Stage 0 inventory Tier 1 in <code>content-gaps-2026-05.md</code>; Stage 1 brief in <code>harness-symphony-gap.md</code>; GH #1173 exists.</td><td>Tier 2 <span class="small">(inventory Tier 1)</span></td><td><span class="status covered">BREADTH</span></td><td><code>src/content/docs/ai/ai-native-work/</code>. Prereqs: existing AI-native work modules score &gt;=3.</td><td class="days">1</td><td>Unlocks when (a) brief is ab-discuss-validated, (b) AI track critical-count &lt; 50, (c) parent epic #1173 has child issues, (d) sidebar placement merged.</td><td>2-3</td></tr>
+<tr><td>Software engineering craft for operators</td><td>Stage 0 inventory Tier 1 in <code>content-gaps-2026-05.md</code>.</td><td>Tier 2 <span class="small">(inventory Tier 1)</span></td><td><span class="status partial">MIXED</span></td><td><code>src/content/docs/prerequisites/engineering-craft/</code> or platform foundations. Prereqs: Git Deep Dive, Modern DevOps, and platform engineering concepts score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) target track critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>4-7</td></tr>
+<tr><td>LLM-native application engineering on Kubernetes</td><td>Stage 0 inventory Tier 1 in <code>content-gaps-2026-05.md</code>.</td><td>Tier 2 <span class="small">(inventory Tier 1)</span></td><td><span class="status partial">MIXED</span></td><td><code>src/content/docs/ai/</code> or <code>ai-ml-engineering/</code>. Prereqs: RAG, serving, observability, GPU scheduling, and evals-related modules score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) AI/AI-ML critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>4-7</td></tr>
+<tr><td>Engineer mental models for distributed systems practice</td><td>Stage 0 inventory Tier 2 in <code>content-gaps-2026-05.md</code>.</td><td>Tier 2</td><td><span class="status partial">MIXED</span></td><td><code>src/content/docs/prerequisites/</code> or platform foundations. Prereqs: Kubernetes basics, Linux networking, and Modern DevOps score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) target track critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>2-3</td></tr>
+<tr><td>Cost lens as a cross-cutting operating habit</td><td>Stage 0 inventory Tier 2 in <code>content-gaps-2026-05.md</code>.</td><td>Tier 2</td><td><span class="status partial">MIXED</span></td><td>Cross-track insertions plus <code>k8s/finops/</code>. Prereqs: existing FinOps modules score &gt;=3 and no broad rewrite collision.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) FinOps/platform critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>2-3</td></tr>
+<tr><td>DVC data versioning arc</td><td>KK MLOps net gap in <a href="kodekloud-gap-analysis-2026-05-12.html#mlops">#mlops</a>; aggregate row 1 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/platform/disciplines/data-ai/mlops/</code>. Prereqs: MLOps fundamentals, model training, ML pipelines, and on-prem private MLOps score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Disciplines critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+<tr><td>Great Expectations data-quality module</td><td>KK MLOps net gap in <a href="kodekloud-gap-analysis-2026-05-12.html#mlops">#mlops</a>; aggregate row 2 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/platform/disciplines/data-ai/mlops/</code> or data engineering. Prereqs: data pipelines, ML pipelines, and monitoring score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Disciplines critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+<tr><td>GitHub Actions dedicated modern CI module</td><td>KK DevOps net gap and Jenkins exclusion context in <a href="kodekloud-gap-analysis-2026-05-12.html#devops">#devops</a>; aggregate row 3 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>; <code>memory/feedback_skip_jenkins_prefer_modern_cicd.md</code>.</td><td>Tier 2</td><td><span class="status covered">BREADTH</span></td><td><code>src/content/docs/prerequisites/modern-devops/</code> or platform CI/CD toolkits. Prereqs: CI/CD pipelines and GitOps score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) target track critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+<tr><td>Ansible operator arc</td><td>KK DevOps net gap in <a href="kodekloud-gap-analysis-2026-05-12.html#devops">#devops</a>; aggregate row 4 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/platform/toolkits/infrastructure-networking/iac-tools/</code>. Prereqs: IaC fundamentals, Terraform/OpenTofu, and existing Ansible module score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Toolkits critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>4-7</td></tr>
+<tr><td>ML repository hygiene for reproducible teams</td><td>KK MLOps net gap in <a href="kodekloud-gap-analysis-2026-05-12.html#mlops">#mlops</a>; aggregate row 5 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/platform/disciplines/data-ai/mlops/</code>. Prereqs: Git Deep Dive, Python packaging mentions, and MLOps fundamentals score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Disciplines critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+<tr><td>Azure Event Hub and Event Grid operations</td><td>KK Azure net gap in <a href="kodekloud-gap-analysis-2026-05-12.html#azure">#azure</a>; aggregate row 7 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status covered">BREADTH</span></td><td><code>src/content/docs/cloud/azure-essentials/</code>. Prereqs: Azure Functions, Monitor, and messaging/event-driven cloud basics score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Azure/cloud critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+<tr><td>Azure SQL Database operations</td><td>KK Azure net gap in <a href="kodekloud-gap-analysis-2026-05-12.html#azure">#azure</a>; aggregate row 8 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status covered">BREADTH</span></td><td><code>src/content/docs/cloud/azure-essentials/</code>. Prereqs: Entra ID, networking, Key Vault, and managed database concepts score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Azure/cloud critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+<tr><td>Production model-serving traffic patterns</td><td>KK MLOps net gap in <a href="kodekloud-gap-analysis-2026-05-12.html#mlops">#mlops</a>; aggregate row 9 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/platform/disciplines/data-ai/mlops/</code>. Prereqs: model serving, monitoring, KServe/BentoML/Seldon references, and deployment strategies score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Disciplines critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+<tr><td>Drift-triggered auto-retraining loop</td><td>KK MLOps net gap in <a href="kodekloud-gap-analysis-2026-05-12.html#mlops">#mlops</a>; aggregate row 10 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/platform/disciplines/data-ai/mlops/</code>. Prereqs: ML monitoring, ML pipelines, model registry, and CI/CD for ML score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Disciplines critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+<tr><td>CML reference for machine-learning CI</td><td>KK MLOps net gap in <a href="kodekloud-gap-analysis-2026-05-12.html#mlops">#mlops</a>; aggregate row 11 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/platform/disciplines/data-ai/mlops/</code>. Prereqs: CI/CD for ML and GitHub Actions score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Disciplines critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+<tr><td>Dapr and Buildpacks application definition</td><td>CNCF application-definition row in <a href="kodekloud-gap-analysis-2026-05-12.html#cncf">#cncf</a>; aggregate row 13 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/platform/toolkits/</code>. Prereqs: application platforms, Backstage, Helm, and container build modules score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Toolkits critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>2-3</td></tr>
+<tr><td>gRPC and Envoy service-to-service communication</td><td>CNCF service proxy/network row in <a href="kodekloud-gap-analysis-2026-05-12.html#cncf">#cncf</a>; aggregate row 15 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/platform/disciplines/networking/</code> or service mesh internals. Prereqs: service mesh, ingress, API gateway, and networking fundamentals score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Disciplines critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>2-3</td></tr>
+<tr><td>AWS data ingestion and transformation services</td><td>Cert SAA-C03 task 3.5 in <a href="kodekloud-gap-analysis-2026-05-12.html#certs">#certs</a>; aggregate row 18 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status covered">BREADTH</span></td><td><code>src/content/docs/cloud/aws-essentials/</code> or AWS managed data addendum. Prereqs: S3, IAM, networking, monitoring, and data architecture modules score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) AWS/cloud critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>2-3</td></tr>
+<tr><td>HCP Terraform workflow operations</td><td>Terraform Associate objective 9 in <a href="kodekloud-gap-analysis-2026-05-12.html#certs">#certs</a>; aggregate row 19 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/platform/toolkits/infrastructure-networking/iac-tools/</code>. Prereqs: Terraform, OpenTofu, IaC at scale, drift remediation, and testing score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Platform Toolkits critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+<tr><td>Azure Backup and Site Recovery operations</td><td>AZ-104 monitor/maintain objective in <a href="kodekloud-gap-analysis-2026-05-12.html#certs">#certs</a>; aggregate row 20 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 2</td><td><span class="status covered">BREADTH</span></td><td><code>src/content/docs/cloud/azure-essentials/</code>. Prereqs: Azure VMs, Blob, Monitor, and DR architecture score &gt;=3.</td><td class="days">0</td><td>Unlocks when (a) brief written + ab-discuss-validated, (b) Azure/cloud critical-count &lt; 50, (c) parent epic + child issues exist, (d) sidebar placement merged.</td><td>1</td></tr>
+</tbody>
+</table>
+<p>
+  These rows are GH #1174's deliberation target. Stage 2 pressure-test decides
+  advance, defer, or needs-brief. Rows inherited from
+  <code>content-gaps-2026-05.md</code> retain their inventory tier in the source
+  column; this roadmap does not overwrite that Stage 0 classification.
+</p>
+</section>
+
+<section id="tier-3">
+<h2>Tier 3 - deferred</h2>
+<p>
+  These rows are not drafting unlocks. They are deferred because they are niche,
+  replaced by a modern default, already listed in Tier 3/Tier 4 of
+  <code>content-gaps-2026-05.md</code>, or they need a higher-priority quality
+  rewrite before any new module slot is justified.
+</p>
+<table>
+<thead>
+<tr>
+  <th>Gap title</th><th>Sources</th><th>Tier</th><th>Depth flag</th>
+  <th>Track placement and prerequisite chain</th><th>Stage</th>
+  <th>Unlock criteria</th><th>Estimated child-module count</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>Jenkins curriculum path</td><td>Deliberate exclusion from <code>memory/feedback_skip_jenkins_prefer_modern_cicd.md</code>; Jenkins discussed in <a href="kodekloud-gap-analysis-2026-05-12.html#devops">#devops</a>.</td><td><span class="status gap">Tier 3</span></td><td>BREADTH</td><td>No new placement. Prefer GitHub Actions, GitLab CI, and Argo CD.</td><td class="days">0</td><td>Will not pursue unless user direction changes; current unlock is closed by policy.</td><td>0</td></tr>
+<tr><td>Docker fundamentals absolute-beginner arc</td><td>KK aggregate row 12 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 3</td><td>BREADTH</td><td>Existing prerequisites and Cloud Native 101 already cover the path; revisit only after beginner-path audit.</td><td class="days">0</td><td>Unlocks only if audit proves existing Docker modules score &gt;=3 but still miss the beginner sequence.</td><td>4-7</td></tr>
+<tr><td>Classic ARM Templates and Bicep migration map</td><td>KK Azure and AZ-104 compute signal in <a href="kodekloud-gap-analysis-2026-05-12.html#azure">#azure</a> and <a href="kodekloud-gap-analysis-2026-05-12.html#certs">#certs</a>; aggregate row 27 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 3</td><td>BREADTH</td><td>Modern Bicep modules are the default. Consider an appendix only after Azure Essentials quality remains green.</td><td class="days">0</td><td>Deferred because Bicep is the intentional path; unlock requires Stage 2 to prove field need beyond cert compatibility.</td><td>1</td></tr>
+<tr><td>CNCF edge and bare-metal control plane</td><td>CNCF edge rows in <a href="kodekloud-gap-analysis-2026-05-12.html#cncf">#cncf</a>; aggregate row 17 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>; Tier 4 edge carryover in <code>content-gaps-2026-05.md</code>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/on-premises/</code>. Prereqs: on-prem planning, provisioning, networking, storage, and multi-cluster score &gt;=3.</td><td class="days">0</td><td>Deferred under Tier 4 carryover; unlock requires on-prem expansion plan and critical-count &lt; 50.</td><td>2-3</td></tr>
+<tr><td>AWS security-service selector</td><td>SAA secure-architecture signal in <a href="kodekloud-gap-analysis-2026-05-12.html#certs">#certs</a>; aggregate row 22 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 3</td><td>BREADTH</td><td>Prefer strengthening existing AWS security and threat-model material before adding a selector module.</td><td class="days">0</td><td>Deferred as provider-service selector; unlock requires Stage 2 to prove operator decision value.</td><td>1</td></tr>
+<tr><td>Azure storage access and operator tooling</td><td>AZ-104 storage signal in <a href="kodekloud-gap-analysis-2026-05-12.html#certs">#certs</a>; aggregate row 23 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 3</td><td>BREADTH</td><td><code>src/content/docs/cloud/azure-essentials/</code>. Prereqs: Blob, identity, and Key Vault score &gt;=3.</td><td class="days">0</td><td>Deferred as operator-tooling detail; unlock requires Stage 2 and proof it is not better folded into Blob rewrite.</td><td>1</td></tr>
+<tr><td>Azure governance mechanics</td><td>AZ-104 governance signal in <a href="kodekloud-gap-analysis-2026-05-12.html#certs">#certs</a>; aggregate row 24 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 3</td><td>BREADTH</td><td>Fold into cloud governance unless Stage 2 proves Azure-specific mechanics need a module.</td><td class="days">0</td><td>Deferred pending governance brief and Cloud Custodian decision.</td><td>1</td></tr>
+<tr><td>Azure network troubleshooting and secure access</td><td>AZ-104 networking signal in <a href="kodekloud-gap-analysis-2026-05-12.html#certs">#certs</a>; aggregate row 25 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 3</td><td>BREADTH</td><td>Fold into Azure VNet/Application Gateway rewrites unless Stage 2 proves a standalone operator path.</td><td class="days">0</td><td>Deferred behind Tier 1 Azure Application Gateway and existing VNet quality.</td><td>1</td></tr>
+<tr><td>AWS database edge patterns</td><td>SAA performance/cost signal in <a href="kodekloud-gap-analysis-2026-05-12.html#certs">#certs</a>; aggregate row 26 in <a href="kodekloud-gap-analysis-2026-05-12.html#expansion">#expansion</a>.</td><td>Tier 3</td><td>BREADTH</td><td>Prefer strengthening AWS database and architecture modules before greenfield service-edge coverage.</td><td class="days">0</td><td>Deferred as provider-specific edge detail; unlock requires Stage 2 proof of broad operator value.</td><td>1</td></tr>
+<tr><td>Compliance-aware platform engineering</td><td>Tier 3 in <code>content-gaps-2026-05.md</code>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td>Platform governance/security. Prereqs: governance, policy, secrets, supply chain, and audit logging score &gt;=3.</td><td class="days">0</td><td>Deferred as niche regulated-industry path until core platform/security quality is below threshold.</td><td>4-7</td></tr>
+<tr><td>Hardware and facilities awareness</td><td>Tier 3 in <code>content-gaps-2026-05.md</code>; <code>memory/project_onprem_vision.md</code>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/on-premises/</code>. Prereqs: on-prem planning, networking, storage, and provisioning score &gt;=3.</td><td class="days">0</td><td>Deferred until on-prem vision has an expansion epic and quality floor clears.</td><td>4-7</td></tr>
+<tr><td>KServe standalone deep-dive</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code> and <code>memory/project_topical_gap_analysis.md</code>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td>Platform ML toolkits. Prereqs: model serving and ML platform modules score &gt;=3.</td><td class="days">0</td><td>Deferred as Tier 4 carryover; first verify current KServe coverage.</td><td>1</td></tr>
+<tr><td>Seldon Core and BentoML standalone depth</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; source gap artifact lists both as well-covered in <a href="kodekloud-gap-analysis-2026-05-12.html#mlops">#mlops</a>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td>Platform ML toolkits. Prereqs: existing tool modules score &gt;=3.</td><td class="days">0</td><td>Deferred until live coverage audit resolves the memory/artifact mismatch.</td><td>1</td></tr>
+<tr><td>Prefect and Argo Workflows standalone orchestration</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; MLOps net gap mentions Prefect/Argo in <a href="kodekloud-gap-analysis-2026-05-12.html#mlops">#mlops</a>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td>Data/ML orchestration. Prereqs: Airflow, ML pipelines, and workflow orchestration score &gt;=3.</td><td class="days">0</td><td>Deferred under Tier 4 carryover until data/ML quality debt clears.</td><td>2-3</td></tr>
+<tr><td>Bare-metal MLOps end-to-end recipe</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_topical_gap_analysis.md</code>; <code>memory/project_onprem_vision.md</code>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td><code>src/content/docs/on-premises/ai-ml-infrastructure/</code>. Prereqs: RKE2, GPU, storage, Kubeflow, and private MLOps platform score &gt;=3.</td><td class="days">0</td><td>Deferred until on-prem expansion epic exists and critical-count &lt; 50.</td><td>2-3</td></tr>
+<tr><td>Vector databases for LLMOps</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_topical_gap_analysis.md</code>; AI/GPU infra item in <code>memory/project_expansion_plan.md</code>.</td><td>Tier 3</td><td>BREADTH</td><td><code>src/content/docs/ai/</code> or AI/GPU infrastructure. Prereqs: RAG, storage, and serving score &gt;=3.</td><td class="days">0</td><td>Deferred until LLM-native app engineering pressure-test completes.</td><td>1</td></tr>
+<tr><td>Multi-cluster depth beyond CAPI</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_expansion_plan.md</code>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td>On-prem multi-cluster or extending Kubernetes. Prereqs: CAPI, on-prem multi-cluster, and networking score &gt;=3.</td><td class="days">0</td><td>Deferred until on-prem and extending-K8s quality gates clear.</td><td>2-3</td></tr>
+<tr><td>Workload identity mechanics across clouds</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; cloud expansion memory.</td><td>Tier 3</td><td>BREADTH</td><td>Cloud deep dives. Prereqs: AWS, GCP, Azure identity modules score &gt;=3.</td><td class="days">0</td><td>Deferred pending depth audit of existing cloud identity modules.</td><td>2-3</td></tr>
+<tr><td>Release Engineering expansion</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_expansion_plan.md</code>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td>Platform Disciplines delivery automation. Prereqs: CI/CD, GitOps, deployment strategies, and observability score &gt;=3.</td><td class="days">0</td><td>Deferred until Platform Disciplines critical-count &lt; 50.</td><td>4-7</td></tr>
+<tr><td>Chaos Engineering expansion</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_expansion_plan.md</code>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td>Platform Disciplines reliability. Prereqs: Release Engineering, observability, incident response, and resilience score &gt;=3.</td><td class="days">0</td><td>Deferred until Release Engineering is validated and Platform Disciplines critical-count &lt; 50.</td><td>4-7</td></tr>
+<tr><td>FinOps expansion</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_expansion_plan.md</code>.</td><td>Tier 3</td><td><span class="status partial">MIXED</span></td><td><code>src/content/docs/k8s/finops/</code> or platform FinOps. Prereqs: existing FinOps modules score &gt;=3.</td><td class="days">0</td><td>Deferred until cost-lens Stage 2 decides whether this is module expansion or cross-cut rewrite.</td><td>4-7</td></tr>
+<tr><td>Engineering Leadership foundation</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_expansion_plan.md</code>.</td><td>Tier 3</td><td>BREADTH</td><td>Potential prerequisites or platform foundations. Prereqs: software craft brief and review protocol alignment.</td><td class="days">0</td><td>Deferred until software engineering craft pressure-test decides scope.</td><td>4-7</td></tr>
+<tr><td>Advanced Networking expansion</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_expansion_plan.md</code>.</td><td>Tier 3</td><td><span class="status partial">MIXED</span></td><td>Linux/networking or platform networking. Prereqs: Linux networking and platform networking score &gt;=3.</td><td class="days">0</td><td>Deferred until networking critical modules are rewritten and Stage 2 proves the module split.</td><td>4-7</td></tr>
+<tr><td>Data Engineering on Kubernetes expansion</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_expansion_plan.md</code>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td>Platform Disciplines data engineering. Prereqs: current data engineering and MLOps modules score &gt;=3.</td><td class="days">0</td><td>Deferred until Platform Disciplines critical-count &lt; 50; may absorb streaming Tier 1 after rewrite.</td><td>4-7</td></tr>
+<tr><td>Extending Kubernetes expansion</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_expansion_plan.md</code>.</td><td>Tier 3</td><td><span class="status partial">MIXED</span></td><td><code>src/content/docs/k8s/extending/</code>. Prereqs: CRDs/operators, admission, API machinery, and controller material score &gt;=3.</td><td class="days">0</td><td>Deferred until existing extending-K8s quality is green enough for expansion.</td><td>8+</td></tr>
+<tr><td>eBPF foundation module</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_expansion_plan.md</code>.</td><td>Tier 3</td><td><span class="status partial">MIXED</span></td><td>Linux operations, networking, or security. Prereqs: Linux kernel, networking, Cilium, and observability score &gt;=3.</td><td class="days">0</td><td>Deferred pending networking/security rewrite sequence.</td><td>1</td></tr>
+<tr><td>Edge Kubernetes module</td><td>Tier 4 carryover in <code>content-gaps-2026-05.md</code>; <code>memory/project_expansion_plan.md</code>; CNCF edge signal in <a href="kodekloud-gap-analysis-2026-05-12.html#cncf">#cncf</a>.</td><td>Tier 3</td><td><span class="status gap">DEPTH-FIRST</span></td><td>Cloud/on-prem edge. Prereqs: on-prem, multi-cluster, and networking score &gt;=3.</td><td class="days">0</td><td>Deferred behind on-prem vision and CNCF edge/bare-metal control-plane decision.</td><td>1</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="quality-cross-cut">
+<h2>Quality-board cross-cut</h2>
+<p>
+  Tracks with at least 10 critical-rubric modules are rewrite-first tracks:
+  Platform Disciplines (65), Platform Toolkits (52), Platform Foundations (31),
+  CKS (29), and CKAD (23). Any gap placed in these tracks is flagged
+  <span class="status gap">DEPTH-FIRST</span>. These rows are not new-content
+  unlocks; they are rewrite unlocks until the relevant track drops below 50.
+</p>
+<table>
+<thead><tr><th>Track</th><th>Critical count</th><th>Roadmap rows affected</th><th>Implication</th></tr></thead>
+<tbody>
+<tr><td>Platform Disciplines</td><td class="days">65</td><td>Streaming ops, MLOps gaps, data engineering, release engineering, chaos engineering</td><td>Rewrite existing modules first; no drafting while count is above 50.</td></tr>
+<tr><td>Platform Toolkits</td><td class="days">52</td><td>Ansible, Dapr/Buildpacks, HCP Terraform, ML platform tool depth</td><td>Rewrite first; new tool modules wait for validated brief and lower critical count.</td></tr>
+<tr><td>Platform Foundations</td><td class="days">31</td><td>Software craft, engineering mental models, leadership-adjacent foundations</td><td>Below 50 but still high; Stage 2 should prefer focused rewrites over broad new arcs.</td></tr>
+<tr><td>CKS</td><td class="days">29</td><td>Compliance, security governance, eBPF/security-adjacent rows</td><td>Keep security expansions behind CKS and platform-security rewrites.</td></tr>
+<tr><td>CKAD</td><td class="days">23</td><td>Application delivery and developer workflow dependencies</td><td>Do not let app-platform gaps bypass CKAD quality debt when they depend on developer workflows.</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="dependencies">
+<h2>Prerequisite chain</h2>
+<div class="tree">
+<ul>
+  <li>Tier 1 Azure Application Gateway
+    <ul>
+      <li>Requires Azure VNet, Azure DNS, Azure Monitor, AKS networking modules score &gt;=3.</li>
+      <li>Blocked by Stage 1 brief and GH #1174 pressure-test.</li>
+    </ul>
+  </li>
+  <li>Tier 1 Azure App Service operations
+    <ul>
+      <li>Requires Azure ACI/ACA, Functions, DNS, Key Vault, Monitor, and CI/CD score &gt;=3.</li>
+      <li>Can share an Azure Essentials placement epic with Application Gateway only after both briefs validate.</li>
+    </ul>
+  </li>
+  <li>Tier 1 Cloud Custodian governance
+    <ul>
+      <li>Requires cloud governance, FinOps, Terraform/OpenTofu, and policy-as-code modules score &gt;=3.</li>
+      <li>Must wait for Stage 2 to prevent a narrow tool catalog module.</li>
+    </ul>
+  </li>
+  <li>Tier 1 streaming operations
+    <ul>
+      <li>Requires Kafka/managed broker, observability, platform messaging, and data-engineering prerequisites score &gt;=3.</li>
+      <li>Hard-blocked by Platform Disciplines critical-count 65; rewrite-first until below 50.</li>
+    </ul>
+  </li>
+</ul>
+</div>
+</section>
+
+<section id="quality-gate">
+<h2>Quality-floor gate status</h2>
+<p>
+  Live <code>/api/quality/scores</code> reports <strong>249</strong>
+  critical-rubric modules out of 754 scored modules. The roadmap gate opens
+  at fewer than 50 critical-rubric modules. The immediate implication is
+  explicit: most Tier 1 gaps cannot unlock for drafting yet, even if their
+  Stage 1 brief, Stage 2 pressure-test, Stage 3 epic, and Stage 4 sidebar
+  placement all complete.
+</p>
+<div class="caveat">
+  <strong>Gate state:</strong> <span class="status gap">GATE CLOSED</span>.
+  Work allowed now: Stage 1 briefs, Stage 2 deliberation, parent/child issue
+  planning, and rewrite sequencing. Work not allowed now: greenfield module
+  drafting from this roadmap.
+</div>
+</section>
+
+<section id="actions">
+<h2>Next actions</h2>
+<ol>
+  <li>File one GH issue for each Tier 1 gap without a brief: Azure Application Gateway, Azure App Service, streaming operations, and Cloud Custodian governance.</li>
+  <li>File Stage 1 brief subtasks for those four Tier 1 rows; harness engineering already has <code>docs/research/harness-symphony-gap.md</code> and GH #1173.</li>
+  <li>Use GH #1174 to pressure-test Tier 1 and Tier 2 rows; channel naming is covered separately by claude.</li>
+  <li>Do not open drafting issues from this artifact. Drafting unlocks downstream of all four stages plus the quality-floor gate.</li>
+</ol>
+</section>
+
+<p class="meta footer-meta">
+  Artifact: <code>docs/research/gap-triangulation-roadmap-2026-05.html</code>.
+  Source aggregate table explicitly consumed from
+  <code>docs/research/kodekloud-gap-analysis-2026-05-12.html#expansion</code>.
+</p>
+
+</main>
+</body>
+</html>
