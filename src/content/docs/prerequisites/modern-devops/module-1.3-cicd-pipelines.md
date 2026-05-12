@@ -6,11 +6,13 @@ sidebar:
   order: 4
 ---
 
-# Module 1.3: CI/CD Pipelines
+> **Complexity:** [MEDIUM]
+>
+> **Time to Complete:** 60-75 minutes
+>
+> **Prerequisites:** [Module 1.1: Infrastructure as Code](/prerequisites/modern-devops/module-1.1-infrastructure-as-code/), basic Git knowledge
 
-**Complexity:** [MEDIUM]<br>
-**Time to Complete:** 60-75 minutes<br>
-**Prerequisites:** [Module 1.1: Infrastructure as Code](/prerequisites/modern-devops/module-1.1-infrastructure-as-code/), basic Git knowledge
+---
 
 ## Learning Outcomes
 
@@ -30,7 +32,7 @@ In 2020, attackers compromised the SolarWinds Orion build environment and insert
 
 Think of CI/CD as the automated assembly line for software. Source code enters as raw material, moves through quality stations, becomes a container image, receives a label and signature, and is promoted only if each station records a clean result. A team can still choose when a release reaches users, but the release should never depend on someone remembering which commands to run on which host. Kubernetes 1.35+ assumes this world: applications arrive as versioned container images, rollout controllers converge toward desired state, and platform teams rely on repeatable automation rather than personal deployment folklore.
 
-This module turns that assembly line into a design skill. You will separate CI from the two meanings of CD, model pipelines as stages and jobs, connect Infrastructure as Code to delivery gates, secure container artifacts with scans and provenance, compare common CI/CD tools, and choose rollout strategies that fit the risk of the change. When later Kubernetes modules use `k` as the kubectl alias, read it as `alias k=kubectl`; for example, a rollout check would be written as `k rollout status deployment/myapp` after the alias is configured in your shell.
+This module turns that assembly line into a design skill. You will separate CI from the two meanings of CD, model pipelines as stages and jobs, connect Infrastructure as Code to delivery gates, secure container artifacts with scans and provenance, compare common CI/CD tools, and choose rollout strategies that fit the risk of the change. Later Kubernetes modules may mention interactive shell shorthand for `kubectl`, but every runnable command in this module uses the full `kubectl` binary name so copied examples behave the same way in scripts and CI jobs.
 
 ## Core Concepts: CI, Delivery, and Deployment
 
