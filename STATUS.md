@@ -267,6 +267,7 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 - [ ] **(Optional follow-up)** Add tests for `--skip-git-repo-check` presence + `--color never` absence on resume cmd (cross-family reviewer's two non-blocking nits).
 - [ ] **Test `/goal` rule (PR #1082)** on a real bounded queue. If status-line convention holds, squash-merge. If it surfaces gotchas, refine before merge.
 - [ ] **Release-notes review item 3:** hook `args: string[]` exec form + `continueOnBlock` for PostToolUse. Check `.claude/settings.json` for hooks that benefit.
+- [ ] **Harness engineering + Symphony gap** — captured in [`docs/research/harness-symphony-gap.md`](docs/research/harness-symphony-gap.md). Two workstreams: (B) curriculum modules in `ai/ai-native-work` for harness-engineering + Symphony, (C) self-application audit (priority-1: drop "harness engineering" vocabulary into CLAUDE.md; priority-2: `WORKFLOW.md`-style single-file phase contract; etc.). Both post-overnight-batch.
 
 **Carryover from 2026-05-09 evening handoff ("utilizing ALL agents"):**
 
