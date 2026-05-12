@@ -1,12 +1,12 @@
 # Session handoff — 2026-05-12 session 4
 
-**A⁴ readiness redesign SHIPPED end-to-end. 15 PRs merged this session: 9 NEEDS_CHANGES triage (4 trivial-fix + 4 prose-quality + 1 APPROVE_WITH_NITS) + 4 A⁴ PRs (helper, chain step, readiness API, catchup bugfix #1) + 2 orphan-chain PRs (#1158, #1159). Catchup task #6 surfaced 2 additional bugs (seed handling); fix PR #1161 in flight at session end (review dispatched, awaiting verdict). Discovered chain process from session 3 was orphaned and ran 6.5h producing unauthorized PRs — killed at 14:18.**
+**A⁴ readiness redesign SHIPPED end-to-end. 15 PRs merged this session: 9 NEEDS_CHANGES triage (4 trivial-fix + 4 prose-quality + 1 APPROVE_WITH_NITS) + 4 A⁴ PRs (helper, chain step, readiness API, catchup bugfix #1) + 2 orphan-chain PRs (#1158, #1159). Catchup task #6 surfaced 2 additional bugs (seed handling); fix PR #1161 merged at session end (APPROVE WITH NITS verdict). Discovered chain process from session 3 was orphaned and ran 6.5h producing unauthorized PRs — killed at 14:18.**
 
 ## TL;DR for cold-start
 
 1. Hit `curl -s http://127.0.0.1:8768/api/briefing/session?compact=1` first.
 2. **A⁴ is fully shipped in main**: #1153 (helper), #1155 (chain step), #1157 (readiness API), #1160 (nothing_to_do bugfix). Readiness API at `/api/tracks/readiness` is now FS-derived from frontmatter, predicate `revision_pending is not True AND citations_verified is True`.
-3. **PR #1161 (seed-handling bugfix) is in flight** at session end — `gh pr view 1161`. Review dispatched (background task b8j1fncrr). If APPROVED + CI green: merge it. If NEEDS_CHANGES: address and re-review. The fix is needed before catchup task #6 can run cleanly.
+3. **PR #1161 (seed-handling bugfix) MERGED at session end** — APPROVE WITH NITS, squash-merged. Catchup task #6 is now unblocked end-to-end. First action next session: run a controlled `python -m scripts.quality.pipeline backfill-pending --limit 50` batch to validate the full chain works clean.
 4. **Catchup is PARTIAL**: 2 modules backfilled (`ai-ai-building-module-1.3-tools-retrieval-and-boundaries`, `ai-ai-for-kubernetes-platform-work-module-1.1-ai-for-yaml-manifests-config-review`). 742 modules total need backfill (handoff-3's "45 historical" was an under-estimate — entire curriculum lacks `citations_verified`).
 5. **CRITICAL discovery — chain orphan**: session 3 chain process (PID 39723, parent PID 1) survived the kill-watcher's SIGTERM by becoming an orphan attached to init. Ran 6.5h producing PRs #1158, #1159 autonomously. Caught at 14:18 and killed. **Cold-start ritual must now include `/bin/ps aux | grep dispatch_388_pilot` before starting any backfill or readiness work.**
 6. Two new research artifacts on `main`: `docs/research/content-gaps-2026-05.md` (Stage 0 gap inventory, all tiers, anti-rot guard) + `harness-symphony-gap.md` Section B addendum on the **layered-harness mental model** (the core teaching point for Module 2.1).
@@ -49,14 +49,14 @@
 - `docs/research/content-gaps-2026-05.md` — Stage 0 inventory of all candidate content gaps, tiered, with anti-rot unlock criterion (dependency-bound, not calendar-bound). Should be the source of truth for any new module work after the chain stabilizes.
 - `harness-symphony-gap.md` Section B addendum — "Core teaching point: the layered-harness mental model." Three layers (platform default / project advisory / project enforcement); discipline = "push every rule down to the lowest enforceable layer." Explicitly drops the earlier "KubeDojo as worked example" plan — our harness is advisory-only today.
 
-### PR #1161 (in flight at session end)
+### PR #1161 — merged at session end (APPROVE WITH NITS)
 
-- Branch: `claude/fix-backfill-seed-handling`
-- Head: `10ab25ea`
-- Fixes: (a) no-op success commit now includes seed file; (b) research step validates payload before writing — aborts on bridge-error stubs rather than overwriting seeds.
-- Tests added to `test_quality_stages.py` for both bugs.
-- Smoke: `python -m scripts.quality.pipeline backfill-pending --limit 2` reportedly clean.
-- Review: claude dispatched (b8j1fncrr) — verdict pending.
+- Branch: `claude/fix-backfill-seed-handling` (deleted post-merge)
+- Squash-merged at session end after claude review verdict APPROVE WITH NITS
+- Fixes: (a) no-op success commit now includes seed file (mirrors success-path pattern); (b) research step validates payload before writing — aborts on bridge-error stubs rather than overwriting seeds.
+- Tests added to `test_quality_stages.py` for both bugs using real production payload shapes.
+- Smoke: `python -m scripts.quality.pipeline backfill-pending --limit 2` confirmed clean tree between modules.
+- Latent nit (non-blocking): zero-claims valid seeds may false-positive the research guard. Domain-acceptable risk.
 
 ## Key durable decisions
 

@@ -263,7 +263,7 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 
 **Next session — top priorities (2026-05-12 session 4 — A⁴ shipped + catchup bugs):**
 
-- [ ] **First action: `gh pr view 1161`** — verify catchup bugfix #2 (seed handling) verdict. If APPROVED + CI green: merge + remove worktree. If NEEDS_CHANGES: fix-pass and re-review. Background review task: `b8j1fncrr`.
+- [x] ~~First action: verify PR #1161~~ — MERGED at session end (APPROVE WITH NITS). Catchup unblocked.
 - [ ] **Cold-start ritual: `/bin/ps aux | grep dispatch_388_pilot`** — kill any chain orphans before doing pipeline work. Session-3 chain orphaned and ran 6.5h producing unauthorized PRs (#1158, #1159) this session.
 - [ ] **Full catchup task #6** — after #1161 merges, run `python -m scripts.quality.pipeline backfill-pending --limit 50` in batches. 742 modules total need backfill. Verify primary checkout stays clean between batches. Push between batches.
 - [ ] **Move Decision Card to non-pending** — `docs/decisions/pending/2026-05-12-readiness-signal-redesign.md` → `docs/decisions/2026-05-12-readiness-signal-redesign.md`. A⁴ implementation is complete on main.
