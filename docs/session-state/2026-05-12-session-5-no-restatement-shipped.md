@@ -1,6 +1,6 @@
 # Session handoff — 2026-05-12 session 5
 
-**NO RESTATEMENT contract shipped + 4 chain-failure modules rewritten clean. 10 PRs merged + 1 issue tracked. `ab discuss` converged on Option C; codex+gemini both rejected the deterministic anti-repetition gate (Option D) after codex measured Jaccard overlap clusters at ~0.40 for both clean and padded modules. Backfill batch restarted at session end (limit 50, 742 modules total) and running autonomously on the codex lane.**
+**NO RESTATEMENT contract shipped + 4 chain-failure modules rewritten clean. 9 PRs merged + 1 issue tracked + 1 in-flight handoff PR (#1171, this one). `ab discuss` converged on Option C; codex+gemini both rejected the deterministic anti-repetition gate (Option D) after codex measured Jaccard overlap clusters at ~0.40 for both clean and padded modules. Backfill batch restarted at session end (limit 50, 742 modules total) and running autonomously on the codex lane.**
 
 ## TL;DR for cold-start
 
@@ -15,7 +15,7 @@
 
 ## What shipped this session
 
-### 10 PRs merged on `main`
+### 9 PRs merged on `main`
 
 | PR | Module / Change |
 |---|---|
