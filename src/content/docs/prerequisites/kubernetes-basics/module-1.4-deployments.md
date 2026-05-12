@@ -15,7 +15,7 @@ lab:
 >
 > **Time to Complete**: 40-45 minutes.
 >
-> **Prerequisites**: Module 3, Pods. This module assumes a Kubernetes 1.35 or newer cluster and a working shell. To keep commands short during practice, set `alias k=kubectl` before you begin, then read `k` as the same client command you already used in earlier modules.
+> **Prerequisites**: Module 3, Pods. This module assumes a Kubernetes 1.35 or newer cluster and a working shell. All runnable examples use the full `kubectl` command so they can be copied into scripts as well as interactive terminals.
 
 ---
 
@@ -30,11 +30,11 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-A payment startup once ran its checkout processor as a single naked Pod because the team wanted the smallest possible manifest while preparing for a product launch. At 2 PM on a Friday, a memory leak killed that Pod during a partner promotion, and nothing in the cluster recreated it because no controller owned the workload. For 23 minutes, every payment request failed until an on-call engineer manually applied a replacement, then another 15 minutes disappeared when the replacement used the wrong image tag and needed a second emergency fix.
+Hypothetical scenario: a payment startup runs its checkout processor as a single naked Pod because the team wants the smallest possible manifest while preparing for a product launch. At 2 PM on a Friday, a memory leak kills that Pod during a partner promotion, and nothing in the cluster recreates it because no controller owns the workload. For 23 minutes, every payment request fails until an on-call engineer manually applies a replacement, then another 15 minutes disappear when the replacement uses the wrong image tag and needs a second emergency fix.
 
-The incident cost roughly twelve thousand dollars in failed transactions, but the worse damage was operational: engineers stopped trusting deploys, customer support handled angry merchants, and the next release was delayed because the team had no repeatable way to replace application instances safely. A Deployment would not have made the memory leak vanish, yet it would have recreated failed Pods automatically, kept a desired replica count, and provided a controlled rolling update path instead of a late-Friday manual rebuild under pressure.
+In this scenario, the failed transactions matter, but the worse damage is operational: engineers stop trusting deploys, customer support handles angry merchants, and the next release is delayed because the team has no repeatable way to replace application instances safely. A Deployment would not make the memory leak vanish, yet it would recreate failed Pods automatically, keep a desired replica count, and provide a controlled rolling update path instead of a late-Friday manual rebuild under pressure.
 
-That is why Deployments are the first Kubernetes workload controller worth treating as more than syntax. Pods describe one running copy of something, while Deployments describe how many copies should exist, how they should be updated, and how Kubernetes should recover when reality drifts away from the desired state. The practical skill is not memorizing `k create deployment`; it is learning to read the Deployment, ReplicaSet, and Pod layers as one control system that protects availability while still letting you change software.
+That is why Deployments are the first Kubernetes workload controller worth treating as more than syntax. Pods describe one running copy of something, while Deployments describe how many copies should exist, how they should be updated, and how Kubernetes should recover when reality drifts away from the desired state. The practical skill is not memorizing `kubectl create deployment`; it is learning to read the Deployment, ReplicaSet, and Pod layers as one control system that protects availability while still letting you change software.
 
 Think of a Deployment as a restaurant manager rather than an individual server. You say, "I need three trained servers on the floor using the current menu," and the manager handles hiring, replacing someone who calls in sick, and rotating staff onto a revised menu without emptying the dining room. Kubernetes uses more precise language, but the shape is the same: you declare the desired staffing plan, and the controller keeps reconciling the floor until the observed state matches that plan.
 
@@ -73,19 +73,17 @@ The Deployment is therefore both a safety mechanism and a debugging map. When an
 
 There are two normal ways to create a Deployment, and they serve different purposes. Imperative commands are fast when you are exploring a cluster, testing a small image, or generating a starter manifest. Declarative YAML is the production habit because it can be reviewed, versioned, repeated, and compared against the live cluster without relying on whoever happened to type the original command.
 
-The first command block preserves the quick testing workflow from the original module and adds the `k` alias used throughout KubeDojo labs. Run the alias in every new shell session, because it is a shell convenience rather than a Kubernetes object. The dry-run command is especially useful because it lets you convert a correct one-line experiment into YAML without pretending that hand-written manifests are always the fastest first step.
+The first command block preserves the quick testing workflow from the original module while using the full `kubectl` binary name. That small bit of verbosity is intentional because the same command can be pasted into a shell, a lab note, or a script without depending on interactive alias expansion. The dry-run command is especially useful because it lets you convert a correct one-line experiment into YAML without pretending that hand-written manifests are always the fastest first step.
 
 ```bash
-alias k=kubectl
-
 # Create deployment
-k create deployment nginx --image=nginx
+kubectl create deployment nginx --image=nginx
 
 # With replicas
-k create deployment nginx --image=nginx --replicas=3
+kubectl create deployment nginx --image=nginx --replicas=3
 
 # Dry run to see YAML
-k create deployment nginx --image=nginx --dry-run=client -o yaml
+kubectl create deployment nginx --image=nginx --dry-run=client -o yaml
 ```
 
 Imperative creation is deliberately narrow: it can set a name, image, and replica count, but it does not encourage you to reason about selectors, update strategy, resource requests, or labels beyond the defaults generated for you. That is acceptable for a learning cluster and risky for a shared environment. Treat the command as a scaffold builder, then move the resulting manifest into version control before other people or automation start depending on it.
@@ -117,12 +115,12 @@ spec:
         - containerPort: 80
 EOF
 
-k apply -f deployment.yaml
+kubectl apply -f deployment.yaml
 ```
 
-Before running this, what output do you expect from `k get deploy,rs,pods` after the apply completes? A healthy result should show one Deployment, one active ReplicaSet, and three Pods with names derived from the ReplicaSet name. If you see fewer Pods than requested, resist the urge to apply again; describe the Deployment and inspect the Pods, because the controller is already trying and needs you to read the blocker.
+Before running this, what output do you expect from `kubectl get deploy,rs,pods` after the apply completes? A healthy result should show one Deployment, one active ReplicaSet, and three Pods with names derived from the ReplicaSet name. If you see fewer Pods than requested, resist the urge to apply again; describe the Deployment and inspect the Pods, because the controller is already trying and needs you to read the blocker.
 
-The safest mental model is that `k apply` changes intent rather than directly starting containers. If you edit `replicas: 3` to `replicas: 5` and apply the file again, Kubernetes compares the new desired state with the current cluster state, then asks the active ReplicaSet to create two additional Pods. Existing healthy Pods remain untouched because the Pod template did not change, which is why scaling a Deployment should be less disruptive than deleting and recreating one.
+The safest mental model is that `kubectl apply` changes intent rather than directly starting containers. If you edit `replicas: 3` to `replicas: 5` and apply the file again, Kubernetes compares the new desired state with the current cluster state, then asks the active ReplicaSet to create two additional Pods. Existing healthy Pods remain untouched because the Pod template did not change, which is why scaling a Deployment should be less disruptive than deleting and recreating one.
 
 A practical team habit is to keep a small command note beside the manifest during early development: the imperative command that generated the first draft, the declarative file that became the source of truth, and the verification commands used after each change. That habit helps beginners connect fast experiments to reviewable infrastructure. It also prevents a common split-brain situation where one engineer changes YAML while another tries to fix the same Deployment with ad hoc commands.
 
@@ -144,21 +142,21 @@ You can observe the hierarchy without learning any hidden API. The `deploy,rs,po
 
 ```bash
 # List deployments
-k get deployments
-k get deploy              # Short form
+kubectl get deployments
+kubectl get deploy              # Short form
 
 # Detailed info
-k describe deployment nginx
+kubectl describe deployment nginx
 
 # See related resources
-k get deploy,rs,pods
+kubectl get deploy,rs,pods
 ```
 
-A useful debugging pattern is to start broad and descend only when the broad layer points you downward. `k describe deployment nginx` shows conditions such as progress and availability, recent events, selector information, and desired versus available counts. If those counts are off, `k get rs` shows whether the old or new ReplicaSet has replicas, and `k get pods` shows the concrete reason a specific instance is waiting, crashing, or not ready.
+A useful debugging pattern is to start broad and descend only when the broad layer points you downward. `kubectl describe deployment nginx` shows conditions such as progress and availability, recent events, selector information, and desired versus available counts. If those counts are off, `kubectl get rs` shows whether the old or new ReplicaSet has replicas, and `kubectl get pods` shows the concrete reason a specific instance is waiting, crashing, or not ready.
 
 Direct ReplicaSet edits are tempting because the object is visible and has a replica field, but that field is not the source of truth when a Deployment owns it. The next reconciliation loop will adjust the ReplicaSet to match the Deployment's desired state, or the next Deployment update will create a different ReplicaSet entirely. In production, this is a feature: operators can trust that managed children return to the parent specification rather than accumulating hidden manual drift.
 
-Stop and think: if you edit a ReplicaSet directly with `k edit rs <name>` and change its replica count, what should the Deployment do? It should notice that the child state no longer matches the Deployment intent and correct the drift. The learning point is not "never inspect ReplicaSets"; it is "inspect them freely, but make durable changes at the Deployment layer."
+Stop and think: if you edit a ReplicaSet directly with `kubectl edit rs <name>` and change its replica count, what should the Deployment do? It should notice that the child state no longer matches the Deployment intent and correct the drift. The learning point is not "never inspect ReplicaSets"; it is "inspect them freely, but make durable changes at the Deployment layer."
 
 ## Scaling, Self-Healing, and Day-Two Operations
 
@@ -166,13 +164,13 @@ Scaling is the simplest operation that proves the controller model. You are not 
 
 ```bash
 # Scale up/down
-k scale deployment nginx --replicas=5
+kubectl scale deployment nginx --replicas=5
 
 # Or patch the deployment to scale
-k patch deployment nginx -p '{"spec": {"replicas": 5}}'
+kubectl patch deployment nginx -p '{"spec": {"replicas": 5}}'
 
 # Watch pods scale
-k get pods -w
+kubectl get pods -w
 ```
 
 When you scale from three replicas to five, the active ReplicaSet increases its desired count and creates two new Pods from the same template. When you scale back down, Kubernetes chooses Pods to terminate according to controller logic and scheduling hints, so you should avoid storing unique local state in any one Pod. A Deployment assumes replicas are interchangeable, which is perfect for stateless web services and dangerous for single-writer databases that need stronger identity guarantees.
@@ -181,20 +179,20 @@ Self-healing uses the same count logic. If one Pod disappears, the ReplicaSet ob
 
 ```bash
 # Create deployment
-k create deployment nginx --image=nginx --replicas=3
+kubectl create deployment nginx --image=nginx --replicas=3
 
 # See pods
-k get pods
+kubectl get pods
 
 # Delete a pod (using label selector to target the first one)
-k delete pod $(k get pods -l app=nginx -o jsonpath='{.items[0].metadata.name}')
+kubectl delete pod $(kubectl get pods -l app=nginx -o jsonpath='{.items[0].metadata.name}')
 
 # Immediately check again
-k get pods
+kubectl get pods
 # A new pod is already being created!
 
 # The deployment maintains desired state
-k get deployment nginx
+kubectl get deployment nginx
 # READY shows 3/3
 ```
 
@@ -210,31 +208,31 @@ Rolling updates are where Deployments become release machinery instead of just r
 
 ```bash
 # Update image
-k set image deployment/nginx nginx=nginx:1.27
+kubectl set image deployment/nginx nginx=nginx:1.27
 
 # Watch rollout
-k rollout status deployment nginx
+kubectl rollout status deployment nginx
 
 # View rollout history
-k rollout history deployment nginx
+kubectl rollout history deployment nginx
 ```
 
 The important behavior is that a rollout waits for new Pods to become ready before it removes too much old capacity. If the new image pulls successfully and passes readiness, the Deployment keeps shifting traffic capacity toward the new ReplicaSet until the old one reaches zero. If the image is broken, the new Pods may sit in `ImagePullBackOff` while old Pods continue serving, which gives you time to roll back without causing a complete outage.
 
 ```bash
 # Undo last change
-k rollout undo deployment nginx
+kubectl rollout undo deployment nginx
 
 # Rollback to specific revision
-k rollout history deployment nginx
-k rollout undo deployment nginx --to-revision=2
+kubectl rollout history deployment nginx
+kubectl rollout undo deployment nginx --to-revision=2
 ```
 
 Rollbacks work because old ReplicaSets keep previous Pod templates. The revision history limit defaults to ten, which is enough for many beginner labs but should still be an explicit operational choice in real systems. A very low history limit saves object clutter but reduces recovery options, while a very high limit keeps more templates around without replacing proper release records, observability, or artifact provenance.
 
-Try running `k set image deployment/nginx nginx=nginx:broken` on a disposable lab Deployment, then compare `k get pods`, `k describe deployment nginx`, and `k rollout status deployment nginx`. You should see Kubernetes protect old healthy Pods while reporting that the new revision is not progressing. This is the moment when a Deployment feels less like a command wrapper and more like a release guardrail.
+Try running `kubectl set image deployment/nginx nginx=nginx:broken` on a disposable lab Deployment, then compare `kubectl get pods`, `kubectl describe deployment nginx`, and `kubectl rollout status deployment nginx`. You should see Kubernetes protect old healthy Pods while reporting that the new revision is not progressing. This is the moment when a Deployment feels less like a command wrapper and more like a release guardrail.
 
-Rollout status should be part of every human or CI-driven apply. `k apply -f deployment.yaml` tells you the API accepted a desired state, but it does not prove the workload became healthy. `k rollout status deployment nginx` waits for Deployment progress, and its failure is a signal to inspect events, Pod reasons, and image availability before telling users a release is complete.
+Rollout status should be part of every human or CI-driven apply. `kubectl apply -f deployment.yaml` tells you the API accepted a desired state, but it does not prove the workload became healthy. `kubectl rollout status deployment nginx` waits for Deployment progress, and its failure is a signal to inspect events, Pod reasons, and image availability before telling users a release is complete.
 
 ## Rolling Update Strategy
 
@@ -320,7 +318,7 @@ Good Deployment usage is mostly about choosing a clear owner for intent and then
 
 | Pattern | When to Use It | Why It Works | Scaling Consideration |
 |---|---|---|---|
-| Declarative Deployment manifests | Shared environments, CI, and anything reviewed by a team | The manifest records selector, template, resources, and rollout strategy in one source of truth | Pair it with `k rollout status` so apply success is not mistaken for application health |
+| Declarative Deployment manifests | Shared environments, CI, and anything reviewed by a team | The manifest records selector, template, resources, and rollout strategy in one source of truth | Pair it with `kubectl rollout status` so apply success is not mistaken for application health |
 | Small surge with zero unavailable Pods | User-facing services with enough spare cluster capacity | New Pods prove readiness before old capacity is removed | Capacity must cover at least the desired replicas plus the allowed surge |
 | Immutable image tags | Any environment where rollback must be predictable | Each revision points to a known artifact instead of a moving tag | Tag naming should connect cleanly to build, release, or commit metadata |
 | Inspect children, edit parents | Debugging Deployments, ReplicaSets, and Pods during incidents | Child status gives symptoms while the Deployment remains the durable intent | Direct child edits can be overwritten, so promote durable fixes to the Deployment |
@@ -331,7 +329,7 @@ Anti-patterns usually appear when a team treats Kubernetes objects as independen
 |---|---|---|
 | Running naked Pods for services | Crashes, node loss, and updates require manual intervention | Use Deployments for stateless replicated applications |
 | Using `latest` for release images | Rollback and audit become ambiguous because the tag can move | Use immutable tags or digests tied to a build |
-| Ignoring rollout progress | The API accepts a bad manifest while users remain on an old or broken version | Gate releases on `k rollout status` and inspect events on failure |
+| Ignoring rollout progress | The API accepts a bad manifest while users remain on an old or broken version | Gate releases on `kubectl rollout status` and inspect events on failure |
 | Changing selectors after launch | The selector is immutable and wrong ownership can create orphaned workloads | Design labels before creation or migrate with a new Deployment |
 
 ## Decision Framework
@@ -352,7 +350,7 @@ During incidents, use the same framework in reverse. If users report errors afte
 
 ### Worked Example: Reading a Stuck Rollout
 
-Imagine a team ships a new frontend image at the start of a quiet maintenance window. The apply command succeeds, but the release dashboard never shows the new version, and `k rollout status` eventually reports that the Deployment exceeded its progress deadline. This is the point where beginners often retry the same apply, delete random Pods, or scale the Deployment down and back up. Those actions create more churn without answering the central question: which layer failed to move from desired state to healthy observed state?
+Imagine a team ships a new frontend image at the start of a quiet maintenance window. The apply command succeeds, but the release dashboard never shows the new version, and `kubectl rollout status` eventually reports that the Deployment exceeded its progress deadline. This is the point where beginners often retry the same apply, delete random Pods, or scale the Deployment down and back up. Those actions create more churn without answering the central question: which layer failed to move from desired state to healthy observed state?
 
 Start at the Deployment because it records the rollout story. The desired replica count tells you how much capacity the controller is trying to maintain, while the available and updated counts tell you whether the new template has produced enough ready Pods. Conditions add timing and reason fields, so a progress failure is not just "the command failed"; it is Kubernetes saying that the new ReplicaSet did not advance in the expected time window. That narrows the investigation before you look at individual Pods.
 
@@ -399,32 +397,32 @@ Over time, these checks become routine. You will see a Deployment name and immed
 
 | Mistake | Why It Happens | How to Fix It |
 |---|---|---|
-| Selector does not match template labels | The author changes labels in one stanza and forgets the selector must identify the Pods created by the template. | Make `spec.selector.matchLabels` match `spec.template.metadata.labels` before creation, then verify with `k get deploy -o yaml`. |
+| Selector does not match template labels | The author changes labels in one stanza and forgets the selector must identify the Pods created by the template. | Make `spec.selector.matchLabels` match `spec.template.metadata.labels` before creation, then verify with `kubectl get deploy -o yaml`. |
 | Trying to update the selector later | Teams discover a naming problem after launch, but `apps/v1` treats the selector as immutable. | Create a replacement Deployment with the correct selector and migrate traffic intentionally. |
 | Using a floating `latest` image tag | The tag is convenient during demos, but it makes rollbacks and node cache behavior unpredictable. | Use immutable tags or digests that point to one known image artifact. |
 | Editing the ReplicaSet directly | The child object is visible during debugging, so operators mistake it for the durable source of truth. | Inspect ReplicaSets freely, but change the Deployment template or replica count instead. |
 | Choosing Recreate for highly available apps | The strategy looks simpler, but it stops old Pods before new Pods are serving. | Use RollingUpdate unless concurrent versions are unsafe for application correctness. |
 | Omitting resource requests and limits | Early manifests focus on the image and forget that rollouts may temporarily need extra capacity. | Add realistic requests and limits so the scheduler and cluster autoscaler can make good decisions. |
-| Ignoring rollout status and history | Apply success is mistaken for release success, and revision numbers are left without context. | Run `k rollout status` after changes and annotate or document the reason for each meaningful rollout. |
+| Ignoring rollout status and history | Apply success is mistaken for release success, and revision numbers are left without context. | Run `kubectl rollout status` after changes and annotate or document the reason for each meaningful rollout. |
 | Scaling blindly during an active rollout | Traffic pressure and release pressure happen together, and operators forget both old and new ReplicaSets may receive replicas. | Inspect both ReplicaSets, understand proportional scaling, and finish or pause the rollout deliberately. |
 
 ## Quiz
 
 <details><summary>Scenario: Your team needs to implement an nginx Deployment from a one-line experiment, then make it reviewable for production. What sequence should you choose?</summary>
 
-Start with `k create deployment nginx --image=nginx --dry-run=client -o yaml` if you need a quick scaffold, then edit the generated manifest into a declarative Deployment with explicit labels, selector, replica count, image tag, and resources. Apply the manifest with `k apply -f deployment.yaml`, then verify with `k get deploy,rs,pods` and `k rollout status deployment nginx`. This sequence preserves the speed of imperative exploration while moving durable intent into a file the team can review and repeat.
+Start with `kubectl create deployment nginx --image=nginx --dry-run=client -o yaml` if you need a quick scaffold, then edit the generated manifest into a declarative Deployment with explicit labels, selector, replica count, image tag, and resources. Apply the manifest with `kubectl apply -f deployment.yaml`, then verify with `kubectl get deploy,rs,pods` and `kubectl rollout status deployment nginx`. This sequence preserves the speed of imperative exploration while moving durable intent into a file the team can review and repeat.
 
 </details>
 
 <details><summary>Scenario: You delete two Pods from a five-replica Deployment, and replacements appear almost immediately. Which layer caused that behavior, and how would you diagnose it?</summary>
 
-The active ReplicaSet observed that the number of live matching Pods was below its desired count and created replacements from the Deployment's current template. The Deployment owns the ReplicaSet and desired rollout history, but the ReplicaSet handles the immediate "keep this many identical Pods" work. Diagnose the behavior by running `k get deploy,rs,pods` so you can see the desired counts at each layer and confirm the replacements belong to the expected ReplicaSet.
+The active ReplicaSet observed that the number of live matching Pods was below its desired count and created replacements from the Deployment's current template. The Deployment owns the ReplicaSet and desired rollout history, but the ReplicaSet handles the immediate "keep this many identical Pods" work. Diagnose the behavior by running `kubectl get deploy,rs,pods` so you can see the desired counts at each layer and confirm the replacements belong to the expected ReplicaSet.
 
 </details>
 
 <details><summary>Scenario: A rollout to `nginx:broken` stalls with new Pods in `ImagePullBackOff`, while old Pods remain Running. What should you conclude before taking action?</summary>
 
-The Deployment is protecting availability by refusing to remove too much old capacity before the new ReplicaSet produces ready Pods. The image reference or registry access is likely wrong, so applying the same manifest again will not help. Inspect Pod events, confirm the image tag, then either fix the template with a valid image or run `k rollout undo deployment nginx` if the safest move is to return to the previous revision.
+The Deployment is protecting availability by refusing to remove too much old capacity before the new ReplicaSet produces ready Pods. The image reference or registry access is likely wrong, so applying the same manifest again will not help. Inspect Pod events, confirm the image tag, then either fix the template with a valid image or run `kubectl rollout undo deployment nginx` if the safest move is to return to the previous revision.
 
 </details>
 
@@ -458,32 +456,32 @@ This lab creates a Deployment, scales it, performs a rollout, observes history, 
 
 ```bash
 # 1. Create deployment
-k create deployment web --image=nginx:1.26
+kubectl create deployment web --image=nginx:1.26
 
 # 2. Scale to 3 replicas
-k scale deployment web --replicas=3
+kubectl scale deployment web --replicas=3
 
 # 3. Verify
-k get deploy,rs,pods
+kubectl get deploy,rs,pods
 
 # 4. Update image
-k set image deployment/web nginx=nginx:1.27
+kubectl set image deployment/web nginx=nginx:1.27
 
 # 5. Watch rollout
-k rollout status deployment web
+kubectl rollout status deployment web
 
 # 6. Check history
-k rollout history deployment web
+kubectl rollout history deployment web
 
 # 7. Simulate problem - rollback
-k rollout undo deployment web
+kubectl rollout undo deployment web
 
 # 8. Verify rollback
-k get deployment web -o jsonpath='{.spec.template.spec.containers[0].image}'
+kubectl get deployment web -o jsonpath='{.spec.template.spec.containers[0].image}'
 # Should show nginx:1.26
 
 # 9. Cleanup
-k delete deployment web
+kubectl delete deployment web
 ```
 
 ### Tasks
@@ -492,7 +490,7 @@ k delete deployment web
 
 <details><summary>Solution</summary>
 
-Run the first create command, then run `k get deploy,rs,pods`. You should see one Deployment named `web`, one active ReplicaSet owned by it, and one Pod before scaling. If the Pod is not running, describe it and read events before continuing.
+Run the first create command, then run `kubectl get deploy,rs,pods`. You should see one Deployment named `web`, one active ReplicaSet owned by it, and one Pod before scaling. If the Pod is not running, describe it and read events before continuing.
 
 </details>
 
@@ -508,7 +506,7 @@ Run the scale command, wait until three Pods are ready, then delete one Pod by n
 
 <details><summary>Solution</summary>
 
-Run the set image command and then `k rollout status deployment web`. After it completes, `k get rs` should show a newer ReplicaSet with the active replicas and an older ReplicaSet retained for history with zero replicas. The exact generated names vary because Kubernetes includes hashes in the names.
+Run the set image command and then `kubectl rollout status deployment web`. After it completes, `kubectl get rs` should show a newer ReplicaSet with the active replicas and an older ReplicaSet retained for history with zero replicas. The exact generated names vary because Kubernetes includes hashes in the names.
 
 </details>
 
@@ -516,7 +514,7 @@ Run the set image command and then `k rollout status deployment web`. After it c
 
 <details><summary>Solution</summary>
 
-Run `k rollout undo deployment web`, wait for rollout status to complete, and then read the image with the jsonpath command from the lab. The output should be `nginx:1.26`, which proves the Deployment restored the previous template revision rather than merely deleting current Pods.
+Run `kubectl rollout undo deployment web`, wait for rollout status to complete, and then read the image with the jsonpath command from the lab. The output should be `nginx:1.26`, which proves the Deployment restored the previous template revision rather than merely deleting current Pods.
 
 </details>
 
@@ -524,7 +522,7 @@ Run `k rollout undo deployment web`, wait for rollout status to complete, and th
 
 <details><summary>Solution</summary>
 
-Run `k delete deployment web`, then use `k get deploy,rs,pods` to confirm the lab resources are gone. Deleting the parent Deployment removes the managed ReplicaSets and Pods, which is another reminder that ownership flows from the Deployment down through the hierarchy.
+Run `kubectl delete deployment web`, then use `kubectl get deploy,rs,pods` to confirm the lab resources are gone. Deleting the parent Deployment removes the managed ReplicaSets and Pods, which is another reminder that ownership flows from the Deployment down through the hierarchy.
 
 </details>
 
@@ -532,10 +530,10 @@ Run `k delete deployment web`, then use `k get deploy,rs,pods` to confirm the la
 
 - [ ] Create a deployment named `web` with image `nginx:1.26`.
 - [ ] Scale the deployment to 3 replicas.
-- [ ] Verify 3 pods are running using `k get pods`.
+- [ ] Verify 3 pods are running using `kubectl get pods`.
 - [ ] Delete one Pod and observe the replacement.
 - [ ] Update the image to `nginx:1.27`.
-- [ ] Watch the rollout complete using `k rollout status`.
+- [ ] Watch the rollout complete using `kubectl rollout status`.
 - [ ] Roll back the deployment to the previous version.
 - [ ] Verify the active pods are running `nginx:1.26`.
 - [ ] Clean up by deleting the deployment.
