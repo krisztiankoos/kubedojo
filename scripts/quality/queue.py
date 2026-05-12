@@ -27,6 +27,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 from . import state as _state
 from .state import (
     load_state,
@@ -412,6 +414,33 @@ def set_qa_pending_frontmatter(module_path: Path) -> bool:
     return True
 
 
+def set_citations_verified_frontmatter(module_path: Path, verified: bool = True) -> None:
+    """Set or remove the citations_verified field on a module's frontmatter.
+
+    Args:
+        module_path: absolute path to the .md module file.
+        verified: if True, sets ``citations_verified: true``.
+            If False, removes the key entirely (absent = not verified).
+    """
+    text = module_path.read_text(encoding="utf-8")
+    fm = _FRONTMATTER_RE.match(text)
+    if not fm:
+        return
+    try:
+        data = yaml.safe_load(fm.group(1))
+    except yaml.YAMLError:
+        return
+    if not isinstance(data, dict):
+        return
+    if verified:
+        data["citations_verified"] = True
+    else:
+        data.pop("citations_verified", None)
+    dumped = yaml.safe_dump(data, sort_keys=False, default_flow_style=False).rstrip()
+    new_fm = f"---\n{dumped}\n---\n"
+    module_path.write_text(new_fm + text[fm.end():], encoding="utf-8")
+
+
 def clear_qa_pending_frontmatter(module_path: Path) -> bool:
     """Remove the ``qa_pending`` line from a module's frontmatter."""
     text = module_path.read_text(encoding="utf-8")
@@ -474,4 +503,5 @@ __all__ = [
     "clear_revision_pending_frontmatter",
     "set_qa_pending_frontmatter",
     "clear_qa_pending_frontmatter",
+    "set_citations_verified_frontmatter",
 ]

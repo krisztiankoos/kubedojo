@@ -35,6 +35,7 @@ from . import density, queue, state, stages
 from .dispatchers import DispatcherUnavailable
 from .prompts import assert_required_docs_exist
 from .worktree import has_uncommitted, primary_checkout_root
+from .queue import set_citations_verified_frontmatter
 
 
 _REPO_ROOT = primary_checkout_root(Path(__file__).resolve().parents[2])
@@ -436,6 +437,10 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
             "error": (inject["stderr"] or inject["stdout"])[-500:],
             "module_key": module_key,
         }
+    # A4 prereq #1: backfill success (including no-op inject) means
+    # citations were verified for readiness purposes, so mark as verified
+    # in frontmatter.
+    set_citations_verified_frontmatter(_REPO_ROOT / st["module_path"], verified=True)
 
     # The research step writes (or refreshes) the seed JSON; both
     # artifacts (module + seed) must land in the same commit so the
