@@ -341,7 +341,7 @@ ls | head -5
 The second pipeline searches for a word inside a file, turning a full file display into a focused question about matching lines:
 
 ```bash
-cat menu.txt | grep "pasta"
+cat daily-specials.txt | grep "pasta"
 ```
 
 `cat` displays file contents, and `grep "pasta"` filters to lines containing the word pasta. You will use `grep` often because systems produce more text than humans can read line by line. There are more efficient ways to use `grep` directly on files, but this pipeline is a clear first example: produce text, then filter text. The habit matters more than the specific food word.
