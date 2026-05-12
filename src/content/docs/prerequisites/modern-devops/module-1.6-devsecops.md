@@ -152,7 +152,7 @@ Image signing addresses a different risk than scanning. A scanner asks whether a
 
 The strongest pattern is to connect build identity, scan evidence, and admission control. The CI system builds the image, records the digest, scans the digest, signs the digest, and publishes metadata. The cluster admission policy then verifies that production workloads reference an approved and signed artifact. This turns "we scanned it somewhere" into an enforceable deployment rule.
 
-War story: a platform team once discovered that several services were rebuilding from `latest` base images during emergency patches. The release notes looked clean, but two services pulled newer packages than the staging environment had used, and a runtime behavior changed under load. The fix was not just "do better tagging"; the team changed the pipeline to pin base image digests, record build provenance, and reject production images without a signed digest.
+Hypothetical scenario: a platform team discovers that several services are rebuilding from `latest` base images during emergency patches. The release notes look clean, but two services pull newer packages than the staging environment used, and runtime behavior changes under load. The fix is not just "do better tagging"; the team changes the pipeline to pin base image digests, record build provenance, and reject production images without a signed digest.
 
 Which approach would you choose here and why: blocking every medium vulnerability at build time, or blocking only high-confidence reachable findings while opening tracked work for the rest? The second approach is usually more sustainable, but only if the team has a real process for aging, ownership, and escalation. A non-blocking finding with no owner is just delayed risk.
 
@@ -236,13 +236,12 @@ PSS has three profile levels, and the level names are intentionally plain. `priv
 
 The important operational choice is enforcement mode. `warn` helps developers see violations without blocking them, `audit` records violations for review, and `enforce` rejects non-compliant pods. A practical rollout often starts with `warn` and `audit`, fixes the noisy workloads, then enables `enforce` for new deployments before tightening existing namespaces.
 
-Use the `k` alias for `kubectl` during hands-on work to keep commands readable: `alias k=kubectl`. The alias is only a shortcut, but the habit matters in this curriculum because later Kubernetes modules use it consistently and expect you to recognize common command shapes quickly.
+Use full `kubectl` commands in shared examples and automation, even if you personally use a shorter interactive alias in your terminal. The habit matters because a command copied from curriculum into CI, a runbook, or a shell script should work in a non-interactive environment without depending on local shell setup.
 
 ```bash
-alias k=kubectl
-k label namespace production pod-security.kubernetes.io/enforce=restricted --overwrite
-k label namespace production pod-security.kubernetes.io/warn=restricted --overwrite
-k label namespace production pod-security.kubernetes.io/audit=restricted --overwrite
+kubectl label namespace production pod-security.kubernetes.io/enforce=restricted --overwrite
+kubectl label namespace production pod-security.kubernetes.io/warn=restricted --overwrite
+kubectl label namespace production pod-security.kubernetes.io/audit=restricted --overwrite
 ```
 
 Before running this in a shared cluster, what output do you expect when a developer submits the earlier insecure pod to a namespace with `enforce=restricted`? The correct expectation is an admission rejection before scheduling, because the API server evaluates the request and refuses to persist a pod that violates the selected profile.
@@ -355,7 +354,7 @@ roleRef:
 
 The better configuration keeps the developer inside one namespace and grants only the verbs needed for the job. Notice what is missing: no permission to delete resources, read Secrets, modify RBAC, or operate across namespaces. Those omissions are the security control, because least privilege is defined as much by what you leave out as by what you include.
 
-War story: a deployment pipeline at one company used a cluster-admin service account because early Helm releases needed several permissions and nobody revisited the binding. Months later, a CI integration token leaked through a misconfigured job log. The incident response team avoided a larger compromise only because registry credentials had separate rotation, but the pipeline token still had enough access to enumerate every namespace and inspect sensitive workload metadata.
+Hypothetical scenario: a deployment pipeline uses a cluster-admin service account because early Helm releases needed several permissions and nobody revisited the binding. Months later, a CI integration token leaks through a misconfigured job log. The incident response team avoids a larger compromise only because registry credentials have separate rotation, but the pipeline token still has enough access to enumerate every namespace and inspect sensitive workload metadata.
 
 ## Network and Runtime Defenses
 
@@ -631,10 +630,10 @@ Compare the tools by the stage of risk they address, not by popularity. Trivy gi
 
 In this exercise, you will review an insecure Kubernetes deployment, scan or reason about its risk, and replace it with a hardened version. You do not need a production cluster; a local Kubernetes environment is enough for syntax validation, and the manual checklist still teaches the security reasoning if optional scanners are unavailable. Use Kubernetes 1.35+ semantics when thinking about Pod Security Admission behavior.
 
-Start by setting the `k` alias if your shell does not already have it. The alias keeps commands short and matches the rest of the Kubernetes curriculum, but every command is still ordinary `kubectl` underneath. If you use a temporary shell, set the alias again before running the validation commands.
+Start by confirming that `kubectl` is available in your shell and can talk to the cluster you intend to use for dry-run validation. The exercise uses full commands so every block can be copied into a temporary shell, runbook, or CI job without relying on interactive aliases or shell-specific setup.
 
 ```bash
-alias k=kubectl
+kubectl version --client
 ```
 
 - [ ] Create the insecure deployment manifest and identify every field that increases workload risk.
@@ -672,7 +671,7 @@ spec:
 EOF
 
 # 2. Scan with kubectl (basic check)
-k apply -f insecure-deployment.yaml --dry-run=server
+kubectl apply -f insecure-deployment.yaml --dry-run=server
 # Note: This won't catch security issues, just syntax
 
 # 3. If you have trivy installed:
