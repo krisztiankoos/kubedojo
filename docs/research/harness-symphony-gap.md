@@ -207,6 +207,56 @@ reviewed cross-family per `docs/review-protocol.md`. Do NOT include in
 tonight's #388 lift batch — that's existing-module density work, not new
 content. Write these as fresh modules in a follow-up dispatch.
 
+### Core teaching point: the layered-harness mental model
+
+The most important thing Module 2.1 should teach is NOT the seven principles
+or the Symphony state machine — it's the mental model that makes those
+principles actionable for any reader on any platform.
+
+**Every agent harness has three layers:**
+
+1. **Platform defaults** — what the AI tool / coding agent / CLI gives you
+   by default. Hardcoded behaviors, system-prompt rules, default tool wiring.
+   Examples: Claude Code's "Edit is the editing tool", Codex's `AGENTS.md`
+   convention, Cursor's `.cursorrules`. You can't change these without
+   changing platforms.
+2. **Project advisory** — what your repo's docs say. `CLAUDE.md`, `AGENTS.md`,
+   `.claude/rules/`, memory files, README sections aimed at agents. Read by
+   the agent; honored when it doesn't conflict with platform defaults. When
+   it does conflict, the platform layer wins.
+3. **Project enforcement** — what your repo can mechanically force regardless
+   of the platform layer. For Claude Code: `.claude/settings.json` hooks +
+   permission denies. For Codex: pre-commit hooks, CI gates, sandbox
+   wrappers. **The only layer where your project rules override platform
+   defaults.**
+
+The harness-engineering discipline is **"push every rule down to the lowest
+enforceable layer."** A rule in advisory text that the agent ignores half
+the time is not a rule, it's a wishlist. The same rule encoded as a hook
+that exits non-zero when violated is enforcement.
+
+Concrete worked example — the same rule at each layer:
+
+| Layer | "Don't direct-commit to main" |
+|---|---|
+| Platform default | Nothing — `git commit` is allowed |
+| Project advisory | `feedback_no_direct_push_to_main.md`, `CLAUDE.md` rule |
+| Project enforcement | `pre-tool-use` hook in `.claude/settings.json` blocking `git commit` when branch == `main` with no PR ref |
+
+The advisory version gets violated. The enforcement version cannot be
+violated. That difference is the discipline. This lesson generalizes across
+every agent platform — it's the most reusable thing the module teaches.
+
+**What this module should NOT do**: hold KubeDojo up as a model of strong
+enforcement. As of 2026-05-12, KubeDojo's harness is mostly project-advisory,
+with limited mechanical enforcement (sandbox modes, density verifier,
+citation gate). The friction this creates is documented in this repo's
+feedback memory files — useful candor signal, but not a success case study.
+External success stories (OpenAI's Codex internal team, Symphony) carry the
+positive worked-example role. KubeDojo's friction can appear as one short
+anti-example for principle #3 (Enforce invariants, not implementations).
+That's it.
+
 ---
 
 ## C. How this maps to KubeDojo (parallel analysis from learn-ukrainian)
