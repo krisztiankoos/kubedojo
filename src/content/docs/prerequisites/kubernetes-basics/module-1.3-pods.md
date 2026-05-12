@@ -15,12 +15,12 @@ lab:
 >
 > **Time to Complete**: 60-75 minutes
 >
-> **Prerequisites**: Module 1.2 (kubectl Basics; define `alias k=kubectl` before using shorthand)
+> **Prerequisites**: Module 1.2 (kubectl Basics)
 
 ---
 
 ## What You'll Be Able to Do
-- Diagnose Pod lifecycle failures, including `Pending`, `ImagePullBackOff`, `CreateContainerConfigError`, `CrashLoopBackOff`, and `OOMKilled`, by combining events, logs, exit codes, and native `k` inspection commands.
+- Diagnose Pod lifecycle failures, including `Pending`, `ImagePullBackOff`, `CreateContainerConfigError`, `CrashLoopBackOff`, and `OOMKilled`, by combining events, logs, exit codes, and native `kubectl` inspection commands.
 - Design multi-container Pods that use sidecar, ambassador, adapter, init container, ephemeral container, shared `emptyDir`, and `localhost` communication patterns without turning the Pod into a small virtual machine.
 - Evaluate requests, limits, Quality of Service classes, CFS throttling, OOM killer behavior, taints, tolerations, affinity, and anti-affinity when predicting how Pods schedule and survive resource pressure.
 - Implement declarative Pod manifests with labels, annotations, volumes, probes, `securityContext`, service accounts, and Kubernetes 1.35-compatible fields that make runtime behavior explicit and reviewable.
@@ -32,7 +32,7 @@ The most common mistake new Kubernetes teams make is carrying a virtual-machine 
 
 A Pod is not a miniature server, and it is not a convenient folder for everything that happens to support an application. It is the smallest scheduling and lifecycle unit in Kubernetes: the control plane places the entire Pod on one node, the kubelet starts and watches the containers together, and higher-level controllers replace the Pod rather than repairing it in place. This matters because every design choice flows from that boundary. If two processes must share a local file and loopback network, they may belong together; if they scale, fail, upgrade, or store data independently, putting them in the same Pod creates a hidden coupling that production traffic will eventually expose.
 
-This module turns the Pod from a vocabulary word into an operational model. You will see why Kubernetes wraps containers in a shared sandbox, how the pause container anchors networking, why `Pending` differs from `CrashLoopBackOff`, how probes change traffic routing, and how resource settings influence scheduling and eviction. We will use the shorthand alias `k` for `kubectl`; if your shell does not already define it, run `alias k=kubectl` before practicing the commands. The examples target Kubernetes 1.35 or later and focus on decisions you will make repeatedly: when to use one container, when to add a sidecar, how to write a manifest that survives review, and how to debug a Pod without guessing.
+This module turns the Pod from a vocabulary word into an operational model. You will see why Kubernetes wraps containers in a shared sandbox, how the pause container anchors networking, why `Pending` differs from `CrashLoopBackOff`, how probes change traffic routing, and how resource settings influence scheduling and eviction. The runnable examples use the full `kubectl` command so they work when copied into scripts, terminals, and lab notes without shell-specific setup. The examples target Kubernetes 1.35 or later and focus on decisions you will make repeatedly: when to use one container, when to add a sidecar, how to write a manifest that survives review, and how to debug a Pod without guessing.
 
 ## From Containers to Pods: The Sandbox Boundary
 Containerization is built from Linux primitives rather than magic. Namespaces decide what a process can see, and control groups decide what a process can consume. A network namespace gives a process its own interfaces, routing table, and port space; a mount namespace gives it a filesystem view; a PID namespace gives it a process tree; and cgroups account for CPU, memory, and other resource use. Docker made these pieces approachable for developers, but Kubernetes needed a higher-level abstraction because production applications often need a tiny group of tightly coupled processes to share the same placement, IP address, and scratch storage.
@@ -209,7 +209,7 @@ Volumes also express runtime intent. An `emptyDir` is created when the Pod lands
 
 Before running this, what output do you expect from a dry review of the manifest? A scheduler will only consider nodes matching the `nodeSelector`, permitted by the toleration, and compatible with the anti-affinity rule. The init container must complete before the main container starts, and the main container will refuse to run as root. Once the process starts, readiness controls traffic and liveness controls restarts. If you cannot describe those consequences from the YAML, the manifest is not yet reviewable enough for production.
 
-Imperative commands still have a place when used deliberately. For a quick connectivity test, `k run` can create a disposable Pod, and `--dry-run=client -o yaml` can help you draft a manifest. The danger appears when an emergency manual change becomes the only record of truth. A news organization once fixed a cache image during a live event with a direct command and restored service, but the change never reached Git. When a node failed later, the replacement Pod came from the old manifest and reintroduced the bug. The rule is blunt because incidents are blunt: if the desired state is not in version control, the cluster cannot be trusted to preserve it.
+Imperative commands still have a place when used deliberately. For a quick connectivity test, `kubectl run` can create a disposable Pod, and `--dry-run=client -o yaml` can help you draft a manifest. The danger appears when an emergency manual change becomes the only record of truth. Hypothetical scenario: a team fixes a cache image during a live event with a direct command and restores service, but the change never reaches Git. When a node fails later, the replacement Pod comes from the old manifest and reintroduces the bug. The rule is blunt because incidents are blunt: if the desired state is not in version control, the cluster cannot be trusted to preserve it.
 
 ## Scheduling, Resources, and Quality of Service
 Scheduling is a constraint-solving problem. The scheduler does not place a Pod on a node because the image looks small or because the cluster has total free capacity somewhere. It evaluates the Pod's requested resources, placement rules, taints, tolerations, affinity, anti-affinity, and current node allocations. A Pod requesting more memory than any single node can provide will stay `Pending` even if the cluster has plenty of memory in aggregate. This is why requests are not documentation; they are part of the scheduling equation.
@@ -267,17 +267,17 @@ Storage choices should match data meaning. Files written directly to a container
 A useful mental test is whether deleting the Pod should delete the data or only stop the process. If deleting the Pod should delete the data, an `emptyDir` may be correct. If deleting the Pod must not delete the data, use a persistent volume and design recovery deliberately. If the Pod needs node internals, pause and ask whether you are building a node agent, a security exception, or an accidental privilege escalation. The storage stanza is not just plumbing; it is a durability and trust statement.
 
 ## Diagnosing Pod Failures Without Guessing
-Debugging Pods is easier when you follow the lifecycle instead of jumping straight to logs. If the Pod is `Pending`, the application may never have started, so logs are often irrelevant. Start with `k describe pod <pod-name>` and read the Events section from bottom to top. Events such as insufficient CPU, untolerated taints, node affinity mismatch, or volume attach failure point to scheduling and setup. Events such as `ErrImagePull` or `ImagePullBackOff` point to registry access, wrong image names, missing tags, or private registry authentication. The kubelet is telling you which step failed; your job is to look at the step that actually ran.
+Debugging Pods is easier when you follow the lifecycle instead of jumping straight to logs. If the Pod is `Pending`, the application may never have started, so logs are often irrelevant. Start with `kubectl describe pod <pod-name>` and read the Events section from bottom to top. Events such as insufficient CPU, untolerated taints, node affinity mismatch, or volume attach failure point to scheduling and setup. Events such as `ErrImagePull` or `ImagePullBackOff` point to registry access, wrong image names, missing tags, or private registry authentication. The kubelet is telling you which step failed; your job is to look at the step that actually ran.
 
 `CreateContainerConfigError` usually means the kubelet cannot assemble the container configuration from the Pod spec. A missing ConfigMap key, missing Secret, invalid environment reference, or impossible security setting can block startup even after the image pulls successfully. `CreateContainerError` means the runtime encountered a lower-level creation problem, such as a bad command, missing executable, mount failure, or permission issue. In both cases, the container may not have produced application logs because the process did not reach normal execution. Events and state blocks are more useful than staring at an empty log stream.
 
-`CrashLoopBackOff` means the container did start and then exited repeatedly. Kubernetes restarts it according to policy, but backs off to avoid burning node CPU on a process that immediately fails. Here, logs are usually the primary signal, and the `--previous` flag matters because the current container instance may be new and empty. Use `k logs <pod-name> --previous` when the last crashed instance printed the useful stack trace, failed database connection, syntax error, or missing file message just before exiting. If there are multiple containers, add `-c <container-name>` so you are reading the right process.
+`CrashLoopBackOff` means the container did start and then exited repeatedly. Kubernetes restarts it according to policy, but backs off to avoid burning node CPU on a process that immediately fails. Here, logs are usually the primary signal, and the `--previous` flag matters because the current container instance may be new and empty. Use `kubectl logs <pod-name> --previous` when the last crashed instance printed the useful stack trace, failed database connection, syntax error, or missing file message just before exiting. If there are multiple containers, add `-c <container-name>` so you are reading the right process.
 
 `OOMKilled` is different because the application may not have a chance to print anything. The kernel terminates the process after it exceeds its memory cgroup limit, and Kubernetes records `Reason: OOMKilled` with exit code 137 in the container's last state. The short-term fix may be increasing the memory limit, but the durable fix is to compare actual memory growth, request sizing, limit sizing, and application behavior. A memory leak hidden behind repeated restarts can look like a flaky cluster until you connect restart count, last state, and metrics.
 
-Interactive tools are useful after you know what layer you are investigating. `k exec -it <pod-name> -- /bin/sh` drops into a running container if the image includes a shell, which lets you inspect mounted files, environment variables, DNS, and local network behavior. `k port-forward pod/<pod-name> 8080:80` tunnels traffic through the API server to the Pod, which is helpful before you create a Service or Ingress. Ephemeral containers help when the image lacks a shell, but they should support diagnosis, not become a substitute for fixing the manifest or image.
+Interactive tools are useful after you know what layer you are investigating. `kubectl exec -it <pod-name> -- /bin/sh` drops into a running container if the image includes a shell, which lets you inspect mounted files, environment variables, DNS, and local network behavior. `kubectl port-forward pod/<pod-name> 8080:80` tunnels traffic through the API server to the Pod, which is helpful before you create a Service or Ingress. Ephemeral containers help when the image lacks a shell, but they should support diagnosis, not become a substitute for fixing the manifest or image.
 
-The debugging order is simple enough to memorize. First, identify the phase and conditions with `k get pod` and `k describe`. Second, read Events for scheduling, image, network, volume, and configuration failures. Third, read logs, using `--previous` for repeated crashes and `-c` for multi-container Pods. Fourth, inspect resource state for OOM kills and throttling. Fifth, use exec, port-forward, or ephemeral containers to test what the process can see from inside the namespace. Skipping the first two steps is how teams waste an hour debugging application code that never started.
+The debugging order is simple enough to memorize. First, identify the phase and conditions with `kubectl get pod` and `kubectl describe`. Second, read Events for scheduling, image, network, volume, and configuration failures. Third, read logs, using `--previous` for repeated crashes and `-c` for multi-container Pods. Fourth, inspect resource state for OOM kills and throttling. Fifth, use exec, port-forward, or ephemeral containers to test what the process can see from inside the namespace. Skipping the first two steps is how teams waste an hour debugging application code that never started.
 
 A good incident note records the same sequence because it separates evidence from guesses. Instead of writing "Kubernetes killed the app," record that the Pod was scheduled to a specific node, the container previously terminated with exit code 137, memory usage rose above the configured limit, and the kubelet restarted the container according to policy. Instead of writing "networking is broken," record that the Pod remained in `ContainerCreating`, the Events stream showed CNI setup failure, and no application container had started. These details matter during review because they point to different owners, different fixes, and different prevention work.
 
@@ -323,7 +323,7 @@ When you are unsure, write down the recovery story in one paragraph before choos
 ## Quiz
 
 <details>
-<summary>1. Scenario: Your team deploys a Pod that stays `Pending` for 20 minutes. `k describe pod api` shows insufficient CPU and a node affinity mismatch. What layer failed, and what should you change first?</summary>
+<summary>1. Scenario: Your team deploys a Pod that stays `Pending` for 20 minutes. `kubectl describe pod api` shows insufficient CPU and a node affinity mismatch. What layer failed, and what should you change first?</summary>
 
 **Answer:** The failure is at scheduling time, not inside the application container. The scheduler cannot find a node that satisfies both the requested CPU and the placement rule, so logs will not help because the container may never have started. First review whether the CPU request reflects measured need and whether the hard affinity is truly required. If both are correct, add suitable node capacity or adjust node labels so the scheduler has a valid target.
 </details>
@@ -366,7 +366,7 @@ When you are unsure, write down the recovery story in one paragraph before choos
 
 ## Hands-On Exercise: The Ultimate Multi-Container Debugging Challenge
 
-In this hands-on exercise, you will create a multi-container Pod, inspect its shared namespace behavior, trigger an intentional memory failure, and practice the diagnostic sequence used during real incidents. Work in a disposable namespace or local training cluster, and keep using the `k` alias so your commands match the rest of the Kubernetes basics track.
+In this hands-on exercise, you will create a multi-container Pod, inspect its shared namespace behavior, trigger an intentional memory failure, and practice the diagnostic sequence used during real incidents. Work in a disposable namespace or local training cluster, and use the full `kubectl` command so every example remains copy-paste runnable.
 
 <details>
 <summary>Task 1: Declarative Multi-Container Creation</summary>
@@ -406,17 +406,17 @@ Apply the declarative manifest to your local cluster. Verify that the Pod transi
 **Solution:**
 ```bash
 # Apply the declarative manifest to the API Server
-k apply -f multi-pod.yaml
+kubectl apply -f multi-pod.yaml
 
 # Wait for the pod to become fully ready
-k wait --for=condition=Ready pod/web-logger --timeout=60s
+kubectl wait --for=condition=Ready pod/web-logger --timeout=60s
 ```
 
 Open a new terminal window, or background the port-forward process to test it:
 
 ```bash
 # Establish a secure port-forward tunnel to the Pod in the background
-k port-forward pod/web-logger 8080:80 &
+kubectl port-forward pod/web-logger 8080:80 &
 
 # Wait a moment for the tunnel to establish
 sleep 2
@@ -433,12 +433,12 @@ kill %1
 <details>
 <summary>Task 3: Interactive Namespace Exploration</summary>
 
-The `content-writer` container continuously overwrites the physical file on the shared volume. Use `k exec` to open an interactive shell inside the `nginx-server` container. Once inside, install `curl` and make a local HTTP request to `localhost:80`. Explain why this works across container boundaries.
+The `content-writer` container continuously overwrites the physical file on the shared volume. Use `kubectl exec` to open an interactive shell inside the `nginx-server` container. Once inside, install `curl` and make a local HTTP request to `localhost:80`. Explain why this works across container boundaries.
 
 **Solution:**
 ```bash
 # Execute an interactive shell inside the specific container
-k exec -it web-logger -c nginx-server -- /bin/sh
+kubectl exec -it web-logger -c nginx-server -- /bin/sh
 ```
 
 Once inside the container's interactive shell, execute the following:
@@ -479,11 +479,11 @@ spec:
 ```
 ```bash
 # Apply the doomed pod to the cluster
-k apply -f oom-pod.yaml
+kubectl apply -f oom-pod.yaml
 
 # Watch the failure unfold after the process asks for too much memory
 sleep 5
-k get pod memory-hog
+kubectl get pod memory-hog
 ```
 You should briefly see the Pod run and then observe a restart cycle. The process asks the kernel for substantially more memory than the configured cgroup permits, so the kernel terminates it to protect the node.
 </details>
@@ -491,12 +491,12 @@ You should briefly see the Pod run and then observe a restart cycle. The process
 <details>
 <summary>Task 5: Forensically Diagnosing the Death</summary>
 
-Use `k describe` to prove why the `memory-hog` Pod died. Find the exact reason and exit code in the container's last state, and connect that result back to the memory limit in the manifest.
+Use `kubectl describe` to prove why the `memory-hog` Pod died. Find the exact reason and exit code in the container's last state, and connect that result back to the memory limit in the manifest.
 
 **Solution:**
 ```bash
 # Extract the forensic log of the dead pod
-k describe pod memory-hog
+kubectl describe pod memory-hog
 ```
 Scroll to the `Containers:` section, locate the `stress-test` container, and inspect the `Last State:` block. The important evidence is `Reason: OOMKilled` alongside `Exit Code: 137`, which shows that the kernel killed the process after it exceeded the configured memory limit.
 </details>
@@ -509,7 +509,7 @@ Cleanly delete both Pods created during this exercise to free cluster resources 
 **Solution:**
 ```bash
 # Delete the pods, returning the cluster to a clean state
-k delete pod web-logger memory-hog --force --grace-period=0
+kubectl delete pod web-logger memory-hog --force --grace-period=0
 ```
 </details>
 
@@ -517,7 +517,7 @@ Success criteria:
 - [ ] You created a declarative multi-container Pod that uses a shared `emptyDir` volume.
 - [ ] You verified both containers became ready and served changing content through `localhost` and port-forwarding.
 - [ ] You explained why Pod containers can share loopback networking while keeping separate filesystems.
-- [ ] You triggered and diagnosed an `OOMKilled` restart using `k describe` and exit code 137.
+- [ ] You triggered and diagnosed an `OOMKilled` restart using `kubectl describe` and exit code 137.
 - [ ] You cleaned up both disposable Pods without leaving training resources behind.
 
 ## Sources
