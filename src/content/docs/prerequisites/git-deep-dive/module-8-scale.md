@@ -5,12 +5,13 @@ revision_pending: false
 sidebar:
   order: 8
 ---
+> **Complexity**: [MEDIUM]
+>
+> **Time to Complete**: 90 minutes
+>
+> **Prerequisites**: Previous module in Git Deep Dive (Module 7)
 
-# Module 8: Efficiency at Scale — Sparse Checkout and LFS
-
-**Complexity**: [MEDIUM]  
-**Time to Complete**: 90 minutes  
-**Prerequisites**: Previous module in Git Deep Dive (Module 7)  
+---
 
 ## Learning Outcomes
 
@@ -24,11 +25,11 @@ By the end of this module, you will be able to:
 
 ## Why This Module Matters
 
-The platform engineering division at a rapidly expanding e-commerce provider decided to consolidate infrastructure configuration into a single repository. At first, the decision felt elegant: service manifests lived beside shared policies, cluster add-ons were visible to every team, and one pull request could update a Deployment, its NetworkPolicy, and the matching observability rule together. Two years later the same repository held more than 1,500 services, tens of thousands of Kubernetes manifests, and several gigabytes of proprietary Helm chart tarballs that security required to be versioned with the deployment code. A normal clone took more than ten minutes on a strong office connection, CI runners burned paid minutes before reaching the first test, and developers began avoiding routine rebases because `git status` made their laptops sound like build machines.
+Hypothetical scenario: a platform engineering division at a rapidly expanding e-commerce provider decides to consolidate infrastructure configuration into a single repository. At first, the decision feels elegant: service manifests live beside shared policies, cluster add-ons are visible to every team, and one pull request can update a Deployment, its NetworkPolicy, and the matching observability rule together. Two years later the same repository holds more than 1,500 services, tens of thousands of Kubernetes manifests, and several gigabytes of proprietary Helm chart tarballs that security requires to be versioned with the deployment code. A normal clone takes more than ten minutes on a strong office connection, CI runners burn paid minutes before reaching the first test, and developers begin avoiding routine rebases because `git status` makes their laptops sound like build machines.
 
 Nothing in that story is a Git bug. Git was built as a content-addressed database, and a large repository asks that database to move several different kinds of weight: commit history, directory structure, file content, working tree entries, and binary objects that may not compress well. When teams talk loosely about a repository being "too big," they often mix these costs together and reach for the wrong fix. Sparse checkout reduces working tree scope, shallow clones reduce history depth, partial clones defer object downloads, Git LFS moves binary payloads out of normal Git history, and maintenance commands rebuild the local database so common operations stay fast. Each tool solves a different pressure point.
 
-This module teaches you how to reason about those pressure points instead of copying optimization flags into every clone command. You will work through sparse checkout for human developers, clone filters for CI, LFS for large artifacts, submodules and subtrees for shared dependencies, and local maintenance for repositories that have accumulated years of loose objects. Kubernetes examples use version 1.35+ assumptions, and when we need `kubectl` we will introduce the shell alias `alias k=kubectl` before using `k` in commands. The goal is not to make every repository tiny; the goal is to make large repositories predictable, explainable, and fast enough that Git stops being the bottleneck in the delivery path.
+This module teaches you how to reason about those pressure points instead of copying optimization flags into every clone command. You will work through sparse checkout for human developers, clone filters for CI, LFS for large artifacts, submodules and subtrees for shared dependencies, and local maintenance for repositories that have accumulated years of loose objects. Kubernetes examples assume version 1.35+ behavior, and any runnable Kubernetes command should use the full `kubectl` binary name so copied shell blocks behave the same way in scripts and CI steps. The goal is not to make every repository tiny; the goal is to make large repositories predictable, explainable, and fast enough that Git stops being the bottleneck in the delivery path.
 
 ## Core Content: The Monorepo Problem and Sparse Checkout
 
@@ -102,7 +103,7 @@ git sparse-checkout disable
 
 Pause and predict: if you have a sparse checkout configured to only show `services/payment-gateway`, and you run `git commit -a -m "update"`, will Git accidentally commit changes that someone else made to `services/inventory-api` after you pulled? The answer is no for ordinary pulled changes, because `git commit -a` records your staged or modified working tree changes, not every hidden path that changed upstream. The more important risk is the opposite: you may forget that a cross-service change requires paths outside your cone, so you should widen the cone before making repository-wide edits.
 
-War story: a platform team tried to optimize daily work by writing a sparse checkout rule that included any file named `deployment.yaml` anywhere in the repository. The rule seemed clever because Kubernetes services usually had that filename, but it forced legacy non-cone matching across a rapidly growing tree. By the time the repository passed 30,000 tracked files, `git status` took several seconds because every path had to be tested against the pattern. Switching to cone mode and explicitly listing service directories reduced status latency to interactive speed because Git could reason about directory prefixes rather than arbitrary wildcard matches.
+Exercise scenario: a platform team tries to optimize daily work by writing a sparse checkout rule that includes any file named `deployment.yaml` anywhere in the repository. The rule seems clever because Kubernetes services usually have that filename, but it forces legacy non-cone matching across a rapidly growing tree. By the time the repository passes 30,000 tracked files, `git status` takes several seconds because every path has to be tested against the pattern. Switching to cone mode and explicitly listing service directories reduces status latency to interactive speed because Git can reason about directory prefixes rather than arbitrary wildcard matches.
 
 Sparse checkout is also a social contract. If every team invents private path rules, support gets harder because build failures may reproduce only for the one person whose working tree is shaped differently. Strong platform teams publish common cones, such as "service developer," "cluster add-on maintainer," and "release engineer," and they document which tasks require widening the tree. That documentation prevents sparse checkout from becoming invisible local state that only the original author understands.
 
@@ -149,7 +150,7 @@ Treeless partial clones go further by omitting historical tree objects as well. 
 git clone --filter=tree:0 https://git.example.com/platform-repo.git
 ```
 
-Before applying Kubernetes manifests in CI, define the `kubectl` alias close to the first use so the log is explicit and shell steps are reproducible. The alias itself is not a Git optimization, but it keeps the module's Kubernetes commands consistent with the rest of KubeDojo. A shell setup line such as `alias k=kubectl` should appear before later commands like `k apply -f services/payment-gateway/manifests/`, and that small discipline prevents readers from wondering whether `k` is a custom wrapper, a local script, or the standard Kubernetes CLI shortcut.
+Before applying Kubernetes manifests in CI, keep the command line explicit so logs and copied shell steps are reproducible. This habit is not a Git optimization, but it matters in modules that mix repository design with Kubernetes operations because learners may paste commands into non-interactive scripts. A command such as `kubectl apply -f services/payment-gateway/manifests/` is longer than the common interactive shorthand, yet it makes clear that the standard Kubernetes CLI is being used rather than a local wrapper or shell-specific alias.
 
 Combining partial clone and sparse checkout is often the winning move for current-state deployment jobs, but the order still matters. The clone filter decides what object data is available locally, while sparse checkout decides what paths appear in the working tree. If the job clones bloblessly and then sparsely checks out only one service, the runner avoids old file payloads and avoids materializing unrelated service directories. If the job only uses sparse checkout after a full clone, it may still transfer the very history it was trying to avoid. This is why checkout optimization belongs in the CI design, not in a late shell step copied from a developer laptop.
 
@@ -220,7 +221,7 @@ git push origin main
 
 Stop and think: if you run `git log -p` on a file tracked by LFS, what will you see in the diff? Git history contains pointer file changes, so the textual patch describes pointer metadata rather than the binary payload itself. The LFS extension makes your working tree convenient, but it does not transform Git history into a binary diff viewer. For review workflows, that means teams often pair LFS with checksum checks, provenance metadata, or artifact promotion rules so reviewers know why a large binary changed.
 
-War story: a junior engineer generated a 2GB PostgreSQL database dump to test a migration and accidentally pushed it with a work-in-progress commit. Deleting the file in the next commit removed it from the current tree, but the large object stayed reachable in history and every new clone paid for it. The eventual fix required a coordinated history rewrite, temporary freeze, force push, and instructions for every developer to replace local clones or carefully repair their remotes. If the repository had tracked dump patterns through LFS before the incident, the payload would have gone through the large-object path rather than permanently inflating normal Git history.
+Exercise scenario: a junior engineer generates a 2GB PostgreSQL database dump to test a migration and accidentally pushes it with a work-in-progress commit. Deleting the file in the next commit removes it from the current tree, but the large object stays reachable in history and every new clone pays for it. The eventual fix requires a coordinated history rewrite, temporary freeze, force push, and instructions for every developer to replace local clones or carefully repair their remotes. If the repository had tracked dump patterns through LFS before the mistake, the payload would have gone through the large-object path rather than permanently inflating normal Git history.
 
 LFS is not a reason to store every artifact in Git. If a build can reproduce a chart from source, an artifact registry may be the better system of record, with Git storing only the source and version metadata. LFS is strongest when the binary is legitimately part of the reviewable repository state, must be checked out with the code, and cannot be rebuilt easily by the consumer. That boundary keeps Git useful as a collaboration tool instead of turning it into a general storage bucket.
 
@@ -351,7 +352,7 @@ A good rollout plan starts with one repository and one workflow rather than a si
 I would test a treeless partial clone such as `git clone --filter=tree:0 <url>` because the job needs the current checkout more than historical trees or blobs. This can reduce network transfer and startup time while keeping the checkout model compatible with normal Git commands. The risk is that a future version of the job may add a history-aware tool and trigger on-demand fetches or incorrect assumptions. I would record the clone mode in the CI configuration and measure checkout time separately so the trade-off remains visible.
 </details>
 
-<details><summary>Question 2: You joined a team and cloned its microservice repository. When you run `k apply -f vendor/shared-crds/base.yaml`, Kubernetes reports that the file does not exist, and the directory is empty. What happened, and how do you fix the immediate problem?</summary>
+<details><summary>Question 2: You joined a team and cloned its microservice repository. When you run `kubectl apply -f vendor/shared-crds/base.yaml`, Kubernetes reports that the file does not exist, and the directory is empty. What happened, and how do you fix the immediate problem?</summary>
 
 The repository is probably using a Git submodule for `vendor/shared-crds`, and a standard clone did not fetch the nested repository contents. The immediate fix is to run `git submodule update --init --recursive` from the parent repository root, or to reclone with submodule recursion enabled. The deeper lesson is that submodules require explicit clone and CI configuration because the parent stores a pointer, not the dependency files themselves. If the team wants ordinary clones to contain those files, it should evaluate a subtree or another distribution mechanism.
 </details>
@@ -489,10 +490,6 @@ Committing `.gitattributes` makes the LFS policy part of the repository contract
 - [ ] You can explain why sparse checkout reduces working tree scope but does not remove hidden services from repository history.
 - [ ] You can explain why LFS must be configured before large tarballs are committed normally.
 
-## Next Module
-
-Ready to stop doing things manually? Learn how to force compliance and automate conflict resolution in [Module 9: Automation and Customization](../module-9-hooks-rerere/).
-
 ## Sources
 
 - [Git sparse-checkout documentation](https://git-scm.com/docs/git-sparse-checkout)
@@ -505,3 +502,7 @@ Ready to stop doing things manually? Learn how to force compliance and automate 
 - [Git garbage collection documentation](https://git-scm.com/docs/git-gc)
 - [Git commit-graph documentation](https://git-scm.com/docs/git-commit-graph)
 - [Git maintenance documentation](https://git-scm.com/docs/git-maintenance)
+
+## Next Module
+
+Ready to stop doing things manually? Learn how to force compliance and automate conflict resolution in [Module 9: Automation and Customization](../module-9-hooks-rerere/).
