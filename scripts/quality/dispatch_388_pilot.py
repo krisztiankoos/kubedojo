@@ -320,7 +320,8 @@ def dispatch_backfill(slug: str, module_path: str) -> bool:
         log({
             "event": "backfill_failed",
             "slug": slug,
-            "reason": f"git pull failed: {pull.stderr or pull.stdout}".strip()[-500:],
+            "reason": "pull_failed",
+            "detail": f"{pull.stderr or pull.stdout}".strip()[-500:],
         })
         return False
     backfill = subprocess.run(
@@ -334,9 +335,16 @@ def dispatch_backfill(slug: str, module_path: str) -> bool:
         log({
             "event": "backfill_failed",
             "slug": slug,
-            "reason": f"pipeline failed: {backfill.stderr or backfill.stdout}".strip()[-500:],
+            "reason": "pipeline_failed",
+            "detail": f"{backfill.stderr or backfill.stdout}".strip()[-500:],
         })
         return False
+
+    made_commit = any(line.startswith("[ok]") for line in backfill.stdout.splitlines())
+    if not made_commit:
+        log({"event": "backfill_skipped_noop", "slug": slug})
+        return True
+
     push = subprocess.run(
         ["git", "push", "origin", "main"],
         cwd=PRIMARY_REPO,
@@ -346,9 +354,11 @@ def dispatch_backfill(slug: str, module_path: str) -> bool:
     )
     if push.returncode != 0:
         log({
-            "event": "backfill_failed",
+            "event": "push_failed",
             "slug": slug,
-            "reason": f"git push failed: {push.stderr or push.stdout}".strip()[-500:],
+            "reason": "push_failed",
+            "rc": push.returncode,
+            "detail": f"{push.stderr or push.stdout}".strip()[-500:],
         })
         return False
 
@@ -423,6 +433,7 @@ def main(argv: list[str] | None = None) -> int:
             merge_sha = merge_pr(pr_num)
             if merge_sha:
                 log({"event": "merged", "pr": pr_num, "module": module_path, "merge_sha": merge_sha})
+                # dispatch_backfill is best-effort and must never block the merge chain.
                 dispatch_backfill(slug, module_path)
             else:
                 log({"event": "merge_held", "pr": pr_num, "module": module_path, "verdict": "MERGE_FAILED"})

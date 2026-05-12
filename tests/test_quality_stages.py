@@ -1566,6 +1566,19 @@ def test_backfill_pending_happy_path_records_done_and_commits(fake_repo, monkeyp
     assert rc2 == 0
 
 
+def test_backfill_pending_cli_accepts_module_filter(monkeypatch):
+    seen_filters = []
+
+    def fake_iter_states(filters=None):
+        seen_filters.append(list(filters) if filters is not None else None)
+        return []
+
+    monkeypatch.setattr(pipeline, "iter_states", fake_iter_states)
+    rc = pipeline.main(["backfill-pending", "--module", "k8s-cka-module-1.1-pods"])
+    assert rc == 0
+    assert seen_filters == [["k8s-cka-module-1.1-pods"]]
+
+
 def test_backfill_pending_research_failure_records_error_no_commit(fake_repo, monkeypatch):
     """Research subcommand failure must record stage_failed=research, leave
     state.backfill.done=False, and NOT touch the working tree. Repeating
