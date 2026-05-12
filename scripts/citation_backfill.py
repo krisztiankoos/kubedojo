@@ -870,6 +870,18 @@ def parse_agent_response(raw: str) -> dict[str, Any]:
     return json.loads(text[first:last + 1])
 
 
+def _looks_like_error_seed(seed: dict[str, Any]) -> bool:
+    """Return True when the parsed agent response is likely a bridge/error payload."""
+    model = str(seed.get("from_model") or "").lower()
+    if model.startswith("codex-bridge-error"):
+        return True
+    claims = seed.get("claims")
+    has_claims_array = isinstance(claims, list) and len(claims) > 0
+    if not has_claims_array and "schema_version" not in seed:
+        return True
+    return False
+
+
 def validate_seed(seed: dict[str, Any]) -> list[str]:
     """Schema-only validation (no network). Returns list of issues."""
     issues: list[str] = []
@@ -1163,6 +1175,13 @@ def run_research(
             "module_key": normalized_key, "ok": False,
             "error": "parse_failed", "detail": str(exc),
             "raw_head": raw[:400], "raw_tail": raw[-400:],
+        }
+    if _looks_like_error_seed(seed):
+        return {
+            "module_key": normalized_key,
+            "ok": False,
+            "error": "agent_response_invalid",
+            "detail": "agent response missing claims/schema_version or bridge error payload",
         }
 
     seed.setdefault("module_key", normalized_key)
