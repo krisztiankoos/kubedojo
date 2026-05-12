@@ -77,7 +77,7 @@ A good monolith is not a bad architecture waiting to be rescued. Shopify's long-
 
 For Kubernetes learners, a monolith also teaches a useful baseline. You can run a monolith in a container, deploy it with a Deployment, expose it with a Service, configure it with ConfigMaps and Secrets, and restart it with probes. Kubernetes does not require microservices; it manages containers and desired state, which can be useful before an application is decomposed.
 
-The first Kubernetes command you will eventually use in many modules is `kubectl`, and this curriculum uses the shorter alias `k` after introducing it once with `alias k=kubectl`. For example, when you later inspect workloads with `k get pods -A`, you are asking Kubernetes about runtime units, not asking it whether those units contain monolithic or microservice code.
+The first Kubernetes command you will eventually use in many modules is `kubectl`, and this curriculum writes commands with the full binary name so examples remain copy-paste safe in scripts and non-interactive shells. For example, when you later inspect workloads with `kubectl get pods -A`, you are asking Kubernetes about runtime units, not asking it whether those units contain monolithic or microservice code.
 
 ## The Microservices Approach
 
@@ -485,7 +485,7 @@ Separate data ownership is a strong long-term pattern, but immediate physical se
 
 ## Hands-On Exercise
 
-This module is architectural, so the exercise is a design review rather than a cluster lab. You will analyze a familiar application, choose boundaries, and connect each decision to Kubernetes runtime features. If you have a cluster available, you may also practice the inspection habit by setting `alias k=kubectl` and running `k get pods -A`, but the core deliverable is the reasoning document you create for yourself.
+This module is architectural, so the exercise is a design review rather than a cluster lab. You will analyze a familiar application, choose boundaries, and connect each decision to Kubernetes runtime features. If you have a cluster available, you may also practice the inspection habit by running `kubectl get pods -A`, but the core deliverable is the reasoning document you create for yourself.
 
 ### Setup
 
