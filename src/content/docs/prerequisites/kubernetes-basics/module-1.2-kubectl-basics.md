@@ -35,7 +35,7 @@ Hypothetical scenario: it is early in an incident, a service owner says the stag
 
 That discipline matters because `kubectl` is the everyday control surface for Kubernetes. Dashboards, GitOps controllers, Helm, Kustomize, and platform portals all matter, but the human operator still reaches for `kubectl` when they need to verify what the API server actually stores and what the controllers are doing with it. The same command family can read harmless inventory, start a port-forward, update an image, or delete a namespace. That power is useful only when paired with habits that keep cluster, namespace, verb, and output format explicit.
 
-This module teaches the command surface as an operating workflow rather than as a memorization list. You will start with the mental model of `kubectl` as a typed HTTPS client, then practice the read-only verbs that separate broad inventory from detailed diagnosis. From there you will compare imperative and declarative changes, learn how dry-runs and Server-Side Apply reduce risk, and finish with a hands-on lab that deliberately breaks a rollout so you can repair it using the same sequence you would use during real support work.
+This module teaches the command surface as an operating workflow rather than as a memorization list. You will start with the mental model of `kubectl` as a typed HTTPS client, then practice the read-only verbs that separate broad inventory from detailed diagnosis. From there you will compare imperative and declarative changes, learn how dry-runs and Server-Side Apply reduce risk, and finish with a hands-on lab that deliberately breaks a rollout so you can repair it using the same evidence-first sequence you would use during real support work.
 
 ## The Mental Model: kubectl Is a Typed API Client
 
@@ -297,7 +297,7 @@ kubectl get pods --v=8 2>&1 | grep -E 'curl|http'
 
 Which approach would you choose here and why: editing a production Deployment live with `kubectl edit`, or changing the manifest, running `kubectl diff`, and applying after review? The live edit may feel faster, but it creates an undocumented drift that a GitOps controller may undo. The manifest workflow has more ceremony because it preserves the decision in the place where the team can review and repeat it.
 
-The safest operators are not the ones who never type destructive commands. They are the ones who make destructive commands boring by checking context, narrowing scope, previewing when possible, and verifying afterward. That mindset scales because every later Kubernetes topic, from Services to RBAC to storage, still passes through the same API-server gate. If you build the habit here, future modules will feel like new resource types rather than entirely new ways of operating.
+The safest operators are not the ones who never type destructive commands. They are the ones who make destructive commands boring by checking context, narrowing scope, previewing when possible, and verifying afterward. That mindset scales because every later Kubernetes topic, from Services to RBAC to storage, still passes through the same API-server gate. If you build the habit here, future modules will feel like new resource types layered on a familiar operating loop rather than entirely new ways of working.
 
 ## Debugging Workflow and Worked Example
 
