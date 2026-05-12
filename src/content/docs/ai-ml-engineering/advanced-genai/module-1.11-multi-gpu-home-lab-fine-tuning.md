@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Multi-GPU and Home-Lab Fine-Tuning"
 slug: ai-ml-engineering/advanced-genai/module-1.11-multi-gpu-home-lab-fine-tuning
 sidebar:
