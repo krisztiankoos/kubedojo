@@ -24,7 +24,7 @@ After this module, you will be able to make practical first-pass decisions about
 
 ## Why This Module Matters
 
-In 2017, a large online retailer entered its Black Friday sale with a deployment process that still depended on a few powerful servers and a set of manual recovery runbooks. When traffic jumped faster than the team expected, one overloaded host stopped responding, several checkout containers disappeared with it, and engineers began the familiar emergency routine: SSH into replacement machines, pull container images, update proxy configuration, restart processes, and watch dashboards for the next failure. The business impact was measured in thousands of dollars per minute because the technical system had no reliable way to place work somewhere else when a machine failed.
+Hypothetical scenario: an online retailer enters a holiday sale with a deployment process that still depends on a few powerful servers and a set of manual recovery runbooks. When traffic jumps faster than the team expected, one overloaded host stops responding, several checkout containers disappear with it, and engineers begin the familiar emergency routine: SSH into replacement machines, pull container images, update proxy configuration, restart processes, and watch dashboards for the next failure. The business impact can become severe because the technical system has no reliable way to place work somewhere else when a machine fails.
 
 That incident is not unusual because containers solve only one layer of the production problem. A container gives an application a consistent package, but it does not decide which machine should run the package, replace the package after a crash, expose the package through stable networking, or coordinate a rolling update while customers are still using the service. Docker made it practical to build and run isolated processes; Kubernetes exists because production teams also need a control system that can operate many of those processes across many machines without turning every failure into a midnight manual repair.
 
@@ -95,12 +95,11 @@ flowchart LR
 
 Every analogy has limits, but this one helps separate concerns. The control plane is the coordination system, not the place where most business workloads run. Nodes are the machines that provide CPU, memory, disk, and networking. Pods are the scheduled units of application work. Namespaces give teams a way to group resources and apply boundaries, though they are not a complete security boundary by themselves.
 
-When you interact with Kubernetes, you normally use `kubectl`, the official command-line client, and many teams define `alias k=kubectl` to keep commands short. After that alias is set, commands such as `k get pods` and `k describe pod hello` talk to the API server rather than directly to a worker node. This detail is important for diagnosis: if the API server is down, management commands fail even though existing containers may continue running on their assigned nodes.
+When you interact with Kubernetes, you normally use `kubectl`, the official command-line client. Many engineers use a short interactive alias for personal typing speed, but learning material and automation should use the full command because aliases do not reliably expand in non-interactive shells. Commands such as `kubectl get pods` and `kubectl describe pod hello` talk to the API server rather than directly to a worker node. This detail is important for diagnosis: if the API server is down, management commands fail even though existing containers may continue running on their assigned nodes.
 
 ```bash
-alias k=kubectl
-k version
-k cluster-info
+kubectl version
+kubectl cluster-info
 ```
 
 Pause and predict: if your laptop cannot reach the API server, but the worker nodes are healthy, what do you expect to happen to applications that are already running? Existing pods usually continue to run because the node-local kubelet and container runtime keep executing their last known assignments. New deployments, scaling changes, and fresh scheduling decisions wait until the control plane becomes reachable again.
@@ -343,8 +342,8 @@ Cloud-managed Kubernetes is the usual starting point for production teams becaus
 
 Self-managed Kubernetes gives more control and often more responsibility than beginners expect. kubeadm can bootstrap conformant clusters, k3s provides a lightweight distribution that is popular for edge and lab environments, and OpenShift packages Kubernetes with additional enterprise platform features. These options can be the right choice for regulated environments, unusual infrastructure, or teams with strong platform engineering expertise, but they are not free just because the software is open source.
 
-> **War Story: The Cost of Doing It Yourself**
-> In 2019, a mid-sized fintech company decided to run its own self-managed Kubernetes cluster on bare metal to save managed service costs. Six months later, a botched upgrade to its `etcd` database corrupted cluster state and caused a 14-hour production outage. The team learned that a highly available control plane is a distributed systems responsibility, not a side project, and later moved to a managed service while keeping application deployment patterns mostly unchanged.
+> **Hypothetical scenario: The Cost of Doing It Yourself**
+> A mid-sized financial technology team decides to run its own self-managed Kubernetes cluster on bare metal to save managed service costs. Months later, a poorly rehearsed `etcd` upgrade damages cluster state and causes a long production outage. The team learns that a highly available control plane is a distributed systems responsibility, not a side project, and later moves to a managed service while keeping application deployment patterns mostly unchanged.
 
 Local Kubernetes is for learning, development, and repeatable tests rather than production availability. kind runs Kubernetes nodes as Docker containers, minikube runs a local cluster through a VM or container driver, and Docker Desktop includes a Kubernetes option on developer machines. These tools are valuable because they let you practice the API and resource model without waiting for a cloud account or a shared platform environment.
 
@@ -452,10 +451,10 @@ A Service fixes the design by providing a stable virtual IP and DNS name that se
 
 **Task**: Explore a Kubernetes cluster and connect each observation to the architecture you just learned. This is a preview exercise, so it is fine if some output still feels unfamiliar. The point is to see that Kubernetes exposes an API for nodes, namespaces, system components, Pods, and events rather than asking you to SSH into machines and manage containers one by one.
 
-**Setup**: Use any disposable Kubernetes cluster such as kind, minikube, Docker Desktop, or a cloud sandbox. Set the common short alias before you begin so the commands match the rest of the track.
+**Setup**: Use any disposable Kubernetes cluster such as kind, minikube, Docker Desktop, or a cloud sandbox. The commands below use the full `kubectl` binary name so they work when copied into scripts, CI jobs, and non-interactive shells.
 
 ```bash
-alias k=kubectl
+kubectl version
 ```
 
 ### Tasks
@@ -463,7 +462,7 @@ alias k=kubectl
 - [ ] **Evaluate cluster shape** by listing nodes and deciding whether this environment is a local learning cluster, a managed cloud cluster, or a self-managed cluster.
 
 ```bash
-k get nodes
+kubectl get nodes
 ```
 
 <details>
@@ -475,7 +474,7 @@ Look at the node names, roles, versions, and count. A kind cluster often shows n
 - [ ] **Diagnose control plane and worker support components** by inspecting the system namespace and identifying at least one component related to networking, DNS, or node operation.
 
 ```bash
-k get pods -n kube-system
+kubectl get pods -n kube-system
 ```
 
 <details>
@@ -487,7 +486,7 @@ Expect to see system Pods rather than your application Pods. Depending on the di
 - [ ] **Compare namespace boundaries** by listing namespaces and explaining why teams use them to organize resources without treating them as complete security isolation.
 
 ```bash
-k get namespaces
+kubectl get namespaces
 ```
 
 <details>
@@ -499,8 +498,8 @@ Most clusters include namespaces such as `default`, `kube-system`, and `kube-pub
 - [ ] **Implement a simple Pod** and then predict what information Kubernetes stores about scheduling, image pulling, and container state.
 
 ```bash
-k run hello --image=nginx:1.27 --restart=Never
-k get pods
+kubectl run hello --image=nginx:1.27 --restart=Never
+kubectl get pods
 ```
 
 <details>
@@ -512,7 +511,7 @@ The Pod should move from Pending to Running if the image can be pulled and a nod
 - [ ] **Diagnose the Pod lifecycle** by describing the Pod and finding the node assignment, container state, and recent events.
 
 ```bash
-k describe pod hello
+kubectl describe pod hello
 ```
 
 <details>
@@ -524,8 +523,8 @@ Read the output from top to bottom and connect it to the request flow. The node 
 - [ ] **Clean up and verify desired state** by deleting the standalone Pod, then checking that it does not return because no Deployment owns it.
 
 ```bash
-k delete pod hello
-k get pods
+kubectl delete pod hello
+kubectl get pods
 ```
 
 <details>
