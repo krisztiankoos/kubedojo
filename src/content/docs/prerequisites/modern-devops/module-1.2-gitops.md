@@ -6,11 +6,13 @@ sidebar:
   order: 3
 ---
 
-# Module 1.2: GitOps
+> **Complexity**: [MEDIUM]
+>
+> **Time to Complete**: 60-75 minutes
+>
+> **Prerequisites**: [Module 1.1: Infrastructure as Code](/prerequisites/modern-devops/module-1.1-infrastructure-as-code/), Git basics, Kubernetes fundamentals
 
-**Complexity:** [MEDIUM]<br>
-**Time to Complete:** 60-75 minutes<br>
-**Prerequisites:** [Module 1.1: Infrastructure as Code](/prerequisites/modern-devops/module-1.1-infrastructure-as-code/), Git basics, Kubernetes fundamentals
+---
 
 ## Learning Outcomes
 
@@ -28,7 +30,7 @@ On June 21, 2022, a routine BGP community update at Cloudflare reordered policy 
 
 Kubernetes solves part of that problem by giving teams declarative APIs, controllers, health checks, and rollout mechanics, but Kubernetes does not automatically make a team disciplined. An engineer can still run an urgent command against the wrong namespace, a CI job can still hold broad cluster credentials, and a production fix can still live only in terminal history. GitOps addresses the gap by making Git the operational contract for the cluster. The repository describes the intended state, peer review controls how that state changes, and a controller inside the cluster continuously reconciles reality toward that contract.
 
-Throughout the Kubernetes sections in KubeDojo, the shorthand `k` means `alias k=kubectl`; after configuring that alias, `k get deploy` is simply a shorter form of `kubectl get deploy`. GitOps does not make imperative commands disappear, but it changes their role. Commands become diagnostic tools, temporary emergency actions, or local lab helpers, while durable production changes move through Git. That distinction is what keeps a late-night mitigation from becoming a hidden configuration fork that surprises the next engineer.
+Many Kubernetes engineers use a short local abbreviation for `kubectl` during interactive work, but a production teaching module should write the full command so examples remain safe in scripts, CI jobs, and shared runbooks. GitOps does not make imperative commands disappear, but it changes their role. Commands become diagnostic tools, temporary emergency actions, or local lab helpers, while durable production changes move through Git. That distinction is what keeps a late-night mitigation from becoming a hidden configuration fork that surprises the next engineer.
 
 This module teaches GitOps as an operating model, not as a tool demo. You will see why pull-based reconciliation reduces credential exposure, how Argo CD and Flux CD express the same core principles with different ergonomics, how repository structure affects multi-tenant safety, and why rollback is a Git operation rather than a frantic sequence of cluster commands. The goal is that you can design, diagnose, and defend a GitOps workflow before you install a controller in a real Kubernetes 1.35+ environment.
 
@@ -59,7 +61,7 @@ flowchart LR
 
 The diagram hides an important operational consequence. In the push model, the pipeline must reach the cluster at deployment time, so network access and credentials exist outside the cluster boundary. In the pull model, the controller only needs outbound access to Git and registries, while all writes to the Kubernetes API happen through in-cluster identity. That is why security teams often prefer GitOps for production clusters: the external automation system no longer needs a kubeconfig that can mutate workloads across namespaces.
 
-GitOps also changes how drift is treated. Drift means the actual cluster state differs from the desired state in Git. Some drift is accidental, such as a developer running `k scale deployment web --replicas=10` during an incident and forgetting to update the manifest. Some drift is malicious, such as an attacker changing an image tag or mounting a new secret into a pod. A GitOps controller detects both cases as disagreement between declaration and reality, then either alerts, repairs, or waits for approval depending on policy.
+GitOps also changes how drift is treated. Drift means the actual cluster state differs from the desired state in Git. Some drift is accidental, such as a developer running `kubectl scale deployment web --replicas=10` during an incident and forgetting to update the manifest. Some drift is malicious, such as an attacker changing an image tag or mounting a new secret into a pod. A GitOps controller detects both cases as disagreement between declaration and reality, then either alerts, repairs, or waits for approval depending on policy.
 
 > **Pause and predict:** if Git says a Deployment should run three replicas and the cluster currently runs ten, what should a GitOps controller do by default in a strict production environment, and when might you intentionally choose a softer policy?
 
@@ -114,7 +116,7 @@ The reconciliation loop is intentionally repetitive. A controller checks Git, re
 
 ```bash
 # Someone manually edits production
-k scale deployment web --replicas=10
+kubectl scale deployment web --replicas=10
 
 # GitOps agent detects drift
 # Git says 3 replicas, cluster has 10
@@ -239,7 +241,7 @@ Both tools also depend on the quality of Kubernetes health signals. A Deployment
 
 The table preserves the usual headline differences, but real selection should include operational questions. Who will debug failed syncs at 03:00? Do application teams need a visual diff, or are they comfortable reading controller status? Will the platform team support many clusters with strict tenant boundaries? Are Helm charts first-class artifacts, or does the organization standardize on Kustomize overlays? These questions reveal the maintenance cost that a feature checklist can hide.
 
-> **Before running this in a real cluster, what output do you expect from `k get applications -n argocd` after a repository path is wrong: a missing Kubernetes object, a synced app, or a degraded/out-of-sync application, and why?**
+> **Before running this in a real cluster, what output do you expect from `kubectl get applications -n argocd` after a repository path is wrong: a missing Kubernetes object, a synced app, or a degraded/out-of-sync application, and why?**
 
 The expected answer is that the Application object exists, but the controller reports a sync or comparison problem because the desired source cannot be rendered or found. That difference is crucial for diagnosis. A GitOps failure often means the controller is healthy while its input is wrong, so you inspect controller events, source status, generated manifests, and RBAC separately rather than assuming the cluster itself rejected a valid deployment.
 
@@ -363,11 +365,11 @@ Encrypted secrets are useful when teams want the encrypted file to travel with t
 The important diagnostic habit is to separate desired state, rendered state, applied state, and runtime state. Desired state is what the repository says. Rendered state is what Helm, Kustomize, or another tool produces after templates and overlays are evaluated. Applied state is what the Kubernetes API accepted. Runtime state is what pods, controllers, probes, and users experience afterward. GitOps can be synced while the app is unhealthy, or the app can be healthy while the GitOps controller reports drift in a field owned by another controller.
 
 ```bash
-# Useful drift diagnosis sequence once alias k=kubectl is configured
-k get deploy gitops-demo -o yaml
-k describe deploy gitops-demo
-k get events --sort-by=.lastTimestamp
-k rollout status deployment/gitops-demo
+# Useful drift diagnosis sequence for a suspected GitOps mismatch
+kubectl get deploy gitops-demo -o yaml
+kubectl describe deploy gitops-demo
+kubectl get events --sort-by=.lastTimestamp
+kubectl rollout status deployment/gitops-demo
 ```
 
 Those commands are diagnostic, not a replacement for the repository. If you find that the live Deployment has five replicas while Git declares two, the durable fix is to change Git or let the controller restore Git's value. If you find that pods are crashing even though the Application is synced, the fix may be a bad image, missing ConfigMap, probe error, or resource limit rather than a GitOps sync problem. The discipline is to use cluster inspection to understand reality, then encode durable corrections in Git.
@@ -484,7 +486,7 @@ flowchart TD
     Repo -->|No| Small[Start simple, then add policy as risk grows]
 ```
 
-For a learning cluster or a one-off experiment, `k apply -f manifests/` can be perfectly reasonable because the environment is disposable and the audit burden is low. For a shared staging cluster, GitOps starts paying off by making application changes reviewable and repeatable. For production, GitOps becomes most valuable when paired with branch protection, signed commits, policy checks, scoped controller permissions, and a rollback process that the team has rehearsed before a real outage.
+For a learning cluster or a one-off experiment, `kubectl apply -f manifests/` can be perfectly reasonable because the environment is disposable and the audit burden is low. For a shared staging cluster, GitOps starts paying off by making application changes reviewable and repeatable. For production, GitOps becomes most valuable when paired with branch protection, signed commits, policy checks, scoped controller permissions, and a rollback process that the team has rehearsed before a real outage.
 
 | Decision | Choose This When | Watch Out For |
 |----------|------------------|---------------|
@@ -508,7 +510,7 @@ The framework should lead to an explicit operating decision. A platform team mig
 
 | Mistake | Why It Happens | How to Fix It |
 |---------|----------------|---------------|
-| Manual `k` commands in production become the real deployment process | During incidents, people optimize for speed and forget that reconciliation will restore Git or leave undocumented drift. | Treat imperative commands as temporary mitigation, then commit the durable desired state and let the controller reconcile it. |
+| Manual `kubectl` commands in production become the real deployment process | During incidents, people optimize for speed and forget that reconciliation will restore Git or leave undocumented drift. | Treat imperative commands as temporary mitigation, then commit the durable desired state and let the controller reconcile it. |
 | Raw secrets are committed to the GitOps repository | Teams correctly want everything declarative, but they forget that Git history is durable and widely copied. | Use encrypted secret workflows, External Secrets Operator, Sealed Secrets, SOPS, or managed secret references instead of plaintext credentials. |
 | The GitOps controller has cluster-wide privileges for every application | It is easier to install the tool with broad permissions than to model tenants and namespaces carefully. | Scope controller identities, Argo CD Projects, Flux namespaces, and Kubernetes RBAC to the resources each application should own. |
 | Repository ownership is unclear | A folder structure exists, but branch protection and CODEOWNERS do not match operational responsibility. | Assign owners by environment and component, then require approvals for sensitive paths such as production and cluster infrastructure. |
@@ -519,7 +521,7 @@ The framework should lead to an explicit operating decision. A platform team mig
 ## Quiz
 
 <details>
-<summary>Scenario: An on-call engineer uses `k set image` to deploy a patched container during a vulnerability response, but the old vulnerable image returns several minutes later. What happened, and what is the durable fix?</summary>
+<summary>Scenario: An on-call engineer uses `kubectl set image` to deploy a patched container during a vulnerability response, but the old vulnerable image returns several minutes later. What happened, and what is the durable fix?</summary>
 
 The GitOps controller detected that the live Deployment no longer matched the image tag declared in Git, so it reconciled the cluster back to the reviewed repository state. The manual command may have been useful as a temporary emergency mitigation, but it did not change the source of truth. The durable fix is to update the image tag in the GitOps repository, pass the required checks and review, and let the controller apply the approved state. This tests drift diagnosis because the problem is not Kubernetes failing to update; it is Git correctly winning over an unreviewed live edit.
 </details>
@@ -564,7 +566,7 @@ It is safer when tags are immutable, artifacts are scanned and signed, tests cov
 
 In this exercise, you will manually simulate the exact behavior of a GitOps agent. Instead of installing Argo CD or Flux, you will act as the continuous reconciliation controller to understand the underlying mechanics of drift detection and correction. The lab uses a local directory as the Git source of truth and a Kubernetes cluster as the live environment, so it works best on a disposable local cluster where you can safely create and delete a Deployment.
 
-Before starting, configure the shorthand used throughout KubeDojo: `alias k=kubectl`. The command examples below use `k` for Kubernetes operations, but the original `kubectl` name is included here so the alias is clear. If you are on macOS, the included `sed -i ''` command works as written; on GNU/Linux, use `sed -i 's/nginx:1.27/nginx:1.28/' manifests/deployment.yaml` instead.
+Before starting, make sure `kubectl` is configured for a disposable Kubernetes cluster where you are comfortable creating and deleting a small Deployment. The command examples below use the full `kubectl` binary name so they remain copy-paste-safe in scripts and terminals. If you are on macOS, the included `sed -i ''` command works as written; on GNU/Linux, use `sed -i 's/nginx:1.27/nginx:1.28/' manifests/deployment.yaml` instead.
 
 Below is the complete simulation script for reference.
 
@@ -598,34 +600,34 @@ spec:
 EOF
 
 # 3. Apply (simulate GitOps sync)
-k apply -f manifests/
+kubectl apply -f manifests/
 
 # 4. Verify
-k get deployment gitops-demo
+kubectl get deployment gitops-demo
 
 # 5. Simulate drift (manual change)
-k scale deployment gitops-demo --replicas=5
+kubectl scale deployment gitops-demo --replicas=5
 
 # 6. Check drift
-k get deployment gitops-demo
+kubectl get deployment gitops-demo
 # Shows 5 replicas
 
 # 7. Reconcile (simulate GitOps correction)
-k apply -f manifests/
+kubectl apply -f manifests/
 # Back to 2 replicas!
 
 # 8. Make a "Git change"
 sed -i '' 's/nginx:1.27/nginx:1.28/' manifests/deployment.yaml
 
 # 9. Apply new state (simulate GitOps sync)
-k apply -f manifests/
+kubectl apply -f manifests/
 
 # 10. Verify update
-k get deployment gitops-demo -o jsonpath='{.spec.template.spec.containers[0].image}'
+kubectl get deployment gitops-demo -o jsonpath='{.spec.template.spec.containers[0].image}'
 # Shows nginx:1.28
 
 # 11. Cleanup
-k delete -f manifests/
+kubectl delete -f manifests/
 rm -rf ~/gitops-demo
 ```
 
@@ -658,7 +660,7 @@ Simulate an unauthorized, late-night production intervention by manually overrid
 <details>
 <summary>Solution</summary>
 
-Execute steps 5 and 6. By running `k scale`, you bypass the declarative process. The cluster now reports 5 replicas, while your file demands 2, which is exactly the drift a controller would detect during its next comparison loop.
+Execute steps 5 and 6. By running `kubectl scale`, you bypass the declarative process. The cluster now reports 5 replicas, while your file demands 2, which is exactly the drift a controller would detect during its next comparison loop.
 </details>
 
 **Task 4: Enforce Continuous Reconciliation**
