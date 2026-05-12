@@ -1,45 +1,44 @@
 ---
+revision_pending: false
 title: "AI for YAML, Manifests, and Config Review"
 slug: ai/ai-for-kubernetes-platform-work/module-1.1-ai-for-yaml-manifests-config-review
 sidebar:
   order: 1
 ---
 
-# AI for YAML, Manifests, and Config Review
+> **Complexity**: MEDIUM
+>
+> **Time to Complete**: 50-70 minutes
+>
+> **Prerequisites**: Kubernetes manifests, Deployments, Services, probes, resource requests, and basic `kubectl`
 
-> **AI for Kubernetes & Platform Work** | Complexity: `[MEDIUM]` | Time: 50-70 min | Prerequisites: Kubernetes manifests, Deployments, Services, probes, resource requests, and basic `kubectl`
+---
 
-## Learning Outcomes
+## What You'll Be Able to Do
 
-By the end of this module, you will be able to evaluate AI feedback on Kubernetes YAML by separating confirmed findings from assumptions, uncertain claims, and cluster-specific questions that still require verification.
-
-You will be able to design a constrained review prompt that gives an AI assistant the manifest, the review objective, the expected output structure, and explicit uncertainty rules before it offers recommendations.
-
-You will be able to debug a manifest review by tracing each AI claim back to YAML evidence, Kubernetes documentation, or real cluster behavior instead of accepting fluent explanations at face value.
-
-You will be able to compare generation-first and review-first AI workflows and justify which one is safer for production platform work, especially when admission policies, security standards, and workload-specific tradeoffs matter.
-
-You will be able to create a small review note that records what changed, why the change is justified, what still depends on the cluster, and which verification command or policy check supports each conclusion.
+- Evaluate AI feedback on Kubernetes YAML by classifying confirmed findings, assumptions, and cluster-specific verification questions before any patch is accepted.
+- Design constrained review prompts that include the exact manifest, review objective, output format, and uncertainty rules for Kubernetes 1.35+ platform work.
+- Debug a manifest review by tracing each AI claim to YAML evidence, Kubernetes documentation, policy behavior, or a real cluster check.
+- Compare generation-first, review-first, and diff-focused workflows, then choose the safer approach for production manifest review.
+- Implement a concise review note that records accepted changes, rejected suggestions, remaining assumptions, and the verification evidence behind each decision.
 
 ## Why This Module Matters
 
-A platform team is preparing a routine rollout on a Thursday afternoon. The application looks ordinary: a Deployment, a Service, a ConfigMap, and a few Helm values that have survived several previous releases. A senior engineer is in another incident call, a junior engineer is trying to help, and an AI assistant has been asked to review the YAML because the diff is larger than expected.
+Hypothetical scenario: a platform team is preparing a routine rollout on a Thursday afternoon. The application looks ordinary: a Deployment, a Service, a ConfigMap, and a few Helm values that have survived several previous releases. A senior engineer is in another incident call, a junior engineer is trying to help, and an AI assistant has been asked to review the YAML because the diff is larger than expected and no one wants to miss a small operational detail.
 
-The assistant replies with confidence. It says the manifest is production ready, recommends a few harmless-looking formatting changes, and misses the fact that the Deployment has no readiness probe. During rollout, pods begin accepting traffic before the application has warmed its caches and connected to its downstream dependency. The cluster did exactly what the YAML asked it to do; the team failed because the review process trusted a fluent summary instead of forcing evidence.
+The assistant replies with confidence. It says the manifest is production ready, recommends a few harmless-looking formatting changes, and misses the fact that the Deployment has no readiness probe. During rollout, pods begin accepting traffic before the application has warmed its caches and connected to its downstream dependency. The cluster did exactly what the YAML asked it to do; the review process failed because it trusted a fluent summary instead of forcing evidence, uncertainty, and verification into the discussion.
 
-That story is not a warning against AI. It is a warning against using AI without a review system. Kubernetes configuration is executable operational intent, not documentation. A single field can change how traffic flows, how pods are scheduled, how processes run inside containers, and how failures spread during a rollout.
+That scenario is not a warning against using AI for platform work. It is a warning against using AI without a review system. Kubernetes configuration is executable operational intent, not documentation, because a single field can change how traffic flows, how pods are scheduled, how processes run inside containers, how admission controllers judge the object, and how failures spread during a rollout. AI can make that review better, but only when the human reviewer keeps ownership of the manifest and treats the assistant as another reviewer whose claims must be checked.
 
-AI can make YAML review better when it is treated as a reviewer that asks sharper questions. It can summarize unfamiliar manifests, compare two versions, point out common omissions, and help less-experienced engineers understand why a field matters. The same assistant becomes dangerous when it is treated as an authority that knows your cluster, your policies, your incident history, or your workload behavior.
-
-This module teaches a review-first workflow. You will still use AI, but you will constrain the task, demand uncertainty, verify every operational claim, and keep human ownership of the final manifest. The goal is not to make AI write Kubernetes YAML faster. The goal is to make your team inspect, question, and explain Kubernetes YAML with more discipline.
+This module teaches a review-first workflow for AI-assisted Kubernetes YAML review. You will still use AI, but you will constrain the task, ask for uncertainty, classify every claim, verify operational assertions, and keep a written trail of why a change was accepted or deferred. The goal is not to make AI write Kubernetes YAML faster. The goal is to make your team inspect, question, and explain Kubernetes YAML with more discipline than a quick human skim or an unconstrained prompt would provide.
 
 ## The Review Mindset: AI Is a Reviewer, Not the Owner
 
-The safest starting point is a simple mental model: the human owns the manifest, and the AI helps inspect it. That means the AI is not allowed to invent missing context, silently assume policy defaults, or turn a vague request into a production recommendation. A reviewer can raise concerns, ask questions, and explain tradeoffs, but the owner must verify and decide.
+The safest starting point is a simple mental model: the human owns the manifest, and the AI helps inspect it. That means the assistant is not allowed to invent missing context, silently assume policy defaults, or turn a vague request into a production recommendation. A reviewer can raise concerns, ask questions, and explain tradeoffs, but the owner must verify and decide. This model sounds strict, yet it is the same expectation you already have for human code review on infrastructure changes.
 
-Generation-first prompts are tempting because they produce a complete-looking file quickly. A prompt like “generate a production Deployment and Service” feels productive, especially when the result has valid indentation and familiar fields. The problem is that generic output usually reflects generic assumptions, not your cluster’s admission controllers, namespaces, runtime classes, Pod Security settings, network policies, or SLOs.
+Generation-first prompts are tempting because they produce a complete-looking file quickly. A prompt like "generate a production Deployment and Service" feels productive, especially when the result has valid indentation and familiar fields. The problem is that generic output usually reflects generic assumptions, not your cluster's admission controllers, namespace labels, runtime classes, Pod Security settings, network policies, image policies, traffic patterns, or service objectives. YAML that looks mature can still be wrong for the environment that will run it.
 
-Review-first prompts begin with real material. You provide the actual manifest or diff, state what kind of review you need, and ask the model to separate visible issues from assumptions. That shift changes the AI from a creative generator into a constrained analysis tool. It also forces you to read the YAML closely enough to know what you are asking.
+Review-first prompts begin with real material. You provide the actual manifest or rendered diff, state what kind of review you need, and ask the model to separate visible issues from assumptions. That shift changes the assistant from a creative generator into a constrained analysis tool. It also forces you to read the YAML closely enough to know what you are asking, which is one of the hidden benefits of the workflow.
 
 ```ascii
 +----------------------+        +-----------------------+        +----------------------+
@@ -54,11 +53,11 @@ Review-first prompts begin with real material. You provide the actual manifest o
 +----------------------+        +-----------------------+        +----------------------+
 ```
 
-Think of AI review like bringing another engineer into a code review. You would not accept “looks good” from a human reviewer on a risky production change without evidence. You would expect them to point at exact lines, explain failure modes, distinguish certainty from suspicion, and ask questions when they lack context. The same standard applies to an AI assistant.
+Think of AI review like inviting another engineer into a code review. You would not accept "looks good" from a human reviewer on a risky production change without evidence. You would expect them to point at exact lines, explain failure modes, distinguish certainty from suspicion, and ask questions when they lack context. The same standard applies to an AI assistant, even when its answer is polished and fast.
 
-A good review prompt therefore asks for risks, not just improvements. Improvements can become a shopping list of unrelated suggestions, many of which add complexity without solving a real problem. Risks force the review toward operational consequences: failed scheduling, unsafe rollout behavior, unexpected privilege, missing observability, or policy rejection.
+A good review prompt therefore asks for risks, not just improvements. Improvements can become a shopping list of unrelated suggestions, many of which add complexity without solving a real problem. Risks force the review toward operational consequences: failed scheduling, unsafe rollout behavior, unexpected privilege, missing observability, broken Service selection, or policy rejection. The word "risk" also reminds the reviewer that every accepted change should reduce a specific failure mode.
 
-The review mindset also protects learning. If the model gives a correct answer but the engineer does not understand it, the team has only outsourced thinking. If the model explains the risk and the engineer verifies it, the team improves both the manifest and the operator’s judgment. That is the durable value of AI in platform work.
+The review mindset also protects learning. If the model gives a correct answer but the engineer does not understand it, the team has only outsourced thinking. If the model explains the risk and the engineer verifies it, the team improves both the manifest and the operator's judgment. That is the durable value of AI in platform work: not a replacement for review, but a way to make the review more explicit and teachable.
 
 | Workflow | What the AI does | Main risk | Safer use |
 |---|---|---|---|
@@ -68,15 +67,13 @@ The review mindset also protects learning. If the model gives a correct answer b
 | Policy-focused | Checks against known standards | May misstate policy behavior | Use with admission or policy tooling nearby |
 | Explanation-focused | Translates YAML into plain language | May sound correct while omitting failure modes | Use for onboarding, then verify claims |
 
-### Active Learning: Predict the Safer Prompt
+Pause and predict: compare these two prompts before reading further. "Improve this YAML" and "Review this exact Deployment for rollout, resource, and security risks; separate confirmed findings from assumptions; do not invent fields." Which prompt is safer for a production Deployment review, and what specific failure mode does the safer prompt reduce?
 
-Before reading the next paragraph, compare these two prompts and decide which one is safer for a production Deployment review: “Improve this YAML” or “Review this exact Deployment for rollout, resource, and security risks; separate confirmed findings from assumptions; do not invent fields.” Write down one reason before you continue, because the reason matters more than the label.
-
-The second prompt is safer because it limits the task, defines the review dimensions, and requires uncertainty to be visible. The first prompt asks the model to decide what “improve” means, which invites style comments, unnecessary changes, and confident recommendations that may not fit your environment. In platform work, vague prompts create vague accountability.
+The second prompt is safer because it limits the task, defines the review dimensions, and requires uncertainty to be visible. The first prompt asks the model to decide what "improve" means, which invites style comments, unnecessary changes, and confident recommendations that may not fit your environment. In platform work, vague prompts create vague accountability. The safer prompt does not guarantee a correct answer, but it gives the human reviewer a response that can be audited.
 
 ## The YAML Review Workflow
 
-A strong AI-assisted YAML review has a sequence. The order matters because each step reduces a specific failure mode. If you ask for recommendations before stating the review goal, the model may optimize for style instead of risk. If you patch before verification, you may replace one problem with another. If you verify without recording assumptions, the next reviewer will not know which decisions were cluster-specific.
+A strong AI-assisted YAML review has a sequence. The order matters because each step reduces a specific failure mode. If you ask for recommendations before stating the review goal, the model may optimize for style instead of risk. If you patch before verification, you may replace one problem with another. If you verify without recording assumptions, the next reviewer will not know which decisions were cluster-specific and which were visible directly in the manifest.
 
 ```mermaid
 flowchart TD
@@ -92,17 +89,17 @@ flowchart TD
     I --> J[Write review note with assumptions]
 ```
 
-The first step is to start with the real manifest or a focused diff. A model cannot review operational intent that it cannot see. If your prompt only describes the workload in prose, the assistant has to fill gaps with assumptions, and those assumptions often become hidden defects. Copying the exact YAML is more work, but that friction is useful because it anchors the review.
+The first step is to start with the real manifest or a focused diff. A model cannot review operational intent that it cannot see. If your prompt only describes the workload in prose, the assistant has to fill gaps with assumptions, and those assumptions often become hidden defects. Copying the exact YAML is more work, but that friction is useful because it anchors the review and prevents the assistant from critiquing a manifest that exists only in its response.
 
-The second step is to state the review objective. A Deployment can be reviewed for rollout safety, security posture, scheduling predictability, service exposure, compatibility, naming consistency, observability, or policy compliance. Asking for all of those at once can overload both the model and the human reviewer, so choose the dimensions that fit the change.
+The second step is to state the review objective. A Deployment can be reviewed for rollout safety, security posture, scheduling predictability, service exposure, compatibility, naming consistency, observability, or policy compliance. Asking for all of those at once can overload both the model and the human reviewer, so choose the dimensions that fit the change. A small probe change should not trigger an unrestricted rewrite of every security and resource field in the file.
 
-The third step is to ask for risks and uncertainty. The model should not merely suggest edits. It should tell you what is confirmed from the YAML, what is plausible but not proven, and what question must be answered before a change is safe. This is how you keep a distinction between “the manifest has no readiness probe” and “the application probably needs a longer startup time.”
+The third step is to ask for risks and uncertainty. The model should not merely suggest edits. It should tell you what is confirmed from the YAML, what is plausible but not proven, and what question must be answered before a change is safe. This is how you keep a distinction between "the manifest has no readiness probe" and "the application probably needs a longer startup time." The first statement is visible; the second needs workload evidence.
 
-The fourth step is to classify every claim. A claim that points to a missing field can often be checked directly in the YAML. A claim about admission behavior, runtime identity, network reachability, or workload readiness usually requires external evidence. Senior review quality comes from knowing which kind of claim you are holding.
+The fourth step is to classify every claim. A claim that points to a missing field can often be checked directly in the YAML. A claim about admission behavior, runtime identity, network reachability, or workload readiness usually requires external evidence. Senior review quality comes from knowing which kind of claim you are holding, because each kind of claim requires a different verification path.
 
-The fifth step is to patch only justified changes. This is where many AI workflows fail. The assistant may recommend ten changes, but a production review should accept only the changes that solve a real risk and have a verification path. “AI suggested it” is not a reason to mutate infrastructure.
+The fifth step is to patch only justified changes. This is where many AI workflows fail. The assistant may recommend ten changes, but a production review should accept only the changes that solve a real risk and have a verification path. "The assistant suggested it" is not a reason to mutate infrastructure. Minimal, justified patches are easier to review, easier to roll back, and easier to explain during a later incident review.
 
-The final step is to record the decision. A short review note helps the next engineer understand which risks were confirmed, which assumptions remain, and which checks were run. That note is especially useful when a later incident asks why the team chose a particular probe, resource request, or security setting.
+The final step is to record the decision. A short review note helps the next engineer understand which risks were confirmed, which assumptions remain, and which checks were run. That note is especially useful when a later incident asks why the team chose a particular probe, resource request, security setting, or rollout strategy. A review note is not paperwork for its own sake; it is a memory aid for operational decisions.
 
 | Step | Reviewer question | Evidence to collect | Common failure if skipped |
 |---|---|---|---|
@@ -110,21 +107,19 @@ The final step is to record the decision. A short review note helps the next eng
 | Define goal | What risk dimension matters now? | Rollout, security, resources, policy, exposure | Review becomes unfocused advice |
 | Prompt AI | What format should the answer use? | Confirmed, possible, questions, tradeoffs | Certainty and speculation blend together |
 | Classify claims | Is the claim visible or contextual? | YAML line, docs, policy, cluster command | Possible concerns become assumed defects |
-| Verify | What command or source confirms this? | `k explain`, dry-run, diff, policy test | Fluent text replaces evidence |
+| Verify | What command or source confirms this? | `kubectl explain`, dry-run, diff, policy test | Fluent text replaces evidence |
 | Patch | Which changes are justified? | Minimal manifest edit with rationale | Unrelated fields drift into the change |
 | Record | What should the next reviewer know? | Review note with assumptions | Future maintainers repeat the same reasoning |
 
-A review workflow is not bureaucracy for its own sake. It is a way to make uncertainty explicit before it becomes production behavior. Kubernetes will not ask whether a missing request was intentional, whether a privileged container was accidental, or whether a probe path actually matches the application. The reviewer has to ask before apply time.
+A review workflow is not bureaucracy for its own sake. It is a way to make uncertainty explicit before it becomes production behavior. Kubernetes will not ask whether a missing request was intentional, whether a privileged container was accidental, or whether a probe path actually matches the application. The reviewer has to ask before apply time, and AI is useful only when it helps the reviewer ask better questions.
 
-### Active Learning: Classify the Claim
+Before running this process on real code, practice classifying one claim. Suppose an AI review says, "This Deployment will be rejected by your cluster because it lacks `runAsNonRoot: true`." Do not decide whether the recommendation is good yet. First classify the claim: which part is visible in the YAML, and which part requires cluster-specific verification?
 
-Suppose an AI review says, “This Deployment will be rejected by your cluster because it lacks `runAsNonRoot: true`.” Do not decide whether the recommendation is good yet. First classify the claim: which part is visible in the YAML, and which part requires cluster-specific verification?
-
-The visible part is whether the manifest includes `runAsNonRoot: true` in a pod or container security context. The rejection claim is not visible in the YAML. It depends on admission policy, namespace labels, Pod Security admission mode, or another controller such as Kyverno or OPA Gatekeeper, so it must be verified against the actual cluster or policy source.
+The visible part is whether the manifest includes `runAsNonRoot: true` in a pod or container security context. The rejection claim is not visible in the YAML. It depends on admission policy, namespace labels, Pod Security admission mode, or another controller such as Kyverno, OPA Gatekeeper, or ValidatingAdmissionPolicy. That means the claim must be verified against the actual cluster or policy source before it is written as a defect.
 
 ## Worked Example: From Vague YAML to Evidence-Based Review
 
-A worked example makes the workflow concrete. The manifest below is valid enough to look ordinary, but it has several production review targets. The point is not that every workload must use the exact same settings. The point is to learn how an AI assistant can help identify risks while the human reviewer still verifies and decides.
+A worked example makes the workflow concrete. The manifest below is valid enough to look ordinary, but it has several production review targets. The point is not that every workload must use the exact same settings. The point is to learn how an AI assistant can help identify risks while the human reviewer still verifies and decides. Keep that distinction in mind as you read the example, because some recommendations are reasonable only when their assumptions are true.
 
 ```yaml
 apiVersion: apps/v1
@@ -154,7 +149,7 @@ spec:
               memory: "256Mi"
 ```
 
-A weak prompt asks the assistant to “make this production ready.” That prompt hides the reviewer’s intent and invites the model to add fields that may not match the workload. A stronger prompt constrains the review to specific dimensions and asks the model to show uncertainty.
+A weak prompt asks the assistant to "make this production ready." That prompt hides the reviewer's intent and invites the model to add fields that may not match the workload. It also makes the response harder to audit because every suggestion arrives as part of one broad improvement bundle. A stronger prompt constrains the review to specific dimensions and asks the model to show uncertainty.
 
 ```text
 Review this Kubernetes Deployment for operational risks.
@@ -175,22 +170,22 @@ Return:
 4. minimal changes worth considering, with tradeoffs
 ```
 
-A useful answer should identify that no readiness probe is configured, so rollout traffic readiness cannot be inferred from Kubernetes readiness checks. It should notice that resource limits exist but requests do not, which affects scheduling predictability because requests are the scheduler’s reservation signal. It should also notice that no explicit security context is present, while avoiding an unsupported claim that the cluster will definitely reject the pod.
+A useful answer should identify that no readiness probe is configured, so rollout traffic readiness cannot be inferred from Kubernetes readiness checks. It should notice that resource limits exist but requests do not, which affects scheduling predictability because requests are the scheduler's reservation signal. It should also notice that no explicit security context is present, while avoiding an unsupported claim that the cluster will definitely reject the pod. That combination of concern and restraint is what you are training the review to produce.
 
-The same answer should avoid overclaiming. For example, it should not state that a liveness probe is mandatory for every service, because a poorly designed liveness probe can restart a slow but healthy application. It should not assume the correct readiness path without knowing the application. It should not claim that `nginx:1.27` is forbidden unless the organization has a tag policy or image policy that says so.
+The same answer should avoid overclaiming. For example, it should not state that a liveness probe is mandatory for every service, because a poorly designed liveness probe can restart a slow but healthy application. It should not assume the correct readiness path without knowing the application. It should not claim that `nginx:1.27` is forbidden unless the organization has a tag policy or image policy that says so. Overclaiming is not a small style issue; it can cause teams to patch YAML for reasons they cannot defend.
 
-A reviewer now classifies the findings. “No readiness probe exists” is visible in the YAML. “Readiness probe path should be `/healthz`” is not visible, because the path depends on the application. “No resource requests exist” is visible. “The CPU request should be `100m`” is a sizing recommendation that depends on workload measurements, SLOs, and cluster capacity.
+A reviewer now classifies the findings. "No readiness probe exists" is visible in the YAML. "Readiness probe path should be `/healthz`" is not visible, because the path depends on the application. "No resource requests exist" is visible. "The CPU request should be `100m`" is a sizing recommendation that depends on workload measurements, service objectives, and cluster capacity. The classification step turns a fluent model response into reviewable engineering work.
 
 | AI claim | Classification | How to verify | Decision quality |
 |---|---|---|---|
-| No readiness probe is configured | Confirmed from YAML | Search manifest and use `k explain` | Strong basis for review discussion |
+| No readiness probe is configured | Confirmed from YAML | Search manifest and use `kubectl explain` | Strong basis for review discussion |
 | Traffic may reach pods before the app is ready | Plausible operational risk | Confirm app startup behavior and Service routing | Needs workload context |
 | Resource limits exist without requests | Confirmed from YAML | Inspect `resources` block | Strong basis for scheduling discussion |
 | CPU request should be `100m` | Requires verification | Check metrics, load tests, or team standard | Do not accept blindly |
 | No explicit security context exists | Confirmed from YAML | Inspect pod and container security contexts | Strong basis for security discussion |
 | Cluster will reject this pod | Requires verification | Check Pod Security, Kyverno, Gatekeeper, or admission logs | Do not assert without evidence |
 
-A minimal revised manifest might add a readiness probe, resource requests, and a security context. These changes are not magic defaults. They are examples of justified changes that a reviewer would still tune for the real workload. The readiness path must exist in the container image. The request values should reflect observed usage or a team baseline. The security context must match how the image is built.
+A minimal revised manifest might add a readiness probe, resource requests, and a security context. These changes are not magic defaults. They are examples of justified changes that a reviewer would still tune for the real workload. The readiness path must exist in the container image. The request values should reflect observed usage or a team baseline. The security context must match how the image is built and how the namespace enforces policy.
 
 ```yaml
 apiVersion: apps/v1
@@ -240,32 +235,29 @@ spec:
 
 This revised YAML is better only if its assumptions are true. If the image requires root, `runAsNonRoot: true` may prevent startup. If the application returns success on `/` before dependencies are ready, the readiness probe may provide false confidence. If the request values are too low, the scheduler may pack pods too tightly and create noisy-neighbor risk. AI can surface the tradeoff, but it cannot erase the need for workload knowledge.
 
-Verification begins with Kubernetes-native checks. The `kubectl` command is shown first because it is the portable command name; after you define `alias k=kubectl` in your shell, the shorter `k` alias is used throughout the rest of this module and in many KubeDojo labs. The alias does not change behavior; it only reduces typing during repeated inspection.
+Verification begins with Kubernetes-native checks. The full `kubectl` command is shown in every runnable shell block because copy-paste examples should work in scripts and non-interactive shells. Many engineers use a short alias interactively, but module examples should not rely on aliases when the goal is reproducible review. The command output is less important than the habit: validate field shape, object construction, and policy behavior separately.
 
 ```bash
-alias k=kubectl
-k apply --dry-run=client -f deployment-reviewed.yaml
-k get -f deployment-reviewed.yaml --dry-run=client -o yaml
-k explain deployment.spec.template.spec.containers.readinessProbe
-k explain deployment.spec.template.spec.containers.resources.requests
-k explain deployment.spec.template.spec.securityContext
+kubectl apply --dry-run=client -f deployment-reviewed.yaml
+kubectl get -f deployment-reviewed.yaml --dry-run=client -o yaml
+kubectl explain deployment.spec.template.spec.containers.readinessProbe
+kubectl explain deployment.spec.template.spec.containers.resources.requests
+kubectl explain deployment.spec.template.spec.securityContext
 ```
 
-Dry-run checks syntax and client-side object construction, but it does not prove the workload is healthy. `k explain` confirms field shape and documentation, but it does not prove the chosen values are right. That distinction is important: validation tells you whether Kubernetes accepts a field, while review decides whether the field expresses the correct operational intent.
+Dry-run checks syntax and object construction, but it does not prove the workload is healthy. `kubectl explain` confirms field shape and documentation, but it does not prove the chosen values are right. That distinction is important: validation tells you whether Kubernetes accepts a field, while review decides whether the field expresses the correct operational intent. Treat each command as one evidence source, not as a final stamp of correctness.
 
 The review note should be short and concrete. A good note says that the manifest now has a readiness probe because the original Deployment had no readiness gate before Service traffic. It says that resource requests were added to make scheduling intent explicit, while the exact values require measurement. It says that a non-root security context was added as a security posture improvement, while image compatibility must be verified in an environment that runs the container.
 
-### Active Learning: Predict the Hidden Failure
+Pause and predict: choose one way the revised manifest could fail even though the YAML is valid and the AI recommendation sounded reasonable. Pick readiness, resources, or security context. Then write the evidence you would need to confirm or disprove your prediction before you read the next paragraph.
 
-Before moving on, predict one way the revised manifest could fail even though the YAML is valid and the AI recommendation sounded reasonable. Choose from readiness, resources, or security context, then explain what evidence would confirm or disprove your prediction.
-
-One possible answer is that `runAsNonRoot: true` could fail if the container image starts as UID `0` and does not define a non-root user. Another is that the readiness probe could be technically valid but semantically weak if `/` returns success before the application is ready for real traffic. A third is that requests could be too low for the workload, causing pods to be scheduled onto nodes where they later contend for CPU or memory.
+One possible answer is that `runAsNonRoot: true` could fail if the container image starts as UID `0` and does not define a non-root user. Another is that the readiness probe could be technically valid but semantically weak if `/` returns success before the application is ready for real traffic. A third is that requests could be too low for the workload, causing pods to be scheduled onto nodes where they later contend for CPU or memory. Each answer is useful only when it includes a verification step.
 
 ## Designing Prompts That Constrain the Model
 
-Prompt design is not about clever wording. In platform engineering, prompt design is about reducing the space in which the model can make unsupported assumptions. A safe prompt gives the assistant enough context to review the actual object while limiting the output to evidence, uncertainty, and tradeoffs.
+Prompt design is not about clever wording. In platform engineering, prompt design is about reducing the space in which the model can make unsupported assumptions. A safe prompt gives the assistant enough context to review the actual object while limiting the output to evidence, uncertainty, and tradeoffs. The goal is not to produce a perfect incantation; the goal is to make the review response easier for a human to audit.
 
-A strong manifest review prompt has five parts. It includes the exact YAML or rendered diff, the review goal, the cluster or policy context that is known, the output format, and the uncertainty rule. If one of those parts is missing, the model will often fill the gap with generic Kubernetes advice.
+A strong manifest review prompt has five parts. It includes the exact YAML or rendered diff, the review goal, the cluster or policy context that is known, the output format, and the uncertainty rule. If one of those parts is missing, the model will often fill the gap with generic Kubernetes advice. Generic advice can be useful during learning, but it is unsafe when it is disguised as environment-specific guidance.
 
 ```ascii
 +-----------------------+
@@ -289,24 +281,24 @@ A strong manifest review prompt has five parts. It includes the exact YAML or re
 +-----------------------+
 ```
 
-The exact YAML or diff prevents hallucinated fields. The review objective tells the assistant whether to prioritize rollout, security, scheduling, exposure, or policy compatibility. Known context prevents generic recommendations from overriding real constraints, such as an organization that requires image digests or a namespace that enforces restricted Pod Security. The output structure makes the response easier to audit. The uncertainty rule tells the model that “I do not know” is an acceptable and expected answer.
+The exact YAML or diff prevents hallucinated fields. The review objective tells the assistant whether to prioritize rollout, security, scheduling, exposure, or policy compatibility. Known context prevents generic recommendations from overriding real constraints, such as an organization that requires image digests or a namespace that enforces restricted Pod Security. The output structure makes the response easier to audit. The uncertainty rule tells the model that "unknown from this manifest" is an acceptable and expected answer.
 
-The most common prompting mistake is asking the model to both review and rewrite in the same pass. That mixes diagnosis with treatment. It is safer to first ask for findings and questions, then ask for a minimal patch after the findings have been verified. This keeps the reviewer from turning every suggestion into a change.
+The most common prompting mistake is asking the model to both review and rewrite in the same pass. That mixes diagnosis with treatment. It is safer to first ask for findings and questions, then ask for a minimal patch after the findings have been verified. This keeps the reviewer from turning every suggestion into a change, and it makes the eventual patch easier for teammates to evaluate.
 
 | Prompt element | Weak version | Strong version | Why it matters |
 |---|---|---|---|
-| Input | “Here is my app” | “Here is the rendered Deployment YAML” | Review must anchor to concrete configuration |
-| Goal | “Improve it” | “Review rollout and scheduling risks” | Narrow goals produce actionable findings |
-| Context | “Production cluster” | “Kubernetes 1.35+, restricted namespace, Kyverno image policy” | Context prevents generic advice |
-| Output | “Tell me issues” | “Confirmed, possible, questions, verification commands” | Structured output is easier to audit |
-| Uncertainty | “Be confident” | “Say when a claim needs verification” | Explicit uncertainty prevents false authority |
-| Patch timing | “Fix it now” | “Do not rewrite until findings are classified” | Diagnosis stays separate from changes |
+| Input | "Here is my app" | "Here is the rendered Deployment YAML" | Review must anchor to concrete configuration |
+| Goal | "Improve it" | "Review rollout and scheduling risks" | Narrow goals produce actionable findings |
+| Context | "Production cluster" | "Kubernetes 1.35+, restricted namespace, Kyverno image policy" | Context prevents generic advice |
+| Output | "Tell me issues" | "Confirmed, possible, questions, verification commands" | Structured output is easier to audit |
+| Uncertainty | "Be confident" | "Say when a claim needs verification" | Explicit uncertainty prevents false authority |
+| Patch timing | "Fix it now" | "Do not rewrite until findings are classified" | Diagnosis stays separate from changes |
 
-A senior prompt also asks for the absence of evidence. For example, “Which risks cannot be determined from this manifest alone?” is often more valuable than “What is wrong?” The model might then point out that it cannot know traffic patterns, startup behavior, admission policies, image user identity, or whether a Service targets the labels. Those missing facts guide the human reviewer toward the next verification step.
+A senior prompt also asks for the absence of evidence. For example, "Which risks cannot be determined from this manifest alone?" is often more valuable than "What is wrong?" The model might then point out that it cannot know traffic patterns, startup behavior, admission policies, image user identity, PodDisruptionBudget settings, Service selectors, or whether the application supports graceful shutdown. Those missing facts guide the human reviewer toward the next verification step.
 
 A production review prompt should avoid asking for absolute correctness. Kubernetes manifests are full of contextual decisions. A liveness probe can be protective or harmful. A CPU limit can reduce noisy-neighbor impact or throttle a latency-sensitive application. A non-root security context can improve posture or reveal an image build problem. The assistant should explain tradeoffs instead of pretending every field has one universal best value.
 
-Here is a reusable prompt pattern for a Deployment review. You can adapt the review dimensions, but keep the separation between confirmed findings, possible concerns, and questions.
+Here is a reusable prompt pattern for a Deployment review. You can adapt the review dimensions, but keep the separation between confirmed findings, possible concerns, and questions. The format is intentionally explicit because a review response that is a little repetitive is easier to audit than a polished paragraph that blends evidence with speculation.
 
 ```text
 Review the Kubernetes manifest below as a platform engineer.
@@ -338,7 +330,7 @@ Return:
 5. minimal next checks using kubectl or policy tooling
 ```
 
-When asking for a patch, use a second prompt that narrows the task. The second prompt should refer to the verified findings rather than reopening the entire manifest for creative improvement. This mirrors good human review: first discuss the issue, then apply the smallest change that addresses it.
+When asking for a patch, use a second prompt that narrows the task. The second prompt should refer to the verified findings rather than reopening the entire manifest for creative improvement. This mirrors good human review: first discuss the issue, then apply the smallest change that addresses it. The second prompt is also a useful guard against assistant drift, where a model adds unrelated fields simply because it is now in "rewrite" mode.
 
 ```text
 Using only the confirmed findings below, propose a minimal YAML patch.
@@ -355,39 +347,37 @@ Rules:
 - If a change could break the container image, say how to verify it.
 ```
 
-This two-step prompting pattern teaches the model to behave like a reviewer instead of a generator. It also teaches the human to separate the thinking stages. That separation is one of the strongest defenses against prompt-induced technical debt, where YAML grows fields because an assistant suggested them and no one remembers why.
+This two-step prompting pattern teaches the model to behave like a reviewer instead of a generator. It also teaches the human to separate the thinking stages. That separation is one of the strongest defenses against prompt-induced technical debt, where YAML grows fields because an assistant suggested them and no one remembers why. When the diagnosis and patch are separate, the review can reject a good-sounding change without losing the useful finding that led to it.
 
-### Active Learning: Rewrite a Weak Prompt
+Try this before moving on: rewrite the prompt "Make this Helm values file secure and reliable" in your own words. Your rewrite should mention exact input, review dimensions, output structure, and uncertainty. If your rewrite asks the AI to produce final YAML immediately, revise it so review comes first.
 
-Take the prompt “Make this Helm values file secure and reliable” and rewrite it in your own words before reading further. Your rewrite should mention exact input, review dimensions, output structure, and uncertainty. If your rewrite asks the AI to produce final YAML immediately, revise it so review comes first.
-
-A better prompt would say: “Review this exact rendered manifest and the Helm values that produced it for security and reliability risks. Separate confirmed concerns from assumptions, name any cluster policy that must be checked, and return questions before suggesting changes.” The wording can vary, but the structure should make evidence and uncertainty visible.
+A better prompt would say: "Review this exact rendered manifest and the Helm values that produced it for security and reliability risks. Separate confirmed concerns from assumptions, name any cluster policy that must be checked, and return questions before suggesting changes." The wording can vary, but the structure should make evidence and uncertainty visible. The key move is not the phrase itself; it is the decision to delay patching until findings have been classified.
 
 ## Verifying AI Claims Against Kubernetes Reality
 
-Verification is where AI-assisted review becomes platform engineering instead of autocomplete. The model can point you toward likely risks, but Kubernetes truth comes from API schemas, controller behavior, admission policy, workload behavior, and the running cluster. A reviewer needs to know which verification tool fits which claim.
+Verification is where AI-assisted review becomes platform engineering instead of autocomplete. The model can point you toward likely risks, but Kubernetes truth comes from API schemas, controller behavior, admission policy, workload behavior, and the running cluster. A reviewer needs to know which verification tool fits which claim. Using the wrong tool can create false confidence, because a successful syntax check does not prove a readiness endpoint is meaningful or a policy exception is acceptable.
 
-A field-shape claim is usually checked with `k explain`, schema-aware tools, dry-run apply, or server-side validation. For example, if the assistant suggests a field under `securityContext`, you can ask Kubernetes where that field belongs. This catches a frequent AI failure mode: placing a valid field at the wrong level.
-
-```bash
-k explain deployment.spec.template.spec.securityContext
-k explain deployment.spec.template.spec.containers.securityContext
-k explain deployment.spec.template.spec.containers.readinessProbe
-k apply --dry-run=client -f deployment-reviewed.yaml
-```
-
-A cluster-policy claim requires policy evidence. If the AI says a manifest violates Pod Security, Kyverno, Gatekeeper, or an internal admission rule, the reviewer must check the actual policy source or a server-side dry run in the target namespace. Client-side dry-run cannot prove admission behavior because admission runs on the API server path.
+A field-shape claim is usually checked with `kubectl explain`, schema-aware tools, dry-run apply, or server-side validation. For example, if the assistant suggests a field under `securityContext`, you can ask Kubernetes where that field belongs. This catches a frequent AI failure mode: placing a valid field at the wrong level. It also catches stale examples that use fields from older API versions or place container-only settings at the pod level.
 
 ```bash
-k apply --dry-run=server -n platform-review -f deployment-reviewed.yaml
-k get ns platform-review --show-labels
-k get validatingadmissionpolicy
-k get validatingwebhookconfiguration
+kubectl explain deployment.spec.template.spec.securityContext
+kubectl explain deployment.spec.template.spec.containers.securityContext
+kubectl explain deployment.spec.template.spec.containers.readinessProbe
+kubectl apply --dry-run=client -f deployment-reviewed.yaml
 ```
 
-A workload-behavior claim requires workload evidence. A readiness probe path is not correct merely because it exists in YAML. The application must return success only when it can safely receive traffic. Resource requests are not correct merely because they are present. They should be informed by metrics, load tests, team baselines, or known operating envelopes.
+A cluster-policy claim requires policy evidence. If the AI says a manifest violates Pod Security, Kyverno, Gatekeeper, ValidatingAdmissionPolicy, or an internal admission rule, the reviewer must check the actual policy source or a server-side dry run in the target namespace. Client-side dry-run cannot prove admission behavior because admission runs on the API server path. Even server-side dry-run should be interpreted carefully, because the result depends on the namespace and cluster you target.
 
-A rollout-risk claim requires controller understanding. Deployments use a rollout strategy to replace pods while trying to maintain availability, but the exact risk depends on replicas, readiness, surge settings, disruption budgets, and application startup behavior. An AI assistant may identify a missing probe, but the reviewer must reason through the rollout path.
+```bash
+kubectl apply --dry-run=server -n platform-review -f deployment-reviewed.yaml
+kubectl get ns platform-review --show-labels
+kubectl get validatingadmissionpolicy
+kubectl get validatingwebhookconfiguration
+```
+
+A workload-behavior claim requires workload evidence. A readiness probe path is not correct merely because it exists in YAML. The application must return success only when it can safely receive traffic. Resource requests are not correct merely because they are present. They should be informed by metrics, load tests, team baselines, or known operating envelopes. This is where the reviewer must bring knowledge that the assistant does not have.
+
+A rollout-risk claim requires controller understanding. Deployments use a rollout strategy to replace pods while trying to maintain availability, but the exact risk depends on replicas, readiness, surge settings, disruption budgets, and application startup behavior. An AI assistant may identify a missing probe, but the reviewer must reason through the rollout path. A two-replica Deployment with no meaningful readiness signal can still create a user-visible failure if both new pods report ready before they can serve real requests.
 
 ```ascii
 +-------------------------+       +-------------------------+       +-------------------------+
@@ -402,137 +392,149 @@ A rollout-risk claim requires controller understanding. Deployments use a rollou
 +-------------------------+       +-------------------------+       +-------------------------+
 ```
 
-The diagram shows why a readiness probe is not just a checkbox. During a rollout, Kubernetes needs a signal that a new pod can receive traffic. Without that signal, pod readiness can become too coarse for real application readiness. With a poor signal, Kubernetes may receive false reassurance. The field matters because it participates in a controller workflow.
+The diagram shows why a readiness probe is not just a checkbox. During a rollout, Kubernetes needs a signal that a new pod can receive traffic. Without that signal, pod readiness can become too coarse for real application readiness. With a poor signal, Kubernetes may receive false reassurance. The field matters because it participates in a controller workflow, and the quality of the signal determines whether the workflow protects users or simply looks complete.
 
-The same verification principle applies to resource requests. A missing request does not always break a deployment immediately, but it weakens scheduling predictability. The scheduler uses requests to decide where pods fit. Limits affect runtime enforcement differently. AI reviews often mention “add resources,” but the reviewer must ask which part of resource management is being improved and which values are justified.
+The same verification principle applies to resource requests. A missing request does not always break a deployment immediately, but it weakens scheduling predictability. The scheduler uses requests to decide where pods fit. Limits affect runtime enforcement differently. AI reviews often mention "add resources," but the reviewer must ask which part of resource management is being improved and which values are justified. A request copied from a generic example may be worse than a deferred recommendation with a measurement plan.
 
 | Claim type | Example AI statement | Verification source | Reviewer decision |
 |---|---|---|---|
-| YAML structure | “`allowPrivilegeEscalation` belongs under container securityContext” | `k explain` and schema validation | Accept field placement if schema confirms |
-| Admission behavior | “This namespace will reject root containers” | Server-side dry-run and policy inspection | Treat as unknown until policy confirms |
-| Controller behavior | “Readiness affects rollout availability” | Kubernetes docs and rollout testing | Evaluate with replicas and strategy |
-| Workload behavior | “The `/healthz` endpoint proves readiness” | App docs, test environment, owner confirmation | Verify before relying on it |
-| Capacity sizing | “Use `100m` CPU request” | Metrics, load test, team baseline | Tune, do not copy blindly |
-| Security posture | “Drop Linux capabilities by default” | Security standard and image compatibility test | Prefer minimal privileges when compatible |
+| YAML structure | "`allowPrivilegeEscalation` belongs under container securityContext" | `kubectl explain` and schema validation | Accept field placement if schema confirms |
+| Admission behavior | "This namespace will reject root containers" | Server-side dry-run and policy inspection | Treat as unknown until policy confirms |
+| Controller behavior | "Readiness affects rollout availability" | Kubernetes docs and rollout testing | Evaluate with replicas and strategy |
+| Workload behavior | "The `/healthz` endpoint proves readiness" | App docs, test environment, owner confirmation | Verify before relying on it |
+| Capacity sizing | "Use `100m` CPU request" | Metrics, load test, team baseline | Tune, do not copy blindly |
+| Security posture | "Drop Linux capabilities by default" | Security standard and image compatibility test | Prefer minimal privileges when compatible |
 
-A senior reviewer is comfortable saying “we do not know yet.” That is not weakness. It is the correct response when a claim depends on data the manifest does not contain. AI should help you find those unknowns faster, not hide them behind confident prose.
+A senior reviewer is comfortable saying "we do not know yet." That is not weakness. It is the correct response when a claim depends on data the manifest does not contain. AI should help you find those unknowns faster, not hide them behind confident prose. The best review output often contains both a confirmed YAML finding and a question that must be answered before a patch is complete.
 
-### Active Learning: Choose the Verification Path
+Choose the verification path before you reach for commands. Your AI assistant says, "This manifest is invalid because `seccompProfile` is in the wrong place." Which verification path should you use first: load testing, `kubectl explain`, server-side dry-run, or checking application logs? Decide before reading the answer, and explain why the other paths are less direct.
 
-Your AI assistant says, “This manifest is invalid because `seccompProfile` is in the wrong place.” Which verification path should you use first: load testing, `k explain`, server-side dry-run, or checking application logs? Decide before reading the answer, and explain why the other paths are less direct.
-
-The first check should be `k explain` or schema validation because the claim is about field placement and API shape. Server-side dry-run can also help, but it may mix schema validation with admission behavior. Load testing and application logs are useful for workload behavior, not for deciding where a Kubernetes field belongs in the manifest.
+The first check should be `kubectl explain` or schema validation because the claim is about field placement and API shape. Server-side dry-run can also help, but it may mix schema validation with admission behavior. Load testing and application logs are useful for workload behavior, not for deciding where a Kubernetes field belongs in the manifest. Selecting the right verification path keeps the review focused and reduces noise.
 
 ## Senior Review: Context, Tradeoffs, and Team Practice
 
-Beginner reviewers often ask, “Is this YAML valid?” Senior reviewers ask, “What operational promise does this YAML make, and can the platform keep that promise?” Valid YAML can still create unreliable systems. A Deployment can pass validation and still route traffic too early, schedule unpredictably, run with more privilege than necessary, or violate an internal release standard.
+Beginner reviewers often ask, "Is this YAML valid?" Senior reviewers ask, "What operational promise does this YAML make, and can the platform keep that promise?" Valid YAML can still create unreliable systems. A Deployment can pass validation and still route traffic too early, schedule unpredictably, run with more privilege than necessary, break Service selection, or violate an internal release standard. Review quality improves when every field is connected to the promise it makes.
 
 AI is most useful at the middle of this reasoning chain. It can help explain what a field usually means, compare two versions of a manifest, and propose questions the reviewer should ask. It is less reliable at the edges: knowing your exact cluster on one side and making final production decisions on the other. Keep the model in the middle, where it accelerates thinking without owning authority.
 
-The senior pattern is to connect each YAML field to a failure mode. A readiness probe connects to traffic safety. Resource requests connect to scheduling and capacity planning. Security context connects to process identity and privilege. Labels and selectors connect to whether controllers and Services find the pods they intend to manage. Environment variables and ConfigMaps connect to runtime configuration drift.
+The senior pattern is to connect each YAML field to a failure mode. A readiness probe connects to traffic safety. Resource requests connect to scheduling and capacity planning. Security context connects to process identity and privilege. Labels and selectors connect to whether controllers and Services find the pods they intend to manage. Environment variables and ConfigMaps connect to runtime configuration drift. Once the field has a failure mode, the reviewer can decide whether the proposed change reduces risk or only adds appearance of maturity.
 
-When reviewing generated or AI-modified YAML, pay special attention to unnecessary fields. More YAML is not automatically more mature. Extra fields increase maintenance cost, can conflict with platform defaults, and may become copied cargo cult. A minimal manifest that expresses intentional decisions is usually safer than a verbose manifest that no one can explain.
+When reviewing generated or AI-modified YAML, pay special attention to unnecessary fields. More YAML is not automatically more mature. Extra fields increase maintenance cost, can conflict with platform defaults, and may become copied cargo cult. A minimal manifest that expresses intentional decisions is usually safer than a verbose manifest that no one can explain. The review question is not "did the assistant add best practices?" but "does each accepted field express a decision we can defend?"
 
-Team practice matters because AI adoption changes review habits. If one engineer uses AI privately and pastes a polished manifest into a PR, other reviewers may see the final YAML without the uncertainty that produced it. A better team workflow includes the AI review note in the PR description or change record. That note should say which findings were accepted, rejected, or left for follow-up.
+Team practice matters because AI adoption changes review habits. If one engineer uses AI privately and pastes a polished manifest into a PR, other reviewers may see the final YAML without the uncertainty that produced it. A better team workflow includes the AI review note in the PR description or change record. That note should say which findings were accepted, rejected, or left for follow-up. It should also identify any cluster or workload fact that could not be proven from the YAML alone.
 
-A good review note is not long. It can be a short table with the claim, evidence, decision, and remaining assumption. The discipline is in recording reasoning, not in producing paperwork. When a later incident happens, that record helps the team see whether the failure was an unknown risk, a rejected recommendation, or an assumption that was never verified.
+A good review note is not long. It can be a short table with the claim, evidence, decision, and remaining assumption. The discipline is in recording reasoning, not in producing paperwork. When a later incident happens, that record helps the team see whether the failure was an unknown risk, a rejected recommendation, or an assumption that was never verified. This is especially useful for probes, resource settings, and security contexts, where a field can be syntactically valid yet semantically wrong.
 
 | Review note field | Good entry | Weak entry |
 |---|---|---|
-| Claim | “No readinessProbe exists in the Deployment” | “AI said readiness is bad” |
-| Evidence | “Confirmed by manifest search and `k explain`” | “Looks right” |
-| Decision | “Add readiness probe using app-owned endpoint” | “Added probe” |
-| Assumption | “Endpoint returns success only after dependencies are ready” | “Should be fine” |
-| Follow-up | “Validate in staging rollout before production” | “Monitor” |
+| Claim | "No readinessProbe exists in the Deployment" | "AI said readiness is bad" |
+| Evidence | "Confirmed by manifest search and `kubectl explain`" | "Looks right" |
+| Decision | "Add readiness probe using app-owned endpoint" | "Added probe" |
+| Assumption | "Endpoint returns success only after dependencies are ready" | "Should be fine" |
+| Follow-up | "Validate in staging rollout before production" | "Monitor" |
 
-A mature AI-assisted workflow also defines where AI is not allowed to decide. For example, the model should not choose production resource requests without metrics. It should not decide that a policy exception is acceptable. It should not approve a privilege increase. It should not merge a risky rollout because the YAML passes dry-run. Those decisions belong to humans and team process.
+A mature AI-assisted workflow also defines where AI is not allowed to decide. For example, the model should not choose production resource requests without metrics. It should not decide that a policy exception is acceptable. It should not approve a privilege increase. It should not merge a risky rollout because the YAML passes dry-run. Those decisions belong to humans and team process, even when the assistant provides useful context.
 
-There is one more senior habit: ask the model to critique its own limits. A prompt like “What can you not determine from this manifest?” often reveals missing context that a normal review would overlook. The answer may mention Service selectors, actual image user, admission policies, PodDisruptionBudget, traffic shape, startup time, or whether the app supports graceful shutdown.
+There is one more senior habit: ask the model to critique its own limits. A prompt like "What can you not determine from this manifest?" often reveals missing context that a normal review would overlook. The answer may mention Service selectors, actual image user, admission policies, PodDisruptionBudget, traffic shape, startup time, or whether the app supports graceful shutdown. These are not failures of the model; they are prompts for better evidence.
 
-Use AI to make review conversations better. A junior engineer can ask the assistant to explain a manifest in plain English before the team review. A senior engineer can ask it to generate a checklist of verification questions. A platform lead can ask it to compare a diff against team standards. In each case, the final judgment remains grounded in evidence.
+Use AI to make review conversations better. A junior engineer can ask the assistant to explain a manifest in plain English before the team review. A senior engineer can ask it to generate a checklist of verification questions. A platform lead can ask it to compare a diff against team standards. In each case, the final judgment remains grounded in evidence, and the team becomes better at explaining why the manifest should run in production.
+
+## Patterns & Anti-Patterns
+
+The most reliable pattern is constrained review before generation. Use it when the manifest already exists, the change is heading toward a real environment, or the team needs a defensible decision trail. The reviewer supplies the manifest, review dimensions, known context, and output rules, then asks the assistant for findings and questions. This works because it keeps the model anchored to observable input and delays edits until the team has classified the risks.
+
+A second strong pattern is diff-centered review. Use it when Helm, Kustomize, or a GitOps tool produces a rendered before-and-after manifest. The assistant should compare operationally meaningful changes, not just summarize the largest visual diff. A readiness probe addition, a selector change, a resource request removal, and a namespace move can all appear in the same review, and the model needs a structured output so the human reviewer can see which changes alter rollout behavior, routing, scheduling, or admission.
+
+A third strong pattern is evidence-linked review notes. Use it when the review produces a patch or a production recommendation. The note should connect each accepted change to a visible finding, a verification command, a source, or a remaining assumption. This scales better than private chat transcripts because teammates do not need to reread the whole AI conversation; they need the claims, evidence, decisions, and gaps.
+
+The most common anti-pattern is prompt-to-patch. A reviewer asks the assistant to "fix" the manifest, accepts a full rewritten YAML file, and then reviews the generated file as if it were the source of truth. This is risky because the patch may include unrelated changes, invented context, or plausible defaults that no one requested. The better alternative is to ask for findings first, verify them, and request a minimal patch only for accepted findings.
+
+Another anti-pattern is policy clairvoyance. The assistant states that a manifest will pass or fail cluster policy even though the prompt did not include namespace labels, admission configuration, or policy definitions. Teams fall into this trap because the answer sounds operationally specific. The fix is to require policy claims to include their evidence path, such as server-side dry-run, namespace labels, Pod Security standards, Kyverno policy, Gatekeeper constraint, or ValidatingAdmissionPolicy definition.
+
+A quieter anti-pattern is best-practice accumulation. The assistant keeps adding probes, limits, labels, annotations, security fields, topology spread, disruption budgets, and lifecycle hooks because each one can be justified in isolation. The result is a verbose manifest with weak ownership. The better pattern is intentional minimalism: keep the fields that express real operational decisions, defer fields whose assumptions are not yet known, and record why each accepted change belongs in the file.
+
+## Decision Framework
+
+Choosing the right AI workflow depends on the risk you are trying to reduce. If you need to teach a beginner what a manifest does, explanation-focused AI is appropriate, but you should not treat the explanation as an approval. If you need to review a production change, review-first or diff-focused AI is safer because it begins with real YAML and visible uncertainty. If you need policy confidence, the model can help form questions, but the evidence must come from Kubernetes, admission tooling, or the policy source itself.
+
+Use generation-first AI only when the output is clearly a draft, example, or learning scaffold. For production work, generation-first should be followed by the same review process as human-written YAML, because generated YAML has no special authority. Use review-first AI when you already have a manifest and want to find risks. Use diff-focused AI when the change is the unit of review. Use policy-focused AI when you provide the policy itself and ask the model to map manifest fields to policy clauses, while still validating with the actual tool.
+
+| Situation | Safer workflow | Evidence required | Stop condition |
+|---|---|---|---|
+| Learning what a manifest does | Explanation-focused review | YAML paths and official docs | Stop before treating the explanation as approval |
+| Reviewing a production Deployment | Review-first workflow | Confirmed findings, questions, dry-run, owner input | Stop before patching unverified assumptions |
+| Reviewing a Helm change | Diff-focused workflow | Rendered old and new manifests | Stop when unchanged inherited risk is separated from new risk |
+| Checking security posture | Policy-focused workflow | Pod Security, Kyverno, Gatekeeper, or admission evidence | Stop before claiming rejection without policy proof |
+| Choosing resource values | Human-owned sizing with AI questions | Metrics, load tests, baselines | Stop before copying generic values |
+| Writing a PR note | Evidence-linked review note | Claim, evidence, decision, assumption | Stop when another reviewer can audit the reasoning |
+
+When in doubt, choose the workflow that preserves the most evidence and makes the fewest assumptions. A fast answer that hides uncertainty is expensive later. A slightly slower review that labels uncertainty is easier to improve, easier to teach, and easier to defend. The decision framework is not meant to slow every small change; it is meant to keep high-confidence prose from replacing high-quality engineering judgment.
 
 ## Did You Know?
 
 - **Readiness is a traffic signal, not a startup timer**: A readiness probe tells Kubernetes whether a container should receive traffic through Services and endpoints. Setting only `initialDelaySeconds` without a meaningful readiness condition can hide startup timing problems rather than model real readiness.
-
-- **Resource requests and limits answer different questions**: Requests influence scheduling because they describe reserved capacity, while limits constrain runtime usage for supported resources. AI reviews that simply say “add resources” are incomplete unless they explain which scheduling or runtime problem the values address.
-
+- **Resource requests and limits answer different questions**: Requests influence scheduling because they describe reserved capacity, while limits constrain runtime usage for supported resources. AI reviews that simply say "add resources" are incomplete unless they explain which scheduling or runtime problem the values address.
 - **Pod and container security contexts are related but not identical**: Some security settings can be placed at the pod level, while others belong at the container level. This is why field placement should be verified with Kubernetes schema information instead of trusting a generated example.
-
 - **Server-side dry-run sees more than client-side dry-run**: Client-side dry-run can catch local object construction issues, but server-side dry-run goes through the API server path and can expose admission behavior. It still does not prove the application is healthy, so it complements rather than replaces rollout testing.
 
 ## Common Mistakes
 
-| Mistake | Why It Hurts | Better Practice |
+| Mistake | Why It Happens | How to Fix It |
 |---|---|---|
-| Asking AI to “improve this YAML” without a review goal | The model chooses its own definition of improvement and may focus on style, verbosity, or generic best practices | State the review dimension, such as rollout safety, security posture, scheduling predictability, or policy compatibility |
-| Treating every AI concern as a confirmed defect | Possible risks become unnecessary changes, and the manifest drifts away from known workload behavior | Classify each claim as confirmed from YAML, requiring verification, or rejected with rationale |
+| Asking AI to "improve this YAML" without a review goal | The model chooses its own definition of improvement and may focus on style, verbosity, or generic best practices | State the review dimension, such as rollout safety, security posture, scheduling predictability, or policy compatibility |
+| Treating every AI concern as a confirmed defect | Possible risks become unnecessary changes, and the manifest drifts away from known workload behavior | Classify each claim as confirmed from YAML, requiring verification, rejected, or deferred with rationale |
 | Letting AI rewrite before the findings are understood | The reviewer loses the link between problem, evidence, and patch | Run a review pass first, then request a minimal patch only for verified findings |
-| Trusting field names without checking placement | Valid-looking YAML can put a field at the wrong level or use a field that does not apply to the object | Use `k explain`, dry-run, schema validation, and official documentation to verify field shape |
-| Assuming the model knows admission policy | AI cannot infer your namespace labels, policy engines, exceptions, or enforcement mode from the manifest alone | Check server-side dry-run, policy definitions, and admission events in the target environment |
+| Trusting field names without checking placement | Valid-looking YAML can put a field at the wrong level or use a field that does not apply to the object | Use `kubectl explain`, dry-run, schema validation, and official documentation to verify field shape |
+| Assuming the model knows admission policy | The assistant cannot infer your namespace labels, policy engines, exceptions, or enforcement mode from the manifest alone | Check server-side dry-run, policy definitions, namespace labels, and admission events in the target environment |
 | Copying generic probe paths or resource values | A manifest may become syntactically better while still misrepresenting application readiness or capacity needs | Tie probes to application semantics and tie resource values to measurements or team baselines |
 | Omitting a review note after AI assistance | Later reviewers cannot tell which recommendations were verified, rejected, or accepted as assumptions | Record claim, evidence, decision, and remaining uncertainty in the PR or change record |
 
 ## Quiz
 
-**Q1.** Your team is reviewing a Deployment generated by an AI assistant. The YAML passes client-side dry-run, but it has no readiness probe and the assistant says, “The rollout should be safe because there are two replicas.” How should you respond in the review?
-
 <details>
-<summary>Answer</summary>
+<summary>Q1. Your team is reviewing a Deployment generated by an AI assistant. The YAML passes client-side dry-run, but it has no readiness probe and the assistant says, "The rollout should be safe because there are two replicas." How should you evaluate AI feedback and respond in the review?</summary>
 
-Two replicas do not prove rollout safety by themselves. The missing readiness probe is a confirmed YAML finding, while the safety claim depends on application readiness behavior, rollout strategy, Service routing, and possibly disruption constraints. A strong response would ask for the readiness risk to be recorded, verify the relevant fields with `k explain` or manifest inspection, and ask the workload owner what signal proves the app can receive traffic before deciding on the probe design.
+Two replicas do not prove rollout safety by themselves. The missing readiness probe is a confirmed YAML finding, while the safety claim depends on application readiness behavior, rollout strategy, Service routing, and possibly disruption constraints. A strong response would ask for the readiness risk to be recorded, verify the relevant fields with `kubectl explain` or manifest inspection, and ask the workload owner what signal proves the app can receive traffic before deciding on the probe design.
 
 </details>
 
-**Q2.** A junior engineer asks AI to “make this manifest secure,” and the assistant adds several security fields. The container then fails to start in staging because it expected to run as root. What review step was skipped, and how would you redesign the AI workflow?
-
 <details>
-<summary>Answer</summary>
+<summary>Q2. A junior engineer asks AI to "make this manifest secure," and the assistant adds several security fields. The container then fails to start in staging because it expected to run as root. What review step was skipped, and how would you redesign constrained review prompts for the workflow?</summary>
 
 The skipped step was verification of workload and image compatibility before accepting the patch. The safer workflow is to ask AI first for confirmed security concerns, possible concerns, and questions, then verify whether the image can run with a non-root user and dropped privileges. Only after that should the reviewer request a minimal patch with explicit tradeoffs and a staging validation plan.
 
 </details>
 
-**Q3.** Your AI review says a Deployment will be rejected by “restricted Pod Security” because it lacks `runAsNonRoot: true`. The namespace labels are not included in the prompt. What should you classify as confirmed, what remains uncertain, and what check would you run?
-
 <details>
-<summary>Answer</summary>
+<summary>Q3. Your AI review says a Deployment will be rejected by restricted Pod Security because it lacks `runAsNonRoot: true`. The namespace labels are not included in the prompt. What should you classify as confirmed, what remains uncertain, and what check would you run to debug the manifest review?</summary>
 
 It is confirmed only if the manifest visibly lacks `runAsNonRoot: true` or another relevant security context. The rejection claim remains uncertain because namespace enforcement mode and admission configuration are external to the manifest. A reviewer should inspect namespace labels, applicable admission policies, and use server-side dry-run in the target namespace before claiming rejection.
 
 </details>
 
-**Q4.** A model suggests adding CPU request `100m` and memory request `128Mi` to every container because “these are safe defaults.” Your team runs latency-sensitive services with uneven traffic. What is the right way to evaluate the suggestion?
-
 <details>
-<summary>Answer</summary>
+<summary>Q4. A model suggests adding CPU request `100m` and memory request `128Mi` to every container because "these are safe defaults." Your team runs latency-sensitive services with uneven traffic. What is the right way to compare this suggestion with a human-owned sizing workflow?</summary>
 
-The presence of requests is a valid scheduling concern, but the exact values require workload evidence. The reviewer should treat the numbers as placeholders, compare them with metrics, load tests, historical usage, SLOs, and team baselines, then choose values that express real scheduling intent. Accepting generic values blindly could cause under-reservation, poor placement, or misleading capacity planning.
+The presence of requests is a valid scheduling concern, but the exact values require workload evidence. The reviewer should treat the numbers as placeholders, compare them with metrics, load tests, historical usage, service objectives, and team baselines, then choose values that express real scheduling intent. Accepting generic values blindly could cause under-reservation, poor placement, or misleading capacity planning.
 
 </details>
 
-**Q5.** During a PR review, an engineer includes AI output that lists twelve recommendations but no distinction between visible findings and assumptions. You are the reviewer. What change do you request before discussing the YAML patch?
-
 <details>
-<summary>Answer</summary>
+<summary>Q5. During a PR review, an engineer includes AI output that lists twelve recommendations but no distinction between visible findings and assumptions. You are the reviewer. What change do you request before discussing the YAML patch?</summary>
 
 Ask the engineer to reorganize the AI output into confirmed concerns, possible concerns requiring verification, rejected suggestions, and open questions. The patch should not be evaluated as a bundle of AI recommendations until each claim has evidence. This preserves the link between manifest line, operational risk, verification path, and accepted change.
 
 </details>
 
-**Q6.** Your team compares two rendered Helm manifests. The new version adds a readiness probe, removes resource requests, and changes Service labels. The AI summary focuses only on the added probe and says the change improves reliability. What did the review miss?
-
 <details>
-<summary>Answer</summary>
+<summary>Q6. Your team compares two rendered Helm manifests. The new version adds a readiness probe, removes resource requests, and changes Service labels. The AI summary focuses only on the added probe and says the change improves reliability. What did the diff-focused review miss?</summary>
 
 The review missed the full diff impact. Adding a readiness probe may improve traffic safety, but removing requests weakens scheduling predictability, and changing Service labels can affect whether traffic reaches the intended pods. A diff-focused review should compare all operationally meaningful changes, not only the change that sounds beneficial.
 
 </details>
 
-**Q7.** An AI assistant recommends a liveness probe for an application that sometimes pauses during expensive startup migrations. The YAML is valid, but previous incidents involved restart loops during slow startup. What question should the reviewer ask before accepting the recommendation?
-
 <details>
-<summary>Answer</summary>
+<summary>Q7. An AI assistant recommends a liveness probe for an application that sometimes pauses during expensive startup migrations. The YAML is valid, but previous incidents involved restart loops during slow startup. What question should the reviewer ask before accepting the recommendation?</summary>
 
 The reviewer should ask whether the liveness probe can distinguish a permanently unhealthy process from a temporarily slow startup. They should also consider startup probes, probe timing, and application-specific health behavior. A valid liveness probe can make reliability worse if it restarts containers that would have recovered without intervention.
 
@@ -540,7 +542,7 @@ The reviewer should ask whether the liveness probe can distinguish a permanently
 
 ## Hands-On Exercise
 
-Goal: use AI as a constrained manifest reviewer, then verify its claims with Kubernetes-native checks and a written review note. You can use any AI assistant, but the scoring target is your process and evidence, not the assistant’s fluency.
+Goal: use AI as a constrained manifest reviewer, then verify its claims with Kubernetes-native checks and a written review note. You can use any AI assistant, but the scoring target is your process and evidence, not the assistant's fluency.
 
 - [ ] Create a file named `deployment.yaml` with the starting manifest below. The manifest intentionally has review targets around readiness, resource requests, and security context, but you should not patch it yet.
 
@@ -572,19 +574,18 @@ spec:
               memory: "256Mi"
 ```
 
-- [ ] Define the `k` alias after confirming `kubectl` works in your environment. Use the full command once, then use the shorter alias for the rest of the exercise.
+- [ ] Confirm `kubectl` works in your environment, then validate the starting manifest with the full command name so the exercise remains scriptable.
 
 ```bash
 kubectl version --client
-alias k=kubectl
-k apply --dry-run=client -f deployment.yaml
+kubectl apply --dry-run=client -f deployment.yaml
 ```
 
 - [ ] Read the manifest manually before using AI. Write three review objectives in a scratch note: rollout safety, scheduling predictability, and runtime security. This step prevents the assistant from defining the review goal for you.
 
 ```bash
 grep -nE 'readinessProbe|livenessProbe|resources|requests|limits|securityContext' deployment.yaml || true
-k explain deployment.spec.template.spec.containers
+kubectl explain deployment.spec.template.spec.containers
 ```
 
 - [ ] Send the exact manifest to an AI assistant with this constrained prompt. Do not ask for a rewritten manifest yet, because the first pass is for classification and reasoning.
@@ -608,14 +609,14 @@ Return:
 4. verification commands or evidence sources for each concern
 ```
 
-- [ ] Classify the AI output into a table with four columns: claim, classification, evidence, and decision. At least one claim must be marked “requires verification,” because no manifest contains every fact about the cluster or workload.
+- [ ] Evaluate AI feedback by classifying the output into a table with four columns: claim, classification, evidence, and decision. At least one claim must be marked "requires verification," because no manifest contains every fact about the cluster or workload.
 
 ```bash
 grep -nE 'readinessProbe|resources|requests|securityContext|runAsNonRoot|allowPrivilegeEscalation' deployment.yaml || true
-k explain deployment.spec.template.spec.containers.readinessProbe
-k explain deployment.spec.template.spec.containers.resources
-k explain deployment.spec.template.spec.securityContext
-k explain deployment.spec.template.spec.containers.securityContext
+kubectl explain deployment.spec.template.spec.containers.readinessProbe
+kubectl explain deployment.spec.template.spec.containers.resources
+kubectl explain deployment.spec.template.spec.securityContext
+kubectl explain deployment.spec.template.spec.containers.securityContext
 ```
 
 - [ ] Create `deployment-reviewed.yaml` only after the claims are classified. Add a readiness probe, resource requests, and a minimal security posture if your review justifies those changes. Use the example below as a starting point, but adjust only when you can explain the tradeoff.
@@ -669,9 +670,9 @@ spec:
 - [ ] Validate field shape and object construction. If you have access to a disposable namespace in a real cluster, also run server-side dry-run there to catch admission behavior; if not, record that admission verification is still pending.
 
 ```bash
-k apply --dry-run=client -f deployment-reviewed.yaml
-k get -f deployment-reviewed.yaml --dry-run=client -o yaml
-k diff --server-side=false -f deployment-reviewed.yaml || true
+kubectl apply --dry-run=client -f deployment-reviewed.yaml
+kubectl get -f deployment-reviewed.yaml --dry-run=client -o yaml
+kubectl diff --server-side=false -f deployment-reviewed.yaml || true
 ```
 
 - [ ] Ask the AI a second, narrower question that explains tradeoffs without suggesting new fields. This helps you test whether the changes are understood rather than merely copied.
@@ -685,24 +686,33 @@ Rules:
 - For readiness, resources, and security context, name one verification step each.
 ```
 
-- [ ] Write a review note named `ai-yaml-review-note.md` with four sections: confirmed findings, accepted changes, rejected or deferred suggestions, and assumptions requiring cluster or workload validation. The note should be short enough for a PR description but specific enough that another reviewer can audit it.
+- [ ] Implement a review note named `ai-yaml-review-note.md` with four sections: confirmed findings, accepted changes, rejected or deferred suggestions, and assumptions requiring cluster or workload validation. The note should be short enough for a PR description but specific enough that another reviewer can audit it.
 
 - [ ] Confirm your final review process meets the success criteria below. If any item fails, revise the prompt, verification, or manifest before treating the exercise as complete.
 
 Success criteria:
-- [ ] The original manifest and reviewed manifest both pass `k apply --dry-run=client`.
+- [ ] The original manifest and reviewed manifest both pass `kubectl apply --dry-run=client`.
 - [ ] Every AI claim is classified as confirmed, requiring verification, rejected, or deferred.
 - [ ] At least one verification command was used for probes, resources, and security context.
 - [ ] The reviewed manifest contains no unrelated fields added only because AI suggested them.
 - [ ] The review note identifies at least one assumption that cannot be proven from YAML alone.
 - [ ] The final decision explains why each accepted change improves rollout safety, scheduling predictability, or runtime security.
 
-## Next Module
-
-Continue to [AI for Kubernetes Troubleshooting and Triage](./module-1.2-ai-for-kubernetes-troubleshooting-and-triage/).
-
 ## Sources
 
-- [Liveness, Readiness, and Startup Probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) — Explains how readiness probes affect whether traffic is sent to Pods during rollout and steady-state operation.
-- [Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) — Describes the Kubernetes securityContext fields used to set runtime user, group, and privilege-related controls.
-- [Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — Covers resource requests and limits, including how requests influence scheduling decisions.
+- [Kubernetes: Liveness, Readiness, and Startup Probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/)
+- [Kubernetes: Configure a Security Context for a Pod or Container](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)
+- [Kubernetes: Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)
+- [Kubernetes API Concepts: Dry Run](https://kubernetes.io/docs/reference/using-api/api-concepts/#dry-run)
+- [Kubernetes: Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+- [Kubernetes: Services](https://kubernetes.io/docs/concepts/services-networking/service/)
+- [Kubernetes: Labels and Selectors](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)
+- [Kubernetes: Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/)
+- [Kubernetes: Validating Admission Policy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/)
+- [kubectl explain reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_explain/)
+- [Kyverno documentation](https://kyverno.io/docs/introduction/)
+- [OPA Gatekeeper documentation](https://open-policy-agent.github.io/gatekeeper/website/docs/)
+
+## Next Module
+
+Continue to [AI for Kubernetes Troubleshooting and Triage](./module-1.2-ai-for-kubernetes-troubleshooting-and-triage/) to practice using AI for incident investigation without letting the assistant outrank cluster evidence.
