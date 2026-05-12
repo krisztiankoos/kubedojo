@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KodeKloud Engineer × kubedojo — gap analysis (2026-05-12)</title>
+<style>
+  :root {
+    --bg: #fafbfc; --fg: #1a1d23; --muted: #5b6573; --accent: #0057B7;
+    --good: #0d8a4a; --partial: #b45c00; --gap: #b8001f; --card: #ffffff;
+    --border: #e2e6eb; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { margin: 0 0 8px; font-size: 28px; }
+  h2 { margin: 40px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+       font-size: 22px; }
+  h3 { margin: 24px 0 8px; font-size: 17px; }
+  .meta { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  .tldr { background: var(--card); border-left: 4px solid var(--accent);
+          padding: 14px 18px; margin: 16px 0 28px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0;
+          background: var(--card); border: 1px solid var(--border); }
+  th, td { padding: 10px 12px; border-bottom: 1px solid var(--border);
+           text-align: left; vertical-align: top; }
+  th { background: #eef2f6; font-weight: 600; font-size: 13px; }
+  td { font-size: 14px; }
+  td.days { white-space: nowrap; font-family: var(--mono); font-size: 13px;
+            color: var(--muted); }
+  .status { font-weight: 600; }
+  .status.covered { color: var(--good); }
+  .status.partial { color: var(--partial); }
+  .status.gap { color: var(--gap); }
+  ol.gaps { padding-left: 24px; }
+  ol.gaps li { margin: 8px 0; }
+  ol.gaps strong { color: var(--accent); }
+  code { background: #eef2f6; padding: 1px 6px; border-radius: 3px;
+         font-family: var(--mono); font-size: 13px; }
+  .placeholder { padding: 24px; background: #fff7e6; border: 1px dashed var(--partial);
+                 border-radius: 6px; color: var(--partial); text-align: center;
+                 font-style: italic; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 8px 0 16px;
+            font-size: 13px; }
+  .legend span { padding: 2px 8px; border-radius: 3px; background: var(--card);
+                 border: 1px solid var(--border); }
+  .toc { background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+         padding: 12px 18px; margin: 16px 0 32px; }
+  .toc a { color: var(--accent); text-decoration: none; margin-right: 16px; }
+  .toc a:hover { text-decoration: underline; }
+  .well-covered { background: #eef9f1; border: 1px solid #c4e3ce;
+                  padding: 12px 16px; border-radius: 6px; margin: 12px 0; font-size: 14px; }
+  .caveat { background: #fff7e6; border: 1px solid #f0d9a8; padding: 12px 16px;
+            border-radius: 6px; margin: 12px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>KodeKloud Engineer × kubedojo — gap analysis</h1>
+<p class="meta">
+  Captured 2026-05-12. Sources: live curriculum at
+  <code>engineer.kodekloud.com/curriculum</code> + kubedojo content tree
+  (<code>src/content/docs/</code>, 648 EN files). Analyst: claude (KK pull,
+  kubedojo grep, classification per cluster). Tracks: MLOps (this version),
+  Cloud-AWS · Cloud-Azure · DevOps · CNCF Landscape.
+</p>
+
+<div class="tldr">
+  <strong>TL;DR.</strong> KodeKloud's 100-day arcs surface production
+  micro-skills (uv lockfile debugging, Vault KV policies for MLflow, drift-triggered
+  retraining loops, multi-stage Docker for ML serving) at task-grain. kubedojo
+  teaches the matching <em>concepts</em> at module-grain, but several concrete
+  tools/patterns are absent or under-deep. <strong>Top-3 net gaps from MLOps:</strong>
+  DVC (zero dedicated coverage, KK spends 10 days on it),
+  Great Expectations (3 file mentions, no module),
+  ML repo hygiene (uv + Makefile + pre-commit + cookiecutter + packaging as
+  a connected story, currently scattered across prerequisites).
+</div>
+
+<div class="toc">
+  <strong>Sections:</strong>
+  <a href="#methodology">Methodology</a>
+  <a href="#mlops">MLOps</a>
+  <a href="#aws">Cloud-AWS (pending)</a>
+  <a href="#azure">Cloud-Azure (pending)</a>
+  <a href="#devops">DevOps (pending)</a>
+  <a href="#cncf">CNCF Landscape</a>
+  <a href="#expansion">Expansion plan</a>
+</div>
+
+<section id="methodology">
+<h2>Methodology</h2>
+<p>For each KodeKloud day-list, classify by topic cluster (the
+100 days collapse to ~14 clusters per track). For each cluster, run a coverage
+check against kubedojo content:</p>
+<div class="legend">
+  <span class="status covered">✅ Covered</span> — kubedojo has a dedicated
+  module that teaches the topic at depth.
+  <span class="status partial">⚠️ Partial</span> — concept mentioned or covered
+  as part of a broader module; depth audit may surface holes.
+  <span class="status gap">❌ Gap</span> — no kubedojo coverage, or coverage
+  is shallow enough that a learner can't operate the tool from it.
+</div>
+<div class="caveat">
+  <strong>Important framing.</strong> KodeKloud is a <em>task-practice</em>
+  curriculum; their day-numbering serves their sandbox economy, not pedagogy.
+  Treat their list as a <strong>checklist of tools and patterns</strong>, not
+  a teaching roadmap. We adapt the framing: kubedojo teaches concepts before
+  tasks (per <code>feedback_teaching_not_listicles.md</code>); KodeKloud's
+  task-list shape must not leak into our module shape. Use this analysis to
+  identify candidate gaps, then validate via Stage-2 <code>ab discuss</code>
+  before opening epics.
+</div>
+</section>
+
+<section id="mlops">
+<h2>100 Days of MLOps</h2>
+
+<p>kubedojo footprint relevant to MLOps:</p>
+<ul>
+  <li><code>ai-ml-engineering/mlops/</code> — 12 modules (Docker for ML, CI/CD for ML,
+      K8s for ML, advanced K8s, experiment tracking, data pipelines, ML pipelines,
+      model serving, monitoring, notebooks-to-prod, small-team platform).</li>
+  <li><code>platform/toolkits/data-ai-platforms/ml-platforms/</code> — 11 modules
+      (Kubeflow, MLflow, BentoML, KServe, Seldon Core, Feast/feature stores, vLLM,
+      Ray Serve, GPU scheduling, bare-metal MLOps, LangChain/LlamaIndex).</li>
+  <li><code>platform/disciplines/data-ai/mlops/</code> — 6 discipline modules
+      (fundamentals, feature stores, model training, serving, monitoring, ML pipelines).</li>
+  <li><code>ai-ml-engineering/prerequisites/</code> — Python/CUDA env, notebooks/scripts/layouts.</li>
+  <li><code>ai-ml-engineering/machine-learning/</code> — sklearn, eval/validation,
+      hyperparameter optimization (Optuna), CV, etc.</li>
+  <li><code>platform/toolkits/observability-intelligence/observability/</code> —
+      Prometheus, Grafana, Loki, OpenTelemetry, tracing.</li>
+</ul>
+
+<h3>Per-cluster classification</h3>
+<table>
+<thead>
+<tr>
+  <th>Days</th>
+  <th>Topic cluster</th>
+  <th>kubedojo coverage</th>
+  <th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td class="days">1–9</td>
+  <td>Python tooling for ML — venv, Jupyter, uv lockfile, project structure,
+      Makefile, code quality, packaging, pre-commit, cookiecutter</td>
+  <td><code>prerequisites/module-1.3</code> (reproducible env),
+      <code>1.4</code> (notebooks/scripts/layouts). uv, pre-commit, cookiecutter
+      <em>mentioned</em> (2–15 hits) but no deep walkthrough; Makefile + project-quality
+      not surfaced as a story.</td>
+  <td class="status partial">⚠️ Partial</td>
+</tr>
+<tr>
+  <td class="days">10–19</td>
+  <td>DVC — install, track dataset, remote storage, pull, pipeline, parameterize,
+      metrics, experiments, version data/models across git branches, end-to-end</td>
+  <td>DVC = 7 file hits (mentioned in <code>mlops/module-1.6</code>,
+      <code>1.7</code>) — <strong>no dedicated module</strong>.</td>
+  <td class="status gap">❌ Major gap</td>
+</tr>
+<tr>
+  <td class="days">20–30</td>
+  <td>MLflow — tracking server, log, organize, search, autolog, model registry,
+      compare runs, load+preprocess, debug, remote tracking + artifact store, end-to-end</td>
+  <td><code>ml-platforms/module-9.2-mlflow.md</code> +
+      <code>mlops/module-1.6-experiment-tracking.md</code>. Depth audit
+      may show gaps in remote-tracking-server + registry+preprocessing patterns.</td>
+  <td class="status covered">✅ Covered</td>
+</tr>
+<tr>
+  <td class="days">31–40</td>
+  <td>Training pipeline — sklearn reproducible, YAML config, eval/CV, Optuna,
+      FLAML AutoML, joblib parallelization, modular config-driven, PyTorch+GPU+checkpoint,
+      "production training system" composition</td>
+  <td><code>machine-learning/module-1.1</code> (sklearn),
+      <code>1.3</code> (eval), <code>1.11</code> (HPO/Optuna),
+      <code>deep-learning/module-1.2-pytorch-fundamentals</code>, <code>1.3-training-neural-networks</code>.
+      FLAML = 1 hit only. "Production training system" as a composed pattern absent.</td>
+  <td class="status partial">⚠️ Partial — FLAML + composition</td>
+</tr>
+<tr>
+  <td class="days">41–43</td>
+  <td>Feast feature store — install, define views, materialize online</td>
+  <td><code>ml-platforms/module-9.3-feature-stores.md</code> +
+      <code>platform/.../mlops/module-5.2-feature-stores.md</code>.</td>
+  <td class="status covered">✅ Covered</td>
+</tr>
+<tr>
+  <td class="days">44–45</td>
+  <td>HashiCorp Vault × MLflow — store admin password in Vault, fix broken KV policy
+      for MLflow reader</td>
+  <td>Vault = 29 hits site-wide (strong in DevSecOps); MLOps × Vault integration
+      <strong>not</strong> a dedicated story.</td>
+  <td class="status partial">⚠️ Partial — integration pattern missing</td>
+</tr>
+<tr>
+  <td class="days">46–49</td>
+  <td>Great Expectations — author expectations, debug failing checkpoint, publish
+      Data Docs in CI, secrets+data-quality capstone</td>
+  <td>GE = 3 hits across <code>mlops/1.7</code>, <code>platform/.../mlops/5.6</code>,
+      <code>5.1</code> — mentioned only.</td>
+  <td class="status gap">❌ Gap</td>
+</tr>
+<tr>
+  <td class="days">50–56</td>
+  <td>Docker for ML — training image, multi-stage serving, Compose dev env, GPU image,
+      registry push, health-checks + graceful shutdown, CI automation</td>
+  <td><code>ai-ml-engineering/mlops/module-1.2-docker-for-ml.md</code> — single
+      module; KodeKloud's 7-day split suggests depth we may not match.</td>
+  <td class="status partial">⚠️ Partial — depth audit needed</td>
+</tr>
+<tr>
+  <td class="days">57–66</td>
+  <td>Model serving — Flask, FastAPI, batch, BentoML, container, A/B testing,
+      async task-queue, multi-model gateway, canary, production with Compose</td>
+  <td><code>mlops/module-1.9-model-serving</code> +
+      <code>platform/.../mlops/5.4-model-serving</code> +
+      <code>ml-platforms/9.10-bentoml</code>, <code>9.5-ray-serve</code>,
+      <code>9.8-kserve</code>. Tool coverage strong; production patterns
+      (A/B, canary, multi-model gateway, async-queue) likely thin.</td>
+  <td class="status partial">⚠️ Partial — production patterns thin</td>
+</tr>
+<tr>
+  <td class="days">67–75</td>
+  <td>Monitoring/observability for ML — Prometheus as Grafana source, performance
+      report, data-quality report, Evidently test suites + dashboard, drift alerts,
+      drift-triggered retraining, custom business metrics, end-to-end</td>
+  <td><code>ai-ml-engineering/mlops/module-1.10-ml-monitoring</code> +
+      <code>platform/.../mlops/5.5-model-monitoring</code> + Prom/Grafana basics.
+      Evidently = 5 hits. <strong>Drift-triggered automated retraining</strong>
+      not a dedicated closed-loop pattern.</td>
+  <td class="status partial">⚠️ Partial — retraining loop missing</td>
+</tr>
+<tr>
+  <td class="days">76–84</td>
+  <td>CI/CD for ML — lint+test, data validation, model validation, CML
+      performance reports, registration, deployment, rollback with health checks,
+      multi-env promotion, end-to-end</td>
+  <td><code>ai-ml-engineering/mlops/module-1.3-cicd-for-ml</code> +
+      <code>platform/.../mlops/5.6-ml-pipelines</code>.
+      <strong>CML (Continuous Machine Learning) = 0 hits</strong>.</td>
+  <td class="status gap">❌ CML gap + rollback/promotion thin</td>
+</tr>
+<tr>
+  <td class="days">85–91</td>
+  <td>Workflow orchestration — install Argo Workflows on K8s, basic ML training
+      workflow, pass data between steps, Prefect ML pipeline, parallel training
+      with <code>withItems</code> fan-out, automated retraining with Argo
+      CronWorkflow, production Argo + MLflow on K8s</td>
+  <td><code>platform/.../mlops/5.6</code>, <code>mlops/module-1.8</code>.
+      Argo Workflows = 12 file hits, Prefect = 5 — both cross-referenced only,
+      no standalone module in <code>ml-platforms/</code>.</td>
+  <td class="status partial">⚠️ Partial — both deserve standalone</td>
+</tr>
+<tr>
+  <td class="days">92–96</td>
+  <td>K8s for ML — deploy model, HPA for ML serving, KServe InferenceService,
+      Kubeflow Pipelines basics, GitOps with ArgoCD</td>
+  <td><code>mlops/module-1.4-kubernetes-for-ml</code> +
+      <code>ml-platforms/9.1-kubeflow</code> + <code>9.8-kserve</code> + GitOps
+      modules. KServe + Kubeflow well-covered. <strong>HPA × ML-serving</strong>
+      (autoscaling by RPS not CPU) may be thin.</td>
+  <td class="status covered">✅ Covered — HPA-for-ML may have hole</td>
+</tr>
+<tr>
+  <td class="days">97–100</td>
+  <td>Capstones — end-to-end train/register/serve, monitoring + auto-retraining,
+      full loop with Argo, close loop with Prom+Grafana observability</td>
+  <td><code>mlops/module-1.11-notebooks-to-production</code> +
+      <code>1.12-small-team-private-ai-platform</code> serve this conceptually;
+      no hands-on capstone exercise running the full loop.</td>
+  <td class="status partial">⚠️ Partial — theoretical, not hands-on</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Net gaps from MLOps (ranked by leverage)</h3>
+<ol class="gaps">
+<li><strong>DVC standalone module/arc</strong> — most concrete missing tool;
+    KodeKloud spends 10 days, kubedojo has zero dedicated content.
+    <em>Tier 1.</em></li>
+<li><strong>Great Expectations module</strong> — data-quality is the biggest
+    blind spot in our MLOps coverage; only mentioned.
+    <em>Tier 1.</em></li>
+<li><strong>ML repo hygiene module</strong> — uv lockfile + Makefile + pre-commit
+    + cookiecutter + Python packaging as a connected story for ML projects, not
+    scattered across prerequisites. <em>Tier 2.</em></li>
+<li><strong>CML (Continuous Machine Learning) coverage</strong> — 0 hits.
+    Standard for ML-in-CI; at minimum cite from <code>mlops/1.3-cicd-for-ml</code>.
+    <em>Tier 2.</em></li>
+<li><strong>Production serving patterns module</strong> — A/B + canary +
+    multi-model gateway + async task-queue for ML serving as an explicit teaching
+    unit, not buried inside tool modules. <em>Tier 2.</em></li>
+<li><strong>Drift-triggered auto-retraining</strong> — explicit closed-loop
+    pattern (detector → alert → trigger → registry → redeploy). Currently inferred,
+    not taught. <em>Tier 2.</em></li>
+<li><strong>Production training system composition</strong> — tracking + tuning +
+    selection composed into one system module; plus FLAML AutoML reference.
+    <em>Tier 3.</em></li>
+<li><strong>Argo Workflows + Prefect standalone modules</strong> in
+    <code>ml-platforms/</code>. <em>Tier 3.</em></li>
+<li><strong>Vault × MLOps integration module</strong> — secrets for MLflow /
+    registry / training. <em>Tier 3.</em></li>
+<li><strong>MLOps hands-on capstone</strong> — full loop exercise, not just
+    theory. Compounds with all of the above. <em>Tier 3, but compounds.</em></li>
+</ol>
+
+<div class="well-covered">
+  <strong>Well-covered (don't double-fill):</strong> MLflow basics, BentoML,
+  KServe, Kubeflow, feature stores (Feast), Seldon Core, vLLM/Ray-Serve, GPU
+  scheduling, distributed training, bare-metal MLOps, Prometheus + Grafana
+  fundamentals, ArgoCD/GitOps generally, Optuna (inside HPO module),
+  pre-commit/cookiecutter (briefly, in prerequisites).
+</div>
+
+</section>
+
+<section id="aws">
+<h2>100 Days of Cloud (AWS)</h2>
+<p>50 free days visible (KodeKloud free tier shows 50; the remaining 50 are
+Pro-locked but the curriculum pattern would extend the same clusters). kubedojo
+footprint: <code>cloud/aws-essentials/</code> (12 modules: IAM, VPC, EC2, S3,
+Route53, ECR, ECS-Fargate, Lambda, Secrets, CloudWatch, CICD, CloudFormation)
++ <code>cloud/eks-deep-dive/</code> (5 modules) + <code>cloud/architecture-patterns/</code>
+(VPC topologies, cloud IAM, multi-cluster) + <code>cloud/advanced-operations/</code>
+(multi-account, transit hubs, DR, FinOps) + <code>cloud/managed-services/</code>
+(databases, message-brokers, serverless, object-storage, secrets-deep,
+api-gateways, analytics) + <code>cloud/enterprise-hybrid/</code> (landing zones,
+governance, compliance).</p>
+
+<h3>Per-cluster classification</h3>
+<table>
+<thead>
+<tr><th>Days</th><th>Topic cluster</th><th>kubedojo coverage</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td class="days">1–15</td>
+  <td>EC2 + EBS primitives — Key Pair, Security Group, Subnet, S3 versioning,
+      GP3 volume, EC2 launch + types, stop/terminate protection, EIP, ENI,
+      AMI, snapshot</td>
+  <td><code>aws-essentials/1.2-vpc</code>, <code>1.3-ec2</code>, <code>1.4-s3</code>;
+      EBS specifics in EKS-storage module. EC2 = 63 hits, EBS = 86, IAM = 82.</td>
+  <td class="status covered">✅ Covered</td>
+</tr>
+<tr>
+  <td class="days">16–20</td>
+  <td>IAM — user, group, read-only policy, attach to user, role for EC2</td>
+  <td><code>aws-essentials/1.1-iam</code> + <code>architecture-patterns/4.3-cloud-iam</code>
+      + <code>eks-deep-dive/5.3-eks-identity</code>.</td>
+  <td class="status covered">✅ Covered</td>
+</tr>
+<tr>
+  <td class="days">21–30</td>
+  <td>Compute+networking patterns — EIP for app hosting, secure SSH, S3-to-S3
+      migration, ALB for EC2, EC2 + CloudWatch alarm, Nginx web server, public VPC,
+      private ECR, VPC peering public↔private, NAT instance</td>
+  <td><code>aws-essentials/1.10-cloudwatch</code>, <code>1.6-ecr</code>,
+      <code>architecture-patterns/4.4-vpc-topologies</code>,
+      <code>advanced-operations/8.2-transit-hubs</code> (VPC peering, transit
+      gateway). ALB = 29 hits, VPC peering = 15. CloudWatch = 30.</td>
+  <td class="status covered">✅ Covered — depth audit for hands-on</td>
+</tr>
+<tr>
+  <td class="days">31–40</td>
+  <td>Managed services + serverless — private RDS, RDS snapshot, Lambda
+      (console + CLI), deploy/manage app, EC2 ALB, S3 role-based, ECS containerized,
+      S3 static website, troubleshooting</td>
+  <td><code>aws-essentials/1.7-ecs-fargate</code>, <code>1.8-lambda</code>,
+      <code>managed-services/9.1-databases</code> (RDS), <code>9.3-serverless</code>.
+      Lambda = 42 hits, ECS = 35, RDS = 270 (very strong). S3 static = 1 hit
+      (very thin).</td>
+  <td class="status partial">⚠️ Partial — S3 static hosting + S3-role-based-access
+      thin; rest covered</td>
+</tr>
+<tr>
+  <td class="days">41–50</td>
+  <td>Security + DBs + K8s + scaling + integration + IaC — KMS, DynamoDB,
+      EKS, Auto Scaling, NAT Gateway, S3+Lambda event-driven, SQS+SNS,
+      CloudFormation, VPC peering audit, EC2 storage expansion</td>
+  <td>KMS in <code>aws-essentials/1.9-secrets</code> + <code>managed-services/9.8-secrets-deep</code>.
+      DynamoDB in <code>managed-services/9.1-databases</code> (mentioned 33×).
+      EKS = 5-module deep dive. Auto Scaling = 77 hits. CloudFormation = 26 hits +
+      <code>aws-essentials/1.12-cloudformation</code>. SQS = 24, SNS = 27, in
+      <code>managed-services/9.2-message-brokers</code>.</td>
+  <td class="status covered">✅ Covered</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Net gaps from AWS</h3>
+<ol class="gaps">
+<li><strong>S3 static-website hosting + S3 role-based access patterns</strong> —
+    1 hit each; KodeKloud spends a day on each. Likely thin in <code>1.4-s3</code>
+    module. <em>Tier 3 (deep audit; may be present in module body).</em></li>
+<li><strong>NAT Gateway vs NAT Instance distinction</strong> — KodeKloud covers
+    both as separate patterns; kubedojo bundles them. <em>Tier 3.</em></li>
+<li><strong>Hands-on AWS lab pairs</strong> — kubedojo teaches concepts at
+    module-grain; KodeKloud's strength is task-grain hands-on sandboxes. Existing
+    epic <code>#197 (On-Premises Track — Practitioner-Grade Expansion)</code>
+    covers a similar idea for on-prem; a cloud-lab pairing track may be a
+    separate Tier-2 candidate. <em>Cross-cuts the discipline; not a single
+    module gap.</em></li>
+</ol>
+
+<div class="well-covered">
+  <strong>Well-covered (AWS):</strong> IAM, VPC, EC2, S3, Lambda, ECS-Fargate,
+  ECR, RDS, CloudWatch, CloudFormation, EKS (5-module deep dive),
+  Auto Scaling, SQS/SNS, KMS, ALB, transit hubs / VPC peering, multi-account,
+  DR, FinOps.
+</div>
+</section>
+
+<section id="azure">
+<h2>100 Days of Cloud (Azure)</h2>
+<p>50 free days visible (course-card shows "Pro Only" enrollment but the
+day-list is browseable). kubedojo footprint: <code>cloud/azure-essentials/</code>
+(12 modules: Entra ID, VNet, VMs, Blob, DNS, ACR, ACI/ACA, Functions, Key Vault,
+Monitor, CICD, Bicep) + <code>cloud/aks-deep-dive/</code> (5 modules:
+architecture, networking, identity, production, Fleet Manager).</p>
+
+<h3>Per-cluster classification</h3>
+<table>
+<thead>
+<tr><th>Days</th><th>Topic cluster</th><th>kubedojo coverage</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td class="days">1–15</td>
+  <td>VM + Network basics — SSH key pair, VM (console + CLI), VNet, IPv4 VNet,
+      Subnet, Public IP, Managed Disk, NIC, NSG</td>
+  <td><code>azure-essentials/3.2-vnet</code>, <code>3.3-vms</code>.
+      VNet = 31 hits, Azure VM = 16, Public IP = 28, NSG = 11, Managed Disk = 5,
+      Azure CLI = 20.</td>
+  <td class="status partial">⚠️ Partial — Managed Disk + NSG thin</td>
+</tr>
+<tr>
+  <td class="days">16–20</td>
+  <td>Blob Storage + ARM templates — private/public container, copy data,
+      visibility flip, ARM deployment</td>
+  <td><code>azure-essentials/3.4-blob</code>. Blob = 21 hits. ARM template = 11
+      hits (we have Bicep at <code>3.12-bicep</code> as the modern equivalent,
+      but classic ARM not its own module).</td>
+  <td class="status partial">⚠️ Partial — ARM templates absent as a module
+      (Bicep covers modern path; ARM is legacy but still in field)</td>
+</tr>
+<tr>
+  <td class="days">21–30</td>
+  <td>Compute + networking patterns — Public IP assign, User Data + CLI,
+      secure SSH, disk expansion, public/private VNet VMs, troubleshoot,
+      Azure Container Registry, Azure SQL DB</td>
+  <td>ACR = 286 hits (very strong) + <code>azure-essentials/3.6-acr</code>.
+      User Data = 18 hits. Azure SQL = 5 hits (very thin).</td>
+  <td class="status partial">⚠️ Partial — Azure SQL DB thin</td>
+</tr>
+<tr>
+  <td class="days">31–40</td>
+  <td>Web app + ALB + Internet + VNet peering + Storage lifecycle + MySQL on VM
+      + Containers on VM + Static website + Key Vault</td>
+  <td><code>azure-essentials/3.7-aci-aca</code> (Container Instances/Apps),
+      <code>3.9-key-vault</code> (Key Vault = 21 hits). Application Gateway = 3
+      hits.</td>
+  <td class="status partial">⚠️ Partial — Application Gateway very thin</td>
+</tr>
+<tr>
+  <td class="days">41–50</td>
+  <td>Table Storage + Backup + App Gateway + Event Hub + AKS + EventHub→Blob
+      + SQL migration + VM+ACR + App Gateway</td>
+  <td>AKS = 155 hits + <code>aks-deep-dive/</code> (5 modules). Event Hub = 4
+      hits, App Gateway = 3 hits. Table Storage not surfaced.</td>
+  <td class="status partial">⚠️ Partial — Event Hub, App Gateway, Table Storage
+      thin</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Net gaps from Azure</h3>
+<ol class="gaps">
+<li><strong>Azure Application Gateway module</strong> — 3 hits, no module.
+    Different mental model from ALB (L7 with WAF integration). <em>Tier 2.</em></li>
+<li><strong>Azure Event Hub / Event Grid module</strong> — 4 hits, no dedicated
+    coverage. Major Azure-specific messaging primitive. <em>Tier 2.</em></li>
+<li><strong>Azure SQL Database module</strong> — 5 hits, no dedicated module.
+    The Azure-equivalent of RDS, deserves the same treatment.
+    <em>Tier 2.</em></li>
+<li><strong>Classic ARM Templates module</strong> — 11 hits; we have Bicep,
+    but field engineers still encounter legacy ARM. A "Bicep + ARM" mapping
+    module would teach migration as well. <em>Tier 3.</em></li>
+<li><strong>Azure Managed Disk + Snapshot patterns</strong> — 5 hits;
+    operational mechanic deserves more depth. <em>Tier 3.</em></li>
+<li><strong>NSG (Network Security Group) deep-dive</strong> — 11 hits, mostly
+    cross-references. Azure-specific firewall mental model. <em>Tier 3.</em></li>
+</ol>
+
+<div class="well-covered">
+  <strong>Well-covered (Azure):</strong> Entra ID, VNet basics, VMs, Blob Storage,
+  DNS, ACR (very strong — 286 hits), ACI/ACA (Container Instances/Apps),
+  Functions, Key Vault, Monitor, CICD, Bicep (IaC), AKS (5-module deep dive).
+</div>
+</section>
+
+<section id="devops">
+<h2>100 Days of DevOps</h2>
+<p>kubedojo footprint: <code>src/content/docs/linux/</code> (foundations / operations
+/ security) + <code>prerequisites/git-deep-dive/</code> (10 modules) +
+<code>k8s/</code> (169 modules across CKA/CKAD/CKS/KCNA/KCSA + tool certs) +
+Docker via <code>ai-ml-engineering/mlops/module-1.2-docker-for-ml</code> and
+prerequisites + <code>platform/.../iac-tools/module-7.4-ansible</code> +
+Terraform via IaC toolkit modules.</p>
+
+<h3>Per-cluster classification</h3>
+<table>
+<thead>
+<tr><th>Days</th><th>Topic cluster</th><th>kubedojo coverage</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr>
+  <td class="days">1–20</td>
+  <td>Linux fundamentals + services — users, SSH, SELinux, cron, bash scripting,
+      Tomcat, network services, iptables, processes, SSL, Nginx LBR, PostgreSQL,
+      web app config, Nginx + PHP-FPM</td>
+  <td><code>linux/foundations/</code>, <code>linux/operations/</code>,
+      <code>linux/security/hardening</code>. Nginx = 269 hits, PostgreSQL = 139,
+      cron = 129, iptables/nftables = 65, SELinux = 28, MySQL/MariaDB = 45.
+      Tomcat (0 hits, Java legacy — OK skip), PHP-FPM (1 hit, legacy — OK skip).</td>
+  <td class="status covered">✅ Covered</td>
+</tr>
+<tr>
+  <td class="days">21–34</td>
+  <td>Git — repo, clone, fork, branches, merge, remotes, revert, cherry-pick,
+      PRs, hard reset, stash, rebase, merge conflicts, hooks</td>
+  <td><code>prerequisites/git-deep-dive/</code> — 10 modules:
+      internals, advanced merging, interactive rebasing, undo/recovery,
+      remotes/PRs, hooks/rerere, scale, gitops-bridge +
+      <code>zero-to-terminal/module-0.6-git-basics</code>.</td>
+  <td class="status covered">✅ Strong coverage</td>
+</tr>
+<tr>
+  <td class="days">35–47</td>
+  <td>Docker — install, deploy nginx, copy, pull image, create image, exec,
+      Dockerfile, network, port mapping, Compose, troubleshoot, deploy app</td>
+  <td><code>ai-ml-engineering/mlops/module-1.2-docker-for-ml</code> + Docker
+      content scattered across k8s/prereq modules. No dedicated <em>Docker
+      from-scratch</em> arc; assumes Docker familiarity.</td>
+  <td class="status partial">⚠️ Partial — Docker fundamentals dedicated arc
+      may be missing for absolute beginners</td>
+</tr>
+<tr>
+  <td class="days">48–67</td>
+  <td>Kubernetes — Pods, Deployments, resource limits, rolling updates, rollback,
+      volumes, sidecars, env vars, PVs, init containers, Secrets, multi-app
+      deploys (Iron Gallery, Redis, MySQL, Guest Book)</td>
+  <td><code>k8s/</code> track: 169 modules across CKA, CKAD, CKS, KCNA, KCSA,
+      Extending K8s, tool certs. The cert tracks are kubedojo's strongest content.</td>
+  <td class="status covered">✅ Very strong coverage</td>
+</tr>
+<tr>
+  <td class="days">68–81</td>
+  <td>Jenkins — server, plugins, user access, jobs, parameterized, scheduled,
+      DB backup, slave nodes, security, deploy pipeline, conditional pipeline,
+      deployment job, chained, multistage</td>
+  <td><strong>No dedicated Jenkins track or module.</strong> 45 mentions across
+      corpus, mostly as one CI/CD tool among many.</td>
+  <td class="status gap">❌ MAJOR GAP — Jenkins track</td>
+</tr>
+<tr>
+  <td class="days">82–93</td>
+  <td>Ansible — inventory, playbooks, copy/files, ping, install package,
+      blockinfile, services, ACLs, lineinfile, Jinja2 templates, conditionals</td>
+  <td><strong>1 dedicated module</strong>:
+      <code>platform/toolkits/infrastructure-networking/iac-tools/module-7.4-ansible.md</code>
+      + 26 mentions corpus-wide. KodeKloud spends 12 days; kubedojo has 1
+      module.</td>
+  <td class="status gap">❌ MAJOR GAP — Ansible depth (or arc)</td>
+</tr>
+<tr>
+  <td class="days">94–100</td>
+  <td>Terraform on AWS — VPC, SG, EC2, IAM, EC2 in private subnet, IAM for
+      DynamoDB, CloudWatch alarm</td>
+  <td>Terraform = 93 hits + IaC toolkit modules
+      (<code>platform/.../iac-tools/</code>) + IaC discipline
+      (<code>platform/disciplines/delivery-automation/iac/</code>: 6 modules).
+      Strong coverage.</td>
+  <td class="status covered">✅ Covered</td>
+</tr>
+</tbody>
+</table>
+
+<h3>Net gaps from DevOps</h3>
+<ol class="gaps">
+<li><strong>Jenkins track</strong> — KodeKloud spends 14 days; kubedojo has
+    no dedicated coverage. Even if we don't recommend Jenkins (most modern
+    stacks prefer GitHub Actions / GitLab CI / Argo), it's so prevalent in
+    enterprise environments that a single "Jenkins for engineers landing in
+    a Jenkins-heavy shop" module is justified. <em>Tier 2.</em></li>
+<li><strong>Ansible expansion</strong> — KodeKloud spends 12 days; kubedojo
+    has 1 module. Inventory, playbooks, modules (blockinfile/lineinfile/copy/file/
+    service/template), Jinja2 templating, conditionals, loops. Could be a
+    5–7 module arc under <code>platform/toolkits/.../iac-tools/</code>.
+    <em>Tier 2.</em></li>
+<li><strong>Docker fundamentals arc</strong> — kubedojo treats Docker as
+    pre-required for most other content. A "Docker from scratch" arc
+    (install → run containers → Dockerfile → networking → Compose) would close
+    the absolute-beginner path. <em>Tier 3.</em></li>
+</ol>
+
+<div class="well-covered">
+  <strong>Well-covered (DevOps):</strong> Linux fundamentals (Nginx, PostgreSQL,
+  cron, iptables, SELinux, bash), Git (10-module deep dive), Kubernetes (169
+  modules across all 5 cert tracks), Terraform (IaC discipline + toolkit
+  modules), CI/CD generally (mlops + cicd-delivery toolkit), supply chain
+  security (CKS).
+</div>
+</section>
+
+<section id="cncf">
+<h2>CNCF Landscape</h2>
+<p>Snapshot captured 2026-05-12 from
+<code>docs/research/cncf-landscape-snapshot-2026-05-12.yaml</code>, fetched
+from <code>raw.githubusercontent.com/cncf/landscape/master/landscape.yml</code>.
+The check below prioritizes CNCF graduated and incubating projects, then maps
+each dominant project to kubedojo mentions and dedicated module-grain coverage.</p>
+
+<h3>Per-category classification</h3>
+<table>
+<thead>
+<tr><th>Category</th><th>Dominant CNCF projects</th><th>kubedojo coverage</th><th>Status</th></tr>
+</thead>
+<tbody>
+<tr><td>Database</td><td>Vitess (graduated), TiKV (graduated)</td><td>Vitess has <code>platform/.../cloud-native-databases/module-15.4-vitess.md</code> and 12 hits. TiKV has 0 hits.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td>Streaming &amp; Messaging</td><td>CloudEvents (graduated), NATS/Strimzi (incubating)</td><td>CloudEvents 5 hits, NATS 13, Strimzi 15; coverage lives in managed brokers/streaming modules, with no dedicated NATS or Strimzi module.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td>Application Definition &amp; Image Build</td><td>Dapr/Helm (graduated), Backstage/Buildpacks (incubating)</td><td>Helm and Backstage have dedicated modules. Dapr appears mainly inside Azure Container Apps; Buildpacks has 2 hits and no module.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td>Continuous Integration &amp; Delivery</td><td>Argo, Flux (graduated), OpenKruise (incubating)</td><td>ArgoCD/Rollouts/Workflows and Flux all have dedicated coverage; OpenKruise has 1 mention only, but is not the dominant teaching path.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Scheduling &amp; Orchestration</td><td>Kubernetes, KEDA, Knative, Crossplane (graduated); Kubeflow (incubating)</td><td>Kubernetes cert tracks, KEDA, Knative, Crossplane, and Kubeflow all have module-grain coverage.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Coordination &amp; Service Discovery</td><td>CoreDNS, etcd (graduated)</td><td>CoreDNS is taught throughout Kubernetes networking/DNS modules; etcd has <code>module-15.5-etcd-operator.md</code> plus 238 hits.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Remote Procedure Call</td><td>gRPC (incubating)</td><td>gRPC has 104 hits and a strong section in API Gateway coverage, but no standalone service-to-service module.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td>Service Proxy</td><td>Envoy (graduated), Contour (incubating)</td><td>Envoy has 61 hits through service mesh, gateways, and Azure Container Apps; Contour hits are mostly false positives. No Envoy-specific module.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td>API Gateway</td><td>Emissary-Ingress (incubating)</td><td>kubedojo intentionally teaches Kubernetes Gateway API and managed gateways instead; <code>module-3.5-gateway-api.md</code> and <code>module-9.9-api-gateways.md</code> are dedicated.</td><td class="status covered">✅ Covered — intentional substitution</td></tr>
+<tr><td>Service Mesh</td><td>Istio, Linkerd (graduated)</td><td>Istio has a 4-module ICA track; Linkerd appears in strategy comparisons. The category is covered even though Linkerd is not a standalone module.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Cloud Native Storage</td><td>Rook, CubeFS (graduated), Longhorn (incubating)</td><td>Rook/Ceph and Longhorn have dedicated storage modules. CubeFS has 0 hits, but kubedojo intentionally favors Rook/Ceph + Longhorn here.</td><td class="status covered">✅ Covered — intentional substitution</td></tr>
+<tr><td>Container Runtime</td><td>containerd, CRI-O (graduated), Lima (incubating)</td><td>containerd has 114 hits and CRI-O 41 across CKA/CKS/runtime-security modules, but neither has a dedicated operator module.</td><td class="status partial">⚠️ Partial</td></tr>
+<tr><td>Cloud Native Network</td><td>Cilium (graduated), CNI (incubating)</td><td>Cilium has <code>platform/.../networking/module-5.1-cilium.md</code> and an advanced CCA module; CNI is heavily covered in Kubernetes networking.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Automation &amp; Configuration</td><td>KubeEdge (graduated), Cloud Custodian/metal3-io/OpenYurt (incubating)</td><td>Terraform, Crossplane, and Ansible are the intentional IaC path, but KubeEdge and Cloud Custodian have 0 hits; metal3 has mentions only.</td><td class="status gap">❌ Gap</td></tr>
+<tr><td>Container Registry</td><td>Harbor, Dragonfly (graduated)</td><td>Harbor and Dragonfly both have dedicated container-registry modules.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Security &amp; Compliance</td><td>cert-manager, Falco, Kyverno, OPA, in-toto, TUF (graduated)</td><td>cert-manager, Falco, Kyverno, OPA/Gatekeeper, SPIFFE/SPIRE, and supply-chain security have dedicated coverage; Keycloak/Kubescape are mentioned only.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Key Management / Identity</td><td>SPIFFE, SPIRE (graduated)</td><td><code>on-premises/security/module-6.5-workload-identity-spiffe.md</code> and <code>security-tools/module-4.8-spiffe-spire.md</code> cover both.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Monitoring</td><td>Prometheus (graduated), Thanos/Cortex (incubating)</td><td>Prometheus and Grafana are dedicated; Thanos has 20 hits and Cortex 11, mostly under observability-at-scale rather than standalone modules.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Logging</td><td>Fluentd (graduated)</td><td>kubedojo intentionally teaches Loki as the platform default; Fluentd has 33 mentions but no dedicated module.</td><td class="status covered">✅ Covered — intentional substitution</td></tr>
+<tr><td>Tracing</td><td>OpenTelemetry, Jaeger (graduated)</td><td>OpenTelemetry has a dedicated module. Jaeger has 39 mentions but no standalone module; tracing is taught through OTel-first instrumentation.</td><td class="status covered">✅ Covered — intentional substitution</td></tr>
+<tr><td>Chaos Engineering</td><td>Chaos Mesh, Litmus (incubating)</td><td>Chaos Mesh has a dedicated discipline module and chaos engineering has a 5-module arc; Litmus is comparison-level only.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Continuous Optimization</td><td>OpenCost (incubating)</td><td><code>scaling-reliability/module-6.4-finops-opencost.md</code> plus cloud FinOps modules cover OpenCost and cost allocation.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Serverless</td><td>Knative, KEDA (graduated), KServe (incubating)</td><td>Knative, KEDA, managed serverless, and KServe all have dedicated modules even though the current YAML places several of them outside Serverless.</td><td class="status covered">✅ Covered</td></tr>
+<tr><td>Wasm</td><td>wasmCloud (incubating), Spin/SpinKube (sandbox)</td><td>KCNA has <code>module-3.9-webassembly.md</code>. wasmCloud has 2 hits and SpinKube 4, so practical Wasm platform coverage is still watchlist-level.</td><td class="status partial">⚠️ Partial — sandbox-heavy</td></tr>
+<tr><td>Edge / Bare metal</td><td>KubeEdge (graduated), metal3-io/OpenYurt (incubating)</td><td>On-prem and bare-metal Kubernetes are strong, but KubeEdge/OpenYurt have 0 hits and metal3 is mentioned without a dedicated module.</td><td class="status gap">❌ Gap</td></tr>
+</tbody>
+</table>
+
+<h3>Net gaps from CNCF Landscape</h3>
+<ol class="gaps">
+<li><strong>Dapr + Buildpacks application-definition coverage</strong> — Dapr is
+    graduated but appears mainly as an Azure Container Apps feature; Buildpacks
+    has only 2 hits. A module should teach sidecar building blocks and source-to-image
+    buildpacks without making Azure the center. <em>Tier 2.</em></li>
+<li><strong>NATS / Strimzi / CloudEvents streaming module</strong> — all have
+    several mentions but no dedicated operational walkthrough; current content
+    favors managed brokers and Kafka concepts. <em>Tier 2.</em></li>
+<li><strong>gRPC + Envoy service-to-service communication</strong> — gRPC and
+    Envoy are frequent cross-references, but the standalone mental model
+    (HTTP/2, protobuf contracts, xDS, retries, timeouts) is missing.
+    <em>Tier 2.</em></li>
+<li><strong>Cloud Custodian governance module</strong> — incubating CNCF project,
+    0 hits; fits existing governance/compliance and cloud-policy material.
+    <em>Tier 3.</em></li>
+<li><strong>CNCF edge/bare-metal control plane module</strong> — KubeEdge,
+    OpenYurt, and metal3 are absent or mention-only despite strong on-prem
+    coverage. <em>Tier 3.</em></li>
+</ol>
+
+<div class="well-covered">
+  <strong>Well-covered (CNCF):</strong> Kubernetes, Helm, Argo, Flux, Crossplane,
+  KEDA, Knative, Kubeflow, KServe, CoreDNS, etcd, Istio, Cilium/CNI, Rook,
+  Longhorn, Harbor, Dragonfly, cert-manager, Falco, Kyverno, OPA/Gatekeeper,
+  SPIFFE/SPIRE, Prometheus, Grafana/Loki/OpenTelemetry, Chaos Mesh, OpenCost,
+  Backstage, Vitess.
+  <br><br>
+  <strong>Intentional deviations:</strong> Gateway API over Emissary, Loki over
+  Fluentd, OpenTelemetry-first tracing over a Jaeger-only module, Rook/Ceph +
+  Longhorn over CubeFS, Terraform/Crossplane/Ansible over Cloud Custodian as the
+  primary IaC path. These are teaching choices, not automatic gaps.
+</div>
+</section>
+
+<section id="expansion">
+<h2>Expansion plan (interim — KodeKloud + CNCF; awaiting cert blueprint augmentation)</h2>
+
+<p>This section is interim — it now captures gaps from <strong>KodeKloud and
+CNCF Landscape (2 of 3 sources)</strong>. Triangulation with cert blueprints
+(Step 3) will reorder and refine. Per the protocol from
+<code>content-gaps-2026-05.md</code>, NO module drafting starts until Stage 2
+(<code>ab discuss</code> pressure-test) and the critical-rubric count drops
+below ~50.</p>
+
+<h3>Aggregate gap list — KodeKloud + CNCF sources (interim top 17)</h3>
+<table>
+<thead>
+<tr><th>#</th><th>Gap</th><th>Track</th><th>Tier</th><th>Sources</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>DVC standalone module/arc (data versioning)</td><td>MLOps</td>
+    <td>Tier 1</td><td>KK (10 days)</td></tr>
+<tr><td>2</td><td>Great Expectations module (data quality)</td><td>MLOps</td>
+    <td>Tier 1</td><td>KK (4 days)</td></tr>
+<tr><td>3</td><td>Jenkins module/arc (for enterprise CI/CD reality)</td>
+    <td>DevOps</td><td>Tier 2</td><td>KK (14 days)</td></tr>
+<tr><td>4</td><td>Ansible 5–7 module arc (inventory + playbooks + modules + templates)</td>
+    <td>DevOps</td><td>Tier 2</td><td>KK (12 days)</td></tr>
+<tr><td>5</td><td>ML repo hygiene module (uv + Makefile + pre-commit + cookiecutter + packaging)</td>
+    <td>MLOps</td><td>Tier 2</td><td>KK (9 days)</td></tr>
+<tr><td>6</td><td>Azure Application Gateway module</td><td>Azure</td>
+    <td>Tier 2</td><td>KK (3 days)</td></tr>
+<tr><td>7</td><td>Azure Event Hub / Event Grid module</td><td>Azure</td>
+    <td>Tier 2</td><td>KK (2 days)</td></tr>
+<tr><td>8</td><td>Azure SQL Database module</td><td>Azure</td>
+    <td>Tier 2</td><td>KK (3 days)</td></tr>
+<tr><td>9</td><td>Production model serving patterns (A/B + canary + multi-model + async-queue)</td>
+    <td>MLOps</td><td>Tier 2</td><td>KK (4 days)</td></tr>
+<tr><td>10</td><td>Drift-triggered auto-retraining pattern module</td><td>MLOps</td>
+    <td>Tier 2</td><td>KK (2 days)</td></tr>
+<tr><td>11</td><td>CML (Continuous Machine Learning) reference</td><td>MLOps</td>
+    <td>Tier 2</td><td>KK (1 day)</td></tr>
+<tr><td>12</td><td>Docker fundamentals arc (absolute-beginner Docker path)</td>
+    <td>DevOps</td><td>Tier 3</td><td>KK (13 days)</td></tr>
+<tr><td>13</td><td>Dapr + Buildpacks application-definition module</td>
+    <td>Platform / App Dev</td><td>Tier 2</td><td>CNCF</td></tr>
+<tr><td>14</td><td>NATS / Strimzi / CloudEvents streaming operations module</td>
+    <td>Platform / Messaging</td><td>Tier 2</td><td>CNCF</td></tr>
+<tr><td>15</td><td>gRPC + Envoy service-to-service communication module</td>
+    <td>Platform / Networking</td><td>Tier 2</td><td>CNCF</td></tr>
+<tr><td>16</td><td>Cloud Custodian governance / policy-as-code module</td>
+    <td>Cloud / Governance</td><td>Tier 3</td><td>CNCF</td></tr>
+<tr><td>17</td><td>CNCF edge/bare-metal control plane module (KubeEdge, OpenYurt, metal3)</td>
+    <td>On-Premises / Edge</td><td>Tier 3</td><td>CNCF</td></tr>
+</tbody>
+</table>
+
+<h3>Next steps</h3>
+<ol>
+<li><strong>Cert blueprint augmentation</strong> — AWS SAA-C03, Azure AZ-104,
+    Terraform Associate. K8s certs already drive our k8s/ track. Goal:
+    "must-know" signal for cloud + IaC, complementing the KodeKloud
+    tool-task signal.</li>
+<li><strong>Triangulation</strong> — gaps appearing in ≥2 sources →
+    Tier 1 (high confidence). 1 source → Tier 2 candidate (needs
+    <code>ab discuss</code> Stage 2 per protocol). Outputs a single
+    canonical gap inventory that supersedes both this artifact and the
+    Tier-4 topical list in <code>content-gaps-2026-05.md</code>.</li>
+<li><strong>Cross-cut with quality board</strong> — separate <em>coverage
+    gaps</em> (missing tools) from <em>depth gaps</em> (shallow modules,
+    rubric &lt; 2.0). KodeKloud only surfaces coverage; the
+    <code>/quality-board</code> already flags depth.</li>
+<li><strong>Roadmap output</strong> — per-tier module specs, prerequisite
+    chain, sidebar placement, unlock criteria. No holding back on Tier 1/2/3
+    per user direction; modules built as free capacity allows.</li>
+</ol>
+
+<div class="caveat">
+  <strong>Reminder.</strong> KodeKloud is a hands-on task curriculum. Counts
+  above ("KK 14 days" etc.) measure <em>time KodeKloud spends</em>, not
+  <em>module count we should write</em>. A 14-day KodeKloud arc may compress
+  to 3 kubedojo modules that teach the concepts properly. Don't propagate
+  task-list shape into module shape (per
+  <code>feedback_teaching_not_listicles.md</code>).
+</div>
+</section>
+
+<p class="meta" style="margin-top: 48px; text-align: center;">
+  Generated 2026-05-12. Updated incrementally as remaining tracks are captured.
+  Per HTML-first artifact policy, view via local API
+  (<code>http://127.0.0.1:8910/docs/research/kodekloud-gap-analysis-2026-05-12.html</code>),
+  not <code>file://</code>.
+</p>
+
+</main>
+</body>
+</html>
