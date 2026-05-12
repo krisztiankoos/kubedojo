@@ -349,7 +349,26 @@ Use Release Engineering for registry tag and registry access checks.
 Keep the two-sentence status update unchanged.
 ```
 
-The completed outcome is a status note with confirmed facts, visible uncertainty, and assigned follow-up checks. It is not a root-cause analysis, and it does not pretend to be one. It is good enough for the immediate communication task because the prompt contract matched the real decision: tell engineers what is known, what is not known, and who is checking the next evidence.
+Constraint-flip variation: if you only have two minutes before the on-call handoff, keep the same facts but optimize for investigation speed. The prompt should force triage priorities instead of exhaustive coverage, with the output still required to label uncertainty.
+
+```text
+Task: Draft a 2-minute handoff note for a failed `web` deployment.
+
+Context:
+- `kubectl rollout status deployment/web` shows a progress deadline exceeded.
+- A new `web` Pod is in ImagePullBackOff.
+- No logs have been collected yet.
+
+Constraints:
+- Provide exactly three next checks.
+- Order checks by expected signal-to-effort from namespace read-only access.
+- Do not claim the root cause or propose a fix.
+
+Output format:
+2 short bullet findings and 3 numbered next checks in this shape: [Owner] | [Command] | [Why this is highest priority].
+```
+
+This variant is not about adding more detail; it is about preserving reviewability when decision time is short and avoiding the temptation to pretend certainty.
 
 ## Did You Know?
 
