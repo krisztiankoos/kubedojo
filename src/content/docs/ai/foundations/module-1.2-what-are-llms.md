@@ -3,23 +3,24 @@ title: "What Are LLMs?"
 slug: ai/foundations/module-1.2-what-are-llms
 sidebar:
   order: 2
+revision_pending: false
 ---
 
-# What Are LLMs?
+> **Complexity**: `[QUICK]`
+>
+> **Time to Complete**: 40-55 min
+>
+> **Prerequisites**: Module 1.1 or equivalent comfort with basic AI terminology
 
-> **AI Foundations** | Complexity: `[QUICK]` | Time: 40-55 min | Prerequisites: Module 1.1 or equivalent comfort with basic AI terminology
+---
 
 ## Learning Outcomes
 
-By the end of this module, you should be able to evaluate whether a language-model task needs generation, retrieval, verification, or a combination of those capabilities.
-
-You should be able to analyze how tokens, context windows, and next-token prediction shape the quality and failure modes of an LLM response.
-
-You should be able to compare LLMs with search engines, databases, rules engines, and human reviewers when choosing a tool for a real workflow.
-
-You should be able to design a prompt boundary that gives an LLM enough context, constrains the output, and makes uncertainty visible instead of hidden.
-
-You should be able to debug a poor LLM answer by checking task fit, missing context, ambiguous instructions, unsupported claims, and verification gaps.
+- Evaluate whether a language-model task needs generation, retrieval, verification, human judgment, or a combination of those capabilities.
+- Analyze how tokens, context windows, and next-token prediction shape the quality and failure modes of an LLM response.
+- Compare LLMs with search engines, databases, rules engines, and human reviewers when choosing a tool for a real workflow.
+- Design a prompt boundary that gives an LLM enough context, constrains the output, and makes uncertainty visible instead of hidden.
+- Debug a poor LLM answer by checking task fit, missing context, ambiguous instructions, unsupported claims, and verification gaps.
 
 ## Why This Module Matters
 
@@ -737,7 +738,7 @@ In later AI Foundations modules, you will learn prompting basics, retrieval patt
 
 ## Common Mistakes
 
-| Mistake | Why It Fails | Better Move |
+| Mistake | Why It Happens | How to Fix It |
 |---|---|---|
 | Treating an LLM as a factual database | The model generates likely language and may not have current or private evidence | Retrieve the source of truth first, then use the model to summarize or explain it |
 | Trusting confidence of tone | Polished language can appear without verified support | Check evidence, citations, tests, or source material before acting |
@@ -835,26 +836,43 @@ In later AI Foundations modules, you will learn prompting basics, retrieval patt
 
 **Success Criteria**:
 
-- [ ] You can explain whether your task needed generation, retrieval, validation, human judgment, or a combination.
+- [ ] You can evaluate whether your language-model task needed generation, retrieval, verification, human judgment, or a combination.
 
-- [ ] Your improved prompt includes labeled context, a specific task, an output contract, uncertainty handling, and at least one explicit boundary.
+- [ ] You can design a prompt boundary with labeled context, a specific task, an output contract, uncertainty handling, and at least one explicit boundary.
 
 - [ ] You identify which claims in the model's answer would require verification before anyone acts on them.
 
 - [ ] You define a verification path that uses a source, test, validator, reviewer, metric, or policy outside the model.
 
-- [ ] You can name at least two ways the weak prompt could produce a polished but unreliable answer.
+- [ ] You can debug a poor LLM answer by naming at least two ways the weak prompt could produce a polished but unreliable answer.
 
 - [ ] You can explain how tokens and context windows influenced what you included, removed, labeled, or split.
 
-- [ ] You can state whether the LLM is acting as a drafter, analyzer, recommender, or decision-maker in your final workflow.
+- [ ] You can compare the LLM role with a search engine, database, rules engine, or human reviewer in your final workflow.
 
-## Next Module
+<details>
+<summary>Solution outline</summary>
 
-Continue to [Prompting Basics](./module-1.3-prompting-basics/).
+A strong submission first separates the job into capabilities instead of treating the chat box as the whole system. For example, an incident-summary workflow might use retrieval for logs and deployment metadata, the LLM for drafting a timeline and suspected contributing factors, validation for required fields and evidence references, and a human incident owner for final judgment. The improved prompt should name the model's limited role, provide labeled evidence, require unknowns to remain visible, and define a verification path outside the model.
+
+</details>
 
 ## Sources
 
 - [Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165) — Canonical GPT-3 paper showing large autoregressive language models performing next-token prediction with broad downstream capabilities.
 - [Large language model](https://en.wikipedia.org/wiki/Large_language_model) — Overview of how LLMs tokenize text and what language tasks they commonly perform.
 - [Search engine](https://developer.mozilla.org/en-US/docs/Glossary/search_engine) — Concise definition of search engines as systems for retrieving relevant information in response to a query.
+- [Attention Is All You Need](https://arxiv.org/abs/1706.03762) — Primary paper introducing the Transformer architecture used by modern language models.
+- [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding](https://arxiv.org/abs/1810.04805) — Primary paper showing how Transformer language models changed many NLP tasks.
+- [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155) — Primary paper describing instruction tuning with human feedback.
+- [OpenAI tokenizer documentation](https://platform.openai.com/tokenizer) — Vendor tool for inspecting how text is broken into model tokens.
+- [OpenAI text generation guide](https://platform.openai.com/docs/guides/text) — Vendor documentation for generation workflows and model inputs.
+- [OpenAI function calling guide](https://platform.openai.com/docs/guides/function-calling) — Vendor documentation for connecting model output to tool calls under application control.
+- [OpenAI structured outputs guide](https://platform.openai.com/docs/guides/structured-outputs) — Vendor documentation for constraining model responses to schemas.
+- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework) — Primary public-sector framework for identifying and managing AI system risk.
+- [Kubernetes documentation](https://kubernetes.io/docs/home/) — Vendor documentation for Kubernetes concepts and versioned operational references.
+- [Kubernetes API reference](https://kubernetes.io/docs/reference/kubernetes-api/) — Vendor API reference for checking exact Kubernetes resource fields.
+
+## Next Module
+
+Continue to [Prompting Basics](./module-1.3-prompting-basics/).
