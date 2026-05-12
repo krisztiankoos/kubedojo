@@ -31,11 +31,10 @@ The outage is not really about one careless command. It is about a cluster that 
 
 This module teaches the two organizational primitives that make Kubernetes usable beyond toy demos. Namespaces divide the API into logical rooms, while labels attach structured identity to the objects inside those rooms. You will learn what those boundaries actually isolate, what they absolutely do not isolate, how selectors allow decoupled controllers to cooperate, and how namespace-level policy turns a shared cluster into a platform that can survive normal human mistakes. That shared vocabulary also makes incident review faster because ownership, blast radius, and cleanup scope become visible in ordinary commands.
 
-Throughout the commands, this module uses `k` as the local alias for `kubectl`; if your shell does not already define it, run `alias k=kubectl` before practicing. The Kubernetes examples target version 1.35 or newer behavior, and the concepts are stable across modern clusters even when individual cloud distributions add their own admission policies or default labels.
+Throughout the commands, this module uses the full `kubectl` binary name so every copied example works in interactive shells and scripts without relying on local aliases. The Kubernetes examples target version 1.35 or newer behavior, and the concepts are stable across modern clusters even when individual cloud distributions add their own admission policies or default labels.
 
 ```bash
-alias k=kubectl
-k version --client
+kubectl version --client
 ```
 
 ## Section 1: Namespaces - Logical Rooms, Not Separate Buildings
@@ -100,25 +99,25 @@ Mature clusters treat `default` as a warning light rather than a convenient home
 Namespace names must be valid DNS labels, and you should avoid the `kube-` prefix because Kubernetes reserves that convention for system namespaces. You should also avoid names that look like public top-level domains, such as `com` or `org`, because Kubernetes DNS search behavior can make short names confusing. Starting in modern Kubernetes versions, the control plane automatically applies the immutable label `kubernetes.io/metadata.name` to every namespace, which gives policies and selectors a stable way to identify a namespace by name.
 
 ```bash
-k create namespace team-frontend
-k get namespaces
-k get pods -n team-frontend
+kubectl create namespace team-frontend
+kubectl get namespaces
+kubectl get pods -n team-frontend
 ```
 
 Constantly typing `-n team-frontend` is useful for clarity in scripts, but it is tiring during interactive work. Your kubeconfig context can store a default namespace, so ordinary commands target the namespace you are currently operating in. This is convenient, yet it also creates a class of mistakes where your terminal prompt and your mental model disagree. The safer practice is to make the active context visible in your shell prompt and to check it before running destructive commands.
 
 ```bash
 # View your current context configuration to see your active namespace
-k config view --minify | grep namespace:
+kubectl config view --minify | grep namespace:
 
 # Set the default namespace for your current context to 'team-frontend'
-k config set-context --current --namespace=team-frontend
+kubectl config set-context --current --namespace=team-frontend
 
 # Now this command automatically looks in 'team-frontend'
-k get pods
+kubectl get pods
 ```
 
-War story: an experienced engineer once intended to delete a broken deployment in `staging`, but their current context still pointed at `production`. The command was syntactically perfect and operationally wrong, so Kubernetes did exactly what the engineer asked. Namespaces reduce blast radius only when humans and automation carry the namespace through the workflow. A visible prompt, explicit manifest metadata, restricted RBAC, and dry-run habits work together; no single layer is enough.
+Hypothetical scenario: an experienced engineer intends to delete a broken deployment in `staging`, but their current context still points at `production`. The command is syntactically perfect and operationally wrong, so Kubernetes does exactly what the engineer asked. Namespaces reduce blast radius only when humans and automation carry the namespace through the workflow. A visible prompt, explicit manifest metadata, restricted RBAC, and dry-run habits work together; no single layer is enough.
 
 Pause and predict: if a Pod in the `test` namespace tries to connect to `http://data:8080`, while the `data` Service exists only in `prod`, what namespace will DNS search first and what name would make the cross-namespace target explicit? Make a prediction before reading the next paragraph, because this detail explains many "it worked locally" failures.
 
@@ -166,27 +165,27 @@ Values are strings, even when they look numeric. Quoting values such as `"2.1.4"
 
 ```bash
 # Find all backend pods in the current namespace
-k get pods -l tier=backend
+kubectl get pods -l tier=backend
 
 # Find all production payment processors in the current namespace
-k get pods -l app.kubernetes.io/name=payment-processor,environment=production
+kubectl get pods -l app.kubernetes.io/name=payment-processor,environment=production
 
 # Look across namespaces when the incident boundary is unclear
-k get pods -A -l app.kubernetes.io/name=payment-processor
+kubectl get pods -A -l app.kubernetes.io/name=payment-processor
 ```
 
 Label taxonomies deserve deliberate design because they become operational contracts. A useful taxonomy usually includes application identity, component, environment, version, owner, cost center, and managed-by information. The exact keys matter less than consistency, but Kubernetes recommends the `app.kubernetes.io/*` family because many ecosystem tools already understand it. When teams improvise labels per deployment, incident response turns into archaeology: every query requires guessing which spelling somebody chose months earlier.
 
-Before running this, what output do you expect from `k get pods -l app.kubernetes.io/name=payment-processor,environment=production` if one Pod has the payment label but `environment=staging`? The answer should be "it will not match," because comma-separated label requirements are logical AND operations. This small rule is worth internalizing before you use selectors in cleanup commands.
+Before running this, what output do you expect from `kubectl get pods -l app.kubernetes.io/name=payment-processor,environment=production` if one Pod has the payment label but `environment=staging`? The answer should be "it will not match," because comma-separated label requirements are logical AND operations. This small rule is worth internalizing before you use selectors in cleanup commands.
 
 Equality-based selectors match exact values or exclude exact values. The operators `=`, `==`, and `!=` are available in command-line selectors, and multiple requirements separated by commas must all be true. Equality is simple and readable, which makes it a good default for Services and narrow incident queries. The tradeoff is that equality cannot express "one of these several values" without repeating commands or switching to set-based syntax.
 
 ```bash
 # Select pods where environment is exactly 'production'
-k get pods -l environment=production
+kubectl get pods -l environment=production
 
 # Select pods where tier is not 'frontend'
-k get pods -l tier!=frontend
+kubectl get pods -l tier!=frontend
 ```
 
 Services use a simple selector map, which behaves like equality across every listed key. This is intentionally limited because a Service should usually define a stable contract rather than a clever query. If the Service selector is too broad, it may send traffic to Pods that expose a different protocol or version. If the selector is too narrow, it may fail to find newly rolled-out Pods that should receive traffic.
@@ -211,13 +210,13 @@ Set-based selectors add operators such as `in`, `notin`, `exists`, and `doesnote
 
 ```bash
 # Select pods where environment is either 'production' or 'staging'
-k get pods -l 'environment in (production, staging)'
+kubectl get pods -l 'environment in (production, staging)'
 
 # Select pods that have the 'release' label, regardless of its value
-k get pods -l release
+kubectl get pods -l release
 
 # Select pods that are not in the cache tier and are part of a release
-k get pods -l 'tier notin (cache),release'
+kubectl get pods -l 'tier notin (cache),release'
 ```
 
 Newer workload controllers such as Deployments, ReplicaSets, Jobs, and DaemonSets use the richer selector structure with `matchLabels` and `matchExpressions`. `matchLabels` is syntactic convenience for exact matching, while `matchExpressions` exposes the set-based operators. The critical rule is that the selector must match the Pod template labels, and for Deployments the selector is effectively immutable after creation. Kubernetes protects that immutability because changing the selector could make a Deployment lose track of its existing ReplicaSets.
@@ -278,9 +277,9 @@ graph TD
 
 This canary pattern is simple, but it has a sharp edge. Kubernetes Services do not guarantee percentage-based traffic splitting by label; they load-balance across ready endpoints according to implementation details. Counting Pods gives you only a rough traffic share, and uneven connection reuse can skew it further. For precise progressive delivery you would use a service mesh, Gateway API implementation, or ingress controller feature, but understanding label-based routing is still the foundation beneath those tools.
 
-War story: a team once added `app=api` to a one-off debug Pod because they wanted it to appear in a familiar dashboard. Their production Service also selected `app=api`, so a Pod running a diagnostic container became a backend endpoint. The fix was not just deleting the Pod; it was tightening the Service selector to include `component=http` and `environment=production`, then documenting which labels were safe for ad hoc resources.
+Hypothetical scenario: a team adds `app=api` to a one-off debug Pod because they want it to appear in a familiar dashboard. Their production Service also selects `app=api`, so a Pod running a diagnostic container becomes a backend endpoint. The fix is not just deleting the Pod; it is tightening the Service selector to include `component=http` and `environment=production`, then documenting which labels are safe for ad hoc resources.
 
-Selectors also shape cleanup safety. A command such as `k delete pod -l app=web` is fast, but speed is dangerous when the selector is broad. Before deleting, prefer `k get pods -l ... --show-labels` and check the exact objects that would be affected. In production automation, combine selectors with namespaces and dry-run workflows where possible. The safest selector is not the shortest selector; it is the one that expresses the operational boundary you actually intend.
+Selectors also shape cleanup safety. A command such as `kubectl delete pod -l app=web` is fast, but speed is dangerous when the selector is broad. Before deleting, prefer `kubectl get pods -l ... --show-labels` and check the exact objects that would be affected. In production automation, combine selectors with namespaces and dry-run workflows where possible. The safest selector is not the shortest selector; it is the one that expresses the operational boundary you actually intend.
 
 ## Section 3: Annotations - Metadata for Machines and Humans
 
@@ -330,7 +329,7 @@ metadata:
     backup.company.com/config: '{"schedule":"0 2 * * *","retention_days":30,"storage_class":"cold-archive","exclude_paths":["/tmp","/var/cache"]}'
 ```
 
-In that metadata block, `dept=it` is a label because the IT department wants to find resources with `k get pods -l dept=it`. The backup configuration is an annotation because it is a long controller-specific instruction. Notice that the annotation key is prefixed with a domain-style namespace owned by the tool. That prefix reduces the chance that another controller will attach a different meaning to the same key.
+In that metadata block, `dept=it` is a label because the IT department wants to find resources with `kubectl get pods -l dept=it`. The backup configuration is an annotation because it is a long controller-specific instruction. Notice that the annotation key is prefixed with a domain-style namespace owned by the tool. That prefix reduces the chance that another controller will attach a different meaning to the same key.
 
 ## Section 4: ResourceQuotas and LimitRanges - Budgets at the Namespace Door
 
@@ -388,9 +387,9 @@ The interplay is easier to understand as a checkout counter. The LimitRange writ
 Which approach would you choose here and why: a quota that allows `4` CPU cores with a LimitRange default request of `500m`, or the same quota with a default request of `100m` for small web workloads? The first setting admits fewer defaulted Pods but may represent capacity honestly. The second admits more Pods but can understate demand if the applications regularly need more CPU. The correct value depends on measured workload behavior, not a universal template.
 
 ```bash
-k describe quota frontend-quota -n team-frontend
-k describe limitrange frontend-limits -n team-frontend
-k get pods -n team-frontend -o custom-columns=NAME:.metadata.name,CPU_REQ:.spec.containers[*].resources.requests.cpu,CPU_LIM:.spec.containers[*].resources.limits.cpu
+kubectl describe quota frontend-quota -n team-frontend
+kubectl describe limitrange frontend-limits -n team-frontend
+kubectl get pods -n team-frontend -o custom-columns=NAME:.metadata.name,CPU_REQ:.spec.containers[*].resources.requests.cpu,CPU_LIM:.spec.containers[*].resources.limits.cpu
 ```
 
 Admission timing is another critical detail. Newly created or updated objects are evaluated against current LimitRanges and ResourceQuotas, but existing running Pods are not retroactively rewritten just because a new LimitRange appears. This protects production from surprise throttling, yet it also means a namespace may contain older workloads that do not match current policy until they are restarted or redeployed. During a rollout, platform teams should communicate when defaults take effect and how teams can inspect injected resources.
@@ -399,7 +398,7 @@ Quota events are often misunderstood because controllers keep trying to reconcil
 
 Resource requests also deserve cultural care. If requests are set too low, the scheduler packs too many Pods onto nodes and runtime contention appears later as latency. If requests are set too high, quota is exhausted by capacity that applications do not actually use. A good platform team treats requests as measured engineering data. They provide defaults to keep beginners safe, then encourage mature teams to tune values from metrics, load tests, and production observations.
 
-War story: a platform group once introduced a memory quota before adding a LimitRange. Their intention was good, but dozens of CI jobs immediately failed because the generated Pods lacked memory requests. The fix was to add defaults, publish an example patch, and stage the policy change in a non-production namespace first. Policy is not only a YAML object; it is a contract with the teams whose deployment systems will meet that object at admission time.
+Hypothetical scenario: a platform group introduces a memory quota before adding a LimitRange. Their intention is good, but dozens of CI jobs immediately fail because the generated Pods lack memory requests. The fix is to add defaults, publish an example patch, and stage the policy change in a non-production namespace first. Policy is not only a YAML object; it is a contract with the teams whose deployment systems will meet that object at admission time.
 
 ## Patterns & Anti-Patterns
 
@@ -451,7 +450,7 @@ Start with the operational question
 | Decision | Prefer this | Avoid this | Reason |
 | :--- | :--- | :--- | :--- |
 | Naming a workload home | `metadata.namespace: payments-prod` | Letting it fall into `default` | Explicit placement is reviewable and repeatable. |
-| Finding all backend Pods | `k get pods -l tier=backend` | Searching names with shell filters | Labels survive Pod recreation and naming changes. |
+| Finding all backend Pods | `kubectl get pods -l tier=backend` | Searching names with shell filters | Labels survive Pod recreation and naming changes. |
 | Passing controller configuration | Annotation with a tool-owned prefix | Long JSON in a label | Annotations are not selector indexes and allow larger values. |
 | Budgeting a team namespace | ResourceQuota plus LimitRange | Quota alone | Defaults prevent admission failures for manifests missing resources. |
 | Canary routing | Shared Service selector plus version labels | Editing endpoint IPs manually | Label selection lets controllers update endpoints dynamically. |
@@ -460,7 +459,7 @@ Start with the operational question
 
 - Kubernetes Service DNS uses the pattern `<service>.<namespace>.svc.cluster.local` by default, so `data.analytics.svc.cluster.local` and `data.prod.svc.cluster.local` can refer to different Services without a naming collision.
 - Label keys and values are constrained around the DNS label tradition, including the familiar 63-character name segment limit, because Kubernetes labels are designed to be compact identifiers that the API server can index efficiently.
-- A namespace deletion is asynchronous: after `k delete namespace alpha-team`, Kubernetes removes namespaced objects and waits for finalizers, so a broken finalizer can leave the namespace in `Terminating` until the object is repaired.
+- A namespace deletion is asynchronous: after `kubectl delete namespace alpha-team`, Kubernetes removes namespaced objects and waits for finalizers, so a broken finalizer can leave the namespace in `Terminating` until the object is repaired.
 - Lease objects in `kube-node-lease` reduce control-plane load by letting each node update a small heartbeat object instead of constantly rewriting the larger Node status object.
 
 ## Common Mistakes
@@ -489,7 +488,7 @@ The application should use `data-sink.analytics.svc.cluster.local`, or at least 
 
 <details><summary><strong>Question 3:</strong> During an incident, you need to target Pods where `tier` is either `frontend` or `cache`, but you must leave `database` and `backend` alone. Which selector style should you use, and why?</summary>
 
-Use a set-based selector such as `k get pods -l 'tier in (frontend, cache)'` before choosing a destructive action. Equality-based selectors are excellent for one exact value, but they cannot express several acceptable values for the same key in one requirement. The `in` operator captures the intended operational set without repeating commands. That reduces the chance that one command accidentally includes a tier you meant to exclude.
+Use a set-based selector such as `kubectl get pods -l 'tier in (frontend, cache)'` before choosing a destructive action. Equality-based selectors are excellent for one exact value, but they cannot express several acceptable values for the same key in one requirement. The `in` operator captures the intended operational set without repeating commands. That reduces the chance that one command accidentally includes a tier you meant to exclude.
 </details>
 
 <details><summary><strong>Question 4:</strong> A new alerting controller needs a contact email and runbook URL for every Deployment, but operators never select resources by those exact values. Should the metadata be labels or annotations?</summary>
@@ -533,13 +532,13 @@ Create a new namespace for a simulated development team and switch your active c
 
 ```bash
 # Create the namespace
-k create namespace alpha-team
+kubectl create namespace alpha-team
 
 # Switch your context to the new namespace
-k config set-context --current --namespace=alpha-team
+kubectl config set-context --current --namespace=alpha-team
 
 # Verify you are in the new namespace
-k config view --minify | grep namespace:
+kubectl config view --minify | grep namespace:
 ```
 </details>
 
@@ -579,11 +578,11 @@ spec:
 ```
 
 ```bash
-k apply -f guardrails.yaml
+kubectl apply -f guardrails.yaml
 
 # Verify the LimitRange and ResourceQuota
-k describe limitrange cpu-guardrails
-k describe quota alpha-budget
+kubectl describe limitrange cpu-guardrails
+kubectl describe quota alpha-budget
 ```
 </details>
 
@@ -618,9 +617,9 @@ spec:
 ```
 
 ```bash
-k apply -f web-v1.yaml
-k get pods --show-labels
-k describe pod -l app=web,version=v1
+kubectl apply -f web-v1.yaml
+kubectl get pods --show-labels
+kubectl describe pod -l app=web,version=v1
 ```
 
 The described Pods should show CPU values injected by the LimitRange, even though the Deployment template did not specify them directly. That confirms admission-time defaulting is working.
@@ -648,11 +647,11 @@ spec:
 ```
 
 ```bash
-k apply -f web-svc.yaml
+kubectl apply -f web-svc.yaml
 
 # Verify the service is finding the three v1 pods
-k get endpoints web-svc
-k get pods -l app=web,version=v1
+kubectl get endpoints web-svc
+kubectl get pods -l app=web,version=v1
 ```
 </details>
 
@@ -679,11 +678,11 @@ spec:
 ```
 
 ```bash
-k apply -f web-v2-canary.yaml
+kubectl apply -f web-v2-canary.yaml
 
 # Check the endpoints again
-k get endpoints web-svc
-k get pods --show-labels
+kubectl get endpoints web-svc
+kubectl get pods --show-labels
 ```
 
 The Service endpoint list should now include the canary Pod as well as the three stable Pods. Because the Service selector checks only `app=web`, both versions qualify for traffic.
@@ -697,10 +696,10 @@ Delete the namespace to remove every namespaced object created in the exercise, 
 
 ```bash
 # Delete the namespace and all exercise resources inside it
-k delete namespace alpha-team
+kubectl delete namespace alpha-team
 
 # Reset your context back to default
-k config set-context --current --namespace=default
+kubectl config set-context --current --namespace=default
 ```
 </details>
 
