@@ -13,8 +13,6 @@ revision_pending: false
 
 ---
 
-# Module 1.1: Why Kubernetes Won
-
 ## Learning Outcomes
 
 After this module, you will be able to:
@@ -28,13 +26,13 @@ After this module, you will be able to:
 
 ## Why This Module Matters
 
-It was 3 AM on Black Friday 2014, and a developer at a fast-growing e-commerce company was staring at terminal windows across a fleet of Linux servers. Their flash sale had gone far beyond the forecast, containers were crashing as traffic shifted between overloaded hosts, and every attempted manual restart created another question about capacity, ports, logs, and whether the replacement process had landed on a healthy machine. By sunrise the incident review was already forming: the company had lost hundreds of thousands of dollars in orders, but the deeper failure was that the team had tried to operate a distributed system as if it were a collection of pets.
+Hypothetical scenario: it is the morning of a high-traffic launch, and an on-call developer is staring at terminal windows across a fleet of Linux servers. Demand has gone far beyond the forecast, containers are crashing as traffic shifts between overloaded hosts, and every attempted manual restart creates another question about capacity, ports, logs, and whether the replacement process landed on a healthy machine. By the incident review, the team has learned the deeper lesson: it tried to operate a distributed system as if it were a collection of pets.
 
 That kind of incident is why the orchestration wars mattered. Docker made containers approachable, but approachability did not answer the harder operational questions: where should each container run, what happens when a machine disappears, how does a rollout happen without downtime, and who remembers the intended shape of the system after several emergency commands have changed production? Kubernetes won because it turned those questions into a persistent control problem rather than a heroic shell session, and that difference still shapes every Kubernetes task you will practice in this curriculum.
 
 This module is not a nostalgia tour through old infrastructure brands. It is a decision-making lesson about why some platforms become durable standards while others become historical footnotes, respectable niches, or maintenance burdens. As you move into Kubernetes 1.35 and later modules, you will see controllers, manifests, labels, Deployments, Services, Custom Resource Definitions, and managed clusters; the history explains why those pieces exist and why they are arranged around an API-driven, declarative control loop instead of a pile of remote commands.
 
-Before we go further, set the command-language expectation for the rest of the path. In hands-on Kubernetes modules, KubeDojo uses the shell alias `alias k=kubectl`, so a phrase such as `k get pods` means the normal Kubernetes CLI with a shorter name. This particular module is mostly conceptual, but introducing the alias here prevents a small syntax detail from becoming a distraction when the next module begins using commands for real.
+Before we go further, set the command-language expectation for the rest of the path. KubeDojo examples use the full `kubectl` command in runnable shell blocks because copied exercises should work in non-interactive terminals, scripts, and classroom environments without relying on local aliases. Many engineers shorten the command interactively on their own machines, but the curriculum treats explicit commands as part of the learning contract. When the next module starts using Kubernetes objects directly, you should be able to focus on the API behavior rather than wondering whether a shell shortcut changed the command semantics.
 
 ---
 
