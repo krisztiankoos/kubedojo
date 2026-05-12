@@ -5,13 +5,15 @@ sidebar:
 revision_pending: false
 ---
 
-# Module 4: The Safety Net — Undo and Recovery
+> **Complexity**: [MEDIUM]
+>
+> **Time to Complete**: 60 minutes
+>
+> **Prerequisites**: Module 3 of Git Deep Dive
 
-**Complexity**: [MEDIUM]  
-**Time to Complete**: 60 minutes  
-**Prerequisites**: Module 3 of Git Deep Dive
+---
 
-## Learning Outcomes
+## What You'll Be Able to Do
 
 - Implement `git reset` with `--soft`, `--mixed`, and `--hard` flags to intentionally manipulate the working directory, staging area, and commit history in order to correct architectural mistakes.
 - Diagnose and recover from catastrophic Git mistakes, including botched rebases and accidental hard resets, using `git reflog` to trace and restore orphaned commits.
@@ -25,10 +27,10 @@ On April 5, 2022, starting at 7:38 UTC, an Atlassian maintenance script ran the 
 
 This module turns Git undo from superstition into engineering judgment. You will learn why `reset`, `restore`, `revert`, `reflog`, and `cherry-pick` are not interchangeable synonyms for "go back." Each command edits a different part of Git's state model, and each has a different collaboration contract. By the end, you should be able to look at a broken branch, decide whether you need to move a pointer, create an inverse commit, restore one file, or copy a patch across histories, and then explain that decision to a teammate under incident pressure.
 
-Before the commands begin, anchor the operational context. Kubernetes examples in this module target Kubernetes 1.35 or later, and when cluster validation appears we use the common shell alias `k` for `kubectl` after defining it once. The Git recovery workflow itself works without a cluster, but platform engineers usually recover code that will eventually become cluster state, so the lesson keeps the repository mechanics connected to deployment risk.
+Before the commands begin, anchor the operational context. Kubernetes examples in this module target Kubernetes 1.35 or later, and every runnable shell example uses the full `kubectl` command name so copied commands behave the same way in scripts and terminals. The Git recovery workflow itself works without a cluster, but platform engineers usually recover code that will eventually become cluster state, so the lesson keeps the repository mechanics connected to deployment risk.
 
 ```bash
-alias k=kubectl
+kubectl version --client
 ```
 
 ## 1. The Three Trees of Git and `git reset`
@@ -115,7 +117,7 @@ git reset --hard HEAD
 git reset --hard HEAD~1
 ```
 
-The war story behind this warning is painfully common. A junior platform engineer was asked to update CPU and memory resource requests across dozens of Kubernetes manifests. They wrote a shell script, saw a huge `git status`, became uncertain about one substitution, and ran `git reset --hard` because they thought it would merely unstage files. The command erased all tracked file edits, and because the edits had never been committed, the best remaining recovery options were IDE local history and shell scrollback. Git could recover the branch pointer, but it could not resurrect content it had never stored.
+Hypothetical scenario: a junior platform engineer is asked to update CPU and memory resource requests across dozens of Kubernetes manifests. They write a shell script, see a huge `git status`, become uncertain about one substitution, and run `git reset --hard` because they think it will merely unstage files. The command erases all tracked file edits, and because the edits were never committed, the best remaining recovery options are IDE local history and shell scrollback. Git can recover a branch pointer it recorded, but it cannot resurrect content it never stored.
 
 Use reset as a deliberate state operation. Ask which tree contains the work you want to preserve, then choose the reset mode that leaves that tree intact. If the valuable state is already committed, `--hard` may be acceptable. If it is staged, `--soft` preserves it. If it is in the working directory, `--mixed` generally keeps it available for reorganization. That decision process is slower than muscle memory, but it is much faster than explaining to a team why a production fix vanished.
 
@@ -209,7 +211,7 @@ Revert is not magic; it calculates an inverse patch using the current file conte
 
 Merge commits require extra care because a merge has more than one parent. To revert a merge, Git needs to know which parent is the mainline that should be preserved. The common command is `git revert -m 1 <merge-commit>`, but you should not type it blindly. Parent one is usually the branch you merged into, yet workflows differ, and the wrong mainline can reverse the wrong side of the merge. Inspect the merge commit with `git show --summary <hash>` before deciding.
 
-The classic war story is the "un-revertable" merge. A team merged a large feature into `main`, discovered database lock problems, and reverted the merge with `git revert -m 1`. Production stabilized, but two weeks later Git reported "Already up to date" when the team tried to merge the fixed feature branch again. Git was technically correct: the original feature commits were already in `main`'s history, even though their effects had been counteracted by a revert commit. The team had to revert the revert, then apply new fixes on top.
+Hypothetical scenario: a team merges a large feature into `main`, discovers database lock problems, and reverts the merge with `git revert -m 1`. Production stabilizes, but two weeks later Git reports "Already up to date" when the team tries to merge the fixed feature branch again. Git is technically correct: the original feature commits are already in `main`'s history, even though their effects have been counteracted by a revert commit. The team must either revert the revert, then apply new fixes on top, or rebuild the corrected feature as new commits.
 
 That story does not mean merge reverts are bad. It means rollback strategy should include a reintroduction plan. If you revert a feature merge, write down whether the future fix will revert the revert, rebuild the feature on a new branch with new commits, or cherry-pick a smaller corrected patch. Without that plan, the emergency rollback can become a confusing historical knot long after the incident is over.
 
@@ -255,10 +257,10 @@ git checkout a1b2c3d -- dashboard.json
 
 After this command, `dashboard.json` appears in the working directory and is staged for commit. That staging behavior surprises some people, but it is useful because Git has copied a specific historical snapshot into the proposed next commit. Review it before committing, especially if the file contains environment-specific URLs, dashboard data source names, or alert thresholds. A recovered file can be syntactically correct and still operationally stale.
 
-For Kubernetes manifests, pair file recovery with validation. If a restored object will be applied to a cluster, run the repository's usual validation path before opening a pull request. At minimum, a platform engineer should be comfortable checking client-side syntax against the current Kubernetes command surface. With the alias defined earlier, a simple local validation command might look like this when a real cluster context and manifest are available.
+For Kubernetes manifests, pair file recovery with validation. If a restored object will be applied to a cluster, run the repository's usual validation path before opening a pull request. At minimum, a platform engineer should be comfortable checking client-side syntax against the current Kubernetes command surface. Using the full command name, a simple local validation command might look like this when a real cluster context and manifest are available.
 
 ```bash
-k apply --dry-run=client -f deployment.yaml
+kubectl apply --dry-run=client -f deployment.yaml
 ```
 
 File-level commands are safest when you name both the source and the target in your head. "Restore `statefulset.yaml` from `HEAD` into my working directory" is a clear operation. "Checkout something" is vague. During recovery, vague commands invite mistakes because Git has multiple places it can read from and multiple places it can write to. If you cannot say the source and destination out loud, inspect with `git status`, `git diff`, and `git diff --staged` before changing state.
@@ -559,10 +561,6 @@ Success criteria:
 - [ ] `deployment.yaml` on `main` does not contain the unapproved `replicas: 3` line.
 - [ ] You can explain why reflog was appropriate for recovery and cherry-pick was appropriate for transplanting the approved changes.
 
-## Next Module
-
-Now that you know how to reliably recover from disasters and manipulate history with surgical precision, it is time to master working on multiple features simultaneously without losing your mind in [Module 5: Multi-Tasking Mastery](../module-5-worktrees-stashing/).
-
 ## Sources
 
 - [Git documentation: git-reset](https://git-scm.com/docs/git-reset)
@@ -577,3 +575,7 @@ Now that you know how to reliably recover from disasters and manipulate history 
 - [Pro Git book: Revision Selection](https://git-scm.com/book/en/v2/Git-Tools-Revision-Selection)
 - [Pro Git book: Git References](https://git-scm.com/book/en/v2/Git-Internals-Git-References)
 - [Kubernetes documentation: kubectl apply](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_apply/)
+
+## Next Module
+
+Now that you know how to reliably recover from disasters and manipulate history with surgical precision, it is time to master working on multiple features simultaneously without losing your mind in [Module 5: Multi-Tasking Mastery](../module-5-worktrees-stashing/).
