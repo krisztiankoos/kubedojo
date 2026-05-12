@@ -3544,139 +3544,6 @@ def build_activity_feed(
 
 # ---- Phase D: per-section track readiness ----
 
-# Pipeline v2's ``jobs.queue_state`` is one of ``pending | leased |
-# completed | failed`` (control_plane.py:195-201). It is NOT the same
-# vocabulary as the status reducer's ``pending_write | pending_review |
-# pending_patch | in_progress | done | dead_letter`` (cli.py:536-560),
-# which is derived from a combination of job rows + events. Bucketing
-# naïvely off raw ``queue_state`` misclassifies dead-lettered modules
-# as in-flight. We reuse the pipeline's own reducer so this endpoint
-# stays in lock-step with ``/api/pipeline/v2/status``.
-_READINESS_BUCKET_FOR_STATUS: dict[str, str] = {
-    "done": "cleared",
-    "dead_letter": "dead_letter",
-    "in_progress": "in_flight",
-    "pending_write": "in_flight",
-    "pending_review": "in_flight",
-    "pending_patch": "in_flight",
-}
-
-
-def _readiness_bucket_for_status(status: str | None) -> str:
-    if not status:
-        return "not_yet_enqueued"
-    # Unknown statuses default to in_flight so a reducer extension
-    # doesn't silently mark new work cleared.
-    return _READINESS_BUCKET_FOR_STATUS.get(status, "in_flight")
-
-
-def _load_v2_module_statuses(repo_root: Path) -> dict[str, str]:
-    """Map ``module_key`` → reducer status from ``.pipeline/v2.db``.
-
-    Uses the same ``_module_status`` reducer as
-    ``pipeline_v2.cli._build_status_report`` so the readiness grid
-    agrees with ``/api/pipeline/v2/status`` row-for-row. Dead-letter
-    detection flows through ``_current_dead_letter_rows``.
-    """
-    db_path = repo_root / ".pipeline" / "v2.db"
-    if not db_path.exists():
-        return {}
-    # Import here so the module-level deferral pattern is preserved.
-    # Missing pipeline_v2 degrades to an empty map (same stance as
-    # ``build_pipeline_stuck`` around dead-letter rows).
-    try:
-        from pipeline_v2.cli import (
-            _current_dead_letter_rows,
-            _module_status,
-        )
-    except ModuleNotFoundError as exc:
-        if exc.name not in {"pipeline_v2", "pipeline_v2.cli"}:
-            raise
-        return {}
-
-    job_rows = _query_sqlite_rows(
-        db_path,
-        """
-        SELECT module_key, phase, queue_state
-        FROM jobs
-        WHERE module_key IS NOT NULL
-        ORDER BY id ASC
-        """,
-    )
-    event_rows = _query_sqlite_rows(
-        db_path,
-        """
-        SELECT id, module_key, type, payload_json, at
-        FROM events
-        WHERE module_key IS NOT NULL
-        ORDER BY id ASC
-        """,
-    )
-
-    modules: set[str] = set()
-    job_state_by_module: dict[str, dict[str, Any]] = {}
-    event_types_by_module: dict[str, set[str]] = {}
-    dead_letter_rows: list[dict[str, Any]] = []
-
-    for row in job_rows:
-        module_key = str(row.get("module_key") or "")
-        if not module_key:
-            continue
-        phase = str(row.get("phase") or "")
-        queue_state = str(row.get("queue_state") or "")
-        modules.add(module_key)
-        state = job_state_by_module.setdefault(
-            module_key,
-            {
-                "pending_phases": set(),
-                "has_leased": False,
-                "has_failed": False,
-                "has_completed": False,
-            },
-        )
-        if queue_state == "pending":
-            state["pending_phases"].add(phase)
-        elif queue_state == "leased":
-            state["has_leased"] = True
-        elif queue_state == "failed":
-            state["has_failed"] = True
-        elif queue_state == "completed":
-            state["has_completed"] = True
-
-    for row in event_rows:
-        module_key = str(row.get("module_key") or "")
-        if not module_key:
-            continue
-        event_type = str(row.get("type") or "")
-        modules.add(module_key)
-        event_types_by_module.setdefault(module_key, set()).add(event_type)
-        if event_type in {
-            "needs_human_intervention",
-            "module_dead_lettered",
-            "dead_letter_recovered",
-        }:
-            dead_letter_rows.append({
-                "module_key": module_key,
-                "id": int(row.get("id") or 0),
-                "type": event_type,
-                "payload_json": str(row.get("payload_json") or "{}"),
-                "at": int(row.get("at") or 0),
-            })
-
-    unresolved_dead_letters = {
-        r["module_key"] for r in _current_dead_letter_rows(dead_letter_rows)
-    }
-
-    statuses: dict[str, str] = {}
-    for module_key in modules:
-        status = _module_status(
-            job_state_by_module.get(module_key),
-            event_types_by_module.get(module_key, set()),
-            dead_lettered=module_key in unresolved_dead_letters,
-        )
-        statuses[module_key] = status
-    return statuses
-
 
 def _section_for_key(module_key: str) -> str:
     """Second path segment of a module key; ``_root`` for top-level modules.
@@ -4026,28 +3893,45 @@ def build_tracks_readiness(repo_root: Path) -> dict[str, Any]:
     """Per-track, per-section readiness grid for the operator dashboard.
 
     Buckets every English module on disk into one of:
-      - ``cleared`` — pipeline v2 latest state is ``done``/``completed``
-      - ``in_flight`` — pending_* / leased / running / in_progress
-      - ``dead_letter`` — pipeline gave up, needs human triage
-      - ``not_yet_enqueued`` — file exists but has no v2 job row
+      - ``cleared`` — frontmatter says ``revision_pending`` is not true and ``citations_verified`` is true
+      - ``not_yet_enqueued`` — every other state
 
     Readiness % = ``cleared / total``. Tracks come out in the canonical
     ``TRACK_ORDER``; within a track, sections are alphabetical so the
     grid layout is stable across calls.
     """
+    started_at = time.perf_counter()
     docs_root = repo_root / "src" / "content" / "docs"
-    from status import TRACK_ORDER, _iter_en_modules, _track_for_key
-    pipeline_status = _load_v2_module_statuses(repo_root)
+    from status import TRACK_ORDER, _extract_frontmatter, _iter_en_modules, _track_for_key
+
+    read_errors = 0
 
     # track_slug -> section_slug -> counts
     grid: dict[str, dict[str, dict[str, int]]] = {}
+    # Keep the old buckets so downstream dashboards stay compatible.
+    # Unclear cases are represented as not-yet-enqueued until A^4 catchup.
+    # Track-level in_flight/dead_letter are always 0 under A^4.
 
     for path in _iter_en_modules(docs_root):
         rel = path.relative_to(docs_root).as_posix()
         module_key = rel[:-3] if rel.endswith(".md") else rel
+        try:
+            path.read_text(encoding="utf-8")
+        except OSError:
+            read_errors += 1
+            continue
+        frontmatter = _extract_frontmatter(path)
+        # Non-bool values produce spec-correct but surprising behavior:
+        #   revision_pending: "yes" → not True → counts as cleared
+        #   citations_verified: 1   → not True → counts as uncleared
+        # This is intentional: only literal True/False/absent are valid frontmatter states.
+        cleared = (
+            frontmatter.get("revision_pending") is not True
+            and frontmatter.get("citations_verified") is True
+        )
         track = _track_for_key(module_key)
         section = _section_for_key(module_key)
-        bucket = _readiness_bucket_for_status(pipeline_status.get(module_key))
+        bucket = "cleared" if cleared else "not_yet_enqueued"
         t = grid.setdefault(track, {})
         s = t.setdefault(
             section,
@@ -4127,8 +4011,13 @@ def build_tracks_readiness(repo_root: Path) -> dict[str, Any]:
     grand["readiness_pct"] = (
         round(100.0 * grand["cleared"] / grand["total"], 1) if grand["total"] else 0.0
     )
+    errors: dict[str, int] = {}
+    if read_errors:
+        errors["frontmatter_read_errors"] = read_errors
     return {
         "generated_at": int(time.time()),
+        "duration_ms": round(1000.0 * (time.perf_counter() - started_at), 3),
+        "errors": errors,
         "totals": grand,
         "tracks": out_tracks,
     }
@@ -8565,6 +8454,22 @@ def _v_quality_board(repo_root: Path) -> tuple:
     return ("quality-board", sig.hexdigest())
 
 
+def _v_docs_frontmatter(repo_root: Path) -> tuple:
+    docs_root = repo_root / "src" / "content" / "docs"
+    from status import _iter_en_modules
+
+    sig = hashlib.sha1()
+    for path in _iter_en_modules(docs_root):
+        try:
+            rel = path.relative_to(repo_root).as_posix()
+            stat = path.stat()
+        except OSError:
+            continue
+        sig.update(rel.encode("utf-8"))
+        sig.update(f":{stat.st_mtime_ns}:{stat.st_size}".encode("utf-8"))
+    return ("docs-frontmatter", sig.hexdigest())
+
+
 # Map fixed paths (query-independent beyond ``?compact=1``) to policies.
 # (ttl_seconds, version_fn_or_None)
 CACHE_POLICY: dict[str, tuple[float, Callable[[Path], tuple] | None]] = {
@@ -8583,6 +8488,7 @@ CACHE_POLICY: dict[str, tuple[float, Callable[[Path], tuple] | None]] = {
     "/api/labs/status": (10.0, None),
     "/api/quality/board": (30.0, _v_quality_board),
     "/api/quality/upgrade-plan": (30.0, None),
+    "/api/tracks/readiness": (5.0, _v_docs_frontmatter),
     "/api/citations/status": (30.0, None),
     "/api/ztt/status": (30.0, None),
     "/api/git/worktree": (2.0, None),
