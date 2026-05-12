@@ -519,7 +519,10 @@ def cmd_backfill_pending(args: argparse.Namespace) -> int:
         print(f"missing dependency: {_CITATION_BACKFILL_SCRIPT}")
         return 1
 
-    candidates = iter_states(args.only or None)
+    filters = list(args.only or [])
+    if args.module:
+        filters.extend(args.module)
+    candidates = iter_states(filters or None)
     pending = [
         st for st in candidates
         if st["stage"] == "COMMITTED" and not (st.get("backfill") or {}).get("done")
@@ -812,6 +815,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_backfill.add_argument("--limit", type=int, default=None)
     p_backfill.add_argument("--only", nargs="*", help="filter by slug(s)")
+    p_backfill.add_argument("--module", action="append", default=[], help="filter by a single slug (repeatable)")
     p_backfill.add_argument(
         "--agent",
         choices=("codex", "gemini"),

@@ -27,10 +27,12 @@ from pathlib import Path
 # checkout (primary OR a worktree) without a hard-coded absolute path.
 # scripts/quality/dispatch_388_pilot.py -> repo root is parents[2].
 REPO = Path(__file__).resolve().parents[2]
+PRIMARY_REPO = REPO.parent.parent if REPO.parent.name == ".worktrees" else REPO
 PILOT_FILE = REPO / "scripts/quality/pilot-2026-05-02.txt"
 LOG = REPO / "logs/388_pilot_2026-05-02.jsonl"
 BRIEF = REPO / "scripts/prompts/module-rewriter-388.md"
 WRITER_BRIEF = REPO / "scripts/prompts/module-writer.md"
+VENV_PYTHON = PRIMARY_REPO / ".venv" / "bin" / "python"
 
 sys.path.insert(0, str(REPO / "scripts"))
 from agent_runtime.runner import invoke  # noqa: E402
@@ -40,6 +42,27 @@ from agent_runtime.errors import (  # noqa: E402
     RateLimitedError,
 )
 from lib.pr_merge import PrMergeError, merge_when_green  # noqa: E402
+
+
+def module_slug_for_pipeline(module_path: str) -> str:
+    module = Path(module_path)
+    if not module.is_absolute():
+        module = REPO / module
+    try:
+        relative = module.relative_to(PRIMARY_REPO / "src" / "content" / "docs")
+    except ValueError:
+        rel = module.as_posix()
+        prefix_parts = rel.split("/src/content/docs/", 1)
+        if len(prefix_parts) == 2:
+            rel = prefix_parts[1]
+        elif rel.startswith("src/content/docs/"):
+            rel = rel[len("src/content/docs/"):]
+        else:
+            rel = rel.removeprefix(f"{REPO.as_posix().removesuffix('/')}/")
+            rel = rel.removeprefix(f"{PRIMARY_REPO.as_posix().removesuffix('/')}/")
+            rel = rel.removeprefix("/src/content/docs/")
+        return rel.removesuffix(".md").replace("/", "-")
+    return relative.as_posix().removesuffix(".md").replace("/", "-")
 
 
 def log(event: dict) -> None:
@@ -283,6 +306,58 @@ def merge_pr(pr_num: int) -> str | None:
         return None
 
 
+def dispatch_backfill(slug: str, module_path: str) -> bool:
+    log({"event": "backfill_start", "slug": slug, "module_path": module_path})
+    pipeline_slug = module_slug_for_pipeline(module_path)
+    pull = subprocess.run(
+        ["git", "pull", "--ff-only", "origin", "main"],
+        cwd=PRIMARY_REPO,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if pull.returncode != 0:
+        log({
+            "event": "backfill_failed",
+            "slug": slug,
+            "reason": f"git pull failed: {pull.stderr or pull.stdout}".strip()[-500:],
+        })
+        return False
+    backfill = subprocess.run(
+        [str(VENV_PYTHON), "-m", "scripts.quality.pipeline", "backfill-pending", "--module", pipeline_slug],
+        cwd=PRIMARY_REPO,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if backfill.returncode != 0:
+        log({
+            "event": "backfill_failed",
+            "slug": slug,
+            "reason": f"pipeline failed: {backfill.stderr or backfill.stdout}".strip()[-500:],
+        })
+        return False
+    push = subprocess.run(
+        ["git", "push", "origin", "main"],
+        cwd=PRIMARY_REPO,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if push.returncode != 0:
+        log({
+            "event": "backfill_failed",
+            "slug": slug,
+            "reason": f"git push failed: {push.stderr or push.stdout}".strip()[-500:],
+        })
+        return False
+
+    match = re.search(rf"^\[ok\]\s+{re.escape(pipeline_slug)}:\s+([0-9a-f]+)", backfill.stdout, re.MULTILINE)
+    sha = match.group(1) if match else None
+    log({"event": "backfill_done", "slug": slug, "sha": sha})
+    return True
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="#388 volume-run dispatcher")
     p.add_argument(
@@ -348,6 +423,7 @@ def main(argv: list[str] | None = None) -> int:
             merge_sha = merge_pr(pr_num)
             if merge_sha:
                 log({"event": "merged", "pr": pr_num, "module": module_path, "merge_sha": merge_sha})
+                dispatch_backfill(slug, module_path)
             else:
                 log({"event": "merge_held", "pr": pr_num, "module": module_path, "verdict": "MERGE_FAILED"})
         elif verdict == "APPROVE_WITH_NITS":
