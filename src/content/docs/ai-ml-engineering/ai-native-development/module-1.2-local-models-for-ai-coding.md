@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Local Models for AI Coding"
 slug: ai-ml-engineering/ai-native-development/module-1.2-local-models-for-ai-coding
 sidebar:
@@ -11,7 +12,7 @@ sidebar:
 
 **Reading Time**: 3-4 hours
 
-**Prerequisites**: Module 1.1 complete, comfort using a terminal, basic Git workflow, and at least 8 GB RAM. A 16 GB machine is strongly recommended for the examples in this module.
+**Prerequisites**: Module 1.1 complete, comfort using a terminal, basic Git workflow, and enough free memory to run a small local model comfortably. More RAM will make the examples smoother.
 
 ---
 
@@ -33,7 +34,7 @@ By the end of this module, you will be able to:
 
 ## Why This Module Matters
 
-Marcus was not trying to become an AI infrastructure engineer when his monthly API bill crossed three hundred dollars. He was trying to build an internal code analysis tool after work, and the cost grew quietly because every small experiment felt harmless. A prompt to generate tests became another prompt to revise the tests, which became another prompt to explain a failing edge case, which became another prompt to refactor the helper function.
+One common reason developers explore local models is that repeated API-assisted coding experiments can quietly turn into a noticeable monthly bill. He was trying to build an internal code analysis tool after work, and the cost grew quietly because every small experiment felt harmless. A prompt to generate tests became another prompt to revise the tests, which became another prompt to explain a failing edge case, which became another prompt to refactor the helper function.
 
 By the time he looked at the credit card statement, the problem was no longer a single expensive request. The problem was that he had built a workflow where every tiny coding thought required a paid round trip to somebody else's server. His code left his machine, his work stopped when the network was unstable, and his budget depended on how often he experimented.
 
@@ -95,16 +96,16 @@ The table shows why "local versus API" is a false binary for serious work. The r
 
 Most beginners choose local models by reputation, download size, or benchmark screenshots. That is understandable, but it leads to predictable problems. A model that looks impressive on a leaderboard may be unusable on an 8 GB laptop, and a model that fits comfortably may be weak for the task you are assigning it. The first practical constraint is memory, not marketing.
 
-The model name often includes a size such as `7b`, `14b`, `16b`, or `32b`. The `b` means billions of parameters. More parameters can improve capability, but they also require more memory and usually run more slowly. Quantization reduces memory use by storing parameters in fewer bits, which is why a `7b` model can often fit in several gigabytes instead of requiring the full memory implied by raw sixteen-bit weights.
+The model name often includes a size such as `7b`, `14b`, `16b`, or `32b`. The `b` means billions of parameters. More parameters can improve capability, but they also require more memory and usually run more slowly. [Quantization reduces memory use by storing parameters in fewer bits](https://huggingface.co/docs/transformers/main_classes/quantization), which is why a `7b` model can often fit in several gigabytes instead of requiring the full memory implied by raw sixteen-bit weights.
 
 ```ascii
 +----------------------+----------------------+----------------------+
 | Model size           | Typical workstation  | Practical expectation|
 +----------------------+----------------------+----------------------+
-| 3B to 4B             | 4 GB to 8 GB RAM     | Fast, limited depth  |
-| 7B                   | 8 GB to 16 GB RAM    | Good daily driver    |
-| 14B to 16B           | 16 GB to 24 GB RAM   | Better refactoring   |
-| 22B to 32B           | 32 GB+ RAM or GPU    | Stronger, slower     |
+| Small models         | Entry-level hardware | Fast, limited depth  |
+| Mid-sized coding models | Common developer laptops | Good daily driver |
+| Larger local coding models | Machines with more memory headroom | Better for harder refactors |
+| Large local models   | High-memory workstations or GPUs | Stronger, but slower |
 | Very large models    | High-end GPU setup   | Not laptop-friendly  |
 +----------------------+----------------------+----------------------+
 ```
@@ -130,9 +131,9 @@ The answer is engineering evidence: focused tests, edge-case analysis, code revi
 
 ## 3. Install Ollama And Run A First Coding Model
 
-Ollama is a local model runtime and model manager. It downloads model artifacts, runs an inference server, exposes a local API, and provides a command-line interface. You can think of it as the part of the system that turns "run this model" into an actual process listening on your machine.
+Ollama is a local model runtime and model manager. [It downloads model artifacts, runs an inference server, exposes a local API, and provides a command-line interface.](https://github.com/ollama/ollama/blob/main/README.md) You can think of it as the part of the system that turns "run this model" into an actual process listening on your machine.
 
-On macOS, Homebrew is the simplest installation path for many developers. On Linux, the official install script is common, and systemd may manage the service after installation. On Windows, the installer provides the same command-line interface through PowerShell. Use the installation method that matches your operating system and verify with `ollama --version` before moving on.
+Use the installation path recommended in the current Ollama documentation for your operating system, then verify the CLI with `ollama --version` before moving on. Use the installation method that matches your operating system and verify with `ollama --version` before moving on.
 
 ```bash
 # macOS with Homebrew
@@ -442,7 +443,7 @@ The senior move is to make these decisions visible to the team. Document which l
 
 ## Did You Know?
 
-1. Ollama exposes a local HTTP API by default, which is why editor tools can talk to it without each tool implementing its own model runtime.
+1. [Ollama exposes a local HTTP API by default](https://github.com/ollama/ollama/blob/main/README.md), which is why editor tools can talk to it without each tool implementing its own model runtime.
 
 2. Quantization is the reason many local models fit on ordinary developer machines; it stores model weights with fewer bits while accepting some quality trade-off.
 
@@ -688,6 +689,8 @@ In the next module, you will learn how to write prompts that produce better code
 
 ## Sources
 
-- [Ollama README](https://github.com/ollama/ollama) — Primary upstream entry point for installing Ollama and understanding how local model runtimes work.
-- [Aider README](https://github.com/Aider-AI/aider) — Primary upstream reference for using Aider with cloud and local models.
-- [DeepSeek-R1 model card](https://huggingface.co/deepseek-ai/DeepSeek-R1) — Useful primary source for current open reasoning-model capabilities and distilled local variants.
+- [huggingface.co: quantization](https://huggingface.co/docs/transformers/main_classes/quantization) — The Hugging Face quantization guide explicitly states that lower-precision quantization reduces memory and computational costs.
+- [github.com: README.md](https://github.com/ollama/ollama/blob/main/README.md) — The Ollama README documents the CLI, model execution flow, and REST API.
+- [Ollama README](https://github.com/ollama/ollama) — Best starting point for the local runtime, installation paths, CLI usage, and the local HTTP API.
+- [Aider GitHub Repository](https://github.com/aider-ai/aider) — Useful overview of terminal-based AI coding workflows and the project's Git-oriented usage model.
+- [Qwen2.5-Coder-7B-Instruct Model Card](https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct) — Provides a concrete example of the model family, parameter count, and context window discussed in the module.
