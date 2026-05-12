@@ -6,8 +6,6 @@ sidebar:
   order: 3
 ---
 
-# Module 1.2: Declarative vs Imperative - The Philosophy
-
 > **Complexity**: `[QUICK]` - Conceptual understanding with production consequences
 >
 > **Time to Complete**: 25-30 minutes
@@ -36,6 +34,8 @@ The on-call engineer at a SaaS company got paged at 2 AM because a revenue-criti
 Nothing in that story requires Kubernetes to be broken. The cluster was doing exactly what it was built to do: compare the declared desired state with the observed current state and move reality back toward the declaration. The operational failure came from using imperative instincts inside a declarative control system. When the engineer finally changed the Deployment YAML, committed the fix, and applied the corrected manifest, the next rollout converged in seconds because she stopped fighting the controller and started changing the source of truth.
 
 That difference is not academic. Kubernetes rewards operators who ask, "What state should exist?" before asking, "What command should I run?" It punishes teams that treat a live cluster as a collection of mutable servers because every controller is designed to undo unowned manual edits. In this module, you will build the mental model that makes Deployments, Services, GitOps, drift detection, and self-healing feel like parts of one system rather than a pile of commands.
+
+You will also practice a habit that becomes more valuable as systems grow: separating investigation from durable change. Investigation can be quick, interactive, and messy because its job is to expose evidence. Durable change must be explicit, reviewed, repeatable, and owned because its job is to survive the next rollout, teammate, cluster replacement, and incident review. That separation is the difference between using commands as tools and letting commands become hidden infrastructure.
 
 ---
 
@@ -83,13 +83,13 @@ spec:
         image: nginx
 ```
 
-For the rest of this curriculum, define the short alias `k` once in your shell and use it for Kubernetes commands. The alias is only a typing convenience; it does not change the API request or the operational model.
+Many engineers define a short local alias for interactive typing, but training material and runbooks should use the full `kubectl` command so examples are copy-paste safe in terminals, scripts, CI jobs, and incident notes. A typing shortcut does not change the API request or the operational model, and it should never become a hidden prerequisite for understanding the lesson.
 
 ```bash
-alias k=kubectl
+kubectl version --client
 ```
 
-The original one-line apply command from many beginner tutorials still captures the important idea: submit the declaration, then let Kubernetes handle the ongoing work. In daily practice, this module uses the `k` alias after introducing it, but you should recognize both forms when reading documentation or old runbooks.
+The original one-line apply command from many beginner tutorials still captures the important idea: submit the declaration, then let Kubernetes handle the ongoing work. In daily practice, this module uses the full `kubectl` binary in runnable examples because the command should work whether you paste it into an interactive shell, a script, or a CI job.
 
 ```bash
 kubectl apply -f nginx-deployment.yaml
@@ -97,10 +97,10 @@ kubectl apply -f nginx-deployment.yaml
 ```
 
 ```bash
-k apply -f nginx-deployment.yaml
+kubectl apply -f nginx-deployment.yaml
 ```
 
-Pause and predict: if you run the same `k apply -f nginx-deployment.yaml` command a second time without changing the file, what should Kubernetes create, update, or leave alone? The correct expectation is not "run the deployment again." The correct expectation is "compare the declaration with the stored object and converge only if something differs." That property, called idempotency, is one reason declarative configuration works so well in automated pipelines.
+Pause and predict: if you run the same `kubectl apply -f nginx-deployment.yaml` command a second time without changing the file, what should Kubernetes create, update, or leave alone? The correct expectation is not "run the deployment again." The correct expectation is "compare the declaration with the stored object and converge only if something differs." That property, called idempotency, is one reason declarative configuration works so well in automated pipelines.
 
 The distinction between the two styles is not that imperative commands are evil and declarative files are always good. The distinction is where long-term intent lives. Imperative work is useful for exploration, quick diagnostics, and temporary emergency action because it gives an operator immediate leverage. Declarative work is safer for production because intent survives the operator, can be reviewed before it changes the cluster, and can be reconciled by software after the next crash, reschedule, or rollout.
 
@@ -112,7 +112,7 @@ The distinction between the two styles is not that imperative commands are evil 
 | Repeated execution | Can duplicate work or hit "already exists" errors | Should converge on the same state |
 | Auditability | Depends on external logging and discipline | Changes can flow through review and Git history |
 
-War story: a platform team once investigated a memory-limit change that appeared in production during an incident but could not be found in Git, the deployment pipeline, or the service repository. The change had been made with a live edit at the end of a long call, fixed the immediate symptom, and then disappeared when the next normal release applied the old manifest. The outage postmortem was not about the memory limit itself; it was about the dangerous gap between live state and declared state.
+Hypothetical scenario: a platform team investigates a memory-limit change that appears in production during an incident but cannot be found in Git, the deployment pipeline, or the service repository. The change was made with a live edit at the end of a long call, fixed the immediate symptom, and then disappeared when the next normal release applied the old manifest. The incident review is not mainly about the memory limit itself; it is about the dangerous gap between live state and declared state.
 
 ---
 
@@ -134,7 +134,7 @@ flowchart TD
     Current -- "Loop forever" --> Compare
 ```
 
-The important word in that diagram is "forever." `k apply` is not the deployment itself in the way a shell script might be the deployment. Applying a manifest sends desired state to the API server; controllers continue the work after the command exits. If a node fails five minutes later, the Deployment controller still knows the desired replica count because the desired state is stored in the Kubernetes API, not in the terminal that ran the command.
+The important word in that diagram is "forever." `kubectl apply` is not the deployment itself in the way a shell script might be the deployment. Applying a manifest sends desired state to the API server; controllers continue the work after the command exits. If a node fails five minutes later, the Deployment controller still knows the desired replica count because the desired state is stored in the Kubernetes API, not in the terminal that ran the command.
 
 This is why manual changes to managed objects often feel like Kubernetes is being stubborn. Imagine deleting one pod from a Deployment because you want to "restart" it. The Deployment controller does not interpret that deletion as a new desired state of fewer pods. It observes that the ReplicaSet now has fewer available pods than requested, creates a replacement, and keeps moving toward the declared count. From the controller's point of view, it is repairing damage, not arguing with the operator.
 
@@ -144,7 +144,7 @@ spec:
   replicas: 3
 ```
 
-Before running this in a lab, predict the controller's behavior: if you manually delete a pod managed by a Deployment with `spec.replicas: 3`, will Kubernetes preserve the deletion, create a replacement, or wait for the next `k apply`? The key is ownership. A managed pod is not the source of truth; the Deployment and its ReplicaSet are higher-level declarations that explain how many matching pods should exist.
+Before running this in a lab, predict the controller's behavior: if you manually delete a pod managed by a Deployment with `spec.replicas: 3`, will Kubernetes preserve the deletion, create a replacement, or wait for the next `kubectl apply`? The key is ownership. A managed pod is not the source of truth; the Deployment and its ReplicaSet are higher-level declarations that explain how many matching pods should exist.
 
 The reconciliation model also explains why Kubernetes does not need every failure mode encoded in your deployment pipeline. You do not write separate pipeline steps for "if a container exits, start another," "if a node disappears, reschedule elsewhere," or "if a rollout stalls, expose status." You declare a workload shape, and controllers perform narrow, repeated corrections. The platform is powerful because each controller has a small responsibility and can keep performing it after the original change request is long gone.
 
@@ -176,7 +176,7 @@ Kubernetes applies the same shape of reasoning to infrastructure. A Deployment i
 
 The analogy also shows a common mistake. If someone stands next to the thermostat and manually toggles the heater switch every few seconds, the room may briefly feel right, but the person is fighting the automation. The correct fix is to change the set point, repair the sensor, or adjust the controller's policy. In Kubernetes, the equivalent is updating the manifest, fixing labels and selectors, or changing the controller-owned resource rather than editing a pod by hand.
 
-Which approach would you choose here and why: during a production traffic spike, should an engineer run `k scale deployment web --replicas=10` and leave the manifest unchanged, or update the declarative replica setting through the normal release path? A practical answer can include an emergency manual scale, but only if the team records the decision and follows immediately with a manifest change. Otherwise the next routine apply may undo the emergency capacity and create a second incident.
+Which approach would you choose here and why: during a production traffic spike, should an engineer run `kubectl scale deployment web --replicas=10` and leave the manifest unchanged, or update the declarative replica setting through the normal release path? A practical answer can include an emergency manual scale, but only if the team records the decision and follows immediately with a manifest change. Otherwise the next routine apply may undo the emergency capacity and create a second incident.
 
 ---
 
@@ -197,8 +197,8 @@ kubectl apply -f deployment.yaml
 ```
 
 ```bash
-# With the alias used in this course
-k apply -f deployment.yaml
+# Repeating the full command remains copy-paste safe
+kubectl apply -f deployment.yaml
 ```
 
 Version control is the third benefit because declarative configuration can be reviewed like application code. A replica increase, a memory-limit fix, and a readiness probe change become visible commits rather than tribal memory. This does not make every YAML file beautiful, and it does not remove the need for good review, but it does give the team a durable timeline of infrastructure intent.
@@ -239,7 +239,7 @@ There is a tradeoff. Declarative systems can feel indirect when you are debuggin
 
 ## The Imperative Trap
 
-Kubernetes includes imperative commands because operators need fast ways to explore, debug, and handle exceptional situations. `k run` can create a temporary pod, `k logs` can inspect symptoms, `k describe` can surface events, and `k scale` can buy time during an incident. The trap appears when a temporary command becomes the unrecorded production source of truth. A live change that is not represented in the manifest is a loan from the future; eventually a controller, pipeline, or teammate will collect it.
+Kubernetes includes imperative commands because operators need fast ways to explore, debug, and handle exceptional situations. `kubectl run` can create a temporary pod, `kubectl logs` can inspect symptoms, `kubectl describe` can surface events, and `kubectl scale` can buy time during an incident. The trap appears when a temporary command becomes the unrecorded production source of truth. A live change that is not represented in the manifest is a loan from the future; eventually a controller, pipeline, or teammate will collect it.
 
 ```bash
 # These work, but...
@@ -249,10 +249,10 @@ kubectl set image deployment/nginx nginx=nginx:1.27
 ```
 
 ```bash
-# Course style after the alias is defined
-k run nginx --image=nginx
-k scale deployment nginx --replicas=5
-k set image deployment/nginx nginx=nginx:1.27
+# Equivalent examples written without shell aliases
+kubectl run nginx --image=nginx
+kubectl scale deployment nginx --replicas=5
+kubectl set image deployment/nginx nginx=nginx:1.27
 ```
 
 The danger is not that those commands fail. The danger is that they succeed outside the review path. A manual scale can stabilize traffic, but if the manifest still says three replicas, the next apply can reduce capacity. A manual image update can test a fix, but if the Deployment file still references the old image, the next rollout can restore the bug. A live edit can unblock a team, but if no one knows which field changed, the root cause becomes harder to diagnose.
@@ -268,9 +268,9 @@ kubectl apply -f deployment.yaml
 ```
 
 ```bash
-# Same workflow using the course alias
-k create deployment nginx --image=nginx --dry-run=client -o yaml > deployment.yaml
-k apply -f deployment.yaml
+# Same workflow repeated with full commands for scripts and runbooks
+kubectl create deployment nginx --image=nginx --dry-run=client -o yaml > deployment.yaml
+kubectl apply -f deployment.yaml
 ```
 
 When an emergency demands a direct command, treat it like a production hotfix, not like a normal workflow. Write down the command in the incident channel, explain why the normal path was too slow, and create the follow-up manifest change before the incident is considered closed. This discipline matters because an imperative change can be operationally correct for the next ten minutes while still being organizationally dangerous for the next release.
@@ -317,7 +317,7 @@ Worked example: suppose `web-abc123` is crash-looping. An imperative instinct sa
 
 The fastest way to stop fighting Kubernetes is to ask which object owns the symptom you are staring at. A pod name is often the most visible thing in an alert, but a pod is usually not the most meaningful place to make a durable change. Deployments own ReplicaSets, ReplicaSets own pods, StatefulSets own ordered pods, Jobs own completion behavior, and GitOps controllers may own the manifests that create all of them. If you edit the bottom of that chain while a higher object still declares a different target, the higher object will eventually win.
 
-This ownership chain is why `k describe pod` is more than a wall of text. It gives you events, scheduling messages, image pull status, restart counts, labels, and owner references. Those details help you connect the symptom to the declaration that produced it. A pod stuck in `ImagePullBackOff` may point to a bad image name in the Deployment template. A pod that never becomes ready may point to a probe declaration that does not match the application. A pod that keeps returning after deletion points to a controller doing its assigned work.
+This ownership chain is why `kubectl describe pod` is more than a wall of text. It gives you events, scheduling messages, image pull status, restart counts, labels, and owner references. Those details help you connect the symptom to the declaration that produced it. A pod stuck in `ImagePullBackOff` may point to a bad image name in the Deployment template. A pod that never becomes ready may point to a probe declaration that does not match the application. A pod that keeps returning after deletion points to a controller doing its assigned work.
 
 The same reasoning applies to Services. A beginner may see a Service that does not route traffic and try to recreate it by hand. A declarative operator checks the selector, then checks whether any pod labels match that selector, then checks whether the owning workload template sets those labels. The durable fix may be a label correction in the Deployment, not a Service rewrite. The Service object expresses desired networking intent, but the endpoint population depends on other declared state being consistent with that intent.
 
@@ -403,7 +403,7 @@ Scaling consideration: the more services and teams you have, the more expensive 
 
 ## When You'd Use This vs Alternatives
 
-Choose declarative management for production workloads, shared environments, repeatable infrastructure, and any change that must survive a rebuild. Choose imperative commands for exploration, one-time inspection, temporary debug objects, and emergency actions that are immediately followed by a declarative update. Choose GitOps when you want a controller to continuously compare the cluster with Git rather than relying on a human or CI job to run `k apply` at the right time.
+Choose declarative management for production workloads, shared environments, repeatable infrastructure, and any change that must survive a rebuild. Choose imperative commands for exploration, one-time inspection, temporary debug objects, and emergency actions that are immediately followed by a declarative update. Choose GitOps when you want a controller to continuously compare the cluster with Git rather than relying on a human or CI job to run `kubectl apply` at the right time.
 
 ```text
 Decision path
@@ -425,7 +425,7 @@ Use this decision path during incidents because pressure narrows thinking. A fas
 |---|---|---|
 | Learning a new resource type | Generate a manifest with `--dry-run=client -o yaml` | You learn the schema while keeping the durable result reviewable |
 | Production rollout | Commit and apply a manifest or let GitOps reconcile | The change is reviewed, repeatable, and auditable |
-| Pod crash investigation | Use `k describe`, `k logs`, and owner references | Inspection is temporary; the fix belongs in the owning declaration |
+| Pod crash investigation | Use `kubectl describe`, `kubectl logs`, and owner references | Inspection is temporary; the fix belongs in the owning declaration |
 | Sudden traffic spike | Scale quickly if needed, then update the manifest | Emergency capacity should not disappear on the next apply |
 | Competing changes to a namespace | Stop and assign one source of truth | Kubernetes will not negotiate conflicting desired states for you |
 
@@ -446,13 +446,13 @@ The framework is deliberately conservative because Kubernetes itself is conserva
 
 | Mistake | Why It Happens | How to Fix It |
 |---|---|---|
-| Using imperative commands as the normal production release path | Commands feel faster than waiting for review, especially when YAML is unfamiliar | Use `k create ... --dry-run=client -o yaml` to generate manifests, then review, commit, and apply them |
-| Editing live resources with `k edit` and never updating Git | The live edit solves the immediate symptom, so the follow-up feels optional | Treat every live edit as an incident hotfix that requires a matching manifest change before closure |
+| Using imperative commands as the normal production release path | Commands feel faster than waiting for review, especially when YAML is unfamiliar | Use `kubectl create ... --dry-run=client -o yaml` to generate manifests, then review, commit, and apply them |
+| Editing live resources with `kubectl edit` and never updating Git | The live edit solves the immediate symptom, so the follow-up feels optional | Treat every live edit as an incident hotfix that requires a matching manifest change before closure |
 | Assuming Kubernetes "undoing" a manual change is a bug | The operator focuses on the visible object and misses its owner controller | Inspect owner references and change the higher-level declaration that owns the object |
-| Mixing Helm, raw `k apply`, and GitOps on the same resource | Each tool seems declarative in isolation, so ownership boundaries are ignored | Assign exactly one tool and one repository path as the source of truth for each managed resource |
-| Forgetting to prune resources removed from files | Applying a changed file updates known objects but does not always delete old named objects | Use GitOps pruning or carefully scoped `k apply --prune` policies, and verify before deleting shared resources |
+| Mixing Helm, raw `kubectl apply`, and GitOps on the same resource | Each tool seems declarative in isolation, so ownership boundaries are ignored | Assign exactly one tool and one repository path as the source of truth for each managed resource |
+| Forgetting to prune resources removed from files | Applying a changed file updates known objects but does not always delete old named objects | Use GitOps pruning or carefully scoped `kubectl apply --prune` policies, and verify before deleting shared resources |
 | Storing sensitive values directly in plain YAML | Teams want all configuration in Git and confuse declarative with unencrypted | Use External Secrets, SOPS, Sealed Secrets, or another approved secret-management workflow |
-| Believing `k apply` makes a multi-resource release perfectly atomic | Declarative convergence can involve several controllers and partial progress | Design readiness probes, rollout checks, and rollback plans around eventual convergence |
+| Believing `kubectl apply` makes a multi-resource release perfectly atomic | Declarative convergence can involve several controllers and partial progress | Design readiness probes, rollout checks, and rollback plans around eventual convergence |
 
 ---
 
@@ -464,13 +464,13 @@ The mechanism is the reconciliation loop, implemented by controllers that compar
 
 </details>
 
-<details><summary>During a traffic spike, an engineer runs `k scale deployment web --replicas=10`. Two days later, a normal release applies the manifest and the workload drops back to three replicas. What caused the outage?</summary>
+<details><summary>During a traffic spike, an engineer runs `kubectl scale deployment web --replicas=10`. Two days later, a normal release applies the manifest and the workload drops back to three replicas. What caused the outage?</summary>
 
 The manual scale changed live state without changing the declarative source of truth. When the normal release applied the manifest, Kubernetes reconciled the Deployment back to the replica count declared in that file. The trap was not the emergency scale itself; it was leaving the repository and the cluster with different stories about desired capacity. A proper follow-up would commit the new replica target or a more appropriate autoscaling configuration.
 
 </details>
 
-<details><summary>Your pipeline runs `k apply -f deployment.yaml` several times in a row after a retry bug. The file does not change. What should happen, and why is that safe?</summary>
+<details><summary>Your pipeline runs `kubectl apply -f deployment.yaml` several times in a row after a retry bug. The file does not change. What should happen, and why is that safe?</summary>
 
 The cluster should converge to the same declared state each time rather than creating duplicate Deployments or extra unmanaged pods. Declarative apply is intended to be idempotent: repeating the same desired state should produce the same end state. Kubernetes may update managed fields or report that the object is unchanged, but the workload shape should remain stable. This property is what makes retries and continuous reconciliation practical.
 
@@ -509,8 +509,7 @@ This exercise uses a local or disposable Kubernetes 1.35+ cluster. You do not ne
 First, create a clean namespace and a small declarative Deployment. The manifest intentionally uses an explicit label selector because selectors are how the Deployment knows which pods belong to its desired state. Read the file before applying it and predict how many pods should exist after convergence.
 
 ```bash
-alias k=kubectl
-k create namespace declarative-lab --dry-run=client -o yaml > namespace.yaml
+kubectl create namespace declarative-lab --dry-run=client -o yaml > namespace.yaml
 ```
 
 ```yaml
@@ -539,40 +538,40 @@ spec:
 Apply the namespace and Deployment from files, then inspect what Kubernetes created. The important observation is that you apply one higher-level object, but the controller creates lower-level pods to satisfy it.
 
 ```bash
-k apply -f namespace.yaml
-k apply -f web-deployment.yaml
-k get deployment web -n declarative-lab
-k get pods -n declarative-lab -l app=web
+kubectl apply -f namespace.yaml
+kubectl apply -f web-deployment.yaml
+kubectl get deployment web -n declarative-lab
+kubectl get pods -n declarative-lab -l app=web
 ```
 
 Now deliberately create drift by deleting one pod. Do not immediately reapply the manifest. Watch the pod list until the replacement appears, and connect the behavior back to the reconciliation loop from the diagram.
 
 ```bash
-POD_NAME="$(k get pods -n declarative-lab -l app=web -o jsonpath='{.items[0].metadata.name}')"
-k delete pod "$POD_NAME" -n declarative-lab
-k get pods -n declarative-lab -l app=web --watch
+POD_NAME="$(kubectl get pods -n declarative-lab -l app=web -o jsonpath='{.items[0].metadata.name}')"
+kubectl delete pod "$POD_NAME" -n declarative-lab
+kubectl get pods -n declarative-lab -l app=web --watch
 ```
 
 Next, test idempotency by applying the same Deployment again. The expected result is not an additional Deployment and not six pods. The expected result is convergence to the same declared shape.
 
 ```bash
-k apply -f web-deployment.yaml
-k apply -f web-deployment.yaml
-k get deployment web -n declarative-lab
+kubectl apply -f web-deployment.yaml
+kubectl apply -f web-deployment.yaml
+kubectl get deployment web -n declarative-lab
 ```
 
 Finally, create a temporary imperative scale and then correct it declaratively. This is the incident pattern in miniature: a manual command changes live state, and the durable fix is to update the manifest so the source of truth matches the desired capacity.
 
 ```bash
-k scale deployment web -n declarative-lab --replicas=5
-k get deployment web -n declarative-lab
+kubectl scale deployment web -n declarative-lab --replicas=5
+kubectl get deployment web -n declarative-lab
 ```
 
 Edit `web-deployment.yaml` so `spec.replicas` is `5`, apply it, and explain in your notes why this is different from leaving the manual scale alone. Clean up the namespace only after you have captured the observations you need.
 
 ```bash
-k apply -f web-deployment.yaml
-k delete namespace declarative-lab
+kubectl apply -f web-deployment.yaml
+kubectl delete namespace declarative-lab
 ```
 
 - [ ] You created a namespace and applied a Deployment from declarative YAML.
