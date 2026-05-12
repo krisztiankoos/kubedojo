@@ -24,8 +24,10 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+import citation_backfill  # noqa: E402
 
-from scripts.quality import dispatchers, pipeline, queue, stages, state, worktree  # noqa: E402
+from scripts.quality import dispatchers, pipeline, stages, state, worktree  # noqa: E402
 from scripts.quality.citations import CitationResult  # noqa: E402
 from scripts.quality.dispatchers import DispatchResult  # noqa: E402
 from conftest import _read_frontmatter
@@ -1715,6 +1717,147 @@ def test_backfill_pending_inject_nothing_to_do_marks_done(fake_repo, monkeypatch
     assert bf.get("reason") == "nothing_to_do"
     assert bf.get("sha") is None or len(bf["sha"]) == 40
     assert _read_frontmatter(fake_repo / st["module_path"])["citations_verified"] is True
+
+
+def test_backfill_pending_inject_nothing_to_do_includes_seed_in_commit(fake_repo, monkeypatch):
+    """When inject is no-op after research changed the seed, both module and
+    seed must be committed so the checkout stays clean."""
+    slug, st = _seed_committed_state(fake_repo, monkeypatch)
+    module_rel = st["module_path"]
+    module_key = pipeline._module_key_from_path(module_rel)
+    seed_rel = f"docs/citation-seeds/{module_key.replace('/', '-')}.json"
+    seed_path = fake_repo / seed_rel
+    seed_path.parent.mkdir(parents=True, exist_ok=True)
+    seed_before = json.dumps({
+        "schema_version": 3,
+        "module_key": module_key,
+        "module_path": module_rel,
+        "claims": [{"claim_text": "initial"}],
+    }, indent=2) + "\n"
+    seed_path.write_text(seed_before, encoding="utf-8")
+    subprocess.run(["git", "add", str(seed_path)], cwd=fake_repo, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "seed module for no-op backfill"], cwd=fake_repo, check=True, capture_output=True)
+
+    head_before = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=fake_repo, check=True, capture_output=True, text=True,
+    ).stdout.strip()
+
+    def fake_subcmd(module_key_arg: str, sub: str, *, agent=None):
+        del agent
+        if sub == "research":
+            seed_path.write_text(
+                json.dumps({
+                    "schema_version": 3,
+                    "module_key": module_key,
+                    "module_path": module_rel,
+                    "claims": [{"claim_text": "updated"}],
+                }, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            return {"ok": True, "stdout": '{"ok": true}', "stderr": "", "returncode": 0}
+        return {
+            "ok": False,
+            "error": "nothing_to_do",
+            "detail": "seed has no cited, rewrite, or further_reading actions",
+            "stdout": "",
+            "stderr": "",
+            "returncode": 0,
+        }
+
+    monkeypatch.setattr(pipeline, "_run_citation_subcommand", fake_subcmd)
+    outcome = pipeline._backfill_one(st, agent=None)
+    assert outcome["done"] is True and outcome["ok"] is True
+    assert outcome["no_op"] is True
+    assert outcome.get("reason") == "nothing_to_do"
+
+    head_after = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=fake_repo, check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    assert head_after != head_before
+
+    log_out = subprocess.run(
+        ["git", "log", "-1", "--name-only", "--pretty=format:"],
+        cwd=fake_repo, check=True, capture_output=True, text=True,
+    ).stdout
+    files = {line.strip() for line in log_out.splitlines() if line.strip()}
+    assert module_rel in files
+    assert seed_rel in files
+
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=fake_repo, check=True, capture_output=True, text=True,
+    ).stdout
+    assert status == "", "no-op backfill must leave a clean working tree"
+
+
+def test_backfill_pending_research_error_payload_preserves_seed(fake_repo, monkeypatch):
+    """A bridge error seed payload (`from_model: codex-bridge-error`) must fail
+    research cleanly and preserve the existing seed file on disk."""
+    slug, st = _seed_committed_state(fake_repo, monkeypatch)
+    module_rel = st["module_path"]
+    module_key = pipeline._module_key_from_path(module_rel)
+    seed_rel = f"docs/citation-seeds/{module_key.replace('/', '-')}.json"
+    seed_path = fake_repo / seed_rel
+    seed_path.parent.mkdir(parents=True, exist_ok=True)
+    seed_before = json.dumps({
+        "schema_version": 3,
+        "module_key": module_key,
+        "module_path": module_rel,
+        "claims": [{"claim_text": "keep"}],
+    }, indent=2) + "\n"
+    seed_path.write_text(seed_before, encoding="utf-8")
+    subprocess.run(["git", "add", str(seed_path)], cwd=fake_repo, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "seed module for bridge-error reseach"], cwd=fake_repo, check=True, capture_output=True)
+
+    # Point citation_backfill to the fake repo and force an error-shaped response.
+    monkeypatch.setattr(citation_backfill, "REPO_ROOT", fake_repo)
+    monkeypatch.setattr(citation_backfill, "DOCS_ROOT", fake_repo / "src" / "content" / "docs")
+    monkeypatch.setattr(citation_backfill, "SEED_DIR", fake_repo / "docs" / "citation-seeds")
+
+    def fake_dispatch(_prompt: str, *, task_id: str) -> tuple[bool, str]:
+        del task_id
+        return True, json.dumps({
+            "from_model": "codex-bridge-error",
+            "module_key": module_key,
+            "module_path": module_rel,
+        })
+
+    monkeypatch.setattr(citation_backfill, "dispatch_codex", fake_dispatch)
+
+    research_result: dict[str, object] = {}
+    research_returncode = 0
+
+    def fake_subcmd(module_key_arg: str, sub: str, *, agent=None):
+        del agent
+        if sub == "research":
+            result = citation_backfill.run_research(module_key_arg, agent="codex")
+            research_result.update({"ok": result.get("ok"), "detail": result.get("detail")})
+            nonlocal research_returncode
+            research_returncode = 1 if not result.get("ok") else 0
+            return {
+                "ok": bool(result.get("ok")),
+                "stdout": json.dumps(result, ensure_ascii=False),
+                "stderr": result.get("detail", "") if not result.get("ok") else "",
+                "returncode": research_returncode,
+            }
+        raise AssertionError("inject must not run after research failed")
+
+    monkeypatch.setattr(pipeline, "_run_citation_subcommand", fake_subcmd)
+
+    rc = pipeline.cmd_backfill_pending(
+        argparse.Namespace(only=None, limit=None, module=[], agent=None)
+    )
+    assert rc == 1
+    assert research_returncode == 1
+    assert research_result.get("ok") is False
+    assert research_result.get("detail") == "agent response missing claims/schema_version or bridge error payload"
+
+    assert seed_path.read_text(encoding="utf-8") == seed_before
+
+    st2 = state.load_state(slug)
+    bf = st2["backfill"]
+    assert bf["done"] is False and bf["ok"] is False
+    assert bf["stage_failed"] == "research"
+    assert bf["error"] == "agent response missing claims/schema_version or bridge error payload"
 
 
 def test_backfill_pending_inject_failure_does_not_set_citations_verified(fake_repo, monkeypatch):

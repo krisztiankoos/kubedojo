@@ -435,14 +435,48 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
         # path (frontmatter can still be marked verified).
         if inject.get("error") == "nothing_to_do" or "nothing_to_do" in (inject.get("stdout") or ""):
             set_citations_verified_frontmatter(_REPO_ROOT / st["module_path"], verified=True)
-            _git(repo, "add", st["module_path"], check=False)
-            msg = f"chore(citations): mark {module_key} verified (no-op backfill)"
-            rc, _, _ = _git(repo, "commit", "-m", msg, check=False)
-            sha = None
+            seed_rel = f"docs/citation-seeds/{module_key.replace('/', '-')}.json"
+            rc, status_all, _ = _git(repo, "status", "--porcelain", check=False)
             if rc != 0:
                 _git(repo, "restore", st["module_path"], check=False)
-            else:
-                _, sha, _ = _git(repo, "rev-parse", "HEAD")
+                return {
+                    "done": False, "ok": False, "stage_failed": "git_status",
+                    "error": "git status failed after no-op inject",
+                    "module_key": module_key,
+                }
+            changed_paths = {
+                line[3:].strip() for line in status_all.splitlines()
+                if line.strip()
+            }
+            backfill_paths = [p for p in (st["module_path"], seed_rel) if p in changed_paths]
+            foreign_paths = changed_paths - set(backfill_paths)
+            if foreign_paths:
+                # Leave only scope-owned changes in the commit set. Roll
+                # back no-op writes if someone else touched this checkout.
+                for p in backfill_paths:
+                    _git(repo, "restore", p, check=False)
+                return {
+                    "done": False, "ok": False, "stage_failed": "concurrent_edit",
+                    "error": f"unexpected working-tree changes outside backfill scope: {sorted(foreign_paths)[:5]}",
+                    "module_key": module_key,
+                }
+            if not backfill_paths:
+                return {
+                    "done": True, "ok": True, "no_op": True,
+                    "reason": "nothing_to_do", "module_key": module_key,
+                }
+            _git(repo, "add", *backfill_paths)
+            msg = f"chore(citations): mark {module_key} verified (no-op backfill)"
+            rc, _, stderr = _git(repo, "commit", "-m", msg, check=False)
+            if rc != 0:
+                for p in backfill_paths:
+                    _git(repo, "restore", "--staged", p, check=False)
+                    _git(repo, "restore", p, check=False)
+                return {
+                    "done": False, "ok": False, "stage_failed": "git_commit",
+                    "error": stderr.strip()[-500:], "module_key": module_key,
+                }
+            _, sha, _ = _git(repo, "rev-parse", "HEAD")
             return {
                 "done": True, "ok": True, "no_op": True,
                 "reason": "nothing_to_do", "sha": (sha.strip() if sha else None),
