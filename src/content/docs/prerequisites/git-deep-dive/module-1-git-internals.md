@@ -30,8 +30,6 @@ Most engineers learn Git as a set of porcelain commands — `git add`, `git comm
 
 Platform engineers manage that same content-addressable model at scale every day. A Kubernetes `ConfigMap` that disappears from a release branch is not a mystery; it is either still present in an earlier tree object, still in the working tree, still in the index, or still in a reflog entry on someone's laptop. Knowing how Git stores and references that content is the difference between recovery and panic. When later KubeDojo modules discuss Kubernetes 1.35+ operations, runnable examples use the full `kubectl` binary so copied commands behave the same in scripts and interactive terminals.
 
-Git feels mysterious when you only know porcelain commands such as `git add`, `git commit`, and `git push`. Underneath that interface, however, Git is a small database of immutable objects plus a set of movable names that point at those objects. This module takes the black box apart carefully, preserving the beginner-friendly commands while adding the mental model you need for real recovery work. You will inspect the `.git` directory, compare object types, implement staged snapshots, evaluate hash-based storage, and design recovery steps before panic pushes the wrong pointer.
-
 ## The `.git` Directory as Repository State
 Every time you run `git init`, Git creates a hidden `.git` directory at the root of your project. That directory is not decoration around your code; it is the repository database, configuration store, reference namespace, and recovery workspace. If you copy a project directory without `.git`, you copy files but not history. If you damage `.git`, your working files may still exist, yet Git loses the memory that explains how those files relate to previous snapshots.
 
