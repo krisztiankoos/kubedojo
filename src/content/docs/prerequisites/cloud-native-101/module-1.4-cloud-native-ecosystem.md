@@ -486,7 +486,7 @@ Good deferrals are not dismissals. A team might defer Istio until it has many se
 
 - [CNCF Landscape](https://landscape.cncf.io)
 - [CNCF Project Maturity Levels](https://www.cncf.io/projects/)
-- [CNCF Graduation Criteria](https://github.com/cncf/toc/blob/main/process/graduation_criteria.adoc)
+- [CNCF Graduation Criteria](https://github.com/cncf/toc/blob/main/process/graduation_criteria.md)
 - [Kubernetes Documentation - Concepts](https://kubernetes.io/docs/concepts/)
 - [Kubernetes Documentation - Command Line Tool kubectl](https://kubernetes.io/docs/reference/kubectl/)
 - [Helm Documentation](https://helm.sh/docs/)
@@ -499,7 +499,7 @@ Good deferrals are not dismissals. A team might defer Istio until it has many se
 - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
 - [Argo CD Documentation](https://argo-cd.readthedocs.io/)
 - [Flux Documentation](https://fluxcd.io/flux/)
-- [Trivy Documentation](https://trivy.dev/latest/)
+- [Trivy Documentation](https://trivy.dev/docs)
 - [Falco Documentation](https://falco.org/docs/)
 - [cert-manager Documentation](https://cert-manager.io/docs/)
 - [Velero Documentation](https://velero.io/docs/)
