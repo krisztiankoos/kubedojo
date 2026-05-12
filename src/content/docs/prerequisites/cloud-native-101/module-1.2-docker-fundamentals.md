@@ -35,11 +35,10 @@ This module focuses on practical Docker literacy rather than Docker trivia. You 
 
 There is also an economic reason to learn these details early. Every unnecessary megabyte in an image is pulled by CI runners, developer laptops, staging clusters, and production nodes. Every vague tag creates work during rollback because no one can prove which bytes were running. Every missing log or hidden environment assumption lengthens an incident. Docker fundamentals look like local commands, but they shape the delivery path long before a container reaches a cluster.
 
-Before you touch Kubernetes commands in this course, set the short alias you will use later. The full command is `kubectl`, but KubeDojo examples use `k` after introducing the alias once, and Kubernetes 1.35+ keeps the same core troubleshooting shape you will practice with Docker here.
+Before you touch Kubernetes commands in this course, verify that the full `kubectl` client works on your machine. Many engineers use personal shell aliases interactively, but learning materials and copy-paste examples should use the complete command name so they remain runnable in scripts, terminals, and CI jobs without relying on local shell setup. Kubernetes 1.35+ keeps the same core troubleshooting shape you will practice with Docker here: inspect the declared configuration, read process output, enter a running workload only when needed, and keep runtime state separate from the image that produced it.
 
 ```bash
-alias k=kubectl
-k version --client
+kubectl version --client
 ```
 
 ## Installing Docker
@@ -165,7 +164,7 @@ docker rm CONTAINER                    # Remove stopped container
 docker rm -f CONTAINER                 # Force remove (stop + rm)
 ```
 
-In Kubernetes 1.35+, the same concepts appear with different nouns. A Pod is not a Docker container, but it has container images, environment variables, ports, logs, restart behavior, and volumes. When this course later uses `k logs`, `k exec`, and `k describe`, you should recognize them as orchestration-level versions of the Docker inspection habits you are building now.
+In Kubernetes 1.35+, the same concepts appear with different nouns. A Pod is not a Docker container, but it has container images, environment variables, ports, logs, restart behavior, and volumes. When this course later uses `kubectl logs`, `kubectl exec`, and `kubectl describe`, you should recognize them as orchestration-level versions of the Docker inspection habits you are building now.
 
 ```yaml
 apiVersion: v1
@@ -181,16 +180,16 @@ spec:
 ```
 
 ```bash
-k apply -f nginx-pod.yaml
-k logs nginx-practice
-k exec -it nginx-practice -- sh
+kubectl apply -f nginx-pod.yaml
+kubectl logs nginx-practice
+kubectl exec -it nginx-practice -- sh
 ```
 
 ## Inspecting and Debugging Containers
 
 Debugging a container starts with a discipline: observe before you mutate. Logs tell you what the main process wrote to standard output and standard error. Process listings tell you whether the expected command is still running. Inspect output shows the configuration Docker used when it created the container. Interactive exec sessions are powerful, but they should come after the non-invasive checks because typing commands inside a running container can change the very state you are trying to understand.
 
-> **Stop and think**: When a container is not behaving right, these three commands are your debugging toolkit in this order: `docker logs` asks what happened, `docker exec -it ... bash` lets you look inside, and `docker inspect` shows the full configuration. This same pattern applies in Kubernetes later: `k logs`, `k exec`, and `k describe` give you the equivalent layers of evidence.
+> **Stop and think**: When a container is not behaving right, these three commands are your debugging toolkit in this order: `docker logs` asks what happened, `docker exec -it ... bash` lets you look inside, and `docker inspect` shows the full configuration. This same pattern applies in Kubernetes later: `kubectl logs`, `kubectl exec`, and `kubectl describe` give you the equivalent layers of evidence.
 
 ```bash
 # View logs
@@ -241,7 +240,7 @@ docker image prune                     # Remove unused images
 docker build -t myapp:v1 .
 ```
 
-War story: a payments team once spent an afternoon chasing a "Docker networking" issue after a local test service started returning connection refused. The root cause was a changed environment variable: the application had moved from port 8000 to port 8080 internally, but the run command still mapped the host to the old container port. The fix was a one-character port change, but the lesson was larger: container diagnosis works fastest when you separate process health, internal listening address, host port mapping, and client URL.
+Hypothetical scenario: a local test service starts returning connection refused after a developer changes the application port from 8000 to 8080 internally, but the run command still maps the host to the old container port. The fix may be a one-line port correction, yet the diagnostic lesson is larger: container troubleshooting moves fastest when you separate process health, internal listening address, host port mapping, and client URL instead of treating every refused connection as a generic networking failure. That same separation will matter later when Kubernetes adds Services, probes, and Pod networking to the path.
 
 ## Building Container Images
 
