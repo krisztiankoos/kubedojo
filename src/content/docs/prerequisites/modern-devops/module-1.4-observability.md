@@ -538,14 +538,6 @@ kubectl create deployment web --image=nginx:1.27 --replicas=3
 kubectl expose deployment web --port=80
 kubectl wait --for=condition=available deployment/web --timeout=90s
 ```
-
-The same workflow remains explicit for copy-paste practice:
-
-```bash
-kubectl create deployment web --image=nginx:1.27 --replicas=3
-kubectl expose deployment web --port=80
-kubectl wait --for=condition=available deployment/web --timeout=90s
-```
 </details>
 
 <details>
@@ -555,13 +547,6 @@ kubectl wait --for=condition=available deployment/web --timeout=90s
 # 2. View logs
 kubectl logs -l app=web --all-containers
 kubectl logs -l app=web -f  # Follow logs (Press Ctrl+C to exit)
-```
-
-The same workflow remains explicit for copy-paste practice:
-
-```bash
-kubectl logs -l app=web --all-containers
-kubectl logs -l app=web -f
 ```
 </details>
 
@@ -581,17 +566,6 @@ kubectl rollout status deployment/metrics-server -n kube-system
 kubectl top pods
 kubectl top nodes
 ```
-
-The same workflow remains explicit for copy-paste practice:
-
-```bash
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-kubectl patch deployment metrics-server -n kube-system --type=json \
-  -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
-kubectl rollout status deployment/metrics-server -n kube-system
-kubectl top pods
-kubectl top nodes
-```
 </details>
 
 <details>
@@ -605,13 +579,6 @@ kubectl scale deployment web --replicas=0
 # Check events (kubernetes logs)
 kubectl get events --sort-by='.lastTimestamp'
 ```
-
-The same workflow remains explicit for copy-paste practice:
-
-```bash
-kubectl scale deployment web --replicas=0
-kubectl get events --sort-by='.lastTimestamp'
-```
 </details>
 
 <details>
@@ -619,15 +586,6 @@ kubectl get events --sort-by='.lastTimestamp'
 
 ```bash
 # 5. Restore application and view pod status
-kubectl scale deployment web --replicas=1
-kubectl wait --for=condition=ready pod -l app=web --timeout=60s
-kubectl get pods -o wide
-kubectl describe pod -l app=web
-```
-
-The same workflow remains explicit for copy-paste practice:
-
-```bash
 kubectl scale deployment web --replicas=1
 kubectl wait --for=condition=ready pod -l app=web --timeout=60s
 kubectl get pods -o wide
@@ -646,14 +604,6 @@ kubectl exec $(kubectl get pod -l app=web -o name | head -1) -- \
 # View nginx access logs
 kubectl logs -l app=web | tail
 ```
-
-The same workflow remains explicit for copy-paste practice:
-
-```bash
-kubectl exec $(kubectl get pod -l app=web -o name | head -1) -- \
-  curl -s localhost > /dev/null
-kubectl logs -l app=web | tail
-```
 </details>
 
 <details>
@@ -663,12 +613,6 @@ kubectl logs -l app=web | tail
 # 7. Explore with JSONPath (metrics-like queries)
 kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}'
 ```
-
-The same workflow remains explicit for copy-paste practice:
-
-```bash
-kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.phase}{"\n"}{end}'
-```
 </details>
 
 <details>
@@ -676,13 +620,6 @@ kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.ph
 
 ```bash
 # 8. Cleanup
-kubectl delete deployment web
-kubectl delete service web
-```
-
-The same workflow remains explicit for copy-paste practice:
-
-```bash
 kubectl delete deployment web
 kubectl delete service web
 ```
