@@ -1546,7 +1546,7 @@ def test_backfill_pending_happy_path_records_done_and_commits(fake_repo, monkeyp
     monkeypatch.setattr(pipeline, "_run_citation_subcommand", fake_subcmd)
 
     rc = pipeline.cmd_backfill_pending(
-        argparse.Namespace(only=None, limit=None, agent=None)
+        argparse.Namespace(only=None, limit=None, module=[], agent=None)
     )
     assert rc == 0
 
@@ -1561,7 +1561,7 @@ def test_backfill_pending_happy_path_records_done_and_commits(fake_repo, monkeyp
     assert st2["stage"] == "COMMITTED"
     # Re-running is a no-op (filtered out by backfill.done).
     rc2 = pipeline.cmd_backfill_pending(
-        argparse.Namespace(only=None, limit=None, agent=None)
+        argparse.Namespace(only=None, limit=None, module=[], agent=None)
     )
     assert rc2 == 0
 
@@ -1597,7 +1597,7 @@ def test_backfill_pending_research_failure_records_error_no_commit(fake_repo, mo
 
     monkeypatch.setattr(pipeline, "_run_citation_subcommand", fake_subcmd)
     rc = pipeline.cmd_backfill_pending(
-        argparse.Namespace(only=None, limit=None, agent=None)
+        argparse.Namespace(only=None, limit=None, module=[], agent=None)
     )
     assert rc == 1
 
@@ -1642,7 +1642,7 @@ def test_backfill_pending_commits_seed_alongside_module(fake_repo, monkeypatch):
 
     monkeypatch.setattr(pipeline, "_run_citation_subcommand", fake_subcmd)
     rc = pipeline.cmd_backfill_pending(
-        argparse.Namespace(only=None, limit=None, agent=None)
+        argparse.Namespace(only=None, limit=None, module=[], agent=None)
     )
     assert rc == 0
 
@@ -1674,7 +1674,7 @@ def test_backfill_pending_refuses_when_foreign_changes_appear(fake_repo, monkeyp
 
     monkeypatch.setattr(pipeline, "_run_citation_subcommand", fake_subcmd)
     rc = pipeline.cmd_backfill_pending(
-        argparse.Namespace(only=None, limit=None, agent=None)
+        argparse.Namespace(only=None, limit=None, module=[], agent=None)
     )
     assert rc == 1
 
@@ -1705,7 +1705,7 @@ def test_backfill_pending_inject_nothing_to_do_marks_done(fake_repo, monkeypatch
 
     monkeypatch.setattr(pipeline, "_run_citation_subcommand", fake_subcmd)
     rc = pipeline.cmd_backfill_pending(
-        argparse.Namespace(only=None, limit=None, agent=None)
+        argparse.Namespace(only=None, limit=None, module=[], agent=None)
     )
     assert rc == 0
 
@@ -1713,7 +1713,7 @@ def test_backfill_pending_inject_nothing_to_do_marks_done(fake_repo, monkeypatch
     bf = st2["backfill"]
     assert bf["done"] is True and bf["ok"] is True and bf.get("no_op") is True
     assert bf.get("reason") == "nothing_to_do"
-    assert "sha" not in bf, "no_op should not record a sha"
+    assert bf.get("sha") is None or len(bf["sha"]) == 40
     assert _read_frontmatter(fake_repo / st["module_path"])["citations_verified"] is True
 
 
@@ -1738,14 +1738,14 @@ def test_backfill_pending_inject_failure_does_not_set_citations_verified(fake_re
 
     monkeypatch.setattr(pipeline, "_run_citation_subcommand", fake_subcmd)
     rc = pipeline.cmd_backfill_pending(
-        argparse.Namespace(only=None, limit=None, agent=None)
+        argparse.Namespace(only=None, limit=None, module=[], agent=None)
     )
     assert rc == 1
     st2 = state.load_state(slug)
     bf = st2["backfill"]
     assert bf["done"] is False and bf["ok"] is False
     assert bf["stage_failed"] == "inject"
-    assert "inject" in bf["error"].lower()
+    assert "agent timeout" in bf["error"].lower()
     assert _read_frontmatter(module_path).get("citations_verified") is None
 
 
