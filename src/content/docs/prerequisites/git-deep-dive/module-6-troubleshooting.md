@@ -6,11 +6,13 @@ sidebar:
 revision_pending: false
 ---
 
-# Module 6: The Digital Detective — Troubleshooting and Search
+> **Complexity**: [MEDIUM]
+>
+> **Time to Complete**: 90 minutes
+>
+> **Prerequisites**: Module 5 of Git Deep Dive
 
-**Complexity**: [MEDIUM]  
-**Time to Complete**: 90 minutes  
-**Prerequisites**: Module 5 of Git Deep Dive  
+---
 
 ## Learning Outcomes
 
@@ -24,11 +26,11 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-At 3:14 AM on a holiday retail weekend, a payment platform that had been stable for months started dropping a measurable slice of checkout traffic with `503 Service Unavailable` responses. The Kubernetes control plane was healthy, the nodes were ready, and the application images had passed their normal checks, yet the customer-facing path was failing often enough that revenue dashboards turned into incident evidence. The latest revert did not help, because the release also contained compliance patches that could not be rolled back casually, and the only visible clue was that the `payment-gateway` manifests had been touched by several teams across hundreds of commits.
+Hypothetical scenario: at 3:14 AM on a holiday retail weekend, a payment platform that had been stable for months started dropping a measurable slice of checkout traffic with `503 Service Unavailable` responses. The Kubernetes control plane was healthy, the nodes were ready, and the application images had passed their normal checks, yet the customer-facing path was failing often enough that revenue dashboards turned into incident evidence. The latest revert did not help, because the release also contained compliance patches that could not be rolled back casually, and the only visible clue was that the `payment-gateway` manifests had been touched by several teams across hundreds of commits.
 
 In that kind of incident, Git is no longer a place where finished work is stored. It becomes a queryable timeline of operational decisions, and the team that can interrogate that timeline calmly has a different outage experience from the team that scrolls through pull requests in panic. A single YAML line can route traffic to the wrong port, remove a readiness gate, weaken a `NetworkPolicy`, or hide a resource limit change behind a formatting commit. The practical skill is not memorizing more commands; it is learning how to turn an unreliable symptom into a narrow historical question that Git can answer.
 
-This module teaches that investigative workflow using the same tools you already have installed. You will use binary search to find the first bad commit, automate that search so human judgment does not contaminate the result, trace line authorship through refactors, search deleted history with Pickaxe queries, scan current and historical snapshots with `git grep`, and assemble an audit trail that an incident commander or compliance reviewer can trust. For Kubernetes examples, assume a current cluster target of Kubernetes 1.35 or newer, and when command examples use the short form `k`, define it once with `alias k=kubectl` so the abbreviation is explicit.
+This module teaches that investigative workflow using the same tools you already have installed. You will use binary search to find the first bad commit, automate that search so human judgment does not contaminate the result, trace line authorship through refactors, search deleted history with Pickaxe queries, scan current and historical snapshots with `git grep`, and assemble an audit trail that an incident commander or compliance reviewer can trust. For Kubernetes examples, assume a current cluster target of Kubernetes 1.35 or newer, and use the full `kubectl` command in runnable examples so every command can be copied into a script without depending on an interactive shell alias.
 
 The lesson also changes how you think about time during troubleshooting. A live cluster shows the present, dashboards show recent symptoms, and Git shows the sequence of intended state changes that led there. The strongest investigators move between those views deliberately instead of letting one view dominate the story. If the cluster says a service is broken, Git can tell you when the intended service definition changed; if Git says nothing changed, the cluster can reveal deployment drift, controller lag, or an out-of-band edit. Treating those timelines as separate but comparable records keeps the investigation grounded.
 
@@ -92,8 +94,7 @@ Bisecting: 125 revisions left to test after this (roughly 7 steps)
 Pause and predict: if you run a Kubernetes validation against this checked-out commit and it succeeds, what should you tell Git next, and what does that answer mean for the remaining history? The correct answer is `git bisect good`, because success proves the regression was introduced after the current midpoint. Git can then ignore the older half of the range and continue searching only in the newer half.
 
 ```bash
-alias k=kubectl
-k apply --dry-run=server -f deployment.yaml
+kubectl apply --dry-run=server -f deployment.yaml
 git bisect good
 ```
 
@@ -120,7 +121,7 @@ Always end the session deliberately. During an incident, engineers often celebra
 git bisect reset
 ```
 
-A platform team managing tenant onboarding once used this workflow when default `NetworkPolicy` objects stopped rendering from a Helm chart. The pipeline was green, the chart still installed, and a visual diff of recent pull requests was not revealing the missing indentation inside a helper template. A manual bisection using `helm template` as the classification test narrowed more than two hundred commits to a single chart refactor in eight checks, which gave the incident channel a specific commit, author, and rationale instead of another hour of speculative review.
+Hypothetical scenario: a platform team managing tenant onboarding uses this workflow when default `NetworkPolicy` objects stop rendering from a Helm chart. The pipeline is green, the chart still installs, and a visual diff of recent pull requests does not reveal the missing indentation inside a helper template. A manual bisection using `helm template` as the classification test can narrow more than two hundred commits to a single chart refactor in eight checks, which gives the incident channel a specific commit, author, and rationale instead of another hour of speculative review.
 
 The team learned an important secondary lesson from that incident: bisection is most useful when the test can be run against historical code without requiring the whole production system. Rendering a chart, validating a manifest, running a focused unit test, or starting a small local service gives Git something repeatable to classify. If the only way to observe the bug is to wait for production traffic, the first task is to design a smaller reproduction. That reproduction becomes the bridge between operational symptoms and historical proof.
 
@@ -386,12 +387,11 @@ git grep "apiVersion: policy/v1beta1" $(git rev-list --all)
 
 Which approach would you choose here and why: a current release readiness check for deprecated APIs, or a historical compliance investigation into when deprecated APIs were introduced? For the current release, search the relevant branch or tag with `git grep`. For introduction history, use `git log -S` or `-G` so the result points to commits rather than merely showing present-day files.
 
-In Kubernetes work, pair `git grep` with cluster checks when you need both intended state and observed state. A repository can show what should be deployed, while `k get` and `k describe` show what the API server currently knows. Define the alias first, then use it consistently in your local shell so examples remain short without hiding the underlying tool.
+In Kubernetes work, pair `git grep` with cluster checks when you need both intended state and observed state. A repository can show what should be deployed, while `kubectl get` and `kubectl describe` show what the API server currently knows. Use the full command in shared documentation, scripts, and copied examples so the evidence-gathering sequence does not depend on a local alias that only exists in one engineer's interactive shell.
 
 ```bash
-alias k=kubectl
-k get deploy,svc,pdb -n payments
-k describe deploy payment-gateway -n payments
+kubectl get deploy,svc,pdb -n payments
+kubectl describe deploy payment-gateway -n payments
 ```
 
 Do not confuse repository search with cluster truth. A manifest branch may contain a `PodDisruptionBudget`, while the cluster lacks it because the branch was never applied, a GitOps controller is paused, or an overlay excludes the file. Strong troubleshooting usually alternates between Git evidence and Kubernetes evidence until the two timelines line up.
@@ -452,7 +452,7 @@ e4f5g6h,Bob Developer,2024-01-12,Fix typo in deployment
 
 A strong audit trail usually includes the question, the command, the boundaries, and the interpretation. For example, "all commits touching `k8s/prod/` during the holiday change freeze" is stronger than "recent manifest changes" because it defines a path and a date range. If the team later challenges the result, you can rerun the exact command and discuss whether the boundary was right instead of arguing from memory.
 
-War story: after a platform outage caused by a missing readiness probe, the team initially argued about whether the change had bypassed review. A filtered log for the production overlay showed that the probe was removed in a small commit labeled as an image tag update, and `--name-status` revealed that the same commit changed an overlay patch file. The evidence shifted the conversation from personal suspicion to process repair: image automation needed a narrower write path, and review rules needed to flag manifest field removal separately from image changes.
+Hypothetical scenario: after a platform outage caused by a missing readiness probe, the team initially argues about whether the change bypassed review. A filtered log for the production overlay shows that the probe was removed in a small commit labeled as an image tag update, and `--name-status` reveals that the same commit changed an overlay patch file. The evidence shifts the conversation from personal suspicion to process repair: image automation needs a narrower write path, and review rules need to flag manifest field removal separately from image changes.
 
 Filtered history is most persuasive when it is paired with boundaries that match the operational policy. If the organization has a change freeze from one date to another, use those exact dates. If the freeze applies only to production overlays, filter only those paths. If automation is allowed to update image tags but not probes, include file names and patches so the distinction is visible. A report that mirrors the policy language is easier for reviewers to evaluate than a broad dump of nearby commits.
 
@@ -640,7 +640,7 @@ done
 
 ### Step 2: Verify the Problem
 
-Inspect the current file to confirm the broken state exists at `HEAD`. This is your bad anchor. In a real Kubernetes workflow, this step might be a failed `k apply --dry-run=server` or a failing integration test, but here a direct text check keeps the exercise portable.
+Inspect the current file to confirm the broken state exists at `HEAD`. This is your bad anchor. In a real Kubernetes workflow, this step might be a failed `kubectl apply --dry-run=server` or a failing integration test, but here a direct text check keeps the exercise portable.
 
 ```bash
 cat deployment.yaml | grep containerPort
