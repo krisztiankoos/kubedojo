@@ -3,13 +3,21 @@ title: "What Is AI?"
 slug: ai/foundations/module-1.1-what-is-ai
 sidebar:
   order: 1
+revision_pending: false
 ---
 
-> **AI Foundations** | Complexity: `[QUICK]` | Time: 35-50 min
+> **Complexity**: `[QUICK]`
+>
+> **Time to Complete**: 60-75 min
+>
+> **Prerequisites**: Basic scripting literacy, basic infrastructure terminology, and curiosity about how automation fails
+
+---
 
 ## Learning Outcomes
 
 By the end of this module, you should be able to:
+
 - Classify a given automation system into one of four AI architecture categories by identifying its operational mechanism and boundaries.
 - Compare the risk profiles of rule-based systems, machine learning systems, generative AI, and agentic workflows when applied to infrastructure automation tasks.
 - Design a trust boundary for an agentic workflow by mapping its destructive permissions to required human-approval gates.
@@ -17,13 +25,21 @@ By the end of this module, you should be able to:
 
 ## Why This Module Matters
 
-An infrastructure engineer wakes up at 3:00 AM to a barrage of alerts indicating that the primary database is experiencing massive query latency. Groggy and stressed, they paste the complex error logs into a newly integrated generative AI assistant, asking for an immediate remediation script. The assistant quickly outputs a highly structured, perfectly formatted set of shell commands that promise to gracefully restart the connection pool and prune orphaned transactions. Because the response looks authoritative and uses the correct terminology, the engineer executes the script without deep inspection. Instead of fixing the latency, the script forcefully terminates all active connections and initiates a destructive rebuild of the primary index, causing a complete system outage. The engineer fell into the trap of confusing linguistic fluency with operational competence.
+Hypothetical scenario: an infrastructure engineer wakes up during an overnight incident and sees that the primary database is reporting severe query latency. The engineer pastes several pages of logs into a generative assistant and asks for an immediate remediation script. The response is formatted cleanly, names familiar database concepts, and presents the exact confidence of a runbook written by a senior operator. Under pressure, the engineer runs it and discovers too late that the script terminated healthy sessions and triggered a costly index rebuild during peak load.
 
-Understanding what Artificial Intelligence actually is—and more importantly, what it is not—is critical for modern engineering teams. As AI systems become deeply embedded into operational workflows, from intelligent alerting and automated remediation to code generation and architecture planning, the ability to accurately categorize these systems becomes a core safety skill. Treating a probabilistic generative model as if it were a deterministic rule-based script leads to catastrophic failures in production environments. Engineers must move beyond marketing terminology and learn to evaluate the specific architectural mechanisms, failure modes, and required trust boundaries of the tools they deploy. This module establishes that foundational taxonomy, transforming AI from a magical black box into a comprehensible engineering component with measurable operational risks.
+That failure is not a story about a foolish engineer; it is a story about a missing taxonomy. The engineer treated fluent language as operational evidence, even though language quality and system understanding are different properties. A deterministic script, a statistical classifier, a generative language model, and an autonomous agent can all be sold under the same "AI-powered" label, but they fail in different ways and deserve different boundaries. This module gives you the vocabulary to separate the marketing wrapper from the mechanism that actually makes decisions.
+
+Modern platform teams are not deciding whether AI exists in their workflow, because it already appears in alert triage, code review, search, anomaly detection, documentation, ticket routing, and experimental remediation tools. The practical question is narrower and more useful: what kind of system is this, what evidence does it use, what can it change, and who remains accountable when it is wrong? If you can answer those questions, you can use AI as an engineering component instead of treating it as magic, novelty, or a blanket ban.
+
+The module is intentionally grounded in infrastructure work rather than abstract philosophy. You will learn how ordinary software differs from probabilistic systems, how four common AI-adjacent architectures behave, why agentic workflows need special scrutiny, and how to place trust boundaries around tools before they touch production. Later modules will go deeper into large language models, prompts, agents, and Kubernetes 1.35+ workflows, so this first lesson builds the safety vocabulary that makes those deeper topics easier to reason about.
 
 ## AI vs Ordinary Software
 
-Traditional software engineering relies on deterministic, rule-based logic where a human programmer explicitly defines every decision pathway in advance. If a specific condition is met, the system executes a predetermined corresponding action, producing identical outputs for identical inputs every single time. This predictability is the foundation of traditional infrastructure automation, allowing engineers to build highly reliable systems by exhaustively mapping out expected states and edge cases. When a traditional system fails, it is almost always because a human failed to anticipate a specific condition or wrote flawed logic, making debugging a process of tracing the execution path to find the logical error. The mechanics of this approach are straightforward and highly visible, as demonstrated by this rudimentary scaling logic.
+Traditional software engineering relies on explicit decisions written by people. A developer describes the condition, the program checks that condition, and the program performs the corresponding action. This is why ordinary infrastructure automation can be tested with familiar techniques such as unit tests, dry runs, static analysis, code review, and staged rollout. If the same input enters the same deterministic program in the same state, you expect the same output, and when that expectation fails you can usually trace the path through the code.
+
+That determinism is not primitive or outdated; it is the reason much of production infrastructure works at all. A deployment controller reconciles actual state toward desired state, a linter rejects a known-invalid manifest, and a threshold alert fires when a metric crosses a configured boundary. These systems can still be complicated, buggy, and poorly designed, but their decision logic is inspectable. You can ask where the condition is defined, who changed it, which branch executed, and why the resulting action followed from the input.
+
+The simplest form of this thinking looks like the kind of logic many engineers write in scripts, controllers, and runbooks. The code below is intentionally small, but the important property is not its size. The important property is that a human authored the conditions and the resulting behavior is expected to be repeatable.
 
 ```text
 if (cpu_utilization_percentage > 80) {
@@ -35,14 +51,19 @@ if (cpu_utilization_percentage > 80) {
 }
 ```
 
-In stark contrast, artificial intelligence systems operate fundamentally differently by leveraging statistical approximations and learned patterns rather than explicit, hard-coded rules. Instead of an engineer writing a comprehensive list of instructions for every possible scenario, the system is fed massive amounts of data and utilizes complex mathematical algorithms to deduce the underlying structures and relationships on its own. When presented with new, unseen inputs, the AI system does not follow a predefined path but instead calculates the probability of various outcomes based on its learned internal representations. This probabilistic nature allows AI systems to handle incredibly complex, ambiguous tasks that would be impossible to program manually, such as recognizing natural language or detecting novel security anomalies. However, this power comes at the cost of strict determinism, meaning the system can produce different or unexpected outputs, requiring fundamentally different approaches to testing, monitoring, and establishing operational trust.
+Artificial intelligence systems, as the term is used in modern engineering practice, usually introduce statistical generalization. Instead of a human writing every branch, the system is trained, tuned, or prompted to infer patterns from data and apply those patterns to new inputs. The system may classify a support ticket, predict future demand, generate text, summarize logs, recommend a configuration, or decide which tool to call next. That extra flexibility is useful precisely because the space of possible inputs is too large, ambiguous, or fluid for ordinary hand-written rules to cover comfortably.
 
-> **Active Learning: Predict the Failure Mode**
-> Imagine you are replacing the deterministic scaling script above with a machine learning model trained to predict future CPU spikes based on historical traffic patterns. Before reading further, predict what might happen if a sudden, unprecedented marketing event drives a massive traffic spike that looks completely different from anything in the historical training data. How would the failure of the deterministic script differ from the failure of the machine learning model in this exact scenario?
+The tradeoff is that statistical generalization changes the shape of verification. You no longer prove correctness only by reading a branch and checking a known condition. You also ask what data shaped the model, whether the current situation resembles that data, how the system represents uncertainty, what it does when evidence is incomplete, and whether the output can be independently checked. In other words, AI does not remove engineering discipline; it moves more of that discipline into evaluation, monitoring, and boundary design.
+
+Pause and predict: if a deterministic scaling script and a trained forecasting model both face a traffic spike caused by a campaign that has never happened before, which one fails more visibly and which one might fail more persuasively? The deterministic script may be obviously limited because it only checks a current metric, while the model may produce a confident forecast based on historical patterns that no longer apply. That difference matters because obvious brittleness often receives faster skepticism than polished probabilistic output.
+
+It helps to think of ordinary software as a recipe and many AI systems as an experienced but imperfect taster. A recipe says that if the oven is at a certain temperature and the timer reaches a certain point, you take the dish out. The taster can recognize patterns that are hard to encode, such as smell, texture, and context, but can also be fooled by unfamiliar ingredients or misleading presentation. Good kitchens use both: recipes for repeatability, judgment for ambiguity, and clear rules for when judgment must not override safety.
+
+The same hybrid mindset belongs in infrastructure. You might use deterministic validation to block dangerous Kubernetes manifests, machine learning to surface unusual metric patterns, a generative model to draft an incident summary, and an agentic workflow to collect diagnostic evidence. Each tool can be valuable, but each belongs behind a boundary that matches its failure mode. The mistake is not using AI; the mistake is giving an ambiguous, probabilistic system the same unchecked authority you would give to a small deterministic script.
 
 ## The Four Categories You Will Actually Meet
 
-To effectively utilize modern automation tools without introducing unacceptable operational risks, engineers must categorize systems based on their underlying architectural mechanisms. The broad, marketing-driven term "AI" obscures critical differences in how systems make decisions, what inputs they require, and how they fail when encountering edge cases. By organizing these systems into a clear taxonomy ranging from rigid deterministic rules to autonomous probabilistic agents, teams can apply appropriate trust boundaries and verification strategies. The following diagram illustrates the relationship between these different operational architectures, separating traditional rule-based approaches from the probabilistic systems that constitute modern artificial intelligence.
+The word "AI" is too broad to guide operational decisions by itself. A vendor demo, an internal tool name, or a dashboard badge can hide the mechanism that matters most to an engineer. Before you decide whether a system is safe, useful, or overhyped, classify it by how it reaches conclusions and what kind of action it can take. The four categories below are not the only possible taxonomy, but they are practical enough for day-to-day platform work.
 
 ```mermaid
 graph TD
@@ -58,13 +79,15 @@ graph TD
     F --> F1[Multi-Step Execution with Tools]
 ```
 
-### 1. Rule-Based Systems
+Rule-based systems are the familiar foundation. They include scripts, static thresholds, policy checks, hand-authored decision trees, and many conventional controllers. Their strength is traceability: a reviewer can inspect the rule, reproduce the input, and understand why the action happened. Their weakness is that they do not generalize beyond the situations someone anticipated. When a new log format, directory layout, traffic pattern, or workload behavior appears, the rule either misses it, mishandles it, or needs a person to update the logic.
 
-Rule-based systems represent the traditional approach to software engineering and infrastructure automation, relying entirely on explicit, human-authored logic to process inputs and determine outputs. These systems excel in environments with clearly defined parameters and predictable failure domains, such as basic continuous integration pipelines, static alerting thresholds, and standard configuration management tools. Because their execution paths are entirely deterministic, rule-based systems are highly auditable, allowing engineers to precisely trace why a specific decision was made by simply reading the underlying code or configuration files. Their primary limitation is fragility in the face of ambiguity or unprecedented situations; if an input does not match a pre-programmed condition, the system will either fail safely or produce an unhandled exception, requiring constant manual updates to accommodate changing operational realities.
+Machine learning systems generalize from examples. In infrastructure contexts, they often classify events, cluster logs, rank alerts, detect anomalies, forecast demand, or estimate risk. These systems are valuable when the relevant signal is distributed across many inputs and would be awkward to capture with static thresholds. Their weakness is not mystical opacity; their weakness is dependence on data quality and representativeness. If current behavior drifts away from training behavior, a once-useful model can become confidently stale.
 
-### 2. Machine Learning Systems
+Generative AI systems produce new content rather than only selecting from a fixed set of labels. A large language model can draft a runbook, explain a stack trace, translate a vague request into a configuration skeleton, or summarize a long incident thread. The attractive property is fluency across many domains, which makes the tool feel like a general collaborator. The dangerous property is the same fluency, because the model can generate plausible statements without having grounded evidence that those statements are true for your environment.
 
-Machine learning systems move beyond hard-coded logic by utilizing statistical models that have been trained on historical datasets to identify patterns and make predictions or classifications on new, unseen data. In infrastructure contexts, these systems are typically deployed for tasks like predictive autoscaling, intelligent anomaly detection in metric streams, and automated log clustering, where the volume and complexity of data make manual rule creation impossible. Unlike generative models, traditional machine learning systems usually output specific classifications, probability scores, or numerical predictions rather than creating net-new unstructured content. To understand the mechanical contrast between this approach and ordinary software, consider the following logic-flow snippet that demonstrates how a trained model applies probabilistic weights rather than explicit conditional rules.
+Agentic workflows combine generative or reasoning-oriented models with tools. Instead of only answering a question, the system may plan steps, call APIs, query logs, run commands, inspect results, and choose the next action. This is where the operational blast radius grows quickly. An agent with read-only access to logs is different from an agent that can patch deployments, rotate credentials, delete resources, approve pull requests, or execute database migrations. The model's reasoning quality matters, but the permission boundary matters just as much.
+
+To understand the mechanical contrast between hand-authored logic and learned behavior, compare the earlier branch-based example with a simplified model-driven flow. The model does not contain a neat list of human-written conditions for every possible metric combination. Instead, it applies learned weights to current telemetry and produces a score that another rule may consume.
 
 ```text
 historical_model_weights = load_trained_anomaly_model()
@@ -76,28 +99,11 @@ if (anomaly_probability_score > 0.95) {
 }
 ```
 
-The primary risk profile of machine learning systems revolves around data drift and historical bias, where the system confidently makes incorrect predictions because the current operational environment has diverged significantly from the data used during training. Engineers must implement continuous monitoring of the model's performance metrics and establish clear fallback mechanisms for when the model's confidence scores drop below acceptable thresholds.
+Notice that the final decision may still contain a deterministic threshold. Many real systems are hybrids, and that is why taxonomy must focus on the decision mechanism rather than the product label. A model may produce a probability score, a rule may decide whether that score triggers a page, and a human may decide whether remediation is appropriate. When you map the chain this way, you can test the deterministic parts, monitor the probabilistic parts, and place approvals around the parts that alter state.
 
-### 3. Generative AI Systems
+Which approach would you choose here and why: a static CPU threshold for a small internal service with predictable load, or a forecasting model for a consumer-facing service whose demand changes around public events? The threshold is easier to audit and may be completely adequate for the small service. The forecasting model may be worth its extra complexity for the consumer-facing service, but only if you monitor drift, compare predictions with reality, and keep deterministic safety limits around scaling cost and capacity.
 
-Generative artificial intelligence represents a paradigm shift where massive neural networks, typically Large Language Models, are trained to predict the next logical token in a sequence, enabling them to produce highly fluent, unstructured content across a vast array of topics. These systems are incredibly flexible and are increasingly used by engineering teams to draft documentation, explain complex error messages, generate boilerplate configuration files, and assist in synthesizing post-incident review documents. Because they are designed to prioritize linguistic fluency and structural coherence, generative systems can rapidly accelerate workflows that involve translating intent into code or summarizing large volumes of text. However, this same architectural design leads to their most dangerous failure mode: producing entirely fabricated information, often called hallucinations, that sounds incredibly authoritative and plausible. A generative system will confidently invent nonexistent configuration flags, reference deprecated API endpoints as if they were current, or explain a fundamentally flawed architectural pattern with flawless grammar and logical flow, requiring engineers to rigorously verify every output before applying it to production environments.
-
-### 4. Agentic Systems
-
-Agentic systems represent the most operationally complex and potentially dangerous category, combining the reasoning and planning capabilities of generative models with direct access to external tools, APIs, and execution environments. Instead of simply generating a response for a human to review, an agentic workflow receives a high-level goal, autonomously formulates a multi-step execution plan, invokes specific tools to gather information or modify state, evaluates the results of its actions, and iteratively adjusts its approach until it determines the goal has been achieved. In an infrastructure context, an agentic system might be granted permissions to independently investigate a monitoring alert by querying logging databases, analyzing the results, and automatically deploying a configuration change to remediate the identified issue. While this level of autonomous orchestration promises massive efficiency gains, it dramatically expands the operational blast radius by removing the human from the immediate execution loop, requiring entirely new paradigms of identity management, strict principle-of-least-privilege access controls, and mandatory human-in-the-loop approval gates for any destructive actions.
-
-## Worked Example: Debugging an Agentic Failure
-
-Let's examine a concrete scenario where treating an agentic system like a traditional rule-based tool leads to a significant operational incident. An engineering team deployed a newly purchased autonomous remediation agent designed to automatically rollback container deployments if it detected a spike in application errors immediately following a rollout. The team granted the agent broad administrative permissions, assuming it would operate with the predictable reliability of their existing continuous delivery pipelines, and configured it to act immediately without any human approval gates to ensure minimal downtime. During a routine deployment of a non-critical background service, the application developers intentionally introduced a new, highly verbose logging format that output benign debug messages to the standard error stream, a change completely unrelated to the application's actual health or performance.
-
-The agentic system, utilizing a generative model to analyze log streams, misinterpreted this sudden influx of unstructured debug information as a catastrophic failure, despite the fact that the actual HTTP error rates and latency metrics remained perfectly stable. Acting on this flawed probabilistic inference, the agent autonomously formulated a plan to remediate the perceived incident and executed a forceful rollback of the deployment, terminating the new pods and restoring the previous version. Furthermore, because the agent was designed to iteratively resolve issues, it became trapped in a destructive loop; every time the developers attempted to manually push the update forward, the agent immediately detected the new logging format, falsely declared an emergency, and violently reverted the system state, effectively locking the team out of their own environment. The engineers spent hours fruitlessly debugging their continuous integration pipelines and application code, assuming a standard deployment failure, before realizing the autonomous agent was overriding their commands based on a linguistic hallucination regarding the log contents. This incident perfectly illustrates why agentic systems require fundamentally different operational boundaries, specifically the necessity of correlating multiple deterministic metric signals before allowing an autonomous system to execute state-altering commands without explicit human authorization.
-
-> **Active Learning: Designing the Trust Boundary**
-> Review the incident above. If you were tasked with redesigning the deployment remediation workflow to utilize the agent safely, what specific operational boundaries would you implement? Think about how you would restrict the agent's permissions, what deterministic signals it must verify before acting, and where you would mandate a human-in-the-loop approval gate.
-
-## Evaluating Trust and Establishing Boundaries
-
-Successfully integrating artificial intelligence into engineering workflows requires abandoning the binary concept of absolute trust and replacing it with a nuanced, risk-based approach to system boundaries. Engineers must critically evaluate every AI tool by determining its specific architectural category, identifying its primary failure modes, and mapping those risks against the potential blast radius of the task it is performing. A machine learning model predicting optimal scaling parameters for a stateless application might operate safely with a high degree of autonomy, as the worst-case scenario is temporary over-provisioning and increased cloud costs, which can be mitigated with simple financial alerts and budget caps. Conversely, a generative system tasked with synthesizing security audit logs must be treated with extreme skepticism, as a fabricated finding or a missed anomaly could lead to a catastrophic breach, requiring mandatory peer review and cross-referencing against deterministic security scanners. By systematically applying appropriate trust boundaries, teams can harness the immense power of probabilistic systems while maintaining the rigorous safety and reliability standards required for modern infrastructure operations. To operationalize this approach, engineering teams must maintain an updated matrix of approved AI architectures alongside their required verification mechanisms, ensuring that every new tool introduced to the platform is properly constrained before it can impact production workloads.
+The categories also differ in what evidence should make you trust them. A rule-based system earns trust through code review, explicit tests, and operational history. A machine learning system earns trust through evaluation data, drift monitoring, confidence calibration, and comparison with baselines. A generative system earns narrow trust when its output is checked against authoritative sources or executable tests. An agentic workflow earns permission only when identity, tools, approvals, logs, and rollback paths are designed before autonomy is enabled.
 
 | System Category | Typical Operational Use Case | Primary Failure Domain | Required Trust Boundary |
 |-----------------|------------------------------|------------------------|-------------------------|
@@ -106,87 +112,212 @@ Successfully integrating artificial intelligence into engineering workflows requ
 | Generative AI | Documentation synthesis and incident summary drafting | Plausible but completely fabricated technical details | Mandatory independent verification against authoritative sources |
 | Agentic Workflows | Autonomous alert remediation and infrastructure provisioning | Unbounded execution loops and destructive state changes | Strict human-in-the-loop approval gates for all actions |
 
+Use the table as a first-pass review checklist, not as a rigid academic definition. Real systems can cross boundaries, and the most interesting operational systems often do. A ticket router might use a machine learning classifier, then ask a language model to draft a response, then let an agent update the ticket. The safe design question is therefore not "Is this AI?" but "Which step uses which mechanism, what evidence supports it, and what action can follow from it?"
+
+## Worked Example: Debugging an Agentic Failure
+
+Exercise scenario: a platform team introduces an autonomous remediation workflow for a staging cluster. The workflow watches deployment events, reads application logs, queries metrics, and can roll back a deployment when it concludes that a new release is unhealthy. The team gives it broad permissions because the environment is not production, and they expect the tool to behave like the deterministic rollback step in their existing delivery pipeline. That expectation is the first design error.
+
+During a routine release, developers change the application logging format so that verbose diagnostic messages are written to the standard error stream. The application is healthy, request latency is stable, and user-facing error rates are unchanged. The agent, however, asks a generative model to interpret the new logs, receives an alarming summary, and decides that the release is failing. It calls the deployment tool, rolls the service back, observes that the new log pattern disappeared, and treats the disappearance as confirmation that its action was correct.
+
+The resulting loop is easy to miss if you debug it with the wrong mental model. A deterministic rollback rule would usually point to a visible condition such as "HTTP error rate greater than threshold after rollout." In this case, the harmful condition lives across several layers: a generative interpretation of logs, a planning loop that treats its own action as evidence, and a permission boundary that allows state changes without a second signal. The bug is not only in a prompt, a model, or a threshold. The bug is in the workflow design.
+
+The first diagnostic move is to separate observation from action. Read-only investigation can often be delegated earlier than write access because a mistaken summary is recoverable when a human reviews it before change. State-altering steps deserve stronger evidence, especially when they can undo work, delete data, scale systems aggressively, rotate credentials, or modify network policy. In this scenario, the agent should have been allowed to collect logs and metrics, but a rollback should have required deterministic corroboration and a human approval gate.
+
+The second diagnostic move is to require independent signals before an autonomous workflow concludes that remediation worked. If the agent rolls back a deployment and then says the problem disappeared because the logs changed, it may simply be observing the consequence of its own rollback. A safer design asks whether user-facing health improved, whether the original symptom was real, and whether the action affected the intended causal path. This is ordinary incident thinking applied to a new automation shape.
+
+Before running a similar workflow in your own environment, what output would you expect from each stage if the release is healthy but noisy? A good design would show the log summary as uncertain, keep latency and error-rate checks green, refuse rollback because the signals disagree, and ask a human to decide whether the logging change needs cleanup. A poor design would convert scary text into a high-severity conclusion and then let tool access turn that conclusion into state change.
+
+Here is a useful way to review the failure without being distracted by the product interface. The language model produced an interpretation, the planning loop chose an action, the tool permission allowed that action, and the environment produced feedback. Each boundary is a place where engineering controls can be added. You can constrain the model's task, require structured evidence, limit the tool, add approval, log the decision, and enforce rollback limits that stop repeated actions.
+
+When teams skip this boundary review, agentic systems can inherit the broad permissions of the humans who installed them. That is a bad default because the agent lacks the human's situational awareness, social accountability, and ability to pause when a conclusion feels wrong. Least privilege is not merely a security slogan here; it is a reliability control. The agent should have the smallest set of read and write capabilities needed for the narrow workflow, and destructive permissions should be separated behind explicit approval.
+
+The practical lesson is that autonomy should be earned in layers. Start with read-only diagnostics, compare the agent's findings with known-good runbooks, measure false positives, add deterministic cross-checks, then consider low-risk actions with automatic rollback. Only after that evidence exists should a team discuss broader write access, and even then the scope should be narrow. If a workflow cannot explain what evidence justified an action, it is not ready to perform that action without review.
+
+## Evaluating Trust and Establishing Boundaries
+
+Trust is not a single switch. A tool can be trustworthy for drafting a summary and untrustworthy for executing a migration; useful for suggesting a Kubernetes manifest and unsafe for applying it; excellent at finding related documentation and weak at deciding whether your production database is healthy. The safest teams avoid global judgments such as "we trust this AI" or "we do not use AI." They define task-specific trust, evidence-specific trust, and permission-specific trust.
+
+Begin by naming the task. "Help with incidents" is too vague to secure or evaluate, while "summarize recent log lines from this namespace without changing resources" is concrete. A concrete task tells you which inputs matter, what output format is expected, which checks are possible, and what damage could occur. This is especially important for generative tools because their conversational interface can make a broad request feel harmless even when the implied work spans diagnosis, planning, and execution.
+
+Next, name the mechanism. If the system uses a rule, you can inspect the rule. If it uses a model, you can ask what data shaped the model and how current inputs are monitored for drift. If it generates text, you can ask what retrieval, citations, tests, or human review ground the output. If it calls tools, you can ask which identity it uses, which commands are allowed, where approvals happen, and how every action is logged for audit and rollback.
+
+Then name the blast radius. A bad recommendation in a draft document wastes review time; a bad recommendation applied to a cluster can delete workloads. A false anomaly alert may wake someone unnecessarily; an autonomous remediation loop may flap a service for an hour. The same model output can be low risk or high risk depending on what follows it. That is why the permission boundary is often more important than the model family when you design production controls.
+
+Evaluation should also match the category. For rule-based systems, test representative inputs and edge cases. For machine learning systems, compare predictions with labeled examples, track drift, and watch whether confidence remains calibrated over time. For generative systems, verify claims against primary sources, run generated code in isolated environments, and require reviewers to understand the domain. For agentic workflows, test not only the answer quality but the entire loop of planning, tool use, observation, retry, stopping, and escalation.
+
+The most dangerous moment is when a tool moves from advisory to authoritative. Advisory tools can be wrong while still saving time, because a person decides what to accept. Authoritative tools can be wrong and immediately change reality. This does not mean authoritative automation is forbidden; Kubernetes controllers are authoritative automation, and infrastructure depends on them. The difference is that mature controllers are constrained by explicit desired state, well-defined APIs, reconciliation semantics, and extensive operational experience. New AI agents need comparable constraints before they deserve comparable authority.
+
+For a first review, write a simple boundary statement. A good boundary statement might say: "This assistant may read logs and metrics for the staging namespace, summarize likely causes, and draft a rollback plan, but it may not execute changes; any rollback requires a named human approver and must cite at least two deterministic health signals." That sentence is more valuable than a broad policy slogan because it names scope, action, evidence, and approval. It also gives reviewers something testable.
+
+Human approval should not be treated as a decorative checkbox. A tired engineer clicking "approve" on a dense model-generated plan without evidence is not a meaningful control. A useful approval gate presents the proposed action, the evidence, the confidence limits, the affected resources, the rollback path, and the reason alternatives were rejected. The goal is not to slow every workflow forever; the goal is to make dangerous actions legible enough that a responsible person can catch a bad inference before it becomes an outage.
+
+Finally, keep a record of AI-assisted decisions the same way you keep records for deployments and incidents. You want to know which prompt or input triggered a recommendation, what sources or telemetry the system used, which tool calls happened, who approved them, and what changed afterward. Without that audit trail, post-incident review becomes guesswork. With it, AI becomes another observable part of the system, subject to the same engineering habits as any other component.
+
+## Reading AI Outputs Like Operational Evidence
+
+An AI output should be read as a claim that needs a support trail, not as a conclusion that arrives fully verified. This is a small mental shift with large practical consequences. When a model says a service is unhealthy, ask which signals support that claim. When it proposes a command, ask which API version, permissions, and preconditions the command assumes. When it summarizes a document, ask which source lines or events are being compressed and which details may have been omitted.
+
+This habit is familiar from incident response. A graph, log line, alert, and user report can each be true while still being incomplete. Engineers learn to correlate evidence because one signal rarely tells the whole story. AI output deserves the same treatment, especially because it often arrives in a smooth narrative that hides uncertainty. A smooth narrative can make weak evidence feel complete, so your job is to pull the evidence back into view before allowing the output to influence action.
+
+For generative systems, the first question is whether the output is grounded in something inspectable. Grounding might be a link to official documentation, a snippet from a repository file, a query result from a monitoring system, or a test run in an isolated environment. Without grounding, the output may still be useful as a brainstorm, but it should not be treated as operational evidence. The more specific and risky the recommendation, the more specific the grounding needs to be.
+
+For machine learning systems, the first question is whether the current case resembles the cases used for evaluation. A model trained on weekday traffic may behave poorly during a one-time public launch. A model trained on a previous logging format may overreact after a structured logging migration. A model trained on past support tickets may route new product issues to the wrong team. The model does not need malicious input to fail; ordinary change can be enough to make its learned pattern less reliable.
+
+For agentic systems, the first question is whether the workflow can stop. A good agent has a clear goal, limited tools, bounded retries, escalation rules, and logs that show why each step happened. A weak agent keeps trying because every observation becomes an invitation to take another action. This matters because a human operator can notice that a loop has become absurd, while an automated workflow may need an explicit stopping rule. A stop condition is a reliability feature, not an implementation detail.
+
+You can also evaluate AI output by separating syntax, semantics, and suitability. Syntax asks whether the output is well formed, such as valid YAML or a command that parses. Semantics asks whether the output means what the author intends, such as selecting the correct resource or applying the correct policy. Suitability asks whether the output belongs in this environment at this time, given your cluster version, risk tolerance, maintenance window, and rollback path. Many model-generated artifacts pass syntax while failing suitability.
+
+That distinction is especially important in infrastructure education. A generated manifest can look valid while assuming an API field that is not available in your Kubernetes 1.35+ cluster, or it can be technically valid while violating your organization's policy. A generated incident summary can be readable while overemphasizing the loudest log line and ignoring the metric that actually shows user impact. A generated command can be syntactically correct while targeting the wrong namespace. The review must go beyond appearance.
+
+Pause and predict: if a model gives you a remediation plan with three commands, which part is most likely to fool a rushed reviewer: invalid syntax, a wrong causal assumption, or an unsafe blast radius? Invalid syntax is often caught quickly by tools. Wrong causal assumptions and unsafe blast radius are harder because they can be hidden behind plausible explanations. That is why strong review asks not only "Will this run?" but also "Why should this action fix this symptom, and what else could it affect?"
+
+One practical review technique is to turn the output into a checklist of claims. If the assistant says a deployment failed because readiness probes are timing out, the claims might be: the deployment changed recently, pods are failing readiness, the readiness failure started after the change, user-facing errors correlate with the failure, and rolling back would address the cause. Each claim can be checked independently. If several claims are unverified, the plan is not ready for execution.
+
+Another technique is to require a reversible first step. Instead of allowing an assistant to patch production immediately, ask it to propose a read-only query, a dry run, or a staging reproduction that would increase confidence. This keeps the workflow useful while preserving human judgment around irreversible steps. In mature systems, the same idea becomes policy: read widely, write narrowly, and require approval when the proposed change crosses a risk threshold. That policy is how teams convert AI assistance into controlled automation.
+
+The final review question is accountability. If an AI-assisted action causes damage, the organization still owns the outcome. The model does not attend the post-incident review, explain why permissions were broad, or decide how customers should be informed. People do those things, so people must design the controls before the action happens. Treating AI output as operational evidence keeps accountability where it belongs: with the engineers who decide which systems may act and under what conditions.
+
+## Patterns & Anti-Patterns
+
+The strongest pattern is to pair probabilistic judgment with deterministic guardrails. A model can notice that a metric pattern looks unusual, but a rule can cap maximum scale-out, require minimum evidence, or block changes outside an approved maintenance window. This combination gives you flexibility without letting ambiguity make irreversible decisions. It also makes testing easier because you can evaluate the model's recommendation separately from the policy that decides whether action is allowed.
+
+A second useful pattern is staged autonomy. Start with suggestions, then read-only investigation, then low-risk changes, then narrowly scoped write actions with approvals, and only later consider broader automation. Each stage should have measured evidence that the previous stage works well enough. This pattern keeps excitement from outrunning observability and gives the team time to learn where the system is brittle. It also creates a natural rollback path for the automation itself.
+
+A third pattern is source-grounded generation. If a generative model drafts a Kubernetes configuration, an incident summary, or a security recommendation, require it to point to primary documentation, live telemetry, repository files, or test results that can be checked. The model's fluency is useful for synthesis, but the grounding evidence is what lets a reviewer decide whether the synthesis is safe. This is especially important for learners, because polished explanations can hide missing assumptions.
+
+The first anti-pattern is category collapse: treating every tool with an AI label as the same kind of thing. Teams fall into this because vendor language is broad and internal conversations often optimize for speed. The better approach is to name the mechanism in architecture reviews. Say "a classifier ranks alerts," "a language model drafts the summary," or "an agent calls the deployment API." Specific nouns force specific controls.
+
+The second anti-pattern is permission inheritance. A human installs a tool, authenticates it with broad credentials, and accidentally gives the automation the same reach the human has. This is convenient during a demo and dangerous in operations. The better approach is to create purpose-specific identities with narrow read scopes, separate write permissions, and visible audit logs. If the tool needs more access later, the request should be reviewed like any other privilege expansion.
+
+The third anti-pattern is using AI where the rule is already simple and sufficient. A static threshold, schema validation rule, or policy-as-code check may be boring, but boring is often the right answer when the condition is clear. Adding a model can introduce nondeterminism, training concerns, and new monitoring needs without improving the outcome. Use AI when ambiguity, scale, or language makes ordinary rules impractical, not merely because the interface feels modern.
+
+## When You'd Use This vs Alternatives
+
+Use a rule-based system when the condition is explicit, the action is well understood, and predictability matters more than flexibility. Examples include rejecting manifests that lack required labels, blocking privileged containers by policy, or paging when a known saturation metric crosses a defined threshold. The rule may need maintenance, but its behavior can be reviewed before it runs. That reviewability is valuable when the cost of a mistaken action is high.
+
+Use machine learning when patterns are too large or subtle for comfortable manual rules, and when you can collect enough representative data to evaluate performance. Forecasting demand, clustering noisy logs, ranking related incidents, and detecting unusual combinations of metrics can fit this category. The key requirement is feedback. If nobody measures whether predictions remain useful, the model becomes an expensive source of stale confidence.
+
+Use generative AI when the task involves language, synthesis, transformation, or drafting, and when a person or deterministic process can verify the result. It is reasonable to ask for a first draft of documentation, a summary of a long thread, or a starting point for a configuration. It is reckless to treat that draft as authoritative without checking it. Generative output should accelerate expert review, not replace the need for expertise where consequences matter.
+
+Use an agentic workflow when the work genuinely requires multiple steps, tool calls, observation, and adaptation, and when the workflow has been bounded like any other automation with production impact. A read-only diagnostic agent can be a sensible early use case because it gathers context without altering state. A write-capable remediation agent should arrive later, after the team has evidence, guardrails, approval gates, and a clear stop condition. Autonomy is a design choice, not a default setting.
+
+If you are unsure which category fits, trace the input-to-action path. Ask what data enters, what mechanism transforms it, what output is produced, what action follows, and what evidence can disprove the conclusion. A system that cannot answer those questions clearly should remain advisory until it can. Engineering maturity often looks like slowing down at the exact point where a demo looks effortless.
+
 ## Did You Know?
 
-- **Older AI is still everywhere**: Many systems currently marketed as revolutionary new AI products are actually utilizing traditional, well-understood machine learning classifiers or basic rule-based ranking pipelines under the hood.
-- **Language fluency acts as a dangerous trust amplifier**: Human psychology naturally associates polished, confident, and highly structured prose with factual accuracy, making engineers significantly more likely to blindly trust a fluent but entirely hallucinated technical response.
-- **Flexibility dramatically changes the risk profile**: As a system moves from narrow, specific tasks to broad, open-ended capabilities, the potential failure surface expands exponentially, making rigorous trust boundaries increasingly critical for operational safety.
-- **The generic label obscures the underlying architecture**: Two completely different infrastructure tools might both be branded as "AI-powered," despite one utilizing a deterministic decision tree and the other leveraging a probabilistic agentic workflow with a vastly larger operational blast radius.
+- The OECD updated its definition of an AI system in 2023 to emphasize machine-based systems that infer from inputs and generate outputs such as predictions, content, recommendations, or decisions.
+- The NIST AI Risk Management Framework was released as version 1.0 in January 2023 and organizes AI risk work around govern, map, measure, and manage functions.
+- Many production "AI" features are hybrids: a model may rank or generate, while ordinary rules still decide thresholds, permissions, routing, and final execution.
+- A language model can produce a valid-looking configuration for a version your cluster does not run, which is why these modules assume Kubernetes 1.35+ and still require documentation checks.
 
 ## Common Mistakes
 
-| Mistake | Operational Consequence | Better Engineering Practice |
-|---------|-------------------------|-----------------------------|
-| Treating all AI systems as a single, uniform technology category | Masks drastically different risk profiles and failure domains | Categorize every new tool by its specific underlying architectural mechanism |
-| Assuming linguistic fluency guarantees technical correctness | Leads to the deployment of hallucinated or fundamentally flawed configurations | Rigorously verify all generative outputs against official documentation or deterministic tests |
-| Using "AI" as a shortcut term in architectural design discussions | Creates vague reasoning and prevents accurate threat modeling | Explicitly name the actual capability being used, such as "probabilistic classifier" |
-| Assuming machine learning systems are infallible black boxes | Blinds teams to performance degradation caused by data drift over time | Implement continuous monitoring of prediction confidence and establish clear fallback rules |
-| Dismissing all probabilistic systems entirely due to marketing hype | Prevents the adoption of highly effective anomaly detection and automation tools | Separate vendor marketing claims from the actual verifiable capabilities of the system |
-| Trusting generative models most on tasks you understand the least | Creates massive operational blind spots and prevents critical error detection | Rely on AI primarily for accelerating tasks you already possess the expertise to evaluate |
-| Deploying agentic workflows without human approval gates | Expands the automated blast radius and enables rapid, destructive system changes | Mandate human-in-the-loop authorization for any state-altering or destructive actions |
+| Mistake | Why It Happens | How to Fix It |
+|---------|----------------|---------------|
+| Treating all AI systems as a single, uniform technology category | The product label hides whether the system is a rule, classifier, generator, or agent, so reviewers discuss it too vaguely. | Categorize every new tool by its specific underlying architectural mechanism before approving its use. |
+| Assuming linguistic fluency guarantees technical correctness | Polished prose feels like expertise, especially during incidents when people want a clear answer quickly. | Rigorously verify all generative outputs against official documentation, tests, or live telemetry before acting. |
+| Using "AI" as a shortcut term in architectural design discussions | Broad language avoids hard questions about evidence, permissions, and failure modes. | Explicitly name the actual capability being used, such as "probabilistic classifier" or "tool-calling agent." |
+| Assuming machine learning systems are infallible black boxes | Teams may focus on model novelty and forget that predictions depend on data quality and representativeness. | Implement continuous monitoring of prediction confidence, drift, and baseline comparisons with fallback rules. |
+| Dismissing all probabilistic systems entirely due to marketing hype | Frustration with vague claims can make teams ignore useful classification, forecasting, and summarization tools. | Separate vendor marketing claims from the actual verifiable capabilities and risks of the system. |
+| Trusting generative models most on tasks you understand the least | The model's answer may be the only explanation a learner sees, making errors harder to detect. | Use AI primarily to accelerate tasks you can review, and bring in authoritative references for unfamiliar domains. |
+| Deploying agentic workflows without human approval gates | Demo environments reward fast autonomy, while production environments punish unbounded state changes. | Mandate human-in-the-loop authorization for destructive actions and narrowly scope every tool permission. |
 
-## Quick Quiz
+## Quiz
 
-1. **Your team wants to deploy a system that automatically categorizes incoming support tickets based on historical resolution data. Which architectural category best describes this tool, and what is its primary risk?**
-   <details>
-   <summary>Answer</summary>
-   This is a Machine Learning System focused on classification. Its primary risk is historical bias or data drift, where it confidently miscategorizes novel issues because they do not match the patterns found in the training data.
-   </details>
+<details>
+<summary>1. Your team wants to deploy a system that automatically categorizes incoming support tickets based on historical resolution data. Which architectural category best describes this tool, and what risk should you test first?</summary>
 
-2. **A vendor pitches a new "AI DevOps Assistant" that can automatically write infrastructure-as-code templates based on natural language prompts. Why is this system significantly riskier than a standard configuration linter?**
-   <details>
-   <summary>Answer</summary>
-   As a Generative AI System, it prioritizes linguistic fluency and structural coherence over factual accuracy. It can confidently fabricate deprecated configuration flags or insecure architectural patterns, whereas a standard linter relies on deterministic, auditable rules.
-   </details>
+This is a machine learning system because it uses historical examples to classify new tickets. The first risk to test is whether the historical data still represents current support patterns, because new products, new incident types, or changed team ownership can create data drift. A rule-based system would rely on explicit conditions, which is not the main mechanism here. A generative system might draft a response, and an agent might update tickets through tools, but the categorization step is a classifier.
 
-3. **During a severe incident, an engineer uses a large language model to generate a complex database recovery script. The script is perfectly formatted and uses the correct terminology. Why must the engineer still independently verify every command?**
-   <details>
-   <summary>Answer</summary>
-   Because impressive output is a weak trust signal. Generative models can produce highly structured, confident, and plausible-sounding code that is fundamentally incorrect or destructive, easily tricking users who mistake fluency for operational competence.
-   </details>
+</details>
 
-4. **Your organization is implementing an autonomous agent designed to detect security vulnerabilities and automatically apply patches to running containers. What critical boundary must be established before enabling this system?**
-   <details>
-   <summary>Answer</summary>
-   The system must have a strict human-in-the-loop approval gate. Agentic workflows have a massive operational blast radius, and allowing an autonomous system to execute state-altering changes without human authorization risks catastrophic downtime or cascading failures.
-   </details>
+<details>
+<summary>2. A vendor pitches an "AI DevOps Assistant" that writes infrastructure-as-code templates from natural language prompts. Why is this riskier than a deterministic configuration linter?</summary>
 
-5. **A legacy alerting system triggers a page every time CPU utilization exceeds 90% for five minutes. A new engineer suggests replacing it with an "AI model." What is the first question the team should ask before proceeding?**
-   <details>
-   <summary>Answer</summary>
-   The team must ask what specific problem they are trying to solve and what kind of AI system is being proposed. Replacing a highly predictable, deterministic Rule-Based System with a probabilistic model introduces new failure modes that must be justified by a clear operational benefit.
-   </details>
+The assistant is a generative AI system, so it can produce plausible new content that has not been validated against your exact platform rules. A deterministic linter checks known conditions and can explain which rule failed, while the generator may invent deprecated fields, omit required constraints, or produce insecure defaults with confident wording. The correct response is not to ban all generation, but to require review, tests, and primary documentation checks before use. The linter and the generator solve different problems and need different trust boundaries.
 
-6. **An autonomous remediation workflow is stuck in an infinite loop, continuously restarting a healthy service because it misinterprets a new log format. What does this incident reveal about the difference between generative systems and human judgment?**
-   <details>
-   <summary>Answer</summary>
-   It reveals that AI systems often lack basic factual grounding and real-world judgment. The system was unable to step back, correlate the logs with healthy performance metrics, and realize its probabilistic inference was fundamentally incorrect.
-   </details>
+</details>
+
+<details>
+<summary>3. During an incident, an engineer uses a language model to generate a database recovery plan. The plan is clear, detailed, and full of familiar terms. How should the engineer evaluate the reliability of that AI-generated operational response?</summary>
+
+The engineer should treat fluency as a presentation quality rather than evidence of correctness. Reliability comes from checking every command against authoritative documentation, current system state, backups, and a peer review path appropriate to the blast radius. The model may still be useful for organizing possibilities, but it cannot prove that the recovery plan matches the live database. The safest next step is to convert the draft into a reviewed runbook, not to run it because it sounds confident.
+
+</details>
+
+<details>
+<summary>4. Your organization wants an autonomous agent to detect vulnerabilities and automatically patch running workloads. What trust boundary must be designed before write access is enabled?</summary>
+
+The workflow needs a human-approval gate for state-changing actions, narrow tool permissions, and deterministic evidence requirements before any patch is applied. Vulnerability detection can involve probabilistic interpretation, and patching can restart workloads, break compatibility, or change security posture. Read-only investigation may be allowed earlier, but automatic remediation needs stronger controls because the action changes production state. A safe design maps each destructive permission to an approver, an audit record, and a rollback plan.
+
+</details>
+
+<details>
+<summary>5. A legacy alert pages whenever CPU utilization exceeds a threshold for several minutes. A new engineer suggests replacing it with an AI model. What comparison should the team make before changing the design?</summary>
+
+The team should compare the current rule's known limitations with the model's expected benefits and new failure modes. If the threshold is simple, reliable, and easy to tune, replacing it may add drift monitoring, explainability concerns, and operational uncertainty without improving outcomes. If the real problem is complex demand forecasting, a model may be justified, but it should be evaluated against historical and recent incidents. The right question is not whether AI is newer, but whether the mechanism fits the problem.
+
+</details>
+
+<details>
+<summary>6. An agent repeatedly rolls back a healthy deployment because it misreads a noisy log format. Which part of the design should you debug first: the model, the tool permissions, or the evidence gate?</summary>
+
+Start with the evidence gate and permission boundary, because the system should not be able to convert a single uncertain log interpretation into repeated state changes. The model may also need improvement, but model quality alone is a weak control when actions are destructive. The workflow should require independent health signals such as error rate, latency, and readiness before rollback is allowed. It should also limit repeated actions and require human approval when signals disagree.
+
+</details>
+
+<details>
+<summary>7. A generated Kubernetes manifest appears valid, but the assistant does not cite the Kubernetes version or documentation source. What should you do before applying it to a Kubernetes 1.35+ cluster?</summary>
+
+You should validate the manifest against the Kubernetes 1.35+ API behavior and your cluster policies before applying it. The assistant may have generated a field from an older version, a future proposal, or another tool's schema. A dry run, schema validation, policy check, and review against official documentation provide better evidence than the model's wording. The generated manifest can be a useful draft, but applying it without verification would confuse fluency with compatibility.
+
+</details>
 
 ## Hands-On Exercise
 
-In this exercise, you will analyze the operational risks of different automation architectures by designing appropriate trust boundaries for a hypothetical production environment. You are tasked with safely integrating three distinct systems into your team's workflow.
+In this exercise, you will analyze the operational risks of different automation architectures by designing appropriate trust boundaries for a hypothetical production environment. Your platform engineering team manages a fleet of stateless services and is evaluating three tools to reduce operational toil. For each tool, classify the architecture, identify the main failure mode, and decide what constraint must exist before the tool is used near production.
 
-**Scenario Context:**
-Your platform engineering team manages a massive fleet of stateless microservices. You have been given approval to evaluate three new tools to reduce operational toil. For each tool, you must determine its architectural category, identify its primary failure mode, and establish a mandatory operational constraint before it can be deployed.
+Exercise scenario: the first tool is a static script that deletes temporary cache files from nodes every Sunday at midnight. The second tool is a dashboard widget that analyzes historical traffic patterns and predicts when the team may need to scale resources for upcoming events. The third tool is an autonomous chat bot that can read alerts, query a production database for context, and independently execute schema migrations when it believes a mismatch exists. Treat the scenario as a design review, not a vendor evaluation.
 
-**The Tools:**
-1. A static script that automatically deletes temporary cache files from all nodes every Sunday at midnight.
-2. A dashboard widget that analyzes historical traffic patterns and predicts when you will need to manually scale up resources for upcoming marketing events.
-3. An autonomous Slack bot that can read error alerts, query the production database for context, and independently execute database migrations to resolve schema mismatches.
+### Tasks
 
-**Success Criteria**:
-- [ ] You have successfully classified the static script as a Rule-Based System and noted its primary failure mode is brittleness when encountering unexpected directory structures.
-- [ ] You have classified the traffic predictor as a Machine Learning System and established a constraint that its predictions must be verified against current marketing schedules to account for data drift.
-- [ ] You have accurately classified the autonomous Slack bot as an Agentic System, recognizing it carries the highest operational risk.
-- [ ] You have mandated a strict human-in-the-loop approval gate for the Slack bot, ensuring it can never execute a database migration without explicit authorization from a senior engineer.
+- [ ] Classify each automation system into a category: rule-based system, machine learning system, generative AI system, or agentic workflow.
+- [ ] Compare the risk profiles of the three tools by writing one likely failure mode and one likely blast-radius concern for each tool.
+- [ ] Design a trust boundary for the agentic workflow by mapping every destructive permission to a required human-approval gate.
+- [ ] Evaluate the reliability of any AI-generated operational response by listing the external evidence you would require before acting on it.
+- [ ] Decide which tool, if any, could safely start in advisory or read-only mode and explain what evidence would justify additional autonomy later.
 
-## Next Module
+<details>
+<summary>Suggested solution</summary>
 
-Continue to [What Are LLMs?](./module-1.2-what-are-llms/).
+The cache cleanup script is a rule-based system because a person defines the schedule and deletion behavior explicitly. Its main failure mode is brittleness around unexpected directory structures, unsafe path expansion, or a changed node layout, so the boundary should include dry runs, path allowlists, and review before it runs broadly. The traffic predictor is a machine learning system because it forecasts demand from historical data, so its main failure mode is drift when upcoming events differ from the past; it should remain advisory until predictions are compared with current plans and recent telemetry. The chat bot is an agentic workflow because it interprets alerts, queries tools, plans actions, and can execute migrations. It needs the strongest boundary: read-only access by default, no migration execution without named human approval, deterministic health and schema evidence, audit logs for every tool call, and a rollback plan for any approved change.
+
+</details>
+
+### Success Criteria
+
+- [ ] You have classified the static script as a rule-based system and noted that its primary failure mode is brittleness when encountering unexpected directory structures.
+- [ ] You have classified the traffic predictor as a machine learning system and established a constraint that its predictions must be verified against current event plans to account for data drift.
+- [ ] You have accurately classified the autonomous chat bot as an agentic workflow, recognizing that it carries the highest operational risk.
+- [ ] You have designed a trust boundary that prevents the chat bot from executing a database migration without explicit authorization from a senior engineer.
+- [ ] You have compared the risk profiles of rule-based, machine learning, generative AI, and agentic approaches using mechanism, evidence, and blast radius rather than product labels.
+- [ ] You have explained how to evaluate the reliability of an AI-generated operational response before using it in an infrastructure workflow.
 
 ## Sources
 
-- [OECD AI Principles Overview](https://oecd.ai/ai-principles/) — Provides a widely used high-level definition of an AI system and frames AI in terms of predictions, content, recommendations, and decisions.
-- [What is AI? Can you make a clear distinction between AI and non-AI systems?](https://oecd.ai/en/wonk/definition-) — Explains the OECD AI-system definition in plainer language, including how machine learning differs from explicit hand-written rules.
-- [Does ChatGPT tell the truth?](https://help.openai.com/en/articles/8313428-does-chatgpt-tell-the-truth%3F.pls) — Gives a beginner-friendly explanation of hallucinations and why fluent model outputs still need verification.
+- [OECD AI Principles Overview](https://oecd.ai/ai-principles/)
+- [What is AI? Can you make a clear distinction between AI and non-AI systems?](https://oecd.ai/en/wonk/definition-)
+- [Does ChatGPT tell the truth?](https://help.openai.com/en/articles/8313428-does-chatgpt-tell-the-truth%3F.pls)
+- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)
+- [NIST AI Risk Management Framework 1.0 PDF](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf)
+- [Google Cloud: MLOps continuous delivery and automation pipelines in machine learning](https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning)
+- [Microsoft Azure Machine Learning: monitor models in production](https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-monitoring?view=azureml-api-2)
+- [AWS SageMaker model monitor documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html)
+- [Kubernetes concepts overview](https://kubernetes.io/docs/concepts/overview/)
+- [Kubernetes configuration overview](https://kubernetes.io/docs/concepts/configuration/overview/)
+- [OWASP Top 10 for Large Language Model Applications](https://genai.owasp.org/llmrisk/llm-top-10-risk/)
+
+## Next Module
+
+Continue to [What Are LLMs?](./module-1.2-what-are-llms/) to connect this taxonomy to the specific model family behind many modern generative tools.
