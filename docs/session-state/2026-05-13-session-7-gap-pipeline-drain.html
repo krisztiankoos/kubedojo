@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 7 handoff — 2026-05-13 — Gap pipeline drained (cert blueprints + triangulation roadmap + Tier 1+2 pressure-test)</title>
+<style>
+  :root {
+    --bg: #fafbfc; --fg: #1a1d23; --muted: #5b6573; --accent: #0057B7;
+    --good: #0d8a4a; --warn: #b45c00; --bad: #b8001f; --card: #ffffff;
+    --border: #e2e6eb; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { margin: 0 0 8px; font-size: 26px; }
+  h2 { margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+       font-size: 20px; }
+  h3 { margin: 20px 0 8px; font-size: 16px; }
+  .meta { color: var(--muted); margin: 0 0 24px; font-size: 13px; }
+  .tldr { background: var(--card); border-left: 4px solid var(--accent);
+          padding: 14px 18px; margin: 16px 0 28px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0;
+          background: var(--card); border: 1px solid var(--border); }
+  th, td { padding: 9px 11px; border-bottom: 1px solid var(--border);
+           text-align: left; vertical-align: top; font-size: 13.5px; }
+  th { background: #eef2f6; font-weight: 600; }
+  td.col-id { white-space: nowrap; font-family: var(--mono); font-size: 12.5px; }
+  code { background: #eef2f6; padding: 1px 6px; border-radius: 3px;
+         font-family: var(--mono); font-size: 12.5px; }
+  ol li, ul li { margin: 6px 0; }
+  .pill { display: inline-block; padding: 1px 7px; border-radius: 10px;
+          font-size: 11.5px; font-weight: 600; margin-right: 6px; }
+  .pill.merged { background: #eef9f1; color: var(--good); }
+  .pill.closed { background: #eef9f1; color: var(--good); }
+  .pill.new { background: #e8f0fc; color: var(--accent); }
+  .pill.pattern { background: #fff7e6; color: var(--warn); }
+  .smoke { background: #1a1d23; color: #e8eaed; padding: 12px 16px;
+           border-radius: 6px; font-family: var(--mono); font-size: 12.5px;
+           overflow-x: auto; white-space: pre; }
+  .comment { color: #9aa0a6; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 7 — Gap pipeline drained: cert blueprints + triangulation roadmap + Tier 1+2 pressure-test</h1>
+<p class="meta">2026-05-13 · primary on <code>main</code> at PR #1182 merge · author: claude opus 4.7 (1M ctx)</p>
+
+<div class="tldr">
+  <strong>TL;DR.</strong> Autonomous overnight run on the 4-step gap-analysis pipeline carried over from session 6.
+  <span class="pill merged">2 PRs merged</span>: #1181 cert blueprints (SAA-C03 + AZ-104 + Terraform Assoc) augmentation of <code>kodekloud-gap-analysis-2026-05-12.html</code>; #1182 new <code>gap-triangulation-roadmap-2026-05.html</code> (51 rows, T1: 4 / T2: 20 / T3: 27, DEPTH-FIRST 23 / BREADTH 20 / MIXED 8, quality gate CLOSED at 249 critical modules).
+  <span class="pill new">5 GH issues filed</span> (#1183 Stage-3 parent epic + #1184/#1185 child modules + #1186/#1187 Stage-1 brief subtasks).
+  <span class="pill closed">2 GH issues closed</span> (#1173, #1174).
+  <span class="pill pattern">1 tooling note</span>: <code>ab discuss</code> terminator emits false-positive "still disagreeing" when an earlier <code>[DISAGREE]</code> is resolved by a later <code>[AGREE]</code> from the responding agent.
+  Tier 1+2 pressure-test reached <strong>full convergence in 3 rounds</strong> across all 5 rows with no Decision Card emitted.
+</div>
+
+<h2>What shipped</h2>
+
+<table>
+  <thead><tr><th>PR / Issue</th><th>Subject</th><th>Outcome</th></tr></thead>
+  <tbody>
+    <tr><td class="col-id">PR #1181</td>
+        <td>docs(research): augment gap analysis with cert blueprints (SAA / AZ-104 / Terraform Assoc)</td>
+        <td><span class="pill merged">merged</span> at <code>8bf4f14a</code>. Codex (gpt-5.5 danger, 562s) author; claude opus review APPROVE_WITH_NITS (nits: loose count drift on ACI mentions, Cloud Custodian/NATS triangulation-rule overrides flagged). Per <code>feedback_ai_gate_is_the_gate.md</code>, batch-merged.</td></tr>
+    <tr><td class="col-id">PR #1182</td>
+        <td>docs(research): add Step 4 triangulation roadmap (gap analysis)</td>
+        <td><span class="pill merged">merged</span> at <code>f676b134</code>. Codex (gpt-5.5 danger, 942s) author; claude opus review APPROVE_WITH_NITS (nits: row-1/row-16 Tier-1 promotions fragile, AKS-networking prereq wrong track, glyph regression). New file: <code>docs/research/gap-triangulation-roadmap-2026-05.html</code>.</td></tr>
+    <tr><td class="col-id">#1183</td>
+        <td>Curriculum arc: AI-native engineering (harness + Symphony) — Stage 3 epic</td>
+        <td><span class="pill new">filed</span>. Parent epic. Closes #1173. 2 child modules at <code>ai/ai-native-work/{2.1,2.2}</code>; placement and structure locked by Stage-2 convergence.</td></tr>
+    <tr><td class="col-id">#1184</td>
+        <td>Write module: ai-native-work/module-2.1-harness-engineering</td>
+        <td><span class="pill new">filed</span>. Child of #1183. Locked behind quality-floor unlock.</td></tr>
+    <tr><td class="col-id">#1185</td>
+        <td>Write module: ai-native-work/module-2.2-orchestrating-fleets-symphony</td>
+        <td><span class="pill new">filed</span>. Child of #1183. Locked behind quality-floor unlock.</td></tr>
+    <tr><td class="col-id">#1186</td>
+        <td>Stage-1 brief: gap-engineering-craft.md (reading code, debugging, code review, RFCs)</td>
+        <td><span class="pill new">filed</span>. Tier 1 row 2 needs Stage-1 brief before Stage-2 re-deliberation. Excludes ADRs + tech-writing (already covered).</td></tr>
+    <tr><td class="col-id">#1187</td>
+        <td>Stage-1 brief: gap-llm-native-app-synthesis.md (build a real LLM app on K8s arc)</td>
+        <td><span class="pill new">filed</span>. Tier 1 row 3 needs Stage-1 brief; framing as <strong>synthesis gap</strong> (pieces exist, integration doesn't) — output shape (bridge / mini-arc / sidebar restructure) is brief's job to decide.</td></tr>
+    <tr><td class="col-id">#1173</td>
+        <td>Curriculum gap: AI-native engineering / harness engineering module</td>
+        <td><span class="pill closed">closed</span> by Stage-3 advance. All 3 acceptance criteria met (transcript captured, decision made, parent epic + children filed).</td></tr>
+    <tr><td class="col-id">#1174</td>
+        <td>Pressure-test content-gaps-2026-05 Tier 1+2 rows via ab discuss</td>
+        <td><span class="pill closed">closed</span>. Full per-row outcome table in close comment.</td></tr>
+  </tbody>
+</table>
+
+<h2>ab discuss outcomes (channel <code>gap-tier12-pressure-test-2026-05-13</code>, thread <code>db4c0a1451bd...</code>)</h2>
+
+<p>3 rounds, 3 agents (claude opus 4.7 / codex gpt-5.5 / gemini 3.x). Bridge prompt at <code>/tmp/ab-discuss-tier12-prompt.md</code>. Transcript: <code>scripts/ab channel tail gap-tier12-pressure-test-2026-05-13 --thread db4c0a1451bd4bf9b53c22e8c70d1cd1</code>.</p>
+
+<table>
+  <thead><tr><th>Row</th><th>Topic</th><th>Vote (unanimous after round 3)</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>AI-native engineering (harness)</td><td>ADVANCE Stage 3 → #1183</td><td>Placement <code>ai/ai-native-work/</code> per Stage-1 brief. Gemini initially proposed <code>ai-ml-engineering/</code>; conceded round 3 after codex+claude cited the brief.</td></tr>
+    <tr><td>2</td><td>Software engineering craft</td><td>BRIEF Stage 1 → #1186</td><td>Scoped to reading-code / debugging / code-review / RFCs. ADRs + tech-writing excluded (already at <code>engineering-leadership/module-1.4-adrs.md</code>).</td></tr>
+    <tr><td>3</td><td>LLM-native application engineering</td><td>BRIEF Stage 1 → #1187</td><td>Framed as synthesis gap (pieces fragmented across vector-rag / frameworks-agents / ai-infrastructure / ml-platforms). Gemini round-2 said DEFER; conceded round 3 after codex's fragmentation evidence.</td></tr>
+    <tr><td>4</td><td>Engineer mental models</td><td>DEFER</td><td>Substantial coverage at <code>platform/foundations/distributed-systems/{5.1,5.2,5.3}</code> + <code>systems-thinking/{1.1,1.2,1.3}</code>. "Time/clocks as practiced" sub-slice may surface in a future #388 rubric pass — not a new-module epic.</td></tr>
+    <tr><td>5</td><td>Cost lens as cross-cutting thread</td><td>DEFER</td><td>Belongs in rubric dimension + verifier rule, not new modules. Stage 2 unanimous from round 1.</td></tr>
+  </tbody>
+</table>
+
+<h2>Decisions made</h2>
+
+<ol>
+  <li><strong>Stage-3 advance for harness engineering arc.</strong> Per Stage-1 brief, 2-module mini-arc in <code>ai/ai-native-work/</code> (NOT a new track, NOT a single module, NOT in <code>ai-ml-engineering/</code>). 2.1 = harness engineering principles + layered mental model; 2.2 = Symphony / orchestrating fleets.</li>
+  <li><strong>Quality-floor gate remains CLOSED.</strong> 249 critical-rubric modules; gate opens at &lt;50. No drafting unlocks from this session. All filed work is planning/research only.</li>
+  <li><strong>Synthesis-gap framing accepted</strong> for LLM-native application engineering. Rejected as both "false alarm" (gemini round 1) and "redirect to bridges" (claude round 2) — Stage-1 brief decides output shape.</li>
+  <li><strong>Tier 1+2 mental-models + cost-lens deferred</strong> with explicit rationale. Mental models = existing coverage substantial; cost lens = wrong workstream (rubric/verifier, not modules).</li>
+</ol>
+
+<h2>Contract / process notes</h2>
+
+<ul>
+  <li><strong>Decision Card not emitted</strong> per <code>.claude/rules/decision-card.md</code> — when agents converge with <code>[AGREE]</code>, no card is emitted. Gemini's final <code>[AGREE]</code> on round-3 reconciled the earlier <code>[DISAGREE]</code> tokens from codex+claude.</li>
+  <li><strong><code>ab discuss</code> terminator over-flag.</strong> The bridge tool printed <code>⚠️ hit max_rounds=3 without convergence. Still disagreeing: codex, claude</code> even though gemini's final turn was <code>[AGREE]</code> matching the other two. The terminator appears to track per-agent <code>[DISAGREE]</code> from earlier turns without re-evaluating after the next agent's response. Worth a future tooling fix; doesn't affect this outcome. Symptom: false-positive disagreement alert at end of converged sessions.</li>
+  <li><strong>HTML-first artifact pattern reused.</strong> Both PRs added HTML artifacts to <code>docs/research/</code> reusing the existing CSS class set (<code>status covered/partial/gap</code>, <code>well-covered</code>, <code>caveat</code>, <code>gaps</code>, <code>days</code>). No new visual-language drift.</li>
+  <li><strong>"research" label doesn't exist in repo.</strong> Two GH issue creates failed silently on first attempt with <code>could not add label: 'research' not found</code>. Retried with <code>content,enhancement</code> only. Either create the label or update issue templates to stop suggesting it.</li>
+</ul>
+
+<h2>Cold-start for next session</h2>
+
+<ol>
+  <li>Hit the briefing API first: <code>curl -s http://127.0.0.1:8768/api/briefing/session?compact=1</code>. The TODO list below has been pruned to reflect this session's drains.</li>
+  <li><strong>First action choice:</strong>
+    <ul>
+      <li><strong>Re-enable citation backfill</strong> (root cause fixed by #1172 in session 6). Pilot: <code>.venv/bin/python -m scripts.quality.pipeline backfill-pending --limit 3</code>. Verify diffs are append-only. Then <code>--limit 50</code> batches until ~735 queued modules clear.</li>
+      <li><strong>Hook 2 of #1175</strong> — block <code>git commit</code> on <code>main</code> without PR ref. Mirror PR #1177's shape; source <code>_lib.sh</code>.</li>
+      <li><strong>Phase F prose-capacity sampling</strong> (#1170) — sample 20 already-shipped modules to measure body_words distribution before next 100+ #388 sweep.</li>
+    </ul>
+  </li>
+  <li><strong>Cold-start ritual:</strong> <code>/bin/ps aux | grep -E "dispatch_388_pilot|backfill-pending"</code>. Should be empty.</li>
+</ol>
+
+<h2>Smoketests / verification</h2>
+
+<div class="smoke"><span class="comment"># Verify session-7 PRs landed on main</span>
+git log --oneline -3 main
+<span class="comment"># Should show f676b134 (#1182) → 8bf4f14a (#1181) → 7713048b (session-6 handoff)</span>
+
+<span class="comment"># Verify new issues exist + predecessors closed</span>
+gh issue view 1183 --json state,title    <span class="comment"># OPEN, epic</span>
+gh issue view 1184 --json state          <span class="comment"># OPEN</span>
+gh issue view 1185 --json state          <span class="comment"># OPEN</span>
+gh issue view 1186 --json state          <span class="comment"># OPEN</span>
+gh issue view 1187 --json state          <span class="comment"># OPEN</span>
+gh issue view 1173 --json state          <span class="comment"># CLOSED</span>
+gh issue view 1174 --json state          <span class="comment"># CLOSED</span>
+
+<span class="comment"># Re-read the ab discuss transcript on demand</span>
+scripts/ab channel tail gap-tier12-pressure-test-2026-05-13 --thread db4c0a1451bd4bf9b53c22e8c70d1cd1 -n 50
+
+<span class="comment"># Confirm gap artifacts are on main</span>
+ls -la docs/research/{kodekloud-gap-analysis-2026-05-12.html,gap-triangulation-roadmap-2026-05.html,harness-symphony-gap.md,content-gaps-2026-05.md}
+</div>
+
+<h2>Pointers</h2>
+
+<ul>
+  <li><code>docs/research/kodekloud-gap-analysis-2026-05-12.html</code> — source artifact with 4 axes (KK + CNCF + Cert + cross-cut quality-board). Aggregate gap table now top-27 with triangulated <code>Sources</code> column.</li>
+  <li><code>docs/research/gap-triangulation-roadmap-2026-05.html</code> — Step 4 roadmap, planning-only.</li>
+  <li><code>docs/research/content-gaps-2026-05.md</code> — Stage 0 inventory. Tier 1+2 rows are now fully pressure-tested. Tier 3+4 remain on the original workflow (separate pressure-test when relevant tracks reach unlock).</li>
+  <li><code>docs/research/harness-symphony-gap.md</code> — Stage 1 brief for #1183. Source of truth for module 2.1/2.2 scope.</li>
+  <li>ab discuss channel + thread referenced throughout: <code>gap-tier12-pressure-test-2026-05-13</code> / <code>db4c0a1451bd4bf9b53c22e8c70d1cd1</code>.</li>
+</ul>
+
+</main>
+</body>
+</html>
