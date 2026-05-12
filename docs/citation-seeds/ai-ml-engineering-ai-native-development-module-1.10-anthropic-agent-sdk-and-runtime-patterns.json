@@ -1,172 +1,212 @@
 {
   "module_key": "ai-ml-engineering/ai-native-development/module-1.10-anthropic-agent-sdk-and-runtime-patterns",
   "module_path": "src/content/docs/ai-ml-engineering/ai-native-development/module-1.10-anthropic-agent-sdk-and-runtime-patterns.md",
-  "research_run_id": "2026-04-21T21:37:55+00:00-codex-gpt-5.3-codex-spark",
+  "research_run_id": "2026-05-12T17:39:22+00:00-codex-gpt-5.3-codex-spark",
   "schema_version": 3,
   "section_pool_ref": null,
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "Anthropic’s current official product name is the Claude Agent SDK, and older references may still call it the Claude Code SDK because the harness originally powered Claude Code.",
+      "claim_text": "Anthropic positions the Claude Agent SDK as programmatic access to the same core runtime foundations that power Claude Code.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: First: What This SDK Actually Is",
+      "span_hint": "section: Why This Module Matters",
       "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk/",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://www.anthropic.com/news/enabling-claude-code-to-work-more-autonomously",
       "proposed_tier": "vendor",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Anthropic’s engineering post explicitly says the Claude Code SDK is being renamed to the Claude Agent SDK and explains that it is the harness behind Claude Code."
+      "rationale": "Anthropic's announcement says the Claude Agent SDK gives access to the same core tools, context-management systems, and permissions frameworks that power Claude Code."
     },
     {
       "claim_id": "C002",
-      "claim_text": "The Agent SDK gives developers Claude Code’s agent loop as a library, including the same tools, agent loop, and context management.",
+      "claim_text": "Anthropic's public guidance describes agent work as a gather-context, take-action, verify-work, repeat loop.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: First: What This SDK Actually Is",
+      "span_hint": "section: 2. The Gather, Act, Verify Loop",
       "disposition": "needs_allowlist_expansion",
-      "source_ids": [],
-      "proposed_url": "https://code.claude.com/docs/en/agent-sdk/overview",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://claude.com/blog/building-agents-with-the-claude-agent-sdk",
       "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Agent SDK overview directly states that the SDK gives you the same tools, agent loop, and context management that power Claude Code, but the primary docs host is off the current allowlist."
+      "rationale": "The primary Anthropic article explicitly presents this loop, but the canonical page resolves to claude.com, which is outside the current allowlist."
     },
     {
       "claim_id": "C003",
-      "claim_text": "Anthropic documents built-in tools including file reads and edits, writing new files, bash execution, file discovery and grep-style search, web search and fetch, and background monitoring.",
+      "claim_text": "The SDK exposes runtime features such as tools, context management, permissions, subagents, and hooks.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: The Four Core Layers -> Tool Layer",
-      "disposition": "needs_allowlist_expansion",
-      "source_ids": [],
-      "proposed_url": "https://code.claude.com/docs/en/agent-sdk/overview",
-      "proposed_tier": null,
+      "span_hint": "section: 3. What the Claude Agent SDK Adds",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://www.anthropic.com/news/enabling-claude-code-to-work-more-autonomously",
+      "proposed_tier": "vendor",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The official overview page enumerates Read, Write, Edit, Bash, Monitor, Glob, Grep, WebSearch, and WebFetch, but that docs host is off-allowlist."
+      "rationale": "Anthropic's product announcement names core tools, context management, permissions, subagents, and hooks as Agent SDK capabilities."
     },
     {
       "claim_id": "C004",
-      "claim_text": "Anthropic’s engineering guidance presents the agent loop as gather context, take action, verify work, then repeat.",
+      "claim_text": "The current SDK documentation describes capabilities including reading files, editing code, running commands, web operations, MCP integration, and session/context features.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: The Gather -> Act -> Verify Loop",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk/",
-      "proposed_tier": "vendor",
+      "span_hint": "section: 1. From Chat Integration to Agent Runtime",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S003",
+        "S004",
+        "S005"
+      ],
+      "proposed_url": "https://code.claude.com/docs/en/agent-sdk/overview",
+      "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Anthropic’s engineering article gives this loop verbatim as the feedback cycle for Claude Code and the Agent SDK."
+      "rationale": "The detailed capability list is documented in the official SDK docs, but those docs currently resolve to code.claude.com, which is off-allowlist."
     },
     {
       "claim_id": "C005",
-      "claim_text": "Anthropic positions local computer tools as the execution surface and MCP as the standardized integration path for external services.",
+      "claim_text": "The minimal Python example is runnable with the `claude-agent-sdk` package installed and an `ANTHROPIC_API_KEY` configured.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Built-In Tools vs MCP",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk/",
-      "proposed_tier": "vendor",
+      "span_hint": "section: 3. What the Claude Agent SDK Adds | paragraph after first Python example",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": "https://code.claude.com/docs/en/agent-sdk/python",
+      "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The article distinguishes local bash/file tools from MCP integrations, describing MCP as standardized connections to external services with auth and API handling."
+      "rationale": "The Python SDK reference documents installation and environment-key setup, but the canonical doc host is not on the allowlist."
     },
     {
       "claim_id": "C006",
-      "claim_text": "The SDK exposes first-class permission controls, including permission modes, allow and deny rules, and runtime approval handling.",
+      "claim_text": "Built-in tools cover local work such as file reads and edits, shell commands, content search, and web operations.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Permissions Are Not a Detail",
+      "span_hint": "section: 4. Tool Boundaries: Built-In Tools, MCP, and Custom Code",
       "disposition": "needs_allowlist_expansion",
-      "source_ids": [],
-      "proposed_url": "https://code.claude.com/docs/en/agent-sdk/permissions",
+      "source_ids": [
+        "S003",
+        "S007"
+      ],
+      "proposed_url": "https://code.claude.com/docs/en/agent-sdk/overview",
       "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The permissions reference directly documents permission modes, allow/deny rules, and runtime approval callbacks, but the primary docs host is off-allowlist."
+      "rationale": "The official SDK and hooks docs enumerate these tool families, but the documentation host is off-allowlist."
     },
     {
       "claim_id": "C007",
-      "claim_text": "Sessions preserve context across exchanges and can be resumed later or forked to explore different approaches.",
+      "claim_text": "The SDK hook system can intercept tool-use and session lifecycle events, including pre/post tool hooks and session start/stop.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Sessions and Long-Running Work",
+      "span_hint": "section: 5. Permissions, Hooks, and Approval Boundaries",
       "disposition": "needs_allowlist_expansion",
-      "source_ids": [],
-      "proposed_url": "https://code.claude.com/docs/en/agent-sdk/overview",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://code.claude.com/docs/en/hooks",
       "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The overview states that the SDK maintains context across exchanges and that sessions can be resumed or forked, but the primary docs host is off-allowlist."
+      "rationale": "The hooks reference documents these event types directly, but the canonical documentation host is outside the current allowlist."
     },
     {
       "claim_id": "C008",
-      "claim_text": "Hooks let developers intercept lifecycle events and validate, log, block, or transform agent behavior.",
+      "claim_text": "MCP servers extend the SDK with structured external tools and can be configured inside the agent runtime.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Hooks and Runtime Control",
+      "span_hint": "section: 4. Tool Boundaries: Built-In Tools, MCP, and Custom Code | paragraph before second Python example",
       "disposition": "needs_allowlist_expansion",
-      "source_ids": [],
-      "proposed_url": "https://code.claude.com/docs/en/agent-sdk/overview",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://code.claude.com/docs/en/agent-sdk/mcp",
       "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The official overview says SDK hooks use callback functions to validate, log, block, or transform agent behavior, but that exact primary source is off-allowlist."
+      "rationale": "The SDK MCP documentation is the primary source for this capability, but it resolves to code.claude.com rather than an allowlisted host."
     },
     {
       "claim_id": "C009",
-      "claim_text": "The Agent SDK supports subagents, and Anthropic describes them as useful for parallelization and for managing context through isolated context windows.",
+      "claim_text": "Subagents can isolate context by operating in their own context window separate from the main conversation.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Subagents and Decomposition",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk/",
-      "proposed_tier": "vendor",
+      "span_hint": "section: 6. Sessions, Context Compaction, and Drift",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://code.claude.com/docs/en/subagents",
+      "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Anthropic’s engineering post says the SDK supports subagents by default and explains their parallelization and isolated-context benefits."
+      "rationale": "Anthropic's subagents documentation states this explicitly, but the page is hosted on a non-allowlisted domain."
     },
     {
       "claim_id": "C010",
-      "claim_text": "The Agent SDK includes compaction behavior that automatically summarizes earlier messages when the context limit approaches.",
+      "claim_text": "The Claude Agent SDK is the renamed successor to the Claude Code SDK for broader agent use beyond coding workflows.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Sessions and Long-Running Work",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk/",
-      "proposed_tier": "vendor",
+      "span_hint": "section: Did You Know? | bullet 1",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://claude.com/blog/building-agents-with-the-claude-agent-sdk",
+      "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Anthropic’s engineering article explicitly says the SDK compact feature automatically summarizes previous messages as the context limit approaches."
+      "rationale": "Anthropic's primary rename explanation appears in the Claude Agent SDK blog post, which currently resolves to claude.com and therefore needs allowlist expansion."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The SDK supports both Python and TypeScript.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know? | bullet 2",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S006",
+        "S009"
+      ],
+      "proposed_url": "https://code.claude.com/docs/en/agent-sdk/typescript",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The primary SDK references for Python and TypeScript are official but hosted on code.claude.com, which is not currently allowlisted."
     }
   ],
   "further_reading": [
     {
-      "url": "https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk/",
-      "title": "Building agents with the Claude Agent SDK",
+      "url": "https://www.anthropic.com/news/enabling-claude-code-to-work-more-autonomously",
+      "title": "Enabling Claude Code to Work More Autonomously",
       "tier": "vendor",
-      "why_relevant": "This is Anthropic’s most direct explanation of the SDK’s runtime model, loop design, MCP usage, subagents, and compaction."
+      "why_relevant": "Best allowlisted overview of the Agent SDK's relationship to Claude Code, plus hooks and subagents."
     },
     {
-      "url": "https://www.anthropic.com/news/agent-capabilities-api/",
-      "title": "New capabilities for building agents on the Anthropic API",
+      "url": "https://www.anthropic.com/news/agent-capabilities-api",
+      "title": "New Capabilities for Building Agents on the Anthropic API",
       "tier": "vendor",
-      "why_relevant": "This announcement provides adjacent context on Anthropic’s agent-building primitives such as MCP connectivity, code execution, files, and longer-lived context."
+      "why_relevant": "Good adjacent context on Anthropic's broader agent-building primitives, including MCP connectivity and longer-lived context."
     },
     {
       "url": "https://www.anthropic.com/solutions/agents",
       "title": "Claude Agents",
       "tier": "vendor",
-      "why_relevant": "This product overview is useful for learners who want the higher-level framing of where Anthropic positions agents and Claude Code in the broader platform."
+      "why_relevant": "Useful high-level product framing for how Anthropic positions agents, Claude Code, and agent workflows."
     }
   ],
-  "notes": "Seeded only product/runtime behavior claims that need inline support; pedagogical guidance, analogies, quiz material, and hand-on exercise steps were intentionally excluded.",
+  "notes": "Most detailed SDK/runtime claims in this module map to official Anthropic docs that now resolve to code.claude.com or claude.com rather than allowlisted anthropic.com hosts. Expect allowlist-expansion decisions for capability-level citations (tools, hooks, MCP, subagents, Python/TypeScript refs, and rename rationale).",
   "_schema_issues": [],
   "rejected_urls": []
 }

@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Anthropic Agent SDK and Runtime Patterns"
 slug: ai-ml-engineering/ai-native-development/module-1.10-anthropic-agent-sdk-and-runtime-patterns
 sidebar:
@@ -33,7 +34,7 @@ A platform team ships an internal agent that looks impressive during a demo. It 
 
 The problem is not that the team used an AI model. The problem is that they built a chat loop and treated it like an agent runtime. A serious runtime has to decide which tools are available, which actions need approval, how sessions are resumed, how work is observed, and how each action is verified before the agent continues.
 
-The Claude Agent SDK matters because it packages many of the runtime patterns behind Claude Code into a programmable form. Instead of starting with a blank model client and rebuilding tool execution, permissions, hooks, sessions, MCP integration, and context management from scratch, a team can build on a harness designed for iterative agent work.
+The Claude Agent SDK matters because it [packages many of the runtime patterns behind Claude Code into a programmable form](https://www.anthropic.com/news/enabling-claude-code-to-work-more-autonomously). Instead of starting with a blank model client and rebuilding tool execution, permissions, hooks, sessions, MCP integration, and context management from scratch, a team can build on a harness designed for iterative agent work.
 
 This module teaches the runtime design behind that harness. You will not only learn what the SDK exposes; you will learn how to reason about when it is appropriate, how to constrain it, and how to recognize the point where explicit workflow code is safer than agent autonomy.
 
@@ -109,7 +110,7 @@ For low-risk local changes, an automatic second attempt can be reasonable if the
 
 ## 3. What the Claude Agent SDK Adds
 
-The Claude Agent SDK adds value when your application needs the same kind of autonomous loop that Claude Code uses, but inside your own product, service, platform workflow, or internal automation. It gives you programmable access to built-in tools, permissions, sessions, hooks, MCP servers, subagents, and context-management behavior.
+The Claude Agent SDK adds value when your application needs the same kind of autonomous loop that Claude Code uses, but inside your own product, service, platform workflow, or internal automation. It gives you [programmable access to built-in tools, permissions, sessions, hooks, MCP servers, subagents, and context-management behavior](https://www.anthropic.com/news/enabling-claude-code-to-work-more-autonomously).
 
 With a client SDK, your application usually owns the whole tool loop. You send a message, inspect whether the model requested a tool, execute the tool yourself, pass the result back, continue the loop, and decide when to stop. That gives maximum control, but it also means your team must build every runtime guardrail.
 
@@ -802,5 +803,6 @@ grep -R "MCP-style external tools" -n anthropic-agent-runtime-lab/README.md
 
 ## Sources
 
-- [New capabilities for building agents on the Anthropic API](https://www.anthropic.com/news/agent-capabilities-api/) — This announcement provides adjacent context on Anthropic’s agent-building primitives such as MCP connectivity, code execution, files, and longer-lived context.
-- [Claude Agents](https://www.anthropic.com/solutions/agents) — This product overview is useful for learners who want the higher-level framing of where Anthropic positions agents and Claude Code in the broader platform.
+- [Enabling Claude Code to Work More Autonomously](https://www.anthropic.com/news/enabling-claude-code-to-work-more-autonomously) — Best allowlisted overview of the Agent SDK's relationship to Claude Code, plus hooks and subagents.
+- [New Capabilities for Building Agents on the Anthropic API](https://www.anthropic.com/news/agent-capabilities-api) — Good adjacent context on Anthropic's broader agent-building primitives, including MCP connectivity and longer-lived context.
+- [Claude Agents](https://www.anthropic.com/solutions/agents) — Useful high-level product framing for how Anthropic positions agents, Claude Code, and agent workflows.
