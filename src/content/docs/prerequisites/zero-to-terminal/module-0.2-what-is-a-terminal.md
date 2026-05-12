@@ -599,11 +599,9 @@ You've completed this exercise when you can demonstrate each item below without 
 - [Bash Reference Manual: Quoting](https://www.gnu.org/software/bash/manual/html_node/Quoting.html)
 - [Bash Reference Manual: Command Substitution](https://www.gnu.org/software/bash/manual/html_node/Command-Substitution.html)
 - [Kubernetes kubectl quick reference](https://kubernetes.io/docs/reference/kubectl/quick-reference/)
-- [Summary of the Amazon S3 Service Disruption in the Northern Virginia (US-EAST-1) Region](https://aws.amazon.com/message/41926/)
 - [Punched card](https://en.wikipedia.org/wiki/Punched_card)
 - [Graphical user interface](https://en.wikipedia.org/wiki/Graphical_user_interface)
 - [Computer terminal](https://en.wikipedia.org/wiki/Computer_terminal)
-- [Postmortem of database outage of January 31](https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/)
 - [Command line crash course](https://developer.mozilla.org/en-US/docs/Learn/Tools_and_testing/Understanding_client-side_tools/Command_line)
 
 ## Next Module
