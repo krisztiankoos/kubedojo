@@ -68,6 +68,24 @@ _POLL_INTERVAL_S = 1.0
 _ADAPTER_CACHE: dict[str, AgentAdapter] = {}
 
 
+def _git_head_sha(cwd: Path) -> str | None:
+    """Return the current HEAD SHA of ``cwd``, or None on failure."""
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=5,
+        )
+        if proc.returncode == 0:
+            return proc.stdout.strip()
+    except (subprocess.SubprocessError, OSError):
+        pass
+    return None
+
+
 def _load_adapter(name: str) -> AgentAdapter:
     """Import the adapter class for ``name`` and cache the instance.
 
@@ -372,6 +390,7 @@ def invoke(
     env = build_agent_env(provider=agent_name, overrides=plan.env_overrides)
 
     # ---------- 7–9. Run the subprocess with watchdog ----------
+    head_before = _git_head_sha(effective_cwd) if mode == "danger" else None
     start_time = time.monotonic()
     proc: subprocess.Popen | None = None
     watchdog_state: WatchdogState | None = None
@@ -617,13 +636,19 @@ def invoke(
 
         push_verify_error: str | None = None
         if mode == "danger" and parse.ok:
-            # Defense in depth: any agent in danger mode that lands commits
-            # could silent-fail-push (e.g., sandbox env issue). Codex was the
-            # original observed case (PR #907 round-2), but the verify is
-            # cheap (one git ls-remote) and applies to all agents.
-            push_ok, push_verify_error = verify_current_branch_pushed(effective_cwd)
-            if not push_ok:
-                outcome = "error"
+            head_after = _git_head_sha(effective_cwd)
+            if not (
+                head_before is not None
+                and head_after is not None
+                and head_before == head_after
+            ):
+                # Defense in depth: any agent in danger mode that lands commits
+                # could silent-fail-push (e.g., sandbox env issue). Codex was the
+                # original observed case (PR #907 round-2), but the verify is
+                # cheap (one git ls-remote) and applies to all agents.
+                push_ok, push_verify_error = verify_current_branch_pushed(effective_cwd)
+                if not push_ok:
+                    outcome = "error"
 
         record = _build_usage_record(
             agent=agent_name,
