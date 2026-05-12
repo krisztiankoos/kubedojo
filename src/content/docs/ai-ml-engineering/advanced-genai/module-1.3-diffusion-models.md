@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Diffusion Models"
 slug: ai-ml-engineering/advanced-genai/module-1.3-diffusion-models
 sidebar:
