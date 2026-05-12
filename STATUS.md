@@ -270,7 +270,7 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 
 **Carryover from 2026-05-09 evening handoff ("utilizing ALL agents"):**
 
-- [ ] 1. Pipeline Supervisor stopped — investigate `.pids/pipeline.pid` + logs, restart if appropriate.
+- [x] 1. ~~Pipeline Supervisor stopped~~ — phantom service: `local_api.py:106` referenced `.pids/pipeline.pid` with no producer script. Entry removed 2026-05-12.
 - [x] 2. Close GH #740 (Decision Card pattern adopted: `.claude/rules/decision-card.md`, `docs/decisions/` convention docs, `day3-388` and `html-migration-strategy` ab discuss threads).
 - [ ] 3. Rename `needs_human` → `residuals_filed` (GH #342, pipeline-v4 outcomes — mechanical change; codex dispatch + gemini review).
 - [ ] 4. Update stale memory `feedback_codex_review_danger_mode.md` (bug fixed by `dispatch_smart.py:270-279` codex auto-bump).
@@ -347,8 +347,7 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 
 ## Blockers
 
-- **GH_TOKEN source is per-project `<project>/.envrc`** (loaded by direnv on `cd`, OR manually via `source ./.envrc && unset GITHUB_TOKEN`). The user runs multiple repos with different fine-grained PATs; do NOT put GH_TOKEN in `~/.bash_secrets`. Claude Code's shell is not direnv-hooked, so manual sourcing is required at session start. Codex's `_agent_env` strips `GITHUB_TOKEN` from spawned subprocesses, but codex's restored-shell snapshot mechanism (`~/.codex/shell_snapshots/*.sh`) replays `GH_TOKEN` from the parent shell's env — that's why codex's `gh pr merge` works in practice (confirmed across 19 PR drains 2026-05-07). PR #919's `orchestrator_open_pr` fallback in `dispatch_388_pilot.py` remains the safety net. Recovery procedure if `.envrc` is missing/expired: pull from latest valid codex snapshot. Memory: `reference_gh_token_from_envrc.md`.
-- **GH_TOKEN value still exposed in 2026-05-04 session 2 transcript.** Functional impact none, operational hygiene only. Rotate when convenient.
+_None._
 
 ## Key Decisions
 
