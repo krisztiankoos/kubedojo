@@ -136,3 +136,20 @@ Reusable helpers Codex identified:
 
 **Awaiting:** user override (D / different scope) or "go A⁴ now" /
 "defer A⁴ until chain done".
+
+---
+
+## Resolution — 2026-05-12
+
+**Chosen option:** GO A⁴.
+
+**Shipped on `main` via three PRs:**
+
+| PR | SHA | What |
+|---|---|---|
+| #1153 | `228c5786` | A⁴ prereq #1 — write `citations_verified` to frontmatter on backfill |
+| #1155 | `acf1c03f` | A⁴ prereq #2 — add citation backfill step to per-module loop |
+| #1157 | `f0fd5ea3` | A⁴ main — frontmatter-derived `/api/tracks/readiness` |
+
+Backfill backlog and one-time apparent regression were both flagged in
+the PRs; ongoing `quality.pipeline backfill-pending` walks the corpus.
