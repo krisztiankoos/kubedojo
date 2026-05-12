@@ -19,15 +19,15 @@ lab:
 
 ---
 
-Throughout this module, `kubectl` is the official Kubernetes command-line client, and we will use the common short alias `k` after defining it once. The alias matters because Kubernetes work involves many repeated inspection commands, and the shorter form keeps examples readable without changing what is executed.
+Throughout this module, `kubectl` is the official Kubernetes command-line client, and every runnable command uses the full binary name. Many engineers configure a short interactive alias on their own machines, but aliases are shell-local conveniences and do not expand reliably in scripts, copied command blocks, or non-interactive automation. Using `kubectl` everywhere keeps the examples clear, portable, and safe to paste into a terminal or lab notebook without hidden setup.
 
 ```bash
-alias k=kubectl
+kubectl version --client
 ```
 
 ## What You'll Be Able to Do
 
-- Construct and verify a Kubernetes 1.35+ local cluster with `kind`, Docker, and the `k` command-line workflow.
+- Construct and verify a Kubernetes 1.35+ local cluster with `kind`, Docker, and the `kubectl` command-line workflow.
 - Compare local cluster tools and design a topology that matches the development or testing problem in front of you.
 - Diagnose local cluster startup, networking, kubeconfig, and control plane failures by reading concrete signals from Docker and Kubernetes.
 - Evaluate how control plane and worker node components cooperate, then predict how failures affect scheduling and access.
@@ -41,7 +41,7 @@ A cluster is not just another command-line tool you install and forget. It is a 
 
 Cloud-managed Kubernetes is the right answer for many production workloads, yet it is a poor first sandbox for learning. A managed control plane can take many minutes to provision, incurs a fee simply for existing, and often brings attached costs for nodes, disks, load balancers, and cross-zone traffic. A forgotten learning cluster can create a real invoice, while a local `kind` cluster can be deleted without leaving behind cloud infrastructure. This module teaches you to build that local arena, inspect its moving parts, and decide when a single-node cluster is enough versus when a multi-node topology is worth the extra resources.
 
-The goal is not to memorize a cluster creation command. The goal is to develop an operational model: you should know what `kind` builds, where `k` sends requests, why kubeconfig controls your identity, which component schedules a Pod, why a local LoadBalancer stays pending, and how to recover when Docker, disk space, version skew, or the control plane fails. Once you can deliberately create, break, inspect, and delete your first cluster, later modules about workloads, services, storage, security, and automation become much less abstract.
+The goal is not to memorize a cluster creation command. The goal is to develop an operational model: you should know what `kind` builds, where `kubectl` sends requests, why kubeconfig controls your identity, which component schedules a Pod, why a local LoadBalancer stays pending, and how to recover when Docker, disk space, version skew, or the control plane fails. Once you can deliberately create, break, inspect, and delete your first cluster, later modules about workloads, services, storage, security, and automation become much less abstract.
 
 There is also a cultural lesson in this first module. Teams that are confident with disposable local clusters tend to write smaller experiments, reproduce bugs with fewer meetings, and describe failures with better evidence. Teams without that practice often treat every cluster problem as a shared emergency because nobody can quickly recreate the conditions alone. As you work through the module, keep asking which facts you can prove locally before involving a shared platform. That habit saves time, money, and credibility when the same diagnostic pattern later appears in a real environment.
 
@@ -107,7 +107,7 @@ flowchart TD
     end
 ```
 
-The API server is the front door of the cluster. Every external command, controller request, and internal status update flows through it, and it is the only component that talks directly to the backing datastore. When you run a command with `k`, the API server authenticates who you are, authorizes the action through RBAC, applies admission policies, validates the object, and then persists accepted state. If the API server is down, you may still have containers running on worker nodes, but you cannot reliably read or change cluster state through the Kubernetes API.
+The API server is the front door of the cluster. Every external command, controller request, and internal status update flows through it, and it is the only component that talks directly to the backing datastore. When you run a command with `kubectl`, the API server authenticates who you are, authorizes the action through RBAC, applies admission policies, validates the object, and then persists accepted state. If the API server is down, you may still have containers running on worker nodes, but you cannot reliably read or change cluster state through the Kubernetes API.
 
 `etcd` is the cluster's memory. It is a strongly consistent key-value store that holds objects such as namespaces, Deployments, Secrets, Services, and Pod records. The scheduler does not keep an independent private database, and neither does the controller manager; they watch the API server and write their decisions back into persisted state. This design makes Kubernetes auditable and declarative, but it also means that `etcd` health is not optional. If the datastore cannot accept writes, the cluster cannot safely accept new desired state.
 
@@ -182,7 +182,7 @@ Before running commands, choose the smallest topology that can prove the behavio
 
 ## Section 3: Kubeconfig Is Your Passport
 
-Kubernetes is secure by default, so `k` cannot simply send anonymous HTTP requests to a cluster and hope for the best. It needs an API server address, a trusted certificate authority, and credentials that identify you. That information lives in kubeconfig, usually at `~/.kube/config`. A kubeconfig file is not merely a convenience file; it is the passport that tells your client where to travel, which identity to present, and which cluster/user pairing is active right now.
+Kubernetes is secure by default, so `kubectl` cannot simply send anonymous HTTP requests to a cluster and hope for the best. It needs an API server address, a trusted certificate authority, and credentials that identify you. That information lives in kubeconfig, usually at `~/.kube/config`. A kubeconfig file is not merely a convenience file; it is the passport that tells your client where to travel, which identity to present, and which cluster/user pairing is active right now.
 
 The structure has three major pieces. A cluster entry defines the destination API server and the certificate authority data used to verify that server, much like knowing which country you are entering and trusting its passport control. A user entry defines the identity material, such as certificates, tokens, or an external login plugin. A context binds one user to one cluster, optionally with a default namespace. Switching context changes where future commands go and which credentials they use, which is why context mistakes can be dangerous.
 
@@ -262,26 +262,26 @@ A default `kind` cluster is created with one command. In that default topology, 
 kind create cluster --name dojo-basics
 ```
 
-When this command runs, `kind` pulls the `kindest/node` image, starts a privileged node container, generates certificates, runs `kubeadm init`, starts control plane components, installs networking, and writes access details into kubeconfig. That final kubeconfig step is why your next `k` command knows where the new API server lives. The cluster is local, but it is not fake: you are talking to a real Kubernetes API server whose loopback port is mapped from your host into the node container.
+When this command runs, `kind` pulls the `kindest/node` image, starts a privileged node container, generates certificates, runs `kubeadm init`, starts control plane components, installs networking, and writes access details into kubeconfig. That final kubeconfig step is why your next `kubectl` command knows where the new API server lives. The cluster is local, but it is not fake: you are talking to a real Kubernetes API server whose loopback port is mapped from your host into the node container.
 
 This sequence is worth slowing down because every step leaves a different diagnostic trail. A pull failure points toward registry access or disk space. A node container failure points toward Docker health, permissions, or resource allocation. A `kubeadm init` failure points toward Kubernetes bootstrap logs inside the node. A kubeconfig failure points toward client access rather than cluster creation. When you read a `kind` error, do not collapse all of those stages into "cluster failed." Identify which stage failed, then choose the tool that can see that layer.
 
 To explicitly pin the Kubernetes version, append the `--image` flag, for example `kind create cluster --name dojo-basics --image kindest/node:v1.35.0`. Pinning matters when you are learning from written material because Kubernetes evolves. A command, API default, or warning can change between releases, and you want differences to be deliberate rather than accidental. In real teams, version pinning also makes bug reports reproducible because everyone can create the same local cluster shape before discussing the failure.
 
 ```bash
-k cluster-info
+kubectl cluster-info
 ```
 
 The `cluster-info` output should show the Kubernetes control plane running at a loopback address such as `https://127.0.0.1:42315`, plus system services such as CoreDNS. This confirms three things at once: kubeconfig points to the new cluster, your credentials authenticate successfully, and the API server can answer requests. If this command fails, do not jump straight to workload debugging. First prove whether the client can reach the control plane.
 
 ```bash
-k get nodes
+kubectl get nodes
 ```
 
 You should see one node named `dojo-basics-control-plane` in the Ready state. In many production clusters, control plane nodes are tainted so normal workloads cannot run there. In a default single-node `kind` cluster, the tool makes that node schedulable so you can run application Pods without needing separate workers. That is convenient, but it is also a reminder that local clusters intentionally trade some production separation for speed and simplicity.
 
 ```bash
-k get pods --namespace kube-system
+kubectl get pods --namespace kube-system
 ```
 
 System Pods in `kube-system` show the cluster running itself as Kubernetes-managed workloads. You should see components such as `etcd`, `kube-apiserver`, `kube-controller-manager`, and `kube-scheduler`. This is a useful mental shift: Kubernetes does not hide every internal process from you. Many core components are visible as Pods, which means you can inspect their status, logs, and restarts using the same habits you will later use for your own workloads.
@@ -292,9 +292,9 @@ Before running this, what output do you expect from `docker ps` on your host aft
 
 ## Section 5: Local Networking and Multi-Node Design
 
-Networking is where local clusters often stop feeling intuitive. Your Pods receive IP addresses from a cluster network, but your laptop does not automatically route to that Pod network. In a `kind` cluster, nodes sit on a Docker bridge network, and the API server is the one port mapped by default so `k` can communicate. If you deploy a web application, a Pod IP such as `10.244.0.5` is meaningful inside the cluster, but your browser has no native route to that address from the host.
+Networking is where local clusters often stop feeling intuitive. Your Pods receive IP addresses from a cluster network, but your laptop does not automatically route to that Pod network. In a `kind` cluster, nodes sit on a Docker bridge network, and the API server is the one port mapped by default so `kubectl` can communicate. If you deploy a web application, a Pod IP such as `10.244.0.5` is meaningful inside the cluster, but your browser has no native route to that address from the host.
 
-The quickest access pattern is port forwarding. A command like `k port-forward svc/my-web-app 8080:80` opens a local client-side tunnel through the API server to a Service or Pod. It is excellent for debugging because it requires no permanent cluster networking setup, but it ends when the foreground process ends. For more realistic local ingress, you can configure `kind` port mappings before cluster creation and run an ingress controller. For local LoadBalancer behavior, you need an implementation such as MetalLB because your laptop does not have a cloud load balancer controller.
+The quickest access pattern is port forwarding. A command like `kubectl port-forward svc/my-web-app 8080:80` opens a local client-side tunnel through the API server to a Service or Pod. It is excellent for debugging because it requires no permanent cluster networking setup, but it ends when the foreground process ends. For more realistic local ingress, you can configure `kind` port mappings before cluster creation and run an ingress controller. For local LoadBalancer behavior, you need an implementation such as MetalLB because your laptop does not have a cloud load balancer controller.
 
 Pause and predict: if you start a port-forward, load the application in your browser, and then close the terminal window, what happens to the browser connection? The tunnel disappears immediately because the forwarding path is maintained by the local process. Kubernetes did not create a durable Service exposure on your host; it simply carried traffic through a live debugging connection. This distinction keeps you from mistaking a successful port-forward for a production networking design.
 
@@ -332,7 +332,7 @@ kind create cluster --name dojo-multi --config multi-node-config.yaml
 Verify the architecture through Kubernetes, not only through Docker. The Kubernetes node list is what the scheduler uses when it chooses placement, so it is the view that matters for later workload behavior. Worker nodes normally show `<none>` in the roles column unless you label them, which is expected and not an error.
 
 ```bash
-k get nodes
+kubectl get nodes
 ```
 
 Your terminal output should now accurately reflect the distributed topology:
@@ -344,7 +344,7 @@ dojo-multi-worker           Ready    <none>          1m58s   v1.35.0
 dojo-multi-worker2          Ready    <none>          1m58s   v1.35.0
 ```
 
-Run `k get nodes -o wide` and examine the internal IPs. Each node is really a Docker container, yet Kubernetes sees distinct node addresses and can schedule across them. That makes the topology valuable for practicing node labels, taints, tolerations, affinity, anti-affinity, and DaemonSets. If you later test a workload that must run one copy per node, the multi-node cluster is the first topology in this module that can prove the behavior rather than merely accept the manifest.
+Run `kubectl get nodes -o wide` and examine the internal IPs. Each node is really a Docker container, yet Kubernetes sees distinct node addresses and can schedule across them. That makes the topology valuable for practicing node labels, taints, tolerations, affinity, anti-affinity, and DaemonSets. If you later test a workload that must run one copy per node, the multi-node cluster is the first topology in this module that can prove the behavior rather than merely accept the manifest.
 
 Multi-node local clusters are still approximations, so use them honestly. They do not reproduce separate physical machines, independent power domains, real cloud routing, or storage hardware failure. They do reproduce enough of the Kubernetes control loop to teach scheduling, node identity, Pod placement, and many networking patterns. That boundary matters when reporting results. You can say, "This manifest schedules correctly across three `kind` nodes," but you should not claim it proves production availability. Good local testing answers the Kubernetes question first and leaves cloud-specific questions for environments that actually contain those cloud behaviors.
 
@@ -354,7 +354,7 @@ Local cluster failures usually come from the host environment. Docker might be s
 
 The fastest troubleshooting loop starts with the error boundary. If `kind` cannot create a node container, Kubernetes is not ready for inspection yet. If the node exists but the API is unreachable, inspect control plane logs and kubeconfig. If the API is reachable but a workload is Pending, inspect events and scheduling constraints. If the workload is Running but inaccessible, inspect Services, endpoints, port-forwarding, and ingress mappings. Writing those branches down may feel mechanical, but it prevents a common beginner mistake: running random commands until one seems relevant.
 
-If `kind create cluster` hangs at control-plane startup, inspect Docker first. A Kubernetes control plane needs memory, and the node image is not small. Docker Desktop users should allocate enough memory for the engine, especially for multi-node clusters, while Linux users should check host pressure and swapping. When the API is not available yet, `k` cannot help you, so you bypass Kubernetes and read the node container logs directly through Docker.
+If `kind create cluster` hangs at control-plane startup, inspect Docker first. A Kubernetes control plane needs memory, and the node image is not small. Docker Desktop users should allocate enough memory for the engine, especially for multi-node clusters, while Linux users should check host pressure and swapping. When the API is not available yet, `kubectl` cannot help you, so you bypass Kubernetes and read the node container logs directly through Docker.
 
 ```bash
 docker logs <container-id>
@@ -407,7 +407,7 @@ Reliable local Kubernetes work depends less on one clever command and more on re
 | Anti-Pattern | What Goes Wrong | Better Alternative |
 |---|---|---|
 | Treating a local cluster as durable infrastructure | Manual changes disappear or become impossible to reproduce after deletion | Store manifests and `kind` configs, then recreate the cluster to prove repeatability. |
-| Applying manifests without checking context | Workloads land in the wrong cluster, sometimes a costly shared environment | Run `k config current-context` or inspect contexts before risky actions. |
+| Applying manifests without checking context | Workloads land in the wrong cluster, sometimes a costly shared environment | Run `kubectl config current-context` or inspect contexts before risky actions. |
 | Expecting LoadBalancer Services to work like cloud providers | `EXTERNAL-IP` remains pending because no cloud controller provisions hardware | Use port-forwarding, mapped ingress, or a local load balancer implementation. |
 | Leaving many clusters idle | CPU, memory, ports, and disk are consumed by environments no one is using | Audit with `kind get clusters` and delete clusters at the end of each session. |
 
@@ -446,7 +446,7 @@ The practical decision is usually about feedback speed and fidelity. Local clust
 |---|---|---|
 | Building an image on the host and expecting a `kind` Pod to find it | The node container has its own internal `containerd`, separate from the host Docker image list. | Run `kind load docker-image my-app:v1 --name <cluster-name>` or push the image to a registry the cluster can reach. |
 | Forgetting which kubeconfig context is active | `kind` updates kubeconfig automatically, and multiple clusters can coexist in one file. | Inspect contexts before applying changes and use clear cluster names such as `kind-dojo-basics`. |
-| Assuming a local LoadBalancer Service provisions an external IP | There is no cloud provider controller on your laptop to create external load balancer infrastructure. | Use `k port-forward`, configured ingress port mappings, or a local implementation such as MetalLB. |
+| Assuming a local LoadBalancer Service provisions an external IP | There is no cloud provider controller on your laptop to create external load balancer infrastructure. | Use `kubectl port-forward`, configured ingress port mappings, or a local implementation such as MetalLB. |
 | Leaving idle clusters running for days | Control plane loops, node containers, images, and volumes consume host resources even when you are not testing. | Audit with `kind get clusters` and delete clusters immediately after a lab or reproduction is complete. |
 | Editing a node container by hand | Manual `docker exec` changes are invisible to your cluster configuration and vanish on recreate. | Encode node behavior in `kind` config, manifests, or automation, then recreate the cluster to prove it persists. |
 | Ignoring Docker memory and disk limits | `kind` relies on Docker, so host resource pressure prevents Kubernetes components and images from starting. | Allocate enough Docker memory, keep free disk space, and inspect Docker logs when cluster creation fails. |
@@ -474,8 +474,8 @@ Create a fresh cluster with an explicit node image tag instead of mutating an ex
 Set the `KUBECONFIG` environment variable for the shell session or command that needs access. That makes the client read the provided file instead of silently modifying or depending on your default configuration. After the session ends or the variable is unset, your normal contexts return. This reduces the chance of accidentally applying manifests to the wrong cluster later.
 </details>
 
-<details><summary><strong>[Tests LO3]</strong> `kind create cluster` fails before any Kubernetes objects are available, and the error says it cannot connect to the Docker daemon. Why is `k get pods` the wrong next diagnostic command?</summary>
-`k get pods` depends on a reachable Kubernetes API server, and the API server does not exist yet if `kind` cannot create node containers. The failure is below Kubernetes, at the host runtime layer. The right next checks are Docker service status, Docker Desktop state, socket permissions, and whether the current user can run Docker commands. Once Docker is reachable, `kind` can create the node container that hosts the control plane.
+<details><summary><strong>[Tests LO3]</strong> `kind create cluster` fails before any Kubernetes objects are available, and the error says it cannot connect to the Docker daemon. Why is `kubectl get pods` the wrong next diagnostic command?</summary>
+`kubectl get pods` depends on a reachable Kubernetes API server, and the API server does not exist yet if `kind` cannot create node containers. The failure is below Kubernetes, at the host runtime layer. The right next checks are Docker service status, Docker Desktop state, socket permissions, and whether the current user can run Docker commands. Once Docker is reachable, `kind` can create the node container that hosts the control plane.
 </details>
 
 <details><summary><strong>[Tests LO3]</strong> A local Service of type `LoadBalancer` stays in `<pending>` for a long time. The Pods are healthy. What is missing from the local cluster?</summary>
@@ -487,7 +487,7 @@ The cluster is missing a load balancer implementation that can satisfy the Servi
 In this exercise, you will create multiple local clusters, inspect kubeconfig, pin Kubernetes versions, switch contexts, declare topology, and observe what happens when the control plane disappears. The work is intentionally progressive: first you prove basic creation, then you prove identity and version control, and only then do you simulate failure. Keep notes on what each command proves, because the diagnostic habit is more valuable than the specific cluster names.
 
 **Setup Requirements:**
-Ensure the Docker daemon is installed and actively running on your host machine. Ensure you have the `kind` CLI utility and `kubectl` downloaded, marked as executable, and available on your system path. Use the `k` alias after defining it, and delete lab clusters when finished so your workstation returns to a clean state.
+Ensure the Docker daemon is installed and actively running on your host machine. Ensure you have the `kind` CLI utility and `kubectl` downloaded, marked as executable, and available on your system path. Use the full `kubectl` command in runnable examples, and delete lab clusters when finished so your workstation returns to a clean state.
 
 ### Tasks
 
@@ -632,10 +632,6 @@ The connection will either hang until timeout or immediately fail with a TCP con
 - [ ] You empirically observed and documented the exact failure mode of `kubectl` when the control plane becomes catastrophically unreachable.
 - [ ] You practiced excellent infrastructure hygiene by successfully deleting all ephemeral clusters created during this exercise.
 
-## Next Module
-
-[Module 1.2: kubectl Basics](/prerequisites/kubernetes-basics/module-1.2-kubectl-basics/) — Learn to navigate cluster resources, inspect objects, and turn API access into practical operational control.
-
 ## Sources
 
 - [Kubernetes Components](https://kubernetes.io/docs/concepts/overview/components/)
@@ -650,3 +646,7 @@ The connection will either hang until timeout or immediately fail with a TCP con
 - [kind Configuration](https://kind.sigs.k8s.io/docs/user/configuration/)
 - [kind Known Issues](https://kind.sigs.k8s.io/docs/user/known-issues/)
 - [etcd Learning Documentation](https://etcd.io/docs/)
+
+## Next Module
+
+[Module 1.2: kubectl Basics](/prerequisites/kubernetes-basics/module-1.2-kubectl-basics/) — Learn to navigate cluster resources, inspect objects, and turn API access into practical operational control.
