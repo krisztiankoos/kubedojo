@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "What Is AI?"
 slug: ai/foundations/module-1.1-what-is-ai
 sidebar:
@@ -206,8 +207,8 @@ If you are unsure which category fits, trace the input-to-action path. Ask what 
 
 ## Did You Know?
 
-- The OECD updated its definition of an AI system in 2023 to emphasize machine-based systems that infer from inputs and generate outputs such as predictions, content, recommendations, or decisions.
-- The NIST AI Risk Management Framework was released as version 1.0 in January 2023 and organizes AI risk work around govern, map, measure, and manage functions.
+- [The OECD updated its definition of an AI system in 2023 to emphasize machine-based systems that infer from inputs and generate outputs such as predictions, content, recommendations, or decisions.](https://oecd.ai/en/wonk/definition-)
+- [The NIST AI Risk Management Framework was released as version 1.0 in January 2023 and organizes AI risk work around govern, map, measure, and manage functions.](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook)
 - Many production "AI" features are hybrids: a model may rank or generate, while ordinary rules still decide thresholds, permissions, routing, and final execution.
 - A language model can produce a valid-looking configuration for a version your cluster does not run, which is why these modules assume Kubernetes 1.35+ and still require documentation checks.
 
@@ -306,18 +307,6 @@ The cache cleanup script is a rule-based system because a person defines the sch
 
 ## Sources
 
-- [OECD AI Principles Overview](https://oecd.ai/ai-principles/)
-- [What is AI? Can you make a clear distinction between AI and non-AI systems?](https://oecd.ai/en/wonk/definition-)
-- [Does ChatGPT tell the truth?](https://help.openai.com/en/articles/8313428-does-chatgpt-tell-the-truth%3F.pls)
-- [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework)
-- [NIST AI Risk Management Framework 1.0 PDF](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf)
-- [Google Cloud: MLOps continuous delivery and automation pipelines in machine learning](https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning)
-- [Microsoft Azure Machine Learning: monitor models in production](https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-monitoring?view=azureml-api-2)
-- [AWS SageMaker model monitor documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/model-monitor.html)
-- [Kubernetes concepts overview](https://kubernetes.io/docs/concepts/overview/)
-- [Kubernetes configuration overview](https://kubernetes.io/docs/concepts/configuration/overview/)
-- [OWASP Top 10 for Large Language Model Applications](https://genai.owasp.org/llmrisk/llm-top-10-risk/)
-
-## Next Module
-
-Continue to [What Are LLMs?](./module-1.2-what-are-llms/) to connect this taxonomy to the specific model family behind many modern generative tools.
+- [oecd.ai: definition](https://oecd.ai/en/wonk/definition-) — The OECD page directly says the definition was revised in 2023 and quotes the updated wording about inferring from inputs to generate predictions, content, recommendations, or decisions.
+- [nist.gov: nist ai rmf playbook](https://www.nist.gov/itl/ai-risk-management-framework/nist-ai-rmf-playbook) — The NIST Playbook page explicitly states AI RMF 1.0 was released on January 26, 2023 and names the four functions as Govern, Map, Measure, and Manage.
+- [Kubernetes Configuration Overview](https://kubernetes.io/docs/concepts/configuration/overview/) — Useful follow-up for the module's repeated point that generated infrastructure changes still need verification against official platform documentation.
