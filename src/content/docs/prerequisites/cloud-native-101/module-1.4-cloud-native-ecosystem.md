@@ -194,19 +194,18 @@ flowchart TD
 
 The diagram is simplified, but the separation is useful during design reviews. If a team complains that deployments are slow, the answer may belong in CI/CD or GitOps. If Pods cannot reach each other, the answer may involve Services, DNS, NetworkPolicy, or the CNI. If auditors need proof that production changes were reviewed, the answer may involve Git history, admission policy, and controller logs. The same incident can cross layers, so naming the layer prevents random tool selection.
 
-Here is the first command habit to keep: this curriculum introduces `kubectl` once, then uses the shorter alias `k` for examples. In a real shell you can run `alias k=kubectl`, and in later Kubernetes modules you will inspect cluster resources with commands such as `k get pods -A` or `k get svc -A`. This ecosystem module is mostly conceptual, but the alias matters because the verifier expects Kubernetes examples to use the same shorthand after introduction.
+Here is the first command habit to keep: this curriculum writes out `kubectl` in copy-paste examples, because runnable snippets should behave the same way in an interactive shell, a script, and a training environment. Many engineers use a short interactive alias on their own machines, but shared curriculum examples should not depend on shell alias expansion. In later Kubernetes modules you will inspect cluster resources with commands such as `kubectl get pods -A` or `kubectl get svc -A`, and the full binary name makes the boundary between learner habit and automation habit explicit.
 
 ```bash
-alias k=kubectl
-k get pods -A
-k get nodes -o wide
+kubectl get pods -A
+kubectl get nodes -o wide
 ```
 
-Those commands do not install ecosystem tools. They simply reinforce the boundary between the core Kubernetes API and the surrounding projects. When you run `k get pods -A`, you are asking the cluster about workloads. When you install Prometheus, Argo CD, Cilium, or cert-manager, you are usually adding controllers, custom resources, agents, webhooks, or dashboards that extend how the platform behaves around those workloads.
+Those commands do not install ecosystem tools. They simply reinforce the boundary between the core Kubernetes API and the surrounding projects. When you run `kubectl get pods -A`, you are asking the cluster about workloads. When you install Prometheus, Argo CD, Cilium, or cert-manager, you are usually adding controllers, custom resources, agents, webhooks, or dashboards that extend how the platform behaves around those workloads.
 
 Consider a basic request path for a production web service. A developer changes application code, CI builds a container image, a scanner checks the image, Git receives an updated manifest or chart value, a GitOps controller reconciles the cluster, Kubernetes rolls out Pods, the CNI gives those Pods network connectivity, Services route traffic, observability tools collect signals, and security tools enforce or monitor policy. No single project owns the whole chain, which is exactly why ecosystem literacy matters.
 
-The same chain also explains why tool choices compound. If the image scanner produces noisy findings, developers learn to ignore security output. If GitOps reconciliation is poorly understood, engineers may fight the controller with manual `k apply` commands and create drift. If observability storage is underprovisioned, the team loses the data needed to debug the next rollout. A weak tool choice in one layer becomes operational debt in another layer.
+The same chain also explains why tool choices compound. If the image scanner produces noisy findings, developers learn to ignore security output. If GitOps reconciliation is poorly understood, engineers may fight the controller with manual `kubectl apply` commands and create drift. If observability storage is underprovisioned, the team loses the data needed to debug the next rollout. A weak tool choice in one layer becomes operational debt in another layer.
 
 Which approach would you choose here and why: a startup with two services, no compliance burden, and one platform engineer could adopt managed Kubernetes, Helm, Prometheus, and basic log shipping first; a bank platform with dozens of teams may need GitOps, admission policy, certificate automation, network policy, backup automation, and audit logging from the beginning. The difference is not that one team is more serious. The difference is the cost of failure and the number of people depending on the platform.
 
@@ -290,7 +289,7 @@ If the startup later grows to dozens of services and multiple teams, the stack c
 
 For certification and most first Kubernetes roles, you should separate deep operating knowledge from recognition knowledge. Deep operating knowledge means you can read manifests, run commands, debug common failures, and explain what the object or controller is doing. Recognition knowledge means you can place a tool in the right category, understand why a team might use it, and ask sensible questions without pretending you can operate it alone in production.
 
-Kubernetes itself belongs in the deep knowledge category. You need to know Pods, Deployments, ReplicaSets, Services, ConfigMaps, Secrets, probes, namespaces, labels, selectors, storage claims, and basic RBAC well enough to troubleshoot live behavior. When an application is unavailable, you should be able to inspect Pods with `k get pods -A`, describe a failing workload, read events, and distinguish a scheduling issue from an image pull issue or a readiness issue.
+Kubernetes itself belongs in the deep knowledge category. You need to know Pods, Deployments, ReplicaSets, Services, ConfigMaps, Secrets, probes, namespaces, labels, selectors, storage claims, and basic RBAC well enough to troubleshoot live behavior. When an application is unavailable, you should be able to inspect Pods with `kubectl get pods -A`, describe a failing workload, read events, and distinguish a scheduling issue from an image pull issue or a readiness issue.
 
 Helm and Kustomize sit near that deep category because they affect how manifests reach the cluster. You do not need to be a chart author on day one, but you should know that Helm renders templates from values and that Kustomize patches valid YAML through bases and overlays. When a production object looks different from the file a developer expected, packaging and overlay tools are often part of the explanation.
 
@@ -300,7 +299,7 @@ CNI concepts also deserve early attention even if your cloud provider installs t
 
 Container runtime knowledge should be practical rather than encyclopedic. You should know that containerd or CRI-O handles image pulls and container lifecycle on the node, and that kubelet reports container states through Kubernetes. You do not need to memorize runtime internals to pass an introductory module. You do need to know that a container image problem, registry authentication failure, or node disk-pressure issue may surface as a Pod problem even though the Deployment object is correct.
 
-GitOps tools such as Argo CD and Flux belong in the recognition-to-working category for many early roles. If your team uses GitOps, you must understand reconciliation, drift, sync status, and the idea that Git is the desired state. If your team does not use GitOps yet, you should still recognize the pattern because job descriptions and platform conversations mention it constantly. The dangerous beginner move is using manual `k apply` commands against resources owned by a GitOps controller without understanding why the controller reverts them.
+GitOps tools such as Argo CD and Flux belong in the recognition-to-working category for many early roles. If your team uses GitOps, you must understand reconciliation, drift, sync status, and the idea that Git is the desired state. If your team does not use GitOps yet, you should still recognize the pattern because job descriptions and platform conversations mention it constantly. The dangerous beginner move is using manual `kubectl apply` commands against resources owned by a GitOps controller without understanding why the controller reverts them.
 
 Service mesh concepts can remain conceptual until the architecture requires them. You should know that Istio and Linkerd can add mutual TLS, traffic policy, telemetry, retries, and traffic splitting by controlling service-to-service communication. You should also know that a mesh is not free reliability. It adds proxies, configuration, certificates, upgrade planning, and a second place where networking behavior can break.
 
@@ -344,7 +343,7 @@ Because this is a quick orientation module, you do not need a large pattern cata
 | Treating managed add-ons as architecture-free decisions | Provider defaults hide portability, upgrade, and debugging assumptions | Use managed services deliberately and document what is provider-specific |
 | Adopting service mesh before basic telemetry and ownership | The mesh adds proxies and policies while the team still cannot explain normal traffic | Establish metrics, logs, traces, probes, and service ownership before adding mesh complexity |
 
-The anti-pattern is tempting because every tool can be justified in isolation. Prometheus is useful, Argo CD is useful, cert-manager is useful, Cilium is useful, Falco is useful, and Velero is useful. The platform becomes fragile when nobody prioritizes the order of adoption, trains operators, reviews upgrades, or removes abandoned experiments. Usefulness is not the same as readiness.
+The anti-pattern is tempting because every tool can be justified in isolation. Prometheus is useful, Argo CD is useful, cert-manager is useful, Cilium is useful, Falco is useful, and Velero is useful. The platform becomes fragile when nobody prioritizes the order of adoption, trains operators, reviews upgrades, or removes abandoned experiments. Usefulness is not the same as readiness, and the platform must stay understandable under pressure.
 
 ## When You'd Use This vs Alternatives
 
@@ -360,7 +359,7 @@ For a quick module, the decision framework is a compact comparison rather than a
 
 Apply the framework by asking five questions. What failure or workflow are we improving? Which ecosystem category owns that problem? What does Kubernetes already provide? What maturity and support level does the proposed tool have? Who will be paged when it breaks? If any question produces hand-waving, the adoption decision is not ready yet.
 
-This framework also keeps certifications in perspective. For your first Kubernetes job, you should deeply know Kubernetes, `k` usage, manifests, Helm or Kustomize basics, and enough observability vocabulary to participate in incidents. You should conceptually recognize service mesh, CNI, GitOps, policy, runtime security, backups, and tracing. You do not need to operate every project on the landscape before you can be useful.
+This framework also keeps certifications in perspective. For your first Kubernetes job, you should deeply know Kubernetes, `kubectl` usage, manifests, Helm or Kustomize basics, and enough observability vocabulary to participate in incidents. You should conceptually recognize service mesh, CNI, GitOps, policy, runtime security, backups, and tracing. You do not need to operate every project on the landscape before you can be useful.
 
 ## Did You Know?
 
@@ -421,9 +420,9 @@ The missing category is container image vulnerability scanning, with tools such 
 </details>
 
 <details>
-<summary>Scenario: A team uses Jenkins to run manual `k apply` commands, while Argo CD also reconciles the same namespace from Git. Deployments keep reverting unexpectedly. What is happening?</summary>
+<summary>Scenario: A team uses Jenkins to run manual `kubectl apply` commands, while Argo CD also reconciles the same namespace from Git. Deployments keep reverting unexpectedly. What is happening?</summary>
 
-The team has two sources of truth fighting each other. GitOps controllers such as Argo CD reconcile the live cluster toward the state declared in Git, so manual `k apply` changes that are not committed to Git are treated as drift. The fix is to make Git the deployment path for resources owned by Argo CD, and reserve manual commands for inspection or documented emergency procedures. This preserves auditability and prevents the controller from looking unpredictable.
+The team has two sources of truth fighting each other. GitOps controllers such as Argo CD reconcile the live cluster toward the state declared in Git, so manual `kubectl apply` changes that are not committed to Git are treated as drift. The fix is to make Git the deployment path for resources owned by Argo CD, and reserve manual commands for inspection or documented emergency procedures. This preserves auditability and prevents the controller from looking unpredictable.
 </details>
 
 <details>
@@ -434,7 +433,7 @@ Collect the project's CNCF maturity status, Kubernetes version compatibility, ke
 
 ## Hands-On Exercise: Build Your Stack
 
-This exercise is a design review rather than a cluster lab. You will use the CNCF landscape as a reference, but your deliverable is a reasoned stack proposal for a realistic organization. If you have a local or training cluster available, set `alias k=kubectl` and run `k get pods -A` before you begin so you remember that ecosystem tools ultimately extend or operate around Kubernetes resources.
+This exercise is a design review rather than a cluster lab. You will use the CNCF landscape as a reference, but your deliverable is a reasoned stack proposal for a realistic organization. If you have a local or training cluster available, run `kubectl get pods -A` before you begin so you remember that ecosystem tools ultimately extend or operate around Kubernetes resources.
 
 ### Scenario
 
@@ -447,7 +446,7 @@ You are architecting infrastructure for a rapidly growing fintech startup. The c
 - [ ] **Evaluate graduation, operational complexity, team capability, and vendor neutrality**: For two tools, document why the team can operate them and what provider-specific assumptions exist.
 - [ ] **Design a minimal first production stack for Kubernetes 1.35+**: Include packaging, deployment workflow, metrics, logs, image scanning, policy, certificate management, and backup or restore planning.
 - [ ] **Define a deferral list**: Name two attractive tools you would not adopt yet, and explain what future pain would justify revisiting them.
-- [ ] **Validate the command habit**: If a cluster is available, run `k get pods -A` and record whether any installed ecosystem controllers are already present.
+- [ ] **Validate the command habit**: If a cluster is available, run `kubectl get pods -A` and record whether any installed ecosystem controllers are already present.
 
 <details>
 <summary>Solution guide: maturity choices</summary>
@@ -487,7 +486,7 @@ Good deferrals are not dismissals. A team might defer Istio until it has many se
 
 - [CNCF Landscape](https://landscape.cncf.io)
 - [CNCF Project Maturity Levels](https://www.cncf.io/projects/)
-- [CNCF Graduation Criteria](https://github.com/cncf/toc/blob/main/process/graduation_criteria.adoc)
+- [CNCF Graduation Criteria](https://github.com/cncf/toc/blob/main/process/graduation_criteria.md)
 - [Kubernetes Documentation - Concepts](https://kubernetes.io/docs/concepts/)
 - [Kubernetes Documentation - Command Line Tool kubectl](https://kubernetes.io/docs/reference/kubectl/)
 - [Helm Documentation](https://helm.sh/docs/)
@@ -500,7 +499,7 @@ Good deferrals are not dismissals. A team might defer Istio until it has many se
 - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
 - [Argo CD Documentation](https://argo-cd.readthedocs.io/)
 - [Flux Documentation](https://fluxcd.io/flux/)
-- [Trivy Documentation](https://trivy.dev/latest/)
+- [Trivy Documentation](https://trivy.dev/docs)
 - [Falco Documentation](https://falco.org/docs/)
 - [cert-manager Documentation](https://cert-manager.io/docs/)
 - [Velero Documentation](https://velero.io/docs/)
