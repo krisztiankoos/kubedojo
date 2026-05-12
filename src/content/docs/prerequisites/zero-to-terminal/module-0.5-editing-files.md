@@ -1,6 +1,7 @@
 ---
 title: "Module 0.5: Editing Files"
 slug: prerequisites/zero-to-terminal/module-0.5-editing-files
+revision_pending: false
 sidebar:
   order: 6
 lab:
@@ -10,9 +11,9 @@ lab:
   difficulty: "beginner"
   environment: "ubuntu"
 ---
-> **Complexity**: `[QUICK]` - Type what you see, save, done
+> **Complexity**: `[QUICK]` - Type what you see, save, verify, and run a tiny script
 >
-> **Time to Complete**: 25 minutes
+> **Time to Complete**: 35 minutes
 >
 > **Prerequisites**: [Module 0.3 - First Terminal Commands](../module-0.3-first-commands/)
 
@@ -20,44 +21,53 @@ lab:
 
 ## What You'll Be Able to Do
 
-After this module, you will be able to:
-- **Create and edit** files using `nano` from the terminal without a graphical editor
-- **Write** a simple bash script that combines multiple commands into one file
-- **Make** a script executable with `chmod +x` and explain why this step is necessary
-- **Choose** between `nano` and `vim` and explain when you'd use each
+By the end of this module you will have practiced the full editing loop that appears in everyday terminal work: open a file, change it deliberately, save it, verify it, and use it as input to another command. These outcomes are written as practical skills because editing files is not a trivia topic; it is a coordination skill between your keyboard, the shell, the filesystem, and the programs that later read what you wrote.
 
----
+- **Create and edit** plain text files using `nano` from the terminal without depending on a graphical editor.
+- **Implement and verify** a simple Bash script that combines multiple commands into one repeatable file.
+- **Diagnose and fix** execute-permission problems with `chmod +x` when a script cannot run directly.
+- **Compare and choose** between `nano`, `vim`, `cat`, and other file-viewing approaches for a specific editing situation.
 
 ## Why This Module Matters
 
-In the last module, you created files with `touch` -- but they were empty. Empty files are like blank order tickets in a restaurant kitchen. Useful for reserving a spot, but not much else until someone writes on them.
+Hypothetical scenario: you are connected to a training Linux host over a terminal, and a practice service refuses to start because its configuration file has one misspelled setting. There is no desktop editor on that host, and copying the file back to your laptop would add several chances to edit the wrong copy. The practical question is not whether you are a "terminal person"; the question is whether you can open the right file, make the smallest safe change, save it, and prove that the file now contains what you intended.
 
-In the real world, you'll need to edit files constantly:
-- **Configuration files** tell programs how to behave (like the house rules in a kitchen)
-- **Scripts** are files that contain a sequence of commands (like a recipe card)
-- **Kubernetes manifests** are files that tell Kubernetes what to run (you'll get there!)
+In the previous terminal modules, you created empty files with `touch` and inspected directories with commands such as `ls` and `pwd`. Empty files are like blank order tickets in a restaurant kitchen: they reserve a place, but they do not tell anyone what to cook. Real systems use text files for shell scripts, package lists, service configuration, environment files, documentation notes, and eventually Kubernetes manifests for version 1.35 and later clusters. Once text becomes the instruction layer for a system, editing it safely becomes an operations skill rather than a typing exercise.
 
-Consider a realistic production mistake: an engineer editing a load balancer configuration directly on a live server could save stray characters into `nginx.conf`, and a single typo in a configuration file can break a service. 
+This lesson starts with `nano` because it behaves the way most beginners expect: you type letters and they appear in the file. That does not make it a toy. Many experienced engineers still use `nano` for quick edits because it shows its main commands on screen and keeps the cognitive load low when the real problem is the file content. You will also meet `vim`, not as a status symbol, but as a tool with different tradeoffs that becomes valuable after the basic file-editing loop feels routine.
 
-You need to be able to open a file, write in it, save it, and close it -- all from the terminal. No mouse. No graphical text editor. Just you and the keyboard. Learning to edit files safely in the terminal isn't just about writing text; it's about navigating the control room of your servers with precision.
+## Why Terminal Editing Exists
 
----
+Graphical editors are excellent when you are working on your own laptop, especially for large projects with many files, search panels, and language-aware helpers. Servers and cloud environments are different. They often run without a graphical interface, and remote access normally gives you a shell prompt rather than a desktop. When the only available interface is text, a terminal editor is the small reliable tool that lets you repair a configuration file, create a script, or inspect a note without installing an entire desktop stack.
 
-## Why Edit Files in the Terminal?
+The key mental model is that a file is just bytes stored under a name, while an editor is a temporary workspace for changing those bytes. When you run `nano hello.txt`, the shell starts the `nano` program and tells it which file you want to edit. `nano` loads the file contents into a buffer, lets you change that buffer on screen, and writes the buffer back to disk only when you save. Until you save, the file on disk and the text on screen are not the same thing.
 
-"Can't I just use Notepad or TextEdit?"
+That distinction matters because terminal work is often remote, shared, or automated. If you edit the wrong copy of a file, the program reading the real copy will not care how carefully you typed. If you close the editor without saving, the shell returns politely and nothing useful changed. If you save a broken configuration file and then restart a service, the service reads exactly what you wrote. The editor does not judge intent; it writes bytes, so your workflow must include verification.
 
-You can -- on your own computer. But remember from Module 0.1: many servers and cloud-native environments run Linux, and servers usually don't have a graphical interface. When you connect to a remote server (which you'll learn in Module 0.7), there's no mouse, no desktop, no Notepad. There's just the terminal.
+The same file can also be seen by more than one program at different moments, which is why saving is an explicit boundary. While `nano` has the buffer open, another command such as `cat` reads the last saved version from disk, not the words currently visible in your editor. After you save, the next reader sees the new version. This boundary sounds obvious in a calm training module, but it explains many real beginner confusions: the terminal is not ignoring your work, it is reading the durable copy you have or have not written yet.
 
-The terminal text editor is the chef's knife of computing. It's not the fanciest tool, but you'll use it everywhere.
+Terminal editing also teaches you to be precise about names. A filename is not a vague document title; it is a path that points to one object in one directory on one machine. `hello.txt` in your home directory, `hello.txt` in `/tmp`, and `hello.txt` on a remote training host are different files even if they contain the same words. Before editing, the useful question is "which path am I about to change?" After editing, the useful question is "does that exact path contain the text I meant to save?"
 
----
+Here is the basic editing loop you will practice throughout this module. The loop is intentionally small because a small loop is easier to trust under pressure, and it scales from a three-line training note to a production configuration review. The same structure also appears later when you edit Kubernetes YAML: open, change, save, validate, and only then apply the result to the system.
 
-## Meet nano: Your First Terminal Editor
+```text
++--------------------+      +--------------------+      +--------------------+
+|  Open the file      | ---> |  Edit the buffer    | ---> |  Save to disk      |
+|  nano hello.txt     |      |  type, move, cut    |      |  Ctrl+O, Enter     |
++--------------------+      +--------------------+      +--------------------+
+           ^                                                       |
+           |                                                       v
++--------------------+      +--------------------+      +--------------------+
+|  Adjust if needed   | <--- |  Verify the file    | <--- |  Exit the editor   |
+|  reopen with nano   |      |  cat hello.txt      |      |  Ctrl+X            |
++--------------------+      +--------------------+      +--------------------+
+```
 
-There are many text editors that run in the terminal. The two most famous are **vim** and **nano**.
+Pause and predict: if you type three lines in `nano` but close the terminal window before saving, which copy of the file does a later `cat hello.txt` command read: the unsaved editor buffer or the file already stored on disk? The correct answer is the file on disk, because the shell and `cat` know nothing about the editor's unsaved memory. Thinking this through before the first exercise prevents a common surprise when a terminal editor behaves more literally than a modern graphical editor with autosave.
 
-We're starting with **nano** because:
+## Meet nano Before You Need It
+
+There are many editors that run in a terminal, but the two names beginners hear most often are `nano` and `vim`. We start with `nano` because its interaction model is direct: open a file, type text, save with a visible shortcut, and exit with another visible shortcut. `vim` is extremely powerful, but it uses modes, so pressing a letter may insert text in one mode and run an editor command in another. That mode system is valuable after you learn it, yet it is a poor first obstacle when the real lesson is safe file editing.
 
 | nano | vim |
 |------|-----|
@@ -66,29 +76,31 @@ We're starting with **nano** because:
 | Menu at the bottom shows you how to save and quit | People famously get stuck and can't figure out how to exit |
 | Perfect for beginners | Powerful but overwhelming at first |
 
-There's no shame in using nano. Many experienced engineers use it for quick edits. You'll learn vim later when you're ready for more power.
+The comparison is not an argument that one editor is morally better than another. It is a decision about the first tool for a specific job. If you need to make a small, confident edit on a remote host today, `nano` is a good default because it keeps the commands visible. If you later spend hours editing code over SSH, `vim` may become attractive because its movement, search, macros, and repeat commands reward practice. A good engineer chooses tools by situation, not by folklore.
 
-> **Fun fact**: "How to exit vim" became a long-running programming joke because many beginners open vim, start typing, and then do not know the command to quit. With nano, the save and exit shortcuts are shown on screen from the start.
+You will see the same idea when choosing between `nano` and `cat`. `nano` is for changing a file, while `cat` is for printing a file to the terminal. Opening an editor just to look at a file creates unnecessary risk because a stray keystroke can modify the buffer. Printing a file with `cat` when you meant to edit it is harmless but ineffective. The workflow is easier when each command has a clear job in your mind.
 
----
+Before running this, what output do you expect from `cat hello.txt` if `hello.txt` does not exist yet? Some systems will show "No such file or directory," and that is useful feedback rather than a failure of the lesson. Editors such as `nano` can create a new file when you save, while viewers such as `cat` normally expect the file to already exist. That difference explains why the same filename can be acceptable to one command and an error to another.
 
-## Opening nano
+There is another subtle editor distinction that will matter later: some editors are optimized for discoverability, and others are optimized for speed after memorization. `nano` makes common commands visible at the bottom of the screen, so it is easy to recover when you forget a shortcut. `vim` hides much of its power behind commands, modes, and combinations that become fast only after practice. This module chooses discoverability because the first milestone is not speed; it is making correct changes without getting trapped inside the tool.
 
-Let's create and edit a file. First, make sure you're in your home directory:
+## Opening, Editing, Saving, and Exiting
+
+Start in your home directory so the files you create are easy to find and safe to remove later. The `cd ~` command moves you to your home directory, which is a sensible practice area because it is owned by your user account. Running exercises in a predictable directory matters because a beginner can lose confidence quickly when a file is created successfully but in a directory they were not expecting.
 
 ```bash
 cd ~
 ```
 
-Now open nano with a new file:
+Now open `nano` with a filename that does not exist yet. This command does not immediately create permanent content on disk; it opens an editor buffer associated with the name `hello.txt`. The file becomes real in the useful sense when you write the buffer out with the save command.
 
 ```bash
 nano hello.txt
 ```
 
-Your screen will change completely. You'll see something like this:
+Your screen will change completely because the terminal is now controlled by `nano` instead of your shell prompt. You may see a version number that differs from this example, and that is fine. The important pieces are the filename at the top, the empty editing area in the middle, and the shortcut menu at the bottom.
 
-```
+```text
   GNU nano 9.0                    hello.txt
 
 
@@ -101,21 +113,9 @@ Your screen will change completely. You'll see something like this:
 ^X Exit    ^R Read File  ^\ Replace    ^U Paste     ^T Execute
 ```
 
-Let's break this down:
+The bottom menu is the reason `nano` is a friendly first editor. It does not expect you to memorize everything before you can leave. The word "Write Out" means save the buffer to a file, and "Exit" means leave the editor and return to the shell. The old-fashioned wording is common in Unix tools, so it is better to learn the phrase once than to be surprised by it later.
 
-- **Top line**: The editor name and your file name
-- **Middle area**: This is where you type (it's blank because the file is new)
-- **Bottom two lines**: The menu showing available commands
-
----
-
-## The ^ Symbol Means Ctrl
-
-This is the one thing that confuses everyone at first:
-
-> **The `^` symbol means "hold the Ctrl key."**
-
-So when you see `^O Write Out`, that means: "Press Ctrl and O at the same time to save the file."
+The `^` symbol in that menu means "hold the Ctrl key," not "type a caret character." When `nano` shows `^O`, press Ctrl and O at the same time. When it shows `^X`, press Ctrl and X at the same time. This notation appears in many terminal programs, logs, and manuals, so learning it here pays off outside `nano` as well.
 
 | What You See | What You Press | What It Does |
 |-------------|---------------|-------------|
@@ -126,25 +126,17 @@ So when you see `^O Write Out`, that means: "Press Ctrl and O at the same time t
 | `^W` | Ctrl + W | Search for text |
 | `^G` | Ctrl + G | Show help |
 
-That's it. Six key combos and you can do everything you need.
+With `nano` open, type the following three lines. Do not worry if the screen wraps differently on your terminal; the file content is determined by the characters and line breaks you type, not by the exact visual width of the terminal window. Press Enter at the end of each line so the text becomes three separate lines in the file.
 
----
-
-## Typing Text
-
-This is the easy part: **just type.**
-
-With nano open, type the following (press Enter at the end of each line):
-
-```
+```text
 Welcome to the Kitchen!
 Today's special: Learning to edit files.
 Chef says: You're doing great.
 ```
 
-Your screen should now show:
+Your screen should now show the text and a "Modified" indicator near the top. That word means the buffer has changes that are not yet written to disk. It is a useful warning because it tells you that leaving incorrectly could discard work.
 
-```
+```text
   GNU nano 9.0                    hello.txt                    Modified
 
 Welcome to the Kitchen!
@@ -156,49 +148,33 @@ Chef says: You're doing great.
 ^X Exit    ^R Read File  ^\ Replace    ^U Paste     ^T Execute
 ```
 
-Notice the word **Modified** in the top line. That means you've made changes that haven't been saved yet.
+To save, press Ctrl+O. `nano` will ask you to confirm the destination filename. In this exercise the suggested filename is already correct, so press Enter. The important habit is to read that filename before confirming, especially when you later edit files from different directories or remote machines.
 
----
-
-## Saving: Ctrl + O
-
-Let's save. Press:
-
-```
+```text
 Ctrl + O
 ```
 
-nano will ask you to confirm the file name:
-
-```
+```text
 File Name to Write: hello.txt
 ```
 
-Press **Enter** to confirm. The "Modified" indicator disappears. Your file is saved.
+After you press Enter, the "Modified" indicator disappears because the editor buffer and the file on disk now match. You are still inside `nano`, so saving and exiting are two separate steps. This separation is useful because you can save a checkpoint, keep editing, and save again before leaving.
 
----
+To leave `nano`, press Ctrl+X. If the buffer has no unsaved changes, `nano` exits immediately. If you changed something after the last save, it asks whether to save the modified buffer, and you must choose deliberately.
 
-## Exiting: Ctrl + X
-
-To leave nano and return to the terminal:
-
-```
+```text
 Ctrl + X
 ```
 
-If you've made changes since your last save, nano will ask:
-
-```
+```text
 Save modified buffer?  Y Yes  N No  ^C Cancel
 ```
 
-Press `Y` to save and exit, `N` to exit without saving, or `Ctrl + C` to cancel and stay in nano.
+This prompt is worth slowing down for because the choices are literal. `Y` saves changes and continues the exit path, `N` discards unsaved changes, and Ctrl+C cancels the exit attempt so you can return to editing. Beginners often press a key quickly because they want the prompt to go away, but this is exactly the moment when a patient habit prevents lost work.
 
----
+## Verify and Reopen Files Deliberately
 
-## Verify Your File: `cat`
-
-Now that you're back in the terminal, let's confirm the file was saved. The `cat` command prints a file's contents to the screen:
+Returning to the shell prompt is not the end of an edit. Verification is the habit that turns "I think I saved it" into "the file contains what I intended." The simplest verification command is `cat`, which prints a file's contents to the terminal. The name comes from "concatenate" because the command can join files, but in daily work it is also a fast way to read a short text file.
 
 ```bash
 cat hello.txt
@@ -206,82 +182,73 @@ cat hello.txt
 
 Expected output:
 
-```
+```text
 Welcome to the Kitchen!
 Today's special: Learning to edit files.
 Chef says: You're doing great.
 ```
 
-`cat` is short for "concatenate" (it can combine multiple files), but most people use it to quickly peek at a file's contents. Think of it as reading a note without picking it up -- you just glance at it.
+The verification step also trains you to distinguish "editing" from "viewing." If the file is short and you only need to confirm its contents, `cat` is safer and faster than opening an editor. If the file is long, later modules will introduce viewers such as `less`, which let you scroll without editing. When the task is to change text, use an editor; when the task is to inspect text, prefer a viewer.
 
----
-
-## Editing an Existing File
-
-To edit a file that already exists, just open it the same way:
+To edit an existing file, open it with the same command. `nano` reads the saved content into a new buffer, and you can move around with the arrow keys. Add a new line at the bottom, save, exit, and verify again with `cat`. This repeat-open-save-verify rhythm is more important than the specific kitchen text in the example.
 
 ```bash
 nano hello.txt
 ```
 
-Your text is there. Use the arrow keys to move around. Type to add text. Use Backspace/Delete to remove text.
+Add this line at the bottom of the file:
 
-Add a new line at the bottom:
-
-```
+```text
 PS: The pantry is fully stocked.
 ```
 
-Save with `Ctrl + O`, Enter. Exit with `Ctrl + X`.
+Save with Ctrl+O, press Enter to confirm the filename, and exit with Ctrl+X. Then verify the file again. The result should now include the original three lines and the new fourth line, which proves that you edited the existing file rather than creating a separate note somewhere else.
 
----
-
-## Cut and Paste Lines
-
-nano has simple cut and paste for entire lines:
-
-1. Move your cursor to the line you want to cut
-2. Press **Ctrl + K** to cut it (the line disappears)
-3. Move your cursor to where you want to paste it
-4. Press **Ctrl + U** to paste it
-
-You can cut multiple lines by pressing `Ctrl + K` multiple times -- they stack up. Then `Ctrl + U` pastes them all.
-
-This is like the chef rearranging the order of steps in a recipe.
-
----
-
-## Search for Text
-
-Working with a long file and need to find something? Press **Ctrl + W**, type what you're looking for, and press Enter.
-
+```bash
+cat hello.txt
 ```
+
+When you work on remote systems, this habit protects you from a subtle class of mistakes: editing the wrong host, the wrong directory, or a temporary copy. A quick `pwd` before editing tells you where you are, and a quick `cat` after editing tells you what landed on disk. If you are connected to a remote host, `hostname` can also confirm which machine you are changing before you touch a sensitive file.
+
+Exercise scenario: imagine you intended to edit a practice file in your home directory, but your prompt shows that you are in `/tmp`. The edit might still succeed, yet the file would be in the wrong place for the next command. In that situation, the fix is not to type faster; the fix is to stop, run `pwd`, move to the intended directory, and repeat the edit in the correct location.
+
+Verification is also where you catch spelling and punctuation mistakes that the editor cannot understand for you. `nano` does not know whether "pantry" or "panty" is the right kitchen word, and Bash does not know whether a message in an `echo` line is professionally worded. The editor helps you place characters; the verification step helps you read them as the next program or person will read them. That is why experienced terminal users often print or diff a file after editing even when the change seemed simple.
+
+## Move Around, Search, Cut, and Paste
+
+Small files can be edited by simply typing at the end, but real configuration files and scripts eventually require movement. In `nano`, the arrow keys move the cursor, Backspace and Delete remove characters, and Enter creates a new line. These controls are intentionally ordinary, which lets you concentrate on file meaning rather than editor mechanics during the first few modules.
+
+`nano` also has simple line-oriented cut and paste commands. Move the cursor to a line you want to move, press Ctrl+K to cut that entire line, move to the destination, and press Ctrl+U to paste it. If you press Ctrl+K multiple times in a row, `nano` stacks the cut lines and pastes them together when you press Ctrl+U. This is useful when reorganizing a small script or moving related configuration lines together.
+
+Search is the other editing skill that becomes essential sooner than most beginners expect. Press Ctrl+W, type the text you want to find, and press Enter. In your `hello.txt` file, searching for `special` jumps to the line with "Today's special." Pressing Ctrl+W and then Enter again repeats the last search, which is convenient in longer files where the same setting appears more than once.
+
+```text
 Ctrl + W
 ```
 
-nano will prompt:
+`nano` will prompt for the search text:
 
-```
+```text
 Search:
 ```
 
-Type `special` and press Enter. The cursor jumps to the first occurrence of "special" in the file.
+Type `special` and press Enter. The cursor should jump to the matching word in the file. If there is no match, `nano` reports that the text was not found, which is still useful information because it tells you the file does not contain the exact spelling you searched for.
 
-Press `Ctrl + W` and then Enter again (without typing anything) to find the next occurrence.
+Which approach would you choose here and why: manually scanning a two-line note, or using Ctrl+W to find a setting in a file with several hundred lines? Manual scanning is fine when the file fits on one screen, but search becomes the safer choice once your eyes can miss a repeated word, a similar setting name, or a comment that looks like an active configuration line.
 
----
+The tradeoff with cut and paste is that it is easy to move the wrong line if you do not verify the final arrangement. After rearranging lines, read the surrounding text before saving, then save and verify with `cat` or another viewer. In later modules, this same caution applies to YAML indentation, where moving a line to the wrong level can change the meaning of an entire Kubernetes manifest.
 
-## Your First Script
+## Write Your First Script
 
-Now let's do something powerful: write a script. A script is just a text file that contains commands the computer can run. It's a recipe card for the terminal.
+A script is a text file that contains commands for the computer to run in sequence. You can think of it as a recipe card for the terminal: instead of typing the same commands one at a time, you write them once, save the file, and run the recipe whenever you need it. The first script in this module is intentionally friendly, but it introduces the same mechanics used by serious automation.
 
-### Step 1: Create the script
+Open a new script file with `nano`. The `.sh` suffix is a convention that tells humans this is a shell script; it is not the part that makes the file executable. The operating system relies on permissions and, for direct execution, usually a shebang line at the top of the file.
 
 ```bash
 nano my-first-script.sh
 ```
 
-> **Stop and think**: This script starts with a strange line: `#!/bin/bash`. What do you think it does? It's called a "shebang" — it's the script's way of telling the system "when this file is run directly, use bash to interpret it." If you instead run the file with an explicit command like `bash my-first-script.sh`, bash already knows how to interpret it even without a shebang. You will see shebangs at the top of many shell scripts because they make the intended interpreter explicit.
+The first line of the script will be `#!/bin/bash`. That line is called a shebang, and it tells the system which interpreter should read the file when you execute it directly with `./my-first-script.sh`. If you instead run `bash my-first-script.sh`, you have already chosen Bash explicitly, so the shebang is less important for that invocation. Including it is still a good habit because it makes the script's intended interpreter visible to both humans and the operating system.
 
 Type the following exactly:
 
@@ -296,39 +263,35 @@ echo ""
 echo "Great job, chef! Your first script works!"
 ```
 
-Let's understand each line:
+Each line teaches a small piece of shell behavior. `echo` prints text, which makes it useful for status messages and simple reports. `$(date)` runs the `date` command and inserts its output into the line. `$(whoami)` inserts your current username, while `$(pwd)` inserts your current directory. The empty `echo ""` line prints a blank line so the output is easier to read.
 
-- `#!/bin/bash` -- This is called a "shebang." It tells the system "use the bash program to run this file" [when you execute it directly with `./my-first-script.sh`. In practice, you should include it in shell scripts you want to run directly, but a script can still be run without it if you invoke an interpreter explicitly, such as `bash my-first-script.sh`](https://en.wikipedia.org/wiki/Shebang_%28Unix%29). (Yes, "shebang" is a real term.)
-- `echo` -- A command that prints text to the screen. Think of it as the kitchen yelling "Order up!"
-- `$(date)` -- Runs the `date` command and inserts the result. The `$()` syntax means "run this command and give me the output."
-- `$(whoami)` -- Runs `whoami`, which tells you your username.
-- `$(pwd)` -- You know this one -- it prints your current directory.
+The script also shows why editing text files is more powerful than typing individual commands at a prompt. A command typed at the prompt runs once and then disappears into shell history. A command saved in a script becomes a repeatable artifact that you can inspect, modify, share, review, and run again. That repeatability is one of the bridges from casual terminal use to automation.
 
-### Step 2: Save and exit
+A script file is also easier to reason about than a remembered sequence of commands because it gives you a fixed object to inspect. You can read the first line and ask which interpreter will run it. You can read each `echo` line and predict the output before execution. You can notice that `cat kitchen-memo.txt` depends on a separate file being present in the current directory. This habit of reading a script before running it becomes essential when scripts later install packages, change permissions, or call cluster tooling.
 
-Press `Ctrl + O`, Enter, then `Ctrl + X`.
+Save with Ctrl+O, press Enter to confirm the filename, and exit with Ctrl+X. At this point the file exists and contains valid shell commands, but it is not necessarily a program the operating system is allowed to execute directly. New files are often created as readable and writable data, not as runnable programs, and that default is a security feature.
 
-### Step 3: Make it executable
-
-> **Pause and predict**: Before running `chmod`, try to run the script directly: `./my-first-script.sh`. What happens? You should get "Permission denied." This is intentional — new files are just data by default. The computer needs explicit permission to treat a file as a program. This is a security feature, not a bug.
-
-Right now, the file is just text. The computer won't run it because it doesn't have *permission* to be executed. Let's fix that:
-
-```bash
-chmod +x my-first-script.sh
-```
-
-`chmod` stands for **ch**ange **mod**e. [The `+x` means "add execute permission."](https://en.wikipedia.org/wiki/Chmod) You're telling the restaurant manager: "This isn't just a document -- it's a recipe that should be cooked."
-
-### Step 4: Run it
+Before running `chmod`, try to run the script directly and predict the result. This is a useful experiment because it separates "the file contains commands" from "the file has execute permission." If your system replies with "Permission denied," it is doing the correct thing: it refuses to treat ordinary text as a program until you explicitly grant that permission.
 
 ```bash
 ./my-first-script.sh
 ```
 
-The `./` means "run this file from the current directory." Expected output:
+Now add execute permission with `chmod +x`. `chmod` stands for change mode, and `+x` means "add execute permission." You are telling the operating system that this file is allowed to run as a program, not merely sit on disk as text.
 
+```bash
+chmod +x my-first-script.sh
 ```
+
+Run the script again from the current directory. The `./` prefix matters because it says "run the file named `my-first-script.sh` from this directory." Without that prefix, the shell searches directories listed in your `PATH`, and your current working directory is usually not searched automatically.
+
+```bash
+./my-first-script.sh
+```
+
+Expected output:
+
+```text
 Welcome to the kitchen!
 Today's date is: Sun Mar 23 14:30:00 UTC 2026
 You are logged in as: yourname
@@ -337,79 +300,141 @@ Your current directory is: /Users/yourname
 Great job, chef! Your first script works!
 ```
 
-You just wrote and executed your first program. That's not nothing -- that's everything.
+The exact date, username, and directory will vary, which is a good sign because the script is running commands at execution time rather than printing only fixed text. If you see a permission error, check `chmod +x` again. If you see a syntax error, reopen the file with `nano` and inspect the line number mentioned by the shell. Errors after the permission step usually mean the operating system successfully started the script but Bash found a problem in the text.
 
----
+This small debugging sequence is the beginning of a useful diagnostic habit. First ask whether the file can be executed at all. Then ask whether the selected interpreter can parse it. Then ask whether the commands inside do what you intended. Those are different layers, and separating them prevents the frustrating habit of changing random lines without knowing which layer failed.
 
-## A Note on vim
+You can run many shell scripts in two different ways, and knowing the difference prevents confusion. `bash my-first-script.sh` asks Bash to read the file, so execute permission is not required for that specific command. `./my-first-script.sh` asks the operating system to execute the file directly, so execute permission and the interpreter selection path matter. In this course we practice the direct form because it exposes the real filesystem permission model that you will meet again when running helper scripts from repositories.
 
-You'll encounter vim eventually. It's incredibly powerful and used by many senior engineers, though it is not installed by default on all minimal Linux distributions. But vim has a famously steep learning curve because it works in "modes" -- you can't just open it and start typing.
+## Use Editing Judgment, Not Editor Folklore
 
-We're not ignoring vim. We're saving it for when you have more context. Right now, nano gets the job done, and learning to walk before you run is how chefs train too.
+You will encounter `vim` eventually, and it is worth learning when you are ready. It is powerful because it treats editing as a language of motions and operations, which lets practiced users change text quickly without reaching for a mouse. The tradeoff is that `vim` starts in normal mode, so a beginner who expects typed letters to appear may accidentally issue commands instead. That is why `nano` is a better first terminal editor for this module's goal.
 
-When you're ready, vim will be there. For now, nano is your friend.
+The practical question is always "what is the safest tool for the current job?" Use `cat` when the file is short and you only need to view it. Use `nano` when you need a simple edit and want visible prompts for saving and exiting. Use `vim` when you already know its modes or when you need powerful navigation and editing on a terminal-only system. Use a graphical editor on your laptop when you are doing larger project work and the file is local.
 
----
+There is one more judgment call: avoid editing binary files with a text editor. Images, compiled programs, archives, and many database files are not plain text. Opening one in `nano` may show strange characters, and saving it can corrupt the file. When you are unsure, run `file filename` before editing. Plain text, shell scripts, Markdown, YAML, JSON, and many configuration files are appropriate targets for a terminal text editor.
+
+Configuration files deserve extra caution because programs read them literally. A stray quote, missing colon, or wrong indentation level can change behavior. Later Kubernetes modules will ask you to edit YAML manifests, and Kubernetes 1.35 will parse those files according to YAML structure rather than your visual intention. The habits from this module transfer directly: open the right file, make a focused edit, save, validate, and then let the system read it.
+
+This is why "quick edit" should not mean "careless edit." A quick edit is small, focused, and verified; a careless edit is rushed, unverified, and often performed in the wrong place. The terminal rewards precision because it gives you compact tools with very little ceremony. It also exposes mistakes quickly because those tools do exactly what you ask. Your goal is to become calm with that literalness rather than intimidated by it.
+
+Exercise scenario: you are about to change a remote service configuration, and you notice your terminal prompt includes a hostname you do not recognize. The safest next step is not to edit and hope; it is to run `hostname` and `pwd`, confirm the machine and directory, and only then open the file. Terminal editing is precise, but precision cuts both ways when you are connected to the wrong place.
+
+## Patterns & Anti-Patterns
+
+The reliable pattern for beginner editing is small, verified change sets. Make one meaningful change, save it, exit cleanly, and verify the saved file before moving on. This approach may feel slower than typing a dozen edits at once, but it gives you a clear checkpoint when something goes wrong. It also mirrors professional change control: smaller changes are easier to review, test, explain, and revert.
+
+Another strong pattern is to choose read-only commands before edit-capable commands when you are still investigating. If you only need to inspect a file, use `cat` for short files or a pager in later modules. Opening an editor should be a deliberate decision because editors are designed to modify buffers. The difference is similar to reading a posted kitchen schedule versus taking a pen to it.
+
+A third pattern is to make scripts self-explanatory at the top. A shebang declares the interpreter, and clear `echo` output helps the person running the script understand what is happening. For training scripts, friendly messages are enough. For operational scripts, clear output becomes even more important because the person reading a terminal log may not be the person who wrote the script.
+
+The matching anti-pattern is treating successful editing as proof of correct behavior. Saving a file proves only that bytes were written to disk. It does not prove that a service can parse the file, that a script has permission to run, or that the commands inside the script are correct. That is why every edit should be followed by the smallest verification command that checks the next layer of meaning.
+
+These patterns are intentionally modest because beginner reliability comes from repeatable habits, not dramatic tricks. If you always confirm location before sensitive edits, save intentionally, inspect the saved result, and test the next layer, you prevent most early terminal editing failures. Later, when you learn faster editors and richer validation commands, those tools will plug into the same pattern. The tool can change; the workflow should remain recognizable.
+
+| Situation | Use This Pattern | Avoid This Anti-Pattern |
+|-----------|------------------|--------------------------|
+| You need to inspect a short file | Run `cat filename` first, then edit only if needed | Opening `nano` just to read and accidentally changing text |
+| You need to make a small edit | Open with `nano`, save with Ctrl+O, exit with Ctrl+X, verify with `cat` | Assuming the file saved because the editor was open |
+| You need to run a script directly | Include `#!/bin/bash`, then run `chmod +x script.sh` before `./script.sh` | Believing the `.sh` suffix alone makes a file executable |
+| You are on a remote host | Confirm `hostname` and `pwd` before editing sensitive files | Editing quickly without checking which machine you are on |
+
+## When You'd Use This vs Alternatives
+
+For this quick module, the decision framework is intentionally simple. Choose the tool that matches the amount of change and the amount of risk. If there is no change to make, use a viewer. If the change is small and the environment is terminal-only, use `nano`. If the edit is complex and you are comfortable with modal editing, use `vim`. If you are working on a local project with many files, a graphical code editor may be the better environment.
+
+| Need | Better Choice | Why |
+|------|---------------|-----|
+| See a short file exactly once | `cat filename` | It cannot accidentally edit the file |
+| Make a beginner-friendly terminal edit | `nano filename` | Visible shortcuts reduce memory burden |
+| Make repeated advanced terminal edits | `vim filename` | Motions and commands scale after practice |
+| Run saved commands repeatedly | `chmod +x script.sh` then `./script.sh` | Permissions make the file runnable directly |
+| Confirm where you are before editing | `pwd` and `hostname` | Location mistakes are easier to prevent than repair |
+
+You can also think in terms of reversibility. Viewing is easy to back out of because it changes nothing. Editing is reversible only if you know what changed or have a backup. Running a script can affect many files or commands at once, so scripts deserve both content verification and permission awareness. This ladder of risk helps you slow down at the right moments without becoming afraid of the terminal.
+
+The best choice is often the one that leaves the most evidence. A `cat` command leaves visible output in your terminal scrollback. A saved script leaves a file you can reopen and inspect. A `chmod +x` command changes a permission bit that can be checked later with tools you will learn in the next terminal lessons. When you choose tools this way, you build a trail that helps you and other engineers understand what happened.
 
 ## Did You Know?
 
-- **nano is closely related to `pico`.** It was created as a free replacement for `pico`, and the name is a playful nod to the SI prefixes `pico` and `nano`.
+- **GNU nano 8.0 was released in 2024, and nano 9.x followed later with the same visible-control-key style beginners rely on.** The exact version on your system may differ, but the core save and exit workflow remains recognizable across many Linux distributions.
 
-- **One early Unix text editor still worth knowing about is `ed`.** [It was written by Ken Thompson, one of the creators of Unix. `ed` is a "line editor" -- you can't see the whole file at once.](https://en.wikipedia.org/wiki/Ed_%28text_editor%29) You edit one line at a time. Engineers in the 1970s wrote entire operating systems using `ed`. Your experience with nano is luxurious by comparison.
+- **`nano` began as a free replacement for `pico`, the editor used with the Pine email client.** The name plays on SI prefixes: nano is larger than pico, and the joke stuck because the replacement became a widely installed editor in its own right.
 
-- **Configuration files run the world.** Nearly every piece of software reads a text configuration file when it starts up. Your web server, your database, Kubernetes itself -- they all read text files to know how to behave. The ability to edit these files from the terminal is one of the most practical skills in all of computing.
+- **The Unix line editor `ed` dates to 1969 and was written by Ken Thompson.** It edits one line at a time, so a full-screen editor such as `nano` is a luxury compared with early Unix editing workflows.
 
----
+- **A shebang line must start with the two characters `#!` at the very beginning of a script.** If you accidentally write `# !/bin/bash` or put a blank line above it, direct execution may not select the interpreter you intended.
 
 ## Common Mistakes
 
-| Mistake | Why It's a Problem | What to Do Instead |
-|---------|-------------------|-------------------|
-| Pressing Ctrl+Z instead of Ctrl+X to exit | Ctrl+Z suspends nano (hides it) instead of closing it. The file stays open in the background | If you accidentally suspend, type `fg` to bring nano back. Then use Ctrl+X to exit properly |
-| Forgetting to save before exiting | Your changes are lost | Press Ctrl+O to save before Ctrl+X to exit. Or just press Ctrl+X and say Y when asked to save |
-| Using `nano` when you meant to use `cat` | You accidentally open the file for editing when you just wanted to read it | Use `cat filename` to view a file without editing it |
-| Editing a file on a remote server thinking it is local | You might accidentally change production configuration instead of your local testing files, causing unexpected downtime | Always check your prompt (like `user@server`) or run `hostname` to confirm which machine you are currently editing files on |
-| Opening a binary file (like an image or compiled program) in nano and saving it | Nano will try to read the binary data as text, and saving it will corrupt the file permanently | Only use nano for plain text files (scripts, configs, logs). Use `file filename` to check the file type before opening |
-
----
+| Mistake | Why It Happens | How to Fix It |
+|---------|----------------|---------------|
+| Pressing Ctrl+Z instead of Ctrl+X to exit | Ctrl+Z suspends `nano` and hides it in the background instead of closing it | Type `fg` to bring `nano` back, then use Ctrl+X to exit properly |
+| Forgetting to save before exiting | Beginners expect autosave, but `nano` writes only when told to write out | Press Ctrl+O and Enter before Ctrl+X, or answer `Y` carefully when prompted |
+| Typing `^O` literally into the file | The caret notation looks like two printable characters if you have not seen terminal shortcuts before | Hold Ctrl and press O; do not type the caret character |
+| Using `nano` when you meant to use `cat` | You wanted to inspect a file but opened an editor capable of changing it | Use `cat filename` for short read-only checks and reserve `nano` for edits |
+| Editing a file on a remote server thinking it is local | Terminal prompts can look similar, especially when several sessions are open | Run `hostname` and `pwd` before changing important files |
+| Opening and saving a binary file in `nano` | The editor treats bytes as text and can corrupt non-text formats | Run `file filename` when unsure, and edit only plain text files |
+| Assuming `.sh` makes a script executable | File extensions are human conventions, while execute permission is a filesystem mode | Add a shebang when appropriate and run `chmod +x script.sh` before direct execution |
 
 ## Quiz
 
-1. **You are editing a crucial configuration file and the nano menu at the bottom tells you to press `^O` to Write Out. You try typing the caret symbol (`^`) and then the letter `O`, but it just types "^O" into your file. What went wrong?**
-   <details>
-   <summary>Answer</summary>
-   You interpreted the `^` symbol literally instead of as a modifier key. In terminal applications like nano, the `^` symbol represents the Ctrl (Control) key on your keyboard. Therefore, `^O` means you should hold down the Ctrl key and press the letter O at the same time. This is a standard convention in Unix-like systems for showing keyboard shortcuts. By typing the characters individually, you were just adding raw text to your document instead of executing the save command.
-   </details>
+<details>
+<summary>Your teammate says they saved `hello.txt`, but `cat hello.txt` still shows the old version. What should you check first, and why?</summary>
 
-2. **You've spent 15 minutes carefully writing a bash script in nano. You press Ctrl+X to exit, but you accidentally press 'N' when prompted to "Save modified buffer?". What happens to your script, and what should you have done differently to ensure your work was safe?**
-   <details>
-   <summary>Answer</summary>
-   Your script changes are permanently lost because pressing 'N' tells nano to discard all modifications made since the last save. Unlike modern graphical editors with autosave or history features, terminal editors do exactly what you tell them in the moment. To prevent this, you should form the habit of manually saving your file before attempting to exit. You do this by pressing Ctrl+O (Write Out) and hitting Enter to confirm the file name, which saves your changes to the disk. Once saved, the "Modified" indicator at the top disappears, and you can safely exit with Ctrl+X.
-   </details>
+Start by checking whether they actually used Ctrl+O and confirmed the filename before exiting. `nano` can hold unsaved changes in its buffer, and closing or discarding that buffer leaves the file on disk unchanged. If they did save, check `pwd` to confirm they edited and viewed the same directory. The key diagnosis is to separate editor memory, saved file content, and current working directory.
 
-3. **You download a script from a coworker that ends in `.sh`. You make it executable and try to run it, but your system throws an error saying it doesn't know how to execute the file. Upon opening it in nano, you see the first line is simply `echo "Starting backup"`. What crucial element is missing, and why does the system need it?**
-   <details>
-   <summary>Answer</summary>
-   The script is missing a shebang line such as `#!/bin/bash` at the very top of the file. When you execute a script directly with `./script.sh`, Linux uses that line to decide which interpreter should read the file. Without it, direct execution may fail because the file does not specify an interpreter. If you instead run the script with an explicit command such as `bash script.sh`, bash is already selected, so a shebang is not strictly required for that specific invocation.
-   </details>
+</details>
 
-4. **You've written a perfect script to automate your server backups, saved it as `backup.sh`, and typed `./backup.sh` to run it. Instead of your backup starting, the terminal sternly replies: `Permission denied`. Why did the system block your script, and how do you resolve this?**
-   <details>
-   <summary>Answer</summary>
-   The system blocked your script because, by default, newly created text files only have read and write permissions, not execute permissions. This is a fundamental security feature in Linux designed to prevent arbitrary text files or downloaded data from being accidentally or maliciously run as programs. To resolve this, you must explicitly grant the file the right to be executed by running `chmod +x backup.sh`. This changes the file's mode, signaling to the operating system that you, the owner, vouch for this file and authorize it to run as a program.
-   </details>
+<details>
+<summary>You are editing a crucial configuration file and the nano menu says `^O Write Out`. You type the characters `^O` into the file. What went wrong?</summary>
 
-5. **You wrote a script called `backup.sh` and tried to run it with `./backup.sh`. You got "Permission denied." Then you ran `chmod +x backup.sh` and tried again — now it says "line 1: syntax error." What are the TWO things that went wrong, and in what order should you fix them?**
-   <details>
-   <summary>Answer</summary>
-   The first issue was that your file lacked execute permissions, which is standard for newly created files as a security measure; this was correctly resolved using `chmod +x`. The second issue is that the script itself contains invalid instructions, most likely a malformed shebang on the first line (such as `#bin/bash` instead of `#!/bin/bash`). In this situation, you should address the permission issue first because `./backup.sh` will not reach the script's syntax until the file is executable. Once permissions are granted, the interpreter can read the file, encounter the bad syntax, and provide a helpful error message pointing directly to line 1. To fix the remaining issue, you should open the file in nano and correct the typo on the first line.
-   </details>
+The caret notation represents the Ctrl key, not text that should be typed literally. The correct action is to hold Ctrl and press O at the same time, then press Enter to confirm the filename. Terminal programs often use this notation because it is compact and works in text interfaces. Typing the characters added content to the buffer, so you should remove those characters before saving.
 
----
+</details>
+
+<details>
+<summary>You wrote `backup.sh`, ran `./backup.sh`, and received `Permission denied`. What layer failed, and what is the focused fix?</summary>
+
+The file content may be fine, but the filesystem has not granted execute permission for direct execution. Add execute permission with `chmod +x backup.sh`, then run `./backup.sh` again. This does not guarantee the script logic is correct; it only allows the operating system to try running it. If a new syntax error appears afterward, you have moved to the interpreter-parsing layer and should inspect the reported line.
+
+</details>
+
+<details>
+<summary>A script starts with `echo "Starting backup"` and no shebang. It runs with `bash backup.sh` but behaves unpredictably with `./backup.sh`. What should you change?</summary>
+
+Add a shebang such as `#!/bin/bash` as the first line when the script is intended to run directly. Running `bash backup.sh` chooses Bash explicitly, so the script can work in that form even without a shebang. Direct execution asks the operating system to choose an interpreter, and the shebang is the portable way to state that choice. After editing, save, verify the first line, and make sure execute permission is present.
+
+</details>
+
+<details>
+<summary>You need to confirm whether a short file contains one setting, but you do not intend to change anything. Should you use `cat` or `nano`, and why?</summary>
+
+Use `cat` for a short read-only check because it prints the file without opening an edit buffer. That reduces the chance of accidental changes and keeps the command focused on inspection. If the file is too long for comfortable printing, a pager is better than an editor, but that appears in a later module. Use `nano` only when you have decided to make a change.
+
+</details>
+
+<details>
+<summary>You moved lines around with Ctrl+K and Ctrl+U, saved, and now a script prints messages in the wrong order. How should you debug it?</summary>
+
+Reopen the script with `nano` and read the surrounding lines in order, not just the line you remember moving. Cut-and-paste operations can move more than one line if you pressed Ctrl+K repeatedly, so the final arrangement matters. After correcting the order, save and run the script again. This is a content problem rather than a permission problem if the script already starts and prints output.
+
+</details>
+
+<details>
+<summary>You are connected to a remote host and about to edit a file that controls a practice service. What two commands help prevent an edit in the wrong place?</summary>
+
+Run `hostname` to confirm which machine you are connected to, and run `pwd` to confirm the current directory. Those checks are quick and prevent a common remote-work mistake: changing a file successfully, but on the wrong host or in the wrong directory. After editing, verify the saved file with a viewer such as `cat` when the file is short. Safe terminal work depends on confirming context before and after the edit.
+
+</details>
 
 ## Hands-On Exercise: Kitchen Memo Board
 
-Create a "memo board" for the restaurant kitchen, practice editing, and write a script.
+In this exercise you will create a small memo file, edit it, write a script that reads it, grant execute permission, and run the script. The scenario is intentionally ordinary because the mechanics are the lesson. If you can do this calmly with a training memo, you can later apply the same loop to shell helpers, Markdown notes, YAML manifests, and service configuration files.
+
+Work in your home directory so cleanup is straightforward. If any command produces output that differs because of your username, date, or directory, treat that as expected. If a command fails, pause and identify the layer: wrong directory, unsaved file, missing permission, or script content. That habit is more valuable than reaching the end quickly.
+
+As you work, say the loop out loud if it helps: open, edit, save, exit, verify. For the script portion, add two more words: permit and run. That may sound overly deliberate for a beginner exercise, but deliberate sequencing is how terminal work becomes predictable. The shell will not remind you that a file is unsaved after you leave the editor, and it will not guess that a text file should be executable because it ends in `.sh`.
 
 ### Part 1: Create and edit a memo
 
@@ -420,7 +445,7 @@ nano kitchen-memo.txt
 
 Type the following five lines:
 
-```
+```text
 === KITCHEN MEMO BOARD ===
 1. Morning prep starts at 6 AM
 2. New menu items arriving Thursday
@@ -428,47 +453,51 @@ Type the following five lines:
 4. Staff meeting at 3 PM Friday
 ```
 
-Save with `Ctrl + O`, Enter. Exit with `Ctrl + X`.
-
-Verify your work:
+Save with Ctrl+O, press Enter, and exit with Ctrl+X. Then verify your saved work with `cat`. Verification is part of the exercise, not an optional extra, because it proves the file on disk contains the memo rather than merely proving that you typed text into an editor buffer.
 
 ```bash
 cat kitchen-memo.txt
 ```
 
-You should see all five lines printed exactly as you typed them.
+You should see all five lines printed exactly as you typed them:
+
+```text
+=== KITCHEN MEMO BOARD ===
+1. Morning prep starts at 6 AM
+2. New menu items arriving Thursday
+3. Remember: clean as you go
+4. Staff meeting at 3 PM Friday
+```
 
 ### Part 2: Edit the memo
 
-Open it again:
+Open the memo again and add a sixth line at the bottom. This step confirms that reopening an existing file is the same basic workflow as creating a new file, except that `nano` loads the previous contents into the buffer first. Move with the arrow keys if needed, type the new line, save, exit, and verify again.
 
 ```bash
 nano kitchen-memo.txt
 ```
 
-Add a sixth line at the bottom:
+Add this line:
 
-```
+```text
 5. Chef says: great work today, team!
 ```
 
-Save and exit (`Ctrl + O`, Enter, `Ctrl + X`).
-
-Verify:
+Save and exit with Ctrl+O, Enter, and Ctrl+X. Then verify that all six lines are present:
 
 ```bash
 cat kitchen-memo.txt
 ```
 
-All six lines should be there.
-
 ### Part 3: Write a cleanup script
+
+Now create a script that prints a short status report and includes the memo contents. This script combines fixed text, command substitution, and a file-reading command. It is still small, but it demonstrates the reason scripts matter: they preserve a repeatable sequence of terminal actions in a text file.
 
 ```bash
 nano kitchen-report.sh
 ```
 
-Type:
+Type this script:
 
 ```bash
 #!/bin/bash
@@ -486,18 +515,16 @@ echo ""
 echo "Report complete. Kitchen is running smoothly!"
 ```
 
-Save and exit.
-
-Make it executable and run it:
+Save and exit. Before making the script executable, you can inspect it with `cat` if you want one more check. Then grant execute permission and run it directly from the current directory. If you see "Permission denied," repeat the `chmod +x` command and confirm the filename is spelled correctly.
 
 ```bash
 chmod +x kitchen-report.sh
 ./kitchen-report.sh
 ```
 
-Expected output (details will vary):
+Expected output will vary in the date, username, and file listing:
 
-```
+```text
 === Kitchen Status Report ===
 Date: Sun Mar 23 14:45:00 UTC 2026
 Chef on duty: yourname
@@ -519,26 +546,37 @@ Report complete. Kitchen is running smoothly!
 
 ### Part 4: Clean up
 
+Remove the training files when you are done. Read the command before running it because `rm` removes files without sending them to a graphical trash folder. In this case the filenames are specific to the exercise, and removing them leaves your home directory tidy for the next module.
+
 ```bash
 rm hello.txt kitchen-memo.txt kitchen-report.sh my-first-script.sh
 ```
 
-**Success criteria**: You created a file with nano, edited it, wrote a bash script that reads from another file, made it executable, and ran it. You're not just using the terminal anymore -- you're *programming* in it.
+Success criteria:
 
----
-
-## What's Next?
-
-**Next Module**: [Module 0.6: Git Basics](../module-0.6-git-basics/) — Learn to track your work with version control, the foundation of all modern software delivery.
-
----
-
-> **You just used a tool that senior engineers use every day. You belong here.**
+- [ ] You created `hello.txt` and verified it with `cat`.
+- [ ] You edited `hello.txt` after reopening it with `nano`.
+- [ ] You created `kitchen-memo.txt` and verified the memo contents.
+- [ ] You wrote `kitchen-report.sh` with a valid `#!/bin/bash` shebang.
+- [ ] You used `chmod +x kitchen-report.sh` before running it directly.
+- [ ] You diagnosed any error by separating directory, save, permission, and script-content problems.
 
 ## Sources
 
-- [Vim Reference Manual: Introduction](https://raw.githubusercontent.com/vim/vim/master/runtime/doc/intro.txt) — Official Vim documentation covering modes and insert commands such as `i`.
-- [Shebang (Unix)](https://en.wikipedia.org/wiki/Shebang_%28Unix%29) — Background on how shebang lines affect direct script execution versus explicitly invoking an interpreter.
-- [Chmod](https://en.wikipedia.org/wiki/Chmod) — Reference for Unix file mode changes, including adding execute permission with `+x`.
-- [Ed (text editor)](https://en.wikipedia.org/wiki/Ed_%28text_editor%29) — Summary of `ed` as an early Unix line editor written by Ken Thompson in 1969.
-- [GNU nano](https://en.wikipedia.org/wiki/GNU_nano) — Further reading on nano's history, relationship to pico, and control-key interface.
+- [GNU nano manual](https://www.nano-editor.org/dist/latest/nano.html)
+- [GNU nano homepage](https://www.nano-editor.org/)
+- [Vim Reference Manual: Introduction](https://raw.githubusercontent.com/vim/vim/master/runtime/doc/intro.txt)
+- [Bash Reference Manual: Shell Scripts](https://www.gnu.org/software/bash/manual/bash.html#Shell-Scripts)
+- [Bash Reference Manual: Command Substitution](https://www.gnu.org/software/bash/manual/bash.html#Command-Substitution)
+- [GNU Coreutils manual: cat invocation](https://www.gnu.org/software/coreutils/manual/html_node/cat-invocation.html)
+- [GNU Coreutils manual: chmod invocation](https://www.gnu.org/software/coreutils/manual/html_node/chmod-invocation.html)
+- [The Open Group: chmod](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/chmod.html)
+- [Linux man-pages: execve](https://man7.org/linux/man-pages/man2/execve.2.html)
+- [Shebang (Unix)](https://en.wikipedia.org/wiki/Shebang_%28Unix%29)
+- [Chmod](https://en.wikipedia.org/wiki/Chmod)
+- [Ed (text editor)](https://en.wikipedia.org/wiki/Ed_%28text_editor%29)
+- [GNU nano](https://en.wikipedia.org/wiki/GNU_nano)
+
+## Next Module
+
+[Module 0.6: Git Basics](../module-0.6-git-basics/) teaches you to track edits over time with version control, which is the next step after you can create, change, and verify files from the terminal.
