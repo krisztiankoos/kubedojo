@@ -565,9 +565,25 @@ Terraform via IaC toolkit modules.</p>
   <td>Jenkins — server, plugins, user access, jobs, parameterized, scheduled,
       DB backup, slave nodes, security, deploy pipeline, conditional pipeline,
       deployment job, chained, multistage</td>
-  <td><strong>No dedicated Jenkins track or module.</strong> 45 mentions across
-      corpus, mostly as one CI/CD tool among many.</td>
-  <td class="status gap">❌ MAJOR GAP — Jenkins track</td>
+  <td><strong>Intentionally not covered.</strong> kubedojo CI/CD canon is
+      GitHub Actions + GitLab CI + ArgoCD (per user direction 2026-05-12 /
+      <code>feedback_skip_jenkins_prefer_modern_cicd.md</code>). Modern stacks
+      have moved past Jenkins; teaching it competes with limited module slots
+      for tools learners actually encounter.</td>
+  <td class="status covered">✓ Out of scope — intentional deviation</td>
+</tr>
+<tr>
+  <td class="days">—</td>
+  <td><strong>Modern CI/CD coverage check</strong> (canon: GitHub Actions +
+      GitLab CI + ArgoCD)</td>
+  <td>ArgoCD = 144 hits +
+      <code>platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd.md</code>
+      ✅. GitLab = 29 hits +
+      <code>platform/toolkits/cicd-delivery/source-control/module-11.1-gitlab.md</code>
+      ("The Complete DevOps Platform" — covers CI alongside source) ✅. GitHub
+      Actions = 80 hits across cicd sub-modules in aws-essentials, azure-essentials,
+      prerequisites/modern-devops — <strong>no dedicated module</strong>.</td>
+  <td class="status partial">⚠️ GitHub Actions needs dedicated module</td>
 </tr>
 <tr>
   <td class="days">82–93</td>
@@ -594,11 +610,13 @@ Terraform via IaC toolkit modules.</p>
 
 <h3>Net gaps from DevOps</h3>
 <ol class="gaps">
-<li><strong>Jenkins track</strong> — KodeKloud spends 14 days; kubedojo has
-    no dedicated coverage. Even if we don't recommend Jenkins (most modern
-    stacks prefer GitHub Actions / GitLab CI / Argo), it's so prevalent in
-    enterprise environments that a single "Jenkins for engineers landing in
-    a Jenkins-heavy shop" module is justified. <em>Tier 2.</em></li>
+<li><strong>GitHub Actions dedicated module</strong> — 80 corpus hits across
+    cicd sub-modules (<code>aws-essentials/1.11-cicd</code>,
+    <code>azure-essentials/3.11-cicd</code>,
+    <code>prerequisites/modern-devops/1.3-cicd-pipelines</code>), but no
+    module-grain teaching. GitHub Actions is most learners' first CI; it
+    deserves its own module under <code>platform/toolkits/cicd-delivery/ci-cd-pipelines/</code>
+    or similar. <em>Tier 1 (user direction 2026-05-12 — modern CI/CD canon).</em></li>
 <li><strong>Ansible expansion</strong> — KodeKloud spends 12 days; kubedojo
     has 1 module. Inventory, playbooks, modules (blockinfile/lineinfile/copy/file/
     service/template), Jinja2 templating, conditionals, loops. Could be a
@@ -614,8 +632,10 @@ Terraform via IaC toolkit modules.</p>
   <strong>Well-covered (DevOps):</strong> Linux fundamentals (Nginx, PostgreSQL,
   cron, iptables, SELinux, bash), Git (10-module deep dive), Kubernetes (169
   modules across all 5 cert tracks), Terraform (IaC discipline + toolkit
-  modules), CI/CD generally (mlops + cicd-delivery toolkit), supply chain
-  security (CKS).
+  modules), <strong>ArgoCD</strong> (144 hits + dedicated module
+  <code>module-2.1-argocd.md</code>), <strong>GitLab</strong>
+  (<code>module-11.1-gitlab.md</code> covers the complete DevOps platform
+  including CI), supply chain security (CKS).
 </div>
 </section>
 
@@ -716,8 +736,8 @@ below ~50.</p>
     <td>Tier 1</td><td>KK (10 days)</td></tr>
 <tr><td>2</td><td>Great Expectations module (data quality)</td><td>MLOps</td>
     <td>Tier 1</td><td>KK (4 days)</td></tr>
-<tr><td>3</td><td>Jenkins module/arc (for enterprise CI/CD reality)</td>
-    <td>DevOps</td><td>Tier 2</td><td>KK (14 days)</td></tr>
+<tr><td>3</td><td>GitHub Actions dedicated module (modern CI/CD canon)</td>
+    <td>DevOps</td><td>Tier 1</td><td>KK + user direction 2026-05-12</td></tr>
 <tr><td>4</td><td>Ansible 5–7 module arc (inventory + playbooks + modules + templates)</td>
     <td>DevOps</td><td>Tier 2</td><td>KK (12 days)</td></tr>
 <tr><td>5</td><td>ML repo hygiene module (uv + Makefile + pre-commit + cookiecutter + packaging)</td>
