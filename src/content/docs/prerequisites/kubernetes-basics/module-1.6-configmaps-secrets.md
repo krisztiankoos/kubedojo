@@ -13,7 +13,7 @@ sidebar:
 
 ---
 
-Throughout this module, commands use the short alias `k` for `kubectl`. If your shell does not already define it, run `alias k=kubectl` before starting the hands-on work. The examples target Kubernetes 1.35 and focus on behavior that matters when configuration, credentials, and rollout operations meet in a real cluster.
+Throughout this module, commands use the full `kubectl` binary name so every example remains copy-paste runnable in an interactive shell, a script, or a CI troubleshooting note. The examples target Kubernetes 1.35 and focus on behavior that matters when configuration, credentials, and rollout operations meet in a real cluster.
 
 ## What You'll Be Able to Do
 
@@ -86,7 +86,7 @@ Static Pods are the exception that reveals why the API boundary matters. A stati
 
 Optional references are another boundary worth designing deliberately. Kubernetes lets you mark some ConfigMap or Secret references as optional, which can be helpful during phased rollouts when a value may not exist in every environment yet. The risk is that optional references can hide a real deployment error until application startup, where the symptom looks like a confusing missing file or empty variable. Use optional references for planned compatibility windows, not as a way to silence manifest validation.
 
-Before running this, what output do you expect from a Secret created with `stringData`? The important prediction is that a later `k get secret -o yaml` will not show `stringData`; it will show base64 values under `data`. If that surprises you, pause before putting Secrets into review workflows, because reviewers may see encoded text and incorrectly assume it is protected from disclosure.
+Before running this, what output do you expect from a Secret created with `stringData`? The important prediction is that a later `kubectl get secret -o yaml` will not show `stringData`; it will show base64 values under `data`. If that surprises you, pause before putting Secrets into review workflows, because reviewers may see encoded text and incorrectly assume it is protected from disclosure.
 
 ## Creating ConfigMaps and Secrets
 
@@ -108,7 +108,7 @@ kubectl create configmap configs --from-file=./config-dir/
 kubectl get configmap app-config -o yaml
 ```
 
-The commands above are preserved because they show the basic creation modes exactly: literal keys, a single file, an entire directory, and a YAML inspection step. In day-to-day module work, run the same operations with `k` after defining the alias. A generated ConfigMap from a directory maps every file name to a key, which is convenient for configuration directories but dangerous if the directory contains editor backups, local overrides, or files that were never meant to leave your workstation.
+The commands above show the basic creation modes exactly: literal keys, a single file, an entire directory, and a YAML inspection step. Keeping the full `kubectl` command in examples makes the workflow unambiguous for readers who paste commands into scripts, terminals, or runbooks. A generated ConfigMap from a directory maps every file name to a key, which is convenient for configuration directories but dangerous if the directory contains editor backups, local overrides, or files that were never meant to leave your workstation.
 
 ```yaml
 apiVersion: v1
@@ -531,10 +531,11 @@ No. ConfigMaps and Secrets have a 1 MiB object size limit, and pushing multi-meb
 
 This exercise uses a disposable namespace so you can inspect ConfigMaps and Secrets without touching other work. You will create non-sensitive application settings, create a Secret, run a Pod that consumes both, and then modify the design to practice file-based delivery. The goal is not just to make the YAML apply; it is to predict which values are visible where and which changes require a new Pod.
 
-Before you begin, define the alias expected throughout the module:
+Before you begin, confirm that your current context points at a disposable cluster or namespace where creating and deleting lab resources is safe:
 
 ```bash
-alias k=kubectl
+kubectl config current-context
+kubectl get namespace default
 ```
 
 ### Task 1: Create the configuration objects
@@ -582,7 +583,7 @@ kubectl logs config-test | grep -E "LOG_LEVEL|APP_NAME|DB_PASSWORD"
 
 <details><summary>Solution notes for Task 1</summary>
 
-The original commands create one ConfigMap, one Secret, and one Pod. If you are following the module convention, the equivalent inspection commands are `k get configmap app-config -o yaml`, `k get secret app-secret -o yaml`, and `k logs config-test`. Notice that the Pod logs show plaintext environment values because the process received them at startup. That visibility is useful for a lab and risky for real credentials in production logs.
+The original commands create one ConfigMap, one Secret, and one Pod. Useful inspection commands at this point are `kubectl get configmap app-config -o yaml`, `kubectl get secret app-secret -o yaml`, and `kubectl logs config-test`. Notice that the Pod logs show plaintext environment values because the process received them at startup. That visibility is useful for a lab and risky for real credentials in production logs.
 
 </details>
 
@@ -591,8 +592,8 @@ The original commands create one ConfigMap, one Secret, and one Pod. If you are 
 Read the stored Secret and decode the single value so you can see exactly where base64 applies. This step builds the habit of distinguishing Kubernetes serialization from actual confidentiality.
 
 ```bash
-k get secret app-secret -o yaml
-k get secret app-secret -o jsonpath='{.data.DB_PASS}' | base64 -d
+kubectl get secret app-secret -o yaml
+kubectl get secret app-secret -o jsonpath='{.data.DB_PASS}' | base64 -d
 ```
 
 <details><summary>Solution notes for Task 2</summary>
@@ -606,12 +607,12 @@ The YAML view shows encoded data under `.data.DB_PASS`, while the decode command
 Update the ConfigMap after the Pod is running, then compare the API object with the Pod logs. You should see the new value in the ConfigMap and the old value inside the already-started container.
 
 ```bash
-k create configmap app-config \
+kubectl create configmap app-config \
   --from-literal=LOG_LEVEL=info \
   --from-literal=APP_NAME=myapp \
-  --dry-run=client -o yaml | k apply -f -
-k get configmap app-config -o jsonpath='{.data.LOG_LEVEL}'
-k logs config-test | grep LOG_LEVEL
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl get configmap app-config -o jsonpath='{.data.LOG_LEVEL}'
+kubectl logs config-test | grep LOG_LEVEL
 ```
 
 <details><summary>Solution notes for Task 3</summary>
@@ -625,8 +626,8 @@ The ConfigMap object changes, but the environment in the existing container does
 Delete the original Pod and recreate it with the ConfigMap mounted at `/etc/app-config`. Then inspect the directory to see how keys become files.
 
 ```bash
-k delete pod config-test
-cat << 'EOF' | k apply -f -
+kubectl delete pod config-test
+cat << 'EOF' | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -644,9 +645,9 @@ spec:
     configMap:
       name: app-config
 EOF
-k wait --for=condition=Ready pod/config-test --timeout=60s
-k exec config-test -- ls -l /etc/app-config
-k exec config-test -- cat /etc/app-config/LOG_LEVEL
+kubectl wait --for=condition=Ready pod/config-test --timeout=60s
+kubectl exec config-test -- ls -l /etc/app-config
+kubectl exec config-test -- cat /etc/app-config/LOG_LEVEL
 ```
 
 <details><summary>Solution notes for Task 4</summary>
