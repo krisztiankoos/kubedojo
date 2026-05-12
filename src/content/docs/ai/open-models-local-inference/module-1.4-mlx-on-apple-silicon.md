@@ -390,75 +390,204 @@ Memory debugging requires a different mindset. If a model loads slowly, swaps he
 
 The debugging lesson is transferable beyond MLX. Every local runtime has layers, and every layer can fail in a different way. MLX gives Mac learners a clean place to practice that layered reasoning because the environment can be small enough to understand.
 
-## 7. Compare MLX With The Rest Of The Local Inference Map
+## 7. Compare Runtimes With A Controlled Test
 
-MLX sits inside a larger ecosystem. To use it well, you need to compare it honestly with other options. The goal of comparison is not to crown one tool. The goal is to choose a tool that makes the next learning step easier and the next engineering decision clearer.
+Runtime comparison becomes useful only after you control the variables that are not the runtime. If one test uses a different prompt, a different model family, and a different token budget, the result does not tell you whether MLX, Ollama, Transformers, or a GGUF tool behaved better. It tells you that several things changed at once. A controlled test fixes the task first, then records the remaining differences honestly.
 
-Ollama is often the best first experience for someone who wants a local chat model with minimal friction. It abstracts model management and exposes simple commands and APIs. That simplicity is valuable, but it also hides some mechanics. A learner who only uses Ollama may not see how tokenizers, chat templates, model formats, and Python workflows fit together. MLX is stronger when the learner needs to touch those mechanics directly.
+For this module, use a small task that can be judged without a benchmark harness: rewrite rough operational notes into a concise handoff. The task is short enough for laptop testing, but it still reveals important behavior. A good answer preserves the deployment time, the database timeout signal, the queue backlog, and the next checks. A bad answer may sound fluent while inventing a root cause or dropping the queue detail.
 
-Hugging Face Transformers is broader than MLX and deeply important for model engineering. It is the ecosystem many teams use for downloading models, tokenizers, configs, and training or evaluation code. MLX can integrate with Hugging Face-hosted MLX-compatible models, but it is not the same as the full Transformers workflow. A learner should eventually understand both the Mac-native path and the broader model ecosystem.
+The comparison artifact should name the task, prompt file, model identifier, runtime, token limit, sampling settings, and observed result. That may feel formal for a laptop experiment, but it prevents the most common comparison error: remembering the strongest answer from one tool and the weakest answer from another. The record does not need to be elaborate. It needs to be complete enough that another learner can repeat the run.
 
-Linux CUDA workflows are essential for many production and research settings. They are not the right first mental model for every Mac learner. Starting with CUDA concepts before local inference concepts can invert the learning sequence. The learner may spend too much time on drivers, containers, and GPU allocation before understanding prompts, context, quantization, throughput, or evaluation. MLX lets them learn those model-level ideas first on hardware they already control.
+```bash
+cat > runtime-comparison.md <<'EOF'
+# Runtime Comparison: Incident Handoff
+
+Task:
+Rewrite synthetic incident notes into a concise handoff.
+
+Prompt file:
+handoff_prompt.txt
+
+Success criteria:
+- Preserve deployment timing without claiming proven causality.
+- Preserve database timeout and queue backlog signals.
+- Avoid invented root cause statements.
+- Return a concise handoff within the chosen token budget.
+
+Runs:
+| Runtime | Model | Token limit | Settings | Result notes |
+|---|---|---:|---|---|
+| MLX LM | mlx-community/Llama-3.2-3B-Instruct-4bit | 180 | default sampling | fill in after run |
+| Other runtime | comparable model if available | 180 | record defaults | fill in after run |
+EOF
+```
+
+This file separates model evidence from runtime evidence in a concrete way. Model evidence is about whether the chosen weights and prompt produce useful text. Runtime evidence is about installation path, load time, generation time, resource pressure, and how much control the tool gives you over the experiment. If the MLX run preserves the facts and another runtime drops them, check whether the models were comparable before claiming a runtime victory.
+
+A fair test also records what the tool hides. Ollama may make a local chat workflow fast to start, but the learner should still identify the model artifact and quantization used for the run. Transformers may expose tokenization and generation settings more directly, but setup can add dependency work that is unrelated to the handoff task. GGUF-based tools may make cross-platform quantized inference easier to compare across machines, while MLX gives the Mac learner a native Python path for the same kind of prompt experiment.
 
 ```ascii
 +--------------------------------------------------------------------------------+
-|                     Local Inference Runtime Decision Surface                    |
+|                         Controlled Runtime Comparison                           |
 +--------------------------------------------------------------------------------+
 |                                                                                |
-|  Need quick chat?                                                              |
-|      -> start with a simple local model tool such as Ollama                     |
+|  Fixed across runs                                                             |
+|    task -> prompt file -> token limit -> success criteria                       |
 |                                                                                |
-|  Need Mac-native Python experiments?                                           |
-|      -> use MLX LM and keep scripts reproducible                               |
+|  Recorded per run                                                              |
+|    runtime -> model artifact -> settings -> load time -> generation time        |
 |                                                                                |
-|  Need broad model engineering workflows?                                       |
-|      -> learn Hugging Face tooling and model repositories                       |
-|                                                                                |
-|  Need cross-platform quantized local models?                                   |
-|      -> evaluate GGUF-based runtimes                                           |
-|                                                                                |
-|  Need multi-user production serving?                                           |
-|      -> evaluate server runtimes, GPUs, queues, observability, and policy       |
+|  Judged after runs                                                             |
+|    fact preservation -> invented claims -> latency -> setup friction            |
 |                                                                                |
 +--------------------------------------------------------------------------------+
 ```
 
-The decision surface becomes more important as the learner advances. A beginner may only need "what runs on my machine today?" An intermediate learner needs "how do I compare two runtimes fairly?" A senior practitioner needs "which runtime teaches the team the right thing for the next decision?" MLX can answer the first question for many Mac users, but its greatest teaching value may be the second and third questions.
+The diagram is a checklist, not a ranking. A Mac-native MLX run can win the setup and scripting category while another runtime wins cross-platform availability. A GGUF run can be easier to share with non-Mac users while the MLX run remains easier for an Apple Silicon learner to inspect from Python. The useful result is not a trophy; it is a written explanation of which constraint mattered most for this task.
 
-A fair comparison uses the same task across tools. If you compare MLX with one prompt and Ollama with another prompt, you are comparing anecdotes. If you compare a small quantized MLX model with a much larger model elsewhere, you are mostly comparing model capacity. A good comparison fixes the task, prompt, model family where possible, token budget, and success criteria. Only then does runtime behavior become meaningful evidence.
+**Active Learning Prompt:** Before you compare two runtime outputs, write down one reason the model could be responsible for a difference and one reason the runtime could be responsible. That short separation protects you from treating every output-quality problem as a tool problem.
 
-For example, suppose your goal is to summarize short incident notes locally. You can run the same notes through an MLX-compatible model and through another local runtime. Evaluate whether each output preserves key facts, avoids invented causes, stays concise, and returns quickly enough for the workflow. That comparison is far more useful than asking which runtime is "faster" without defining the task.
+## 8. Record Artifact, Version, And Timing Evidence
 
-## 8. From Beginner Skill To Senior Judgment
+An MLX experiment becomes reusable when the run record is specific enough to reconstruct. The model identifier is the first piece, but it is not the whole record. A useful note also captures the Python version, package versions, machine architecture, prompt file, token limit, and timing split between loading and generation. Those fields turn "it worked on my Mac" into evidence another person can inspect.
 
-Beginner MLX skill is the ability to install the package, run a model, and explain why Apple Silicon is a legitimate local inference platform. Intermediate skill is the ability to write repeatable scripts, compare models, and debug failures without guessing. Senior skill is the ability to decide when the MLX result should influence architecture and when it should remain a local prototype.
+The timing split matters because first-run behavior can be misleading. A slow first command may include model download, cache population, tokenizer load, weight loading, and generation. A later command may skip several of those costs. If you report only wall-clock time for the whole command, you may blame generation for work that happened before the first token could be produced.
 
-The first senior question is reproducibility. If a team member says a model worked well on their Mac, can another team member reproduce the result? Reproducibility needs more than a screenshot. It needs the model identifier, package versions, machine class, prompt, token settings, and expected behavior. Without those details, the result may be interesting but not yet useful evidence.
+```bash
+cat > run_record.py <<'PY'
+import json
+import platform
+import subprocess
+import time
+from pathlib import Path
 
-The second senior question is operational transfer. If the team later deploys on Linux GPUs or a managed inference platform, which lessons from the MLX prototype transfer? Prompt wording, evaluation cases, failure categories, latency expectations, and privacy requirements often transfer well. Exact runtime performance, memory behavior, and package commands may not. A senior engineer preserves the transferable learning and discards the laptop-specific assumptions.
+from mlx_lm import generate, load
 
-The third senior question is governance. Local inference can make privacy easier because data may not leave the machine, but it does not automatically solve data handling. A developer can still paste sensitive data into a model that logs prompts, sync model outputs into an unapproved tool, or use a model whose license does not fit the project. MLX is local, but local does not mean policy-free.
+MODEL = "mlx-community/Llama-3.2-3B-Instruct-4bit"
+PROMPT_PATH = Path("handoff_prompt.txt")
+MAX_TOKENS = 180
 
-The fourth senior question is user experience. A local model that works in a terminal may still be unsuitable for a user workflow if it is slow, inconsistent, or hard to update. Engineers must distinguish between a successful technical demo and a usable product capability. MLX can help produce the demo quickly, but the team still needs product thinking, evaluation, observability, and maintenance plans.
+def package_version(name: str) -> str:
+    result = subprocess.run(
+        ["python", "-m", "pip", "show", name],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    for line in result.stdout.splitlines():
+        if line.startswith("Version:"):
+            return line.split(":", 1)[1].strip()
+    return "not-found"
 
-```ascii
-+--------------------------------------------------------------------------------+
-|                      What Transfers From An MLX Prototype?                      |
-+--------------------------------------------------------------------------------+
-|                                                                                |
-|  Transfers well                         Does not transfer automatically          |
-|  -----------------------------------    ------------------------------------    |
-|  Prompt patterns                        Laptop-specific latency numbers          |
-|  Evaluation examples                    Unified-memory behavior on one Mac       |
-|  Failure categories                     Local shell commands as deployment       |
-|  Privacy requirements                   Assumption that every user has a Mac     |
-|  Model-family observations              Exact package versions forever           |
-|  Output quality notes                   Single-user workflow as shared service   |
-|                                                                                |
-+--------------------------------------------------------------------------------+
+prompt = PROMPT_PATH.read_text()
+
+load_started = time.perf_counter()
+model, tokenizer = load(MODEL)
+load_finished = time.perf_counter()
+
+generate_started = time.perf_counter()
+output = generate(
+    model,
+    tokenizer,
+    prompt=prompt,
+    max_tokens=MAX_TOKENS,
+    verbose=False,
+)
+generate_finished = time.perf_counter()
+
+record = {
+    "model": MODEL,
+    "prompt_file": str(PROMPT_PATH),
+    "max_tokens": MAX_TOKENS,
+    "machine": platform.machine(),
+    "platform": platform.platform(),
+    "mlx_lm_version": package_version("mlx-lm"),
+    "mlx_version": package_version("mlx"),
+    "load_seconds": round(load_finished - load_started, 2),
+    "generate_seconds": round(generate_finished - generate_started, 2),
+    "output_preview": output[:300],
+}
+
+Path("run-record.json").write_text(json.dumps(record, indent=2) + "\n")
+print(json.dumps(record, indent=2))
+PY
+
+python run_record.py
 ```
 
-This boundary is the reason MLX belongs in a serious curriculum. It is not just a Mac convenience topic. It is a case study in matching runtime, hardware, and learning stage. When learners can explain that match, they become better at evaluating every other runtime too.
+This script uses `pip show` because package metadata is easy to paste into a lab note. It is not a full observability system, and it does not measure tokens per second directly. It does, however, capture enough context to answer practical questions. Did the experiment use the intended model? Was the interpreter native to the machine? Did most time disappear into loading or generation? Were the package versions known when the result was discussed?
+
+For a richer local study, add a small prompt suite instead of a single prompt. Keep each prompt in a file, run the same model against each file, and record whether the output preserved required facts. That gives you a miniature regression set. If a prompt edit improves one case and breaks another, the run record shows the trade-off immediately.
+
+```bash
+mkdir -p prompts
+cp handoff_prompt.txt prompts/handoff-basic.txt
+
+cat > prompts/handoff-causal-risk.txt <<'EOF'
+Rewrite the notes into a handoff. Do not claim a root cause unless the notes prove it.
+
+Notes:
+- errors increased after a deployment
+- database timeouts and queue backlog are both visible
+- rollback helped new errors but backlog remains
+- next engineer should inspect worker saturation and slow queries
+EOF
+```
+
+The second prompt tests a specific behavior: whether the model can avoid overstating causality. That is different from testing whether generation works. A healthy runtime can still run a model that makes a poor judgment, and a careful prompt can sometimes reduce that risk. When the test names the behavior, the learner can improve the workflow without changing unrelated parts of the stack.
+
+Finally, record license and data-handling notes before using real internal examples. MLX execution can keep inference local, but the model artifact still has a license and the generated output can still be stored, synced, or pasted somewhere inappropriate. A good lab uses synthetic notes until the team has approved the model, the data category, and the storage location for outputs.
+
+## 9. Manage Caches, Disk, And Repeat Runs
+
+Local model experiments leave traces on disk, and those traces affect later tests. Package wheels live in one cache, model artifacts usually live under a hub cache, and your project directory may contain prompt files, generated notes, and run records. If you do not know which files are part of the experiment, you may accidentally compare a cold model download against a warm cached run or share output files that were only meant for a private lab.
+
+Start by measuring disk use before you remove anything. Model caches can be large, and a learner who downloads several quantized variants may run out of space before they run out of ideas. The goal is not to memorize one cache path forever. The goal is to recognize that model artifacts are persistent local state, and persistent state belongs in the experiment record when it changes timing or reproducibility.
+
+```bash
+du -sh . 2>/dev/null || true
+du -sh ~/.cache/huggingface 2>/dev/null || true
+python -m pip cache info
+```
+
+Those commands answer different questions. The project directory size tells you how much local lab material you created. The Hugging Face cache size shows whether model downloads are accumulating outside the project. The pip cache output tells you about package downloads, not model weights. Keeping those categories separate prevents a common cleanup mistake: deleting the virtual environment and wondering why the model cache still consumes disk space.
+
+For repeatable runs, create a short manifest after the environment is working. `pip freeze` is not a perfect software bill of materials, but it is useful for a learner-scale lab because it records the installed Python packages at the moment of the test. Pair it with the run record from the previous section and the prompt files used in the comparison. That small bundle is enough for a reviewer to see whether the result came from a stable setup or from a drifting shell session.
+
+```bash
+python -m pip freeze > requirements-run.txt
+ls -lh handoff_prompt.txt run-record.json requirements-run.txt
+```
+
+A clean rerun should be deliberate. If you want to measure warm-generation behavior, keep the downloaded model cache and report that the model was already present. If you want to measure the full first-use experience, say that explicitly and expect download time to dominate. Do not mix those measurements in the same conclusion. A learner who reports "generation took several minutes" after including a first download is describing onboarding time, not token generation behavior.
+
+Environment cleanup should also be scoped. Removing the lab virtual environment resets Python packages for that directory, but it does not remove model artifacts stored in a user cache. Removing prompt and output files resets the task material, but it does not change package versions. Removing model cache entries forces future downloads, but it does not prove the model will behave differently. Name the state you are resetting before you reset it.
+
+```bash
+cat > cleanup-note.md <<'EOF'
+# Cleanup Note
+
+Kept:
+- prompt files
+- run-record.json
+- requirements-run.txt
+
+Reset for next test:
+- virtual environment packages will be recreated
+
+Not reset:
+- downloaded model cache
+- previous runtime-comparison.md notes
+EOF
+```
+
+This note may seem more careful than a beginner lab needs, but it teaches the habit that makes local inference experiments trustworthy. A future rerun can explain why it became faster, why it used less network, or why a package version changed. Without the note, the learner may attribute every difference to MLX or the model when the real cause was cached state.
+
+One more practical detail belongs in the run record: whether the model was already present before the command began. You can capture that as a plain sentence rather than trying to inspect every internal cache file. Write "model already cached" when the download had happened before the measurement, and write "first local download included" when network transfer was part of the timing. That distinction makes a timing note honest without turning a beginner lab into cache forensics.
+
+If a learner needs to hand the experiment to another Mac user, share the prompt files, the run record, and the package manifest before sharing generated output. The receiving learner can recreate the environment, run the same prompt, and compare behavior without depending on another person's prose summary. Generated answers are still useful, but they are evidence after the reproducible inputs, not a substitute for them.
+
+**Active Learning Prompt:** If a second run is much faster than the first, which three cached or already-loaded states could explain the difference? Name them before you change the model, because the answer may be model download cache, weight loading behavior, or a Python environment that no longer needs package installation.
 
 ## Did You Know?
 
@@ -471,14 +600,14 @@ This boundary is the reason MLX belongs in a serious curriculum. It is not just 
 
 | Mistake | Why It Hurts | Better Move |
 |---|---|---|
-| Assuming Macs are not serious learning machines | This blocks useful local experimentation before the learner has tested what the machine can actually do | Use the Apple Silicon hardware deliberately and measure small MLX experiments before escalating to remote infrastructure |
-| Treating MLX as a universal solution | This creates wrong expectations and leads teams to force laptop workflows into problems that need shared serving | Use MLX where Mac-native learning, local privacy, or Python prototyping is the real goal |
-| Skipping runtime comparison entirely | This prevents transfer learning because the learner never sees what MLX hides or exposes compared with other tools | Compare MLX with Ollama, Transformers, GGUF tools, and Linux GPU paths using the same task |
-| Jumping to infrastructure before local mastery | This increases friction too early and can make learners debug drivers before they understand inference behavior | Learn on the machine you control first, then move to larger infrastructure when the task demands it |
-| Choosing the largest possible model first | This often creates memory pressure, slow iteration, and confusing failures that teach little about the task | Start with a smaller quantized model that leaves headroom and enables repeated experiments |
-| Confusing model quality with runtime health | Weak answers may come from the prompt, model, token settings, or chat template rather than from MLX itself | Separate setup checks, model loading, prompt formatting, and output evaluation before changing tools |
-| Forgetting to record the experiment setup | Without model names, package versions, prompt text, and timing, another learner cannot reproduce the result | Keep a short run note that captures model, machine, command, prompt, token limit, and observed behavior |
-| Treating local as automatically governed | Local execution can still violate licensing, data handling, or team policy if the workflow is careless | Review model licenses, data sensitivity, output storage, and sharing rules before using real work data |
+| Running a non-native Python interpreter | MLX may install or run through the wrong architecture path, which makes hardware diagnosis misleading | Print `platform.machine()` inside the active environment and use a native Apple Silicon Python |
+| Trusting a shell command before checking imports | A broken entry point can look like a framework failure even when the package is installed elsewhere | Test `import mlx_lm` and try `python -m mlx_lm.generate` from the same virtual environment |
+| Choosing the largest model first | A model that barely fits can create memory pressure, slow iteration, and confusing failures | Start with a smaller quantized model that leaves headroom for macOS, the prompt, and repeated tests |
+| Skipping the chat template | Instruction models may receive text in a format that does not match their training convention | Use the tokenizer's chat template when available and record whether the script applied it |
+| Comparing runtimes with different tasks | The team cannot tell whether the model, prompt, token limit, or runtime caused the difference | Fix the prompt, task, token budget, and success criteria before comparing runtime behavior |
+| Reporting only whole-command time | Download, cache, and weight loading costs get mixed with generation latency | Separate model load time from generation time in the Python runner |
+| Recording output without artifact details | Another learner cannot reproduce or challenge the result without knowing what actually ran | Save the model identifier, package versions, machine architecture, prompt file, and token limit |
+| Testing with real sensitive notes too early | Local execution does not remove license, retention, sharing, or policy obligations | Use synthetic notes until the model license, data category, and output storage are approved |
 
 ## Quiz
 
@@ -741,12 +870,22 @@ EOF
 - [ ] You diagnosed at least one likely failure by naming the failure domain before proposing fixes.
 - [ ] You wrote a runtime decision note that explains when MLX is appropriate and when another runtime would be better.
 
+## Sources
+
+- [MLX](https://github.com/ml-explore/mlx) — Primary upstream source for Apple's MLX array framework.
+- [MLX LM](https://github.com/ml-explore/mlx-lm) — Canonical MLX-LM repository and README for language-model workflows.
+- [MLX Examples](https://github.com/ml-explore/mlx-examples) — Upstream examples for MLX tasks beyond a single language-model command.
+- [MLX documentation](https://ml-explore.github.io/mlx/build/html/index.html) — Hosted documentation for MLX concepts and API reference.
+- [MLX installation guide](https://ml-explore.github.io/mlx/build/html/install.html) — Official MLX installation instructions.
+- [MLX unified memory documentation](https://ml-explore.github.io/mlx/build/html/usage/unified_memory.html) — Official explanation of MLX unified-memory behavior.
+- [Hugging Face Hub MLX guide](https://huggingface.co/docs/hub/en/mlx) — Hugging Face documentation for MLX-compatible model repositories.
+- [Hugging Face mlx-community](https://huggingface.co/mlx-community) — Community namespace for MLX-converted model artifacts.
+- [mlx-lm on PyPI](https://pypi.org/project/mlx-lm/) — Package metadata for installing MLX-LM through pip.
+- [Ollama](https://github.com/ollama/ollama) — Upstream local-model runtime used for comparison with MLX.
+- [llama.cpp](https://github.com/ggerganov/llama.cpp) — Upstream GGUF-focused local inference runtime used for cross-platform comparison.
+- [Transformers documentation](https://huggingface.co/docs/transformers/index) — Hugging Face documentation for the broader Python model-engineering workflow.
+- [vLLM documentation](https://docs.vllm.ai/en/latest/) — Server-oriented inference runtime documentation for later comparison with laptop workflows.
+
 ## Next Module
 
 Continue to [Running Open Models on Linux Boxes](./module-1.5-running-open-models-on-linux-boxes/).
-
-## Sources
-
-- [MLX](https://github.com/ml-explore/mlx) — Primary upstream source describing MLX as Apple's array framework for machine learning on Apple Silicon.
-- [MLX LM](https://github.com/ml-explore/mlx-lm) — Upstream package showing practical large language model inference workflows built on MLX for Apple Silicon.
-- [MLX Examples](https://github.com/ml-explore/mlx-examples) — Upstream example collection demonstrating MLX across text, image, audio, and multimodal workloads.
