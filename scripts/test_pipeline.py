@@ -188,6 +188,7 @@ class TestCodexPushVerification(unittest.TestCase):
              patch.object(runner, "start_watchdog", return_value=(FakeWatchdogState(), [])), \
              patch.object(runner, "stop_watchdog"), \
              patch.object(runner, "write_record"), \
+             patch.object(runner, "_git_head_sha", side_effect=["old", "new"]), \
              patch.object(runner, "verify_current_branch_pushed", return_value=(False, stale_error)):
             result = runner.invoke(
                 "codex",
