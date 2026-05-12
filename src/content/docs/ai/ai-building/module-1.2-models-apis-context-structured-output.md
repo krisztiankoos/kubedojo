@@ -772,7 +772,15 @@ Your company receives support tickets through email, and the first AI feature wi
 
 ### Step 1: Define The Workflow
 
-Write a short decision record, and include the feature name, and include the user workflow. Include the downstream action, and include the risk of a wrong decision, and include the fallback path. Example format:.
+Write a short decision record covering:
+
+- feature name
+- user workflow
+- downstream action
+- risk of a wrong decision
+- fallback path
+
+Example format:
 
 ```text
 Feature:
@@ -794,13 +802,28 @@ Send rejected or high-risk outputs to human review.
 
 ### Step 2: Choose The Model Path
 
-Choose a primary model for the common path, choose whether a second model is needed for escalation, and justify the decision using constraints. Use these prompts to guide your answer: what latency does the user experience require, how many tickets are routine, which tickets are high risk, can the output be mechanically validated, and when should a human take over. Your answer should name the tradeoff, and a good answer is not "use the best model."
+Choose a primary model for the common path and decide whether a second model is needed for escalation. Then justify the decision using constraints:
+
+- what latency does the user experience require?
+- how many tickets are routine?
+- which tickets are high risk?
+- can the output be mechanically validated?
+- when should a human take over?
+
+Your answer should name the tradeoff. A good answer is not "use the best model."
 
 A good answer ties the model path to the workflow.
 
 ### Step 3: Design The Context Package
 
-Write the context pieces your application should send, and include task instruction, and include allowed labels. Include escalation policy, and include the ticket text, and include output requirements. Include any account metadata that matters, and use placeholders where real data would be inserted.
+Write the context pieces your application should send, including:
+
+- task instruction
+- allowed labels
+- escalation policy
+- ticket text
+- output requirements
+- account metadata that matters (use placeholders where real data would be inserted)
 
 ```text
 Task:
@@ -837,7 +860,7 @@ Return a JSON object that matches the application schema.
 
 ### Step 4: Define The Candidate Output
 
-Create an example object, and use this shape or improve it.
+Create an example object using this shape or improve it.
 
 ```json
 {
@@ -854,11 +877,11 @@ Create an example object, and use this shape or improve it.
 }
 ```
 
-Check whether each field has a downstream purpose, and if a field has no purpose, remove it, and if downstream logic needs a field, add it.
+Check whether each field has a downstream purpose. Remove fields with no purpose. Add fields if downstream logic needs them.
 
 ### Step 5: Write Validation Rules
 
-Write at least eight validation rules, and include syntax rules, schema rules, allowed-value rules, business-policy rules, and risk rules. Example rules:
+Write at least eight validation rules. Cover syntax rules, schema rules, allowed-value rules, business-policy rules, and risk rules. Example rules:
 
 - [ ] Output must parse as JSON.
 - [ ] Required fields must be present.
@@ -873,11 +896,11 @@ Write at least eight validation rules, and include syntax rules, schema rules, a
 
 ### Step 6: Test A Failure Case
 
-Create one candidate output that looks valid but should be rejected, and for example, use `issue_type: "security_risk"` with `requires_human_escalation: false`. Explain which validation rule catches it, and explain what the application should do next, and acceptable next actions include safe rejection, limited retry, or human review. The correct action depends on risk, and for security-risk tickets, human review is usually the safer fallback.
+Create one candidate output that looks valid but should be rejected. For example, use `issue_type: "security_risk"` with `requires_human_escalation: false`. Explain which validation rule catches it. Then explain what the application should do next. Acceptable next actions include safe rejection, limited retry, or human review. The correct action depends on risk, and for security-risk tickets, human review is usually the safer fallback.
 
 ### Step 7: Define Observability
 
-Write the metadata your system should log, and do not log sensitive ticket text unless your organization has explicit approval. Include:
+Write the metadata your system should log. Do not log sensitive ticket text unless your organization has explicit approval.
 
 - [ ] feature name
 - [ ] model name
@@ -906,7 +929,15 @@ Explain how these fields help operators debug the feature.
 
 ### Extension Challenge
 
-Add a second-pass review path, and define when the first model's output should be sent to a stronger model. Define when the stronger model's output should still go to a human, and define how the application prevents the second model from overriding hard policy rules. A strong answer keeps the policy outside the model, and the model can recommend, and the application decides.
+Add a second-pass review path.
+
+Define:
+
+- when the first model's output should be sent to a stronger model
+- when the stronger model's output should still go to a human
+- how the application prevents the second model from overriding hard policy rules
+
+A strong answer keeps policy outside the model. The model can recommend, while the application decides.
 
 ## Sources
 
