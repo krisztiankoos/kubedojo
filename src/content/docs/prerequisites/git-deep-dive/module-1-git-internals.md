@@ -6,13 +6,17 @@ sidebar:
   order: 1
 ---
 
-# Module 1: The Ghost in the Machine — Git Internals
-**Complexity**: [MEDIUM]
-**Time to Complete**: 90 minutes
-**Prerequisites**: Zero to Terminal Module 0.6 (Git Basics: init, add, commit, push, pull)
-**Next Module**: [Module 2: The Art of the Branch](../module-2-advanced-merging/)
+> **Complexity**: [MEDIUM]
+>
+> **Time to Complete**: 90 minutes
+>
+> **Prerequisites**: Zero to Terminal Module 0.6 (Git Basics: init, add, commit, push, pull)
+>
+> **Next Module**: [Module 2: The Art of the Branch](../module-2-advanced-merging/)
 
-## Learning Outcomes
+---
+
+## What You'll Be Able to Do
 By the end of this module, you will be able to:
 1. **Diagnose** repository state by inspecting the `.git` directory, object database, refs, and index.
 2. **Compare** blobs, trees, and commits when reconstructing project history from Git objects.
@@ -24,7 +28,7 @@ By the end of this module, you will be able to:
 
 Most engineers learn Git as a set of porcelain commands — `git add`, `git commit`, `git push`, `git pull` — and rely on muscle memory for everything that does not break. The trouble starts the first time a branch behaves in a way the porcelain cannot explain. A merge appears to lose work that is in fact still recoverable. A reset moves a pointer in a way the engineer assumed would also delete history. A rebase rewrites commits whose original SHAs are still in the reflog, but only for ninety days. Underneath the surface, Git is a small content-addressable database of immutable objects (blobs, trees, commits, tags) plus a set of movable names (refs) that point at those objects. Once that mental model clicks, the porcelain stops being magic and starts being a thin layer over a system that is, by design, hard to permanently destroy.
 
-Platform engineers manage that same content-addressable model at scale every day. A Kubernetes `ConfigMap` that disappears from a release branch is not a mystery; it is either still present in an earlier tree object, still in the working tree, still in the index, or still in a reflog entry on someone's laptop. Knowing how Git stores and references that content is the difference between recovery and panic. Throughout the Kubernetes sections in KubeDojo, the shorthand `k` means `alias k=kubectl`; once configured, commands such as `k get configmap` are read as normal `kubectl` usage.
+Platform engineers manage that same content-addressable model at scale every day. A Kubernetes `ConfigMap` that disappears from a release branch is not a mystery; it is either still present in an earlier tree object, still in the working tree, still in the index, or still in a reflog entry on someone's laptop. Knowing how Git stores and references that content is the difference between recovery and panic. When later KubeDojo modules discuss Kubernetes 1.35+ operations, runnable examples use the full `kubectl` binary so copied commands behave the same in scripts and interactive terminals.
 
 Git feels mysterious when you only know porcelain commands such as `git add`, `git commit`, and `git push`. Underneath that interface, however, Git is a small database of immutable objects plus a set of movable names that point at those objects. This module takes the black box apart carefully, preserving the beginner-friendly commands while adding the mental model you need for real recovery work. You will inspect the `.git` directory, compare object types, implement staged snapshots, evaluate hash-based storage, and design recovery steps before panic pushes the wrong pointer.
 
@@ -356,9 +360,9 @@ ref: refs/heads/main
 
 This shows that `HEAD` points to the `main` branch, and the `main` branch points to the latest commit. When you make a new commit, Git creates a commit object, points that commit at its parent and tree, and then moves the current branch pointer forward. If `HEAD` is detached, Git can still create the commit, but no branch name moves with it. That is why detached commits feel lost after checkout even though the objects may still exist.
 
-A medium-sized startup, let's call them KubeFlow Inc., struggled with configuration drift across development and staging Kubernetes environments. Their main application relied on a critical `ConfigMap` for database connection strings and feature flags. During cleanup, a developer deleted a local branch after an experimental rebase and believed she was only removing a label. She was technically right about the branch deletion, but she had not checked whether the commits reachable only from that label were still needed for recovery.
+Hypothetical scenario: A platform team struggles with configuration drift across development and staging Kubernetes environments. Their main application relies on a critical `ConfigMap` for database connection strings and feature flags. During cleanup, a developer deletes a local branch after an experimental rebase and believes she is only removing a label. She is technically right about the branch deletion, but she has not checked whether the commits reachable only from that label are still needed for recovery.
 
-The incident was resolved because a senior engineer used `git reflog` to find the object ID that `HEAD` had pointed to before the rebase, then restored the missing manifest from that commit. The deeper lesson is not "never delete branches." The lesson is that Git recovery depends on reachability and time. Reflogs preserve recent movements of refs, unreachable objects may survive until pruning, and a calm investigation can often recover what a rushed force-push would make harder to explain.
+In the scenario, recovery succeeds because a senior engineer uses `git reflog` to find the object ID that `HEAD` had pointed to before the rebase, then restores the missing manifest from that commit. The deeper lesson is not "never delete branches." The lesson is that Git recovery depends on reachability and time. Reflogs preserve recent movements of refs, unreachable objects may survive until pruning, and a calm investigation can often recover what a rushed force-push would make harder to explain.
 
 Designing a safe recovery plan starts by freezing evidence. Do not run aggressive garbage collection, do not prune immediately, and do not force-push a guessed fix over the top of the shared branch. First, inspect `HEAD`, branch refs, reflog entries, and object existence. Then create a protective branch or tag pointing at any suspicious commit before you continue. A branch name costs almost nothing, and it can preserve a commit long enough for the team to inspect it carefully.
 
@@ -454,7 +458,7 @@ A branch is a ref, which is a lightweight name pointing at a commit object. Crea
 </details>
 
 ## Hands-On Exercise
-This exercise builds a small repository and asks you to inspect each Git layer deliberately. Use a disposable directory, because the point is to experiment without fear. You will diagnose repository state through `.git`, compare blobs, trees, and commits, implement staging-area changes, evaluate content-addressable behavior, and design a safe recovery plan for detached work. If you also have a Kubernetes cluster available, you may apply the sample `ConfigMap` with the `k` alias after defining `alias k=kubectl`, but the Git exercise does not require a cluster.
+This exercise builds a small repository and asks you to inspect each Git layer deliberately. Use a disposable directory, because the point is to experiment without fear. You will diagnose repository state through `.git`, compare blobs, trees, and commits, implement staging-area changes, evaluate content-addressable behavior, and design a safe recovery plan for detached work. If you also have a Kubernetes cluster available, you may apply the sample `ConfigMap` with `kubectl`, but the Git exercise does not require a cluster.
 
 ### Setup
 Create a temporary repository and configure an identity if your global Git config is empty. Keep all commands inside the disposable directory. The sample file is a Kubernetes `ConfigMap` because configuration drift is a realistic platform failure, but Git treats it like any other text file. Your job is to observe which Git layer changes after each operation.
@@ -494,9 +498,6 @@ Check out the previous commit by object ID to enter detached `HEAD`, make a smal
 - [ ] You can evaluate content-addressable storage by explaining object IDs, immutability, and packfile optimization.
 - [ ] You can design a safe recovery plan that preserves detached or unreachable work before cleanup.
 
-## Next Module
-Next, continue to [Module 2: The Art of the Branch](../module-2-advanced-merging/) to practice branch movement, merge structure, and conflict recovery with the object model you built here.
-
 ## Sources
 - [Pro Git: Plumbing and Porcelain](https://git-scm.com/book/en/v2/Git-Internals-Plumbing-and-Porcelain)
 - [Pro Git: Git Objects](https://git-scm.com/book/en/v2/Git-Internals-Git-Objects)
@@ -510,3 +511,6 @@ Next, continue to [Module 2: The Art of the Branch](../module-2-advanced-merging
 - [Git documentation: git-reflog](https://git-scm.com/docs/git-reflog)
 - [Git documentation: hash-function-transition (SHA-256)](https://git-scm.com/docs/hash-function-transition)
 - [Kubernetes documentation: ConfigMaps](https://kubernetes.io/docs/concepts/configuration/configmap/)
+
+## Next Module
+Next, continue to [Module 2: The Art of the Branch](../module-2-advanced-merging/) to practice branch movement, merge structure, and conflict recovery with the object model you built here.
