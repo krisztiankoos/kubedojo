@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Prompt Engineering Fundamentals"
 slug: ai-ml-engineering/ai-native-development/module-1.6-prompt-engineering-fundamentals
 sidebar:
@@ -134,7 +135,7 @@ state the missing information before making assumptions.
 
 This structure works because it moves hidden expectations into visible instructions. It tells the model what domain to reason in, which trade-offs matter, and how to format the answer. It also prevents a common failure where the model gives a broad architecture redesign when the team needs a small fix before an incident review.
 
-The same structure can be represented in API message roles. A system message usually contains durable behavior and safety constraints. A user message usually contains the task and task-specific data. Assistant messages may contain prior conversation or examples of desired behavior. Different providers expose these roles differently, but the underlying concept is stable: separate durable instructions from task data whenever possible.
+The same structure can be represented in API message roles. [A system message usually contains durable behavior and safety constraints. A user message usually contains the task and task-specific data.](https://developers.openai.com/api/docs/guides/prompting#refine-your-prompt) Assistant messages may contain prior conversation or examples of desired behavior. Different providers expose these roles differently, but the underlying concept is stable: separate durable instructions from task data whenever possible.
 
 ```json
 {
@@ -151,7 +152,7 @@ The same structure can be represented in API message roles. A system message usu
 }
 ```
 
-The boundary between trusted and untrusted text matters. System instructions written by the application are trusted. User input, uploaded files, web pages, tickets, emails, and logs are untrusted data. A production prompt should make that separation visible, because prompt injection attacks often work by making untrusted data look like instructions.
+The boundary between trusted and untrusted text matters. System instructions written by the application are trusted. User input, uploaded files, web pages, tickets, emails, and logs are untrusted data. A production prompt should make that separation visible, because [prompt injection attacks often work by making untrusted data look like instructions](https://developers.openai.com/api/docs/guides/agent-builder-safety).
 
 ```ascii
 +-----------------------------+      +--------------------------------+
@@ -228,11 +229,11 @@ Return:
 4. A test case that would prove the fix
 ```
 
-Reasoning-oriented prompting asks the model to decompose a problem before answering. Older general-purpose models often benefited from explicit instructions to reason step by step, especially on math, logic, and multi-step planning tasks. Modern reasoning models may perform internal reasoning without needing a visible chain, and some providers recommend concise instructions plus a reasoning-control parameter instead of asking for hidden reasoning text.
+Reasoning-oriented prompting asks the model to decompose a problem before answering. Older general-purpose models often benefited from explicit instructions to reason step by step, especially on math, logic, and multi-step planning tasks. [Modern reasoning models may perform internal reasoning without needing a visible chain, and some providers recommend concise instructions plus a reasoning-control parameter instead of asking for hidden reasoning text.](https://developers.openai.com/api/docs/guides/reasoning-best-practices#how-to-prompt-reasoning-models-effectively)
 
 The practical rule is to ask for useful reasoning artifacts, not necessarily private reasoning. For example, "show the assumptions, checks, and final recommendation" is usually better than demanding an unrestricted chain of thought. It gives the user inspectable evidence while avoiding verbose traces that may be unreliable, sensitive, or unnecessary.
 
-Structured-output prompting constrains the response shape. It can be done with plain instructions, but production systems should prefer provider-enforced schemas when available. A schema is stronger than a request because it moves enforcement from the model's style compliance into the API or validation layer. Prompt text can still explain the task, while the schema protects the integration contract.
+Structured-output prompting constrains the response shape. It can be done with plain instructions, but [production systems should prefer provider-enforced schemas when available](https://developers.openai.com/api/docs/guides/structured-outputs#structured-outputs-vs-json-mode). A schema is stronger than a request because it moves enforcement from the model's style compliance into the API or validation layer. Prompt text can still explain the task, while the schema protects the integration contract.
 
 ```json
 {
@@ -479,7 +480,7 @@ The practical senior move is to store prompts near the code that uses them. Incl
 
 Prompt security begins with one uncomfortable fact: the model processes instructions and data in the same token stream. Humans can label something as "a document," but the model still receives text that may contain imperative language. If untrusted text says "ignore the previous rules," the model may treat that as part of the task unless the system and surrounding application enforce a boundary.
 
-Direct prompt injection happens when a user intentionally sends an instruction that attempts to override the intended behavior. Indirect prompt injection happens when the malicious instruction is hidden inside content the model is asked to process, such as a resume, web page, email, ticket, or repository file. Indirect injection is especially dangerous because the user operating the system may not see the hidden instruction.
+[Direct prompt injection happens when a user intentionally sends an instruction that attempts to override the intended behavior. Indirect prompt injection happens when the malicious instruction is hidden inside content the model is asked to process, such as a resume, web page, email, ticket, or repository file.](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) Indirect injection is especially dangerous because the user operating the system may not see the hidden instruction.
 
 ```text
 Trusted task:
@@ -578,13 +579,13 @@ The library should evolve as models and workflows change. A template that was ne
 
 ## Did You Know?
 
-1. **Few-shot prompting changed the economics of task adaptation**: The GPT-3 paper showed that examples placed in the prompt could guide behavior without fine-tuning a separate model for every task, which made experimentation faster and cheaper for many teams.
+1. **Few-shot prompting changed the economics of task adaptation**: [The GPT-3 paper showed that examples placed in the prompt could guide behavior without fine-tuning a separate model for every task](https://arxiv.org/abs/2005.14165), which made experimentation faster and cheaper for many teams.
 
-2. **Prompt injection is a first-class application security risk**: OWASP classifies prompt injection as a major LLM application risk because untrusted text can manipulate model behavior when instructions and data are not separated carefully.
+2. **Prompt injection is a first-class application security risk**: [OWASP classifies prompt injection as a major LLM application risk](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) because untrusted text can manipulate model behavior when instructions and data are not separated carefully.
 
 3. **The best prompt is often shorter after debugging**: Effective prompt iteration frequently removes ambiguity rather than adding bulk, because redundant constraints and inconsistent examples can make the model's job harder.
 
-4. **Structured outputs shift reliability from wording to contracts**: When provider-enforced schemas or local validators are available, they turn part of the prompt problem into an interface problem that can be tested with ordinary software checks.
+4. **Structured outputs shift reliability from wording to contracts**: [When provider-enforced schemas or local validators are available, they turn part of the prompt problem into an interface problem that can be tested with ordinary software checks.](https://developers.openai.com/api/docs/guides/structured-outputs#json-mode)
 
 ---
 
@@ -775,6 +776,11 @@ Next, continue to [Module 1.7: AI-Powered Code Generation](./module-1.7-ai-power
 
 ## Sources
 
-- [Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165) — Foundational paper for GPT-3 and few-shot prompting as an alternative to fine-tuning.
-- [OWASP LLM01:2025 Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) — Primary security reference for prompt-injection threat models and terminology.
-- [The Prompt Report](https://arxiv.org/abs/2406.06608) — Broad survey of prompting techniques that complements the module's conceptual overview.
+- [developers.openai.com: prompting](https://developers.openai.com/api/docs/guides/prompting#refine-your-prompt) — OpenAI's prompting guidance explicitly recommends putting overall tone or role guidance in the system message and task-specific details in user messages.
+- [developers.openai.com: agent builder safety](https://developers.openai.com/api/docs/guides/agent-builder-safety) — OpenAI's agent safety guidance directly defines prompt injection in terms of untrusted text or data attempting to override instructions.
+- [developers.openai.com: reasoning best practices](https://developers.openai.com/api/docs/guides/reasoning-best-practices#how-to-prompt-reasoning-models-effectively) — The reasoning best-practices guide explicitly says reasoning models perform best with straightforward prompts and that 'think step by step' prompting may not help.
+- [developers.openai.com: structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs#structured-outputs-vs-json-mode) — The Structured Outputs guide directly contrasts JSON mode with schema-enforced Structured Outputs and recommends Structured Outputs when possible.
+- [genai.owasp.org: llm01 prompt injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/) — OWASP LLM01 explicitly defines prompt injection and discusses both direct and indirect forms.
+- [arxiv.org: 2005.14165](https://arxiv.org/abs/2005.14165) — Brown et al. is the primary source for GPT-3's few-shot, text-only task adaptation framing.
+- [developers.openai.com: structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs#json-mode) — The Structured Outputs docs explicitly say schema enforcement should be handled with Structured Outputs or, if unavailable, validation libraries and retries.
+- [The Prompt Report: A Systematic Survey of Prompting Techniques](https://arxiv.org/abs/2406.06608) — Broad survey of prompting techniques and terminology that complements the module's conceptual overview.
