@@ -7,12 +7,15 @@ sidebar:
   order: 9
 ---
 
-# Module 9: Automation and Customization - Hooks and Rerere
+> **Complexity**: [MEDIUM]
+>
+> **Time to Complete**: 75 minutes
+>
+> **Prerequisites**: Previous module in Git Deep Dive
+>
+> **Next Module**: [Module 10: Bridge to GitOps](../module-10-gitops-bridge/)
 
-**Complexity**: [MEDIUM]
-**Time to Complete**: 75 minutes
-**Prerequisites**: Previous module in Git Deep Dive
-**Next Module**: [Module 10: Bridge to GitOps](../module-10-gitops-bridge/)
+---
 
 ## Learning Outcomes
 
@@ -26,9 +29,9 @@ By the end of this module, you will be able to:
 
 ## Why This Module Matters
 
-It was a quiet Tuesday morning at a mid-sized fintech company, Vanguard Pay, when the automated alerting system suddenly filled the incident channel. The core payment microservice, deployed through GitOps into a Kubernetes 1.35 production cluster, had just consumed a new manifest from the main branch and started crash-looping. For Kubernetes examples in this course, configure `alias k=kubectl`; later you might confirm the blast radius with `k get pods` or `k describe deploy`, but in this incident the team first saw the failure through customer payment errors and a growing queue of failed transaction retries.
+Hypothetical scenario: a platform team maintains Kubernetes 1.35 manifests in a Git repository watched by a GitOps controller. A developer intends to make a small deployment change, stages a YAML file, and commits it while another editor buffer still contains a malformed indentation change and a credential-shaped configuration value. The remote CI system would eventually reject the problem, but the local workstation is the only place where the author still has the full context of the edit, the staging decision, and the intent behind the change.
 
-The culprit was painfully ordinary. A malformed YAML indentation change reached the repository in the same commit as a hardcoded credential-shaped configuration value, and the GitOps controller reacted faster than the humans around it. CI would have rejected the manifest eventually, yet the deployment trigger watched the branch closely enough that the broken state propagated before the pipeline finished. The team spent three hours rolling back workloads, rotating credentials, restoring clean configuration, and explaining why a local typo had become a production incident with a multi-million-dollar business impact.
+The lesson is not that GitOps is reckless or that CI is unnecessary. The lesson is that defects should be intercepted at the cheapest reliable point, and sometimes that point is before a commit object exists. A malformed manifest, an accidental secret, or an unhelpful commit message is easiest to fix while the developer is still in the local edit loop. Once the change becomes shared history, the same mistake may involve remote pipeline time, reviewer attention, branch protection failures, credential rotation, or noisy deployment automation.
 
 Git hooks exist because the cheapest defect is the one that never leaves the developer workstation. They let a repository interrupt local operations such as commit and push, run validation at the exact moment the developer has context, and reject changes before they become shared history. Hooks are not a replacement for CI, branch protection, or server-side policy, but they make the happy path safer and faster for engineers who are trying to do the right thing under deadline pressure.
 
@@ -446,7 +449,7 @@ The `nuke` alias is included because it appears in many real-world dotfiles, but
 
 Global configuration changes can also shift default Git behavior. Setting `pull.rebase` to `true` makes `git pull` fetch and rebase instead of fetch and merge, which helps teams that prefer linear local history. Setting `push.default` to `current` lets `git push` publish the current branch to a remote branch with the same name. These defaults save time, but they also encode workflow choices, so document them when onboarding a team.
 
-There is a useful analogy here with shell aliases such as `alias k=kubectl`. The alias does not make Kubernetes safer by itself; it lowers friction for commands you run frequently. Git aliases behave the same way. They should shorten well-understood operations, not hide operations that a learner has not yet understood. If a shortcut prevents you from explaining what the underlying command does, it is too early to depend on that shortcut.
+There is a useful analogy here with short shell aliases for frequent Kubernetes commands. The alias does not make Kubernetes safer by itself; it lowers friction for commands you run frequently. Git aliases behave the same way. They should shorten well-understood operations, not hide operations that a learner has not yet understood. If a shortcut prevents you from explaining what the underlying command does, it is too early to depend on that shortcut.
 
 When you review another engineer's dotfiles, pay attention to whether aliases are transparent or surprising. A harmless alias such as `git lg` makes output easier to read, while a destructive alias can remove work with one typo. Team documentation should recommend aliases that improve shared vocabulary and avoid requiring personal shortcuts for core workflows. Repository instructions must remain runnable for someone using plain Git without private shell customization.
 
