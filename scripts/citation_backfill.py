@@ -1464,23 +1464,15 @@ def _authorized_replacement_lines(seed: dict[str, Any], body: str) -> set[str]:
 
 
 def apply_inject_plan(body: str, plan: dict[str, Any], seed: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
-    """Apply authorized prose rewrites (orchestrator-driven) +
-    Codex-emitted inline insertions + append sources_section.
+    """Apply Codex-emitted inline insertions and merge sources.
     Returns (new_body, applied).
-
-    Prose rewrites: orchestrator substring-swaps the seed's anchor_text
-    for the seed's suggested_rewrite. Codex's prose_rewrites entries
-    (if any) are ignored — the seed is the sole source of truth.
     """
     new_body = body
     applied: list[dict[str, Any]] = []
 
-    # Inline insertions FIRST so rewrites applied afterwards can still
-    # substring-match anchor_text against the body (inline wraps only
-    # add `[...](url)` around a sub-phrase; they don't mutate the
-    # anchor sentence text itself, so anchor substring matching still
-    # works). If we ran rewrites first, a rewrite on the same line as
-    # an inline's target_line would invalidate the inline's target.
+    # Inline insertions are the only prose mutation allowed in this
+    # phase; rewrite-disposition claims are recorded below for later
+    # human review.
     for ins in plan.get("inline_insertions") or []:
         reason = _validate_inline_insertion(ins)
         if reason:
@@ -1525,45 +1517,18 @@ def apply_inject_plan(body: str, plan: dict[str, Any], seed: dict[str, Any]) -> 
                         "status": "applied",
                         **({"note": note} if note else {})})
 
-    # Prose rewrites SECOND. Authorized from seed; Codex does not
-    # participate. Anchor substring is expected to still exist in
-    # new_body — inline wraps above add `[…](url)` around sub-phrases
-    # without altering the anchor sentence text.
-    authorized = _authorized_rewrites(seed, body)
     for c in seed.get("claims") or []:
         if c.get("disposition") not in REWRITE_DISPOSITIONS:
             continue
         claim_id = str(c.get("claim_id") or "")
-        if not c.get("anchor_text") or not c.get("suggested_rewrite"):
-            continue
-        if claim_id not in authorized:
-            # Anchor lives inside a `> "..."` quoted blockquote — surface
-            # the skip so the coverage gate sees the claim was addressed.
-            applied.append({"claim_id": claim_id, "kind": "prose_rewrite",
-                            "status": "skipped",
-                            "reason": "inside_quoted_blockquote"})
-            continue
-        info = authorized[claim_id]
-        anchor = info["anchor_text"]
-        suggested = info["suggested_rewrite"]
-        if anchor not in new_body:
-            applied.append({"claim_id": claim_id, "kind": "prose_rewrite",
-                            "status": "rejected",
-                            "reason": "anchor_text_not_in_body"})
-            continue
-        count = new_body.count(anchor)
-        new_body = new_body.replace(anchor, suggested, 1)
         applied.append({"claim_id": claim_id, "kind": "prose_rewrite",
-                        "status": "applied",
-                        **({"note": f"anchor_ambiguous_{count}_matches"} if count > 1 else {})})
+                        "status": "skipped",
+                        "reason": "rewrites_disabled_pending_redesign"})
 
     sources = _build_sources_section_from_seed(seed).strip()
     if sources:
         sources = _sanitize_sources_section_urls(sources)
-        new_body = _strip_sources_section(new_body).rstrip()
-        if not new_body.endswith("\n"):
-            new_body += "\n"
-        new_body += "\n" + sources + "\n"
+        new_body = _merge_sources_section(new_body, sources)
     return new_body, applied
 
 
@@ -1614,6 +1579,95 @@ def _sanitize_sources_section_urls(text: str) -> str:
 
 
 _INLINE_LINK_RE = re.compile(r"\[([^\]]+)\]\(https?://[^)]+\)")
+
+
+def _extract_markdown_link_urls(text: str) -> list[str]:
+    """Return markdown link URLs, including URLs with balanced parens."""
+    urls: list[str] = []
+    i = 0
+    n = len(text)
+    while i < n:
+        lb = text.find("](", i)
+        if lb < 0:
+            break
+        lbr = text.rfind("[", i, lb)
+        if lbr < 0:
+            i = lb + 2
+            continue
+        url_start = lb + 2
+        depth = 0
+        j = url_start
+        while j < n:
+            ch = text[j]
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                if depth == 0:
+                    break
+                depth -= 1
+            elif ch.isspace():
+                break
+            j += 1
+        if j < n and text[j] == ")":
+            urls.append(text[url_start:j])
+            i = j + 1
+        else:
+            i = lb + 2
+    return urls
+
+
+_SOURCES_HEADING_RE = re.compile(r"(?m)^## Sources[ \t]*$")
+_NEXT_H2_RE = re.compile(r"(?m)^## ")
+
+
+def _merge_sources_section(existing_body: str, seed_sources_block: str) -> str:
+    """Merge seed-derived source bullets into an existing Sources section.
+
+    Existing source bullets and any content after Sources are preserved.
+    New bullets are appended only when their markdown-link URL is absent.
+    """
+    seed_entries: list[tuple[str, str]] = []
+    for line in seed_sources_block.splitlines():
+        bullet = line.strip()
+        if not bullet.startswith("- "):
+            continue
+        urls = _extract_markdown_link_urls(bullet)
+        if urls:
+            seed_entries.append((urls[0], bullet))
+    if not seed_entries:
+        return existing_body
+
+    heading = _SOURCES_HEADING_RE.search(existing_body)
+    if not heading:
+        body = existing_body.rstrip()
+        if not body.endswith("\n"):
+            body += "\n"
+        return body + "\n" + seed_sources_block.rstrip() + "\n"
+
+    section_start = heading.end()
+    next_h2 = _NEXT_H2_RE.search(existing_body, section_start)
+    section_end = next_h2.start() if next_h2 else len(existing_body)
+    existing_section = existing_body[heading.start():section_end]
+    seen_urls = set(_extract_markdown_link_urls(existing_section))
+    additions: list[str] = []
+    for url, bullet in seed_entries:
+        if url in seen_urls:
+            continue
+        seen_urls.add(url)
+        additions.append(bullet)
+    if not additions:
+        return existing_body
+
+    insert_at = section_end
+    while insert_at > heading.start() and existing_body[insert_at - 1].isspace():
+        insert_at -= 1
+    insertion_prefix = "\n\n" if insert_at == heading.end() else "\n"
+    return (
+        existing_body[:insert_at]
+        + insertion_prefix
+        + "\n".join(additions)
+        + existing_body[insert_at:]
+    )
 
 
 def _strip_sources_section(body: str) -> str:

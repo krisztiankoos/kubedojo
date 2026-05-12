@@ -258,3 +258,90 @@ def test_dispatch_claude_returns_false_on_ordinary_failure(
     ok, msg = citation_backfill.dispatch_claude("hi", timeout=180)
     assert ok is False
     assert "TypeError" in msg
+
+
+def test_apply_inject_plan_skips_rewrite_disposition_claims() -> None:
+    body = "Marcus ran a local model on 16 GB of RAM.\n"
+    seed = {
+        "claims": [
+            {
+                "claim_id": "C-rewrite",
+                "disposition": "soften_to_illustration",
+                "anchor_text": "Marcus ran a local model on 16 GB of RAM.",
+                "suggested_rewrite": "A developer ran a local model.",
+            }
+        ],
+        "further_reading": [],
+    }
+
+    new_body, applied = citation_backfill.apply_inject_plan(body, {}, seed)
+
+    assert "Marcus ran a local model on 16 GB of RAM." in new_body
+    assert "A developer ran a local model." not in new_body
+    assert {
+        "claim_id": "C-rewrite",
+        "kind": "prose_rewrite",
+        "status": "skipped",
+        "reason": "rewrites_disabled_pending_redesign",
+    } in applied
+
+
+def test_apply_inject_plan_preserves_next_module_after_sources() -> None:
+    body = (
+        "Body text.\n\n"
+        "## Sources\n\n"
+        "- [Existing](https://example.com/a)\n\n"
+        "## Next Module\n\n"
+        "Continue to ...\n"
+    )
+    seed = {
+        "claims": [],
+        "further_reading": [
+            {
+                "title": "New",
+                "url": "https://example.com/b",
+                "why_relevant": "Additional context.",
+            }
+        ],
+    }
+
+    new_body, _ = citation_backfill.apply_inject_plan(body, {}, seed)
+
+    assert "- [New](https://example.com/b)" in new_body
+    assert "- [Existing](https://example.com/a)" in new_body
+    assert "## Next Module\n\nContinue to ..." in new_body
+
+
+def test_apply_inject_plan_sources_merge_dedupes_by_url() -> None:
+    body = (
+        "Body text.\n\n"
+        "## Sources\n\n"
+        "- [A](https://x.com/a)\n"
+    )
+    seed = {
+        "claims": [],
+        "further_reading": [
+            {
+                "title": "Different A",
+                "url": "https://x.com/a",
+                "why_relevant": "Duplicate URL.",
+            },
+            {
+                "title": "B",
+                "url": "https://y.com/b",
+                "why_relevant": "New URL.",
+            },
+        ],
+    }
+
+    new_body, _ = citation_backfill.apply_inject_plan(body, {}, seed)
+    bullets = [
+        line for line in new_body.splitlines()
+        if line.startswith("- ")
+    ]
+
+    assert len(bullets) == 2
+    assert new_body.count("https://x.com/a") == 1
+    assert "- [A](https://x.com/a)" in new_body
+    assert "Different A" not in new_body
+    assert "- [B](https://y.com/b)" in new_body
