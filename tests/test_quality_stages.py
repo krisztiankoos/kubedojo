@@ -20,7 +20,6 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-import yaml
 
 import pytest
 
@@ -29,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from scripts.quality import dispatchers, pipeline, queue, stages, state, worktree  # noqa: E402
 from scripts.quality.citations import CitationResult  # noqa: E402
 from scripts.quality.dispatchers import DispatchResult  # noqa: E402
+from conftest import _read_frontmatter
 
 
 # ---- fixtures ---------------------------------------------------------
@@ -1521,18 +1521,6 @@ def _seed_committed_state(fake_repo: Path, monkeypatch) -> tuple[str, dict]:
     st = state.load_state(slug)
     assert st["stage"] == "COMMITTED", st.get("failure_reason")
     return slug, st
-
-
-def _read_frontmatter(path: Path) -> dict[str, object]:
-    lines = path.read_text(encoding="utf-8").splitlines()
-    if not lines or lines[0] != "---":
-        raise AssertionError(f"invalid frontmatter for {path}")
-    try:
-        end = lines.index("---", 1)
-    except ValueError as exc:
-        raise AssertionError(f"invalid frontmatter for {path}") from exc
-
-    return yaml.safe_load("\n".join(lines[1:end])) or {}
 
 
 def test_backfill_pending_happy_path_records_done_and_commits(fake_repo, monkeypatch):

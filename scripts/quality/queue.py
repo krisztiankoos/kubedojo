@@ -27,8 +27,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from . import state as _state
 from .state import (
     load_state,
@@ -88,6 +86,7 @@ _FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 _COMPLEXITY_RE = re.compile(r"complexity\s*[:=]\s*[`'\"]?\[?(\w+)\]?", re.IGNORECASE)
 _REVISION_LINE_RE = re.compile(r"^revision_pending\s*:.*\n", re.MULTILINE)
 _QA_LINE_RE = re.compile(r"^qa_pending\s*:.*\n", re.MULTILINE)
+_CITATIONS_VERIFIED_LINE_RE = re.compile(r"^citations_verified\s*:.*\n?", re.MULTILINE)
 
 
 def _read_complexity(module_path: Path) -> str | None:
@@ -421,23 +420,30 @@ def set_citations_verified_frontmatter(module_path: Path, verified: bool = True)
         module_path: absolute path to the .md module file.
         verified: if True, sets ``citations_verified: true``.
             If False, removes the key entirely (absent = not verified).
+
+    Called from ``_backfill_one`` after inject. The contract is:
+
+    * inject success → verified=True (citations were written)
+    * inject nothing_to_do → verified=True (verification ran, nothing to
+      verify)
+    * inject failure → not called (key stays absent)
     """
     text = module_path.read_text(encoding="utf-8")
     fm = _FRONTMATTER_RE.match(text)
     if not fm:
         return
-    try:
-        data = yaml.safe_load(fm.group(1))
-    except yaml.YAMLError:
-        return
-    if not isinstance(data, dict):
-        return
+    fm_text = fm.group(0)
     if verified:
-        data["citations_verified"] = True
+        if _CITATIONS_VERIFIED_LINE_RE.search(fm_text):
+            new_fm = _CITATIONS_VERIFIED_LINE_RE.sub(
+                "citations_verified: true\n", fm_text, count=1
+            )
+        else:
+            new_fm = fm_text.replace("---\n", "---\ncitations_verified: true\n", 1)
     else:
-        data.pop("citations_verified", None)
-    dumped = yaml.safe_dump(data, sort_keys=False, default_flow_style=False).rstrip()
-    new_fm = f"---\n{dumped}\n---\n"
+        new_fm = _CITATIONS_VERIFIED_LINE_RE.sub("", fm_text, count=1)
+    if new_fm == fm_text:
+        return
     module_path.write_text(new_fm + text[fm.end():], encoding="utf-8")
 
 

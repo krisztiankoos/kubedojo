@@ -449,6 +449,7 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
     seed_rel = f"docs/citation-seeds/{module_key.replace('/', '-')}.json"
     rc, status_all, _ = _git(repo, "status", "--porcelain", check=False)
     if rc != 0:
+        _git(repo, "restore", st["module_path"], check=False)
         return {
             "done": False, "ok": False, "stage_failed": "git_status",
             "error": "git status failed after inject",

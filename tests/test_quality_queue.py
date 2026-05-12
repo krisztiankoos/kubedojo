@@ -5,9 +5,9 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import yaml
 
 from scripts.quality import queue, state
+from conftest import _read_frontmatter
 
 
 @pytest.fixture
@@ -34,18 +34,6 @@ def _seed_module(repo: Path, rel: str, *, complexity: str | None = None, with_st
         st = state.new_state(p, module_index=0)
         state.save_state(st)
     return p
-
-
-def _load_frontmatter(path: Path) -> dict[str, object]:
-    content = path.read_text(encoding="utf-8")
-    lines = content.splitlines()
-    if not lines or lines[0] != "---":
-        raise AssertionError(f"invalid frontmatter for {path}")
-    try:
-        end = lines.index("---", 1)
-    except ValueError as exc:
-        raise AssertionError(f"invalid frontmatter for {path}") from exc
-    return yaml.safe_load("\n".join(lines[1:end])) or {}
 
 
 # ---- model_to_agent translator ----------------------------------------
@@ -126,11 +114,11 @@ def test_ensure_queued_is_idempotent_in_writer_choice(tmp_repo):
 def test_set_citations_verified_frontmatter_sets_and_removes(tmp_repo):
     p = _seed_module(tmp_repo, "src/content/docs/ai/foundations/m.md")
     queue.set_citations_verified_frontmatter(p)
-    fm = _load_frontmatter(p)
+    fm = _read_frontmatter(p)
     assert fm["citations_verified"] is True
 
     queue.set_citations_verified_frontmatter(p, verified=False)
-    fm = _load_frontmatter(p)
+    fm = _read_frontmatter(p)
     assert "citations_verified" not in fm
 
 
@@ -147,11 +135,22 @@ complexity: quick
 body
 """)
     queue.set_citations_verified_frontmatter(p)
-    fm = _load_frontmatter(p)
+    fm = _read_frontmatter(p)
     assert fm["title"] == "M"
     assert fm["sidebar"] == {"order": 4}
     assert fm["complexity"] == "quick"
     assert fm["citations_verified"] is True
+
+
+def test_set_citations_verified_frontmatter_is_idempotent_for_true(tmp_repo):
+    p = _seed_module(tmp_repo, "src/content/docs/ai/foundations/m.md")
+    first = p.read_bytes()
+    queue.set_citations_verified_frontmatter(p)
+    second = p.read_bytes()
+    queue.set_citations_verified_frontmatter(p)
+    third = p.read_bytes()
+    assert first != second
+    assert second == third
 
 
 # ---- claim ------------------------------------------------------------
