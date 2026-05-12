@@ -19,7 +19,7 @@ lab:
 
 ---
 
-This module uses the common shell alias `alias k=kubectl` so the examples stay readable once the commands become repetitive. Run that alias in your terminal before the hands-on section, and read commands such as `k get svc` as normal Kubernetes CLI calls through `kubectl`. The examples target Kubernetes 1.35 and focus on the built-in Service API rather than higher-level routing systems such as Ingress or Gateway API.
+This module writes the full `kubectl` command in every runnable example so each block can be copied into a normal shell or lab script without relying on interactive aliases. The examples target Kubernetes 1.35 and focus on the built-in Service API rather than higher-level routing systems such as Ingress or Gateway API.
 
 ## What You'll Be Able to Do
 
@@ -32,7 +32,7 @@ After this module, you will be able to perform the work below in a real cluster 
 
 ## Why This Module Matters
 
-During a peak sales weekend, an online retailer watched its payment success rate collapse even though Kubernetes kept recreating the payment pods exactly as designed. The frontend had been configured with individual pod IP addresses because that looked simple during a rushed migration, and every restart silently invalidated part of the routing table the application believed was true. Engineers could see healthy replacement pods, but customers saw failed checkouts, abandoned carts, and a revenue graph falling by thousands of dollars per minute while the team chased symptoms in the wrong layer.
+Hypothetical scenario: during a peak sales weekend, an online retailer watches its payment success rate collapse even though Kubernetes keeps recreating the payment pods exactly as designed. The frontend has been configured with individual pod IP addresses because that looks simple during a rushed migration, and every restart silently invalidates part of the routing table the application believes is true. Engineers can see healthy replacement pods, but customers see failed checkouts, abandoned carts, and a revenue graph falling while the team chases symptoms in the wrong layer.
 
 That story is painful because nothing exotic had failed. Kubernetes treated pods as replaceable units, which is the whole point of controllers such as Deployments, but the application had treated those pods as durable network destinations. A pod IP is closer to a hotel room number than a home address: it is useful while the guest is there, but you should not print it on contracts or bake it into another service's configuration. Services exist to give applications a stable name and address while Kubernetes continues replacing, scaling, and moving pods underneath.
 
@@ -83,23 +83,21 @@ Think of the Service as the sign above a checkout counter and the pods as the in
 Before creating a Service, create something worth exposing. A Deployment gives Kubernetes a controller that owns replica management, labels pods consistently, and replaces failed replicas without needing you to recreate the Service. This matters because a Service selector does not point at a Deployment object directly; it points at labels on pods, and the Deployment is usually what keeps those labels consistent across old and new replicas.
 
 ```bash
-alias k=kubectl
-
 # Create a deployment first
-k create deployment nginx --image=nginx
+kubectl create deployment nginx --image=nginx
 
 # Expose the deployment (defaults to ClusterIP)
-k expose deployment nginx --port=80
+kubectl expose deployment nginx --port=80
 
 # Expose with specific type (using a different name to avoid conflict)
-k expose deployment nginx --port=80 --type=NodePort --name=nginx-np
+kubectl expose deployment nginx --port=80 --type=NodePort --name=nginx-np
 
 # Check the service
-k get services
-k get svc              # Short form
+kubectl get services
+kubectl get svc              # Short form
 ```
 
-The imperative `k expose deployment` command is useful when you are learning or when you need a quick Service during troubleshooting. It reads the Deployment's labels, creates a selector, and writes a Service object for you. The tradeoff is that the command hides the contract until you inspect the generated object, so production teams normally commit declarative YAML where code review can catch an accidental selector, external exposure, or port mismatch.
+The imperative `kubectl expose deployment` command is useful when you are learning or when you need a quick Service during troubleshooting. It reads the Deployment's labels, creates a selector, and writes a Service object for you. The tradeoff is that the command hides the contract until you inspect the generated object, so production teams normally commit declarative YAML where code review can catch an accidental selector, external exposure, or port mismatch.
 
 ```bash
 cat <<EOF > service.yaml
@@ -116,12 +114,12 @@ spec:
   type: ClusterIP            # Default type
 EOF
 
-k apply -f service.yaml
+kubectl apply -f service.yaml
 ```
 
 The declarative version makes the important fields visible. `spec.selector` tells Kubernetes which pods are eligible backends, `spec.ports[].port` tells clients which Service port to call, and `spec.ports[].targetPort` tells the data plane where the selected pods actually listen. If your application listens on port 8080 but you publish `targetPort: 80`, the Service may look valid while every connection fails at the pod boundary.
 
-Pause and predict: before running `k get endpoints nginx-declarative`, what output would prove that the Service has found real pods rather than just existing as an empty virtual IP? You should expect one or more pod IP and port pairs. An empty endpoint list is not a DNS problem, a load balancer problem, or an application problem yet; it first says the Service selector did not currently match ready pod backends.
+Pause and predict: before running `kubectl get endpoints nginx-declarative`, what output would prove that the Service has found real pods rather than just existing as an empty virtual IP? You should expect one or more pod IP and port pairs. An empty endpoint list is not a DNS problem, a load balancer problem, or an application problem yet; it first says the Service selector did not currently match ready pod backends.
 
 A useful worked example is a frontend Deployment with labels `app=frontend` and `tier=web`. A Service with `selector: app: frontend` will include all pods with that app label, even if later you add canary pods that should not receive normal traffic. A Service with both `app: frontend` and `tier: web` is more restrictive, because every selector label must be present on the pod. That precision is powerful, but it also makes label drift one of the most common causes of silent Service outages.
 
@@ -129,7 +127,7 @@ When you write Service YAML, resist the urge to treat labels as decoration. Labe
 
 Declarative Services also make review possible across teams. The application team can confirm the container port, the platform team can confirm the exposure type, and the security team can confirm that internal APIs are not published outside the cluster. Imperative commands are excellent for experiments because they teach object behavior quickly, but the YAML is the durable artifact that records the decision. In production, the difference between a remembered command and a reviewed manifest often shows up during the next incident.
 
-Another useful habit is to inspect the Service immediately after creating it, even if the command appeared to succeed. A Service can be accepted by the API server while still representing the wrong workload because selectors are just labels, not references to a specific controller. If `k get svc` and `k describe svc` do not match the application story in your head, stop and correct that mismatch before adding more routing layers on top.
+Another useful habit is to inspect the Service immediately after creating it, even if the command appeared to succeed. A Service can be accepted by the API server while still representing the wrong workload because selectors are just labels, not references to a specific controller. If `kubectl get svc` and `kubectl describe svc` do not match the application story in your head, stop and correct that mismatch before adding more routing layers on top.
 
 ## Service Types Trade-off Comparison
 
@@ -202,7 +200,7 @@ spec:
 
 ```bash
 # Get external IP (cloud only)
-k get svc web-lb
+kubectl get svc web-lb
 # EXTERNAL-IP column shows the load balancer IP
 ```
 
@@ -260,24 +258,24 @@ The short form works only when the client pod is in the same namespace as the Se
 
 ```bash
 # Create a new deployment and service for DNS testing
-k create deployment nginx-dns --image=nginx
-k expose deployment nginx-dns --port=80
-k rollout status deployment nginx-dns
-k get svc nginx-dns
+kubectl create deployment nginx-dns --image=nginx
+kubectl expose deployment nginx-dns --port=80
+kubectl rollout status deployment nginx-dns
+kubectl get svc nginx-dns
 
 # Test DNS from another pod (using -i and --restart=Never for non-interactive compatibility)
-k run test --image=busybox --rm -i --restart=Never -- wget -qO- nginx-dns
+kubectl run test --image=busybox --rm -i --restart=Never -- wget -qO- nginx-dns
 # Returns nginx HTML!
 
 # Test with full DNS name
-k run test --image=busybox --rm -i --restart=Never -- nslookup nginx-dns.default.svc.cluster.local
+kubectl run test --image=busybox --rm -i --restart=Never -- nslookup nginx-dns.default.svc.cluster.local
 ```
 
 DNS proves name resolution, but it does not prove the application is healthy. A Service name can resolve even when the selector matches no pods, and a Service can have endpoints even when the container port is wrong. Good troubleshooting separates these layers: first prove the name resolves, then prove the Service has endpoints, then prove the endpoint port accepts traffic from a test pod in the same network context.
 
 Before running this, what output do you expect from the `wget` command when the Service is wired correctly? You should expect the Nginx welcome HTML, not merely a successful DNS lookup. If DNS succeeds but the HTTP request times out or gets connection refused, keep moving down the chain toward endpoint readiness, labels, and port mapping instead of repeatedly editing the client.
 
-War story: a platform team once lost hours on a "DNS outage" because a temporary debug pod in `default` curled `orders` while the real Service lived in `commerce`. The short name resolved to an unrelated stub Service in `default`, so every test was technically successful and operationally useless. The fix was not a CoreDNS change; it was the habit of writing namespace-qualified names during incident response.
+Hypothetical scenario: a platform team loses hours on a supposed DNS outage because a temporary debug pod in `default` curls `orders` while the real Service lives in `commerce`. The short name resolves to an unrelated stub Service in `default`, so every test is technically successful and operationally useless. The fix is not a CoreDNS change; it is the habit of writing namespace-qualified names during incident response.
 
 DNS search paths are convenient until they hide the namespace you meant. Inside a pod, the resolver is normally configured so a short Service name is expanded through namespace and cluster suffixes. That saves typing for common same-namespace calls, but it means humans must be explicit when a test crosses a namespace boundary. During troubleshooting, prefer the name that communicates intent to the next engineer reading your shell history.
 
@@ -307,7 +305,7 @@ The selected pods are represented through endpoint data, historically by Endpoin
 
 ```bash
 # Check what pods a service targets
-k get endpoints nginx
+kubectl get endpoints nginx
 # Shows IP:Port of matched pods
 ```
 
@@ -331,9 +329,9 @@ spec:
 
 Named ports are a useful refinement when teams maintain larger manifests. A container can name its port `http`, and the Service can use `targetPort: http`, which survives a future port-number change as long as the name remains accurate. The tradeoff is that spelling now matters as much as the number did; a mismatched port name can produce a Service that selects pods but forwards to no valid application listener.
 
-For diagnosis, think in a chain rather than a single command. `k get svc` tells you the Service exists and shows its type, cluster IP, and published ports. `k describe svc` shows selectors and events. `k get endpoints` or `k get endpointslices` shows whether Kubernetes found ready backends. A test pod using `wget`, `curl`, or `nslookup` then proves what a real in-cluster client experiences.
+For diagnosis, think in a chain rather than a single command. `kubectl get svc` tells you the Service exists and shows its type, cluster IP, and published ports. `kubectl describe svc` shows selectors and events. `kubectl get endpoints` or `kubectl get endpointslices` shows whether Kubernetes found ready backends. A test pod using `wget`, `curl`, or `nslookup` then proves what a real in-cluster client experiences.
 
-The original phantom outage story illustrates why endpoints matter. A streaming company's catalog API showed healthy pods and an active Service, yet a slice of traffic timed out after operational work bypassed Kubernetes and left stale dataplane state on one node. The senior engineer who checked endpoint and proxy state found that requests were still being steered toward a dead address from one node's rules, and restarting the affected `kube-proxy` cleared the stale path. The lesson is not to restart components randomly; it is to prove where the Service contract and the data plane disagree.
+Hypothetical scenario: a catalog API shows healthy pods and an active Service, yet a slice of traffic times out after operational work bypasses Kubernetes and leaves stale dataplane state on one node. The engineer who checks endpoint and proxy state finds that requests are still being steered toward a dead address from one node's rules, and refreshing the affected data-plane component clears the stale path. The lesson is not to restart components randomly; it is to prove where the Service contract and the data plane disagree.
 
 EndpointSlice is worth knowing even in a beginner module because modern clusters use it heavily. The old Endpoints object is easy to read for small examples, but a very large Service can have enough backends that a single object becomes inefficient to update and watch. EndpointSlices divide backend information into smaller pieces, which helps the control plane and networking components scale. In day-to-day debugging, the idea stays familiar: you are still asking which pod IPs and ports the Service currently believes are valid backends.
 
@@ -391,7 +389,7 @@ Security review should happen before the first public address appears. A Cluster
 
 Cost review matters for the same reason. ClusterIP is a Kubernetes object using cluster networking, while LoadBalancer often maps to external cloud resources with billing and quotas. In a small environment, one accidental LoadBalancer may be only annoying; across dozens of teams, the pattern becomes expensive and hard to audit. A good platform gives teams an approved external routing path so they do not create one-off load balancers for every internal dependency.
 
-Use `k get svc` as a quick audit tool after applying any Service, but do not stop there. For a ClusterIP, confirm the type is internal and test from a pod. For a NodePort, confirm the allocated port and check whether every node should really accept that traffic. For a LoadBalancer, confirm the external address, cloud resource, firewall behavior, and whether the cost matches the intended architecture.
+Use `kubectl get svc` as a quick audit tool after applying any Service, but do not stop there. For a ClusterIP, confirm the type is internal and test from a pod. For a NodePort, confirm the allocated port and check whether every node should really accept that traffic. For a LoadBalancer, confirm the external address, cloud resource, firewall behavior, and whether the cost matches the intended architecture.
 
 Which approach would you choose here and why: a metrics scraper inside the cluster needs to pull `/metrics` from twenty application pods, but no user should ever reach that endpoint from the internet? The right answer is usually a ClusterIP Service, because the scraper is an internal client and the endpoint should not become public. If the team later needs external dashboards, expose the dashboard deliberately rather than exposing every scraped workload.
 
@@ -406,7 +404,7 @@ Which approach would you choose here and why: a metrics scraper inside the clust
 
 | Mistake | Why It Happens | How to Fix It |
 |---------|----------------|---------------|
-| Selector does not match pod labels | The Service exists, DNS resolves, and the ClusterIP looks valid, so teams assume routing is configured. | Compare `k describe svc <name>` with `k get pods --show-labels`, then make the Deployment template labels and Service selector match. |
+| Selector does not match pod labels | The Service exists, DNS resolves, and the ClusterIP looks valid, so teams assume routing is configured. | Compare `kubectl describe svc <name>` with `kubectl get pods --show-labels`, then make the Deployment template labels and Service selector match. |
 | Wrong `targetPort` | The manifest copies a sample port while the container process listens somewhere else. | Inspect the container port or application config, then set `targetPort` to the real listener or a correctly named container port. |
 | Using pod IP instead of Service DNS | Direct IP tests work briefly, so the temporary address gets copied into application configuration. | Configure clients with the Service DNS name, preferably namespace-qualified when crossing namespaces. |
 | Forgetting `protocol: UDP` | Service ports default to TCP, and UDP workloads are less common in beginner examples. | Set `protocol: UDP` explicitly for DNS-like or custom UDP services and test with a UDP-capable client. |
@@ -431,7 +429,7 @@ Use a ClusterIP Service because the caller is internal and the cache should not 
 <details>
 <summary>Scenario: A web Service selects `app=frontend,tier=web`, but the pods show `app=frontend,env=prod`; DNS resolves but requests time out. What is the first diagnosis?</summary>
 
-The Service selector does not match the pods, so the Service likely has no usable endpoints. Services require every selector label to be present on a pod before that pod becomes a backend. Run `k get endpoints <service>` or inspect EndpointSlices to confirm the empty backend set, then update either the Deployment template labels or the Service selector so they represent the same workload contract. Do not start by changing DNS because DNS can resolve an empty Service.
+The Service selector does not match the pods, so the Service likely has no usable endpoints. Services require every selector label to be present on a pod before that pod becomes a backend. Run `kubectl get endpoints <service>` or inspect EndpointSlices to confirm the empty backend set, then update either the Deployment template labels or the Service selector so they represent the same workload contract. Do not start by changing DNS because DNS can resolve an empty Service.
 </details>
 
 <details>
@@ -455,7 +453,7 @@ Compare NodePort with LoadBalancer, and choose LoadBalancer when the application
 <details>
 <summary>Scenario: A Service exists, but users report intermittent failures after a rollout. Which checks prove whether the problem is selectors, endpoints, DNS, or port mapping?</summary>
 
-Start with `k get svc` and `k describe svc` to confirm the Service type, ports, and selector. Then check `k get endpoints` or EndpointSlices to verify that ready pod IPs and ports are present. From a temporary pod, test DNS resolution and an actual HTTP request so you distinguish name lookup from application reachability. If endpoints exist but requests fail, inspect `targetPort`, pod readiness, and the container's real listening port before blaming the Service object itself.
+Start with `kubectl get svc` and `kubectl describe svc` to confirm the Service type, ports, and selector. Then check `kubectl get endpoints` or EndpointSlices to verify that ready pod IPs and ports are present. From a temporary pod, test DNS resolution and an actual HTTP request so you distinguish name lookup from application reachability. If endpoints exist but requests fail, inspect `targetPort`, pod readiness, and the container's real listening port before blaming the Service object itself.
 </details>
 
 ## Hands-On Exercise
@@ -464,10 +462,10 @@ In this exercise, you will create a small Nginx Deployment, expose it with a Clu
 
 ### Setup
 
-Run the alias once if you have not already done so in this shell. The lab assumes a working Kubernetes 1.35 or newer cluster and a namespace where you can create Deployments, Services, and temporary pods.
+Confirm that `kubectl` can reach your lab cluster before you create any resources. The lab assumes a working Kubernetes 1.35 or newer cluster and a namespace where you can create Deployments, Services, and temporary pods.
 
 ```bash
-alias k=kubectl
+kubectl version --client
 ```
 
 ### Task 1: Create the workload
@@ -475,15 +473,15 @@ alias k=kubectl
 Create a three-replica Deployment so the Service has multiple pod backends to discover. Waiting for rollout completion matters because a Service can select pods before the application is actually ready, and you want the first endpoint check to reflect healthy backends rather than a rollout in progress.
 
 ```bash
-k create deployment web --image=nginx --replicas=3
-k rollout status deployment web
-k get pods -l app=web --show-labels
+kubectl create deployment web --image=nginx --replicas=3
+kubectl rollout status deployment web
+kubectl get pods -l app=web --show-labels
 ```
 
 <details>
 <summary>Solution notes</summary>
 
-You should see three pods with an `app=web` label because `k create deployment` generates that label for this Deployment. If the pods are still pending or creating, wait before exposing and testing the Service. The Service selector in the next task depends on these labels, so this is the first place to catch a mismatch.
+You should see three pods with an `app=web` label because `kubectl create deployment` generates that label for this Deployment. If the pods are still pending or creating, wait before exposing and testing the Service. The Service selector in the next task depends on these labels, so this is the first place to catch a mismatch.
 </details>
 
 ### Task 2: Expose the Deployment as ClusterIP
@@ -491,15 +489,15 @@ You should see three pods with an `app=web` label because `k create deployment` 
 Expose the Deployment and inspect both the Service and the endpoint list. This validates the core implementation outcome: the Service exists as a stable client destination, and Kubernetes has discovered the actual pod IP and port backends behind it.
 
 ```bash
-k expose deployment web --port=80
-k get svc web
-k get endpoints web
+kubectl expose deployment web --port=80
+kubectl get svc web
+kubectl get endpoints web
 ```
 
 <details>
 <summary>Solution notes</summary>
 
-The `web` Service should show `TYPE` as `ClusterIP`, and the endpoint list should contain three pod IP and port entries for port 80. If the endpoint list is empty, compare the Service selector with `k get pods --show-labels` before testing DNS. Empty endpoints mean the Service contract has no selected ready backends.
+The `web` Service should show `TYPE` as `ClusterIP`, and the endpoint list should contain three pod IP and port entries for port 80. If the endpoint list is empty, compare the Service selector with `kubectl get pods --show-labels` before testing DNS. Empty endpoints mean the Service contract has no selected ready backends.
 </details>
 
 ### Task 3: Test DNS and HTTP from inside the cluster
@@ -507,8 +505,8 @@ The `web` Service should show `TYPE` as `ClusterIP`, and the endpoint list shoul
 Launch a temporary BusyBox pod and request the Service by name. This step proves more than object creation: it proves that an in-cluster client can resolve the Service name and receive an HTTP response from one of the selected pods.
 
 ```bash
-k run test --image=busybox --rm -i --restart=Never -- wget -qO- web
-k run test --image=busybox --rm -i --restart=Never -- nslookup web.default.svc.cluster.local
+kubectl run test --image=busybox --rm -i --restart=Never -- wget -qO- web
+kubectl run test --image=busybox --rm -i --restart=Never -- nslookup web.default.svc.cluster.local
 ```
 
 <details>
@@ -522,9 +520,9 @@ The `wget` command should print the Nginx welcome page, while `nslookup` should 
 Create a second Service pointing at the same Deployment, but this time publish it as NodePort. You are not making this the recommended production path; you are observing how the Service type changes the externally visible shape while the backend pod selection stays label-driven.
 
 ```bash
-k expose deployment web --port=80 --type=NodePort --name=web-external
-k get svc web-external
-k describe svc web-external
+kubectl expose deployment web --port=80 --type=NodePort --name=web-external
+kubectl get svc web-external
+kubectl describe svc web-external
 ```
 
 <details>
@@ -538,10 +536,10 @@ The `web-external` Service should show `TYPE` as `NodePort` and include a high a
 Patch the Service selector to an intentionally wrong value, observe the endpoint list, then restore the selector. This is the fastest way to make the most common Service failure visible in a safe lab environment.
 
 ```bash
-k patch svc web -p '{"spec":{"selector":{"app":"missing-web"}}}'
-k get endpoints web
-k patch svc web -p '{"spec":{"selector":{"app":"web"}}}'
-k get endpoints web
+kubectl patch svc web -p '{"spec":{"selector":{"app":"missing-web"}}}'
+kubectl get endpoints web
+kubectl patch svc web -p '{"spec":{"selector":{"app":"web"}}}'
+kubectl get endpoints web
 ```
 
 <details>
@@ -555,14 +553,14 @@ After the broken selector, the endpoint list should become empty because no pod 
 Delete the Deployment and both Services so the namespace returns to its original state. Cleaning up deliberately is part of the exercise because abandoned NodePort or LoadBalancer objects can create confusing future tests and unnecessary infrastructure exposure.
 
 ```bash
-k delete deployment web
-k delete svc web web-external
+kubectl delete deployment web
+kubectl delete svc web web-external
 ```
 
 **Success criteria**: use this checklist to confirm that you designed a stable Service contract, implemented the selector and port mapping correctly, compared Service types, and diagnosed the most common empty-endpoints failure mode.
 
 - [ ] Design check: the internal `web` Service is created as a stable ClusterIP destination for the `app=web` pods.
-- [ ] Implementation check: `k get endpoints web` shows three distinct pod IP addresses before you break the selector.
+- [ ] Implementation check: `kubectl get endpoints web` shows three distinct pod IP addresses before you break the selector.
 - [ ] Discovery check: the temporary pod resolves `web.default.svc.cluster.local` and the `wget` command returns the Nginx welcome HTML.
 - [ ] Comparison check: the `web-external` Service is created with a `TYPE` of `NodePort` and a port in the 30000-32767 range.
 - [ ] Diagnosis check: changing the selector empties the endpoints list, and restoring the selector repopulates it.
