@@ -21,7 +21,10 @@ import re
 import subprocess
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
+
+import yaml
 
 # Derive REPO from this file's location so the dispatcher works from any
 # checkout (primary OR a worktree) without a hard-coded absolute path.
@@ -65,6 +68,74 @@ def module_slug_for_pipeline(module_path: str) -> str:
     return relative.as_posix().removesuffix(".md").replace("/", "-")
 
 
+def _module_budget_slug(module_path: str) -> str:
+    module = Path(module_path)
+    if not module.is_absolute():
+        module = REPO / module
+    try:
+        relative = module.relative_to(PRIMARY_REPO / "src" / "content" / "docs")
+        rel = relative.as_posix()
+    except ValueError:
+        rel = module.as_posix()
+        if rel.startswith(f"{REPO.as_posix().removesuffix('/')}/"):
+            rel = rel.removeprefix(f"{REPO.as_posix().removesuffix('/')}/")
+        if rel.startswith("src/content/docs/"):
+            rel = rel.removeprefix("src/content/docs/")
+        rel = rel.removeprefix(f"{PRIMARY_REPO.as_posix().removesuffix('/')}/")
+        rel = rel.removeprefix("src/content/docs/")
+    return rel.replace("/", "__")
+
+
+def _parse_yaml_queue(queue_text: str) -> list[dict[str, object]]:
+    loaded = yaml.safe_load(queue_text) or {}
+    entries = loaded.get("queue", loaded) if isinstance(loaded, dict) else loaded
+    if not isinstance(entries, list):
+        raise ValueError("YAML dispatch queue must be a dict with a 'queue' list or a list")
+    normalized: list[dict[str, object]] = []
+    for row in entries:
+        if isinstance(row, str):
+            normalized.append({"path": row})
+            continue
+        if not isinstance(row, dict):
+            raise ValueError("YAML dispatch queue entries must be strings or mappings")
+        if "path" not in row:
+            raise ValueError("YAML dispatch queue entry missing required 'path'")
+        normalized.append(row)
+    return normalized
+
+
+def _queue_from_file(input_file: Path) -> list[tuple[str, int | None]]:
+    if input_file.suffix.lower() == ".yaml":
+        entries = _parse_yaml_queue(input_file.read_text(encoding="utf-8"))
+        loaded: list[tuple[str, int | None]] = []
+        for row in entries:
+            path = str(row["path"]).strip()
+            budget_value = row.get("budget")
+            if budget_value is None:
+                loaded.append((path, None))
+                continue
+            loaded.append((path, int(budget_value)))
+        return loaded
+    return [
+        (line.strip(), None)
+        for line in input_file.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    ]
+
+
+def _write_budget_sidecar(module_path: str, body_words_min: int) -> Path:
+    payload = {
+        "body_words_min": int(body_words_min),
+        "source_module": module_path,
+        "set_at": datetime.now(timezone.utc).isoformat(),
+    }
+    slug = _module_budget_slug(module_path)
+    sidecar = REPO / ".pipeline" / "budgets" / f"{slug}.json"
+    sidecar.parent.mkdir(parents=True, exist_ok=True)
+    sidecar.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    return sidecar
+
+
 def log(event: dict) -> None:
     event["ts"] = time.time()
     with open(LOG, "a") as f:
@@ -90,9 +161,9 @@ def make_worktree(slug: str) -> Path:
     return wt
 
 
-def codex_prompt(module_path: str) -> str:
+def codex_prompt(module_path: str, body_words_target: int = 5000) -> str:
     brief = BRIEF.read_text()
-    writer = WRITER_BRIEF.read_text()
+    writer = WRITER_BRIEF.read_text().replace("{{BODY_WORDS_TARGET}}", str(body_words_target))
     return f"""You are rewriting one KubeDojo module to clear all #388 verifier gates.
 
 MODULE TO REWRITE (relative to repo root): {module_path}
@@ -106,7 +177,7 @@ PROCEDURE
 4. Run the deterministic verifier:
      .venv/bin/python scripts/quality/verify_module.py --glob {module_path} --skip-source-check --summary --quiet
    Iterate until tier == T0 OR all density+structure+alignment+anti_leak+protected_assets gates pass. Sources gate may fail (we skip source check).
-   Hard requirements: body_words >= 5000, mean_wpp >= 30, median_wpp >= 28, short_paragraph_rate <= 0.20, max_consecutive_short_run <= 2, exactly 4 Did You Know, 6-8 Common Mistakes, 6-8 Quiz with <details>, Hands-On with `- [ ]`. Section order per writer brief. No emojis. No number 47. K8s 1.35+. Never use `alias k=kubectl` or `k <subcommand>` in runnable bash/sh/shell/zsh code blocks; use full `kubectl`.
+   Hard requirements: body_words >= {body_words_target}, mean_wpp >= 30, median_wpp >= 28, short_paragraph_rate <= 0.20, max_consecutive_short_run <= 2, exactly 4 Did You Know, 6-8 Common Mistakes, 6-8 Quiz with <details>, Hands-On with `- [ ]`. Section order per writer brief. No emojis. No number 47. K8s 1.35+. Never use `alias k=kubectl` or `k <subcommand>` in runnable bash/sh/shell/zsh code blocks; use full `kubectl`.
 5. Set frontmatter `revision_pending: false` (it is currently `true` — clear it as part of the rewrite). Then commit (sign-off optional, no --no-verify):
      git add {module_path}
      git commit -m "feat(388): density+structure rewrite of <module title> (#388 pilot)"
@@ -127,12 +198,12 @@ DO NOT modify any file outside {module_path}. DO NOT change scripts/, docs/, sib
 """
 
 
-def dispatch_codex(module_path: str, wt: Path, slug: str):
+def dispatch_codex(module_path: str, wt: Path, slug: str, body_words_target: int = 5000):
     log({"event": "codex_dispatch_start", "module": module_path, "slug": slug, "wt": str(wt)})
     try:
         result = invoke(
             agent_name="codex",
-            prompt=codex_prompt(module_path),
+            prompt=codex_prompt(module_path, body_words_target),
             mode="danger",
             cwd=wt,
             model="gpt-5.5",
@@ -372,7 +443,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="#388 volume-run dispatcher")
     p.add_argument(
         "--input", "-i", type=Path, default=None,
-        help=f"Path to module list (one path per line). Default: {PILOT_FILE.relative_to(REPO)}",
+        help=f"Path to module queue (.txt or .yaml). Default: {PILOT_FILE.relative_to(REPO)}",
     )
     p.add_argument(
         "--max", "-n", type=int, default=0,
@@ -395,15 +466,19 @@ def main(argv: list[str] | None = None) -> int:
     if not input_file.exists():
         print(f"❌ input file not found: {input_file}", file=sys.stderr)
         return 1
-    queue = [
-        line.strip()
-        for line in input_file.read_text().splitlines()
-        if line.strip() and not line.startswith("#")
-    ]
+    try:
+        queue = _queue_from_file(input_file)
+    except (ValueError, TypeError, yaml.YAMLError, OSError) as exc:
+        print(f"❌ failed to read queue: {exc}", file=sys.stderr)
+        return 1
     if args.max and args.max > 0:
         queue = queue[: args.max]
     log({"event": "pilot_start", "count": len(queue), "input": str(input_file), "repo": str(REPO)})
-    for module_path in queue:
+    for module_path, requested_budget in queue:
+        body_words_target = requested_budget if requested_budget is not None else 5000
+        if requested_budget is not None:
+            _write_budget_sidecar(module_path, body_words_target)
+            log({"event": "budget_sidecar_written", "module": module_path, "body_words_min": body_words_target})
         slug = slugify(module_path)
         log({"event": "module_start", "module": module_path, "slug": slug})
         try:
@@ -411,7 +486,7 @@ def main(argv: list[str] | None = None) -> int:
         except Exception as e:  # noqa: BLE001
             log({"event": "worktree_error", "module": module_path, "error": repr(e)})
             continue
-        codex_result = dispatch_codex(module_path, wt, slug)
+        codex_result = dispatch_codex(module_path, wt, slug, body_words_target)
         if codex_result is None or not codex_result.ok:
             log({"event": "module_skip", "module": module_path, "reason": "codex_failed"})
             continue

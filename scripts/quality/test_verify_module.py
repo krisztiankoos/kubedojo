@@ -16,7 +16,7 @@ def _base_gates() -> dict[str, bool | None]:
         "density_median_wpp_28": True,
         "density_short_rate_20pct": True,
         "density_max_consecutive_short_2": True,
-        "body_words_5000": True,
+        "body_words_floor_met": True,
         "sentence_length_12_28": True,
         "structure_sections_present": True,
         "structure_order_correct": True,
@@ -282,7 +282,7 @@ def test_density_metrics_on_synthetic_short_module_fail() -> None:
     )
     assert metrics["body_words"] < 5000
     assert gates["density_mean_wpp_30"] is False
-    assert gates["body_words_5000"] is False
+    assert gates["body_words_floor_met"] is False
 
 
 def test_max_consecutive_short_run_edge_case() -> None:
@@ -589,7 +589,7 @@ def test_cli_all_revision_pending_writes_jsonl(tmp_path: Path, monkeypatch) -> N
     out = tmp_path / "records.jsonl"
 
     def fake_verify(path: Path, skip_source_check: bool = False, max_workers: int = 8) -> dict[str, object]:
-        return {"path": str(path), "tier": "T3", "tier_reasons": ["body_words_5000"]}
+        return {"path": str(path), "tier": "T3", "tier_reasons": ["body_words_floor_met"]}
 
     monkeypatch.setattr(verify_module, "REPO_ROOT", tmp_path)
     monkeypatch.setattr(verify_module, "verify", fake_verify)

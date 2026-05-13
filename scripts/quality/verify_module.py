@@ -118,6 +118,37 @@ def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def _module_budget_slug(module_path: str) -> str:
+    module = Path(module_path)
+    if not module.is_absolute():
+        module = REPO_ROOT / module
+    try:
+        relative = module.relative_to(REPO_ROOT / "src" / "content" / "docs")
+        rel = relative.as_posix()
+    except ValueError:
+        rel = module.as_posix()
+        if rel.startswith(f"{REPO_ROOT.as_posix().removesuffix('/')}/"):
+            rel = rel.removeprefix(f"{REPO_ROOT.as_posix().removesuffix('/')}/")
+        if rel.startswith("src/content/docs/"):
+            rel = rel.removeprefix("src/content/docs/")
+    return rel.replace("/", "__")
+
+
+def _body_words_floor_for_module(module_path: Path) -> int:
+    sidecar_path = REPO_ROOT / ".pipeline" / "budgets" / f"{_module_budget_slug(str(module_path))}.json"
+    try:
+        sidecar = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return 5000
+    body_words_min = sidecar.get("body_words_min") if isinstance(sidecar, dict) else None
+    if isinstance(body_words_min, bool):
+        return 5000
+    try:
+        return int(body_words_min)
+    except (TypeError, ValueError):
+        return 5000
+
+
 def _strip_frontmatter(text: str) -> tuple[dict[str, object], str]:
     if not text.startswith("---"):
         return {}, text
@@ -878,6 +909,7 @@ def gate_results(
     alignment: dict[str, object],
     skip_source_check: bool,
     source_h1: dict[str, object] | None = None,
+    body_words_floor: int = 5000,
 ) -> dict[str, bool | None]:
     quiz_count = int(structure["quiz_count"])
     gates: dict[str, bool | None] = {
@@ -886,7 +918,7 @@ def gate_results(
         "density_median_wpp_28": float(metrics["median_wpp"]) >= 28,
         "density_short_rate_20pct": float(metrics["short_paragraph_rate"]) <= 0.20,
         "density_max_consecutive_short_2": int(metrics["max_consecutive_short_run"]) <= 2,
-        "body_words_5000": int(metrics["body_words"]) >= 5000,
+        "body_words_floor_met": int(metrics["body_words"]) >= int(body_words_floor),
         "sentence_length_12_28": 12 <= float(metrics["mean_sentence_length"]) <= 28,
         "structure_sections_present": bool(structure["has_learning_outcomes"])
         and 3 <= int(structure["learning_outcome_count"]) <= 5
@@ -927,7 +959,7 @@ def classify_tier(metrics: dict[str, float | int], gates: dict[str, bool | None]
         "density_short_rate_20pct",
         "density_max_consecutive_short_2",
         "sentence_length_12_28",
-        "body_words_5000",
+        "body_words_floor_met",
     }
     structure_failed = [key for key in failed if key.startswith("structure_")]
     density_failed = [key for key in failed if key in density_keys]
@@ -955,6 +987,7 @@ def verify(path: str | Path, skip_source_check: bool = False, max_workers: int =
     practice_mcq = practice_mcq_metrics(module_path, text)
     alignment = alignment_metrics(text)
     source_h1 = source_h1_metrics(text)
+    body_words_floor = _body_words_floor_for_module(module_path)
     gates = gate_results(
         metrics,
         structure,
@@ -966,6 +999,7 @@ def verify(path: str | Path, skip_source_check: bool = False, max_workers: int =
         alignment,
         skip_source_check,
         source_h1,
+        body_words_floor=body_words_floor,
     )
     tier, reasons = classify_tier(metrics, gates)
     passed = all(value is not False for value in gates.values())
