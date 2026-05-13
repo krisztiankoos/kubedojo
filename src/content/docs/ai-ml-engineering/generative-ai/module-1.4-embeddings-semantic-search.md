@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Embeddings & Semantic Search"
 slug: ai-ml-engineering/generative-ai/module-1.4-embeddings-semantic-search
 sidebar:
@@ -607,7 +608,7 @@ A learning platform can use embeddings to recommend modules. If a learner comple
 
 ## Did You Know?
 
-- **Fact 1**: Word2Vec made word-vector arithmetic famous, but modern retrieval systems usually embed sentences, passages, or document chunks rather than isolated words.
+- **Fact 1**: [Word2Vec made word-vector arithmetic famous](https://arxiv.org/abs/1310.4546), but [modern retrieval systems usually embed sentences, passages, or document chunks rather than isolated words](https://arxiv.org/abs/1908.10084).
 - **Fact 2**: A vector database does not create semantic meaning by itself; the embedding model creates vectors, and the database stores and searches them efficiently.
 - **Fact 3**: Many RAG quality failures come from retrieval and chunking problems, even when the final answer appears to be a language-model problem.
 - **Fact 4**: Hybrid search remains common because exact identifiers, error strings, names, and commands often matter as much as semantic paraphrase.
