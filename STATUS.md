@@ -291,6 +291,11 @@ User direction (locked mid-session 8): **no backfill or content until all bug te
 - [x] ~~Hook epic #1175~~ — CLOSED (5/5 hooks shipped).
 - [x] ~~Re-scope #381 chain~~ — Lane-2 haiku audit verdicts: #381 CLOSE (stale), #382 CLOSE (absorbed by #376), #383 RE-ANCHOR (gemini-drafted body, title updated), #384 RE-ANCHOR (gemini-drafted body, title kept).
 - [x] ~~#1143 codex bridge push-verify skip~~ — closed (PR #1164 already had the fix; auto-close from commit message didn't fire).
+- [x] ~~#1144 branch protection~~ — applied via `GH_TOKEN= gh api ...` OAuth fallback. Memory `reference_gh_oauth_fallback_for_admin_scope.md` added.
+- [x] ~~PR #1202 (#1195 + #1060)~~ — merged (`78caa4b5`). Path nit in goal-driven-runs.md + plan.html Phase 5 chip + brief reference clarification.
+- [x] ~~PR #1203 (#1198 + #1200)~~ — merged (`6238f97a`). Pre-existing test fixture drift (gemini env scope + CKA 0.1 quality drift) + dispatched-codex worktree .venv symlink. Codex flagged 3 spurious failures (env leak); CI was clean.
+- [x] ~~#1011 CKA 0.1 cosmetic nits~~ — closed as superseded (nit 1 already fixed; nits 2/3 cosmetic drift per memory; nits 4/5 below green bar).
+- [ ] **#1204 hook 3 test hermeticity** (NEW follow-up) — pytest from inside a dispatched session inherits `KUBEDOJO_DISPATCHED=1` and breaks 3 hook 3 tests. Fix: `env.pop("KUBEDOJO_DISPATCHED", None)` in test fixture. Small.
 
 **Carryover from session 5 (now done — record for audit trail):**
 
