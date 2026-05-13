@@ -114,6 +114,44 @@ def test_main_commit_backfill_prefix_allowed(tmp_path: Path) -> None:
     assert result.returncode == 0
 
 
+def test_main_commit_backfill_false_positive_denied(tmp_path: Path) -> None:
+    primary = tmp_path / "kubedojo"
+    init_git_main(primary)
+
+    result = run_hook('git commit -m "backfilling: not a pipeline commit"', primary, primary)
+
+    assert result.returncode == 2
+    assert "direct commit to main without PR ref is blocked" in result.stderr
+
+
+def test_main_commit_short_flag_cluster_am_denied(tmp_path: Path) -> None:
+    primary = tmp_path / "kubedojo"
+    init_git_main(primary)
+
+    result = run_hook('git commit -am "fix: thing"', primary, primary)
+
+    assert result.returncode == 2
+    assert "direct commit to main without PR ref is blocked" in result.stderr
+
+
+def test_main_commit_backfill_prefix_allowed_with_colon(tmp_path: Path) -> None:
+    primary = tmp_path / "kubedojo"
+    init_git_main(primary)
+
+    result = run_hook('git commit -m "backfill: real pipeline commit"', primary, primary)
+
+    assert result.returncode == 0
+
+
+def test_main_commit_short_flag_cluster_am_with_pr_ref_allowed(tmp_path: Path) -> None:
+    primary = tmp_path / "kubedojo"
+    init_git_main(primary)
+
+    result = run_hook('git commit -am "fix: thing (#123)"', primary, primary)
+
+    assert result.returncode == 0
+
+
 def test_feature_branch_commit_allowed(tmp_path: Path) -> None:
     primary = tmp_path / "kubedojo"
     init_git_main(primary)

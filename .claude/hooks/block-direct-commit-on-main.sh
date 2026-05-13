@@ -51,6 +51,21 @@ if args is None:
     print("UNKNOWN\tmatched git commit text, but could not locate argv")
     raise SystemExit
 
+expanded_args = []
+for token in args:
+    if (
+        token.startswith("-")
+        and not token.startswith("--")
+        and len(token) > 2
+        and "m" in token
+        and token[-1] == "m"
+    ):
+        expanded_args.append(token[:-1])
+        expanded_args.append("-m")
+    else:
+        expanded_args.append(token)
+args = expanded_args
+
 for index, token in enumerate(args):
     if token in {"-F", "--file"}:
         print("UNKNOWN\tcommit message comes from a file")
@@ -102,7 +117,7 @@ fi
 SUBJECT=$PARSE_VALUE
 
 case "$SUBJECT" in
-  backfill* | handoff* | docs\(status\):*)
+  backfill:* | backfill\ * | handoff:* | handoff\ * | docs\(status\):*)
     exit 0
     ;;
 esac
