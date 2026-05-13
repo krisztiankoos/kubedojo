@@ -308,7 +308,7 @@ def test_stage_3_retry_budget_exhausted(monkeypatch: pytest.MonkeyPatch, tmp_pat
 
     assert len(expand_calls) == 3
     assert result.retry_count == 2
-    assert result.outcome == "needs_human"
+    assert result.outcome == "residuals_filed"
     assert result.reason == "rubric_stage_3_unmet"
     assert result.stage_reached == "RUBRIC_RECHECK"
 
@@ -427,13 +427,13 @@ def test_generated_loc_threshold_is_deprecated(monkeypatch: pytest.MonkeyPatch, 
     assert result.stage_reached == "DONE"
 
 
-def test_citation_residuals_queued_is_needs_human(
+def test_citation_residuals_queued_is_residuals_filed(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """pipeline_v3 exits non-zero with status="residuals_queued" when
     it's audited the module and routed un-auto-fixable items to human
     review. That's a legitimate outcome, not a pipeline failure, so
-    pipeline_v4 should classify it as needs_human and still run the
+    pipeline_v4 should classify it as residuals_filed and still run the
     final rescore — not short-circuit out as failed."""
     _patch_roots(monkeypatch, tmp_path)
     _write_module(tmp_path)
@@ -463,7 +463,7 @@ def test_citation_residuals_queued_is_needs_human(
 
     result = pipeline_v4.run_pipeline_v4(MODULE_KEY)
 
-    assert result.outcome == "needs_human"
+    assert result.outcome == "residuals_filed"
     assert result.reason == "citation_residuals_queued"
     assert result.stage_reached == "DONE"
     assert result.citation_v3_exit == 1

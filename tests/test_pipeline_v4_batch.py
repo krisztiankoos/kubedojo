@@ -455,18 +455,18 @@ def test_audit_missing_sources_clean_module_without_sources_flagged(
 
 
 def test_audit_missing_sources_skips_non_clean_outcomes(tmp_path: Path) -> None:
-    """A module not marked `clean` (needs_human / failed / skipped_locked)
+    """A module not marked `clean` (residuals_filed / failed / skipped_locked)
     is out of audit scope — those are expected to be incomplete."""
     _write_module_351(
         tmp_path,
-        "ai/demo/module-1.0-needs-human",
+        "ai/demo/module-1.0-residuals-filed",
         "# Title\n\nNo sources.\n",
     )
     results = [
-        {"module_key": "ai/demo/module-1.0-needs-human", "outcome": "needs_human"},
-        {"module_key": "ai/demo/module-1.0-needs-human", "outcome": "failed"},
+        {"module_key": "ai/demo/module-1.0-residuals-filed", "outcome": "residuals_filed"},
+        {"module_key": "ai/demo/module-1.0-residuals-filed", "outcome": "failed"},
         {
-            "module_key": "ai/demo/module-1.0-needs-human",
+            "module_key": "ai/demo/module-1.0-residuals-filed",
             "outcome": pipeline_v4_batch.OUTCOME_SKIPPED_LOCKED,
         },
     ]

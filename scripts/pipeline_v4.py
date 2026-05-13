@@ -44,7 +44,7 @@ STAGE_DONE = "DONE"
 
 OUTCOME_CLEAN = "clean"
 OUTCOME_SKIPPED = "skipped_already_stable"
-OUTCOME_NEEDS_HUMAN = "needs_human"
+OUTCOME_RESIDUALS_FILED = "residuals_filed"
 OUTCOME_FAILED = "failed"
 
 
@@ -410,7 +410,7 @@ def _run_pipeline_v4(
                 if result.retry_count >= max_rubric_retries:
                     return _fail_result(
                         result,
-                        outcome=OUTCOME_NEEDS_HUMAN,
+                        outcome=OUTCOME_RESIDUALS_FILED,
                         reason="rubric_stage_3_unmet",
                         score_after=score_after_expand,
                     )
@@ -508,10 +508,10 @@ def _run_pipeline_v4(
         result.stage_reached = STAGE_DONE
         # residuals_queued means pipeline_v3 ran cleanly but routed some
         # items to human review. Not a failure, not fully clean — flag
-        # as needs_human so batch summaries distinguish it from modules
-        # that closed out without operator follow-up.
+        # as residuals_filed so summaries distinguish it from modules
+        # that closed out without residual follow-up.
         if citation_status == "residuals_queued":
-            result.outcome = OUTCOME_NEEDS_HUMAN
+            result.outcome = OUTCOME_RESIDUALS_FILED
             result.reason = "citation_residuals_queued"
         else:
             result.outcome = OUTCOME_SKIPPED if stable_before_citation else OUTCOME_CLEAN
