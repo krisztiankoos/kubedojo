@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 8 handoff — 2026-05-13 — tech-debt drive: hooks 2-nits/3/4/5 shipped + epic #1175 closed + #381/#382 closed + #383/#384 re-anchored + #1143 closed</title>
+<style>
+  :root {
+    --bg: #fafbfc; --fg: #1a1d23; --muted: #5b6573; --accent: #0057B7;
+    --good: #0d8a4a; --warn: #b45c00; --bad: #b8001f; --card: #ffffff;
+    --border: #e2e6eb; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { margin: 0 0 8px; font-size: 26px; }
+  h2 { margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); font-size: 20px; }
+  h3 { margin: 20px 0 8px; font-size: 16px; }
+  .meta { color: var(--muted); margin: 0 0 24px; font-size: 13px; }
+  .tldr { background: var(--card); border-left: 4px solid var(--accent);
+          padding: 14px 18px; margin: 16px 0 28px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0;
+          background: var(--card); border: 1px solid var(--border); }
+  th, td { padding: 9px 11px; border-bottom: 1px solid var(--border);
+           text-align: left; vertical-align: top; font-size: 13.5px; }
+  th { background: #eef2f6; font-weight: 600; }
+  td.col-id { white-space: nowrap; font-family: var(--mono); font-size: 12.5px; }
+  code { background: #eef2f6; padding: 1px 6px; border-radius: 3px;
+         font-family: var(--mono); font-size: 12.5px; }
+  ol li, ul li { margin: 6px 0; }
+  .pill { display: inline-block; padding: 1px 7px; border-radius: 10px;
+          font-size: 11.5px; font-weight: 600; margin-right: 6px; }
+  .pill.merged { background: #eef9f1; color: var(--good); }
+  .pill.closed { background: #eef9f1; color: var(--good); }
+  .pill.new { background: #e8f0fc; color: var(--accent); }
+  .pill.blocked { background: #fdecea; color: var(--bad); }
+  .pill.contract { background: #fff7e6; color: var(--warn); }
+  .smoke { background: #1a1d23; color: #e8eaed; padding: 12px 16px;
+           border-radius: 6px; font-family: var(--mono); font-size: 12.5px;
+           overflow-x: auto; white-space: pre; }
+  .comment { color: #9aa0a6; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 8 — Tech-debt drive: hook epic closed + stale-issue triage</h1>
+<p class="meta">2026-05-13 · primary on <code>main</code> at <code>96a25d82</code> · author: claude opus 4.7 (1M ctx)</p>
+
+<div class="tldr">
+  <strong>TL;DR.</strong> User locked tech-debt-first mode ("no backfill or content until all bug tech-debts are fixed") and demanded full multi-agent orchestration. Drove 5 PRs + 8 GH closes + 2 re-anchors + 3 new filings end-to-end.
+  <span class="pill merged">5 PRs merged</span>: #1082 (goal-driver docs, sat 2 days), #1196 (hook 2 nits), #1197 (hook 3), #1199 (hook 4), #1201 (hook 5).
+  <span class="pill closed">Hook epic #1175 CLOSED — 5/5 hooks shipped.</span> The advisory-rules→enforced-hooks migration is mechanically complete.
+  <span class="pill closed">Stale-issue triage</span>: #381 + #382 closed as stale (UNAUDITED-queue framing gone, scope absorbed by #376); #1143 closed (PR #1164 already had the fix, auto-close didn't fire); #383 + #384 re-anchored with new bodies.
+  <span class="pill new">3 follow-ups filed</span>: #1195 (path nit from #1082), #1198 (pre-existing test fails), #1200 (worktree .venv).
+  <span class="pill blocked">#1144 BLOCKED on user step</span>: PAT lacks <code>Administration:write</code>; gh api command drafted for user to paste.
+</div>
+
+<h2>Agents used</h2>
+
+<table>
+  <thead><tr><th>Agent</th><th>Role</th><th>Count</th></tr></thead>
+  <tbody>
+    <tr><td>claude opus 4.7 (orchestrator)</td><td>dispatch, review, merge, STATUS</td><td>1 (this session)</td></tr>
+    <tr><td>claude-code-guide subagent</td><td>verify <code>/goal</code> docs claims; verify hooks modify-tool-input API</td><td>2</td></tr>
+    <tr><td>general-purpose haiku agent</td><td>#381–#384 re-scope audit (read-only, parallel with Lane 1)</td><td>1</td></tr>
+    <tr><td>codex gpt-5.3-spark (danger)</td><td>4 hook PRs (#1196, #1197, #1199, #1201) — sequential per <code>feedback_codex_dispatch_sequential.md</code></td><td>4</td></tr>
+    <tr><td>gemini-3-flash-preview</td><td>#383/#384 body re-anchor drafts (parallel with codex Lane 1)</td><td>1</td></tr>
+  </tbody>
+</table>
+
+<p>Pattern: orchestrator-driven, never inline-wrote code/content. Single inline edit was the memory file <code>reference_goal_command.md</code> (operational metadata) + STATUS.md update + this handoff. Per <code>feedback_dispatch_codex_for_code_changes.md</code>.</p>
+
+<h2>What shipped (5 PRs merged + 1 epic closed)</h2>
+
+<table>
+  <thead><tr><th>Commit / PR</th><th>Subject</th><th>Outcome</th></tr></thead>
+  <tbody>
+    <tr><td class="col-id">PR #1082</td>
+        <td>docs(rules): add goal-driven-runs.md for /goal vocabulary</td>
+        <td><span class="pill merged">merged</span> at <code>4241fe7b</code>. User-authored 2026-05-11, sat 2 days. Cross-family review (claude opus) verified mechanics against Claude Code docs + OpenAI Codex docs (claim 1–8 ✅; claim 9 about codex <code>/goal</code> verified after subagent flagged as unverifiable — user corrected: codex has it too). Path nit <code>scripts/verifier.py</code> → <code>scripts/quality/verify_module.py</code> filed as #1195.</td></tr>
+    <tr><td class="col-id">PR #1196</td>
+        <td>fix(hooks): hook 2 nits — tighten allowlist + handle -am (#1193)</td>
+        <td><span class="pill merged">merged</span> at <code>f10d99d1</code>. Codex spark 71s. 15/15 tests pass. Allowlist <code>backfill:*|backfill\ *|handoff:*|handoff\ *</code> (was <code>backfill*</code> fail-open on <code>backfilling: ...</code>). Python pre-pass decomposes <code>-am</code>/<code>-Sam</code> clusters per git CLI grammar (<code>m</code> must be last).</td></tr>
+    <tr><td class="col-id">PR #1197</td>
+        <td>feat(hooks): block orchestrator content edits (3/5 of #1175) (#1189)</td>
+        <td><span class="pill merged">merged</span> at <code>d3ae7ba2</code>. New <code>.claude/hooks/block-orchestrator-content-edits.sh</code> + 9 tests + <code>scripts/dispatch_smart.py</code> injects <code>KUBEDOJO_DISPATCHED=1</code> into subprocess env. PreToolUse on <code>Edit</code>/<code>Write</code> now denies when <code>file_path</code> matches <code>src/content/docs/**</code> AND env var unset.</td></tr>
+    <tr><td class="col-id">PR #1199</td>
+        <td>feat(hooks): block Agent worktree isolation (4/5 of #1175) (#1190)</td>
+        <td><span class="pill merged">merged</span> at <code>68c0bd85</code>. Smallest hook of the 5: single-condition <code>isolation == "worktree"</code> check. 6 tests. Codex couldn't run pytest in the worktree (no <code>.venv</code>) — filed as #1200; CI ran the suite.</td></tr>
+    <tr><td class="col-id">PR #1201</td>
+        <td>feat(hooks): auto-inject --mode danger for codex git/gh dispatches (5/5 of #1175) (#1191)</td>
+        <td><span class="pill merged">merged</span> at <code>96a25d82</code>. Most complex hook: <strong>injection semantics</strong>, not deny. Hook reads Bash command, shlex-tokenizes, finds first <code>codex exec</code>, scans prompt for <code>git push</code>/<code>gh pr create</code>, injects or upgrades <code>--mode danger</code> via Claude Code's <code>hookSpecificOutput.updatedInput</code> protocol. 10 tests including FAIL_OPEN paths (stdin-dash, file redirect, malformed JSON). Closes epic #1175 on merge.</td></tr>
+  </tbody>
+</table>
+
+<h2>Stale-issue triage (audit-driven)</h2>
+
+<p>Lane 2 (general-purpose haiku agent) audited the 4 stale "Phase C/D/D.5/E.1" issues that had a May-5 hard gate that expired 8 days ago. Audit cited current state data: <strong>249 critical-rubric modules</strong> (down from 484/721); schema no longer carries an <code>audited</code> field; pipeline-v4 audits inline via <code>actions.next</code>.</p>
+
+<table>
+  <thead><tr><th>Issue</th><th>Verdict</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td><code>#381</code> Phase C: mass-audit 721 UNAUDITED</td><td><span class="pill closed">CLOSE</span></td><td>UNAUDITED queue abstraction no longer exists; the gating concept is dead.</td></tr>
+    <tr><td><code>#382</code> Phase D: critical-rubric blitz</td><td><span class="pill closed">CLOSE</span></td><td>Scope fully absorbed by #376; current count already past #376's ≤380 target.</td></tr>
+    <tr><td><code>#383</code> Phase D.5: UK re-sync</td><td><span class="pill new">RE-ANCHOR</span></td><td>Work is real + ongoing (orthogonal to Phase D). Gemini drafted new title + body; framing now: "≥20 EN modules with diverged UK siblings per track → bulk <code>uk_sync.py</code>."</td></tr>
+    <tr><td><code>#384</code> Phase E.1: expansion plan</td><td><span class="pill new">RE-ANCHOR</span></td><td>Expansion items still unshipped per <code>project_expansion_plan.md</code>. New body strips "after Phase D" sequencing; verification-first method; Jenkins-out per <code>feedback_skip_jenkins_prefer_modern_cicd.md</code>.</td></tr>
+  </tbody>
+</table>
+
+<h2>Other GH-issue management</h2>
+
+<h3>Closed (3 + 5 PR-closes)</h3>
+<ul>
+  <li><code>#1143</code> — Codex bridge push-verify skip. <strong>Fix was already on main</strong> at PR #1164 (2026-05-12, commit <code>7a787c6c</code>); auto-close from commit message didn't fire (same sibling pattern as <code>feedback_gh_pr_merge_auto_squash_race.md</code>). Manual close with cite.</li>
+  <li><code>#1175</code> — Hook epic. All 5 hooks shipped. Closed with completion table cross-referencing each PR + acceptance criteria check.</li>
+  <li><code>#1193</code>, <code>#1189</code>, <code>#1190</code>, <code>#1191</code>, <code>#1082</code> — closed by their respective PR merges.</li>
+</ul>
+
+<h3>Filed (3 new follow-ups)</h3>
+<ul>
+  <li><code>#1195</code> — Fix verifier path reference in <code>goal-driven-runs.md</code> (from PR #1082 nit). One-line correction.</li>
+  <li><code>#1198</code> — Two pre-existing test failures on main: <code>test_bridge_child_env_is_provider_scoped</code> (KeyError on <code>GEMINI_API_KEY</code>) + <code>test_quality_scores_live_repo_no_citations_force_critical</code> (CKA 0.1 now scored "excellent" because Sources landed — test assumption stale). Surfaced during PR #1197 review.</li>
+  <li><code>#1200</code> — Dispatched-codex worktrees lack <code>.venv</code> symlink, so codex can't self-verify with pytest. Recommended fix: symlink primary <code>.venv</code> into worktree at dispatch setup.</li>
+</ul>
+
+<h2>Contract / hardening changes</h2>
+
+<ol>
+  <li><strong>Hook 3 enforcement live.</strong> <code>Edit</code>/<code>Write</code> on <code>src/content/docs/**</code> from the orchestrator (no <code>KUBEDOJO_DISPATCHED=1</code> env) now exits 2 with rule-cite. Dispatched agents (<code>scripts/dispatch_smart.py</code> children) get the env var injected automatically.</li>
+  <li><strong>Hook 4 enforcement live.</strong> <code>Agent</code> tool calls with <code>isolation: "worktree"</code> now exit 2. The 2026-04-30 night-2 Part 5 GC race (5/8 agents lost their worktree commits to primary main) can no longer recur.</li>
+  <li><strong>Hook 5 injection live.</strong> Bare <code>codex exec</code> commands whose prompt contains <code>git push</code> or <code>gh pr create</code> get <code>--mode danger</code> auto-injected via Claude Code's <code>updatedInput.command</code> protocol. Wrapper-routed dispatches (<code>dispatch_smart.py</code>) already set the right mode internally — this hook is the safety net for direct-call paths.</li>
+  <li><strong>Hook 2 nits closed.</strong> Allowlist now requires <code>:</code> or whitespace separator after <code>backfill</code>/<code>handoff</code> (no more <code>backfilling: ...</code> fail-open). <code>-am</code>/<code>-Sam</code> clusters decompose so direct <code>git commit -am</code> on main is now mechanically blocked.</li>
+  <li><strong>Memory: <code>reference_goal_command.md</code> added.</strong> Cross-CLI <code>/goal</code> facts (claude CLI v2.1.139+ with <code>-p</code> handle; codex CLI with <code>features.goals=true</code> + pause/resume/budget). Replaces stale "claude only" assumptions.</li>
+</ol>
+
+<h2>Blocker</h2>
+
+<p><strong>#1144 branch protection — manual step required.</strong> The session's PAT lacks <code>Administration: write</code> scope; <code>gh api -X PUT branches/main/protection</code> returns 403. Implementation drafted (Option A: required CI checks, no required-reviews — aligned with <code>feedback_ai_gate_is_the_gate.md</code>). User runs the gh api payload directly (or sets via GitHub web UI). Curl-friendly body documented inline in the chat record.</p>
+
+<h2>Decisions made</h2>
+
+<ol>
+  <li><strong>Tech-debt-first lock confirmed mid-session.</strong> User: "we will not backfill or do content unill all bug techdebtys are fixed and you need to orchestrate and drive and use all agents." Lane 1 codex sequential + Lane 2 haiku audit + Lane 3 gemini draft + cross-family claude review = full multi-agent orchestration.</li>
+  <li><strong>#1144 Option A (CI only, no required-reviews) was the orchestrator's recommendation</strong>, citing <code>feedback_ai_gate_is_the_gate.md</code>. Not yet user-confirmed; default-execute on no veto. Bot-identity yak shave (Option B) explicitly rejected as not worth the half-day cost.</li>
+  <li><strong>#1143 closed as already-done, not re-dispatched.</strong> Code + tests landed in PR #1164 (session 6); only the auto-close failed. No new work needed.</li>
+  <li><strong>Pre-existing test failures #1198 are NOT blockers for hook PRs.</strong> Reproduced on main without any session-8 changes; filed separately to keep the hook PRs un-encumbered.</li>
+  <li><strong>Re-anchor over close for #383/#384</strong> (vs. close all 4 stale Phase items). The audit verified UK re-sync and expansion-plan scope are still live; only the "after Phase D" gating was dead.</li>
+</ol>
+
+<h2>Cold-start for next session</h2>
+
+<ol>
+  <li><strong>Briefing API first.</strong> Live alerts after this session: <code>249 critical modules</code> + <code>1 detached worktree (codex-interactive)</code>. The Phase C/D/D.5/E.1 framing is gone; <code>actions.next</code> still drives rubric-critical rewrites.</li>
+  <li><strong>Check if #1144 was unblocked by user.</strong> If <code>gh api repos/.../branches/main/protection</code> returns a JSON body (not 403), branch protection is live — close #1144 with the gh api response in the comment.</li>
+  <li><strong>Next-up TODO candidates:</strong>
+    <ul>
+      <li><strong>Citation backfill pilot</strong> — root-cause fixed by PR #1172 (session 6); pilot first with <code>.venv/bin/python -m scripts.quality.pipeline backfill-pending --limit 3</code>; verify diffs are append-only. If clean, run <code>--limit 50</code> batches.</li>
+      <li><strong>Stage-1 brief drafting for #1186 + #1187</strong> — deferred behind tech-debt; now that tech-debt thread is essentially complete (excluding the user-blocked #1144), this is the next content-adjacent thread.</li>
+      <li><strong>Pre-existing test failures #1198</strong> — small cleanup; either fix the test fixtures or refactor the assertions to current expected behavior.</li>
+      <li><strong>Worktree .venv symlink #1200</strong> — small dispatcher patch so codex can self-verify with pytest inside worktrees.</li>
+      <li><strong>Stale carryovers</strong>: <code>pr-1168</code> dangling local branch; Option F sampling (#1170); leaked GH_TOKEN rotation.</li>
+    </ul>
+  </li>
+  <li><strong>Cold-start ritual:</strong> <code>/bin/ps aux | grep -E "dispatch_388_pilot|backfill-pending"</code> — should be empty.</li>
+  <li><strong>Hook 3 caveat:</strong> when you (next-session claude) want to edit anything under <code>src/content/docs/**</code>, you'll get exit-2 with a deny message. That's the intended behavior — dispatch a codex/claude-headless via <code>dispatch_smart.py edit</code> with <code>--worktree</code>. The wrapper injects <code>KUBEDOJO_DISPATCHED=1</code> automatically.</li>
+</ol>
+
+<h2>Smoketests / verification</h2>
+
+<div class="smoke"><span class="comment"># Verify session-8 PRs landed</span>
+git log --oneline -8 main
+<span class="comment"># Expect: 96a25d82 → 68c0bd85 → d3ae7ba2 → f10d99d1 → 4241fe7b → 03241656 → a716df0b → 142b01f6</span>
+
+<span class="comment"># Verify hook epic closed</span>
+gh issue view 1175 --json state | jq -r '.state'   <span class="comment"># CLOSED</span>
+
+<span class="comment"># Verify all 5 hooks registered</span>
+.venv/bin/python -c '
+import json, pathlib
+s = json.loads(pathlib.Path(".claude/settings.json").read_text())
+hooks = []
+for entry in s["hooks"]["PreToolUse"]:
+    for h in entry["hooks"]:
+        hooks.append(h["command"])
+for h in hooks:
+    print(h)
+'
+<span class="comment"># Expect:
+# .claude/hooks/enforce-venv.sh
+# .claude/hooks/block-branch-create-in-primary.sh
+# .claude/hooks/block-direct-commit-on-main.sh
+# .claude/hooks/inject-codex-danger-mode.sh
+# .claude/hooks/block-orchestrator-content-edits.sh
+# .claude/hooks/block-agent-worktree-isolation.sh</span>
+
+<span class="comment"># Verify hook 3 mechanically blocks orchestrator content edits</span>
+unset KUBEDOJO_DISPATCHED
+echo '{"tool_name":"Edit","tool_input":{"file_path":"src/content/docs/foo.md"}}' \
+  | .claude/hooks/block-orchestrator-content-edits.sh; echo "exit=$?"
+<span class="comment"># Expect: exit=2 with deny message</span>
+
+<span class="comment"># Verify hook 4 blocks Agent(isolation="worktree")</span>
+echo '{"tool_name":"Agent","tool_input":{"isolation":"worktree","description":"x","prompt":"y"}}' \
+  | .claude/hooks/block-agent-worktree-isolation.sh; echo "exit=$?"
+<span class="comment"># Expect: exit=2 with deny message</span>
+
+<span class="comment"># Verify hook 5 injects --mode danger</span>
+echo '{"tool_name":"Bash","tool_input":{"command":"codex exec \"draft fix then git push\""}}' \
+  | .claude/hooks/inject-codex-danger-mode.sh
+<span class="comment"># Expect: JSON with hookSpecificOutput.updatedInput.command containing "--mode danger"</span>
+</div>
+
+<h2>Pointers</h2>
+
+<ul>
+  <li>Predecessor: <a href="2026-05-13-session-7-continuation-tech-debt-and-hardening.html"><code>docs/session-state/2026-05-13-session-7-continuation-tech-debt-and-hardening.html</code></a> — session 7 continuation (set up the queue this session drained).</li>
+  <li>Hook epic: GH #1175 (CLOSED). Sub-issues: #1176 (hook 1 ✅), #1189 (hook 3 ✅), #1190 (hook 4 ✅), #1191 (hook 5 ✅), #1193 (hook 2 nits ✅).</li>
+  <li>Stale-issue audit verdicts: #381 CLOSE, #382 CLOSE, #383 RE-ANCHOR (title+body), #384 RE-ANCHOR (body).</li>
+  <li>Memory: <code>reference_goal_command.md</code> (new) — <code>/goal</code> cross-CLI reference.</li>
+  <li>Outstanding tooling debts surfaced this session: #1195 (path nit), #1198 (test drift), #1200 (worktree .venv), #1144 (branch protection — user PAT scope).</li>
+</ul>
+
+</main>
+</body>
+</html>
