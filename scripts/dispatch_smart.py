@@ -168,9 +168,13 @@ def fire(*, agent: str, task_class: str, prompt: str, mode: str, model: str,
     started = time.time()
     try:
         previous_search = os.environ.get("KUBEDOJO_CODEX_SEARCH")
+        previous_dispatched = os.environ.get("KUBEDOJO_DISPATCHED")
         if agent == "codex":
             cfg = TASK_CLASSES[task_class]
             os.environ["KUBEDOJO_CODEX_SEARCH"] = "1" if cfg.codex_search else "0"
+        env = os.environ.copy()
+        env["KUBEDOJO_DISPATCHED"] = "1"
+        os.environ.update(env)
         result = invoke(
             agent,
             prompt,
@@ -196,6 +200,10 @@ def fire(*, agent: str, task_class: str, prompt: str, mode: str, model: str,
                 os.environ.pop("KUBEDOJO_CODEX_SEARCH", None)
             else:
                 os.environ["KUBEDOJO_CODEX_SEARCH"] = previous_search
+        if previous_dispatched is None:
+            os.environ.pop("KUBEDOJO_DISPATCHED", None)
+        else:
+            os.environ["KUBEDOJO_DISPATCHED"] = previous_dispatched
 
     elapsed = time.time() - started
     append_log({

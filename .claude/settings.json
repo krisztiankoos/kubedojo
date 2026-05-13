@@ -13,6 +13,12 @@
           {"type": "command", "command": ".claude/hooks/block-branch-create-in-primary.sh"},
           {"type": "command", "command": ".claude/hooks/block-direct-commit-on-main.sh"}
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {"type": "command", "command": ".claude/hooks/block-orchestrator-content-edits.sh"}
+        ]
       }
     ],
     "PostToolUse": [
