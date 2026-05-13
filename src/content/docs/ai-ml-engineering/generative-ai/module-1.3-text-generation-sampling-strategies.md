@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Text Generation & Sampling Strategies"
 slug: ai-ml-engineering/generative-ai/module-1.3-text-generation-sampling-strategies
 sidebar:
@@ -29,7 +30,7 @@ This module teaches sampling as an engineering control surface rather than as a 
 
 ## The Generation Loop
 
-Text generation is usually autoregressive, which means the model writes one token, appends that token to the context, and then uses the expanded context to score the next token. The model is not drafting a complete paragraph in a hidden buffer and then revealing it. It is repeatedly answering a narrower question: given everything so far, which token should come next? This is why early decoding choices matter so much. A slightly unusual token at step five changes the context at step six, which changes the probabilities at step seven, and the whole answer can drift into a different path.
+[Text generation is usually autoregressive, which means the model writes one token, appends that token to the context, and then uses the expanded context to score the next token.](https://huggingface.co/docs/transformers/v4.45.1/llm_tutorial) The model is not drafting a complete paragraph in a hidden buffer and then revealing it. It is repeatedly answering a narrower question: given everything so far, which token should come next? This is why early decoding choices matter so much. A slightly unusual token at step five changes the context at step six, which changes the probabilities at step seven, and the whole answer can drift into a different path.
 
 ```mermaid
 flowchart TD
@@ -133,7 +134,7 @@ High temperature becomes useful when the user explicitly wants novelty, such as 
 
 ## Top-p: Dynamic Filtering With a Nucleus
 
-Top-p, also called nucleus sampling, filters the candidate tokens by cumulative probability. The sampler sorts tokens from most likely to least likely, keeps the smallest set whose total probability reaches the `top_p` threshold, and discards everything else. Unlike top-k, the size of the candidate set changes at every generation step. When the model is very confident, top-p may keep only a few tokens. When the model is uncertain among many plausible options, top-p can keep a broader set.
+Top-p, also called nucleus sampling, filters the candidate tokens by cumulative probability. The sampler sorts tokens from most likely to least likely, [keeps the smallest set whose total probability reaches the `top_p` threshold](https://huggingface.co/docs/transformers/v4.22.2/main_classes/text_generation), and discards everything else. Unlike top-k, the size of the candidate set changes at every generation step. When the model is very confident, top-p may keep only a few tokens. When the model is uncertain among many plausible options, top-p can keep a broader set.
 
 ```ascii
 Sorted candidates for one decoding step
@@ -166,7 +167,7 @@ A common misunderstanding is that `top_p: 0.9` means "choose the top ninety perc
 
 ## Top-k: Static Filtering and Its Trade-Offs
 
-Top-k sampling keeps exactly the `k` most probable tokens and removes the rest. If `top_k` is `5`, the sampler can choose only among the five highest-ranked candidates, regardless of their absolute probabilities. This is easy to reason about, and it can be useful in local model stacks or research settings where a fixed candidate budget is desirable. The weakness is that the same `k` can be too broad when the model is confident and too narrow when the model is uncertain.
+[Top-k sampling keeps exactly the `k` most probable tokens and removes the rest.](https://huggingface.co/docs/transformers/v4.22.2/main_classes/text_generation) If `top_k` is `5`, the sampler can choose only among the five highest-ranked candidates, regardless of their absolute probabilities. This is easy to reason about, and it can be useful in local model stacks or research settings where a fixed candidate budget is desirable. The weakness is that the same `k` can be too broad when the model is confident and too narrow when the model is uncertain.
 
 ```ascii
 Clear-step distribution with top_k = 5
@@ -423,7 +424,7 @@ There is also a latency and cost dimension. Larger `max_tokens` increases the wo
 
 ## Did You Know?
 
-1. Nucleus sampling was popularized by the 2019 paper "The Curious Case of Neural Text Degeneration," which showed that simply maximizing likelihood can produce dull or repetitive text even when the model is strong.
+1. Nucleus sampling was popularized by [the 2019 paper "The Curious Case of Neural Text Degeneration,"](https://arxiv.org/abs/1904.09751) which showed that simply maximizing likelihood can produce dull or repetitive text even when the model is strong.
 
 2. A zero-temperature setting is best understood as a decoding choice, not as a universal reproducibility guarantee, because provider infrastructure, model versions, safety layers, and tool routing can still change behavior.
 
@@ -871,3 +872,6 @@ Sampling parameters control how a model turns probabilities into generated text,
 
 - [The Curious Case of Neural Text Degeneration](https://arxiv.org/abs/1904.09751) — Primary paper for nucleus sampling, degeneration under maximization, and the motivation for sampling-based decoding.
 - [Hugging Face Transformers: Generation Strategies](https://huggingface.co/docs/transformers/en/generation_strategies) — Practical overview of greedy decoding, sampling, and beam search with current framework terminology.
+- [huggingface.co: llm tutorial](https://huggingface.co/docs/transformers/v4.45.1/llm_tutorial) — The Hugging Face LLM tutorial explicitly states that autoregressive generation iteratively selects the next token from the model's next-token probability distribution until a stop condition is reached.
+- [huggingface.co: text generation](https://huggingface.co/docs/transformers/v4.22.2/main_classes/text_generation) — The Transformers generation docs define `top_p` in cumulative-probability terms that match this claim.
+- [Hugging Face Transformers: Text Generation Strategies](https://huggingface.co/docs/transformers/v4.49.0/en/generation_strategies) — Practical reference for greedy decoding, sampling, and current generation terminology.
