@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Backpropagation and Autograd from Scratch"
 slug: ai-ml-engineering/deep-learning/module-1.7-backpropagation-and-autograd-from-scratch
 sidebar:
@@ -578,11 +579,11 @@ The strongest first hypothesis is exploding gradients or numeric overflow trigge
 
 ## Did You Know?
 
-**Did You Know?** Reverse-mode automatic differentiation and backpropagation describe closely related ideas from different communities: one emphasizes a general derivative-computation method, while the other emphasizes its use in training neural networks.
+**Did You Know?** [Reverse-mode automatic differentiation and backpropagation describe closely related ideas from different communities](https://arxiv.org/abs/1502.05767): one emphasizes a general derivative-computation method, while the other emphasizes its use in training neural networks.
 
-**Did You Know?** A dynamic autograd system, such as PyTorch eager execution, builds the computation graph as normal Python code runs, which makes debugging and control flow easier than in older static-graph workflows.
+**Did You Know?** [A dynamic autograd system, such as PyTorch eager execution, builds the computation graph as normal Python code runs](https://raw.githubusercontent.com/pytorch/pytorch/main/README.md), which makes debugging and control flow easier than in older static-graph workflows.
 
-**Did You Know?** Gradient checkpointing reduces activation memory by recomputing parts of the forward pass during backward, trading extra compute for the ability to train larger models.
+**Did You Know?** [Gradient checkpointing reduces activation memory by recomputing parts of the forward pass during backward](https://raw.githubusercontent.com/pytorch/pytorch/main/torch/utils/checkpoint.py), trading extra compute for the ability to train larger models.
 
 **Did You Know?** Numerical gradient checking is usually a development-time tool, not a training-time tool, because checking every parameter with finite differences requires many additional forward passes.
 
@@ -593,8 +594,8 @@ The strongest first hypothesis is exploding gradients or numeric overflow trigge
 | Mistake | Why It Breaks Learning | Better Practice |
 |---|---|---|
 | Using in-place tensor operations on values needed for backward, such as `a += b` on an activation reused later | Autograd may need the original value to compute a local derivative, and changing it can corrupt the saved graph state or raise a versioning error | Prefer out-of-place operations during model development, and use in-place variants only when you understand what backward needs |
-| Forgetting to call `optimizer.zero_grad()` or `model.zero_grad()` before each backward pass | Frameworks accumulate gradients by default, so each step accidentally includes old batches and update magnitudes drift upward | Clear gradients once per optimization step, usually immediately before the forward or backward pass |
-| Calling `.backward()` twice on the same graph without `retain_graph=True` when a multi-loss workflow needs it | Most frameworks free graph intermediates after backward to save memory, so the second backward cannot reuse the released values | Combine losses before one backward when possible, or explicitly retain the graph when repeated backward is truly required |
+| Forgetting to call `optimizer.zero_grad()` or `model.zero_grad()` before each backward pass | [Frameworks accumulate gradients by default](https://raw.githubusercontent.com/pytorch/tutorials/main/recipes_source/recipes/zeroing_out_gradients.py), so each step accidentally includes old batches and update magnitudes drift upward | Clear gradients once per optimization step, usually immediately before the forward or backward pass |
+| Calling `.backward()` twice on the same graph without `retain_graph=True` when a multi-loss workflow needs it | [Most frameworks free graph intermediates after backward to save memory](https://raw.githubusercontent.com/pytorch/pytorch/main/torch/autograd/__init__.py), so the second backward cannot reuse the released values | Combine losses before one backward when possible, or explicitly retain the graph when repeated backward is truly required |
 | Treating `param.grad is None` and `param.grad == 0` as the same symptom | `None` often means the parameter was not connected to the loss, while zero can mean it was connected but the local derivative was zero | Inspect graph connectivity, `requires_grad`, frozen parameters, and activation states separately |
 | Debugging NaNs only after the optimizer step | The optimizer may spread one bad gradient across many parameters, hiding the operation that first produced the invalid value | Check inputs, outputs, loss, and gradients before calling `optimizer.step()` |
 | Using sigmoid or tanh everywhere in a deep feedforward network without monitoring saturation | Saturated activations have small derivatives, so early layers can receive gradients too small to drive useful learning | Start with ReLU-family activations and inspect activation and gradient distributions |
@@ -784,3 +785,7 @@ _Status: Complete_
 - [AlexNet](https://en.wikipedia.org/wiki/AlexNet) — Overview of AlexNet and its 2012 ImageNet win using GPU-based training.
 - [Training Deep Nets with Sublinear Memory Cost](https://arxiv.org/abs/1604.06174) — Canonical reference for gradient checkpointing and the memory-versus-compute tradeoff.
 - [Automatic Differentiation in Machine Learning: a Survey](https://arxiv.org/abs/1502.05767) — Authoritative overview of autodiff methods, including reverse mode and backpropagation.
+- [raw.githubusercontent.com: README.md](https://raw.githubusercontent.com/pytorch/pytorch/main/README.md) — The official PyTorch README directly describes dynamic neural networks, reverse-mode autodiff, and imperative/debuggable execution.
+- [raw.githubusercontent.com: checkpoint.py](https://raw.githubusercontent.com/pytorch/pytorch/main/torch/utils/checkpoint.py) — PyTorch's checkpoint implementation docstring directly states this compute-versus-memory tradeoff and the backward-pass recomputation behavior.
+- [raw.githubusercontent.com: zeroing out gradients.py](https://raw.githubusercontent.com/pytorch/tutorials/main/recipes_source/recipes/zeroing_out_gradients.py) — The official tutorial explicitly says gradients are accumulated by default whenever `.backward()` is called and explains zeroing them in the training loop.
+- [raw.githubusercontent.com: init  .py](https://raw.githubusercontent.com/pytorch/pytorch/main/torch/autograd/__init__.py) — The `torch.autograd.backward` docstring in the PyTorch source states that if `retain_graph` is false, the graph used to compute gradients will be freed.

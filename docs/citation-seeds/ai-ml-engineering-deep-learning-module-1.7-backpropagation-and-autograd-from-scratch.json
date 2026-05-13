@@ -1,0 +1,123 @@
+{
+  "module_key": "ai-ml-engineering/deep-learning/module-1.7-backpropagation-and-autograd-from-scratch",
+  "module_path": "src/content/docs/ai-ml-engineering/deep-learning/module-1.7-backpropagation-and-autograd-from-scratch.md",
+  "research_run_id": "2026-05-13T23:05:41+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Reverse-mode automatic differentiation is the de-facto/default method for neural network training because neural-network losses usually have far fewer outputs than inputs.",
+      "claim_class": "standard",
+      "span_hint": "section: Learning Outcomes (first paragraph)",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://pytorch.org/blog/overview-of-pytorch-autograd-engine/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official PyTorch autograd overview states that reverse mode is the de-facto choice for this output-to-input ratio, but `pytorch.org` is off the current allowlist."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Reverse-mode automatic differentiation and backpropagation are closely related ideas, with autodiff being the broader derivative-computation framework.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know? (first item)",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://arxiv.org/abs/1502.05767",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The survey explicitly says automatic differentiation is more general than backpropagation and discusses the relationship between the two communities."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "A dynamic autograd system such as PyTorch eager execution builds the computation graph as code runs, which enables arbitrary Python control flow and more straightforward debugging than static-graph workflows.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know? (second item)",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://raw.githubusercontent.com/pytorch/pytorch/main/README.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official PyTorch README directly describes dynamic neural networks, reverse-mode autodiff, and imperative/debuggable execution."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Gradient checkpointing trades compute for memory by not keeping some forward-pass tensors alive and recomputing them during the backward pass.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know? (third item)",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://raw.githubusercontent.com/pytorch/pytorch/main/torch/utils/checkpoint.py",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "PyTorch's checkpoint implementation docstring directly states this compute-versus-memory tradeoff and the backward-pass recomputation behavior."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "PyTorch accumulates gradients by default, so training loops need `optimizer.zero_grad()` or `model.zero_grad()` each step to avoid carrying old gradients into later updates.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Common Mistakes (row about forgetting `optimizer.zero_grad()` / `model.zero_grad()`)",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://raw.githubusercontent.com/pytorch/tutorials/main/recipes_source/recipes/zeroing_out_gradients.py",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official tutorial explicitly says gradients are accumulated by default whenever `.backward()` is called and explains zeroing them in the training loop."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Calling `.backward()` twice on the same graph requires retaining the graph; otherwise PyTorch frees the graph/intermediates after backward.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Common Mistakes (row about calling `.backward()` twice without `retain_graph=True`)",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://raw.githubusercontent.com/pytorch/pytorch/main/torch/autograd/__init__.py",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The `torch.autograd.backward` docstring in the PyTorch source states that if `retain_graph` is false, the graph used to compute gradients will be freed."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/1502.05767",
+      "title": "Automatic Differentiation in Machine Learning: a Survey",
+      "tier": "standards",
+      "why_relevant": "Best high-level reference for the relationship between backpropagation, reverse-mode AD, and autodiff implementation styles."
+    },
+    {
+      "url": "https://arxiv.org/abs/1604.06174",
+      "title": "Training Deep Nets with Sublinear Memory Cost",
+      "tier": "standards",
+      "why_relevant": "Canonical paper behind gradient checkpointing and the compute-memory tradeoff mentioned in the module."
+    }
+  ],
+  "notes": "Existing bottom-of-module sources on Linnainmaa and AlexNet do not back the PyTorch-specific inline claims that actually need citation here; those claims are better anchored to official PyTorch source/docs. No war stories, incidents, pricing, or security-event claims in this module required salvage.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://github.com/pytorch/pytorch/blob/main/docs/source/notes/autograd.rst",
+      "reason": "http_404",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "upstream"
+    },
+    {
+      "url": "https://github.com/pytorch/pytorch/blob/main/docs/source/notes/autograd.rst",
+      "reason": "http_404",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "upstream"
+    }
+  ]
+}
