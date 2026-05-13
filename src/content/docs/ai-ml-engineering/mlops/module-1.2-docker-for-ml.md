@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Docker for ML"
 slug: ai-ml-engineering/mlops/module-1.2-docker-for-ml
 sidebar:
@@ -121,7 +122,7 @@ A beginner often treats Docker as a black box that either starts or fails. A sen
 
 ### 2. Images Are Layered, So Dockerfile Order Is Architecture
 
-Docker images are built from layers, and each Dockerfile instruction usually creates a new layer. Docker caches layers by comparing the instruction and the files used by that instruction. If a layer changes, every later layer must be rebuilt because Docker cannot assume that downstream state remains valid. This is why a single misplaced `COPY . .` can make every small code or documentation change reinstall gigabytes of ML dependencies.
+Docker images are built from layers, and each Dockerfile instruction usually creates a new layer. Docker caches layers by comparing the instruction and the files used by that instruction. [If a layer changes, every later layer must be rebuilt because Docker cannot assume that downstream state remains valid](https://docs.docker.com/build/cache/invalidation/). This is why a single misplaced `COPY . .` can make every small code or documentation change reinstall gigabytes of ML dependencies.
 
 ```mermaid
 graph BT
@@ -202,7 +203,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
 CMD ["python", "-m", "uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
-The `builder` stage contains compilation tools because some Python packages still compile native extensions. The `runtime` stage receives only the virtual environment and the application files. Notice that `libgomp1` appears in the runtime stage too. That is intentional: if a compiled dependency links to a runtime library, removing compilers is safe but removing the runtime library is not.
+The `builder` stage contains compilation tools because some Python packages still compile native extensions. [The `runtime` stage receives only the virtual environment and the application files](https://docs.docker.com/build/building/multi-stage/). Notice that `libgomp1` appears in the runtime stage too. That is intentional: if a compiled dependency links to a runtime library, removing compilers is safe but removing the runtime library is not.
 
 ```mermaid
 graph TD
@@ -231,7 +232,7 @@ The fix is architectural rather than cosmetic. You first copy `requirements.txt`
 
 **Active learning prompt:** In the optimized Dockerfile above, what would happen if `COPY src/ ./src/` were moved above `RUN pip install --no-cache-dir -r requirements.txt` in the builder stage? Predict the next CI symptom before checking the explanation. The symptom would be that application code changes invalidate dependency installation, so the build cache becomes fragile and ordinary feature work pays the cost of reinstalling the full ML stack.
 
-A `.dockerignore` file is part of Dockerfile architecture because it controls what enters the build context before Docker even starts executing instructions. If your build context includes `.git`, local model files, notebooks, cached datasets, and `mlruns`, Docker must send those files to the daemon and may accidentally bake them into the image. That slows builds and can leak secrets or proprietary data.
+A `.dockerignore` file is part of Dockerfile architecture because [it controls what enters the build context before Docker even starts executing instructions](https://docs.docker.com/build/concepts/context/). If your build context includes `.git`, local model files, notebooks, cached datasets, and `mlruns`, Docker must send those files to the daemon and may accidentally bake them into the image. That slows builds and can leak secrets or proprietary data.
 
 ```text
 # .dockerignore for an ML application repository
@@ -322,7 +323,7 @@ docker run --rm \
   ml-api:v1
 ```
 
-Health checks should verify the behavior that matters to the platform. A liveness check answers, "Should this process be restarted?" A readiness check answers, "Should this process receive traffic?" For ML services, readiness should usually confirm that the model is loaded, required artifacts exist, dependency services are reachable, and the service has enough memory to handle requests.
+Health checks should verify the behavior that matters to the platform. [A liveness check answers, "Should this process be restarted?" A readiness check answers, "Should this process receive traffic?"](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) For ML services, readiness should usually confirm that the model is loaded, required artifacts exist, dependency services are reachable, and the service has enough memory to handle requests.
 
 ```python
 # src/health.py
@@ -464,7 +465,7 @@ The `tini` entrypoint is not cosmetic. Containers often run the application as p
 
 **Active learning prompt:** Your container prints a valid `nvidia-smi` table, but `torch.cuda.is_available()` returns `False`. Which layer is now most suspicious? The host driver and runtime mount are probably working, so the next suspect is the Python framework installation: you may have installed a CPU-only PyTorch wheel, a wheel compiled for a different CUDA line, or a package set that overwrote the intended wheel.
 
-GPU containers also need enough shared memory for workloads that use multiprocessing data loaders. Docker's default `/dev/shm` is small, and PyTorch workers can crash with bus errors when they pass tensors through shared memory. The fix is not to reduce model quality or remove workers blindly; the fix is to size shared memory for the workload and verify memory behavior under realistic batch sizes.
+GPU containers also need enough shared memory for workloads that use multiprocessing data loaders. [Docker's default `/dev/shm` is small](https://docs.docker.com/engine/containers/run/), and PyTorch workers can crash with bus errors when they pass tensors through shared memory. The fix is not to reduce model quality or remove workers blindly; the fix is to size shared memory for the workload and verify memory behavior under realistic batch sizes.
 
 ```bash
 docker run --rm --gpus all \
@@ -553,7 +554,7 @@ def ensure_model_present() -> Path:
     return target
 ```
 
-Volume mounts are useful because they decouple the container lifecycle from cached artifacts. Removing a container does not remove a named Docker volume unless you explicitly remove the volume. That is exactly what you want for repeated local experiments, but it can surprise learners who expect `docker rm` to clean every downloaded model file.
+Volume mounts are useful because they decouple the container lifecycle from cached artifacts. [Removing a container does not remove a named Docker volume unless you explicitly remove the volume](https://docs.docker.com/engine/storage/volumes/). That is exactly what you want for repeated local experiments, but it can surprise learners who expect `docker rm` to clean every downloaded model file.
 
 ```mermaid
 graph TD
@@ -635,7 +636,7 @@ graph TD
     end
 ```
 
-Compose gives each service a DNS name matching the service name. From the host, you might call `http://127.0.0.1:8000`. From another container in the same Compose network, the API should call `http://redis:6379` or `http://mlflow:5000`, not `127.0.0.1`, because each container has its own loopback interface. This is one of the most common networking mistakes in local containerized ML systems.
+[Compose gives each service a DNS name matching the service name](https://docs.docker.com/compose/how-tos/networking/). From the host, you might call `http://127.0.0.1:8000`. From another container in the same Compose network, the API should call `http://redis:6379` or `http://mlflow:5000`, not `127.0.0.1`, because each container has its own loopback interface. This is one of the most common networking mistakes in local containerized ML systems.
 
 ```yaml
 services:
@@ -789,7 +790,7 @@ graph TD
 
 Running as root is rarely necessary for an ML API. A compromised root process inside a container is still constrained by container isolation, but it has more power over the container filesystem and any mounted volumes than an unprivileged user. If the service only needs to read model files and bind to a high port such as `8000`, an unprivileged UID is the better default.
 
-Pinning image tags is another production control. The tag `latest` means the base image can change without a Dockerfile change, which makes rebuilds non-reproducible. A team might rebuild the same commit next week and unknowingly receive a different operating system patch set, different Python patch release, or different CUDA base. Security updates matter, but they should enter through deliberate rebuilds and tracked version changes.
+Pinning image tags is another production control. [The tag `latest` means the base image can change without a Dockerfile change, which makes rebuilds non-reproducible](https://docs.docker.com/build/building/best-practices/). A team might rebuild the same commit next week and unknowingly receive a different operating system patch set, different Python patch release, or different CUDA base. Security updates matter, but they should enter through deliberate rebuilds and tracked version changes.
 
 ```text
 PRODUCTION IMAGE CONTRACT
@@ -807,7 +808,7 @@ No baked secrets                Prevents credential leakage through image layers
 Externalized large artifacts    Keeps deploys and rollbacks fast
 ```
 
-The process model deserves special attention in ML containers. Training and serving code often starts subprocesses for data loading, tokenization, parallel inference, logging agents, or worker pools. If the container's PID 1 process does not handle `SIGTERM` and reap children, deployments can hang during shutdown or leave zombie processes behind. This is why a minimal init such as `tini` is often useful for Python ML containers.
+The process model deserves special attention in ML containers. Training and serving code often starts subprocesses for data loading, tokenization, parallel inference, logging agents, or worker pools. If the container's PID 1 process does not handle `SIGTERM` and reap children, deployments can hang during shutdown or leave zombie processes behind. This is why [a minimal init such as `tini` is often useful for Python ML containers](https://docs.docker.com/reference/cli/docker/container/run/).
 
 ```bash
 docker run --rm ml-api:v1 ps -eo pid,ppid,stat,comm
@@ -854,7 +855,7 @@ A senior ML infrastructure engineer treats the image as one artifact in a larger
 
 ## Did You Know?
 
-1. Docker popularized a developer-friendly image format and Dockerfile workflow in 2013, but the underlying Linux isolation primitives were already evolving through namespaces, cgroups, and earlier container tooling.
+1. [Docker popularized a developer-friendly image format and Dockerfile workflow in 2013, but the underlying Linux isolation primitives were already evolving through namespaces, cgroups, and earlier container tooling.](https://learn.microsoft.com/en-us/archive/msdn-magazine/2017/april/containers-bringing-docker-to-windows-developers-with-windows-server-containers)
 
 2. A Docker image can contain CUDA user-space libraries, but it does not contain the host's kernel-level NVIDIA driver; GPU access depends on runtime device injection and host driver compatibility.
 
@@ -1226,3 +1227,14 @@ Continue to [Module 1.3: CI/CD for AI/ML Development](./module-1.3-ci-cd-for-ai-
 - [Docker: What Is a Container?](https://www.docker.com/resources/what-container) — Good primary background for portability, shared-kernel isolation, and the container-vs-VM mental model.
 - [OWASP Docker Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Docker_Security_Cheat_Sheet.html) — Covers practical container hardening topics such as non-root users, capabilities, and runtime safety.
 - [Sources of Irreproducibility in Machine Learning: A Review](https://arxiv.org/abs/2204.07610) — Provides a solid research-oriented framing for why environment control and reproducibility matter in ML workflows.
+- [docs.docker.com: invalidation](https://docs.docker.com/build/cache/invalidation/) — Docker's cache invalidation docs explicitly state that instructions are evaluated in order and that later commands rebuild after invalidation.
+- [docs.docker.com: multi stage](https://docs.docker.com/build/building/multi-stage/) — Docker's multi-stage build docs describe copying chosen artifacts from earlier stages into a lean final stage.
+- [docs.docker.com: context](https://docs.docker.com/build/concepts/context/) — Docker's build-context docs explicitly say `.dockerignore` exclusions are removed from the context before it is sent.
+- [kubernetes.io: configure liveness readiness startup probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) — Kubernetes probe docs directly define liveness as restart-oriented and readiness as traffic-gating.
+- [docs.docker.com: run](https://docs.docker.com/engine/containers/run/) — Docker's `docker run` reference states the default `/dev/shm` size is `64m`.
+- [docs.docker.com: volumes](https://docs.docker.com/engine/storage/volumes/) — Docker's volume docs explicitly state that volume contents exist outside the lifecycle of a given container.
+- [docs.docker.com: 08 using compose](https://docs.docker.com/get-started/workshop/08_using_compose/) — Docker's Compose tutorial explicitly warns that named volumes are not removed by default on `docker compose down`.
+- [docs.docker.com: networking](https://docs.docker.com/compose/how-tos/networking/) — Docker's Compose networking docs say each service registers its name with internal DNS for inter-container reachability.
+- [docs.docker.com: best practices](https://docs.docker.com/build/building/best-practices/) — Docker's best-practices page states that tags may resolve to different underlying versions over time and recommends pinning.
+- [docs.docker.com: run](https://docs.docker.com/reference/cli/docker/container/run/) — Docker's `docker container run` reference explicitly says `--init` ensures init responsibilities such as reaping zombie processes.
+- [learn.microsoft.com: containers bringing docker to windows developers with windows server containers](https://learn.microsoft.com/en-us/archive/msdn-magazine/2017/april/containers-bringing-docker-to-windows-developers-with-windows-server-containers) — The Microsoft Learn article gives concrete dates for Linux namespaces and describes Docker's mid-2013 takeoff built on those primitives.
