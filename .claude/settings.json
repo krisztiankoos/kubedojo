@@ -11,7 +11,8 @@
         "hooks": [
           {"type": "command", "command": ".claude/hooks/enforce-venv.sh"},
           {"type": "command", "command": ".claude/hooks/block-branch-create-in-primary.sh"},
-          {"type": "command", "command": ".claude/hooks/block-direct-commit-on-main.sh"}
+          {"type": "command", "command": ".claude/hooks/block-direct-commit-on-main.sh"},
+          {"type": "command", "command": ".claude/hooks/inject-codex-danger-mode.sh"}
         ]
       },
       {
