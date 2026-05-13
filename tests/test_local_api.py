@@ -2626,13 +2626,19 @@ def test_quality_scores_live_repo_no_citations_force_critical() -> None:
     assert all(isinstance(entry.get("path"), str) for entry in quality["modules"])
     by_path = {m["path"]: m for m in quality["modules"]}
     assert "ai/foundations/module-1.1-what-is-ai.md" in by_path
-    # Spot-check: a module we know lacks a Sources section is critical
-    # with 'no citations' leading the primary_issue.
-    sample = "CKA 0.1: Cluster Setup"
-    if sample in by_module:  # guard: title may drift
-        entry = by_module[sample]
+    # Guard against content drift: keep assertion at least one module
+    # without citations is still enforced as critical severity.
+    no_citations_modules = [
+        m
+        for m in by_module.values()
+        if "no citations" in (m.get("primary_issue") or "").lower()
+    ]
+    assert no_citations_modules, (
+        "Expected at least one module with no citations to be flagged "
+        "as a critical issue."
+    )
+    for entry in no_citations_modules[:5]:
         assert entry["severity"] == "critical"
-        assert entry["primary_issue"].startswith("no citations")
 
 
 def test_compact_briefing_keeps_actions_and_top_modules(tmp_path: Path) -> None:

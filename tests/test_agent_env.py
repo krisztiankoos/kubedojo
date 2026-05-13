@@ -120,6 +120,7 @@ def test_bridge_child_env_is_provider_scoped(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", _base_env()["OPENAI_API_KEY"])
     monkeypatch.setenv("ANTHROPIC_API_KEY", _base_env()["ANTHROPIC_API_KEY"])
     monkeypatch.setenv("GEMINI_API_KEY", _base_env()["GEMINI_API_KEY"])
+    monkeypatch.setenv("KUBEDOJO_GEMINI_SUBSCRIPTION", "0")
     monkeypatch.setenv("GITHUB_TOKEN", _base_env()["GITHUB_TOKEN"])
 
     claude_env = agent_child_env("claude")
