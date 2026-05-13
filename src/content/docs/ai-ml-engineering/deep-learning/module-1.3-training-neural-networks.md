@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Training Neural Networks"
 slug: ai-ml-engineering/deep-learning/module-1.3-training-neural-networks
 sidebar:
@@ -33,7 +34,7 @@ At 03:12 on a Tuesday morning, a fraud-detection retraining job finishes success
 
 That engineer does not need a definition of a tensor in that moment; she needs a mental model sharp enough to ask the right questions under pressure. Did the optimizer see the parameters? Did the labels match the loss function? Did the model switch from training behavior to inference behavior before validation? Did logging keep full computational graphs alive until the GPU ran out of memory? Those questions separate a person who has merely run a tutorial from a practitioner who can operate machine-learning systems responsibly.
 
-PyTorch makes deep learning accessible because it lets engineers write ordinary Python while it handles automatic differentiation, device movement, layer registration, and optimizer updates. The accessibility can be dangerous when the learner treats the framework as a black box. This module teaches PyTorch as a set of inspectable mechanisms, so each convenience maps back to a concrete training responsibility that can be verified, debugged, and improved.
+PyTorch makes deep learning accessible because [it lets engineers write ordinary Python while it handles automatic differentiation, device movement, layer registration, and optimizer updates](https://arxiv.org/abs/1912.01703). The accessibility can be dangerous when the learner treats the framework as a black box. This module teaches PyTorch as a set of inspectable mechanisms, so each convenience maps back to a concrete training responsibility that can be verified, debugged, and improved.
 
 The path through the module follows the way training systems actually fail. First you will map data into tensors with explicit shapes, dtypes, and devices. Then you will watch autograd build and clear computation graphs. After that you will construct registered modules, run complete training and evaluation loops, and add the operational controls that keep experiments reproducible and production jobs recoverable.
 
@@ -708,7 +709,7 @@ graph TD
 | Gradient accumulation | Effective large batch without fitting it at once | Forgetting when to call `optimizer.step()` | Does the accumulated gradient match the intended batch size? |
 | Distributed training | Large datasets or models across devices | Synchronization, reproducibility, and operational complexity | Has single-device training already been made correct and measurable? |
 
-Mixed precision can reduce memory use and improve throughput on modern accelerators by using lower precision where it is safe. The safe part matters. PyTorch's automatic mixed precision chooses appropriate operations and gradient scaling helps avoid underflow, but the engineer still must compare validation metrics and inspect instability rather than assuming faster means equivalent.
+[Mixed precision can reduce memory use and improve throughput on modern accelerators by using lower precision where it is safe. The safe part matters. PyTorch's automatic mixed precision chooses appropriate operations and gradient scaling helps avoid underflow](https://arxiv.org/abs/1710.03740), but the engineer still must compare validation metrics and inspect instability rather than assuming faster means equivalent.
 
 ```python
 import torch
@@ -855,7 +856,7 @@ The final mental model is a layered one. Tensors describe numeric data and execu
 
 ## Did You Know?
 
-1. **Reverse-mode automatic differentiation predates modern deep learning**: PyTorch's autograd uses ideas that were developed decades before today's large neural networks, and the reason it fits neural networks so well is that training usually has many parameters but one scalar loss.
+1. [**Reverse-mode automatic differentiation predates modern deep learning**](https://en.wikipedia.org/wiki/Seppo_Linnainmaa): PyTorch's autograd uses ideas that were developed decades before today's large neural networks, and the reason it fits neural networks so well is that training usually has many parameters but one scalar loss.
 
 2. **Gradient accumulation is intentional behavior**: PyTorch adds gradients into `.grad` buffers instead of replacing them because accumulation supports larger effective batches, multi-loss training, and advanced optimization patterns.
 
