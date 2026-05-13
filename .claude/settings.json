@@ -19,6 +19,12 @@
         "hooks": [
           {"type": "command", "command": ".claude/hooks/block-orchestrator-content-edits.sh"}
         ]
+      },
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {"type": "command", "command": ".claude/hooks/block-agent-worktree-isolation.sh"}
+        ]
       }
     ],
     "PostToolUse": [
