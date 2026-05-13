@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Prose Capacity — #388 sampling vs control (2026-05-13)</title>
+<style>
+  :root {
+    --bg: #fafbfc; --fg: #1a1d23; --muted: #5b6573; --accent: #0057B7;
+    --good: #0d8a4a; --partial: #b45c00; --gap: #b8001f; --card: #ffffff;
+    --border: #e2e6eb; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { margin: 0 0 8px; font-size: 28px; }
+  h2 { margin: 40px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);
+       font-size: 22px; }
+  h3 { margin: 24px 0 8px; font-size: 17px; }
+  .meta { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  .tldr { background: var(--card); border-left: 4px solid var(--accent);
+          padding: 14px 18px; margin: 16px 0 28px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0;
+          background: var(--card); border: 1px solid var(--border); }
+  th, td { padding: 10px 12px; border-bottom: 1px solid var(--border);
+           text-align: left; vertical-align: top; }
+  th { background: #eef2f6; font-weight: 600; font-size: 13px; }
+  td { font-size: 14px; }
+  code { background: #eef2f6; padding: 1px 6px; border-radius: 3px;
+         font-family: var(--mono); font-size: 13px; }
+  .decision { font-size: 18px; color: var(--good); font-weight: 700; }
+  .risk { background: #fff7e6; border: 1px solid #f0d9a8; padding: 12px 16px;
+            border-radius: 6px; margin: 12px 0; font-size: 14px; }
+  .warning { background: #fff7e6; border: 1px solid #f0d9a8; padding: 12px 16px;
+              border-radius: 6px; margin: 12px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Option F Prose Capacity Sampling (388 vs control)</h1>
+<p class="meta">
+  Captured 2026-05-13. Dataset: git main at 2026-05-13T19:15:39+00:00.
+  Source of truth: <code>src/content/docs/**/*.md</code>. Output summary file:
+  <code>.pipeline/prose-capacity-sample.json</code>.
+</p>
+
+<div class="tldr">
+  <strong>Recommendation:</strong> <span class="decision">BUILD F NOW</span>.
+  More than 20% of sampled #388 modules are inside the 4900-5100 band, so the static 5000-word floor is likely creating recurrent failures and should be replaced with dynamic per-module budgets.
+</div>
+
+<section id="methodology">
+  <h2>Methodology</h2>
+  <p>
+    Git was queried with:
+    <code>git log --grep="#388" --pretty=format:%H%x00%s -- src/content/docs</code>,
+    then each commit SHA was resolved via
+    <code>git show --name-only --pretty=format: &lt;sha&gt;</code> to extract changed
+    Markdown files under <code>src/content/docs/</code>. Deleted files on HEAD were skipped.
+  </p>
+  <p>
+    Sampling rule (deterministic):
+  </p>
+  <ul>
+    <li>#388 cohort: first 20 unique markdown paths in git log order.</li>
+    <li>Control cohort: 20 recent non-#388 modules with balanced track quotas.
+      Requested quotas were distributed across <code>prerequisites</code>, <code>k8s</code>, <code>cloud</code>, <code>platform</code>;
+      actual selections are shown as <code>{'k8s': 7, 'cloud': 7, 'platform': 6}</code>.</li>
+    <li>Density metrics were computed from the current <code>HEAD</code> file content with
+      <code>density_metrics()</code> imported from <code>scripts/quality/verify_module.py</code>.</li>
+  </ul>
+  <p>
+    Required exact fields for this decision: <code>body_words</code>, <code>mean_wpp</code>,
+    <code>median_wpp</code>, and <code>short_paragraph_rate</code>.
+  </p>
+  <ul>
+    <li>n_388 = 20</li>
+    <li>n_control = 20</li>
+    <li>Bucket width = 500</li>
+  </ul>
+</section>
+
+<section id="distributions">
+  <h2>Body-word distribution</h2>
+  <h3>#388 cohort</h3>
+  <p>Each row counts body-word buckets and share within the #388 sample.</p>
+  <table>
+<thead><tr><th>Body-word bucket</th><th>#388 count</th><th>Control count</th><th>Gap</th></tr></thead>
+<tbody>
+<tr><td>0-499</td><td>0 (0.0%)</td><td>1 (5.0%)</td><td>-1</td></tr>
+<tr><td>1000-1499</td><td>0 (0.0%)</td><td>6 (30.0%)</td><td>-6</td></tr>
+<tr><td>1500-1999</td><td>0 (0.0%)</td><td>7 (35.0%)</td><td>-7</td></tr>
+<tr><td>2000-2499</td><td>0 (0.0%)</td><td>1 (5.0%)</td><td>-1</td></tr>
+<tr><td>2500-2999</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>+0</td></tr>
+<tr><td>3000-3499</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>+0</td></tr>
+<tr><td>3500-3999</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>+0</td></tr>
+<tr><td>4000-4499</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>+0</td></tr>
+<tr><td>4500-4999</td><td>1 (5.0%)</td><td>1 (5.0%)</td><td>+0</td></tr>
+<tr><td>500-999</td><td>0 (0.0%)</td><td>3 (15.0%)</td><td>-3</td></tr>
+<tr><td>5000-5499</td><td>16 (80.0%)</td><td>1 (5.0%)</td><td>+15</td></tr>
+<tr><td>5500-5999</td><td>1 (5.0%)</td><td>0 (0.0%)</td><td>+1</td></tr>
+<tr><td>6000-6499</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>+0</td></tr>
+<tr><td>6500-6999</td><td>1 (5.0%)</td><td>0 (0.0%)</td><td>+1</td></tr>
+<tr><td>7000-7499</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>+0</td></tr>
+<tr><td>7500-7999</td><td>1 (5.0%)</td><td>0 (0.0%)</td><td>+1</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="samples">
+  <h2>Module samples</h2>
+  <h3>#388 sample (first 20)</h3>
+  <table>
+<thead><tr><th>Path</th><th>Body words</th><th>mean_wpp</th><th>median_wpp</th><th>short_paragraph_rate</th></tr></thead>
+<tbody>
+<tr><td><code>src/content/docs/ai/open-models-local-inference/module-1.3-quantization-and-model-formats.md</code></td><td>5225</td><td>75.7</td><td>77</td><td>0.014</td></tr>
+<tr><td><code>src/content/docs/ai/open-models-local-inference/module-1.6-choosing-between-ollama-mlx-transformers-vllm.md</code></td><td>5020</td><td>61.2</td><td>61.0</td><td>0.0</td></tr>
+<tr><td><code>src/content/docs/ai/open-models-local-inference/module-1.5-running-open-models-on-linux-boxes.md</code></td><td>5116</td><td>72.1</td><td>73</td><td>0.0</td></tr>
+<tr><td><code>src/content/docs/ai/ai-building/module-1.2-models-apis-context-structured-output.md</code></td><td>6584</td><td>49.9</td><td>56.5</td><td>0.227</td></tr>
+<tr><td><code>src/content/docs/prerequisites/modern-devops/module-1.4-observability.md</code></td><td>5116</td><td>73.1</td><td>74.0</td><td>0.029</td></tr>
+<tr><td><code>src/content/docs/prerequisites/git-deep-dive/module-5-worktrees-stashing.md</code></td><td>5033</td><td>65.4</td><td>69</td><td>0.052</td></tr>
+<tr><td><code>src/content/docs/prerequisites/zero-to-terminal/module-0.3-first-commands.md</code></td><td>5205</td><td>56.0</td><td>65</td><td>0.0</td></tr>
+<tr><td><code>src/content/docs/prerequisites/git-deep-dive/module-1-git-internals.md</code></td><td>4997</td><td>64.1</td><td>74.0</td><td>0.167</td></tr>
+<tr><td><code>src/content/docs/prerequisites/zero-to-terminal/module-0.2-what-is-a-terminal.md</code></td><td>5058</td><td>51.1</td><td>59</td><td>0.04</td></tr>
+<tr><td><code>src/content/docs/prerequisites/modern-devops/module-1.3-cicd-pipelines.md</code></td><td>5009</td><td>77.1</td><td>81</td><td>0.031</td></tr>
+<tr><td><code>src/content/docs/prerequisites/cloud-native-101/module-1.4-cloud-native-ecosystem.md</code></td><td>5321</td><td>70.0</td><td>70.5</td><td>0.013</td></tr>
+<tr><td><code>src/content/docs/ai/open-models-local-inference/module-1.2-hugging-face-for-learners.md</code></td><td>5083</td><td>72.6</td><td>73.5</td><td>0.014</td></tr>
+<tr><td><code>src/content/docs/ai/open-models-local-inference/module-1.1-open-models-and-model-hubs.md</code></td><td>5294</td><td>81.4</td><td>83</td><td>0.0</td></tr>
+<tr><td><code>src/content/docs/ai/foundations/module-1.6-using-ai-for-learning-writing-research-and-coding.md</code></td><td>5053</td><td>79.0</td><td>82.0</td><td>0.016</td></tr>
+<tr><td><code>src/content/docs/ai/foundations/module-1.4-how-to-verify-ai-output.md</code></td><td>5201</td><td>61.2</td><td>66</td><td>0.012</td></tr>
+<tr><td><code>src/content/docs/ai/ai-native-work/module-1.4-human-in-the-loop-habits.md</code></td><td>5249</td><td>58.3</td><td>59.0</td><td>0.011</td></tr>
+<tr><td><code>src/content/docs/ai/foundations/module-1.2-what-are-llms.md</code></td><td>7605</td><td>57.6</td><td>59.5</td><td>0.038</td></tr>
+<tr><td><code>src/content/docs/ai/foundations/module-1.1-what-is-ai.md</code></td><td>5044</td><td>77.6</td><td>79</td><td>0.015</td></tr>
+<tr><td><code>src/content/docs/ai/ai-native-work/module-1.3-designing-ai-workflows.md</code></td><td>5572</td><td>69.7</td><td>76.0</td><td>0.0</td></tr>
+<tr><td><code>src/content/docs/ai/ai-native-work/module-1.2-ai-agents-and-assistants.md</code></td><td>5174</td><td>67.2</td><td>67</td><td>0.013</td></tr>
+</tbody>
+</table>
+
+  <h3>Control sample (track-balanced)</h3>
+  <table>
+<thead><tr><th>Path</th><th>Body words</th><th>mean_wpp</th><th>median_wpp</th><th>short_paragraph_rate</th></tr></thead>
+<tbody>
+<tr><td><code>src/content/docs/k8s/ckad/part4-environment/module-4.5-serviceaccounts.md</code></td><td>1249</td><td>39.0</td><td>31.0</td><td>0.094</td></tr>
+<tr><td><code>src/content/docs/k8s/ckad/part5-networking/module-5.3-networkpolicies.md</code></td><td>1186</td><td>25.2</td><td>24</td><td>0.298</td></tr>
+<tr><td><code>src/content/docs/k8s/cba/module-1.1-backstage-dev-workflow.md</code></td><td>4959</td><td>43.1</td><td>40</td><td>0.139</td></tr>
+<tr><td><code>src/content/docs/k8s/ckad/part1-design-build/module-1.3-multi-container-pods.md</code></td><td>1241</td><td>33.5</td><td>31</td><td>0.351</td></tr>
+<tr><td><code>src/content/docs/k8s/cba/module-1.3-backstage-catalog-infrastructure.md</code></td><td>5000</td><td>48.5</td><td>58</td><td>0.136</td></tr>
+<tr><td><code>src/content/docs/cloud/advanced-operations/module-8.7-stateful-migration.md</code></td><td>2130</td><td>50.7</td><td>50.5</td><td>0.071</td></tr>
+<tr><td><code>src/content/docs/cloud/aws-essentials/module-1.1-iam.md</code></td><td>1611</td><td>28.8</td><td>24.5</td><td>0.304</td></tr>
+<tr><td><code>src/content/docs/cloud/gcp-essentials/module-2.4-gcs.md</code></td><td>843</td><td>27.2</td><td>23</td><td>0.355</td></tr>
+<tr><td><code>src/content/docs/cloud/advanced-operations/module-8.5-disaster-recovery.md</code></td><td>706</td><td>29.4</td><td>25.5</td><td>0.292</td></tr>
+<tr><td><code>src/content/docs/cloud/architecture-patterns/module-4.2-multi-cluster.md</code></td><td>1635</td><td>33.4</td><td>32</td><td>0.122</td></tr>
+<tr><td><code>src/content/docs/platform/toolkits/security-quality/security-tools/module-4.1-vault-eso.md</code></td><td>360</td><td>18</td><td>14.0</td><td>0.6</td></tr>
+<tr><td><code>src/content/docs/platform/disciplines/core-platform/leadership/module-1.5-scaling-platform-org.md</code></td><td>1676</td><td>20.0</td><td>8.5</td><td>0.631</td></tr>
+<tr><td><code>src/content/docs/platform/disciplines/core-platform/platform-engineering/module-2.4-golden-paths.md</code></td><td>1501</td><td>21.8</td><td>11</td><td>0.58</td></tr>
+<tr><td><code>src/content/docs/platform/disciplines/delivery-automation/release-engineering/module-1.3-feature-flags.md</code></td><td>1537</td><td>20.5</td><td>16</td><td>0.533</td></tr>
+<tr><td><code>src/content/docs/platform/disciplines/reliability-security/chaos-engineering/module-1.4-stateful-chaos.md</code></td><td>1040</td><td>24.2</td><td>20</td><td>0.465</td></tr>
+<tr><td><code>src/content/docs/k8s/cks/part1-cluster-setup/module-1.1-network-policies.md</code></td><td>1457</td><td>25.1</td><td>19.5</td><td>0.431</td></tr>
+<tr><td><code>src/content/docs/cloud/aws-essentials/module-1.3-ec2.md</code></td><td>1724</td><td>30.2</td><td>29</td><td>0.316</td></tr>
+<tr><td><code>src/content/docs/platform/disciplines/reliability-security/chaos-engineering/module-1.5-automating-chaos.md</code></td><td>509</td><td>20.4</td><td>16</td><td>0.52</td></tr>
+<tr><td><code>src/content/docs/k8s/cks/part1-cluster-setup/module-1.3-ingress-security.md</code></td><td>1861</td><td>56.4</td><td>57</td><td>0.03</td></tr>
+<tr><td><code>src/content/docs/cloud/enterprise-hybrid/module-10.2-governance.md</code></td><td>1336</td><td>38.2</td><td>31</td><td>0.143</td></tr>
+</tbody>
+</table>
+</section>
+
+<section id="decision">
+  <h2>Key decision metric</h2>
+  <p>
+    Cluster condition: 4900 <= body_words <= 5100. Fraction in #388 sample =
+    <strong>40.0%</strong>.
+    Threshold rule from issue: <strong>build Option F now only if fraction &gt; 20%</strong>.
+  </p>
+  <p class="risk">
+    Computed recommendation: <strong>BUILD F NOW</strong>.
+  </p>
+</section>
+
+<section id="threats">
+  <h2>Limitations and threats to validity</h2>
+  <ul>
+    <li>Deterministic sample excludes non-#388 modules that were touched by #388 then later changed
+      but now equalized by post-#388 edits.</li>
+    <li>Only one density summary axis is tested; short-paragraph dynamics may mask semantic depth or
+      conceptual density, especially for concept-heavy AI modules.</li>
+    <li>Control pooling is recency-weighted and track-stratified; it does not match a full bootstrap sample
+      over all non-#388 modules.</li>
+    <li>All results are point estimates from current HEAD only; changing file history or markdown structure will
+      alter recomputed density values.</li>
+    <li>No claim about verifier behavior is made beyond this prose corpus signal.</li>
+  </ul>
+</section>
+
+</main>
+</body>
+</html>
