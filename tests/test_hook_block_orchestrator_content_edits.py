@@ -16,6 +16,7 @@ def run_hook_payload(
     env_overrides: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
+    env.pop("KUBEDOJO_DISPATCHED", None)
     env["CLAUDE_PROJECT_DIR"] = str(primary)
     if env_overrides:
         env.update(env_overrides)
@@ -145,6 +146,7 @@ def test_edit_malformed_payload_fails_open(tmp_path: Path) -> None:
     primary = tmp_path / "kubedojo"
     primary.mkdir()
     env = os.environ.copy()
+    env.pop("KUBEDOJO_DISPATCHED", None)
     env["CLAUDE_PROJECT_DIR"] = str(primary)
     result = subprocess.run(
         [BASH, str(HOOK)],
