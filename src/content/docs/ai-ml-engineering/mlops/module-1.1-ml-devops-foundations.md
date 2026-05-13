@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "ML DevOps Foundations"
 slug: ai-ml-engineering/mlops/module-1.1-ml-devops-foundations
 sidebar:
@@ -108,7 +109,7 @@ The rest of this module uses a progressive design. First, you will build the ver
 
 Git is still the first pillar because training scripts, serving code, tests, configuration templates, infrastructure manifests, and documentation belong in ordinary source control. Git gives teams review, branching, history, and collaboration. The mistake is expecting Git to store every artifact directly, especially large datasets, model checkpoints, embeddings, and generated arrays.
 
-The correct pattern is a split-brain storage model with one logical history. Git stores small text files and pointers. Artifact storage stores large binary payloads. The pointer files connect the Git commit to the data or model object by hash, so a checkout can reconstruct the matching workspace. DVC is a common tool for this pattern, although the same principle also appears in lakehouse tables, feature stores, model registries, and object-storage-backed artifact systems.
+The correct pattern is a split-brain storage model with one logical history. Git stores small text files and pointers. Artifact storage stores large binary payloads. The pointer files connect the Git commit to the data or model object by hash, so a checkout can reconstruct the matching workspace. [DVC is a common tool for this pattern](https://github.com/treeverse/dvc), although the same principle also appears in lakehouse tables, feature stores, model registries, and object-storage-backed artifact systems.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -275,7 +276,7 @@ graph TD
     Later --> L3[slow clone and push failures]
 ```
 
-DVC pipelines add another important idea: stages should declare their dependencies and outputs. If `prepare` depends on `data/raw/customers.csv` and `src/prepare.py`, DVC can rerun it when either changes and skip it when neither changes. If you forget to list a dependency, DVC can skip a stage incorrectly, which is a reproducibility bug disguised as a performance optimization.
+DVC pipelines add another important idea: [stages should declare their dependencies and outputs](https://github.com/treeverse/dvc). If `prepare` depends on `data/raw/customers.csv` and `src/prepare.py`, DVC can rerun it when either changes and skip it when neither changes. If you forget to list a dependency, DVC can skip a stage incorrectly, which is a reproducibility bug disguised as a performance optimization.
 
 ```yaml
 stages:
@@ -342,7 +343,7 @@ A senior review of an ML repository should therefore inspect both Git diffs and 
 
 ## 3. Test The Failure Mode You Actually Fear
 
-Traditional test pyramids start with many unit tests, fewer integration tests, and a small number of end-to-end tests. ML keeps that structure but adds two layers that ordinary services rarely need: data quality tests and model quality tests. These layers matter because a model can pass every unit test and still be unsafe to deploy if the data distribution shifted or a subgroup regressed.
+Traditional test pyramids start with many unit tests, fewer integration tests, and a small number of end-to-end tests. ML keeps that structure but adds two layers that ordinary services rarely need: [data quality tests and model quality tests](https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning). These layers matter because a model can pass every unit test and still be unsafe to deploy if the data distribution shifted or a subgroup regressed.
 
 ```text
 THE ML TESTING PYRAMID
@@ -796,9 +797,9 @@ A mature repository also records operational assumptions. Which data source owns
 
 Kubernetes is useful for ML DevOps when the team needs reproducible execution near production conditions. Local tests are fast, but they do not prove that container images, service accounts, resource requests, object storage access, node selectors, or cluster policies are correct. Running validation or training in Kubernetes exposes those integration points before production traffic depends on them.
 
-A common mistake is using a `Deployment` for a training script. A Deployment is built for long-running services that should keep running. If the process exits, the controller tries to maintain the desired state by creating replacement Pods. Training, batch evaluation, data validation, and migration-style ML tasks are finite. They should start, run to completion, report success or failure, and stop.
+A common mistake is using a `Deployment` for a training script. A Deployment is built for long-running services that should keep running. If the process exits, [the controller tries to maintain the desired state by creating replacement Pods](https://kubernetes.io/docs/concepts/architecture/self-healing/). Training, batch evaluation, data validation, and migration-style ML tasks are finite. They should start, run to completion, report success or failure, and stop.
 
-A Kubernetes `Job` matches that run-to-completion model. It records completion, retries according to policy, and lets the team inspect logs after the work finishes. For ML validation, this is exactly the behavior you want. The workload is not a web server; it is a controlled execution of a pipeline step.
+A Kubernetes `Job` matches that run-to-completion model. [It records completion, retries according to policy](https://kubernetes.io/docs/concepts/workloads/controllers/job/), and lets the team inspect logs after the work finishes. For ML validation, this is exactly the behavior you want. The workload is not a web server; it is a controlled execution of a pipeline step.
 
 ```yaml
 apiVersion: batch/v1
@@ -859,9 +860,9 @@ A release gate should combine evidence from all earlier sections. The Git commit
 
 ## Did You Know?
 
-1. In many production ML systems, the model-training code is a small fraction of the total system; data pipelines, validation, deployment, monitoring, and recovery machinery often dominate the engineering effort.
+1. In many production ML systems, [the model-training code is a small fraction of the total system](https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning); data pipelines, validation, deployment, monitoring, and recovery machinery often dominate the engineering effort.
 
-2. A model can become worse without any code deployment if the real-world data distribution moves away from the distribution used during training.
+2. [A model can become worse without any code deployment if the real-world data distribution moves away from the distribution used during training](https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning).
 
 3. Reproducing an ML result usually requires the data version, random seeds, dependency versions, preprocessing logic, model configuration, and evaluation method, not just the final model file.
 
@@ -1181,3 +1182,5 @@ Up next: [Module 1.2 - Docker & Containerization for ML](./module-1.2-docker-con
 - [Kubernetes Self-Healing](https://kubernetes.io/docs/concepts/architecture/self-healing/) — Describes how Kubernetes controllers replace failed containers and Pods to keep workloads running as intended.
 - [Kubernetes Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) — Defines Jobs as run-to-completion workloads that track completion and failure state.
 - [MLOps: Continuous delivery and automation pipelines in machine learning](https://docs.cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning) — Provides a high-level reference for ML pipeline maturity, automation, and production operating models.
+- [github.com: dvc](https://github.com/treeverse/dvc) — The DVC README explicitly says DVC keeps version info in Git, stores data and models in cloud storage, and supports reproducible ML projects.
+- [cloud.google.com: mlops continuous delivery and automation pipelines in machine learning](https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning) — Google's MLOps architecture guide explicitly says ML testing is more involved than ordinary software testing and names these additional validation layers.
