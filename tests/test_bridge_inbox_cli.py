@@ -230,6 +230,61 @@ def test_discuss_max_rounds_one_clamps_to_two(mock_invoke, monkeypatch, capsys):
 
 
 @patch("agent_runtime.runner.invoke")
+def test_discuss_max_rounds_partial_convergence_message(
+    mock_invoke, monkeypatch, capsys
+):
+    _channels.create_channel("shared")
+    monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)
+
+    responses = {
+        "claude": ["[DISAGREE]", "[AGREE]", "[AGREE]"],
+        "codex": ["[DISAGREE]", "[DISAGREE]", "[AGREE]"],
+        "gemini": ["[DISAGREE]", "[DISAGREE]", "[DISAGREE]"],
+    }
+    call_counts = dict.fromkeys(responses, 0)
+
+    def _discuss_result(agent: str, *_args, **_kwargs) -> Result:
+        idx = call_counts[agent]
+        call_counts[agent] += 1
+        return Result(
+            ok=True,
+            agent=agent,
+            model="test-model",
+            mode="read-only",
+            response=f"{agent} discuss reply {responses[agent][idx]}",
+            stderr_excerpt=None,
+            duration_s=0.1,
+            session_id=None,
+            rate_limited=False,
+            stalled=False,
+            returncode=0,
+            usage_record={},
+        )
+
+    mock_invoke.side_effect = _discuss_result
+
+    exit_code = _run_cli(
+        [
+            "discuss",
+            "shared",
+            "topic",
+            "--with",
+            "claude,codex,gemini",
+            "--max-rounds",
+            "3",
+        ]
+    )
+
+    assert exit_code == 0
+    captured = capsys.readouterr()
+    assert "without unanimous [AGREE] sign-off" in captured.out
+    assert "Final-round tokens:" in captured.out
+    assert "Caveat" in captured.out
+    assert "parallel" in captured.out
+    assert "Escalate to a human" not in captured.out
+
+
+@patch("agent_runtime.runner.invoke")
 def test_discuss_claude_round1_round2_session_resume(mock_invoke, monkeypatch, capsys):
     _channels.create_channel("discuss-resume")
     monkeypatch.setattr(_channels, "fetch_monitor_state", lambda: None)

@@ -1482,6 +1482,7 @@ def _handle_discuss(args) -> int:
         return (agent_name, result.response.strip(), True)
 
     completed_rounds = 0
+    round_history: list[dict[str, tuple[str, bool, bool]]] = []
     try:
         for round_idx in range(1, max_rounds + 1):
             completed_rounds = round_idx
@@ -1659,6 +1660,12 @@ def _handle_discuss(args) -> int:
             # without any cross-agent comparison. Hallucination would have
             # shipped to curriculum if the transcript were taken at face
             # value. Ported from learn-ukrainian commit 872d8376b0.
+            round_history.append(
+                {
+                    agent: (text, ok, text.strip().endswith("[AGREE]"))
+                    for agent, (text, ok) in responses.items()
+                }
+            )
             all_ok = all(ok for (_, ok) in responses.values())
             all_agreed = all_ok and all(
                 text.strip().endswith("[AGREE]") for (text, _) in responses.values()
@@ -1676,24 +1683,72 @@ def _handle_discuss(args) -> int:
                 )
 
             if round_idx == max_rounds:
-                # Tell the caller WHY we stopped so escalation is obvious.
-                # Same strict endswith check as convergence — substring
-                # match would false-positive on "I don't [AGREE] with
-                # that. [DISAGREE]" and report no disagreements.
-                disagreeing = [
+                # Tell the caller WHY we stopped. Use the same strict
+                # endswith check as convergence — substring match would
+                # false-positive on "I don't [AGREE] with that. [DISAGREE]".
+                agreed_final = [
+                    a for a, (t, _) in responses.items() if t.strip().endswith("[AGREE]")
+                ]
+                disagreed_final = [
                     a
                     for a, (t, _) in responses.items()
                     if not t.strip().endswith("[AGREE]")
                 ]
+                final_tokens = []
+                for agent in with_agents:
+                    text, _ = responses[agent]
+                    tail = text.strip()
+                    if tail.endswith("[AGREE]"):
+                        token = "[AGREE]"
+                    elif tail.endswith("[DISAGREE]"):
+                        token = "[DISAGREE]"
+                    else:
+                        token = "[NO_TOKEN]"
+                    final_tokens.append(f"{agent}={token}")
+
+                ever_agreed = {agent: False for agent in with_agents}
+                flipped_agree_to_disagree = False
+                for history_round in round_history:
+                    for agent in with_agents:
+                        text, _ok, ends_with_agree = history_round[agent]
+                        if ever_agreed[agent] and text.strip().endswith("[DISAGREE]"):
+                            flipped_agree_to_disagree = True
+                        if ends_with_agree:
+                            ever_agreed[agent] = True
+
+                parallel_lag_likely = (
+                    len(agreed_final) >= 1
+                    and len(disagreed_final) >= 1
+                    and not flipped_agree_to_disagree
+                )
                 print()
                 print(
-                    f"⚠️  hit max_rounds={max_rounds} without convergence. "
-                    f"Still disagreeing: {', '.join(disagreeing) or '(none? see errors)'}"
+                    f"⚠️  hit max_rounds={max_rounds} without unanimous [AGREE] "
+                    "sign-off."
                 )
-                print(
-                    "   Escalate to a human or re-open the discussion with a "
-                    "tighter brief."
-                )
+                print(f"   Final-round tokens: {'  '.join(final_tokens)}")
+                if parallel_lag_likely:
+                    print(
+                        "   Caveat: agents respond in parallel within a round, so an agent"
+                    )
+                    print(
+                        "   signing [DISAGREE] may not have seen concurrent [AGREE] "
+                        "responses"
+                    )
+                    print(
+                        "   from peers in the same round. Substance may have converged "
+                        "even if"
+                    )
+                    print(
+                        "   tokens did not. Inspect transcript before treating as actual"
+                    )
+                    print("   disagreement.")
+                else:
+                    disagreeing_text = ", ".join(disagreed_final) or "(none? see errors)"
+                    print(
+                        f"   Persistent disagreement on {disagreeing_text}. Escalate to "
+                        "a human or re-open the discussion with a tighter brief."
+                    )
     finally:
         for temp_mcp_path in mcp_cleanup_paths:
             try:
