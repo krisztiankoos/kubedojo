@@ -162,7 +162,7 @@ def make_worktree(slug: str) -> Path:
 
 
 def codex_prompt(module_path: str, body_words_target: int = 5000) -> str:
-    brief = BRIEF.read_text()
+    brief = BRIEF.read_text().replace("{{BODY_WORDS_TARGET}}", str(body_words_target))
     writer = WRITER_BRIEF.read_text().replace("{{BODY_WORDS_TARGET}}", str(body_words_target))
     return f"""You are rewriting one KubeDojo module to clear all #388 verifier gates.
 
