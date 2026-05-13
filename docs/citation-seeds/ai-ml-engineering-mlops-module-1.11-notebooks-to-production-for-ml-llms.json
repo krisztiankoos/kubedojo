@@ -1,31 +1,116 @@
 {
   "module_key": "ai-ml-engineering/mlops/module-1.11-notebooks-to-production-for-ml-llms",
   "module_path": "src/content/docs/ai-ml-engineering/mlops/module-1.11-notebooks-to-production-for-ml-llms.md",
-  "research_run_id": "2026-04-22T04:19:09+00:00-codex-gpt-5.3-codex-spark",
+  "research_run_id": "2026-05-13T23:44:36+00:00-codex-gpt-5.3-codex-spark",
   "schema_version": 3,
   "section_pool_ref": null,
-  "claims": [],
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Production-ready ML workflows should use reproducible pipelines with repeatable, reusable steps for data preparation, training, and scoring.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 2. A Practical Project Shape for the Transition | paragraphs on separable code, config, outputs, and automation",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-management-and-deployment?view=azureml-api-2",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Azure MLOps model-management doc explicitly says reproducible ML pipelines define repeatable and reusable steps for data preparation, training, and scoring."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Model evaluation and validation should compare a candidate against a named baseline or threshold before promotion.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 4. Separating Training, Evaluation, and Serving | paragraphs beginning 'A clean evaluation path should compare the candidate to a baseline'",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Google's MLOps architecture guide states that model evaluation produces quality metrics and model validation confirms performance is better than a baseline before deployment."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Artifact governance requires versioned models plus metadata and lineage so the team can track what was trained, why it changed, and where it is deployed.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 5. Artifact Governance and Promotion Readiness | paragraphs on lineage, ownership, and governance",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-management-and-deployment?view=azureml-api-2",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Azure doc explicitly covers model registration, versioning, metadata tags, and end-to-end lineage for ML lifecycle governance."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "A production serving path needs an explicit scoring interface, runtime environment, deployment settings, and monitoring rather than only ad hoc interactive code.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 4. Separating Training, Evaluation, and Serving | serving-contract paragraphs and serving concern table",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://learn.microsoft.com/en-us/azure/machine-learning/concept-endpoints-online?view=azureml-api-2",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Azure online-endpoints doc specifies model files, scoring script, environment, instance/scaling settings, and monitoring as deployment requirements."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Shadow testing and limited rollout are distinct production-validation stages: mirrored traffic can test a new deployment without affecting user-visible results, while partial traffic routing supports limited rollout.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 5. Artifact Governance and Promotion Readiness | paragraphs defining shadow testing and limited rollout",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://learn.microsoft.com/en-us/azure/machine-learning/concept-endpoints-online?view=azureml-api-2",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Azure online-endpoints doc explicitly describes traffic mirroring or shadowing and percentage-based traffic routing for blue/green rollout."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Model candidate documentation should include intended use, limitations, training parameters, datasets, and evaluation results.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 5. Artifact Governance and Promotion Readiness | candidate-evidence paragraphs; Sources list entry for Model Cards",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://huggingface.co/docs/hub/main/model-cards",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Hugging Face's Model Cards documentation explicitly lists intended uses, limitations, training information, datasets, and evaluation results as core contents."
+    }
+  ],
   "further_reading": [
     {
-      "url": "https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
-      "title": "MLOps: Continuous delivery and automation pipelines in machine learning",
+      "url": "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
+      "title": "MLOps: Continuous Delivery and Automation Pipelines in Machine Learning",
       "tier": "vendor",
-      "why_relevant": "Explains the transition from notebook-driven experimentation to modularized, automated ML pipelines and production delivery."
+      "why_relevant": "Grounds the module's separation of experimentation, validation, deployment, and operational monitoring in a recognized MLOps framework."
     },
     {
       "url": "https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-management-and-deployment?view=azureml-api-2",
-      "title": "MLOps machine learning model management",
+      "title": "MLOps Model Management with Azure Machine Learning",
       "tier": "vendor",
-      "why_relevant": "Covers model registration, versioning, metadata, and deployment concerns that map directly to artifact governance and production handoff."
+      "why_relevant": "Useful for lineage, model registration, metadata, governance, and reproducible pipeline concepts discussed in the module."
     },
     {
-      "url": "https://huggingface.co/docs/hub/en/model-cards",
+      "url": "https://huggingface.co/docs/hub/main/model-cards",
       "title": "Model Cards",
       "tier": "vendor",
-      "why_relevant": "Useful for making model candidates reviewable by documenting datasets, evaluation results, intended use, and limitations."
+      "why_relevant": "Directly supports the module's emphasis on making model candidates reviewable through documented datasets, evaluation evidence, and limitations."
     }
   ],
-  "notes": "Module is predominantly pedagogical and workflow-oriented. It does not make dated statistical, incident, standards, security, pricing, or vendor-version claims that require inline citations under the stated rules.",
+  "notes": "Most of the module is sound pedagogical framing rather than citation-heavy factual prose; code blocks, diagrams, tables, quiz items, and hands-on steps were intentionally excluded per the brief.",
   "_schema_issues": [],
   "rejected_urls": []
 }

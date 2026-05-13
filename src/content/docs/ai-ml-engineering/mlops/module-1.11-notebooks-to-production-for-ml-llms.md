@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Notebooks to Production for ML/LLMs"
 slug: ai-ml-engineering/mlops/module-1.11-notebooks-to-production-for-ml-llms
 sidebar:
@@ -148,7 +149,7 @@ The `reports/` directory stores metrics, evaluation summaries, slice analysis, q
 
 The `tests/` directory protects logic that is easy to break silently. Feature transforms, prompt formatting, request validation, and evaluation calculations are especially worth testing because a tiny change can invalidate comparisons.
 
-A small layout like this teaches the most important MLOps habit: code, config, data reference, output, and decision evidence should be separable. When those are separable, automation becomes possible later.
+A small layout like this teaches the most important MLOps habit: [code, config, data reference, output, and decision evidence should be separable](https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-management-and-deployment?view=azureml-api-2). When those are separable, automation becomes possible later.
 
 The same shape works for LLM applications, but the module names may shift. For an LLM system, `features.py` may become `retrieval.py`, `prompts.py` becomes central, and `evaluation.py` may combine exact-match metrics, rubric scoring, cost tracking, and human review sampling.
 
@@ -455,7 +456,7 @@ For RAG systems, the team must separate retrieval changes from generation change
 
 For fine-tuning systems, the team must separate training data changes from model configuration changes. A better score may come from cleaner labels, more examples, a changed prompt format, different hyperparameters, or leakage into the evaluation set.
 
-The training script should not decide promotion alone. It can write metrics, but a promotion decision should compare those metrics against thresholds and baselines that were agreed before the candidate was produced.
+The training script should not decide promotion alone. It can write metrics, but [a promotion decision should compare those metrics against thresholds and baselines that were agreed before the candidate was produced](https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning).
 
 The evaluation script should not quietly train a new model. If evaluation mutates the artifact it is judging, the report no longer describes the candidate that would be served.
 
@@ -481,7 +482,7 @@ The example decision says `hold-for-slice-review` instead of `promote` because a
 
 This is where senior judgment matters. Production readiness is not just a high score; it is a defensible explanation of what changed, which risks remain, and what the team will observe after deployment.
 
-The serving contract is the next boundary. Before building an API, the team should define the request, response, validation rules, failure behavior, timeout target, model versioning behavior, and rollback mechanism.
+The serving contract is the next boundary. Before building an API, the team should [define the request, response, validation rules, failure behavior, timeout target, model versioning behavior, and rollback mechanism](https://learn.microsoft.com/en-us/azure/machine-learning/concept-endpoints-online?view=azureml-api-2).
 
 A serving contract for the ticket classifier might say that the request contains `title` and `body`, both must be non-empty strings, the response contains `label`, `confidence`, and `model_version`, and invalid requests return a structured client error.
 
@@ -508,7 +509,7 @@ That sequence matters because automating a bad handoff only makes the bad handof
 
 An artifact is not production-ready just because it exists. A production candidate needs lineage, evaluation, ownership, and rollback expectations because real systems fail in ways that are not visible during a successful notebook run.
 
-Lineage means the team can answer how the artifact was produced. The answer should include code reference, config, data reference, feature or prompt version, training command, evaluation command, and output location.
+Lineage means the team can answer how the artifact was produced. The answer should include [code reference, config, data reference, feature or prompt version, training command, evaluation command, and output location](https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-management-and-deployment?view=azureml-api-2).
 
 Evaluation means the team can explain why the artifact is better, safer, cheaper, faster, or otherwise preferable to the baseline. The answer should include metrics, slices, known weaknesses, and acceptance criteria.
 
@@ -520,7 +521,7 @@ A minimal production handoff is enough for many small teams. The notebook proves
 
 The minimum does not require a large platform. It requires a habit: every candidate should be explainable without reopening the notebook kernel that created it.
 
-For an ML classifier, candidate evidence may include dataset snapshot, training config, aggregate metrics, per-class metrics, confusion matrix, baseline comparison, and a short note about observed failure modes.
+For an ML classifier, candidate evidence may include [dataset snapshot, training config, aggregate metrics, per-class metrics, confusion matrix, baseline comparison, and a short note about observed failure modes](https://huggingface.co/docs/hub/main/model-cards).
 
 For an LLM RAG system, candidate evidence may include prompt version, retrieval index version, embedding model, evaluation set, groundedness checks, answer quality rubric, latency, token cost, and examples of failures that remain unacceptable.
 
@@ -544,7 +545,7 @@ candidate_gate:
     - approve_for_limited_rollout
 ```
 
-This gate teaches a crucial habit: production readiness has stages. A candidate might be rejected, held for more evidence, approved for shadow testing, or approved for limited rollout, and those are different decisions.
+This gate teaches a crucial habit: production readiness has stages. A candidate might be rejected, held for more evidence, [approved for shadow testing, or approved for limited rollout, and those are different decisions](https://learn.microsoft.com/en-us/azure/machine-learning/concept-endpoints-online?view=azureml-api-2).
 
 Shadow testing means the system runs the candidate without affecting user-visible results. It is useful when offline evaluation is promising but the team needs live traffic characteristics, latency data, or distribution checks.
 
@@ -825,3 +826,6 @@ The final `grep` command should not show production code importing from notebook
 - [MLOps: Continuous delivery and automation pipelines in machine learning](https://cloud.google.com/solutions/machine-learning/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning) — Explains the transition from notebook-driven experimentation to modularized, automated ML pipelines and production delivery.
 - [MLOps machine learning model management](https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-management-and-deployment?view=azureml-api-2) — Covers model registration, versioning, metadata, and deployment concerns that map directly to artifact governance and production handoff.
 - [Model Cards](https://huggingface.co/docs/hub/en/model-cards) — Useful for making model candidates reviewable by documenting datasets, evaluation results, intended use, and limitations.
+- [cloud.google.com: mlops continuous delivery and automation pipelines in machine learning](https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning) — Google's MLOps architecture guide states that model evaluation produces quality metrics and model validation confirms performance is better than a baseline before deployment.
+- [learn.microsoft.com: concept endpoints online](https://learn.microsoft.com/en-us/azure/machine-learning/concept-endpoints-online?view=azureml-api-2) — The Azure online-endpoints doc specifies model files, scoring script, environment, instance/scaling settings, and monitoring as deployment requirements.
+- [huggingface.co: model cards](https://huggingface.co/docs/hub/main/model-cards) — Hugging Face's Model Cards documentation explicitly lists intended uses, limitations, training information, datasets, and evaluation results as core contents.
