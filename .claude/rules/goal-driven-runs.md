@@ -67,7 +67,7 @@ last_output, current_module, next_action.
 
 ```text
 /goal #388 batch: dispatch codex per module on briefing.actions.next,
-run scripts/verifier.py for density gates (median_wpp≥28, mean_wpp≥30,
+run scripts/quality/verify_module.py for density gates (median_wpp≥28, mean_wpp≥30,
 short-para-rate≤20%), paste the verifier output verbatim. Final line
 of each turn MUST be:
   GOAL_STATUS turn=N/40 blocked=X/3 no_progress=Y/3 module=<key> verifier=<pass|fail>
