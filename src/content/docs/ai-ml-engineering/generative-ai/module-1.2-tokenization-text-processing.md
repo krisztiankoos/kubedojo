@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Tokenization & Text Processing"
 slug: ai-ml-engineering/generative-ai/module-1.2-tokenization-text-processing
 sidebar:
@@ -107,7 +108,7 @@ The lesson is not that one language is worse than another. The lesson is that to
 
 Most modern language-model tokenizers are trained from large text corpora. They do not start with a human-written dictionary of every possible word. Instead, they learn reusable fragments that make the training data efficient to represent. The details vary by algorithm, but the shared goal is to represent frequent strings compactly while still allowing rare or unseen strings to be encoded.
 
-Byte-Pair Encoding, usually shortened to BPE, is one of the most important ideas behind modern subword tokenization. A BPE-style tokenizer starts with very small pieces, then repeatedly merges frequent neighboring pieces. If `l` and `o` often appear together, they may merge into `lo`. If `lo` and `w` often appear together, they may merge into `low`. Over many iterations, frequent words and fragments become single tokens.
+Byte-Pair Encoding, usually shortened to BPE, is one of the most important ideas behind modern subword tokenization. A BPE-style tokenizer starts with very small pieces, then [repeatedly merges frequent neighboring pieces](https://huggingface.co/docs/transformers/en/tokenizer_summary). If `l` and `o` often appear together, they may merge into `lo`. If `lo` and `w` often appear together, they may merge into `low`. Over many iterations, frequent words and fragments become single tokens.
 
 ```text
 Training sketch for one word:
@@ -121,7 +122,7 @@ Possible:    lower
 
 This toy sequence is simplified, but it captures the engineering intuition. BPE rewards frequency. A common word, phrase fragment, or coding pattern may become compact. A rare product name, typo, or mixed-case identifier may fragment. This explains why tokenization can feel inconsistent when two strings look similarly long to a human but appeared at different frequencies in the tokenizer's training data.
 
-WordPiece is similar in spirit but uses a different scoring method for choosing merges. It is commonly associated with BERT-style models and often marks continuation fragments with a prefix such as `##`. That prefix is not decoration; it tells the tokenizer and downstream processing that the fragment continues a word rather than beginning one. This makes it easier to reconstruct word-like structure during certain natural language processing tasks.
+WordPiece is similar in spirit but uses a different scoring method for choosing merges. It is commonly [associated with BERT-style models and often marks continuation fragments with a prefix such as `##`](https://huggingface.co/docs/course/chapter6/6). That prefix is not decoration; it tells the tokenizer and downstream processing that the fragment continues a word rather than beginning one. This makes it easier to reconstruct word-like structure during certain natural language processing tasks.
 
 ```text
 WordPiece-style example:
@@ -131,7 +132,7 @@ WordPiece-style example:
 "play"         -> ["play"]
 ```
 
-SentencePiece approaches the problem from a different angle by treating input as raw text rather than requiring a separate pre-tokenization step. It can encode whitespace as a normal symbol, often shown as `▁`. This is useful for multilingual systems because not every language uses spaces the same way English does. SentencePiece is common in models that need robust behavior across many scripts and writing systems.
+SentencePiece approaches the problem from a different angle by [treating input as raw text rather than requiring a separate pre-tokenization step. It can encode whitespace as a normal symbol, often shown as `▁`](https://huggingface.co/docs/transformers/en/tokenizer_summary). This is useful for multilingual systems because not every language uses spaces the same way English does. SentencePiece is common in models that need robust behavior across many scripts and writing systems.
 
 ```text
 SentencePiece-style example:
@@ -306,7 +307,7 @@ print(f"Unexpected numbers: {sorted(unexpected)}")
 
 The script above does not solve every numerical reasoning problem, but it demonstrates a reliable pattern. Let deterministic code handle exact validation. Let the model handle language tasks where approximate semantic reasoning is useful. A senior production design does not ask tokenization to become perfect; it adds checks around known weak points.
 
-Unicode text introduces another source of hidden complexity. Modern systems commonly use UTF-8, which represents characters as one or more bytes. Some tokenizers operate partly at the byte level, which helps them encode almost any text but can make certain scripts or symbols expand into more tokens. This is one reason the same semantic sentence can have different token costs across languages.
+Unicode text introduces another source of hidden complexity. Modern systems commonly use [UTF-8, which represents characters as one or more bytes](https://www.rfc-editor.org/rfc/rfc3629). [Some tokenizers operate partly at the byte level](https://huggingface.co/docs/transformers/en/tokenizer_summary), which helps them encode almost any text but can make certain scripts or symbols expand into more tokens. This is one reason the same semantic sentence can have different token costs across languages.
 
 ```text
 Character examples in UTF-8:
@@ -323,7 +324,7 @@ Encoding and tokenization are different layers. Encoding turns text into bytes s
 
 The strongest answer starts with measurement and user requirements. The team should not force users into a different language merely to reduce cost. It should measure per-language token usage, choose a model and tokenizer appropriate for supported markets, and set budgets that reflect real input distributions. If the product promises multilingual support, the architecture must budget for multilingual text.
 
-Some strings can trigger anomalous behavior because they correspond to unusual or poorly learned tokens. Researchers have documented cases where rare tokens caused models to respond strangely. These cases are not everyday failures, but they are useful reminders that tokenization is part of the model's learned interface. Security and reliability testing should include unusual strings, generated identifiers, repeated fragments, and data copied from real systems.
+Some strings can trigger anomalous behavior because they correspond to unusual or poorly learned tokens. [Researchers have documented cases where rare tokens caused models to respond strangely.](https://arxiv.org/abs/2404.09894) These cases are not everyday failures, but they are useful reminders that tokenization is part of the model's learned interface. Security and reliability testing should include unusual strings, generated identifiers, repeated fragments, and data copied from real systems.
 
 A robust prompt pipeline treats text processing as a staged system rather than a single concatenation operation. It normalizes where safe, preserves where meaning depends on formatting, counts tokens with the target tokenizer, validates high-risk fields, and records what was sent. This staged design makes failures explainable. When a request is too large or a value is altered, engineers can inspect each stage instead of guessing what happened inside the model.
 
@@ -430,9 +431,9 @@ The senior-level lesson is that tokenization turns prompt construction into reso
 
 ## Did You Know?
 
-1. **Subword tokenization was a major breakthrough for rare words**: Instead of treating every unseen word as unknown, subword methods can compose rare words from smaller learned fragments.
-2. **Whitespace can be part of a token**: Many tokenizers learn fragments that include leading spaces, which is why `world` and ` world` can be different vocabulary entries.
-3. **Token counting is model-specific**: Two models can tokenize the same string differently, so a count from one tokenizer should not be treated as a universal truth.
+1. **Subword tokenization was a major breakthrough for rare words**: Instead of treating every unseen word as unknown, [subword methods can compose rare words from smaller learned fragments.](https://arxiv.org/abs/1508.07909)
+2. **Whitespace can be part of a token**: [Many tokenizers learn fragments that include leading spaces, which is why `world` and ` world` can be different vocabulary entries.](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb)
+3. **Token counting is model-specific**: [Two models can tokenize the same string differently](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb), so a count from one tokenizer should not be treated as a universal truth.
 4. **Context windows are shared budgets**: System instructions, user input, retrieved evidence, chat history, tool outputs, and generated answers all compete for the same limited sequence space.
 
 ---
@@ -756,3 +757,9 @@ The next module moves from how text enters a language model to how responses are
 
 - [Neural Machine Translation of Rare Words with Subword Units](https://arxiv.org/abs/1508.07909) — Classic paper explaining why subword tokenization and BPE-style segmentation matter.
 - [OpenAI API Pricing](https://openai.com/api/pricing/) — Current official pricing page for validating any cost examples in the module.
+- [huggingface.co: tokenizer summary](https://huggingface.co/docs/transformers/en/tokenizer_summary) — The Hugging Face tokenizer summary directly explains that BPE starts with small units and repeatedly merges the most frequent adjacent pair.
+- [huggingface.co: 6](https://huggingface.co/docs/course/chapter6/6) — The Hugging Face WordPiece page explicitly describes the ## continuation prefix and explains the algorithm in BERT-style tokenization.
+- [rfc-editor.org: rfc3629](https://www.rfc-editor.org/rfc/rfc3629) — RFC 3629 is the primary UTF-8 specification and explicitly defines UTF-8 as encoding characters in sequences of 1 to 4 octets.
+- [arxiv.org: 2404.09894](https://arxiv.org/abs/2404.09894) — This paper explicitly studies glitch tokens and describes them as anomalous tokenizer outputs that can compromise model response quality.
+- [github.com: How to count tokens with tiktoken.ipynb](https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb) — The OpenAI cookbook example shows tokens like " is" and " great", directly supporting the claim that leading spaces are often grouped into tokens.
+- [SentencePiece: A Simple and Language Independent Subword Tokenizer and Detokenizer for Neural Text Processing](https://arxiv.org/abs/1808.06226) — Primary reference for raw-text subword tokenization and whitespace-aware tokenization.
