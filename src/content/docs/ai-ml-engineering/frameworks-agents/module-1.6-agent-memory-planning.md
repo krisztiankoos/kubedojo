@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Agent Memory & Planning"
 slug: ai-ml-engineering/frameworks-agents/module-1.6-agent-memory-planning
 sidebar:
@@ -402,9 +403,9 @@ sequenceDiagram
     Solver-->>User: Final answer grounded in evidence
 ```
 
-ReWOO reduces repeated model calls because the model does not reason after every observation. That is valuable for high-volume extraction, predictable research, and workflows with stable tool contracts. The trade-off is that the first plan must be good enough. If the planner fails to include a needed branch, the executor may collect the wrong evidence efficiently, which is still wrong.
+[ReWOO reduces repeated model calls because the model does not reason after every observation.](https://arxiv.org/abs/2305.18323) That is valuable for high-volume extraction, predictable research, and workflows with stable tool contracts. The trade-off is that the first plan must be good enough. If the planner fails to include a needed branch, the executor may collect the wrong evidence efficiently, which is still wrong.
 
-Tree of Thought explores multiple reasoning paths and scores them before synthesizing an answer. It is best for problems where choosing the approach is the hard part: architecture trade-offs, root cause hypotheses, migration strategies, and policy decisions. It is usually a poor fit for routine tool execution because branch exploration is expensive and can accidentally multiply side effects if not isolated.
+[Tree of Thought explores multiple reasoning paths and scores them before synthesizing an answer.](https://arxiv.org/abs/2305.10601) It is best for problems where choosing the approach is the hard part: architecture trade-offs, root cause hypotheses, migration strategies, and policy decisions. It is usually a poor fit for routine tool execution because branch exploration is expensive and can accidentally multiply side effects if not isolated.
 
 ```mermaid
 graph TD
@@ -534,7 +535,7 @@ The safer default is tool composition, not tool creation. If the agent needs to 
 | Verification gate | Confident but wrong final answers | Tests, policy checks, schema validation, rollout checks |
 | Human escalation | Unsafe autonomous decisions | Approval for destructive or irreversible actions |
 
-A Kubernetes-hosted agent should have both application-level and platform-level limits. At the application layer, the agent should count iterations, retries, tool calls, and tokens. At the platform layer, a Kubernetes v1.35+ `batch/v1` Job can enforce finite execution, and container resource limits can prevent a runaway process from consuming unlimited CPU or memory. These controls serve different purposes, and neither replaces the other.
+A Kubernetes-hosted agent should have both application-level and platform-level limits. At the application layer, the agent should count iterations, retries, tool calls, and tokens. At the platform layer, [a Kubernetes v1.35+ `batch/v1` Job can enforce finite execution](https://kubernetes.io/docs/concepts/workloads/controllers/job/), and [container resource limits can prevent a runaway process from consuming unlimited CPU or memory](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/). These controls serve different purposes, and neither replaces the other.
 
 ```yaml
 apiVersion: batch/v1
@@ -752,8 +753,8 @@ The final design principle is reversibility. Prefer actions that can be inspecte
 
 ## Did You Know?
 
-- **Fact 1:** Larger context windows reduce some memory pressure, but they do not remove the need for retrieval design because long prompts can still bury relevant details among distracting text.
-- **Fact 2:** ReWOO-style planning can reduce repeated reasoning calls when a tool chain is predictable, but it becomes brittle when later observations should change the plan.
+- **Fact 1:** Larger context windows reduce some memory pressure, but they do not remove the need for retrieval design because [long prompts can still bury relevant details among distracting text](https://arxiv.org/abs/2307.03172).
+- **Fact 2:** [ReWOO-style planning can reduce repeated reasoning calls when a tool chain is predictable](https://arxiv.org/abs/2305.18323), but it becomes brittle when later observations should change the plan.
 - **Fact 3:** Episodic memory is most useful when it stores the situation, actions, evidence, outcome, and lesson together, rather than storing a vague summary of success.
 - **Fact 4:** A verifier that uses tests, schema checks, policy rules, or live system state is usually more reliable than a reflection loop that only asks the same model to judge itself.
 
