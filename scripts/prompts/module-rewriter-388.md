@@ -1,4 +1,5 @@
 # #388 Module Rewriter — Density-First Brief Addendum
+Word-count target for THIS module: {{BODY_WORDS_TARGET}}. Replaced by dispatch with per-module budget if set, otherwise default 5000.
 
 This addendum is layered on top of `scripts/prompts/module-writer.md`. It is binding for all #388 site-wide rewrite dispatches. The audit gates here are derived from the Codex architectural consult of 2026-05-01 (bridge messages #3384 and #3386) and the empirical baseline established by the density fix-pass batch of the same session (PRs #720-723).
 
@@ -55,8 +56,8 @@ Before finalizing, scan every consecutive body-prose paragraph. If three paragra
 
 ## DEPTH TARGET (REPLACES "600+ CONTENT LINES")
 
-Target substantial depth: 5,000-7,000 words of original instructional content. Do not satisfy depth by adding short lines, fragmented paragraphs, or decorative structure. Word count is the floor; density gates are the ceiling on how those words can be packaged.
-The 5,000-7,000 target is a depth budget, not a quota. If a topic naturally fits in 4,500 words of substantive teaching, write 4,500 words. Padding to hit 5,000 with restated content is a hard failure of this contract (see NO RESTATEMENT ACROSS H2 SECTIONS above).
+Target substantial depth: {{BODY_WORDS_TARGET}}-7,000 words of original instructional content. Do not satisfy depth by adding short lines, fragmented paragraphs, or decorative structure. Word count is the floor; density gates are the ceiling on how those words can be packaged.
+The {{BODY_WORDS_TARGET}}-7,000 target is a depth budget, not a quota. If a topic naturally fits in 4,500 words of substantive teaching, write 4,500 words. Padding to hit {{BODY_WORDS_TARGET}} with restated content is a hard failure of this contract (see NO RESTATEMENT ACROSS H2 SECTIONS above).
 
 ## RUNNABILITY, FABRICATION, AND PRACTICE QUESTIONS
 
@@ -74,7 +75,7 @@ All must pass before commit. The deterministic verifier (`scripts/quality/verify
 2. median_wpp >= 28
 3. short_paragraph_rate <= 20%
 4. max_consecutive_short_run <= 2
-5. body_words >= 5000 (absolute floor — not relative)
+5. body_words >= {{BODY_WORDS_TARGET}} (absolute floor — not relative)
 6. mean_sentence_length 12-28 words
 7. >= 2 inline active-learning prompts in core content (not just in the final hands-on)
 8. Each Learning Outcome maps to >= 1 core section AND >= 1 quiz item OR lab task
@@ -99,7 +100,7 @@ Per the Codex consult, classify each `revision_pending: true` module into one of
 After draft, the dispatched agent must report:
 - mean_wpp, median_wpp, short_paragraph_rate, max_consecutive_short_run, body_words, paragraph_count, mean_sentence_length
 - Which gates passed/failed
-- Body-words-before / body-words-after (and confirmation that absolute floor 5000 is met)
+- Body-words-before / body-words-after (and confirmation that absolute floor {{BODY_WORDS_TARGET}} is met)
 - Salvageable assets preserved (count of code blocks, diagrams, tables before/after)
 - Forbidden tokens grep result
 - Sources verification status (200/redirect/404 + relevance assessment)
