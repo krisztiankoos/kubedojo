@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 7 continuation handoff — 2026-05-13 — tech-debt drain + harness hardening (hook 2, #342, ab discuss terminator, git hygiene)</title>
+<style>
+  :root {
+    --bg: #fafbfc; --fg: #1a1d23; --muted: #5b6573; --accent: #0057B7;
+    --good: #0d8a4a; --warn: #b45c00; --bad: #b8001f; --card: #ffffff;
+    --border: #e2e6eb; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { margin: 0 0 8px; font-size: 26px; }
+  h2 { margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); font-size: 20px; }
+  h3 { margin: 20px 0 8px; font-size: 16px; }
+  .meta { color: var(--muted); margin: 0 0 24px; font-size: 13px; }
+  .tldr { background: var(--card); border-left: 4px solid var(--accent);
+          padding: 14px 18px; margin: 16px 0 28px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0;
+          background: var(--card); border: 1px solid var(--border); }
+  th, td { padding: 9px 11px; border-bottom: 1px solid var(--border);
+           text-align: left; vertical-align: top; font-size: 13.5px; }
+  th { background: #eef2f6; font-weight: 600; }
+  td.col-id { white-space: nowrap; font-family: var(--mono); font-size: 12.5px; }
+  code { background: #eef2f6; padding: 1px 6px; border-radius: 3px;
+         font-family: var(--mono); font-size: 12.5px; }
+  ol li, ul li { margin: 6px 0; }
+  .pill { display: inline-block; padding: 1px 7px; border-radius: 10px;
+          font-size: 11.5px; font-weight: 600; margin-right: 6px; }
+  .pill.merged { background: #eef9f1; color: var(--good); }
+  .pill.closed { background: #eef9f1; color: var(--good); }
+  .pill.new { background: #e8f0fc; color: var(--accent); }
+  .pill.contract { background: #fff7e6; color: var(--warn); }
+  .smoke { background: #1a1d23; color: #e8eaed; padding: 12px 16px;
+           border-radius: 6px; font-family: var(--mono); font-size: 12.5px;
+           overflow-x: auto; white-space: pre; }
+  .comment { color: #9aa0a6; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 7 (continuation) — Tech-debt drain + harness hardening</h1>
+<p class="meta">2026-05-13 · primary on <code>main</code> at <code>a716df0b</code> · author: claude opus 4.7 (1M ctx)</p>
+
+<div class="tldr">
+  <strong>TL;DR.</strong> Continuation of session 7 after the gap-pipeline drain (see <a href="2026-05-13-session-7-gap-pipeline-drain.html">predecessor handoff</a>). User pivoted to <em>bugs + tech debt before backfill or content</em>. Three more PRs merged + git hygiene cleanup + GH issue triage.
+  <span class="pill merged">3 PRs merged</span>: #1188 (ab discuss terminator parallel-lag fix), #1192 (hook 2 of #1175 — block direct commit on main without PR ref), #1194 (#342 pipeline-v4 outcome rename).
+  <span class="pill closed">7 GH issues closed</span>: #1176 (hook 1 oversight), #331/#332/#334/#335/#336/#337 (stale slices subsumed by #376), plus #342 by merge.
+  <span class="pill new">4 GH issues filed</span>: #1189/#1190/#1191 (hooks 3/4/5 sub-issues of #1175) + #1193 (hook 2 nits follow-up).
+  <span class="pill contract">Hardening landed</span>: <code>git commit</code> on <code>main</code> without PR ref now mechanically blocked (advisory → enforced). Net issue count: -3.
+  <strong>Git hygiene</strong>: 61 worktrees → 3, 55 prunable branches → 0, 2 stale pid files cleared. Briefing alerts 4 → 2.
+</div>
+
+<h2>What shipped (3 PRs + 1 hygiene commit since the gap-pipeline handoff)</h2>
+
+<table>
+  <thead><tr><th>Commit / PR</th><th>Subject</th><th>Outcome</th></tr></thead>
+  <tbody>
+    <tr><td class="col-id">39f13c55</td>
+        <td>docs(status): session 7 follow-up — git hygiene cleanup (57 worktrees + 55 branches pruned)</td>
+        <td><span class="pill merged">direct to main</span>. 61 → 3 worktrees. 1 dirty worktree had uncommitted 195+/202- diff from prior orphan codex session; saved as <code>/tmp/orphan-patches/codex-388-trust-boundaries-uncommitted-2026-05-13.patch</code> before force-removing. 2 stale pid files cleared.</td></tr>
+    <tr><td class="col-id">PR #1188</td>
+        <td>fix(ab-discuss): clarify max_rounds terminator on parallel within-round visibility lag</td>
+        <td><span class="pill merged">merged</span> at <code>a0eaa336</code>. Codex (gpt-5.5 danger, 396s); claude opus review APPROVE. Adds per-round agreement history + parallel-lag caveat in the terminator message. New test <code>test_discuss_max_rounds_partial_convergence_message</code>.</td></tr>
+    <tr><td class="col-id">PR #1192</td>
+        <td>feat(hooks): block direct commit on main without PR ref (2/5 of #1175)</td>
+        <td><span class="pill merged">merged</span> at <code>142b01f6</code>. Codex (gpt-5.5 danger, 891s); claude opus review APPROVE_WITH_NITS (2 nits filed as #1193). New <code>.claude/hooks/block-direct-commit-on-main.sh</code> + 11 tests. Allowlist: <code>backfill</code>/<code>handoff</code>/<code>docs(status):</code> prefixes + <code>(#N)</code> PR refs. <strong>Now mechanically enforced for inline -m commits.</strong></td></tr>
+    <tr><td class="col-id">PR #1194</td>
+        <td>fix(pipeline-v4): rename outcome needs_human → residuals_filed (#342)</td>
+        <td><span class="pill merged">merged</span> at <code>a716df0b</code>. Codex (gpt-5.5 danger, 1006s); claude opus review APPROVE. <code>scripts/pipeline_v4.py</code> + 2 test files. Reviewer verified <code>scripts/local_api.py</code> + operator dashboard never needed changes (brief's worry was hypothetical).</td></tr>
+  </tbody>
+</table>
+
+<h2>GH issue management</h2>
+
+<h3>Closed (7)</h3>
+<ul>
+  <li><code>#1176</code> — Hook 1/5 oversight. PR #1177's auto-close from commit message didn't fire (sibling pattern of <code>feedback_gh_pr_merge_auto_squash_race.md</code>). Manual close.</li>
+  <li><code>#331, #332, #334, #335, #336, #337</code> — Stale Quality Epic slices of <strong>CLOSED</strong> parent #180. Subsumed by active #376 (Q2 2026 quality improvement, 484-module critical-rubric backlog). Each closed with reference to #376.</li>
+  <li><code>#342</code> — Closed by PR #1194 merge.</li>
+</ul>
+
+<h3>Filed (4)</h3>
+<ul>
+  <li><code>#1189</code> — Hook 3/5: block <code>Edit</code>/<code>Write</code> on <code>src/content/docs/**</code> unless <code>KUBEDOJO_DISPATCHED=1</code> env var is set. Driven by <code>feedback_dispatch_codex_for_code_changes.md</code>.</li>
+  <li><code>#1190</code> — Hook 4/5: block <code>Agent</code> calls with <code>isolation="worktree"</code>. Driven by <code>feedback_no_parallel_agent_fanout.md</code>.</li>
+  <li><code>#1191</code> — Hook 5/5: require <code>--mode danger</code> for codex dispatches that contain <code>git push</code> or <code>gh pr create</code> in the prompt. Driven by <code>feedback_codex_danger_for_git_gh.md</code>.</li>
+  <li><code>#1193</code> — Hook 2 nits: (a) tighten allowlist prefix matching (<code>backfill*</code> too broad; should require <code>:</code> or whitespace), (b) handle <code>-am</code> short-flag cluster decomposition (currently fails-open).</li>
+</ul>
+
+<h3>Stale-but-not-closed (1)</h3>
+<ul>
+  <li><code>#381</code> — "Phase C: Mass-audit 721 UNAUDITED modules — HARD GATE before May 5 (Gemini downgrade)". The May-5 hard gate is past (today is May-13). #381 → #382 → #383 → #384 form a Phase C/D/D.5/E.1 chain that's stalled. Work is still relevant (484 critical-rubric backlog remains) but the framing assumes pre-2026-05-05 Gemini pricing window. <strong>Next session: re-scope or close these 4.</strong></li>
+</ul>
+
+<h2>Contract / hardening changes</h2>
+
+<ol>
+  <li><strong>Hook 2 enforcement live.</strong> <code>git commit</code> on <code>main</code> without a PR ref now exits 2 with rule-cite, unless subject starts with <code>backfill</code> / <code>handoff</code> / <code>docs(status):</code> or contains <code>(#N)</code>. Inline <code>-m</code> commits only; editor/<code>-F file</code>/HEREDOC are fail-open with stderr note. This handoff commit (<code>docs(status):</code> prefix) is exempt.</li>
+  <li><strong>ab discuss terminator now distinguishes parallel-lag vs persistent disagreement.</strong> Final-round per-agent tokens shown; "Caveat: agents respond in parallel within a round" message fires when mixed tokens + no <code>[AGREE]</code>→<code>[DISAGREE]</code> flip detected. Eliminates the session-7 false-positive that prompted this fix.</li>
+  <li><strong>pipeline_v4 outcome literal renamed.</strong> <code>needs_human</code> → <code>residuals_filed</code>. Removes the false-urgency on the ~36 (extrapolating to ~400+) merge-ready modules with queued citation residuals. Operator dashboard / readiness endpoint never referenced the old literal (verified by reviewer).</li>
+</ol>
+
+<h2>Decisions made</h2>
+
+<ol>
+  <li><strong>Tech-debt priority lock</strong> (user direction): bugs + tech debt before backfill or content/expansion. Recorded in TODO. The remaining workstreams (citation backfill pilot, Stage-1 brief drafting for #1186/#1187) are deferred behind tooling hardening.</li>
+  <li><strong>Hook 2 nits NOT blocking merge.</strong> Per <code>feedback_ai_gate_is_the_gate.md</code>, APPROVE_WITH_NITS auto-merges; the 2 real findings are tracked at #1193 for a future ~20-LOC follow-up.</li>
+  <li><strong>Quality Epic slices closed as stale, not migrated.</strong> #331-#337 are subsumed by #376; reopening allowed if scope diverges. No active work was orphaned.</li>
+</ol>
+
+<h2>Cold-start for next session</h2>
+
+<ol>
+  <li>Hit the briefing API first. The TODO list in STATUS.md has been pruned to reflect this session's drains. Live briefing alerts should be: <code>249 critical modules</code> + <code>1 detached worktree (codex-interactive)</code> only.</li>
+  <li><strong>First action choice (tech-debt continues):</strong>
+    <ul>
+      <li><strong>Hook 3/5 (#1189)</strong> — block Edit/Write on <code>src/content/docs/**</code> unless dispatched. Mirror hook 2's shape; reuse <code>_lib.sh</code>. Codex dispatch + claude opus review pattern is now well-established (3 successful cycles this session). Plus a small dispatcher patch to inject <code>KUBEDOJO_DISPATCHED=1</code> into subprocess env.</li>
+      <li><strong>Hook 2 nits (#1193)</strong> — tight ~20-LOC follow-up: tighten allowlist prefix match + handle <code>-am</code> decomposition.</li>
+      <li><strong>Re-scope #381</strong> — drop the expired May-5 HARD GATE framing; either close as stale OR re-anchor on current state (Gemini pricing has changed; the 721 UNAUDITED count is also likely stale).</li>
+      <li><strong>Citation backfill pilot</strong> — still pending if tech-debt thread feels complete. Root-cause fixed by #1172; pilot with <code>--limit 3</code>.</li>
+    </ul>
+  </li>
+  <li><strong>Cold-start ritual:</strong> <code>/bin/ps aux | grep -E "dispatch_388_pilot|backfill-pending"</code>. Should be empty.</li>
+  <li><strong>Hook 2 caveat for cold-start:</strong> when you commit handoffs/STATUS updates, use the <code>docs(status):</code> prefix (or <code>handoff</code>/<code>backfill</code>) to satisfy the new hook. Direct main commits with arbitrary subjects will now exit 2.</li>
+</ol>
+
+<h2>Smoketests / verification</h2>
+
+<div class="smoke"><span class="comment"># Verify session-7-continuation PRs landed</span>
+git log --oneline -5 main
+<span class="comment"># Should show a716df0b → 142b01f6 → a0eaa336 → 39f13c55 → 6f4d4b83</span>
+
+<span class="comment"># Verify new GH issues exist + closures landed</span>
+gh issue view 1189 --json state    <span class="comment"># OPEN — hook 3</span>
+gh issue view 1190 --json state    <span class="comment"># OPEN — hook 4</span>
+gh issue view 1191 --json state    <span class="comment"># OPEN — hook 5</span>
+gh issue view 1193 --json state    <span class="comment"># OPEN — hook 2 nits</span>
+gh issue view 1176 --json state    <span class="comment"># CLOSED — hook 1 oversight fixed</span>
+gh issue view 331  --json state    <span class="comment"># CLOSED — stale slice</span>
+gh issue view 342  --json state    <span class="comment"># CLOSED by merge</span>
+
+<span class="comment"># Verify hook 2 is mechanically blocking</span>
+cd .  <span class="comment"># primary repo on main</span>
+git commit --allow-empty -m "fix: testing hook2"  <span class="comment"># should EXIT 2</span>
+git commit --allow-empty -m "docs(status): testing hook2"  <span class="comment"># should ALLOW</span>
+
+<span class="comment"># Verify git hygiene state</span>
+git worktree list | wc -l    <span class="comment"># 3 (primary + codex-interactive + goal-consult)</span>
+curl -s http://127.0.0.1:8768/api/git/cleanup | jq -r '.counts'  <span class="comment"># {branches: 0, worktrees: 0}</span>
+</div>
+
+<h2>Pointers</h2>
+
+<ul>
+  <li>Predecessor: <a href="2026-05-13-session-7-gap-pipeline-drain.html"><code>docs/session-state/2026-05-13-session-7-gap-pipeline-drain.html</code></a> — original session 7 (gap pipeline drain).</li>
+  <li>Predecessor: <a href="2026-05-12-session-6-harness-pilot-and-gap-sweep.html"><code>docs/session-state/2026-05-12-session-6-harness-pilot-and-gap-sweep.html</code></a> — session 6 (citation-backfill incident + harness hardening pilot).</li>
+  <li>Hook epic: GH #1175 — Hook 1 ✅ (PR #1177 + #1179) / Hook 2 ✅ (PR #1192) / Hooks 3/4/5 open as #1189/#1190/#1191.</li>
+  <li>Orphan patch from hygiene cleanup: <code>/tmp/orphan-patches/codex-388-trust-boundaries-uncommitted-2026-05-13.patch</code> (516 lines; not committed; module was already rewritten on main).</li>
+</ul>
+
+</main>
+</body>
+</html>
