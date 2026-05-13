@@ -1,31 +1,78 @@
 {
   "module_key": "ai-ml-engineering/mlops/module-1.12-small-team-private-ai-platform",
   "module_path": "src/content/docs/ai-ml-engineering/mlops/module-1.12-small-team-private-ai-platform.md",
-  "research_run_id": "2026-04-22T04:23:27+00:00-codex-gpt-5.3-codex-spark",
+  "research_run_id": "2026-05-13T23:48:59+00:00-codex-gpt-5.3-codex-spark",
   "schema_version": 3,
   "section_pool_ref": null,
-  "claims": [],
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Opening healthcare-startup regression anecdote about a four-person ML team, a copied internal API model, and a customer-reported regression three months later.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, opening paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A four-person ML team at a healthcare startup had a model that looked excellent in a notebook, passed a local evaluation script, and was quietly copied into an internal API by the only engineer who knew how the artifact was produced. Three months later, a customer-reported regression forced the team to ask basic questions under pressure: which run produced the model, which dataset snapshot was used, which prompt template changed, who approved the deployment, and whether the previous artifact could be restored.",
+      "suggested_rewrite": "A small ML team can end up with a model that looks good in a notebook, gets copied into an internal API, and later becomes difficult to explain or restore because the run, data snapshot, prompt template, and deployment history were never recorded.",
+      "lesson_point_url": null,
+      "rationale": "This is a specific operational anecdote with precise team size, sector, and timeline but no attributable source."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "MLflow began as an open-source project for the full ML lifecycle, and small teams often adopt only tracking and artifact features first.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know, bullet 1",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**MLflow began as an open-source project for the full ML lifecycle**: Small teams often adopt only its tracking and artifact features first, which is a reasonable starting point when the immediate problem is traceability rather than complete platform automation.",
+      "suggested_rewrite": "**MLflow is an open-source platform with lifecycle capabilities for ML and AI systems**: For a small team focused on traceability, starting with tracking and artifact features can be a reasonable first step before adding more platform automation.",
+      "lesson_point_url": "https://github.com/mlflow/mlflow",
+      "rationale": "The MLflow repository supports the platform/lifecycle description, but the claim about what small teams often adopt first is a teaching generalization rather than a directly sourced fact."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Kubernetes Jobs are often enough for early shared training, and one Job can standardize image, command, resources, logs, and failure behavior.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know, bullet 2",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Kubernetes Jobs are often enough for early shared training**: A team does not need a full workflow engine to stop relying on personal laptops; one well-defined Job can standardize image, command, resources, logs, and failure behavior.",
+      "suggested_rewrite": "**Kubernetes Jobs can be an early way to standardize shared training**: A well-defined Job can give a team one repeatable way to run shared training workloads outside personal laptops without adopting a full workflow engine first.",
+      "lesson_point_url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/",
+      "rationale": "The Kubernetes Job docs support the run-to-completion workload primitive, but they do not directly support the broader sufficiency claim that Jobs are 'often enough' for early platform design."
+    }
+  ],
   "further_reading": [
     {
       "url": "https://github.com/mlflow/mlflow",
-      "title": "MLflow",
+      "title": "MLflow Repository",
       "tier": "upstream",
-      "why_relevant": "Useful background for the module's illustrative tracking-and-artifact example stack."
+      "why_relevant": "Useful primary reference for MLflow's tracking, artifact, and lifecycle capabilities in small-team MLOps setups."
     },
     {
       "url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/",
       "title": "Kubernetes Jobs",
       "tier": "standards",
-      "why_relevant": "Relevant to the module's recommendation to make training and evaluation execution repeatable outside individual laptops."
+      "why_relevant": "Defines the native Kubernetes primitive the module recommends for repeatable training and evaluation execution."
     },
     {
       "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/",
       "title": "Using RBAC Authorization",
       "tier": "standards",
-      "why_relevant": "Supports the module's emphasis on access control and ownership rules for shared platform components."
+      "why_relevant": "Supports the module's access-control and ownership discussion for shared platform components."
     }
   ],
-  "notes": "No inline citation seeds were generated because the body is almost entirely conceptual guidance and operating heuristics. The named tools in the example stack are illustrative examples rather than load-bearing vendor/version claims, and quiz plus exercise content was excluded per policy.",
+  "notes": "Most of the module is pedagogical guidance, diagrams, code samples, and exercises; the main inline-citation needs are the unsourced opening anecdote and the two 'Did You Know' bullets that make concrete product/capability claims.",
   "_schema_issues": [],
   "rejected_urls": []
 }

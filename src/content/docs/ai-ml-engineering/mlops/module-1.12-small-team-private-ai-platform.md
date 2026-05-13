@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Small-Team Private AI Platform"
 slug: ai-ml-engineering/mlops/module-1.12-small-team-private-ai-platform
 sidebar:
@@ -996,3 +997,4 @@ After completing the exercise, review your design as if you were approving it fo
 
 - [Kubernetes Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) — Relevant to the module's recommendation to make training and evaluation execution repeatable outside individual laptops.
 - [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) — Supports the module's emphasis on access control and ownership rules for shared platform components.
+- [github.com: mlflow](https://github.com/mlflow/mlflow) — General lesson point for an illustrative rewrite.
