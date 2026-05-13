@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Introduction to Large Language Models"
 slug: ai-ml-engineering/generative-ai/module-1.1-introduction-to-large-language-models
 sidebar:
@@ -88,7 +89,7 @@ This request path is the backbone you will reuse throughout the module. When an 
 
 Before transformers, many neural language systems processed text sequentially. Recurrent neural networks and long short-term memory networks moved through a sequence step by step, carrying a hidden state forward. That structure matched the order of text, but it made long-range dependencies difficult and limited parallel training. If the important clue appeared far from the current word, the model had to preserve that clue through many updates.
 
-Transformers changed the scaling path by using attention. Instead of forcing information to travel through a single sequential state, attention lets each token compute relationships with other tokens in the context. A token such as "it" can assign high attention to "contract," "server," or "customer" depending on the surrounding text. This mechanism allowed much more parallel training and made it practical to scale models, datasets, and compute in ways that older architectures struggled to exploit.
+Transformers changed the scaling path by using attention. Instead of forcing information to travel through a single sequential state, attention lets each token compute relationships with other tokens in the context. A token such as "it" can assign high attention to "contract," "server," or "customer" depending on the surrounding text. [This mechanism allowed much more parallel training and made it practical to scale models, datasets, and compute in ways that older architectures struggled to exploit.](https://arxiv.org/abs/1706.03762)
 
 Attention does not mean the model literally "understands" language as a human does, but it does mean the model can build context-sensitive representations. In early layers, the model may track local syntax and token patterns. In deeper layers, it may represent more abstract relationships such as entity roles, code structure, instruction hierarchy, or document themes. Each layer transforms the representation so the final output distribution reflects more than a raw word-frequency table.
 
@@ -116,7 +117,7 @@ Here is the high-level path through a decoder-only transformer during generation
 
 > **Pause and predict:** If you place a crucial instruction at the very beginning of a long prompt, then add many pages of loosely related documents before the user request, what failure mode might appear? Predict the behavior before reading the next paragraph.
 
-The model may ignore, dilute, or partially follow the early instruction because context is not the same as perfect memory. Long context windows are useful, but the model still has to allocate attention across everything provided. Important instructions should be explicit, nearby when possible, non-contradictory, and reinforced through output constraints. In production, you should also test long-context behavior with representative prompts rather than assuming the advertised context size equals reliable use of every token.
+[The model may ignore, dilute, or partially follow the early instruction because context is not the same as perfect memory.](https://arxiv.org/abs/2307.03172) Long context windows are useful, but the model still has to allocate attention across everything provided. Important instructions should be explicit, nearby when possible, non-contradictory, and reinforced through output constraints. In production, you should also test long-context behavior with representative prompts rather than assuming the advertised context size equals reliable use of every token.
 
 A worked example makes the mechanism concrete. Suppose the user asks an assistant to summarize a service-level agreement, and the application adds three retrieved chunks to the prompt. Chunk one contains the current uptime commitment, chunk two contains a deprecated policy, and chunk three contains pricing details. If the prompt simply says "answer the user's question using the context," the model may blend old and new language. A stronger prompt labels each chunk with freshness and authority, asks the model to cite the chunk it used, and validates that the answer references the current policy.
 
@@ -138,7 +139,7 @@ The stronger version does not make the model infallible, but it makes the desire
 
 Pre-training is the expensive stage where a model learns broad language and code patterns from massive datasets. The objective is usually some version of predicting missing or next tokens across large corpora. The result is a base model with broad statistical knowledge, but a base model is not automatically a helpful assistant. If you ask a base model a question, it may continue the pattern of questions rather than answer the specific request.
 
-Instruction tuning adapts a base model to follow requests. The training data contains examples of instructions and desirable responses, so the model learns conversational behavior, formatting expectations, and task completion patterns. Reinforcement learning from human feedback and related preference-optimization techniques further shape outputs toward responses that humans rate as more helpful, safer, or more aligned with policy. These stages are why chat models feel different from raw completion models.
+Instruction tuning adapts a base model to follow requests. The training data contains examples of instructions and desirable responses, so the model learns conversational behavior, formatting expectations, and task completion patterns. Reinforcement learning from human feedback and related preference-optimization techniques further shape outputs toward responses that humans rate as more helpful, safer, or more aligned with policy. [These stages are why chat models feel different from raw completion models.](https://arxiv.org/abs/2203.02155)
 
 Fine-tuning is often misunderstood as "teach the model new facts." It can add domain behavior, terminology, style, and task patterns, but it is usually the wrong first choice for frequently changing knowledge. If your product catalog changes every day, retraining or fine-tuning for each update is expensive and brittle. Retrieval-augmented generation is usually a better fit because the application retrieves current documents at request time and places the relevant evidence into context.
 
@@ -150,7 +151,7 @@ Fine-tuning is often misunderstood as "teach the model new facts." It can add do
 | Analyze live account state | Tool use or application-side API calls | The model should not guess live state from training data because the database is authoritative | Reconsider only for summaries after the authoritative tool result has been fetched |
 | Reduce latency for a narrow repeated task | Smaller model, caching, or fine-tuning | Routing and caching may solve cost and speed before training work is justified | Reconsider when the narrow task has measurable error patterns that adaptation can fix |
 
-The phrase "the model knows" is dangerous in engineering conversations. A model may encode patterns from training, but it does not know whether a pattern is current, authorized, complete, or applicable to your user's contract. When factual correctness matters, the system should provide the evidence and ask the model to reason over that evidence. When live state matters, the system should call tools or databases and let the model explain the result, not invent the state.
+The phrase "the model knows" is dangerous in engineering conversations. [A model may encode patterns from training, but it does not know whether a pattern is current, authorized, complete, or applicable to your user's contract.](https://arxiv.org/abs/2005.11401) When factual correctness matters, the system should provide the evidence and ask the model to reason over that evidence. When live state matters, the system should call tools or databases and let the model explain the result, not invent the state.
 
 > **Stop and think:** Your legal team asks for an assistant that answers questions about contracts signed last week. A teammate proposes fine-tuning a model on last quarter's contract templates. Which part of the requirement makes that proposal risky, and what architecture would you recommend first?
 
@@ -353,7 +354,7 @@ You should now have the full conceptual path. LLMs generate tokens from context.
 
 ## Did You Know?
 
-1. The original transformer paper made parallel training a central advantage, which is one reason transformer-based models scaled so effectively compared with older sequential architectures.
+1. [The original transformer paper made parallel training a central advantage, which is one reason transformer-based models scaled so effectively compared with older sequential architectures.](https://arxiv.org/abs/1706.03762)
 
 2. Many production LLM incidents are context incidents rather than model incidents, because the answer can only be as grounded as the evidence and instructions supplied to the model.
 
@@ -725,3 +726,5 @@ Next: [Tokenization & Text Processing](./module-1.2-tokenization-and-text-proces
 - [platform.openai.com: how we use your data](https://platform.openai.com/docs/models/how-we-use-your-data) — The OpenAI data-controls page directly states both the default training policy and the 30-day abuse-monitoring retention period.
 - [arxiv.org: 2310.06825](https://arxiv.org/abs/2310.06825) — The paper directly states the Apache 2.0 license and reports outperforming Llama 2 13B on its evaluated benchmarks.
 - [Language Models are Few-Shot Learners](https://openai.com/index/language-models-are-few-shot-learners/) — This paper introduced GPT-3 and is a key reference for scale, few-shot prompting, and early frontier-model behavior.
+- [arxiv.org: 2307.03172](https://arxiv.org/abs/2307.03172) — Lost in the Middle directly reports degraded performance when relevant information appears in the middle of long contexts.
+- [arxiv.org: 2005.11401](https://arxiv.org/abs/2005.11401) — The RAG paper abstract explicitly says large language models store factual knowledge in parameters while provenance and updating world knowledge remain open problems.
