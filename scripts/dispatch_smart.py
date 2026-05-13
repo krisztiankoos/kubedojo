@@ -59,6 +59,17 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 LOG_PATH = REPO / "logs" / "smart_dispatch.jsonl"
+PRIMARY_REPO = REPO
+
+
+def _primary_checkout_root(repo_root: Path) -> Path:
+    """Resolve the primary checkout root when this script runs in a worktree."""
+    if repo_root.parent.name == ".worktrees":
+        return repo_root.parent.parent
+    return repo_root
+
+
+PRIMARY_REPO = _primary_checkout_root(REPO)
 
 
 SUPPORTED_AGENTS = ("claude", "codex")
@@ -145,7 +156,11 @@ def ensure_worktree(worktree: Path, new_branch: str | None,
             f"--new-branch was given; refusing to invent a branch name"
         )
     cmd = ["git", "worktree", "add", "-b", new_branch, str(worktree), base]
-    subprocess.run(cmd, cwd=REPO, check=True)
+    subprocess.run(cmd, cwd=PRIMARY_REPO, check=True)
+    primary_venv = PRIMARY_REPO / ".venv"
+    worktree_venv = worktree / ".venv"
+    if primary_venv.exists() and not worktree_venv.exists():
+        worktree_venv.symlink_to(primary_venv)
 
 
 def append_log(entry: dict) -> None:
@@ -301,7 +316,7 @@ def main() -> int:
     if args.worktree:
         worktree = Path(args.worktree)
         if not worktree.is_absolute():
-            worktree = REPO / worktree
+            worktree = PRIMARY_REPO / worktree
     elif mode != "read-only" and not args.dry_run:
         sys.stderr.write(
             f"[smart] mode={mode} requires --worktree to avoid trampling "
