@@ -408,6 +408,15 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
     slug = st["slug"]
     module_key = _module_key_from_path(st["module_path"])
     repo = _REPO_ROOT
+    seed_rel = f"docs/citation-seeds/{module_key.replace('/', '-')}.json"
+
+    def _restore_seed_json() -> None:
+        # Research writes the seed before inject runs. `restore` handles
+        # tracked/staged seed edits; `clean` removes a brand-new untracked
+        # seed and ignores tracked files after they have been restored.
+        _git(repo, "restore", "--staged", seed_rel, check=False)
+        _git(repo, "restore", seed_rel, check=False)
+        _git(repo, "clean", "-f", "--", seed_rel, check=False)
 
     # Refuse to operate on a dirty primary — any pending edits must be
     # resolved before we mutate the same files. The pipeline never leaves
@@ -422,6 +431,7 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
 
     research = _run_citation_subcommand(module_key, "research", agent=agent)
     if not research["ok"]:
+        _restore_seed_json()
         return {
             "done": False, "ok": False, "stage_failed": "research",
             "error": (research["stderr"] or research["stdout"])[-500:],
@@ -435,10 +445,10 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
         # path (frontmatter can still be marked verified).
         if inject.get("error") == "nothing_to_do" or "nothing_to_do" in (inject.get("stdout") or ""):
             set_citations_verified_frontmatter(_REPO_ROOT / st["module_path"], verified=True)
-            seed_rel = f"docs/citation-seeds/{module_key.replace('/', '-')}.json"
             rc, status_all, _ = _git(repo, "status", "--porcelain", check=False)
             if rc != 0:
                 _git(repo, "restore", st["module_path"], check=False)
+                _restore_seed_json()
                 return {
                     "done": False, "ok": False, "stage_failed": "git_status",
                     "error": "git status failed after no-op inject",
@@ -455,6 +465,7 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
                 # back no-op writes if someone else touched this checkout.
                 for p in backfill_paths:
                     _git(repo, "restore", p, check=False)
+                _restore_seed_json()
                 return {
                     "done": False, "ok": False, "stage_failed": "concurrent_edit",
                     "error": f"unexpected working-tree changes outside backfill scope: {sorted(foreign_paths)[:5]}",
@@ -472,6 +483,7 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
                 for p in backfill_paths:
                     _git(repo, "restore", "--staged", p, check=False)
                     _git(repo, "restore", p, check=False)
+                _restore_seed_json()
                 return {
                     "done": False, "ok": False, "stage_failed": "git_commit",
                     "error": stderr.strip()[-500:], "module_key": module_key,
@@ -484,6 +496,7 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
             }
         # Best-effort: discard any partial write so primary stays clean.
         _git(repo, "restore", st["module_path"], check=False)
+        _restore_seed_json()
         return {
             "done": False, "ok": False, "stage_failed": "inject",
             "error": (inject["stderr"] or inject["stdout"])[-500:],
@@ -498,10 +511,10 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
     # artifacts (module + seed) must land in the same commit so the
     # provenance is traceable in git history. ``git status --porcelain``
     # without a path lists every file we may need to stage.
-    seed_rel = f"docs/citation-seeds/{module_key.replace('/', '-')}.json"
     rc, status_all, _ = _git(repo, "status", "--porcelain", check=False)
     if rc != 0:
         _git(repo, "restore", st["module_path"], check=False)
+        _restore_seed_json()
         return {
             "done": False, "ok": False, "stage_failed": "git_status",
             "error": "git status failed after inject",
@@ -519,6 +532,7 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
         # citation_backfill wrote so primary stays clean for retry.
         for p in backfill_paths:
             _git(repo, "restore", p, check=False)
+        _restore_seed_json()
         return {
             "done": False, "ok": False, "stage_failed": "concurrent_edit",
             "error": f"unexpected working-tree changes outside backfill scope: {sorted(foreign_paths)[:5]}",
@@ -543,6 +557,7 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
         for p in backfill_paths:
             _git(repo, "restore", "--staged", p, check=False)
             _git(repo, "restore", p, check=False)
+        _restore_seed_json()
         return {
             "done": False, "ok": False, "stage_failed": "git_commit",
             "error": stderr.strip()[-500:], "module_key": module_key,
