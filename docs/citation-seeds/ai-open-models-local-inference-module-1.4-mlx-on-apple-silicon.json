@@ -1,34 +1,149 @@
 {
   "module_key": "ai/open-models-local-inference/module-1.4-mlx-on-apple-silicon",
   "module_path": "src/content/docs/ai/open-models-local-inference/module-1.4-mlx-on-apple-silicon.md",
-  "research_run_id": "2026-04-20T00:27:10+00:00-codex-gpt-5.3-codex-spark",
-  "schema_version": 2,
+  "research_run_id": "2026-05-14T01:08:10+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "MLX is a machine learning framework from Apple's machine learning research group, designed for Apple Silicon hardware.",
+      "claim_text": "MLX is a machine learning framework from Apple Machine Learning Research designed for Apple silicon.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: What MLX Is",
+      "span_hint": "line 32 | section: Start With The Problem MLX Solves",
       "disposition": "supported",
+      "source_ids": [],
       "proposed_url": "https://github.com/ml-explore/mlx",
       "proposed_tier": "upstream",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The MLX repository README directly describes MLX as an array framework for machine learning on Apple silicon and says it is brought to users by Apple machine learning research."
+      "rationale": "The MLX README directly describes MLX as an array framework for machine learning on Apple silicon from Apple machine learning research."
     },
     {
       "claim_id": "C002",
-      "claim_text": "MLX provides Mac users with a practical local inference path for running open models on Apple Silicon.",
+      "claim_text": "`mlx-lm` provides command-line and Python workflows for generating text, loading models, quantizing models, and fine-tuning LLMs on Apple silicon with MLX.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: What MLX Is | blockquote after introductory paragraph",
+      "span_hint": "line 32 | section: Start With The Problem MLX Solves",
       "disposition": "supported",
+      "source_ids": [],
       "proposed_url": "https://github.com/ml-explore/mlx-lm",
       "proposed_tier": "upstream",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The MLX LM project directly documents text generation and fine-tuning of large language models on Apple silicon with MLX, which supports the module's local-inference claim."
+      "rationale": "The MLX LM README documents CLI and Python APIs plus quantization and fine-tuning features for Apple-silicon LLM workflows."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "MLX is built around Apple silicon's unified memory model, where arrays live in shared memory and can be used across CPU and GPU without explicit transfers.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 36 | section: Start With The Problem MLX Solves",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/ml-explore/mlx",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The MLX README explicitly calls out unified memory and shared-memory arrays across supported device types."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Ollama supports local chat/model execution and exposes a REST API for running and managing models.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 102-114 | section: What MLX Is, And What It Is Not",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/ollama/ollama/blob/main/README.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Ollama README shows local chat usage and documents the REST API for running and managing models."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Hugging Face Transformers is a broad model-engineering library for inference and training, with portable code paths like pipelines and direct model loading.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 102-114 | section: What MLX Is, And What It Is Not",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://huggingface.co/docs/transformers/v4.48.0/en/index",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Transformers docs describe the library as state-of-the-art ML for inference and training and highlight portable inference workflows such as pipelines and AutoClass loading."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "GGUF/llama.cpp tools are a cross-platform local-inference path built around GGUF model files and support running quantized models locally on many hardware backends.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 102-112, 427, 446 | sections: What MLX Is, And What It Is Not; Compare Runtimes With A Controlled Test",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/ggml-org/llama.cpp/blob/master/README.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The llama.cpp README presents GGUF-based local inference with broad backend support and direct local model execution."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "vLLM is oriented toward LLM inference and high-throughput serving rather than a simple laptop-learning workflow.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 102-114, 216 | sections: What MLX Is, And What It Is Not; Choose A Model Like An Engineer",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/vllm-project/vllm/blob/main/README.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The vLLM README describes vLLM as an inference and serving library with state-of-the-art throughput and high-throughput serving features."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The default model used by `mlx-lm` may change over time.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 134 | section: Prepare A Clean MLX Environment",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The default model used by `mlx-lm` may change over time, so a serious lab should name the model explicitly when reproducibility matters.",
+      "suggested_rewrite": "When reproducibility matters, a serious lab should name the model explicitly.",
+      "lesson_point_url": null,
+      "rationale": "The reproducibility lesson is sound, but the module's specific claim about changing defaults is not directly backed by an allowlisted primary source."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Instruction-tuned chat models rely on model-specific chat templates, and `apply_chat_template()` formats messages into the form expected by the model.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 255-259, 283, 606 | sections: Run And Inspect A Python Workflow; Common Mistakes",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://huggingface.co/docs/transformers/main/chat_templating_writing",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Transformers chat-template docs explain that templates are stored on the tokenizer and are used whenever `apply_chat_template()` is called to match the model's expected format."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Hugging Face model downloads are cached locally under the Hub cache, which by default lives under `~/.cache/huggingface/hub`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 543-553 | section: Manage Caches, Disk, And Repeat Runs",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://huggingface.co/docs/huggingface_hub/en/guides/manage-cache",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Hugging Face Hub cache guide directly documents the local cache layout and default cache directory."
     }
   ],
   "further_reading": [
@@ -36,22 +151,34 @@
       "url": "https://github.com/ml-explore/mlx",
       "title": "MLX",
       "tier": "upstream",
-      "why_relevant": "Primary upstream source for what MLX is, how it is designed, and which Apple Silicon features it targets."
+      "why_relevant": "Primary upstream source for MLX's Apple-silicon design and unified-memory model."
     },
     {
       "url": "https://github.com/ml-explore/mlx-lm",
       "title": "MLX LM",
       "tier": "upstream",
-      "why_relevant": "Shows the practical LLM inference workflow on Apple Silicon that learners would actually use."
+      "why_relevant": "Best reference for the concrete CLI and Python LLM workflows the module teaches."
     },
     {
-      "url": "https://github.com/ml-explore/mlx-examples",
-      "title": "MLX Examples",
+      "url": "https://huggingface.co/docs/hub/en/mlx",
+      "title": "Using MLX at Hugging Face",
+      "tier": "vendor",
+      "why_relevant": "Connects MLX, MLX-LM, Hugging Face model repos, installation, and conversion flows in one place."
+    },
+    {
+      "url": "https://huggingface.co/docs/transformers/main/chat_templating_writing",
+      "title": "Writing a chat template",
+      "tier": "vendor",
+      "why_relevant": "Useful for understanding why chat formatting matters when moving from a smoke test to a reliable scripted workflow."
+    },
+    {
+      "url": "https://github.com/vllm-project/vllm/blob/main/README.md",
+      "title": "vLLM README",
       "tier": "upstream",
-      "why_relevant": "Provides concrete examples across text, image, audio, and multimodal workloads for learners exploring MLX capabilities."
+      "why_relevant": "Helpful boundary-reading for the point where a laptop prototype becomes a serving problem."
     }
   ],
-  "notes": "This module is mostly pedagogical and curriculum-framing prose; only the core MLX identity and local-inference capability claims clearly need inline citations.",
+  "notes": "This module is mostly pedagogical workflow guidance. The main inline-citation needs are the MLX/MLX-LM capability claims, the comparison-runtime capability claims, the chat-template behavior claim, the Hugging Face cache-location claim, and one unsupported default-model drift claim that should be rewritten rather than cited.",
   "_schema_issues": [],
   "rejected_urls": []
 }

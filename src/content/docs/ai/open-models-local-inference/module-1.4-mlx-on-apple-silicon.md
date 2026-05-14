@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "MLX on Apple Silicon"
 slug: ai/open-models-local-inference/module-1.4-mlx-on-apple-silicon
 sidebar:
@@ -29,11 +30,11 @@ The senior skill is knowing where the boundary sits. MLX is excellent when the m
 
 ## 1. Start With The Problem MLX Solves
 
-MLX is a machine learning framework from Apple's machine learning research group, designed around Apple Silicon hardware. The practical learner version is simpler: MLX gives M-series Mac users a native path for running and studying machine learning workloads without first translating everything through a CUDA mental model. For open-model learners, the most visible package is usually `mlx-lm`, which provides command-line and Python workflows for loading, generating with, quantizing, and fine-tuning language models.
+[MLX is a machine learning framework from Apple's machine learning research group, designed around Apple Silicon hardware.](https://github.com/ml-explore/mlx) The practical learner version is simpler: MLX gives M-series Mac users a native path for running and studying machine learning workloads without first translating everything through a CUDA mental model. For open-model learners, the most visible package is usually `mlx-lm`, which [provides command-line and Python workflows for loading, generating with, quantizing, and fine-tuning language models](https://github.com/ml-explore/mlx-lm).
 
 The problem MLX solves is not merely "run a model on a Mac." Other tools can do that too, and some are easier for casual chat. The deeper problem is that learners need a path where the runtime matches the hardware well enough that experiments feel real. If every test is dominated by compatibility layers, missing acceleration, or unclear memory behavior, the learner's mental model becomes distorted. They may conclude that local models are fragile when the actual problem was a mismatched runtime.
 
-Apple Silicon is different from the classic desktop GPU setup because CPU and GPU share unified memory. That does not make memory infinite, and it does not magically turn every model into a laptop-sized workload. It does mean that the boundary between "CPU memory" and "GPU memory" feels different from a discrete GPU system where model weights must fit into a separate VRAM budget. MLX was built with that environment in mind, so it is a strong first runtime when the goal is to learn locally on a Mac.
+Apple Silicon is different from the classic desktop GPU setup because [CPU and GPU share unified memory](https://github.com/ml-explore/mlx). That does not make memory infinite, and it does not magically turn every model into a laptop-sized workload. It does mean that the boundary between "CPU memory" and "GPU memory" feels different from a discrete GPU system where model weights must fit into a separate VRAM budget. MLX was built with that environment in mind, so it is a strong first runtime when the goal is to learn locally on a Mac.
 
 ```ascii
 +--------------------------------------------------------------------------------+
@@ -99,7 +100,7 @@ A useful mental model is to separate the runtime layer from the model workflow l
 +--------------------------------------------------------------------------------+
 ```
 
-MLX is not a drop-in replacement for every local inference tool. Ollama is often easier for a quick chat server, GGUF-based tools are widely used across different machines, Hugging Face Transformers is a broad engineering ecosystem, and vLLM is built for high-throughput serving rather than laptop learning. MLX is best understood as a Mac-native technical lane that can be excellent for learning and prototyping, especially when the learner wants to see how a model is loaded and called from Python.
+MLX is not a drop-in replacement for every local inference tool. [Ollama is often easier for a quick chat server](https://github.com/ollama/ollama/blob/main/README.md), [GGUF-based tools are widely used across different machines](https://github.com/ggml-org/llama.cpp/blob/master/README.md), [Hugging Face Transformers is a broad engineering ecosystem](https://huggingface.co/docs/transformers/v4.48.0/en/index), and [vLLM is built for high-throughput serving rather than laptop learning](https://github.com/vllm-project/vllm/blob/main/README.md). MLX is best understood as a Mac-native technical lane that can be excellent for learning and prototyping, especially when the learner wants to see how a model is loaded and called from Python.
 
 That framing prevents two opposite mistakes. The first mistake is dismissing MLX because it is not the dominant production serving stack. The second mistake is overselling MLX as if every learner should use it for every local model task. Both mistakes flatten the decision. A strong practitioner asks: what is the machine, what is the goal, what model format is available, what operational behavior matters, and what will the learner need to transfer later?
 
@@ -280,7 +281,7 @@ PY
 python run_mlx_prompt.py
 ```
 
-This script teaches several important mechanisms. The `load` call brings the model and tokenizer into the process. The tokenizer prepares text in the format the model expects. The chat template matters because instruction-tuned models are often trained with special message formatting. The generation call turns the prompt into output tokens. The timing measurements separate model load time from generation time, which helps the learner avoid vague complaints like "it is slow" when the slow part may only be the first load.
+This script teaches several important mechanisms. The `load` call brings the model and tokenizer into the process. The tokenizer prepares text in the format the model expects. [The chat template matters because instruction-tuned models are often trained with special message formatting.](https://huggingface.co/docs/transformers/main/chat_templating_writing) The generation call turns the prompt into output tokens. The timing measurements separate model load time from generation time, which helps the learner avoid vague complaints like "it is slow" when the slow part may only be the first load.
 
 The script also demonstrates a serious local-inference habit: keep the model identifier visible. When learners copy snippets from different examples, they often forget which model they actually tested. That makes comparison impossible. Every meaningful local inference note should include the model, runtime, machine, prompt shape, token limit, and observed behavior.
 
@@ -550,7 +551,7 @@ du -sh ~/.cache/huggingface 2>/dev/null || true
 python -m pip cache info
 ```
 
-Those commands answer different questions. The project directory size tells you how much local lab material you created. The Hugging Face cache size shows whether model downloads are accumulating outside the project. The pip cache output tells you about package downloads, not model weights. Keeping those categories separate prevents a common cleanup mistake: deleting the virtual environment and wondering why the model cache still consumes disk space.
+Those commands answer different questions. The project directory size tells you how much local lab material you created. [The Hugging Face cache size shows whether model downloads are accumulating outside the project.](https://huggingface.co/docs/huggingface_hub/en/guides/manage-cache) The pip cache output tells you about package downloads, not model weights. Keeping those categories separate prevents a common cleanup mistake: deleting the virtual environment and wondering why the model cache still consumes disk space.
 
 For repeatable runs, create a short manifest after the environment is working. `pip freeze` is not a perfect software bill of materials, but it is useful for a learner-scale lab because it records the installed Python packages at the moment of the test. Pair it with the run record from the previous section and the prompt files used in the comparison. That small bundle is enough for a reviewer to see whether the result came from a stable setup or from a drifting shell session.
 
@@ -885,6 +886,12 @@ EOF
 - [llama.cpp](https://github.com/ggerganov/llama.cpp) — Upstream GGUF-focused local inference runtime used for cross-platform comparison.
 - [Transformers documentation](https://huggingface.co/docs/transformers/index) — Hugging Face documentation for the broader Python model-engineering workflow.
 - [vLLM documentation](https://docs.vllm.ai/en/latest/) — Server-oriented inference runtime documentation for later comparison with laptop workflows.
+- [github.com: README.md](https://github.com/ollama/ollama/blob/main/README.md) — The Ollama README shows local chat usage and documents the REST API for running and managing models.
+- [huggingface.co: index](https://huggingface.co/docs/transformers/v4.48.0/en/index) — The Transformers docs describe the library as state-of-the-art ML for inference and training and highlight portable inference workflows such as pipelines and AutoClass loading.
+- [github.com: README.md](https://github.com/ggml-org/llama.cpp/blob/master/README.md) — The llama.cpp README presents GGUF-based local inference with broad backend support and direct local model execution.
+- [github.com: README.md](https://github.com/vllm-project/vllm/blob/main/README.md) — The vLLM README describes vLLM as an inference and serving library with state-of-the-art throughput and high-throughput serving features.
+- [huggingface.co: chat templating writing](https://huggingface.co/docs/transformers/main/chat_templating_writing) — The Transformers chat-template docs explain that templates are stored on the tokenizer and are used whenever `apply_chat_template()` is called to match the model's expected format.
+- [huggingface.co: manage cache](https://huggingface.co/docs/huggingface_hub/en/guides/manage-cache) — The Hugging Face Hub cache guide directly documents the local cache layout and default cache directory.
 
 ## Next Module
 
