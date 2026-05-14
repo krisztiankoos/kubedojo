@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.4: TCO & Budget Planning"
 slug: on-premises/planning/module-1.4-tco-budget
 sidebar:
@@ -165,7 +166,7 @@ Two practical points come out of that block. First, peak power, not average powe
 
 ### PUE (Power Usage Effectiveness)
 
-PUE is the ratio of total facility power to IT power, and it is the single multiplier that determines how cheaply your servers get cooled. A perfect facility would deliver one watt of cooling and overhead per watt of compute, but no real facility is perfect. Hyperscalers using free-air cooling and chilled water reach 1.1 to 1.2. A modern, well-run colocation provider lands at 1.3 to 1.4. An older facility runs at 1.6, and a poorly designed room can exceed 2.0. The number matters because every watt your servers draw gets multiplied by PUE before billing.
+[PUE is the ratio of total facility power to IT power](https://www.iso.org/standard/30134-2), and it is the single multiplier that determines how cheaply your servers get cooled. A perfect facility would deliver one watt of cooling and overhead per watt of compute, but no real facility is perfect. Hyperscalers using free-air cooling and chilled water reach 1.1 to 1.2. A modern, well-run colocation provider lands at 1.3 to 1.4. An older facility runs at 1.6, and a poorly designed room can exceed 2.0. The number matters because every watt your servers draw gets multiplied by PUE before billing.
 
 ```
 Total facility power
@@ -243,7 +244,7 @@ A second adjustment worth making is on-call. A team that runs production for a p
 
 ## 3-Year TCO Model
 
-A 3 year horizon is the natural board-level comparison because cloud reserved instance terms come in one and three year tranches, and most server depreciation schedules also run three years. Building the model is a mechanical exercise once the taxonomy is in place: list every CapEx line in year zero, list every OpEx line as an annual recurring number, multiply OpEx by three, and add the totals. The hard part is making sure the cloud comparison column is honest, which means using your real cloud bill or a calculator output dated within a few weeks of the analysis, not a number you remember from a blog post.
+A 3 year horizon is the natural board-level comparison because [cloud reserved instance terms come in one and three year tranches](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-reserved-instances.html), and most server depreciation schedules also run three years. Building the model is a mechanical exercise once the taxonomy is in place: list every CapEx line in year zero, list every OpEx line as an annual recurring number, multiply OpEx by three, and add the totals. The hard part is making sure the cloud comparison column is honest, which means using your real cloud bill or a calculator output dated within a few weeks of the analysis, not a number you remember from a blog post.
 
 ### Template
 
@@ -560,3 +561,10 @@ The on-prem versus cloud question is rarely about hardware cost. Hardware accoun
 ## Next Module
 
 Continue to [Module 2.1: Datacenter Fundamentals](/on-premises/provisioning/module-2.1-datacenter-fundamentals/) to learn the physical infrastructure that supports your Kubernetes cluster.
+
+## Sources
+
+- [iso.org: 30134 2](https://www.iso.org/standard/30134-2) — ISO/IEC 30134-2 is the authoritative standard defining PUE.
+- [docs.aws.amazon.com: ec2 reserved instances.html](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-reserved-instances.html) — AWS documentation explicitly states one-year and three-year RI commitments.
+- [NIST Handbook 135e2025: Life-Cycle Costing Manual](https://nvlpubs.nist.gov/nistpubs/hb/2025/NIST.HB.135e2025.pdf) — Authoritative reference for present-value life-cycle costing, NPV, and sensitivity analysis.
+- [Amazon EKS Pricing](https://aws.amazon.com/eks/pricing/) — Useful for checking managed-cluster fees and which AWS resource charges sit outside the EKS control-plane fee.
