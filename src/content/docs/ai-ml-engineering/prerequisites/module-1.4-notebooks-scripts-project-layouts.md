@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Notebooks, Scripts, and Project Layouts"
 slug: ai-ml-engineering/prerequisites/module-1.4-notebooks-scripts-project-layouts
 sidebar:
@@ -627,7 +628,7 @@ The best AI engineers preserve the speed of exploration while building escape ro
 
 ## Did You Know?
 
-1. Notebook files are structured documents, not just Python scripts with extra comments. That is why ordinary text diffs can be noisy and why notebook-aware diff tools are useful in collaborative projects.
+1. [Notebook files are structured documents, not just Python scripts with extra comments.](https://nbformat.readthedocs.io/en/5.3.0/format_description.html) That is why ordinary text diffs can be noisy and why [notebook-aware diff tools](https://github.com/jupyter/nbdime) are useful in collaborative projects.
 
 2. Many production incidents that look like model failures begin as data or preprocessing mismatches. Moving preprocessing into reviewed, reusable code makes those mismatches easier to detect before the model is blamed.
 
@@ -898,3 +899,5 @@ After completing the exercise, compare your result with the worked example in th
 
 - [Cookiecutter Data Science](https://github.com/drivendataorg/cookiecutter-data-science) — Provides a widely used reference project layout for separating code, data, notebooks, and outputs.
 - [nbstripout](https://github.com/kynan/nbstripout) — Directly supports the module's version-control hygiene advice by stripping notebook outputs and noisy metadata.
+- [nbformat.readthedocs.io: format description.html](https://nbformat.readthedocs.io/en/5.3.0/format_description.html) — The nbformat documentation explicitly describes the official Jupyter Notebook format and its JSON-schema-defined top-level structure.
+- [github.com: nbdime](https://github.com/jupyter/nbdime) — The nbdime project directly documents notebook-aware diff and merge commands, supporting the claim that notebook-specific review tooling exists.
