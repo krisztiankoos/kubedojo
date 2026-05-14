@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Gemma 4 and the Open-Model Landscape"
 slug: ai/open-models-local-inference/module-1.7-gemma-4-and-the-open-model-landscape
 sidebar:
@@ -54,7 +55,7 @@ The diagram deliberately starts with the learner goal instead of the model name.
 
 ## What Gemma 4 Represents In This Module
 
-Gemma 4 represents a current Google-backed open-model family that learners can use as a realistic comparison point. It matters because it connects model-card reading, runtime selection, local experimentation, and ecosystem evaluation in one concrete example. It is modern enough to feel relevant, but still broad enough that the lesson should not collapse into product-specific trivia.
+Gemma 4 represents [a current Google-backed open-model family](https://huggingface.co/google/gemma-4-E2B) that learners can use as a realistic comparison point. It matters because it connects model-card reading, runtime selection, local experimentation, and ecosystem evaluation in one concrete example. It is modern enough to feel relevant, but still broad enough that the lesson should not collapse into product-specific trivia.
 
 Treating Gemma 4 as a case study also helps avoid a common curriculum trap. If a module only teaches one model family, learners may confuse the family name with the skill. If the module teaches a framework using one family as the example, learners gain a method they can reuse when model names change.
 
@@ -81,7 +82,7 @@ The hidden assumption is that current release status predicts fit across all lea
 
 A useful comparison should make trade-offs easier to reason about, not create a popularity contest. Gemma 4, Llama, Qwen, and Mistral can all be reasonable names in a learner's landscape map, but they usually enter the conversation for different reasons. The value comes from asking the same questions of each family and noticing where the answers differ.
 
-Gemma 4 is useful when you want a current Google-backed example with documented ecosystem paths. Llama is useful as a broad reference point because many tools, examples, and community workflows are built around it. Qwen is useful when multilingual capability, coding interest, and strong open-model experimentation are part of the conversation. Mistral is useful when efficiency, deployment shape, and quality-per-size are central concerns.
+Gemma 4 is useful when you want a current Google-backed example with documented ecosystem paths. [Llama is useful as a broad reference point because many tools, examples, and community workflows are built around it](https://huggingface.co/meta-llama). [Qwen is useful when multilingual capability, coding interest, and strong open-model experimentation are part of the conversation](https://huggingface.co/Qwen/Qwen3-32B). [Mistral is useful when efficiency, deployment shape, and quality-per-size are central concerns](https://mistral.ai/news/mistral-3).
 
 Those descriptions are starting hypotheses, not final verdicts. The learner still has to map the family to the task, runtime, and machine. A model family that looks ideal for a hosted endpoint might be inconvenient on a local Mac, and a model that runs smoothly in a local tool might lack the behavior you need for a specific evaluation exercise.
 
@@ -98,7 +99,7 @@ The important move is to keep the comparison fair. If you evaluate Gemma 4 using
 
 Model-family selection and runtime selection are tightly connected. A learner does not experience "Gemma 4" in the abstract; they experience a model through a runtime, a model file, a prompt format, memory pressure, and error messages. That means a model that is theoretically suitable can still be a poor beginner choice if the runtime path is rough.
 
-A runtime also shapes what you can observe. Ollama is often a convenient local starting point because it hides many details and gives quick feedback. MLX can be attractive on Apple Silicon when supported builds exist. Transformers is valuable for learners who need to inspect tokenization, configuration, and Python integration. vLLM becomes more relevant when serving behavior and throughput are part of the lesson.
+A runtime also shapes what you can observe. Ollama is often a convenient local starting point because it hides many details and gives quick feedback. [MLX can be attractive on Apple Silicon when supported builds exist](https://github.com/ml-explore/mlx). Transformers is valuable for learners who need to inspect tokenization, configuration, and Python integration. vLLM becomes more relevant when serving behavior and throughput are part of the lesson.
 
 The point is not to memorize a single runtime ranking. The point is to connect the runtime to the question you are asking. If the learning goal is "compare two chat models on my laptop," a quick local runtime may be enough. If the learning goal is "understand production serving trade-offs," a runtime that exposes batching, memory, and throughput behavior may teach more.
 
@@ -155,7 +156,7 @@ Imagine a curriculum writer needs a model family for a local retrieval-augmented
 
 The writer starts by defining the task. The model must answer questions grounded in retrieved text, avoid inventing details when the retrieval result is weak, and run through a local runtime that learners can install without a complex serving stack. The writer also decides that the lab needs a fallback model family because local machines vary.
 
-Next, the writer compares candidates using the same rubric. Gemma 4 is attractive as the current case study because it has active ecosystem documentation and can anchor the "read the model card, pick a runtime, test the path" workflow. Llama is attractive because many learners will find broad examples and community support. Qwen is attractive if the document set includes multilingual examples or if coding-oriented experiments are planned later. Mistral is attractive if efficiency and compact deployment are central to the lab.
+Next, the writer compares candidates using the same rubric. [Gemma 4 is attractive as the current case study because it has active ecosystem documentation](https://huggingface.co/google/gemma-4-E2B) and can anchor the "read the model card, pick a runtime, test the path" workflow. Llama is attractive because many learners will find broad examples and community support. Qwen is attractive if the document set includes multilingual examples or if coding-oriented experiments are planned later. Mistral is attractive if efficiency and compact deployment are central to the lab.
 
 The writer then chooses a first path and a fallback. A reasonable decision might be: use Gemma 4 as the primary case study for the evaluation narrative, but keep a Llama or Mistral path available if the target runtime has better tested local examples for a particular learner environment. That decision does not say Gemma 4 is universally better. It says Gemma 4 is pedagogically useful for this module while the actual lab remains resilient to runtime and hardware constraints.
 
@@ -197,7 +198,7 @@ Gemma 4 is a weaker teaching choice if the module's only goal is the simplest po
 
 ## When Another Family May Be A Better Fit
 
-Another model family may be better when the learner's context points in a different direction. Llama might be easier when the team needs broad examples across tools and tutorials. Qwen might be more compelling when multilingual behavior or coding-focused experimentation is central. Mistral might be stronger when compactness, efficiency, or serving footprint is the dominant concern.
+Another model family may be better when the learner's context points in a different direction. Llama might be easier when the team needs broad examples across tools and tutorials. [Qwen might be more compelling when multilingual behavior or coding-focused experimentation is central](https://huggingface.co/Qwen/Qwen3-32B). [Mistral might be stronger when compactness, efficiency, or serving footprint is the dominant concern](https://mistral.ai/news/mistral-3).
 
 The key is to avoid treating alternatives as defeats. Choosing a different family for a specific lab does not mean Gemma 4 is unimportant. It means the evaluator honored the task, runtime, and learner constraints. That is exactly the habit this module is designed to build.
 
@@ -205,7 +206,7 @@ A strong recommendation often sounds less dramatic than a weak one. "Use Gemma 4
 
 ## Did You Know?
 
-- **Open-model families are not single artifacts**: A family often includes multiple sizes, variants, instruction-tuned versions, runtime conversions, and quantized builds, so you should evaluate the specific artifact you plan to run.
+- **Open-model families are not single artifacts**: [A family often includes multiple sizes, variants, instruction-tuned versions, runtime conversions, and quantized builds](https://huggingface.co/Qwen/Qwen3-32B), so you should evaluate the specific artifact you plan to run.
 - **Documentation quality is part of model usability**: A strong model with unclear setup steps can be a poor beginner teaching choice because learners spend their time debugging the path instead of learning the intended concept.
 - **A local result and a hosted result can differ**: Runtime defaults, quantization, prompt templates, and hardware constraints can change behavior enough that you should record the exact path used for evaluation.
 - **Fallback choices are professional design, not pessimism**: A documented fallback prevents a curriculum or project from depending on one model path staying smooth forever.
@@ -336,3 +337,4 @@ From here, continue to:
 - [Qwen3-32B](https://huggingface.co/Qwen/Qwen3-32B) — Representative current Qwen release that supports the module's multilingual comparison point.
 - [Introducing Mistral 3](https://mistral.ai/news/mistral-3) — Overview of Mistral's current open or open-weight positioning and efficiency framing.
 - [Qwen on Hugging Face](https://huggingface.co/Qwen) — Family hub showing the broader Qwen release landscape for cross-family comparison.
+- [github.com: mlx](https://github.com/ml-explore/mlx) — The MLX project describes itself as machine learning infrastructure for Apple silicon.
