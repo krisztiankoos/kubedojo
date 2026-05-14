@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 5.5: Model Monitoring & Observability"
 slug: platform/disciplines/data-ai/mlops/module-5.5-model-monitoring
 sidebar:
@@ -645,7 +646,7 @@ It is also sensitive to binning decisions.
 
 Jensen-Shannon divergence compares probability distributions.
 
-It is symmetric and bounded, which makes it easier to reason about than raw KL divergence.
+It is [symmetric and bounded](https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence), which makes it easier to reason about than raw KL divergence.
 
 It can work for categorical distributions and binned numeric distributions.
 
@@ -899,7 +900,7 @@ Production monitoring turns checks into metrics, dashboards, alerts, and respons
 
 Evidently is a common open-source tool for ML monitoring reports and tests.
 
-It can generate interactive reports, structured outputs, and checks suitable for automated workflows.
+It can [generate interactive reports, structured outputs, and checks suitable for automated workflows](https://github.com/evidentlyai/evidently).
 
 ```mermaid
 flowchart LR
@@ -1137,7 +1138,7 @@ It does not label by request ID.
 
 It does not label by raw feature value.
 
-Those would create unbounded cardinality and damage the monitoring system.
+Those would create [unbounded cardinality](https://prometheus.io/docs/practices/naming/) and damage the monitoring system.
 
 ### Grafana Dashboard
 
@@ -1516,7 +1517,7 @@ They are early warnings.
 
 ### NannyML for Performance Estimation
 
-Performance estimation tools such as NannyML attempt to estimate model performance before true labels arrive.
+Performance estimation tools such as [NannyML attempt to estimate model performance before true labels arrive](https://github.com/NannyML/NannyML).
 
 They typically use reference data, predicted probabilities, confidence behavior, and production distributions to infer likely metric movement.
 
@@ -2161,3 +2162,11 @@ Operations decide action.
 ## Next Module
 
 Continue to [Module 5.6: ML Pipelines & Automation](../module-5.6-ml-pipelines/) to learn how to automate the full ML lifecycle, including training, validation, deployment, monitoring feedback, and controlled retraining.
+
+## Sources
+
+- [learn.microsoft.com: concept model monitoring](https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-monitoring?view=azureml-api-2) — General lesson point for an illustrative rewrite.
+- [en.wikipedia.org: Jensen%E2%80%93Shannon divergence](https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence) — The referenced page directly describes Jensen-Shannon divergence as symmetric and bounded.
+- [github.com: evidently](https://github.com/evidentlyai/evidently) — The README directly describes Evidently as open source and documents reports, test suites, and JSON/Python/HTML outputs.
+- [prometheus.io: naming](https://prometheus.io/docs/practices/naming/) — Prometheus label best-practice documentation explicitly warns against labels with high cardinality and unbounded value sets.
+- [github.com: NannyML](https://github.com/NannyML/NannyML) — The README directly states that NannyML estimates post-deployment performance without targets and detects data drift.

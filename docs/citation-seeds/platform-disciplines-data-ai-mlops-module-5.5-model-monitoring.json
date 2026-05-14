@@ -1,0 +1,189 @@
+{
+  "module_key": "platform/disciplines/data-ai/mlops/module-5.5-model-monitoring",
+  "module_path": "src/content/docs/platform/disciplines/data-ai/mlops/module-5.5-model-monitoring.md",
+  "research_run_id": "2026-05-14T09:47:59+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A model service can return successful responses quickly even while the model behavior has degraded.",
+      "claim_class": "benchmark",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The API may return HTTP 200 in under 50 ms.",
+      "suggested_rewrite": "The API may return successful HTTP 200 responses quickly.",
+      "lesson_point_url": "https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-monitoring?view=azureml-api-2",
+      "rationale": "The precise latency figure is illustrative, but the operational lesson that infrastructure health can mask model staleness is real and supported."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The war story claims the model started at 94% accuracy.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story: The Slow Decline",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Initial accuracy was 94%.",
+      "suggested_rewrite": "Initial performance looked strong.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed anecdotal metric with false precision."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The war story claims the model fell to 71% accuracy after twelve months.",
+      "claim_class": "war_story",
+      "span_hint": "section: War Story: The Slow Decline",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Twelve months later, accuracy had fallen to 71%.",
+      "suggested_rewrite": "Over time, the model's accuracy had degraded substantially.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed anecdotal metric with a precise timeframe and percentage."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "A large jump in positive prediction rate can indicate drift or another production issue.",
+      "claim_class": "statistic",
+      "span_hint": "section: Model Behavior Signals",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A binary classifier that normally predicts positive 2% of the time and suddenly predicts positive 20% of the time may be experiencing data drift, concept drift, a broken feature, or a legitimate external event.",
+      "suggested_rewrite": "A binary classifier that normally predicts positive only rarely and then suddenly predicts it much more often may be experiencing data drift, concept drift, a broken feature, or a legitimate external event.",
+      "lesson_point_url": "https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-monitoring?view=azureml-api-2",
+      "rationale": "The exact percentages are illustrative, but prediction-drift monitoring as a concept is supported by the cited model-monitoring documentation."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "A large change in approval rate can indicate prediction drift.",
+      "claim_class": "statistic",
+      "span_hint": "section: Understanding Drift",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A classifier that used to approve 30% of applications now approves 60%.",
+      "suggested_rewrite": "A classifier that used to approve a much smaller share of applications now approves a much larger share.",
+      "lesson_point_url": "https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-monitoring?view=azureml-api-2",
+      "rationale": "The exact approval rates are illustrative, but the underlying lesson about output-distribution change is real and supported."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "PSI is especially common in credit risk and regulated financial settings.",
+      "claim_class": "statistic",
+      "span_hint": "section: Drift Detection Methods and Baselines",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Population Stability Index, or PSI, is common in credit risk and regulated financial contexts.",
+      "suggested_rewrite": "Population Stability Index, or PSI, is widely used in credit risk monitoring and also appears in broader model-monitoring workflows.",
+      "lesson_point_url": null,
+      "rationale": "The allowlisted evidence cleanly supports widespread use in credit-risk scoring, but not the broader regulated-finance phrasing as written."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Jensen-Shannon divergence is symmetric and bounded.",
+      "claim_class": "statistic",
+      "span_hint": "section: Drift Detection Methods and Baselines",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The referenced page directly describes Jensen-Shannon divergence as symmetric and bounded."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Training-serving skew is one of the most common causes of production model failure.",
+      "claim_class": "statistic",
+      "span_hint": "section: Training-Serving Skew",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "It is one of the most common causes of production model failure.",
+      "suggested_rewrite": "It is a common cause of production model failure.",
+      "lesson_point_url": null,
+      "rationale": "The superlative frequency ranking is not supported by a matching allowlisted source."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Evidently is an open-source ML monitoring framework that supports reports, test suites, and exportable outputs for automation.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Evidently for Drift Detection",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/evidentlyai/evidently",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The README directly describes Evidently as open source and documents reports, test suites, and JSON/Python/HTML outputs."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Prometheus labels should avoid high-cardinality dimensions such as user IDs or other unbounded values.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Prometheus Metrics",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://prometheus.io/docs/practices/naming/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Prometheus label best-practice documentation explicitly warns against labels with high cardinality and unbounded value sets."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "NannyML can estimate post-deployment model performance before targets arrive and can detect drift.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: NannyML for Performance Estimation",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/NannyML/NannyML",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The README directly states that NannyML estimates post-deployment performance without targets and detects data drift."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://learn.microsoft.com/en-us/azure/machine-learning/concept-model-monitoring?view=azureml-api-2",
+      "title": "Azure Machine Learning model monitoring",
+      "tier": "vendor",
+      "why_relevant": "A concise vendor guide to monitoring signals, reference windows, thresholds, and alerting patterns for production ML."
+    },
+    {
+      "url": "https://prometheus.io/docs/practices/naming/",
+      "title": "Prometheus metric and label naming",
+      "tier": "upstream",
+      "why_relevant": "Covers the label-cardinality constraints and metric design choices that matter when exporting ML monitoring signals to Prometheus."
+    },
+    {
+      "url": "https://github.com/NannyML/NannyML",
+      "title": "NannyML README",
+      "tier": "upstream",
+      "why_relevant": "Useful for the delayed-label part of the module because it focuses on post-deployment performance estimation and drift analysis."
+    }
+  ],
+  "notes": "Skipped Mermaid diagrams, code blocks, JSON/YAML examples, tables, quiz items, and exercise steps per seed rules; captured only prose claims and named-tool capability assertions that need inline support or rewriting.",
+  "_schema_issues": [
+    "claim[3]:hard_cite_class_cannot_soften:statistic/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion",
+    "claim[4]:hard_cite_class_cannot_soften:statistic/soften_to_illustration — must be supported, weak_anchor, or needs_allowlist_expansion"
+  ],
+  "rejected_urls": []
+}
