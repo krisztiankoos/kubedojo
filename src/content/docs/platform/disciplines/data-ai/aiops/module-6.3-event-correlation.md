@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 6.3: Event Correlation"
 slug: platform/disciplines/data-ai/aiops/module-6.3-event-correlation
 sidebar:
@@ -633,7 +634,7 @@ A practical operating model assigns clear responsibilities. Platform teams usual
 
 The feedback loop should be short. If responders split a correlated incident during response, the system should record that override. If they manually merge two incidents, the system should capture the evidence that convinced them. If they change the root-cause hypothesis, the review should store the final cause and the reason the original hypothesis lost. These signals are the training and tuning data that make the system better.
 
-Security and compliance also matter. Alert payloads may contain customer identifiers, internal hostnames, or sensitive operational details. Text-correlation pipelines should normalize or redact volatile and sensitive fields before storing examples for model training. This protects users and also improves model quality because stable failure semantics matter more than unique identifiers.
+Security and compliance also matter. Alert payloads may contain customer identifiers, internal hostnames, or sensitive operational details. [Text-correlation pipelines should normalize or redact volatile and sensitive fields before storing examples for model training](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html). This protects users and also improves model quality because stable failure semantics matter more than unique identifiers.
 
 ## Did You Know?
 
@@ -1015,3 +1016,9 @@ Senior practitioners treat algorithmic quality as an operational responsibility.
 ## Next Module
 
 Continue to [Module 6.4: Root Cause Analysis](../module-6.4-root-cause-analysis/) to learn how to evaluate probable causes inside correlated incidents and decide which hypothesis deserves action first.
+
+## Sources
+
+- [cheatsheetseries.owasp.org: Logging Cheat Sheet.html](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html) — OWASP's Logging Cheat Sheet explicitly advises excluding or sanitizing sensitive data in logs, including internal network names, identifiers, and other sensitive fields.
+- [Grafana Tempo Service Graphs](https://grafana.com/docs/tempo/latest/metrics-from-traces/service_graphs/) — Explains how trace data can be turned into service graphs, including inferred dependencies and virtual nodes for uninstrumented external services.
+- [Amazon Builders' Library: Timeouts, Retries, and Backoff with Jitter](https://aws.amazon.com/cn/builders-library/timeouts-retries-and-backoff-with-jitter/?did=ba_card&trk=ba_card) — Grounds the module's retry-amplification discussion in a primary operational reference on overload, retries, and backoff.

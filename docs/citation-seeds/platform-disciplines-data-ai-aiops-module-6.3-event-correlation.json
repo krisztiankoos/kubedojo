@@ -1,0 +1,60 @@
+{
+  "module_key": "platform/disciplines/data-ai/aiops/module-6.3-event-correlation",
+  "module_path": "src/content/docs/platform/disciplines/data-ai/aiops/module-6.3-event-correlation.md",
+  "research_run_id": "2026-05-14T09:01:40+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening incident narrative uses a precise-but-unsourced outage timeline to motivate correlation.",
+      "claim_class": "war_story",
+      "span_hint": "line 31 | section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "At 03:08, a primary database starts rejecting connections after a storage controller stalls. The database alert is only the first signal. Seconds later, the order service reports connection failures, the user service reports latency, the API gateway reports elevated errors, the frontend reports failed checkouts, and the synthetic monitor reports the customer journey as broken. The on-call engineer does not experience one clean failure; they experience a screen full of competing claims about what is broken.",
+      "suggested_rewrite": "When a primary database stalls or rejects connections, downstream services can quickly emit connection failures, latency alerts, elevated errors, failed checkouts, and synthetic-monitor failures. The on-call engineer then faces a screen full of competing symptoms rather than one clean failure.",
+      "lesson_point_url": null,
+      "rationale": "This is a fabricated war-story timeline with false precision and no attributable source, so the safe fix is to remove the invented timestamp and causal specifics."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Alert payloads may contain customer identifiers, internal hostnames, or other sensitive operational details, so text-correlation pipelines should redact or normalize sensitive fields before storing training examples.",
+      "claim_class": "security_claim",
+      "span_hint": "line 636 | section: Operating Model for Event Correlation",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OWASP's Logging Cheat Sheet explicitly advises excluding or sanitizing sensitive data in logs, including internal network names, identifiers, and other sensitive fields."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://grafana.com/docs/tempo/latest/metrics-from-traces/service_graphs/",
+      "title": "Grafana Tempo Service Graphs",
+      "tier": "upstream",
+      "why_relevant": "Explains how trace data can be turned into service graphs, including inferred dependencies and virtual nodes for uninstrumented external services."
+    },
+    {
+      "url": "https://aws.amazon.com/cn/builders-library/timeouts-retries-and-backoff-with-jitter/?did=ba_card&trk=ba_card",
+      "title": "Amazon Builders' Library: Timeouts, Retries, and Backoff with Jitter",
+      "tier": "vendor",
+      "why_relevant": "Grounds the module's retry-amplification discussion in a primary operational reference on overload, retries, and backoff."
+    },
+    {
+      "url": "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html",
+      "title": "OWASP Logging Cheat Sheet",
+      "tier": "standards",
+      "why_relevant": "Provides practical guidance on sanitizing logs and excluding sensitive fields when storing alert payloads or training data."
+    }
+  ],
+  "notes": "The module is mostly pedagogical. Mermaid diagrams, code blocks, quiz items, and exercise scaffolding were intentionally excluded from claim extraction per the pipeline rules.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
