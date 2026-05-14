@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 2.1: What is Platform Engineering?"
 slug: platform/disciplines/core-platform/platform-engineering/module-2.1-what-is-platform-engineering
 sidebar:
@@ -677,7 +678,7 @@ This decision flow keeps the platform from becoming either a free-for-all or a r
 
 1. Many famous "you build it, you run it" organizations also invest heavily in internal platforms, which means their developer autonomy is supported by substantial hidden enablement rather than individual teams solving every infrastructure problem alone.
 
-2. Backstage began as Spotify's internal developer portal before becoming a widely adopted open source project, which is a useful reminder that successful platform tools often emerge from concrete internal workflow pain.
+2. [Backstage began as Spotify's internal developer portal before becoming a widely adopted open source project](https://www.cncf.io/blog/2022/03/15/backstage-project-joins-the-cncf-incubator/), which is a useful reminder that successful platform tools often emerge from concrete internal workflow pain.
 
 3. The phrase "golden path" does not mean "the only path"; in mature platform organizations it usually means a well-supported default with clear guidance for exceptions and learning loops.
 
@@ -978,3 +979,9 @@ Review Questions:
 ## Next Module
 
 Continue to [Module 2.2: Developer Experience (DevEx)](../module-2.2-developer-experience/) to learn how to measure and improve the developer experience outcomes that determine whether a platform is actually working.
+
+## Sources
+
+- [What is platform engineering?](https://cloud.google.com/solutions/platform-engineering) — Provides a current vendor-neutral-style overview of platform engineering, internal platforms, and golden paths.
+- [Backstage project joins the CNCF Incubator](https://www.cncf.io/blog/2022/03/15/backstage-project-joins-the-cncf-incubator/) — Useful primary history for a major platform-engineering tool and its evolution from internal platform to CNCF project.
+- [Backstage GitHub repository](https://github.com/backstage/backstage) — Shows the upstream project positioning, core components, and current canonical entry point for Backstage.

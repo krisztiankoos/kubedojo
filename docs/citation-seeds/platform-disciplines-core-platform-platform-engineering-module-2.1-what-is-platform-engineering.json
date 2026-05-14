@@ -1,0 +1,97 @@
+{
+  "module_key": "platform/disciplines/core-platform/platform-engineering/module-2.1-what-is-platform-engineering",
+  "module_path": "src/content/docs/platform/disciplines/core-platform/platform-engineering/module-2.1-what-is-platform-engineering.md",
+  "research_run_id": "2026-05-14T08:34:36+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Patrick Debois helped catalyze the DevOps movement with DevOpsDays in 2009.",
+      "claim_class": "war_story",
+      "span_hint": "section: From DevOps to Platform Engineering, paragraph 2",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://devopsdays.org/about/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a specific historical event/person/date claim, and the primary source is off-allowlist on devopsdays.org."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The CALMS model became a useful way to discuss DevOps adoption because it emphasized that automation alone was not enough.",
+      "claim_class": "standard",
+      "span_hint": "section: From DevOps to Platform Engineering, paragraph 2",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://www.atlassian.com/devops/frameworks/calms-framework",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a named framework claim that should be tied to a primary or near-primary explanation, but the best matching source is off-allowlist."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Team Topologies distinguishes team types by purpose and describes how they should interact.",
+      "claim_class": "standard",
+      "span_hint": "section: Team Topologies and Interaction Modes, paragraph 1",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://teamtopologies.com/key-concepts",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a named organizational framework claim, and the authoritative description is on the Team Topologies site, which is outside the allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Backstage began as Spotify's internal developer portal before becoming a widely adopted open source project.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know?, item 2",
+      "disposition": "supported",
+      "source_ids": [
+        "S004",
+        "S005"
+      ],
+      "proposed_url": "https://www.cncf.io/blog/2022/03/15/backstage-project-joins-the-cncf-incubator/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "An allowlisted CNCF source directly states that Backstage was created at Spotify, became mission-critical internally, and was later open-sourced."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://cloud.google.com/solutions/platform-engineering",
+      "title": "What is platform engineering?",
+      "tier": "vendor",
+      "why_relevant": "Provides a current vendor-neutral-style overview of platform engineering, internal platforms, and golden paths."
+    },
+    {
+      "url": "https://www.cncf.io/blog/2022/03/15/backstage-project-joins-the-cncf-incubator/",
+      "title": "Backstage project joins the CNCF Incubator",
+      "tier": "standards",
+      "why_relevant": "Useful primary history for a major platform-engineering tool and its evolution from internal platform to CNCF project."
+    },
+    {
+      "url": "https://github.com/backstage/backstage",
+      "title": "Backstage GitHub repository",
+      "tier": "upstream",
+      "why_relevant": "Shows the upstream project positioning, core components, and current canonical entry point for Backstage."
+    }
+  ],
+  "notes": "Seeded only prose claims that clearly need inline sourcing under the module rules; excluded tables, code blocks, Mermaid diagrams, quizzes, and exercise scaffolds.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
