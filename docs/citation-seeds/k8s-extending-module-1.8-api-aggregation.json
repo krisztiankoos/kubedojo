@@ -1,0 +1,276 @@
+{
+  "module_key": "k8s/extending/module-1.8-api-aggregation",
+  "module_path": "src/content/docs/k8s/extending/module-1.8-api-aggregation.md",
+  "research_run_id": "2026-05-14T04:24:20+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "CRDs are served and stored by the main Kubernetes API server, while aggregated APIs require programming and allow specialized API behavior such as custom storage.",
+      "claim_class": "standard",
+      "span_hint": "section: CRDs vs API Aggregation; table + opening paragraphs",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream custom-resources documentation explicitly contrasts CRDs with aggregated APIs and calls out custom storage and additional flexibility."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Upstream Kubernetes guidance warns against using custom resources as storage for application, end-user, or monitoring data.",
+      "claim_class": "standard",
+      "span_hint": "section: Why This Module Matters; paragraphs 1-3",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a direct recommendation in the custom-resources documentation and is central to the module's telemetry-vs-state framing."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The metrics APIs (`metrics.k8s.io`, `custom.metrics.k8s.io`, and `external.metrics.k8s.io`) are accessed through the aggregation layer; Metrics Server is the reference implementation for the resource Metrics API, and `kubectl top` fetches from Metrics Server.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Why This Module Matters; later metrics example; section: Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S007",
+        "S008",
+        "S009"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The HPA, resource metrics pipeline, and kubectl reference docs together directly back the aggregation-based metrics path and `kubectl top` behavior."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "An `APIService` is named `version.group`, is HTTPS-only, uses `caBundle` to validate the backend serving certificate, strongly discourages `insecureSkipTLSVerify`, and references a Service that communicates on port 443.",
+      "claim_class": "standard",
+      "span_hint": "section: The APIService Resource; opening paragraphs + YAML explanation",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/api-service-v1/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "These are explicit fields and semantics in the APIService reference."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "`groupPriorityMinimum` determines API group preference during discovery, and `versionPriority` determines preferred version ordering within a group.",
+      "claim_class": "standard",
+      "span_hint": "section: The APIService Resource; paragraph after APIService YAML",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/api-service-v1/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The APIService reference defines both priority fields and their ordering behavior."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "For aggregated API paths, kube-apiserver authenticates and authorizes the original request before proxying it to the extension apiserver.",
+      "claim_class": "standard",
+      "span_hint": "section: The APIService Resource; request-path discussion around the first diagram",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official aggregation-layer auth flow explicitly lists authentication and authorization on the main API server before proxying."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The original user identity is conveyed to the extension apiserver through headers such as `X-Remote-User` and `X-Remote-Group`, and header spoofing must be prevented by validating the authenticating proxy client certificate.",
+      "claim_class": "security_claim",
+      "span_hint": "section: The APIService Resource; paragraphs after the APIService field table",
+      "disposition": "supported",
+      "source_ids": [
+        "S004",
+        "S005"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/authentication/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Both the auth reference and aggregation-layer configuration docs explicitly describe header-based identity and the client-certificate anti-spoofing requirement."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "kube-apiserver creates the `extension-apiserver-authentication` ConfigMap in `kube-system`, and extension apiservers read it to validate the proxy CA, allowed names, and request-header names.",
+      "claim_class": "standard",
+      "span_hint": "section: The APIService Resource; paragraph beginning \"This trust model explains why...\"",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The aggregation-layer configuration guide describes the ConfigMap contents and how extension apiservers use them."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Delegated authorization is commonly implemented with `SubjectAccessReview`, and extension apiservers typically need `system:auth-delegator` plus the `extension-apiserver-authentication-reader` role binding.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Deployment, TLS, and Delegated Authentication; RBAC paragraphs + bindings",
+      "disposition": "supported",
+      "source_ids": [
+        "S005",
+        "S006"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official setup and aggregation-layer docs directly name the SAR flow and the standard RBAC roles involved."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Aggregated APIs must participate correctly in Kubernetes discovery, because clients learn supported groups, versions, resources, scope, and verbs through the Discovery API.",
+      "claim_class": "standard",
+      "span_hint": "section: Building an Extension API Server; discovery paragraphs",
+      "disposition": "supported",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/overview/kubernetes-api/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes API docs define the Discovery API as the mechanism clients use to learn group/version/resource metadata."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The aggregation layer runs in-process with kube-apiserver, and discovery requests to an extension API server must round-trip from kube-apiserver in five seconds or less.",
+      "claim_class": "standard",
+      "span_hint": "section: Building an Extension API Server; discovery discussion; section: Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/apiserver-aggregation/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The aggregation-layer concept page states both the in-process design and the five-second discovery round-trip requirement."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "The specific diagnostic reason strings `ServiceNotFound` and `FailedDiscoveryCheck`, and the exact one-to-one mappings the module gives for them, need an authoritative source if kept verbatim.",
+      "claim_class": "standard",
+      "span_hint": "section: Testing and Production Considerations; debugging paragraph after the first command block",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "`ServiceNotFound` points to the `APIService` backend reference. `FailedDiscoveryCheck` usually means health, TLS, routing, or discovery JSON failed.",
+      "suggested_rewrite": "Unavailable `APIService` conditions usually point first to backend Service references, TLS, health, routing, or discovery problems.",
+      "lesson_point_url": null,
+      "rationale": "The cited Kubernetes docs support the general troubleshooting layers, but not this exact pair of reason-string-to-cause mappings as written."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "etcd recommends a default backend quota of 2 GiB and describes 8 GiB as a suggested maximum for normal environments.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know; etcd bullet",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://etcd.io/docs/v3.6/dev-guide/limit/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The claim is real and primary, but the primary etcd documentation host is outside the current allowlist."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "The `cert-manager.io/inject-ca-from` annotation injects CA data into the `APIService` so the aggregator can validate the backend certificate.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Deployment, TLS, and Delegated Authentication; final paragraph before `manifests/apiservice.yaml`",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": "https://cert-manager.io/docs/concepts/ca-injector/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a cert-manager-specific behavior with an off-allowlist primary source."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "The module's version-scoped wording about when the aggregation proxy is built into the main API server is more specific than the allowlisted source supports.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know; first bullet",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In Kubernetes 1.35 and later, the main API server binary includes the aggregation proxy and routes to registered `APIService` backends.",
+      "suggested_rewrite": "The main API server binary includes the aggregation proxy and routes requests to registered `APIService` backends.",
+      "lesson_point_url": null,
+      "rationale": "The official aggregation-layer doc supports the in-process proxy behavior, but not the specific `1.35 and later` cutoff."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/apiserver-aggregation/",
+      "title": "Kubernetes API Aggregation Layer",
+      "tier": "standards",
+      "why_relevant": "Best high-level reference for what the aggregation layer is, how APIService registration works, and the discovery latency requirement."
+    },
+    {
+      "url": "https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/",
+      "title": "Configure the Aggregation Layer",
+      "tier": "standards",
+      "why_relevant": "Covers the real authn/authz flow, proxy client certificates, request headers, and delegated authorization."
+    },
+    {
+      "url": "https://github.com/kubernetes/sample-apiserver",
+      "title": "sample-apiserver",
+      "tier": "upstream",
+      "why_relevant": "Concrete upstream example of an extension apiserver implementation and manifests that match the aggregation model."
+    }
+  ],
+  "notes": "Source map: S001=https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/apiserver-aggregation/ ; S002=https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/ ; S003=https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/api-service-v1/ ; S004=https://kubernetes.io/docs/reference/access-authn-authz/authentication/ ; S005=https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/ ; S006=https://kubernetes.io/docs/tasks/extend-kubernetes/setup-extension-api-server/ ; S007=https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/ ; S008=https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/ ; S009=https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/ ; S010=https://kubernetes.io/docs/concepts/overview/kubernetes-api/ ; S011=https://cert-manager.io/docs/concepts/ca-injector/ (off-allowlist) ; S012=https://etcd.io/docs/v3.6/dev-guide/limit/ (off-allowlist).",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

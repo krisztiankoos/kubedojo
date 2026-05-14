@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 revision_pending: false
 title: "Module 1.8: API Aggregation & Extension API Servers"
 slug: k8s/extending/module-1.8-api-aggregation
@@ -27,7 +28,7 @@ By the end of this module, you will be able to:
 
 Hypothetical scenario: your platform team is asked to expose a large stream of application latency measurements through `kubectl` because developers already know how to use Kubernetes resource discovery, RBAC, namespace filtering, and JSONPath output. A quick first design creates a `LatencySample` CRD and a controller that writes every scrape as a Kubernetes object. The first demo looks elegant, but the design quietly turns the control plane datastore into a telemetry database, and that is not what etcd is built to be.
 
-The problem is not that CRDs are weak. CRDs are one of the strongest extension mechanisms in Kubernetes because they give you schema validation, watch behavior, server-side apply, storage, admission integration, and familiar client behavior with very little custom code. The problem is that every CRD object is part of the cluster's declarative state. If you use that machinery for volatile measurements, expensive computed reports, or objects whose source of truth lives in a database outside the cluster, you pay the cost in the most sensitive place: the Kubernetes API server and its backing etcd cluster.
+The problem is not that CRDs are weak. CRDs are one of the strongest extension mechanisms in Kubernetes because they give you schema validation, watch behavior, server-side apply, storage, admission integration, and familiar client behavior with very little custom code. The problem is that every CRD object is part of the cluster's declarative state. If you use that machinery for volatile measurements, expensive computed reports, or [objects whose source of truth lives in a database outside the cluster](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/), you pay the cost in the most sensitive place: the Kubernetes API server and its backing etcd cluster.
 
 API aggregation solves a different class of problem. It lets the main Kubernetes API server keep acting as the front door, while a separate HTTPS service answers requests for a particular API group and version. A learner can still run `kubectl get datarecords -A`, RBAC can still be evaluated consistently, discovery can still list the resource, and client libraries can still speak Kubernetes-shaped HTTP, but the bytes do not have to be stored as CRD objects in etcd. That separation is why `metrics.k8s.io` and custom metrics adapters can feel native to users while serving data that is computed, cached, or read from another backend.
 
@@ -41,7 +42,7 @@ A good aggregation design also protects the rest of the control plane from your 
 
 If the Kubernetes API server is a government building, CRDs are like adding a new department inside the building. They use the existing filing cabinets, the existing security desk, the existing archive process, and the existing public counter. An aggregated API server is more like an embassy inside the same building: visitors enter through the same front door and follow the same visible protocol, but requests for that embassy are routed to staff who run their own records system, apply specialized rules, and return answers in the format the building expects.
 
-That analogy matters because the user experience can look almost identical while the implementation risk is completely different. A CRD author writes an OpenAPI schema and usually a controller; the Kubernetes API server stores the objects and handles the basic REST machinery. An aggregated API author writes the REST machinery directly. The kube-aggregator only decides that a request for a registered group and version should be proxied to your service; your service must then behave enough like Kubernetes for `kubectl`, controllers, discovery clients, and operators to trust it.
+That analogy matters because the user experience can look almost identical while the implementation risk is completely different. A CRD author writes an OpenAPI schema and usually a controller; [the Kubernetes API server stores the objects and handles the basic REST machinery. An aggregated API author writes the REST machinery directly](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/). The kube-aggregator only decides that a request for a registered group and version should be proxied to your service; your service must then behave enough like Kubernetes for `kubectl`, controllers, discovery clients, and operators to trust it.
 
 | Requirement | CRD | API Aggregation |
 |------------|-----|-----------------|
@@ -67,7 +68,7 @@ The easiest review question is "would we want to restore this data from an etcd 
 
 Another useful question is "who is allowed to make the final decision about this object?" A CRD usually means Kubernetes validation, admission, and controllers define the resource lifecycle. An aggregated API may need to combine Kubernetes RBAC with backend-specific authorization, because a user who can list a namespace in Kubernetes might not be allowed to read every record in an external database. That double authorization model is powerful, but it must be explicit or your API will surprise both cluster administrators and backend owners.
 
-The following diagram preserves the basic request path you should keep in your head. The client does not call the extension service directly. The client calls the main Kubernetes API server, the normal authentication and authorization stages run first, and the aggregation layer consults the `APIService` registry to decide whether the path belongs to a proxied backend. Only after those checks does the request cross the internal HTTPS connection to your server.
+The following diagram preserves the basic request path you should keep in your head. The client does not call the extension service directly. The client calls the main Kubernetes API server, [the normal authentication and authorization stages run first](https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/), and the aggregation layer consults the `APIService` registry to decide whether the path belongs to a proxied backend. Only after those checks does the request cross the internal HTTPS connection to your server.
 
 ```mermaid
 flowchart TD
@@ -105,7 +106,7 @@ Notice that the aggregator does not make the backend magically stateless or safe
 
 ## The APIService Resource
 
-An `APIService` object is the routing contract between the main API server and your extension server. It says that a group and version, such as `data.kubedojo.io/v1alpha1`, should be served by a named Kubernetes Service on a specific port. The object also includes priority values that affect discovery ordering and a certificate authority bundle that lets the aggregator verify the backend server certificate. If those details are wrong, your server can be perfectly healthy and still invisible to clients.
+An `APIService` object is the routing contract between the main API server and your extension server. It says that a group and version, such as `data.kubedojo.io/v1alpha1`, should be served by a named Kubernetes Service on a specific port. The object also includes priority values that affect discovery ordering and [a certificate authority bundle that lets the aggregator verify the backend server certificate](https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/api-service-v1/). If those details are wrong, your server can be perfectly healthy and still invisible to clients.
 
 The name of the object is intentionally mechanical: `{version}.{group}`. That convention allows a human to inspect the registry and immediately see which version of which group is being delegated. It also keeps the routing table deterministic, which matters when several API groups and versions are installed in the same cluster. Before running this, what output do you expect from `kubectl get apiservice v1alpha1.data.kubedojo.io` if the Service exists but the TLS certificate does not match the Service DNS name?
 
@@ -127,7 +128,7 @@ spec:
   insecureSkipTLSVerify: false         # Never true in production
 ```
 
-The two priority fields are easy to copy without understanding, but they deserve attention. `groupPriorityMinimum` controls the relative ordering of API groups during discovery, while `versionPriority` controls preferred version ordering inside the group. You normally choose values that make your group discoverable without competing with built-in Kubernetes groups. Registering an experimental server under a built-in group with inappropriate priority is not an experiment anymore; it can change how clients resolve resources that operators assume are native.
+The two priority fields are easy to copy without understanding, but they deserve attention. [`groupPriorityMinimum` controls the relative ordering of API groups during discovery, while `versionPriority` controls preferred version ordering inside the group](https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/api-service-v1/). You normally choose values that make your group discoverable without competing with built-in Kubernetes groups. Registering an experimental server under a built-in group with inappropriate priority is not an experiment anymore; it can change how clients resolve resources that operators assume are native.
 
 | Field | Description | Typical Value |
 |-------|------------|---------------|
@@ -141,9 +142,9 @@ The two priority fields are easy to copy without understanding, but they deserve
 | `caBundle` | Base64 CA cert for TLS verification | CA cert bytes |
 | `insecureSkipTLSVerify` | Skip TLS verification (development only) | `false` |
 
-The proxy step is also more specific than many first implementations assume. The original bearer token is not simply handed to your backend, because the backend should trust the aggregator as a front proxy and receive a normalized identity. In common extension API server setups, the aggregator authenticates to your server with its front-proxy client credentials, and the original user identity is conveyed through request headers such as `X-Remote-User` and `X-Remote-Group`. Your server must verify the proxy client before treating those headers as authoritative.
+The proxy step is also more specific than many first implementations assume. The original bearer token is not simply handed to your backend, because the backend should trust the aggregator as a front proxy and receive a normalized identity. In common extension API server setups, the aggregator authenticates to your server with its front-proxy client credentials, and [the original user identity is conveyed through request headers such as `X-Remote-User` and `X-Remote-Group`. Your server must verify the proxy client before treating those headers as authoritative](https://kubernetes.io/docs/reference/access-authn-authz/authentication/).
 
-This trust model explains why extension API servers often need to read the `extension-apiserver-authentication` ConfigMap from `kube-system`. That ConfigMap contains request-header client configuration that lets the extension server validate the aggregator's client certificate and header names. Without that validation, the server cannot distinguish a real proxied request from a direct caller that copied header names from documentation. In other words, the header is not the proof; the verified front-proxy connection is the proof that makes the header meaningful.
+This trust model explains why extension API servers often need to [read the `extension-apiserver-authentication` ConfigMap from `kube-system`](https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/). That ConfigMap contains request-header client configuration that lets the extension server validate the aggregator's client certificate and header names. Without that validation, the server cannot distinguish a real proxied request from a direct caller that copied header names from documentation. In other words, the header is not the proof; the verified front-proxy connection is the proof that makes the header meaningful.
 
 ```text
 Original request:
@@ -183,7 +184,7 @@ This staged approach mirrors how native API features depend on one another. Disc
 
 The project structure separates the concerns you would expect in a small API server. Types define the JSON shape clients see, storage defines how records are found, handlers translate HTTP paths into Kubernetes-style responses, and the main entry point wires TLS and routing together. In a production server you would probably use the Kubernetes generic apiserver libraries or a framework, but a small direct HTTP implementation is useful because it reveals the exact protocol obligations that frameworks otherwise hide.
 
-The folder names are not only cosmetic. They make ownership clearer when the implementation grows: storage engineers can reason about backend queries, API reviewers can inspect object shapes, and platform engineers can review routing and authentication. This separation also prevents a subtle failure mode where discovery logic starts making backend calls. Discovery should be cheap and reliable because clients and the aggregator may call it frequently; if discovery depends on a slow database, your entire API group can look unhealthy when only one dependency is degraded.
+The folder names are not only cosmetic. They make ownership clearer when the implementation grows: storage engineers can reason about backend queries, API reviewers can inspect object shapes, and platform engineers can review routing and authentication. This separation also prevents a subtle failure mode where discovery logic starts making backend calls. [Discovery should be cheap and reliable because clients and the aggregator may call it frequently](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/apiserver-aggregation/); if discovery depends on a slow database, your entire API group can look unhealthy when only one dependency is degraded.
 
 ```mermaid
 graph TD
@@ -418,7 +419,7 @@ func (s *Store) Get(namespace, name string) (*types.DataRecord, error) {
 }
 ```
 
-Discovery handlers are where many first attempts fail. `kubectl` does not know your resource exists because you wrote a Go struct; it knows because the aggregated endpoint returns `APIGroup` and `APIResourceList` payloads that describe group versions, resource names, scope, kind, verbs, short names, and categories. If this payload is missing, malformed, served at the wrong path, or delayed by a slow backend query, the aggregator marks the `APIService` unavailable and discovery clients stop seeing the group.
+Discovery handlers are where many first attempts fail. `kubectl` does not know your resource exists because you wrote a Go struct; it knows because [the aggregated endpoint returns `APIGroup` and `APIResourceList` payloads that describe group versions, resource names, scope, kind, verbs, short names, and categories](https://kubernetes.io/docs/concepts/overview/kubernetes-api/). If this payload is missing, malformed, served at the wrong path, or delayed by a slow backend query, the aggregator marks the `APIService` unavailable and discovery clients stop seeing the group.
 
 Discovery also defines the promise your server is making to clients. If the resource list says `watch` is supported, controllers may open watches. If it says `delete` is supported, operators may try to remove objects. If it marks the resource namespaced, clients will construct namespaced paths. Keep the advertised verbs and scope aligned with the handlers you actually wrote, because generic Kubernetes tooling believes discovery more than comments in your repository.
 
@@ -1123,7 +1124,7 @@ The Extending Kubernetes track now fits together as a layered toolbox rather tha
 ## Did You Know?
 
 - **kube-aggregator is built into the API server**: It is not a separate deployed component. In Kubernetes 1.35 and later, the main API server binary includes the aggregation proxy and routes to registered `APIService` backends.
-- **Metrics Server is an aggregated API**: The common `kubectl top` command queries `metrics.k8s.io`, which is served through API aggregation rather than stored as ordinary CRD objects.
+- **Metrics Server is an aggregated API**: [The common `kubectl top` command queries `metrics.k8s.io`](https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/), which is served through API aggregation rather than stored as ordinary CRD objects.
 - **etcd has practical storage limits**: etcd documents recommend a default backend quota of 2 GiB and discuss an 8 GiB maximum for normal environments, which is why volatile telemetry belongs elsewhere.
 - **HPA custom metrics depend on this pattern**: Custom and external metrics APIs let autoscaling read dynamic measurements through Kubernetes-shaped endpoints without persisting every measurement in cluster state.
 
@@ -1135,7 +1136,7 @@ The Extending Kubernetes track now fits together as a layered toolbox rather tha
 | Missing or wrong CA bundle | The Service works internally, so TLS verification is treated as optional | Use CA injection or set `caBundle` from the certificate authority that signed the backend serving certificate |
 | Broken discovery responses | The server handles resources but skips Kubernetes `APIGroup` and `APIResourceList` payloads | Implement `/apis/{group}` and `/apis/{group}/{version}` with correct Kubernetes discovery objects |
 | Trusting request headers directly | The extension server sees `X-Remote-User` and assumes any caller is the aggregator | Configure request-header authentication, verify the front-proxy client, and restrict direct network access |
-| Missing delegated-auth RBAC | Least privilege cleanup removes permissions the extension server needs to validate callers | Bind `system:auth-delegator` and `extension-apiserver-authentication-reader` to the server ServiceAccount |
+| Missing delegated-auth RBAC | Least privilege cleanup removes permissions the extension server needs to validate callers | [Bind `system:auth-delegator` and `extension-apiserver-authentication-reader` to the server ServiceAccount](https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/) |
 | Service port mismatch | The Deployment listens on 8443, the Service maps 443, and the `APIService` references the wrong layer | Point `APIService.spec.service.port` at the Service port and map `targetPort` to the container port |
 | Advertising unsupported verbs | Developers copy a full CRUD verb list from a CRD example | Publish only implemented verbs, then add write or watch support after storage semantics are correct |
 | Forgetting namespaced paths | Cluster-wide list works, so namespaced routing is never tested | Implement both `/apis/{group}/{version}/{resource}` and `/apis/{group}/{version}/namespaces/{ns}/{resource}` paths |
@@ -1330,6 +1331,9 @@ kind delete cluster --name aggregation-lab
 - https://github.com/kubernetes-sigs/custom-metrics-apiserver
 - https://etcd.io/docs/current/dev-guide/limit/
 - https://cert-manager.io/docs/usage/certificate/
+- [Kubernetes API Aggregation Layer](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/apiserver-aggregation/) — Best high-level reference for what the aggregation layer is, how APIService registration works, and the discovery latency requirement.
+- [Configure the Aggregation Layer](https://kubernetes.io/docs/tasks/extend-kubernetes/configure-aggregation-layer/) — Covers the real authn/authz flow, proxy client certificates, request headers, and delegated authorization.
+- [sample-apiserver](https://github.com/kubernetes/sample-apiserver) — Concrete upstream example of an extension apiserver implementation and manifests that match the aggregation model.
 
 ## Next Module
 
