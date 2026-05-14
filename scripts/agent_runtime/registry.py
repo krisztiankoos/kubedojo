@@ -43,7 +43,7 @@ class AgentEntry(TypedDict):
 AGENTS: dict[str, AgentEntry] = {
     "codex": {
         "adapter": "scripts.agent_runtime.adapters.codex:CodexAdapter",
-        "default_model": "gpt-5.4",
+        "default_model": os.environ.get("AB_CODEX_MODEL", "gpt-5.5"),
         "cost_tier": "medium",
         "capabilities": frozenset({
             "code_writing",
