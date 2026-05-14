@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Part 4 Cumulative Quiz: Storage"
 sidebar:
   order: 7
@@ -46,7 +47,7 @@ A payment platform engineer ships a routine release late on a Friday. The Deploy
 
 Storage failures feel different from stateless workload failures because the data has a history. A bad image can usually be rolled back, but a badly handled persistent volume can strand a database, attach a disk to the wrong node, hide a stale configuration file, or delete the only copy of a directory the team assumed was durable. Kubernetes gives you clean abstractions, but those abstractions do not remove the need to reason about the real backing storage underneath them.
 
-The CKA storage domain tests that reasoning under time pressure. You are rarely asked to recite the name of a field in isolation; you are asked to make a broken pod run, explain why a PVC is pending, recover from a deleted claim, or choose a storage pattern for a workload that has actual durability and scheduling constraints. This module turns the earlier Part 4 lessons into an operator's mental model: start from the symptom, identify the storage contract, inspect the controller events, then change the smallest thing that restores the workload safely.
+[The CKA storage domain tests that reasoning under time pressure](https://www.cncf.io/training/certification/cka/). You are rarely asked to recite the name of a field in isolation; you are asked to make a broken pod run, explain why a PVC is pending, recover from a deleted claim, or choose a storage pattern for a workload that has actual durability and scheduling constraints. This module turns the earlier Part 4 lessons into an operator's mental model: start from the symptom, identify the storage contract, inspect the controller events, then change the smallest thing that restores the workload safely.
 
 ---
 
@@ -56,9 +57,9 @@ The CKA storage domain tests that reasoning under time pressure. You are rarely 
 
 Kubernetes storage work begins with a simple question: does the data need to outlive the pod? If the answer is no, an ephemeral volume may be the simplest and safest choice. If the answer is yes, you need a claim, a backing volume, and a lifecycle decision for what happens when the claim goes away. This distinction matters because many broken designs come from using a durable abstraction for temporary scratch data or using a temporary abstraction for business data.
 
-An `emptyDir` volume is created for a pod and removed when that pod leaves the node. It survives container restarts inside the same pod, which makes it useful for caches, shared scratch directories, and sidecar handoff patterns. It does not survive pod deletion, eviction, or node failure, so it is the wrong place for uploaded files, database state, or anything that must be recovered after rescheduling.
+[An `emptyDir` volume is created for a pod and removed when that pod leaves the node](https://kubernetes.io/docs/concepts/storage/volumes/). It survives container restarts inside the same pod, which makes it useful for caches, shared scratch directories, and sidecar handoff patterns. It does not survive pod deletion, eviction, or node failure, so it is the wrong place for uploaded files, database state, or anything that must be recovered after rescheduling.
 
-A memory-backed `emptyDir` is faster, but it changes the resource risk. The bytes stored in that volume count against memory usage, and a cache that grows without a limit can push a container toward eviction or an out-of-memory kill. When you choose `medium: Memory`, also set a `sizeLimit` and make sure the pod's memory requests and limits reflect the possible cache size.
+A memory-backed `emptyDir` is faster, but it changes the resource risk. [The bytes stored in that volume count against memory usage](https://kubernetes.io/docs/concepts/storage/volumes/), and a cache that grows without a limit can push a container toward eviction or an out-of-memory kill. When you choose `medium: Memory`, also set a `sizeLimit` and make sure the pod's memory requests and limits reflect the possible cache size.
 
 ```yaml
 apiVersion: v1
@@ -80,7 +81,7 @@ spec:
       sizeLimit: 128Mi
 ```
 
-Projected volumes solve a different problem. They let a pod see configuration, secrets, service account tokens, and selected pod metadata as files without baking those values into the image. This is powerful because it separates deployment-time identity and configuration from application code, but it also creates subtle update behavior. A normal ConfigMap or Secret volume can update after the source object changes, while a `subPath` mount pins a specific file path and does not receive those live updates.
+Projected volumes solve a different problem. They let a pod see configuration, secrets, service account tokens, and selected pod metadata as files without baking those values into the image. This is powerful because it separates deployment-time identity and configuration from application code, but it also creates subtle update behavior. [A normal ConfigMap or Secret volume can update after the source object changes, while a `subPath` mount pins a specific file path and does not receive those live updates](https://kubernetes.io/docs/concepts/storage/volumes/).
 
 ```yaml
 apiVersion: v1
@@ -107,9 +108,9 @@ spec:
               fieldPath: metadata.name
 ```
 
-A `hostPath` volume should make you cautious. It mounts part of the node filesystem into a pod, which can expose node secrets, break isolation, and create workloads that only run on nodes with a particular local path. It is useful for tightly controlled node agents and some local labs, but it is not a general application storage pattern and is usually blocked by stricter admission policies.
+A `hostPath` volume should make you cautious. [It mounts part of the node filesystem into a pod, which can expose node secrets, break isolation](https://kubernetes.io/docs/concepts/storage/volumes/), and create workloads that only run on nodes with a particular local path. It is useful for tightly controlled node agents and some local labs, but it is not a general application storage pattern and [is usually blocked by stricter admission policies](https://kubernetes.io/docs/concepts/security/pod-security-standards/).
 
-Persistent storage adds a contract. The pod does not ask for a specific cloud disk or storage array volume directly; it asks for a `PersistentVolumeClaim`, and Kubernetes binds that claim to a `PersistentVolume` or asks a provisioner to create one. The claim is namespaced because it belongs to an application boundary, while the persistent volume is cluster-scoped because the underlying storage resource exists outside one namespace.
+Persistent storage adds a contract. The pod does not ask for a specific cloud disk or storage array volume directly; it asks for a `PersistentVolumeClaim`, and Kubernetes binds that claim to a `PersistentVolume` or asks a provisioner to create one. [The claim is namespaced because it belongs to an application boundary, while the persistent volume is cluster-scoped because the underlying storage resource exists outside one namespace](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
 
 ```ascii
 +--------------------+        requests         +--------------------------+
@@ -151,11 +152,11 @@ The decision model can be summarized as a set of tradeoffs rather than a list of
 
 A PVC describes what an application needs. It can request capacity, access modes, a specific `storageClassName`, and sometimes a data source such as a snapshot or another PVC. Kubernetes then tries to satisfy that request with an existing PV or through dynamic provisioning. When the PVC remains `Pending`, the cluster is telling you that the requested contract has not been fulfilled.
 
-The access mode is part of that contract, but it is often misunderstood. `ReadWriteOnce` means the volume can be mounted read-write by workloads on a single node, not necessarily by only one pod in all cases. `ReadOnlyMany` and `ReadWriteMany` depend on backing storage that supports multi-node mounts. If your application requires active writers on several nodes, a block disk with `ReadWriteOnce` is the wrong primitive even if the YAML is accepted.
+The access mode is part of that contract, but it is often misunderstood. [`ReadWriteOnce` means the volume can be mounted read-write by workloads on a single node, not necessarily by only one pod in all cases](https://kubernetes.io/docs/concepts/storage/persistent-volumes/). `ReadOnlyMany` and `ReadWriteMany` depend on backing storage that supports multi-node mounts. If your application requires active writers on several nodes, a block disk with `ReadWriteOnce` is the wrong primitive even if the YAML is accepted.
 
 Capacity binding is also a contract, not an exact shopping order. A claim for `20Gi` can bind to a larger suitable volume, but it cannot bind to a smaller one. Static PV binding usually selects the smallest matching volume that satisfies the request, because using a much larger volume wastes capacity. In dynamic provisioning, the external provisioner creates storage that matches the requested size according to the StorageClass and driver behavior.
 
-StorageClass behavior changes when binding happens. With `volumeBindingMode: Immediate`, a dynamic volume may be provisioned as soon as the PVC is created. That is fine for storage available across the cluster, but risky for zonal disks because the volume may appear in one zone while the pod later schedules in another. With `WaitForFirstConsumer`, Kubernetes waits until a pod needs the PVC, then considers the pod's scheduling constraints before provisioning or binding.
+StorageClass behavior changes when binding happens. With `volumeBindingMode: Immediate`, a dynamic volume may be provisioned as soon as the PVC is created. That is fine for storage available across the cluster, but risky for zonal disks because the volume may appear in one zone while the pod later schedules in another. [With `WaitForFirstConsumer`, Kubernetes waits until a pod needs the PVC, then considers the pod's scheduling constraints before provisioning or binding](https://kubernetes.io/docs/concepts/storage/storage-classes/).
 
 ```yaml
 apiVersion: storage.k8s.io/v1
@@ -168,7 +169,7 @@ allowVolumeExpansion: true
 reclaimPolicy: Delete
 ```
 
-The `reclaimPolicy` describes what happens to the backing PV after the claim is deleted. `Delete` is convenient for disposable environments because the volume is removed by the provisioner. `Retain` preserves the PV and the underlying data, but it also leaves the PV in a `Released` state with its old claim reference. That is a safety feature: Kubernetes should not silently hand possibly sensitive data to a new claim.
+The `reclaimPolicy` describes what happens to the backing PV after the claim is deleted. [`Delete` is convenient for disposable environments because the volume is removed by the provisioner](https://kubernetes.io/docs/concepts/storage/persistent-volumes/). [`Retain` preserves the PV and the underlying data, but it also leaves the PV in a `Released` state with its old claim reference](https://kubernetes.io/docs/concepts/storage/persistent-volumes/). That is a safety feature: Kubernetes should not silently hand possibly sensitive data to a new claim.
 
 A retained PV needs deliberate handling. An administrator may inspect or back up the data, clean the backing store if reuse is intended, and then remove the old `claimRef` or recreate the PV object with a clean specification. The important exam habit is to notice that `Released` does not mean `Available`. It means the claim is gone, but the PV still remembers the old binding.
 
@@ -267,7 +268,7 @@ spec:
       claimName: writer-data
 ```
 
-The `fsGroup` setting asks Kubernetes to make mounted volume files accessible to the specified group when the volume type and driver support the behavior. It is not a magic fix for every image, but it is a common CKA-level repair for pods that run as a non-root user and need to write to a mounted volume. Always verify the fix by writing an actual file, not merely by checking that the pod is running.
+[The `fsGroup` setting asks Kubernetes to make mounted volume files accessible to the specified group when the volume type and driver support the behavior](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/). It is not a magic fix for every image, but it is a common CKA-level repair for pods that run as a non-root user and need to write to a mounted volume. Always verify the fix by writing an actual file, not merely by checking that the pod is running.
 
 A disciplined troubleshooting path keeps you from thrashing. Start with the pod event, then inspect the PVC, then the PV, then the StorageClass, then node or driver state. At each step, ask what promise the resource made and whether the next resource in the chain fulfilled that promise. This turns a noisy incident into a sequence of falsifiable checks.
 
@@ -302,7 +303,7 @@ A disciplined troubleshooting path keeps you from thrashing. Start with the pod 
 +---------------------+
 ```
 
-The same path works for snapshots and clones, but with an extra data-source branch. If a PVC is supposed to restore from a snapshot, the claim may wait on snapshot readiness or driver support. If a PVC is supposed to clone another PVC, the source claim must be in the same namespace, the driver must support cloning, and the destination request must satisfy the driver's size rules.
+The same path works for snapshots and clones, but with an extra data-source branch. If a PVC is supposed to restore from a snapshot, the claim may wait on snapshot readiness or driver support. [If a PVC is supposed to clone another PVC, the source claim must be in the same namespace, the driver must support cloning, and the destination request must satisfy the driver's size rules](https://kubernetes.io/docs/concepts/storage/volume-pvc-datasource/).
 
 ### 4. Use Snapshots and Clones as Recovery Tools, Not Decoration
 
@@ -343,7 +344,7 @@ spec:
     persistentVolumeClaimName: app-data
 ```
 
-Restoring from a snapshot creates a new PVC whose `dataSource` points at the `VolumeSnapshot`. The new claim still needs a compatible StorageClass, capacity request, access mode, and driver support. A restore is not a command that mutates the old PVC in place; it creates a new volume from a recovery point, which you can mount into a pod for validation before switching traffic.
+Restoring from a snapshot creates a new PVC whose `dataSource` points at the `VolumeSnapshot`. The new claim still needs a compatible StorageClass, capacity request, access mode, and driver support. [A restore is not a command that mutates the old PVC in place; it creates a new volume from a recovery point](https://kubernetes.io/blog/2020/12/10/kubernetes-1.20-volume-snapshot-moves-to-ga/), which you can mount into a pod for validation before switching traffic.
 
 ```yaml
 apiVersion: v1
@@ -364,9 +365,9 @@ spec:
     apiGroup: snapshot.storage.k8s.io
 ```
 
-The professional stake is consistency. A snapshot taken while an application is actively writing may be crash-consistent but not necessarily application-consistent, depending on the application and storage system. For databases, teams often coordinate snapshots with application-level flushing, backup tooling, or temporary write quiescence. The CKA will not usually ask you to design an enterprise backup program, but it can expect you to know that a snapshot resource is not the same as a verified restore.
+The professional stake is consistency. [A snapshot taken while an application is actively writing may be crash-consistent but not necessarily application-consistent, depending on the application and storage system](https://kubernetes.io/blog/2020/12/10/kubernetes-1.20-volume-snapshot-moves-to-ga/). For databases, teams often coordinate snapshots with application-level flushing, backup tooling, or temporary write quiescence. The CKA will not usually ask you to design an enterprise backup program, but it can expect you to know that a snapshot resource is not the same as a verified restore.
 
-When you troubleshoot a failed snapshot or restore, start by checking whether the CRDs exist, whether the snapshot controller is installed, whether the CSI driver supports snapshots, and whether the snapshot object is ready to use. A PVC restore that stays pending may be a storage problem, a snapshot readiness problem, a class mismatch, or a capacity mismatch. The event stream is again the shortest path to the real issue.
+When you troubleshoot a failed snapshot or restore, [start by checking whether the CRDs exist, whether the snapshot controller is installed, whether the CSI driver supports snapshots, and whether the snapshot object is ready to use](https://kubernetes.io/docs/concepts/storage/volume-snapshots/). A PVC restore that stays pending may be a storage problem, a snapshot readiness problem, a class mismatch, or a capacity mismatch. The event stream is again the shortest path to the real issue.
 
 ```bash
 k get volumesnapshot -n app
@@ -397,7 +398,7 @@ The exam rewards small, reversible actions. Describing a resource is safer than 
 
 ## Did You Know?
 
-1. **A PVC without `storageClassName` and a PVC with `storageClassName: ""` are intentionally different**: the first may use the cluster default StorageClass, while the second opts out of dynamic provisioning and waits for a manually matching PV.
+1. **A PVC without `storageClassName` and a PVC with `storageClassName: ""` are intentionally different**: [the first may use the cluster default StorageClass, while the second opts out of dynamic provisioning and waits for a manually matching PV](https://kubernetes.io/docs/concepts/storage/persistent-volumes/).
 
 2. **`WaitForFirstConsumer` is a scheduling feature as much as a storage feature**: it delays binding or provisioning so the selected node and storage topology can agree before a zonal volume is created.
 
@@ -700,3 +701,15 @@ k get pv
 ## Next Module
 
 Proceed to [Part 5: Troubleshooting](/k8s/cka/part5-troubleshooting/) to build a broader diagnostic workflow for Kubernetes cluster and workload failures.
+
+## Sources
+
+- [cncf.io: cka](https://www.cncf.io/training/certification/cka/) — The CNCF CKA page explicitly describes the exam as performance-based, command-line, and lists Storage at 10%.
+- [kubernetes.io: volumes](https://kubernetes.io/docs/concepts/storage/volumes/) — The Volumes doc directly states the `emptyDir` lifecycle and its behavior across container crashes.
+- [kubernetes.io: pod security standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/) — The Pod Security Standards page explicitly lists `hostPath` volumes as forbidden in the Baseline policy.
+- [kubernetes.io: persistent volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) — The Persistent Volumes doc states that PVs are cluster resources and claims must exist in the same namespace as the Pod using them.
+- [kubernetes.io: storage classes](https://kubernetes.io/docs/concepts/storage/storage-classes/) — The StorageClass doc directly explains `WaitForFirstConsumer` and its topology-aware scheduling behavior.
+- [kubernetes.io: volume pvc datasource](https://kubernetes.io/docs/concepts/storage/volume-pvc-datasource/) — The CSI Volume Cloning doc directly states the `dataSource` model, CSI dependency, and same-namespace requirement.
+- [kubernetes.io: volume snapshots](https://kubernetes.io/docs/concepts/storage/volume-snapshots/) — The Volume Snapshots doc explicitly says the API objects are CRDs, snapshot support is CSI-only, and controller-side components are required.
+- [kubernetes.io: kubernetes 1.20 volume snapshot moves to ga](https://kubernetes.io/blog/2020/12/10/kubernetes-1.20-volume-snapshot-moves-to-ga/) — The official Kubernetes snapshot GA post explicitly says snapshot restore provisions a new volume and does not support reverting an existing PVC.
+- [kubernetes.io: security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) — The Security Context task page documents `fsGroup` effects and notes CSI-driver-specific support for ownership and permission handling.
