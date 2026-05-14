@@ -431,6 +431,7 @@ def _backfill_one(st: dict[str, Any], *, agent: str | None) -> dict[str, Any]:
 
     research = _run_citation_subcommand(module_key, "research", agent=agent)
     if not research["ok"]:
+        _restore_seed_json()
         return {
             "done": False, "ok": False, "stage_failed": "research",
             "error": (research["stderr"] or research["stdout"])[-500:],
