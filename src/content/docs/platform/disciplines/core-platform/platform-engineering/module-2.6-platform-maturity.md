@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 2.6: Platform Maturity"
 slug: platform/disciplines/core-platform/platform-engineering/module-2.6-platform-maturity
 sidebar:
@@ -1097,3 +1098,9 @@ Your completed exercise should meet the following criteria:
 ## Next Module
 
 You have completed the core Platform Engineering discipline sequence. To continue applying these ideas with concrete implementation patterns, go next to the [GitOps Tools Toolkit](/platform/toolkits/cicd-delivery/gitops-deployments/) and evaluate how delivery tooling choices affect adoption, operations, measurement, and platform maturity.
+
+## Sources
+
+- [Announcing the Platform Engineering Maturity Model](https://www.cncf.io/blog/2023/11/20/announcing-the-platform-engineering-maturity-model/) — Gives readers a CNCF-backed maturity framework that complements the module’s emphasis on assessing platform progress across multiple dimensions.
+- [Backstage](https://github.com/backstage/backstage) — Useful for readers who want a primary upstream reference for developer portals, software catalogs, and software templates mentioned in the module.
+- [Argo CD](https://argoproj.github.io/cd/) — Provides the primary upstream reference for the GitOps delivery model used as an example in the module.

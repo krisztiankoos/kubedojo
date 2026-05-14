@@ -1,0 +1,144 @@
+{
+  "module_key": "platform/disciplines/core-platform/platform-engineering/module-2.6-platform-maturity",
+  "module_path": "src/content/docs/platform/disciplines/core-platform/platform-engineering/module-2.6-platform-maturity.md",
+  "research_run_id": "2026-05-14T08:48:15+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The Northstar Retail case presents a specific company profile, team counts, and platform stack as if it were an observed case.",
+      "claim_class": "war_story",
+      "span_hint": "section: 4. Worked Example > Case Study: Northstar Retail",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Northstar Retail has forty application teams and a six-person platform team. The platform includes a Backstage-based portal, GitOps deployment through ArgoCD, a Kubernetes 1.35+ runtime baseline, service templates for Go APIs and frontend apps, and a self-service workflow for PostgreSQL databases. The platform team has an engineering manager but no dedicated product manager, and leadership wants to know whether the platform is ready for a larger investment.",
+      "suggested_rewrite": "Consider a representative retail platform case: several application teams, a small platform team, a developer portal, GitOps delivery, a current Kubernetes baseline, service templates for common workloads, and a limited self-service workflow for databases. Leadership wants to know whether that platform is ready for a larger investment.",
+      "lesson_point_url": null,
+      "rationale": "This is a concrete, quantified composite case with named technologies and no attributable source."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The Northstar case claims only 12 of 40 teams use the full path, with legacy Jenkins and low trust in production database self-service.",
+      "claim_class": "war_story",
+      "span_hint": "section: 4. Worked Example > Case Study: Northstar Retail",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The platform team's demos are strong. A new Go service can be created from the portal, connected to a repository, deployed through GitOps, and registered in the service catalog. However, only twelve of the forty application teams use the full flow. Many older services still use Jenkins pipelines, and several teams provision databases by filing tickets because they do not trust the self-service workflow for production.",
+      "suggested_rewrite": "In this example, the demos are strong and the supported flow works for new services, but adoption remains limited: only a minority of teams use the full path, older services keep legacy pipelines, and some teams still prefer ticket-based database provisioning because they do not trust the self-service path for production.",
+      "lesson_point_url": null,
+      "rationale": "The sentence bundle contains precise adoption counts and detailed operational behavior for a synthetic case."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The Northstar case claims mixed operational signals, no reviewed SLO, inconsistent incident reviews, and no outcome metrics.",
+      "claim_class": "war_story",
+      "span_hint": "section: 4. Worked Example > Case Study: Northstar Retail",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Operational data is mixed. The portal has a loose availability target but no reviewed SLO. ArgoCD incidents are investigated, but incident reviews are inconsistent and action items often compete with feature requests. The platform team tracks ticket count and portal usage, but it cannot yet connect platform adoption to lead time, incident reduction, or cost savings.",
+      "suggested_rewrite": "Operational signals are mixed. Availability expectations are informal, incident review is inconsistent, and the team tracks only a small set of usage and support metrics rather than clear outcome measures.",
+      "lesson_point_url": null,
+      "rationale": "These are specific facts about a named example organization, but the example is not attributed to a real source."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "The module assigns Northstar an exact average maturity score of 2.5 and maps it to Level 2 approaching Level 3.",
+      "claim_class": "statistic",
+      "span_hint": "section: 4. Worked Example > Step 2: Score Each Dimension Against the Rubric",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The average score is 2.5, which places Northstar in Level 2, Operational, approaching Level 3.",
+      "suggested_rewrite": "Using this illustrative scoring, the profile lands in the Level 2-to-Level 3 range.",
+      "lesson_point_url": null,
+      "rationale": "This is a precise number derived from a fabricated case study rather than an attributable dataset."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The war story describes a well-funded fintech that spent 18 months building a platform with specific capabilities and tools.",
+      "claim_class": "war_story",
+      "span_hint": "section: 8. War Story: The Beautiful Platform Nobody Used",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A well-funded financial technology company invested heavily in its internal platform for eighteen months. The platform team built a developer portal, service templates, GitOps deployment, Crossplane-based infrastructure provisioning, observability defaults, and a custom CLI. The technical architecture looked strong, and executive demos created the impression that the company had reached advanced platform maturity.",
+      "suggested_rewrite": "In one representative platform story, an organization invested heavily in its internal platform and built a developer portal, service templates, GitOps delivery, infrastructure provisioning, observability defaults, and a custom CLI. The technical architecture looked strong, and executive demos created the impression that the company had reached advanced platform maturity.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed anecdote with time-bound specifics and named tooling, so the fake precision should be removed."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The war story claims fewer than 1 in 10 teams used the golden path and that most teams kept custom Jenkins/Terraform/help-channel workflows.",
+      "claim_class": "war_story",
+      "span_hint": "section: 8. War Story: The Beautiful Platform Nobody Used",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The adoption data told a different story. Fewer than one in ten teams used the full golden path for production services. Teams continued to maintain custom Jenkins pipelines, copy old Terraform modules, and ask infrastructure engineers for help through informal channels. The platform team had built a capable system, but it had not become the normal way developers worked.",
+      "suggested_rewrite": "Adoption told a different story. Only a small minority of teams used the full supported path for production services, while many teams kept custom pipelines, copied older infrastructure patterns, and relied on informal help channels. The platform team had built a capable system, but it had not become the normal way developers worked.",
+      "lesson_point_url": null,
+      "rationale": "This is an unsourced anecdote with a precise ratio and detailed workflow claims."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The war story attributes adoption failure to template mismatch, missing migration paths, and unclear production workflow behavior after user interviews.",
+      "claim_class": "war_story",
+      "span_hint": "section: 8. War Story: The Beautiful Platform Nobody Used",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The root causes were not mysterious after the team started interviewing users. The platform had been built in isolation, so templates did not match several common service patterns. Legacy services had no realistic migration path, so teams with existing workloads saw the platform as useful only for future projects. Production provisioning workflows were technically automated but did not explain ownership, rollback, backup, alerting, or support behavior clearly enough for teams to trust them.",
+      "suggested_rewrite": "Common root causes in situations like this include templates that do not match common service patterns, missing migration paths for existing workloads, and production workflows that are automated but still unclear about ownership, rollback, backup, alerting, or support behavior.",
+      "lesson_point_url": null,
+      "rationale": "The passage presents interview findings from an unattributed case as concrete facts."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The war story claims recovery took a year and involved embedding engineers, migrating representative services, changing the dashboard, and adding support patterns.",
+      "claim_class": "war_story",
+      "span_hint": "section: 8. War Story: The Beautiful Platform Nobody Used",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The recovery took a year. Platform engineers embedded with product teams, migrated representative services, and treated every failed adoption attempt as product research. The team changed its dashboard from \"templates shipped\" to \"teams successfully operating production services through supported paths.\" It also added support for migration patterns, documented exception handling, and created a product review cadence with developer representatives.",
+      "suggested_rewrite": "Recovery in situations like this can take sustained effort. Platform engineers may need to embed with product teams, migrate representative services, treat failed adoption attempts as product research, and shift dashboards toward successful production use through supported paths. They may also need better migration support, documented exception handling, and a regular product review cadence with developer representatives.",
+      "lesson_point_url": null,
+      "rationale": "This is a detailed outcome timeline for an unattributed anecdote and should be generalized rather than cited."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://www.cncf.io/blog/2023/11/20/announcing-the-platform-engineering-maturity-model/",
+      "title": "Announcing the Platform Engineering Maturity Model",
+      "tier": "standards",
+      "why_relevant": "Gives readers a CNCF-backed maturity framework that complements the module’s emphasis on assessing platform progress across multiple dimensions."
+    },
+    {
+      "url": "https://github.com/backstage/backstage",
+      "title": "Backstage",
+      "tier": "upstream",
+      "why_relevant": "Useful for readers who want a primary upstream reference for developer portals, software catalogs, and software templates mentioned in the module."
+    },
+    {
+      "url": "https://argoproj.github.io/cd/",
+      "title": "Argo CD",
+      "tier": "upstream",
+      "why_relevant": "Provides the primary upstream reference for the GitOps delivery model used as an example in the module."
+    }
+  ],
+  "notes": "Most of the module is pedagogical and does not need inline sourcing. The main citation-risk areas are the two composite anecdotes: the Northstar worked example and the closing war story. I excluded quiz items, exercise prompts, Mermaid diagrams, code blocks, and template-like checklists per instructions.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
