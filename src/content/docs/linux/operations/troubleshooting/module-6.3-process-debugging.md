@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 6.3: Process Debugging"
 slug: linux/operations/troubleshooting/module-6.3-process-debugging
 revision_pending: false
@@ -123,7 +124,7 @@ esac
 
 ## Core Section 2: Use `/proc` as the Ground Truth Baseline
 
-The `/proc` filesystem is a live view of kernel process metadata. It is not an ordinary directory tree stored on disk; it is a virtual interface that lets you ask the kernel about processes, descriptors, memory maps, limits, environment variables, and namespace membership. That makes it the safest first stop for most investigations.
+The [`/proc` filesystem is a live view of kernel process metadata](https://raw.githubusercontent.com/mkerrisk/man-pages/master/man5/proc.5). It is not an ordinary directory tree stored on disk; it is a virtual interface that lets you ask the kernel about processes, descriptors, memory maps, limits, environment variables, and namespace membership. That makes it the safest first stop for most investigations.
 
 Begin by identifying the exact process you are debugging. In incidents, operators often inspect the wrong worker because several commands share the same name or a supervisor has already restarted the service. Confirm the PID, parent PID, command line, and start time before interpreting deeper evidence, then save the small read-only snapshot before any restart closes descriptors or clears state.
 
@@ -141,7 +142,7 @@ ps -o pid,ppid,lstart,stat,wchan,comm,args -p "$PID"
 } > "/tmp/process-$PID-baseline.txt"
 ```
 
-The command line and executable symlink answer different questions. `/proc/$PID/cmdline` shows the arguments used to start the process, while `/proc/$PID/exe` points to the executable image that is still mapped by the process. If a deployment replaced or deleted the binary on disk, the symlink can show a deleted marker even while the old program continues running from its mapped image.
+The command line and executable symlink answer different questions. [`/proc/$PID/cmdline` shows the arguments used to start the process, while `/proc/$PID/exe` points to the executable image that is still mapped by the process](https://raw.githubusercontent.com/mkerrisk/man-pages/master/man5/proc.5). If a deployment replaced or deleted the binary on disk, the symlink can show a deleted marker even while the old program continues running from its mapped image.
 
 ```bash
 tr '\0' ' ' < "/proc/$PID/cmdline"
@@ -150,7 +151,7 @@ ls -l "/proc/$PID/exe"
 ls -l "/proc/$PID/cwd"
 ```
 
-Environment variables can explain behavior that never appears in logs. A process may read a proxy setting, feature flag, config path, or credential location from its environment during startup and then behave correctly according to that hidden input. Treat environment output as sensitive because it may contain tokens, passwords, and internal URLs.
+[Environment variables can explain behavior that never appears in logs](https://raw.githubusercontent.com/mkerrisk/man-pages/master/man5/proc.5). A process may read a proxy setting, feature flag, config path, or credential location from its environment during startup and then behave correctly according to that hidden input. Treat environment output as sensitive because it may contain tokens, passwords, and internal URLs.
 
 ```bash
 tr '\0' '\n' < "/proc/$PID/environ" | sed -n '1,20p'
@@ -166,7 +167,7 @@ printf 'Open descriptor count: '
 ls "/proc/$PID/fd" | wc -l
 ```
 
-File descriptors are the most concrete evidence in many process incidents. A descriptor may point to a regular file, a socket, a pipe, an eventfd, a deleted file, a terminal, or a device. The process only sees small integers, but `/proc/$PID/fd` lets you map those integers back to the resources that keep the process connected to the system.
+File descriptors are the most concrete evidence in many process incidents. A descriptor may point to a regular file, a socket, a pipe, an eventfd, a deleted file, a terminal, or a device. The process only sees small integers, but [`/proc/$PID/fd` lets you map those integers back to the resources that keep the process connected to the system](https://raw.githubusercontent.com/mkerrisk/man-pages/master/man5/proc.5).
 
 ```bash
 ls -l "/proc/$PID/fd" | sed -n '1,20p'
@@ -205,7 +206,7 @@ If the count is near the soft limit and most descriptors point to sockets, you p
 
 **Active learning prompt:** A process shows a low resident memory size but hundreds of descriptors pointing to deleted files. What user-visible symptom could that create, and why would restarting only that process release disk space even though the files were already removed from the directory tree?
 
-The answer is that unlinked files still consume disk blocks while any process holds an open descriptor to them. Directory entries are gone, but the underlying inode remains alive until the final descriptor closes. A restart works because it closes the descriptors, not because it repairs the filesystem.
+The answer is that [unlinked files still consume disk blocks while any process holds an open descriptor to them](https://en.wikipedia.org/wiki/Inode). Directory entries are gone, but the underlying inode remains alive until the final descriptor closes. A restart works because it closes the descriptors, not because it repairs the filesystem.
 
 For a leak suspicion, add a second sample instead of trusting a single count. A growing descriptor count plus repeated socket targets is different from a stable count near a legitimate high-water mark.
 
@@ -233,7 +234,7 @@ strace -e trace=file ls /tmp >/tmp/ls.out 2>/tmp/ls.trace
 sed -n '1,20p' /tmp/ls.trace
 ```
 
-By default, `strace` writes trace output to standard error. The traced program still writes its normal output to standard output unless you redirect it. This matters during debugging because mixing program output and trace output makes evidence harder to read and may break scripts that expect clean output.
+[By default, `strace` writes trace output to standard error.](https://raw.githubusercontent.com/strace/strace/master/doc/strace.1.in) The traced program still writes its normal output to standard output unless you redirect it. This matters during debugging because mixing program output and trace output makes evidence harder to read and may break scripts that expect clean output.
 
 ```bash
 strace ls /tmp >/tmp/program-output.txt 2>/tmp/trace-output.txt
@@ -243,7 +244,7 @@ printf 'Trace output:\n'
 sed -n '1,10p' /tmp/trace-output.txt
 ```
 
-The most useful `strace` filters are categories. `trace=file` focuses on path-based operations such as opening, statting, renaming, and unlinking files. `trace=network` focuses on sockets and connection activity. `trace=process` follows fork, clone, exec, wait, and exit behavior. These categories make the trace match the theory you are testing.
+[The most useful `strace` filters are categories. `trace=file` focuses on path-based operations such as opening, statting, renaming, and unlinking files. `trace=network` focuses on sockets and connection activity. `trace=process` follows fork, clone, exec, wait, and exit behavior.](https://raw.githubusercontent.com/strace/strace/master/doc/strace.1.in) These categories make the trace match the theory you are testing.
 
 ```bash
 strace -e trace=file cat /etc/passwd >/tmp/passwd.copy 2>/tmp/file.trace
@@ -308,7 +309,7 @@ State samples should be repeated when the symptom is intermittent. A process tha
 ps -eo pid,ppid,stat,wchan,comm,args | sed -n '1,25p'
 ```
 
-The common states are simple, but their implications are not. `R` means running or runnable, which includes processes waiting for CPU. `S` means interruptible sleep, often waiting for a timer, socket, pipe, or signal. `D` means uninterruptible sleep, usually waiting in kernel I/O where signals are deferred. `Z` means zombie, where the process has exited but the parent has not collected its status.
+The common states are simple, but their implications are not. [`R` means running or runnable, which includes processes waiting for CPU. `S` means interruptible sleep, often waiting for a timer, socket, pipe, or signal. `D` means uninterruptible sleep, usually waiting in kernel I/O where signals are deferred. `Z` means zombie, where the process has exited but the parent has not collected its status.](https://raw.githubusercontent.com/mkerrisk/man-pages/master/man5/proc.5)
 
 ```text
 +----------------------------- Process State Interpretation -----------------------------+
@@ -323,7 +324,7 @@ The common states are simple, but their implications are not. `R` means running 
 +----------------------------------------------------------------------------------------+
 ```
 
-A `D` state process cannot be fixed by sending stronger signals because the kernel will not deliver the signal until the blocking operation returns. That is why `kill -9` can appear ineffective: `SIGKILL` is pending, but the process is stuck in a section where interruption would risk corrupting kernel or device state. The useful response is to investigate the I/O path, not to repeat the kill command.
+A `D` state process cannot be fixed by sending stronger signals because the kernel will not deliver the signal until the blocking operation returns. That is why [`kill -9` can appear ineffective: `SIGKILL` is pending, but the process is stuck in a section where interruption would risk corrupting kernel or device state](https://en.wikipedia.org/wiki/Signal_%28IPC%29). The useful response is to investigate the I/O path, not to repeat the kill command.
 
 ```bash
 ps -eo pid,ppid,stat,wchan,comm,args | awk '$3 ~ /D/ {print}'
@@ -336,7 +337,7 @@ PID="$(pgrep -n bash)"
 sudo cat "/proc/$PID/stack" 2>/dev/null || cat "/proc/$PID/wchan" 2>/dev/null || true
 ```
 
-Zombies are different from hung processes. A zombie is already dead; it consumes a PID table entry and stores exit status until the parent collects it. Killing the zombie does not help because there is no running process body left to kill. You fix the parent or restart the service tree that owns the broken parent-child relationship.
+Zombies are different from hung processes. [A zombie is already dead; it consumes a PID table entry and stores exit status until the parent collects it](https://en.wikipedia.org/wiki/Zombie_process). Killing the zombie does not help because there is no running process body left to kill. You fix the parent or restart the service tree that owns the broken parent-child relationship.
 
 ```bash
 ps -eo pid,ppid,stat,comm,args | awk '$3 ~ /Z/ {print}'
@@ -447,7 +448,7 @@ This is also where you decide whether the process debugger should hand off to an
 command -v ltrace >/dev/null 2>&1 && ltrace -e getenv,strlen ls /tmp >/tmp/ltrace.out 2>/tmp/ltrace.err || echo "ltrace not installed"
 ```
 
-Threaded programs add another layer because each thread may be waiting on a different event. Linux represents threads as tasks under `/proc/$PID/task`, and each task has its own status, stack, and wait channel. If the process is alive but only one worker is stuck, inspecting the process as a single unit can hide the useful evidence.
+Threaded programs add another layer because each thread may be waiting on a different event. [Linux represents threads as tasks under `/proc/$PID/task`, and each task has its own status, stack, and wait channel](https://raw.githubusercontent.com/mkerrisk/man-pages/master/man5/proc.5). If the process is alive but only one worker is stuck, inspecting the process as a single unit can hide the useful evidence.
 
 ```bash
 PID="$(pgrep -n bash)"
@@ -458,7 +459,7 @@ for tid in /proc/"$PID"/task/*; do
 done | sed -n '1,20p'
 ```
 
-Futex waits are common in threaded applications. A futex is a fast user-space locking primitive with kernel assistance when a thread must sleep. Seeing futex activity in `strace` does not automatically mean the kernel is broken; it often means the application is waiting on a lock, condition variable, or runtime scheduler event.
+Futex waits are common in threaded applications. [A futex is a fast user-space locking primitive with kernel assistance when a thread must sleep](https://raw.githubusercontent.com/mkerrisk/man-pages/master/man2/futex.2). Seeing futex activity in `strace` does not automatically mean the kernel is broken; it often means the application is waiting on a lock, condition variable, or runtime scheduler event.
 
 ```bash
 PID="$(pgrep -n bash)"
@@ -466,7 +467,7 @@ timeout 3s strace -f -e trace=futex -p "$PID" 2>/tmp/futex.trace || true
 sed -n '1,20p' /tmp/futex.trace
 ```
 
-Container debugging uses the same process tools, but you must pay attention to namespaces. A PID inside a container may not match the PID seen from the host. Mount, network, IPC, UTS, user, and PID namespaces can all change what the process sees. `nsenter` lets you enter selected namespaces of a target process so commands run from the same perspective.
+Container debugging uses the same process tools, but you must pay attention to namespaces. A PID inside a container may not match the PID seen from the host. Mount, network, IPC, UTS, user, and PID namespaces can all change what the process sees. [`nsenter` lets you enter selected namespaces of a target process so commands run from the same perspective](https://raw.githubusercontent.com/util-linux/util-linux/master/sys-utils/nsenter.1.adoc).
 
 ```bash
 PID="$(pgrep -n bash)"
@@ -560,7 +561,7 @@ If `RssAnon` grows while descriptor and thread counts are stable, hand off to al
 
 ### Playbook: Kubernetes 1.35+ Workload Debugging
 
-Kubernetes adds API objects and container runtimes, but the kernel evidence still lives with the process. Define the `kubectl` alias once, find the pod, use an ephemeral container when the original image lacks tools, and then map the investigation back to Linux process primitives.
+Kubernetes adds API objects and container runtimes, but the kernel evidence still lives with the process. Define the `kubectl` alias once, find the pod, [use an ephemeral container when the original image lacks tools](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/), and then map the investigation back to Linux process primitives.
 
 ```bash
 alias k=kubectl
@@ -893,6 +894,13 @@ rm -rf "$WORKDIR"
 - [procps ps manual page](https://man7.org/linux/man-pages/man1/ps.1.html)
 - [Kubernetes debug running Pods](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/)
 - [Kubernetes Pod lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
+- [raw.githubusercontent.com: proc.5](https://raw.githubusercontent.com/mkerrisk/man-pages/master/man5/proc.5) — The upstream proc(5) text directly defines proc as a pseudo-filesystem that provides an interface to kernel data structures.
+- [raw.githubusercontent.com: strace.1.in](https://raw.githubusercontent.com/strace/strace/master/doc/strace.1.in) — The upstream strace manual source states that strace records system calls and signals and prints them to standard error or a file set with `-o`.
+- [en.wikipedia.org: Signal (IPC)](https://en.wikipedia.org/wiki/Signal_%28IPC%29) — The cited page explicitly notes that an uninterruptibly sleeping process may not terminate even when sent SIGKILL.
+- [en.wikipedia.org: Zombie process](https://en.wikipedia.org/wiki/Zombie_process) — The cited page directly explains that a zombie is an exited child whose entry remains until the parent reads exit status via wait.
+- [en.wikipedia.org: Inode](https://en.wikipedia.org/wiki/Inode) — The cited page directly explains that deletion of an unlinked file is deferred until processes with access to it have finished using it.
+- [raw.githubusercontent.com: futex.2](https://raw.githubusercontent.com/mkerrisk/man-pages/master/man2/futex.2) — The upstream futex(2) page directly defines futexes as fast user-space locking and explains that the kernel participates when a thread blocks or wakes.
+- [raw.githubusercontent.com: nsenter.1.adoc](https://raw.githubusercontent.com/util-linux/util-linux/master/sys-utils/nsenter.1.adoc) — The upstream nsenter manual source explicitly describes running a program in selected namespaces and the independent networking view provided by a network namespace.
 
 ## Next Module
 
