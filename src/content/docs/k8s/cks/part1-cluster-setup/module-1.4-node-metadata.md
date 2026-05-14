@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 revision_pending: true
 title: "Module 1.4: Node Metadata Protection"
 slug: k8s/cks/part1-cluster-setup/module-1.4-node-metadata
@@ -32,7 +33,7 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-Cloud provider metadata services (like AWS's 169.254.169.254) expose sensitive information: IAM credentials, instance identity, and configuration data. A compromised pod can query this endpoint and potentially escalate privileges or access cloud resources.
+Cloud provider metadata services (like AWS's 169.254.169.254) [expose sensitive information: IAM credentials, instance identity, and configuration data](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html). A compromised pod can query this endpoint and potentially escalate privileges or access cloud resources.
 
 This is a favorite attack vector. The 2019 Capital One breach exploited exactly this vulnerability.
 
@@ -80,9 +81,9 @@ This is a favorite attack vector. The 2019 Capital One breach exploited exactly 
 
 | Cloud Provider | Metadata Endpoint | Credential Path |
 |----------------|-------------------|-----------------|
-| AWS | 169.254.169.254 | /latest/meta-data/iam/security-credentials/ |
-| GCP | 169.254.169.254 | /computeMetadata/v1/ |
-| Azure | 169.254.169.254 | /metadata/identity/oauth2/token |
+| AWS | 169.254.169.254 | [/latest/meta-data/iam/security-credentials/](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html) |
+| GCP | 169.254.169.254 | [/computeMetadata/v1/](https://cloud.google.com/compute/docs/metadata/querying-metadata) |
+| Azure | 169.254.169.254 | [/metadata/identity/oauth2/token](https://learn.microsoft.com/en-us/azure/virtual-machines/instance-metadata-service) |
 | DigitalOcean | 169.254.169.254 | /metadata/v1/ |
 
 All use the same IP: **169.254.169.254** (link-local address)
@@ -213,7 +214,7 @@ spec:
 
 ### AWS IMDSv2 (Recommended)
 
-AWS Instance Metadata Service v2 requires a session token, making direct pod access harder:
+[AWS Instance Metadata Service v2 requires a session token](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-options.html), making direct pod access harder:
 
 ```bash
 # IMDSv2 requires PUT request first to get token
@@ -417,9 +418,9 @@ spec:
 
 - **The 2019 Capital One breach** exposed 100 million customer records through SSRF to the metadata service. The attacker obtained IAM credentials and accessed S3 buckets.
 
-- **169.254.0.0/16 is link-local.** It's reserved for local network communication and never routed on the internet. Cloud providers use it for metadata because it's accessible from any instance without routing.
+- **[169.254.0.0/16 is link-local.](https://www.rfc-editor.org/rfc/rfc3927)** It's reserved for local network communication and never routed on the internet. Cloud providers use it for metadata because it's accessible from any instance without routing.
 
-- **Kubernetes itself uses metadata** on cloud providers for node information. Blocking system components from metadata can break cluster functionality.
+- **Kubernetes itself uses metadata** on cloud providers for node information. [Blocking system components from metadata can break cluster functionality](https://cloud.google.com/kubernetes-engine/docs/how-to/protecting-cluster-metadata).
 
 - **AWS IMDSv2 with hop limit 1** prevents containers from reaching metadata because the request goes through multiple network hops (container → node → metadata service).
 
@@ -431,7 +432,7 @@ spec:
 |---------|--------------|----------|
 | Forgetting DNS with egress policy | Pods can't resolve names | Always allow DNS egress |
 | Blocking metadata for kube-system | Breaks cloud integrations | Exempt system namespaces carefully |
-| Only using NetworkPolicy | Not all CNIs enforce it | Use multiple protection layers |
+| Only using NetworkPolicy | [Not all CNIs enforce it](https://kubernetes.io/docs/concepts/services-networking/network-policies/) | Use multiple protection layers |
 | Testing from wrong namespace | Policy not applied there | Test from namespace with policy |
 | Blocking entire link-local range | May break other services | Start with just 169.254.169.254/32 |
 
@@ -552,3 +553,14 @@ kubectl delete namespace metadata-test
 ## Next Module
 
 [Module 1.5: GUI Security](../module-1.5-gui-security/) - Securing Kubernetes Dashboard and web UIs.
+
+## Sources
+
+- [docs.aws.amazon.com: ec2 instance metadata.html](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html) — AWS EC2 documentation directly describes instance metadata categories, including IAM role credentials and user data.
+- [cloud.google.com: querying metadata](https://cloud.google.com/compute/docs/metadata/querying-metadata) — Google Cloud's Compute Engine metadata documentation directly names both the IP and the /computeMetadata/v1 endpoint.
+- [learn.microsoft.com: instance metadata service](https://learn.microsoft.com/en-us/azure/virtual-machines/instance-metadata-service) — Microsoft Learn directly documents the IMDS IP, the metadata root, and the required Metadata header for requests.
+- [rfc-editor.org: rfc3927](https://www.rfc-editor.org/rfc/rfc3927) — RFC 3927 is the authoritative standard for IPv4 link-local addressing and forwarding behavior.
+- [docs.aws.amazon.com: configuring instance metadata options.html](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-options.html) — AWS documentation directly explains IMDSv2 token requirements and the instance metadata option that enforces IMDSv2-only access.
+- [cloud.google.com: protecting cluster metadata](https://cloud.google.com/kubernetes-engine/docs/how-to/protecting-cluster-metadata) — Google's GKE documentation states that GKE uses instance metadata to configure node VMs and documents protected-vs-allowed metadata access behavior.
+- [kubernetes.io: network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) — Kubernetes documentation states that NetworkPolicies are implemented by the network plugin and have no effect without a controller that supports enforcement.
+- [AWS IMDSv2 Overview](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/configuring-instance-metadata-service.html) — Explains how IMDSv2 works, how tokens are retrieved, and how hop limits affect access.
