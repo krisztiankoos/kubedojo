@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 4.7: Kyverno"
 slug: platform/toolkits/security-quality/security-tools/module-4.7-kyverno
 sidebar:
@@ -28,7 +29,7 @@ A platform team at a payments company inherited a cluster where every team could
 
 One Friday afternoon, a service owner shipped a container running as root, with no CPU limit, and with a floating image tag from a public registry. The change passed CI because the YAML was syntactically valid, and it passed deployment because the API server had no policy saying the workload was unsafe. By Monday morning, the team was investigating noisy neighbors, unexplained cost growth, and an uncomfortable security review that asked why the cluster accepted a workload the organization already knew was forbidden.
 
-Kyverno turns those platform agreements into Kubernetes-native policy. It reads and writes ordinary Kubernetes resources, uses YAML instead of a separate policy language, and can validate, mutate, generate, and verify resources at the point where they enter the cluster. The important lesson is not that Kyverno is "easy"; the important lesson is that a readable policy engine gives a platform team a practical path from documented intent to enforceable behavior.
+Kyverno turns those platform agreements into Kubernetes-native policy. It reads and writes ordinary Kubernetes resources, uses YAML instead of a separate policy language, and [can validate, mutate, generate, and verify resources](https://raw.githubusercontent.com/kyverno/kyverno/main/README.md) at the point where they enter the cluster. The important lesson is not that Kyverno is "easy"; the important lesson is that a readable policy engine gives a platform team a practical path from documented intent to enforceable behavior.
 
 This module teaches Kyverno as a production control system, not as a command reference. You will start with the admission path, then write policies that solve realistic problems, then learn how to roll them out without breaking existing workloads. By the end, you should be able to reason about both the YAML and the operational consequences of installing it.
 
@@ -36,7 +37,7 @@ This module teaches Kyverno as a production control system, not as a command ref
 
 ## 1. Admission Control as a Platform Contract
 
-Kyverno sits on the Kubernetes admission path, which means it evaluates resources after authentication and authorization but before the object is stored in etcd. That location matters because a policy engine can stop unsafe resources before controllers schedule them, mutate resources before other controllers observe them, and create companion resources when a trigger appears. When you use Kyverno well, the API server becomes a contract boundary between application teams and the platform.
+Kyverno sits on the Kubernetes admission path, which means it evaluates resources [after authentication and authorization but before the object is stored in etcd](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/). That location matters because a policy engine can stop unsafe resources before controllers schedule them, mutate resources before other controllers observe them, and create companion resources when a trigger appears. When you use Kyverno well, the API server becomes a contract boundary between application teams and the platform.
 
 The contract should be explicit and observable. A rule that denies every Pod without telling the developer what to fix creates friction, even if the security goal is valid. A rule that audits first, reports violations clearly, and then moves to enforcement after teams have remediated existing workloads is easier to defend during a production incident.
 
@@ -145,7 +146,7 @@ Start validation policies with one concrete risk. "All Pods must be secure" is t
 
 A strong validation policy includes an actionable failure message. Developers should know whether they need to add a field, change an image, use a different namespace, or ask for an exception. A message that only says "policy violation" transfers the diagnosis work to the person trying to ship.
 
-The following worked example blocks floating `latest` image tags for ordinary application Pods while excluding system namespaces. It uses enforcement because the risk is easy to understand and the remediation is usually straightforward: pin the image to an immutable version or digest.
+The following worked example blocks floating `latest` image tags for ordinary application Pods while excluding system namespaces. It uses enforcement because the risk is easy to understand and the remediation is usually straightforward: [pin the image to an immutable version or digest](https://kubernetes.io/docs/concepts/containers/images/).
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -260,7 +261,7 @@ spec:
             - edge-services
 ```
 
-This policy is intentionally set with `background: false` because it relies on admission request context. Background scans evaluate existing resources, but not every request variable is meaningful outside an admission request. When you design policies, decide whether you need to scan historical objects or only control future writes.
+This policy is intentionally set with `background: false` because it relies on admission request context. Background scans evaluate existing resources, but [not every request variable is meaningful outside an admission request](https://raw.githubusercontent.com/kyverno/kyverno/main/config/crds/kyverno/kyverno.io_clusterpolicies.yaml). When you design policies, decide whether you need to scan historical objects or only control future writes.
 
 A senior platform engineer reads a Kyverno validation rule as an operational promise. The policy name tells what it protects, match and exclude blocks tell where it applies, the validation block tells how it decides, and the failure message tells how humans recover. If those four parts disagree, the policy will cause confusion even when the YAML is valid.
 
@@ -362,7 +363,7 @@ Generate policies create related Kubernetes resources when another resource appe
 
 Generation is not validation. A generate rule does not deny a namespace because it lacks a NetworkPolicy; it creates the NetworkPolicy when the namespace is created. That difference matters because generated resources need ownership rules, synchronization behavior, and naming conventions that fit your operational model.
 
-The following policy creates a default-deny NetworkPolicy whenever a new ordinary namespace appears. It excludes system and Kyverno namespaces so the policy does not interfere with cluster infrastructure. It also sets `synchronize: true`, which tells Kyverno to keep the generated resource aligned with the policy over time.
+The following policy creates a [default-deny NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/) whenever a new ordinary namespace appears. It excludes system and Kyverno namespaces so the policy does not interfere with cluster infrastructure. It also sets `synchronize: true`, which tells Kyverno to keep the generated resource aligned with the policy over time.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -439,7 +440,7 @@ GENERATE POLICY OWNERSHIP MODEL
 
 The generated default should be stable, small, and easy to recognize. Team-owned allow policies should be separate resources so teams can manage their own connectivity without editing the platform baseline. This separation makes audits clearer because the generated resource states the default posture while team resources state intentional exceptions.
 
-Generate policies are also useful for ResourceQuota and LimitRange defaults. Those resources are not security controls in the same way as NetworkPolicy, but they protect cluster reliability by preventing accidental resource exhaustion. The same ownership pattern applies: platform defaults should be generated predictably, while team-specific exceptions should be explicit.
+Generate policies are also useful for [ResourceQuota](https://kubernetes.io/docs/concepts/policy/resource-quotas/) and [LimitRange defaults](https://kubernetes.io/docs/concepts/policy/limit-range/). Those resources are not security controls in the same way as NetworkPolicy, but they protect cluster reliability by preventing accidental resource exhaustion. The same ownership pattern applies: platform defaults should be generated predictably, while team-specific exceptions should be explicit.
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -521,7 +522,7 @@ spec:
           - image: "registry.kubedojo.internal/* | ghcr.io/kube-dojo/*"
 ```
 
-Registry restrictions are valuable, but they do not prove that the image was built by your pipeline. An attacker who can push to an approved registry could still publish an image with a valid-looking name. Signature verification closes part of that gap by requiring cryptographic evidence from a trusted signer.
+Registry restrictions are valuable, but they do not prove that the image was built by your pipeline. An attacker who can push to an approved registry could still publish an image with a valid-looking name. Signature verification closes part of that gap by requiring [cryptographic evidence from a trusted signer](https://www.nist.gov/publications/security-considerations-code-signing).
 
 ```yaml
 apiVersion: kyverno.io/v1
@@ -645,7 +646,7 @@ jobs:
       run: kyverno apply policies/ --resource k8s-manifests/ --detailed-results
 ```
 
-Kyverno and OPA Gatekeeper overlap, but they are not interchangeable in every situation. Kyverno is often easier for Kubernetes platform teams because policies look like Kubernetes resources and support validation, mutation, generation, and image verification in one model. Gatekeeper is often stronger when teams need highly expressive logic, mature Rego expertise, or policy reuse beyond Kubernetes.
+Kyverno and OPA Gatekeeper overlap, but they are not interchangeable in every situation. Kyverno is often easier for Kubernetes platform teams because policies look like Kubernetes resources and support validation, mutation, generation, and image verification in one model. [Gatekeeper is often stronger when teams need highly expressive logic, mature Rego expertise](https://raw.githubusercontent.com/open-policy-agent/gatekeeper/master/website/docs/howto.md), or policy reuse beyond Kubernetes.
 
 | Decision point | Kyverno is usually stronger when... | Gatekeeper is usually stronger when... | Senior trade-off |
 |---|---|---|---|
@@ -655,9 +656,9 @@ Kyverno and OPA Gatekeeper overlap, but they are not interchangeable in every si
 | Tool reach | Kubernetes is the primary enforcement target | Policies must also cover Terraform, Envoy, or services outside Kubernetes | Avoid forcing one tool into a domain it was not built to own |
 | Developer experience | Teams need clear YAML examples and fast adoption | Teams can absorb Rego training and centralized policy review | The best control is the one teams can understand under pressure |
 
-Many organizations use both tools. For example, Kyverno can own Kubernetes-native defaults, image verification, and namespace generation, while OPA handles broader policy-as-code across infrastructure repositories. The important architectural choice is to avoid duplicate rules that produce conflicting messages or inconsistent decisions.
+Many organizations use both tools. For example, Kyverno can own Kubernetes-native defaults, image verification, and namespace generation, while [OPA handles broader policy-as-code across infrastructure repositories](https://raw.githubusercontent.com/open-policy-agent/opa/main/README.md). The important architectural choice is to avoid duplicate rules that produce conflicting messages or inconsistent decisions.
 
-A production Kyverno installation also needs operational care. Admission webhooks are part of the write path, so availability, timeouts, and failure policies matter. Policies should be reviewed like application code because a small match change can affect every namespace in the cluster.
+A production Kyverno installation also needs operational care. [Admission webhooks are part of the write path, so availability, timeouts, and failure policies matter](https://kubernetes.io/docs/concepts/cluster-administration/admission-webhooks-good-practices/). Policies should be reviewed like application code because a small match change can affect every namespace in the cluster.
 
 ```text
 SAFE ROLLOUT LADDER
@@ -1050,3 +1051,10 @@ Continue to the [Security Tools README](./) to review the rest of the security t
 - [Kyverno README](https://raw.githubusercontent.com/kyverno/kyverno/main/README.md) — Primary upstream overview of Kyverno's core capabilities and positioning.
 - [Kyverno ClusterPolicy CRD](https://raw.githubusercontent.com/kyverno/kyverno/main/config/crds/kyverno/kyverno.io_clusterpolicies.yaml) — Schema-level source for policy settings such as admission, background scanning, and rule types.
 - [Kubernetes Images](https://kubernetes.io/docs/concepts/containers/images/) — Authoritative source for mutable tags, immutable digests, and production guidance around `:latest`.
+- [kubernetes.io: network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) — The Kubernetes NetworkPolicy documentation includes the default deny all ingress and egress pattern.
+- [kubernetes.io: resource quotas](https://kubernetes.io/docs/concepts/policy/resource-quotas/) — The Kubernetes ResourceQuota documentation directly defines namespace-level aggregate resource constraints.
+- [kubernetes.io: limit range](https://kubernetes.io/docs/concepts/policy/limit-range/) — The Kubernetes LimitRange documentation directly describes these constraints and defaulting behavior.
+- [nist.gov: security considerations code signing](https://www.nist.gov/publications/security-considerations-code-signing) — NIST's code-signing publication directly describes integrity and source-authentication guarantees, which supports the module's distinction between signing and vulnerability assessment.
+- [raw.githubusercontent.com: howto.md](https://raw.githubusercontent.com/open-policy-agent/gatekeeper/master/website/docs/howto.md) — The Gatekeeper how-to documentation directly explains ConstraintTemplates, constraints, and Rego use.
+- [raw.githubusercontent.com: README.md](https://raw.githubusercontent.com/open-policy-agent/opa/main/README.md) — The OPA README directly describes OPA as a general-purpose policy engine with integrations across the stack.
+- [kubernetes.io: admission webhooks good practices](https://kubernetes.io/docs/concepts/cluster-administration/admission-webhooks-good-practices/) — The Kubernetes admission webhook good-practices page directly covers latency, timeouts, availability, and failure-policy concerns.
