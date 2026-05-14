@@ -1,0 +1,142 @@
+{
+  "module_key": "platform/disciplines/data-ai/aiops/module-6.6-auto-remediation",
+  "module_path": "src/content/docs/platform/disciplines/data-ai/aiops/module-6.6-auto-remediation.md",
+  "research_run_id": "2026-05-14T09:10:16+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening payment-outage vignette presents a specific unsourced incident narrative with false-precise operational details and a quantitative customer-impact claim.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A payment team ships a small memory optimization late on a Thursday. At first the dashboards look clean, then checkout latency creeps upward, queue depth rises, and pods begin restarting in one availability zone. The on-call engineer is asleep, the runbook exists in a wiki, and the first alert says only that error rate crossed a threshold. By the time a human connects the deploy, the memory leak, the pod churn, and the rising backlog, customers have already retried thousands of failed purchases.",
+      "suggested_rewrite": "A service can show a familiar failure pattern after a small change: dashboards stay quiet at first, then latency rises, queues deepen, pods restart, and customer-facing errors appear before a human fully connects the symptoms.",
+      "lesson_point_url": null,
+      "rationale": "This reads like a concrete outage story but provides no attributable real incident source, so the safe fix is to keep the lesson and remove the fabricated specifics."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Kubernetes self-healing controllers replace failed Pods to maintain desired state, and Services stop routing to failed Pods.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: From Incident Signal to Decision Mode table; section: Safe Auto-Remediation Principles; section: Did You Know bullet 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/architecture/self-healing/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "These sections rely on concrete Kubernetes self-healing behavior that is directly documented upstream."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "CronJobs create Jobs on a repeating schedule, and Kubernetes advises that CronJob-created Jobs be idempotent because scheduling is approximate.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Kubernetes Implementation Patterns, paragraph 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The implementation-pattern comparison makes a concrete claim about CronJob behavior that the Kubernetes CronJob documentation states explicitly."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Kubernetes RBAC RoleBindings grant permissions within a specific namespace, and the documented most-secure pattern is to grant roles to application-specific ServiceAccounts.",
+      "claim_class": "standard",
+      "span_hint": "section: Kubernetes Implementation Patterns, RBAC paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The module makes a concrete RBAC-scoping and least-privilege claim that is directly covered by the upstream RBAC reference."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "`CrashLoopBackOff` can appear in kubectl status output when a Pod repeatedly fails to start.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Auto-Remediation Contract; section: Building Runbooks That Machines and Humans Can Share",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a specific Kubernetes status-term claim and should point to the Pod lifecycle documentation."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Kubernetes supports restarting a Deployment with `kubectl rollout restart`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Common action classification table; section: The Auto-Remediation Contract",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The module names a concrete kubectl operation, so the command should be backed by the kubectl reference."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Deployment rollouts replace Pods at a controlled rate, and manually deleting a Pod managed by a Deployment causes an immediate replacement to be created by the ReplicaSet.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Auto-Remediation Contract; section: From Incident Signal to Decision Mode table; section: Guardrails, Rollback, and Verification in Practice",
+      "disposition": "supported",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "These remediation examples depend on documented Deployment and ReplicaSet behavior rather than general pedagogy."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/concepts/architecture/self-healing/",
+      "title": "Kubernetes Self-Healing",
+      "tier": "standards",
+      "why_relevant": "It frames which recovery behaviors Kubernetes already provides before teams add higher-level remediation logic."
+    },
+    {
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/",
+      "title": "Using RBAC Authorization",
+      "tier": "standards",
+      "why_relevant": "It is the primary upstream reference for namespace scoping, ServiceAccount permissions, and least-privilege remediation identities."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/",
+      "title": "CronJob",
+      "tier": "standards",
+      "why_relevant": "It documents the polling, scheduling, concurrency, and idempotency constraints that matter when a remediator is implemented as a CronJob."
+    }
+  ],
+  "notes": "No allowlist expansion was needed. Exercise steps, quiz scenarios, mermaid diagrams, and code blocks were excluded unless surrounding prose made a reusable factual Kubernetes claim. Local source ID map: S001=https://kubernetes.io/docs/concepts/architecture/self-healing/ ; S002=https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/ ; S003=https://kubernetes.io/docs/reference/access-authn-authz/rbac/ ; S004=https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/ ; S005=https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/ ; S006=https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

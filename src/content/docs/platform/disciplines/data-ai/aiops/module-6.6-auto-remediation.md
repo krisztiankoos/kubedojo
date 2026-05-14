@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 6.6: Auto-Remediation"
 slug: platform/disciplines/data-ai/aiops/module-6.6-auto-remediation
 sidebar:
@@ -64,7 +65,7 @@ A good remediation contract also names the owner and failure mode. The owner is 
 
 > **Active learning prompt:** Pick a remediation idea from your own environment. Can you write the decision sentence with a symptom, probable cause, confidence threshold, guardrail, action, verification check, and timeout? If one clause feels vague, that is the part you should not automate yet.
 
-The contract also protects against a common misunderstanding: successful command execution is not the same as successful remediation. A `kubectl delete pod` command can return zero while the replacement pod crashes. A `kubectl rollout restart` can complete while the application still fails readiness checks under traffic. A scale-up can create more replicas while the true bottleneck remains a database connection pool. Verification must measure the desired system outcome, not merely the command result.
+The contract also protects against a common misunderstanding: successful command execution is not the same as successful remediation. A `kubectl delete pod` command can return zero while the replacement pod crashes. A [`kubectl rollout restart`](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_rollout/) can complete while the application still fails readiness checks under traffic. A scale-up can create more replicas while the true bottleneck remains a database connection pool. Verification must measure the desired system outcome, not merely the command result.
 
 The senior operating question is therefore not "Can we automate this command?" It is "Can we prove that this action improves the failing condition often enough, safely enough, and quickly enough to run without a human every time?" That proof comes from historical incidents, staging tests, live shadow mode, and audit trails. Without those feedback loops, remediation confidence decays as services evolve.
 
@@ -158,7 +159,7 @@ flowchart TD
 
 Guardrails answer the question, "Should this action run here and now?" Common guardrails include replica minimums, namespace allowlists, label selectors, maintenance windows, rate limits, budget checks, dependency health checks, and service ownership checks. A guardrail should be machine-checkable whenever possible. "Be careful with checkout" is not a guardrail; "do not restart checkout during active incident label `payments-provider-down=true`" can be encoded and audited.
 
-Rollback answers the question, "What happens if the action makes things worse or does not help?" Some Kubernetes actions have natural rollback behavior. Deleting one pod owned by a Deployment is effectively self-healing because the ReplicaSet creates a replacement. Other actions need explicit rollback, such as returning a Deployment to its previous replica count after a failed scale-up or undoing a rollout after a bad restart. Irreversible actions, such as destructive database changes, should not be fully autonomous.
+Rollback answers the question, "What happens if the action makes things worse or does not help?" Some Kubernetes actions have natural rollback behavior. [Deleting one pod owned by a Deployment is effectively self-healing because the ReplicaSet creates a replacement.](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) Other actions need explicit rollback, such as returning a Deployment to its previous replica count after a failed scale-up or undoing a rollout after a bad restart. Irreversible actions, such as destructive database changes, should not be fully autonomous.
 
 Verification answers the question, "How do we know the user-facing condition improved?" The verification should be tied to the original symptom and the service objective. For pod replacement, the replacement should become Ready, but readiness alone is not enough for critical services. You may also check request success rate, queue depth, latency, or synthetic transactions. Verification quality determines how far right a runbook can move on the autonomy spectrum.
 
@@ -176,7 +177,7 @@ A remediation runbook should be executable by both humans and automation. This s
 
 A useful runbook starts with intent. "Restart pod" is a command, not an intent. "Replace one unhealthy replica of a redundant stateless workload when the replacement can be verified" is an intent. The intent tells the decision engine which situations are in scope and tells reviewers which situations should be blocked. Ambiguous intent is one reason automation expands beyond its safe boundary over time.
 
-The trigger section should describe both symptoms and probable causes. Symptoms are observable states such as `CrashLoopBackOff`, high queue depth, or a failing readiness probe. Probable causes are diagnoses such as memory leak, deadlocked process, or misconfigured dependency. Triggering only on symptoms can cause false fixes because different root causes can produce the same symptom. Triggering only on root cause can miss urgent situations when the RCA engine is uncertain.
+The trigger section should describe both symptoms and probable causes. Symptoms are observable states such as [`CrashLoopBackOff`](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/), high queue depth, or a failing readiness probe. Probable causes are diagnoses such as memory leak, deadlocked process, or misconfigured dependency. Triggering only on symptoms can cause false fixes because different root causes can produce the same symptom. Triggering only on root cause can miss urgent situations when the RCA engine is uncertain.
 
 The pre-check section protects the system before state changes. For Kubernetes workloads, common pre-checks include verifying that a target namespace is allowed, the pod is controlled by a workload controller, the service has enough ready replicas, no similar remediation ran recently, and the target workload is not already rolling out. These checks should be run against live Kubernetes state, not stale incident payloads, because the cluster may have changed since detection.
 
@@ -252,7 +253,7 @@ The senior review question for this worked example is whether the guardrails pro
 
 ## Kubernetes Implementation Patterns
 
-Kubernetes gives you several places to implement remediation, and each has different trade-offs. A CronJob is simple and familiar, but it polls on a schedule and may react slowly. A Job launched by an alert receiver can respond quickly, but you need secure event delivery and idempotency. An Operator can reconcile continuously and model remediation as desired state, but it requires more engineering discipline. A workflow engine can orchestrate approvals and complex steps, but it adds another dependency.
+Kubernetes gives you several places to implement remediation, and each has different trade-offs. [A CronJob is simple and familiar, but it polls on a schedule](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) and may react slowly. A Job launched by an alert receiver can respond quickly, but you need secure event delivery and idempotency. An Operator can reconcile continuously and model remediation as desired state, but it requires more engineering discipline. A workflow engine can orchestrate approvals and complex steps, but it adds another dependency.
 
 The pattern in this module uses Kubernetes-native RBAC and a Job or CronJob because it is easy to inspect in a lab. That does not mean every production remediation should be a shell script in a container. The important teaching point is the shape: least-privilege identity, scoped resource selection, live pre-checks, small action, verification, and logs. You can preserve that shape whether the execution layer is an Operator, Argo Workflows, StackStorm, Rundeck, PagerDuty Runbook Automation, or a custom controller.
 
@@ -274,7 +275,7 @@ sequenceDiagram
     Engine->>Audit: Record decision, action, and verification result
 ```
 
-RBAC is the first safety boundary in Kubernetes remediation. A remediation ServiceAccount should have only the verbs it needs in only the namespace it should touch. If the runbook only reads pods and deletes pods in one namespace, it should not have cluster-admin, access to secrets, or permission to mutate Deployments across the cluster. A correct decision engine can still have bugs; least privilege limits the damage when it does.
+RBAC is the first safety boundary in Kubernetes remediation. [A remediation ServiceAccount should have only the verbs it needs in only the namespace it should touch.](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) If the runbook only reads pods and deletes pods in one namespace, it should not have cluster-admin, access to secrets, or permission to mutate Deployments across the cluster. A correct decision engine can still have bugs; least privilege limits the damage when it does.
 
 Labels and annotations are the second boundary. You should not allow automation to act on every workload by default. A label such as `remediator.kubedojo.io/enabled=true` lets service owners opt in after they understand the runbook. A direct pod label such as `remediator.kubedojo.io/restart=true` can mark a single target for a lab or a human-approved remediation. In production, the trigger usually comes from the incident system, but labels still help define ownership and scope.
 
@@ -427,7 +428,7 @@ The cultural concern is real: teams may fear that automation hides incidents, st
 
 ## Did You Know?
 
-- **Kubernetes controllers are already remediation loops**: A Deployment replacing a failed pod is a built-in example of detecting drift from desired state and reconciling it back toward health.
+- **Kubernetes controllers are already remediation loops**: [A Deployment replacing a failed pod is a built-in example of detecting drift from desired state and reconciling it back toward health.](https://kubernetes.io/docs/concepts/architecture/self-healing/)
 - **The safest first runbooks are usually boring**: Actions such as replacing one redundant pod or scaling up within a small bound often teach more about guardrails than dramatic failovers do.
 - **Verification is the difference between automation and hope**: A remediation that logs only command success cannot prove that user impact was reduced.
 - **Human approval can still reduce MTTR**: A high-quality approval request with pre-filled evidence, command plan, and rollback path is much faster than asking an on-call engineer to rediscover context.
@@ -772,3 +773,9 @@ You have completed this exercise when:
 ## Next Module
 
 [AIOps Tools Toolkit](/platform/toolkits/observability-intelligence/aiops-tools/) — compare practical tools for anomaly detection, incident correlation, runbook execution, and guarded remediation in real platform environments.
+
+## Sources
+
+- [Kubernetes Self-Healing](https://kubernetes.io/docs/concepts/architecture/self-healing/) — It frames which recovery behaviors Kubernetes already provides before teams add higher-level remediation logic.
+- [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) — It is the primary upstream reference for namespace scoping, ServiceAccount permissions, and least-privilege remediation identities.
+- [CronJob](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) — It documents the polling, scheduling, concurrency, and idempotency constraints that matter when a remediator is implemented as a CronJob.
