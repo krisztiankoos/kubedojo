@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 6.3: Velero"
 slug: platform/toolkits/developer-experience/scaling-reliability/module-6.3-velero
 sidebar:
@@ -7,7 +8,7 @@ sidebar:
 
 > **Toolkit Track** | Complexity: `[MEDIUM]` | Time: 40-45 minutes  
 > **Prerequisites**: Kubernetes resources, namespaces, PersistentVolumes, cloud object storage, and basic disaster recovery terminology.  
-> **Lab assumptions**: Examples target Kubernetes 1.35+, a working `kubectl` context, and the Velero CLI installed locally.
+> **Lab assumptions**: Examples target [Kubernetes 1.35+](https://github.com/velero-io/velero), a working `kubectl` context, and the Velero CLI installed locally.
 
 ## Learning Outcomes
 
@@ -23,7 +24,7 @@ After completing this module, you will be able to:
 
 A platform team at a growing software company believed it had Kubernetes disaster recovery covered because every cluster had etcd snapshots, GitOps repositories, and a Velero Schedule. Then a storage class migration corrupted the production billing database volume, and the incident commander learned that all three recovery mechanisms protected different pieces of the system. GitOps could recreate Deployments and Services, but it could not recreate runtime data. The etcd snapshot captured cluster state, but it was tied to the damaged control plane and still did not provide a clean application-level rollback. Velero had backups, but nobody had practiced restoring them into an isolated namespace with volume data attached.
 
-The hard lesson is that “we have backups” is not an engineering claim until someone has restored a workload, verified the data, measured the restore time, and documented the decision path. Velero is valuable because it lets teams back up Kubernetes resources in an application-shaped way: namespaces, labels, selected resources, persistent volumes, and restore mappings. It is not magic, and it is not a substitute for every database backup strategy. It is a tool that becomes reliable only when the platform team designs the backup scope, storage backend, volume approach, and operational checks deliberately.
+The hard lesson is that “we have backups” is not an engineering claim until someone has restored a workload, verified the data, measured the restore time, and documented the decision path. Velero is valuable because it lets teams [back up Kubernetes resources in an application-shaped way](https://github.com/velero-io/velero): namespaces, labels, selected resources, persistent volumes, and restore mappings. It is not magic, and it is not a substitute for every database backup strategy. It is a tool that becomes reliable only when the platform team designs the backup scope, storage backend, volume approach, and operational checks deliberately.
 
 This module teaches Velero from that operational point of view. You will start with the recovery model, then install and scope backups, then reason about resources and volumes, then walk through a formal restore example before building your own lab. The goal is not to memorize Velero commands. The goal is to make backup and restore decisions under pressure without guessing.
 
@@ -52,7 +53,7 @@ A useful mental model is to see Velero as “application graph recovery.” It c
 
 Velero does not understand every application’s consistency boundary by default. It can trigger hooks before or after backup, and it can use storage snapshots or file-system backup, but it does not automatically know whether PostgreSQL, Kafka, Elasticsearch, or a custom stateful service is in a recoverable state. For databases, the safest design often combines Velero for Kubernetes objects with database-native backup for the data itself. That split sounds more complex, but it prevents a platform backup tool from pretending to solve application-level consistency alone.
 
-The three common recovery mechanisms should reinforce each other rather than compete. GitOps should describe desired configuration and make platform rebuilds repeatable. Etcd backups should protect the control plane when you operate your own cluster or have access to control-plane restore workflows. Velero should protect application-shaped Kubernetes state and selected persistent data. When these are documented together, responders can choose a path based on failure type instead of trying the most familiar command first.
+The three common recovery mechanisms should reinforce each other rather than compete. GitOps should describe desired configuration and make platform rebuilds repeatable. [Etcd backups should protect the control plane](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/) when you operate your own cluster or have access to control-plane restore workflows. Velero should protect application-shaped Kubernetes state and selected persistent data. When these are documented together, responders can choose a path based on failure type instead of trying the most familiar command first.
 
 | Failure scenario | Strong first response | Why that response fits | Velero role |
 |---|---|---|---|
@@ -61,7 +62,7 @@ The three common recovery mechanisms should reinforce each other rather than com
 | A StatefulSet volume is corrupted by bad writes | Use app-aware backup or known-good snapshot | A snapshot may contain logical corruption if taken after the bad writes | Helpful only if restore point predates corruption |
 | A Deployment manifest is changed incorrectly | Revert through GitOps | Desired configuration is the issue, not runtime loss | Secondary, usually not needed |
 | A storage region is unavailable | Fail over to another region with replicated backups | Local snapshots may be unavailable with the region | Useful only if object storage and snapshots are replicated |
-| A CRD is deleted before its custom resources | Restore CRD and resources in correct order | Kubernetes cannot accept custom resources without their definitions | Velero can help, but restore ordering must be checked |
+| A CRD is deleted before its custom resources | Restore CRD and resources in correct order | Kubernetes cannot accept custom resources without their definitions | Velero can help, but [restore ordering must be checked](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/restore-reference.md) |
 
 Active check: imagine your production namespace is deleted at 10:00, and the most recent successful Velero backup completed at 02:00. Before reading further, decide what data can be recovered, what data may be lost, and which system should tell you whether the eight-hour gap is acceptable. The correct answer depends on recovery point objective, application write behavior, and whether persistent data has a more frequent backup path than Kubernetes objects.
 
@@ -71,7 +72,7 @@ Retention is a second design decision, not a default value to copy. Short retent
 
 The storage location is part of the reliability design. If the cluster and backup bucket live in the same account, region, and access boundary, a single cloud incident or credential compromise can affect both. Production-grade designs usually separate permissions, enable bucket versioning or object lock where appropriate, replicate critical backup data across regions, and restrict who can delete backups. Velero can write the backup, but the platform team must protect the place where the backup lands.
 
-A backup is also a security artifact. It may contain Secrets, ConfigMaps with credentials, Ingress hostnames, database connection strings, and custom resources that expose operational topology. That means backup storage should have encryption at rest, transport encryption, audit logging, lifecycle controls, and least-privilege write access. The people who can restore backups may effectively be able to recreate sensitive workloads, so restore permissions deserve the same scrutiny as production deployment permissions.
+A backup is also a security artifact. [It may contain Secrets, ConfigMaps with credentials, Ingress hostnames, database connection strings, and custom resources that expose operational topology](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/locations.md). That means backup storage should have encryption at rest, transport encryption, audit logging, lifecycle controls, and least-privilege write access. The people who can restore backups may effectively be able to recreate sensitive workloads, so restore permissions deserve the same scrutiny as production deployment permissions.
 
 ```ascii
 +------------------+        +---------------------+        +------------------+
@@ -97,9 +98,9 @@ Stop and think: if you restored a namespace perfectly but the application still 
 
 ## 2. Install Velero and Choose the Backup Boundary
 
-Velero has two major runtime parts: a server inside the cluster and a CLI used by operators. The server watches Velero custom resources such as Backups, Restores, Schedules, BackupStorageLocations, and VolumeSnapshotLocations. The CLI creates and inspects those resources, but the controller logic runs inside the cluster. That separation matters because deleting your local terminal does not stop a backup, while a broken Velero Deployment inside the cluster does.
+Velero has two major runtime parts: [a server inside the cluster and a CLI used by operators](https://github.com/velero-io/velero). The server watches Velero custom resources such as [Backups, Restores, Schedules, BackupStorageLocations, and VolumeSnapshotLocations](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/locations.md). The CLI creates and inspects those resources, but the controller logic runs inside the cluster. That separation matters because deleting your local terminal does not stop a backup, while a broken Velero Deployment inside the cluster does.
 
-The storage provider plugin connects Velero to object storage and, when supported, volume snapshot APIs. On AWS, the plugin writes Kubernetes backup data to S3 and can work with EBS snapshots. On other platforms, equivalent plugins connect to GCS, Azure Blob, or S3-compatible systems. The plugin version must match the Velero server version, so production installations should pin compatible versions instead of copying an old blog post command.
+The storage provider plugin connects Velero to object storage and, when supported, volume snapshot APIs. On AWS, the plugin [writes Kubernetes backup data to S3 and can work with EBS snapshots](https://github.com/velero-io/velero-plugin-for-aws). On other platforms, [equivalent plugins connect to GCS, Azure Blob, or S3-compatible systems](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/supported-providers.md). The plugin version must match the Velero server version, so production installations should pin compatible versions instead of copying an old blog post command.
 
 For the examples below, `kubectl` is shown first and then abbreviated as `k` after the alias is created. The alias is common in Kubernetes operations because Velero work often alternates between `velero` commands and direct Kubernetes inspection. Run the alias in your shell before using the shorter commands.
 
@@ -134,7 +135,7 @@ aws_access_key_id=REPLACE_WITH_ACCESS_KEY
 aws_secret_access_key=REPLACE_WITH_SECRET_KEY
 ```
 
-After installation, verify both Kubernetes readiness and Velero storage readiness. A running Velero Pod only proves that the controller process started. A usable backup location proves that the server can authenticate and reach object storage. Many failed backup programs looked healthy at the Pod level while every backup was failing because a bucket policy, region, endpoint, or credential had drifted.
+After installation, verify both Kubernetes readiness and Velero storage readiness. A running Velero Pod only proves that the controller process started. [A usable backup location proves that the server can authenticate and reach object storage](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/locations.md). Many failed backup programs looked healthy at the Pod level while every backup was failing because a bucket policy, region, endpoint, or credential had drifted.
 
 ```bash
 k get namespace velero
@@ -144,7 +145,7 @@ velero backup-location get
 velero version
 ```
 
-The Velero architecture is easier to reason about if you separate the control resources from the stored artifacts. A Backup custom resource tells the Velero server what to collect. The server writes metadata, Kubernetes object definitions, logs, and related files to object storage. If volume snapshots are enabled and supported, Velero also coordinates snapshot creation through the storage provider or CSI snapshot mechanisms. A Restore custom resource then asks the server to read those artifacts and recreate selected objects.
+The Velero architecture is easier to reason about if you separate the control resources from the stored artifacts. A Backup custom resource tells the Velero server what to collect. The server [writes metadata, Kubernetes object definitions, logs, and related files to object storage](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/locations.md). If volume snapshots are enabled and supported, Velero also coordinates snapshot creation through the storage provider or CSI snapshot mechanisms. A Restore custom resource then asks the server to read those artifacts and recreate selected objects.
 
 ```ascii
 +--------------------------------------------------------------------------------+
@@ -177,7 +178,7 @@ The Velero architecture is easier to reason about if you separate the control re
 
 The backup boundary is where many teams make their first serious mistake. A whole-cluster backup feels safe because it includes more, but it can be slow, expensive, noisy, and dangerous to restore blindly. A narrow namespace backup is easier to restore and validate, but it may miss cluster-scoped resources such as CRDs, StorageClasses, ClusterRoles, or admission configuration that the namespace depends on. The right boundary is the smallest set of objects that can be restored into a working application with known prerequisites.
 
-Velero supports boundary choices through namespace filters, resource filters, label selectors, and cluster-resource options. Namespace filters are a good starting point when each application has a clear namespace. Label selectors are useful when applications share namespaces or when you want a logical backup that follows `app.kubernetes.io/part-of`. Resource filters help exclude noisy or recreated objects such as Events. Cluster-resource handling should be explicit in runbooks because defaults can surprise teams when namespace filters and custom resources interact.
+Velero supports boundary choices through [namespace filters, resource filters, label selectors, and cluster-resource options](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/resource-filtering.md). Namespace filters are a good starting point when each application has a clear namespace. Label selectors are useful when applications share namespaces or when you want a logical backup that follows `app.kubernetes.io/part-of`. Resource filters help exclude noisy or recreated objects such as Events. Cluster-resource handling should be explicit in runbooks because defaults can surprise teams when namespace filters and custom resources interact.
 
 ```bash
 velero backup create payments-namespace \
@@ -197,7 +198,7 @@ velero backup create payments-with-cluster-prereqs \
   --ttl 168h
 ```
 
-A declarative Backup resource is better for reviewable operational patterns than one-off CLI history. The CLI is excellent during incident response and exploration, but a YAML object can be stored in a runbook repository, reviewed by peers, and applied consistently. The manifest below backs up two namespaces, excludes event noise, enables volume snapshots, stores the backup in the default location, and keeps it for thirty days.
+A declarative Backup resource is better for reviewable operational patterns than one-off CLI history. The CLI is excellent during incident response and exploration, but a YAML object can be stored in a runbook repository, reviewed by peers, and applied consistently. The manifest below backs up two namespaces, excludes event noise, [enables volume snapshots, stores the backup in the default location, and keeps it for thirty days](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/api-types/backup.md).
 
 ```yaml
 apiVersion: velero.io/v1
@@ -219,7 +220,7 @@ spec:
   ttl: 720h
 ```
 
-A Schedule wraps a Backup template in a cron expression. The Schedule itself is not the backup; it creates Backup objects over time. Each Backup receives its own TTL when created, so deleting the Schedule later does not automatically delete every Backup it already produced. This detail matters for cost control and compliance because stale backup objects can remain after an application is decommissioned.
+[A Schedule wraps a Backup template in a cron expression](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/api-types/schedule.md). The Schedule itself is not the backup; it creates Backup objects over time. Each Backup receives its own TTL when created, so [deleting the Schedule later does not automatically delete every Backup it already produced](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/api-types/schedule.md). This detail matters for cost control and compliance because stale backup objects can remain after an application is decommissioned.
 
 ```yaml
 apiVersion: velero.io/v1
@@ -289,9 +290,9 @@ The table below is a practical classification tool. It does not replace applicat
 | Events and transient status | Usually exclude | Noise increases size and restore confusion | Not needed for recovery |
 | CRDs and custom resources | Include deliberately | Restoring custom resources before CRDs can fail | Controllers reconcile restored custom resources |
 
-Velero can handle persistent volume data in two broad ways. The first is storage snapshots, commonly through CSI or provider snapshot APIs. Snapshots are fast and efficient because the storage platform creates point-in-time copies. The second is file-system backup through the Velero node agent, which walks volume files and stores them through Velero’s data path. File-system backup is more portable across storage providers, but it can be slower and more sensitive to large file counts.
+Velero can handle persistent volume data in two broad ways. The first is [storage snapshots, commonly through CSI or provider snapshot APIs](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/csi.md). Snapshots are fast and efficient because the storage platform creates point-in-time copies. The second is [file-system backup through the Velero node agent](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/file-system-backup.md), which walks volume files and stores them through Velero’s data path. File-system backup is more portable across storage providers, but it can be slower and more sensitive to large file counts.
 
-The choice is not simply “snapshots are better.” CSI snapshots can be very fast, but they are often tied to a storage class, cloud region, account, and restore environment. File-system backup can be slower, but it may work where snapshots are unavailable or when moving across clusters with different storage backends. Database-native backup may be best when the application needs transaction-aware restore points, incremental logs, or point-in-time recovery.
+The choice is not simply “snapshots are better.” [CSI snapshots can be very fast](https://kubernetes.io/docs/concepts/storage/volume-snapshots/), but they are often tied to a storage class, cloud region, account, and restore environment. File-system backup can be slower, but it may work where snapshots are unavailable or when moving across clusters with different storage backends. Database-native backup may be best when the application needs transaction-aware restore points, incremental logs, or point-in-time recovery.
 
 ```ascii
 +----------------------+----------------------+-----------------------------+
@@ -304,7 +305,7 @@ The choice is not simply “snapshots are better.” CSI snapshots can be very f
 +----------------------+----------------------+-----------------------------+
 ```
 
-A Velero install that uses node agents can enable file-system backup. The flags below install the node agent and make file-system backup the default for volumes. That default is convenient for labs, but production teams often choose per-workload policy because some volumes are too large, too hot, or better protected by application-native tools.
+A Velero install that uses node agents can enable file-system backup. The flags below install the node agent and [make file-system backup the default for volumes](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/file-system-backup.md). That default is convenient for labs, but production teams often choose per-workload policy because some volumes are too large, too hot, or better protected by application-native tools.
 
 ```bash
 velero install \
@@ -342,7 +343,7 @@ spec:
         claimName: report-writer-data
 ```
 
-Application hooks add another consistency tool. A pre-backup hook can flush data, pause writes briefly, create a database dump, or place a marker file. A post-backup hook can resume a process or clean temporary files. Hooks are powerful, but they must be tested carefully because a failing hook can delay backups or leave an application in an unexpected state if written poorly.
+Application hooks add another consistency tool. [A pre-backup hook can flush data, pause writes briefly, create a database dump, or place a marker file](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/backup-hooks.md). A post-backup hook can resume a process or clean temporary files. Hooks are powerful, but they must be tested carefully because a failing hook can delay backups or leave an application in an unexpected state if written poorly.
 
 The manifest below shows a Backup with a pre-hook that asks a PostgreSQL container to create a dump file inside a mounted backup directory. This is still not a full PostgreSQL backup strategy for every environment, but it demonstrates the pattern. In production, you would review authentication, storage path, dump size, timeout, and whether the database-native backup tool provides a better guarantee.
 
@@ -380,7 +381,7 @@ Stop and think: a pre-hook creates `/backup/orders.sql`, but the `/backup` path 
 
 Resource filtering should be driven by restore intent. Excluding Secrets may satisfy a security concern, but it can also make restored Pods fail if the target cluster does not provide replacement Secrets. Including cluster-scoped resources may make a migration easier, but it can also overwrite or conflict with target-cluster policy. A careful backup design names what is intentionally included, what is intentionally excluded, and what must already exist in the restore environment.
 
-Velero restore operations can map namespaces, include or exclude resources, and skip volume restore when you only want objects. Namespace mapping is especially useful for validation drills because it lets you restore `payments` into `payments-restore-test` without disturbing production. You still need to watch for cluster-scoped resources, external DNS, Ingress hostnames, and controllers that assume a fixed namespace.
+Velero restore operations can [map namespaces, include or exclude resources, and skip volume restore](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/api-types/restore.md) when you only want objects. Namespace mapping is especially useful for validation drills because it lets you restore `payments` into `payments-restore-test` without disturbing production. You still need to watch for cluster-scoped resources, external DNS, Ingress hostnames, and controllers that assume a fixed namespace.
 
 ```bash
 velero restore create payments-drill \
@@ -397,7 +398,7 @@ velero restore create payments-services-only \
   --include-resources services,endpointslices.discovery.k8s.io
 ```
 
-Restore validation should look beyond Velero status. A Restore can complete with warnings, and Kubernetes can accept objects that later fail admission, scheduling, image pulling, or application startup. Good validation checks Restore status, restore logs, namespace resources, PVC binding, Pod readiness, application health endpoints, and domain-specific data. The restore is not done until the workload proves it can serve the scenario the business cares about.
+Restore validation should look beyond Velero status. [A Restore can complete with warnings](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/debugging-restores.md), and Kubernetes can accept objects that later fail admission, scheduling, image pulling, or application startup. Good validation checks Restore status, restore logs, namespace resources, PVC binding, Pod readiness, application health endpoints, and domain-specific data. The restore is not done until the workload proves it can serve the scenario the business cares about.
 
 ```bash
 velero restore get
@@ -520,7 +521,7 @@ This worked example shows the core Velero operating loop: inspect the backup, re
 
 Installing Velero is a project. Operating Velero is a reliability practice. The difference is cadence: backups must keep happening, restores must keep working, storage costs must stay visible, credentials must rotate, and application owners must trust the recovery evidence. A platform team that treats Velero as “set and forget” will eventually discover that a broken schedule, expired credential, full snapshot quota, or changed StorageClass invalidated the recovery plan.
 
-Monitoring should cover both Velero internals and recovery outcomes. Pod readiness is necessary but shallow. Backup success counters, backup duration, last successful backup timestamp, storage location availability, restore failures, and node-agent health are stronger signals. The most important alert is often “no recent successful backup for this critical scope,” because it catches silent drift even when the Velero Deployment is still running.
+Monitoring should cover both Velero internals and recovery outcomes. Pod readiness is necessary but shallow. [Backup success counters, backup duration, last successful backup timestamp, storage location availability, restore failures, and node-agent health](https://grafana.com/docs/grafana-cloud/monitor-infrastructure/integrations/integration-reference/integration-velero/) are stronger signals. The most important alert is often “no recent successful backup for this critical scope,” because it catches silent drift even when the Velero Deployment is still running.
 
 ```yaml
 groups:
@@ -688,7 +689,7 @@ k get nodes
 
 ### Step 2: deploy MinIO for Velero object storage
 
-This lab uses Velero’s MinIO example so the backup target runs inside the cluster. That is convenient for learning, but it is not a production design because losing the cluster can also lose the backup store. Production backup storage should live outside the failure domain of the cluster.
+This lab uses [Velero’s MinIO example](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/contributions/minio.md) so the backup target runs inside the cluster. That is convenient for learning, but it is not a production design because losing the cluster can also lose the backup store. Production backup storage should live outside the failure domain of the cluster.
 
 ```bash
 k apply -f https://raw.githubusercontent.com/vmware-tanzu/velero/main/examples/minio/00-minio-deployment.yaml
@@ -867,3 +868,23 @@ Add a PVC-backed workload to the namespace and repeat the exercise using a volum
 ## Next Module
 
 Continue to [Platforms Toolkit](/platform/toolkits/infrastructure-networking/platforms/) to learn how platform components such as Backstage, Crossplane, and cert-manager fit into internal developer platforms.
+
+## Sources
+
+- [github.com: velero](https://github.com/velero-io/velero) — The Velero README directly lists backup/restore, migration, and replication capabilities.
+- [raw.githubusercontent.com: locations.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/locations.md) — Velero docs describe BackupStorageLocation and VolumeSnapshotLocation and the API type docs cover Backup, Restore, and Schedule.
+- [kubernetes.io: configure upgrade etcd](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/) — Kubernetes documentation describes etcd snapshot backup and restore procedures.
+- [raw.githubusercontent.com: resource filtering.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/resource-filtering.md) — The Velero resource filtering documentation directly lists these filtering mechanisms.
+- [raw.githubusercontent.com: backup.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/api-types/backup.md) — The Backup API type documentation enumerates these fields.
+- [raw.githubusercontent.com: schedule.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/api-types/schedule.md) — The Schedule API type documentation describes cron scheduling, templates, and TTL for backups created by schedules.
+- [github.com: velero plugin for aws](https://github.com/velero-io/velero-plugin-for-aws) — The AWS plugin README directly states S3/EBS behavior and includes the compatibility matrix.
+- [raw.githubusercontent.com: supported providers.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/supported-providers.md) — The supported providers documentation lists these object store and volume snapshot provider integrations.
+- [kubernetes.io: volume snapshots](https://kubernetes.io/docs/concepts/storage/volume-snapshots/) — Kubernetes storage documentation directly documents VolumeSnapshot API objects and CSI driver requirements.
+- [raw.githubusercontent.com: csi.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/csi.md) — The Velero CSI documentation states it uses Kubernetes CSI Snapshot APIs and that the CSI plugin was merged into Velero from v1.14.
+- [raw.githubusercontent.com: file system backup.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/file-system-backup.md) — The File System Backup documentation describes the node-agent mechanism, storage portability, and consistency limitations.
+- [raw.githubusercontent.com: backup hooks.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/backup-hooks.md) — The backup hooks documentation explains pre/post command execution and the supported configuration mechanisms.
+- [raw.githubusercontent.com: restore.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/api-types/restore.md) — The Restore API type documentation lists these restore configuration fields.
+- [raw.githubusercontent.com: debugging restores.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/debugging-restores.md) — Velero debugging documentation explicitly states a Restore may be Completed while warnings and errors are shown separately.
+- [raw.githubusercontent.com: restore reference.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/restore-reference.md) — The restore reference documents the default restore order starting with Custom Resource Definitions.
+- [grafana.com: integration velero](https://grafana.com/docs/grafana-cloud/monitor-infrastructure/integrations/integration-reference/integration-velero/) — Grafana's Velero integration documentation lists the Velero Prometheus metrics used for backup, restore, and snapshot monitoring.
+- [raw.githubusercontent.com: minio.md](https://raw.githubusercontent.com/velero-io/velero/main/site/content/docs/main/contributions/minio.md) — The Velero MinIO quick-start says the example explores basic functionality, uses local S3-compatible MinIO, and leaves production MinIO configuration out of scope.
