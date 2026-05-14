@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 2.2: Argo Rollouts"
 slug: platform/toolkits/cicd-delivery/gitops-deployments/module-2.2-argo-rollouts
 sidebar:
@@ -35,13 +36,13 @@ A staff engineer at a busy marketplace watches a normal Kubernetes Deployment ro
 
 That team did not fail because Kubernetes was broken. Kubernetes did exactly what it was asked to do: replace old pods with new pods while keeping enough replicas available. The missing question was not "are the pods running?" but "is the new version serving users safely enough to continue?" Native Deployments do not answer that product and reliability question, because readiness is a scheduling signal rather than a release-quality decision.
 
-Argo Rollouts adds a progressive delivery controller beside the normal Kubernetes controllers. It can expose a small slice of traffic to a new version, pause while metrics accumulate, run automated analysis, promote when evidence is good, and abort when evidence is bad. The value is not the YAML itself; the value is turning a release from a hopeful replacement into a controlled experiment with bounded blast radius.
+Argo Rollouts adds a progressive delivery controller beside the normal Kubernetes controllers. [It can expose a small slice of traffic to a new version, pause while metrics accumulate, run automated analysis, promote when evidence is good, and abort when evidence is bad](https://argo-rollouts.readthedocs.io/en/stable/features/analysis/). The value is not the YAML itself; the value is turning a release from a hopeful replacement into a controlled experiment with bounded blast radius.
 
-This module starts with the simplest useful mental model: a Rollout is a Deployment-shaped object with a smarter strategy section. From there, we add the pieces in a deliberate order. First you will see how traffic moves, then how humans approve a gate, then how automated analysis works, and only then how senior teams combine metrics, routing layers, and rollback policy into a production design.
+This module starts with the simplest useful mental model: [a Rollout is a Deployment-shaped object with a smarter strategy section](https://argo-rollouts.readthedocs.io/en/stable/architecture/). From there, we add the pieces in a deliberate order. First you will see how traffic moves, then how humans approve a gate, then how automated analysis works, and only then how senior teams combine metrics, routing layers, and rollback policy into a production design.
 
 ## Core Section 1: From Rolling Updates to Progressive Delivery
 
-Kubernetes Deployments are excellent at converging pods from one template to another. They compare the desired pod template with existing ReplicaSets, create a new ReplicaSet, and scale old and new replicas according to `maxSurge` and `maxUnavailable`. That solves availability during replacement, but it does not solve release validation because the controller does not know whether conversion rates dropped, p99 latency spiked, or one customer segment started failing.
+Kubernetes Deployments are excellent at converging pods from one template to another. [They compare the desired pod template with existing ReplicaSets, create a new ReplicaSet, and scale old and new replicas according to `maxSurge` and `maxUnavailable`](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). That solves availability during replacement, but it does not solve release validation because the controller does not know whether conversion rates dropped, p99 latency spiked, or one customer segment started failing.
 
 Argo Rollouts keeps the familiar Deployment shape but replaces the rollout decision engine. Instead of moving directly from old ReplicaSet to new ReplicaSet, it creates checkpoints where the rollout can pause, gather evidence, and decide whether to continue. This is why progressive delivery is a control system rather than a different packaging format.
 
@@ -95,7 +96,7 @@ The most important distinction is that a Rollout can make release progress condi
 
 > **Pause and predict:** If a new pod passes readiness but starts returning HTTP 500 responses for one customer path, which controller is more likely to stop the release before most users are affected: a native Deployment or an Argo Rollout with request metrics? Write down the signal each controller can actually observe before you continue.
 
-Progressive delivery has two main patterns in Argo Rollouts: canary and blue-green. A canary release exposes a small percentage of traffic to the new version and expands that percentage over time. A blue-green release runs a complete preview version, validates it, and then switches active traffic in one promotion event.
+[Progressive delivery has two main patterns in Argo Rollouts: canary and blue-green](https://argo-rollouts.readthedocs.io/en/stable/features/analysis/). A canary release exposes a small percentage of traffic to the new version and expands that percentage over time. A blue-green release runs a complete preview version, validates it, and then switches active traffic in one promotion event.
 
 ```ascii
 CANARY RELEASE SHAPE
@@ -145,9 +146,9 @@ A senior rollout design starts by choosing the feedback loop, not by copying a m
 
 ## Core Section 2: Installing the Controller and the kubectl Plugin
 
-Argo Rollouts has two separate installation concerns: the controller in the cluster and the `kubectl` plugin on an operator's workstation. The controller is the required runtime component because it watches Rollout, AnalysisTemplate, AnalysisRun, and Experiment resources, then creates and scales ReplicaSets according to the strategy. Without the controller, the custom resources may exist in the API server, but nothing will reconcile them into actual rollout behavior.
+Argo Rollouts has two separate installation concerns: the controller in the cluster and the `kubectl` plugin on an operator's workstation. [The controller is the required runtime component because it watches Rollout, AnalysisTemplate, AnalysisRun, and Experiment resources, then creates and scales ReplicaSets according to the strategy. Without the controller, the custom resources may exist in the API server, but nothing will reconcile them into actual rollout behavior.](https://argo-rollouts.readthedocs.io/en/stable/architecture/)
 
-The `kubectl argo rollouts` plugin is not the controller. It is an operator interface that makes Rollout state readable and gives you commands such as `promote`, `abort`, `retry`, `undo`, and the live dashboard. You can inspect raw resources with normal `kubectl`, but the plugin saves time because it understands the relationship between Rollouts, ReplicaSets, pods, pauses, and AnalysisRuns.
+[The `kubectl argo rollouts` plugin is not the controller. It is an operator interface that makes Rollout state readable and gives you commands such as `promote`, `abort`, `retry`, `undo`, and the live dashboard.](https://argo-rollouts.readthedocs.io/en/stable/features/kubectl-plugin/) You can inspect raw resources with normal `kubectl`, but the plugin saves time because it understands the relationship between Rollouts, ReplicaSets, pods, pauses, and AnalysisRuns.
 
 This distinction matters during incident response. If the controller is unhealthy, promotions and aborts may not reconcile even when the plugin command succeeds at sending a request. If the plugin is missing, the Rollout can still progress because the controller is running, but the operator loses the purpose-built view and must inspect lower-level resources manually.
 
@@ -189,7 +190,7 @@ kubectl -n argo-rollouts wait \
   --timeout=120s
 ```
 
-Install the plugin on the machine where you run release operations. On macOS with Homebrew, the plugin is packaged as `kubectl-argo-rollouts`, which lets `kubectl` discover it as the subcommand `kubectl argo rollouts`. On Linux, place the executable somewhere on your `PATH` with the same name.
+Install the plugin on the machine where you run release operations. [On macOS with Homebrew, the plugin is packaged as `kubectl-argo-rollouts`, which lets `kubectl` discover it as the subcommand `kubectl argo rollouts`.](https://argo-rollouts.readthedocs.io/en/stable/installation/) On Linux, place the executable somewhere on your `PATH` with the same name.
 
 ```bash
 brew install argoproj/tap/kubectl-argo-rollouts
@@ -276,7 +277,7 @@ kubectl argo rollouts set image color-api color-api=argoproj/rollouts-demo:yello
 kubectl argo rollouts get rollout color-api --watch
 ```
 
-The `setWeight` field means "move the rollout to this target canary percentage." If you do not configure an ingress controller or service mesh for traffic routing, Argo Rollouts approximates the weight by scaling stable and canary ReplicaSets. With five replicas and a twenty percent canary, that often means one canary pod and four stable pods, which is close enough for a lab but not precise for high-stakes user traffic.
+The `setWeight` field means "move the rollout to this target canary percentage." [If you do not configure an ingress controller or service mesh for traffic routing, Argo Rollouts approximates the weight by scaling stable and canary ReplicaSets.](https://argo-rollouts.readthedocs.io/en/stable/features/canary/) With five replicas and a twenty percent canary, that often means one canary pod and four stable pods, which is close enough for a lab but not precise for high-stakes user traffic.
 
 ```ascii
 POD-RATIO CANARY WITHOUT TRAFFIC ROUTER
@@ -298,7 +299,7 @@ Replica count: 5
 
 This approximation is useful but limited. It assumes traffic is evenly distributed across pods, that each pod has similar capacity, and that clients do not create sticky or long-lived connections that skew request distribution. For many HTTP services, it is acceptable during early adoption; for services with strict blast-radius requirements, a real traffic router is usually needed.
 
-A pause step is a deliberate stop in the release sequence. A duration pause resumes automatically after time passes, while an empty pause waits for a human promotion. Manual pauses are useful when a team needs a lead engineer, product owner, or incident commander to inspect dashboards before traffic crosses a threshold.
+A pause step is a deliberate stop in the release sequence. [A duration pause resumes automatically after time passes, while an empty pause waits for a human promotion.](https://argo-rollouts.readthedocs.io/en/stable/features/canary/) Manual pauses are useful when a team needs a lead engineer, product owner, or incident commander to inspect dashboards before traffic crosses a threshold.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -385,7 +386,7 @@ users ─────────────────▶ │ Ingress or serv
              └────────────────┘                 └────────────────┘
 ```
 
-The following example shows the Rollout fields for NGINX Ingress traffic splitting. The `stableIngress` is the existing user-facing Ingress, while the two Services are controlled by Rollouts. In a real cluster, the Ingress object must already route to the stable Service, and the NGINX controller must support the annotations Argo Rollouts writes.
+The following example shows the Rollout fields for NGINX Ingress traffic splitting. [The `stableIngress` is the existing user-facing Ingress, while the two Services are controlled by Rollouts. In a real cluster, the Ingress object must already route to the stable Service, and the NGINX controller must support the annotations Argo Rollouts writes.](https://argo-rollouts.readthedocs.io/en/stable/features/traffic-management/nginx/)
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -509,11 +510,11 @@ spec:
       targetPort: 8080
 ```
 
-The `scaleDownDelaySeconds` field is more than cleanup timing. It gives the routing layer time to stop sending traffic to old pods and preserves a rollback window while connections drain. Too short a delay can make rollback less reliable; too long a delay consumes capacity and can hide resource pressure until several releases overlap.
+The `scaleDownDelaySeconds` field is more than cleanup timing. [It gives the routing layer time to stop sending traffic to old pods and preserves a rollback window while connections drain.](https://argo-rollouts.readthedocs.io/en/stable/features/bluegreen/) Too short a delay can make rollback less reliable; too long a delay consumes capacity and can hide resource pressure until several releases overlap.
 
-> **Pause and predict:** A blue-green rollout has `autoPromotionEnabled: false`, and the preview pods are Ready. Users still see the old version. Is that failure or expected behavior? It is expected behavior because preview readiness only prepares the new ReplicaSet; promotion is the action that switches active traffic.
+> **Pause and predict:** A blue-green rollout has `autoPromotionEnabled: false`, and the preview pods are Ready. Users still see the old version. Is that failure or expected behavior? [It is expected behavior because preview readiness only prepares the new ReplicaSet; promotion is the action that switches active traffic.](https://argo-rollouts.readthedocs.io/en/stable/features/bluegreen/)
 
-Blue-green can also use analysis before and after promotion. Pre-promotion analysis checks the preview version before users see it, which is useful for smoke tests and synthetic checks. Post-promotion analysis checks real user traffic after the switch, which is useful because some defects only appear under production traffic patterns.
+[Blue-green can also use analysis before and after promotion.](https://argo-rollouts.readthedocs.io/en/stable/features/bluegreen/) Pre-promotion analysis checks the preview version before users see it, which is useful for smoke tests and synthetic checks. Post-promotion analysis checks real user traffic after the switch, which is useful because some defects only appear under production traffic patterns.
 
 ```yaml
 strategy:
@@ -540,7 +541,7 @@ A senior design often combines blue-green with manual promotion for risky databa
 
 ## Core Section 5: AnalysisTemplates One Layer at a Time
 
-AnalysisTemplates are where Argo Rollouts becomes evidence-driven instead of merely staged. An AnalysisTemplate defines one or more metrics, each with a provider, interval, count, and success condition. A Rollout creates AnalysisRuns from those templates, injects arguments, and then uses the result to continue, pause, fail, or abort depending on the strategy configuration.
+AnalysisTemplates are where Argo Rollouts becomes evidence-driven instead of merely staged. [An AnalysisTemplate defines one or more metrics, each with a provider, interval, count, and success condition. A Rollout creates AnalysisRuns from those templates, injects arguments, and then uses the result to continue, pause, fail, or abort depending on the strategy configuration.](https://argo-rollouts.readthedocs.io/en/stable/features/analysis/)
 
 The mental jump from `setWeight` to a complex Prometheus template can feel large, so we will build analysis in layers. First, use a job-based template that always passes so you can see the mechanics. Next, introduce a realistic smoke test. Then add Prometheus success rate, latency, and multi-metric behavior.
 
@@ -563,7 +564,7 @@ Layer 5: Multi-signal production analysis
          combine error rate, latency, saturation, and business checks
 ```
 
-The simplest useful AnalysisTemplate can run a Kubernetes Job. This teaches the structure without requiring Prometheus or a service mesh. The Job exits successfully, and the Rollout treats that metric as passed.
+[The simplest useful AnalysisTemplate can run a Kubernetes Job. This teaches the structure without requiring Prometheus or a service mesh. The Job exits successfully, and the Rollout treats that metric as passed.](https://argo-rollouts.readthedocs.io/en/stable/analysis/job/)
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -642,7 +643,7 @@ strategy:
       - setWeight: 100
 ```
 
-> **Pause and predict:** If background analysis starts at step one and fails while the rollout is paused at twenty-five percent, what should happen next? The rollout should become degraded or abort according to failure policy, because the analysis is not just reporting; it is part of the release decision.
+> **Pause and predict:** [If background analysis starts at step one and fails while the rollout is paused at twenty-five percent, what should happen next? The rollout should become degraded or abort according to failure policy, because the analysis is not just reporting; it is part of the release decision.](https://argo-rollouts.readthedocs.io/en/stable/features/analysis/)
 
 A Prometheus metric template introduces three new ideas at once: a query returns data, the success condition interprets that data, and limits decide how many bad samples are tolerated. Keep those ideas separate. The query asks "what happened?" The success condition asks "is that acceptable?" The `failureLimit` asks "how much bad evidence is enough to stop?"
 
@@ -681,7 +682,7 @@ spec:
 
 The query window should usually be longer than the scrape interval and at least as long as the analysis interval. If the window is too short, a single scrape or traffic burst can create noisy results. If the window is too long, the canary may continue serving bad traffic while the metric slowly catches up.
 
-Latency analysis is similar, but histogram queries demand more care. The unit must match the threshold, and the aggregation must preserve the `le` label for `histogram_quantile`. A common production mistake is comparing seconds to milliseconds or aggregating away the bucket boundary label.
+Latency analysis is similar, but histogram queries demand more care. [The unit must match the threshold, and the aggregation must preserve the `le` label for `histogram_quantile`.](https://prometheus.io/docs/prometheus/latest/querying/functions/) A common production mistake is comparing seconds to milliseconds or aggregating away the bucket boundary label.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -786,7 +787,7 @@ spec:
 
 A mature AnalysisTemplate has an owner and a hypothesis. "Success rate must stay above ninety-nine percent for five minutes" is a hypothesis about acceptable user impact. "Run every metric we can find" is not a hypothesis; it is noise that can block releases without teaching the team which risk mattered.
 
-Dry-run analysis is useful during adoption because it reports what would have happened without failing the rollout. Use it when a metric is promising but not yet trusted. Remove dry-run once the team has validated the query, threshold, and alerting behavior across several real releases.
+[Dry-run analysis is useful during adoption because it reports what would have happened without failing the rollout.](https://argo-rollouts.readthedocs.io/en/stable/features/analysis/) Use it when a metric is promising but not yet trusted. Remove dry-run once the team has validated the query, threshold, and alerting behavior across several real releases.
 
 ```yaml
 strategy:
@@ -859,7 +860,7 @@ kubectl argo rollouts undo color-api
 
 > **Operational checkpoint:** Your Rollout is paused at twenty-five percent, the service dashboard looks healthy, but the AnalysisRun failed with a Prometheus connection error. Should you promote, retry, or abort? A defensible answer is to fix Prometheus connectivity and retry analysis before promotion, because promoting without the intended evidence weakens the release policy.
 
-Notifications help connect rollout state to team workflow. Argo Rollouts notifications can send messages when rollouts complete, pause, or fail analysis. The important design point is to notify the channel that can act; broadcasting every step to a noisy room trains people to ignore release signals.
+Notifications help connect rollout state to team workflow. [Argo Rollouts notifications can send messages when rollouts complete, pause, or fail analysis.](https://argo-rollouts.readthedocs.io/en/stable/features/notifications/) The important design point is to notify the channel that can act; broadcasting every step to a noisy room trains people to ignore release signals.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -895,7 +896,7 @@ spec:
         - setWeight: 100
 ```
 
-Experiments are useful when you need to run multiple versions for comparison without treating one as the immediate stable replacement. In a Rollout, an experiment step can create temporary ReplicaSets and run analysis before any live traffic reaches the canary. This is more advanced than a basic canary, so use it when you have a specific comparison to make, not as a default release ritual.
+Experiments are useful when you need to run multiple versions for comparison without treating one as the immediate stable replacement. [In a Rollout, an experiment step can create temporary ReplicaSets and run analysis before any live traffic reaches the canary.](https://argo-rollouts.readthedocs.io/en/stable/features/experiment/) This is more advanced than a basic canary, so use it when you have a specific comparison to make, not as a default release ritual.
 
 ```yaml
 strategy:
@@ -981,10 +982,10 @@ This is also not the only valid answer. A lower-traffic service might need longe
 
 ## Did You Know?
 
-- **Argo Rollouts does not replace Argo CD**: Argo CD syncs desired manifests into the cluster, while Argo Rollouts controls how a changed workload progresses after the manifest is applied.
-- **A Rollout can use pod-ratio traffic before adding ingress or mesh routing**: This makes adoption easier, but exact percentage enforcement usually requires a traffic manager.
-- **AnalysisRuns are ordinary Kubernetes custom resources**: You can inspect them with `kubectl get`, `kubectl describe`, labels, events, and logs from generated Jobs.
-- **Blue-green promotion changes traffic by changing Service targeting**: The old ReplicaSet can remain available for a short rollback window before scale-down policy removes it.
+- **Argo Rollouts does not replace Argo CD**: [Argo CD syncs desired manifests into the cluster, while Argo Rollouts controls how a changed workload progresses after the manifest is applied.](https://argo-cd.readthedocs.io/en/stable/operator-manual/architecture/)
+- **A Rollout can use pod-ratio traffic before adding ingress or mesh routing**: [This makes adoption easier, but exact percentage enforcement usually requires a traffic manager.](https://argo-rollouts.readthedocs.io/en/stable/features/canary/)
+- **AnalysisRuns are ordinary Kubernetes custom resources**: [You can inspect them with `kubectl get`, `kubectl describe`, labels, events, and logs from generated Jobs.](https://argo-rollouts.readthedocs.io/en/stable/features/analysis/)
+- **[Blue-green promotion changes traffic by changing Service targeting](https://argo-rollouts.readthedocs.io/en/stable/features/bluegreen/)**: The old ReplicaSet can remain available for a short rollback window before scale-down policy removes it.
 
 ## Common Mistakes
 
@@ -1365,3 +1366,13 @@ Continue to [Module 2.3: Flux](../module-2.3-flux/) where you will compare anoth
 - [Argo Rollouts Analysis and Progressive Delivery](https://argo-rollouts.readthedocs.io/en/stable/features/analysis/) — Backs canary and blue-green rollout behavior, AnalysisTemplate and AnalysisRun CRDs, Prometheus-driven automated analysis, abort conditions, experiments, and progressive delivery control beyond native Deployments.
 - [argo-rollouts.readthedocs.io: bluegreen](https://argo-rollouts.readthedocs.io/en/stable/features/bluegreen/) — The blue-green sequence of events shows the preview ReplicaSet running before promotion and the old ReplicaSet scaling down only after the switch and delay.
 - [Kubernetes Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) — Use this as the baseline for native rolling-update behavior that Argo Rollouts extends.
+- [argo-rollouts.readthedocs.io: architecture](https://argo-rollouts.readthedocs.io/en/stable/architecture/) — The architecture page explicitly describes Rollout as a custom resource mostly compatible with Deployment but with extra rollout-control fields.
+- [argo-rollouts.readthedocs.io: kubectl plugin](https://argo-rollouts.readthedocs.io/en/stable/features/kubectl-plugin/) — The kubectl-plugin overview says the plugin is optional and is used to visualize and manage Rollouts, Experiments, and Analysis resources.
+- [argo-rollouts.readthedocs.io: installation](https://argo-rollouts.readthedocs.io/en/stable/installation/) — The installation page gives the exact install.yaml controller command and the Brew package name for the kubectl plugin.
+- [argo-rollouts.readthedocs.io: canary](https://argo-rollouts.readthedocs.io/en/stable/features/canary/) — The canary strategy docs explicitly say that without traffic management the rollout makes a best-effort attempt to achieve the percentage using ReplicaSet scaling.
+- [argo-rollouts.readthedocs.io: nginx](https://argo-rollouts.readthedocs.io/en/stable/features/traffic-management/nginx/) — The NGINX traffic-management docs describe stableService, canaryService, stableIngress, annotationPrefix, and the requirement that the primary Ingress route to the stable Service.
+- [argo-rollouts.readthedocs.io: job](https://argo-rollouts.readthedocs.io/en/stable/analysis/job/) — The Job metric-provider docs state that Job-backed analysis succeeds when the Job completes and exits with code zero.
+- [prometheus.io: functions](https://prometheus.io/docs/prometheus/latest/querying/functions/) — The Prometheus query-functions docs state that the le label must be included in the by clause for histogram_quantile on classic histograms.
+- [argo-rollouts.readthedocs.io: notifications](https://argo-rollouts.readthedocs.io/en/stable/features/notifications/) — The notifications docs define the annotation format and list the built-in trigger names used in the module.
+- [argo-rollouts.readthedocs.io: experiment](https://argo-rollouts.readthedocs.io/en/stable/features/experiment/) — The experiment docs explicitly describe rollout experiment steps as blocking and state that failed or errored experiments abort the rollout.
+- [Argo CD Architectural Overview](https://argo-cd.readthedocs.io/en/stable/operator-manual/architecture/) — Backs Argo CD component architecture and responsibilities such as API server, repository server, application controller, Git polling/reconciliation, sync, rollback, auth delegation, and RBAC enforcement.
