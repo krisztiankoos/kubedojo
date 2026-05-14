@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 5.4: Model Serving & Inference"
 slug: platform/disciplines/data-ai/mlops/module-5.4-model-serving
 sidebar:
@@ -470,27 +471,27 @@ It integrates with Knative in many deployments for autoscaling and traffic routi
 
 It supports common model formats and can separate transformer, predictor, and explainer responsibilities.
 
-Seldon Core is a strong fit when enterprise rollout patterns and inference graphs are central.
+[Seldon Core is a strong fit when enterprise rollout patterns and inference graphs are central.](https://github.com/SeldonIO/seldon-core)
 
 It is often chosen for complex deployment graphs, explainability, and experimentation workflows.
 
-BentoML is a strong fit when packaging and developer ergonomics matter more than building a multi-team platform.
+[BentoML is a strong fit when packaging and developer ergonomics matter more than building a multi-team platform.](https://github.com/bentoml/BentoML)
 
 It can be a practical starting point for teams that need to move from notebook to service quickly.
 
-TorchServe and TensorFlow Serving are strong fits when the model framework is fixed and runtime performance inside that ecosystem matters.
+TorchServe and [TensorFlow Serving](https://github.com/tensorflow/serving) are strong fits when the model framework is fixed and runtime performance inside that ecosystem matters.
 
 They reduce platform breadth in exchange for framework-specific depth.
 
 Triton is a strong fit for GPU-heavy serving.
 
-It supports multiple model formats, concurrent model execution, and dynamic batching.
+[It supports multiple model formats, concurrent model execution, and dynamic batching.](https://github.com/triton-inference-server/server)
 
 The tradeoff is operational complexity and dependence on NVIDIA-oriented infrastructure.
 
 ### KServe: Kubernetes Serving
 
-KServe is a Kubernetes-native serving layer for machine-learning models.
+[KServe is a Kubernetes-native serving layer for machine-learning models.](https://github.com/kserve/kserve)
 
 It gives you an `InferenceService` resource rather than asking every team to hand-write Deployments and Services.
 
@@ -583,7 +584,7 @@ If limits are too low, the runtime may be throttled or killed.
 
 `maxReplicas: 10` prevents runaway scale, but it also creates a capacity ceiling.
 
-`scaleTarget: 10` means each replica should handle roughly ten concurrent requests before autoscaling adds more capacity.
+[`scaleTarget: 10`](https://github.com/kserve/kserve/blob/master/docs/samples/autoscaling/README.md) means each replica should handle roughly ten concurrent requests before autoscaling adds more capacity.
 
 ### Deploying to KServe
 
@@ -775,7 +776,7 @@ Debate the model after the system is safe.
 
 ### KServe Canary
 
-The following KServe example keeps most traffic on the primary model and sends a small percentage to a canary model.
+The following KServe example keeps most traffic on the primary model and [sends a small percentage to a canary model](https://github.com/kserve/website/blob/main/docs/model-serving/predictive-inference/rollout-strategies/canary-example.md).
 
 ```yaml
 apiVersion: serving.kserve.io/v1beta1
@@ -1091,7 +1092,7 @@ If cache hit rate could be high, avoid repeated inference.
 
 ### ONNX for Portability
 
-ONNX provides a common model representation that can be executed by ONNX Runtime and other serving tools.
+[ONNX provides a common model representation](https://github.com/onnx/onnx) that can be executed by ONNX Runtime and other serving tools.
 
 It is useful when teams want to separate model training frameworks from serving runtimes.
 
@@ -2251,3 +2252,14 @@ You have completed this exercise when you can:
 ## Next Module
 
 Continue to [Module 5.5: Model Monitoring & Observability](../module-5.5-model-monitoring/) to learn how to detect model degradation before it impacts users.
+
+## Sources
+
+- [github.com: kserve](https://github.com/kserve/kserve) — The KServe README directly lists Kubernetes deployment, multi-framework support, predictor/transformer/explainer routing, canary rollouts, autoscaling, scale-to-zero, explainability, and monitoring.
+- [github.com: canary example.md](https://github.com/kserve/website/blob/main/docs/model-serving/predictive-inference/rollout-strategies/canary-example.md) — The KServe canary rollout example documents canaryTrafficPercent and shows a 90/10 split between revisions.
+- [github.com: README.md](https://github.com/kserve/kserve/blob/master/docs/samples/autoscaling/README.md) — The KServe autoscaling sample documents minReplicas and concurrency behavior for InferenceService autoscaling.
+- [github.com: seldon core](https://github.com/SeldonIO/seldon-core) — The Seldon Core README lists Kubernetes deployment, pipelines, autoscaling, multi-model serving, and experiments with A/B tests and shadow deployments.
+- [github.com: BentoML](https://github.com/bentoml/BentoML) — The BentoML README directly describes REST APIs, Docker image generation, dynamic batching, model parallelism, pipelines, and multi-model orchestration.
+- [github.com: serving](https://github.com/tensorflow/serving) — The TensorFlow Serving README directly lists these serving capabilities.
+- [github.com: server](https://github.com/triton-inference-server/server) — The Triton README directly lists multi-framework support, concurrent model execution, dynamic batching, query types, and HTTP/gRPC protocols.
+- [github.com: onnx](https://github.com/onnx/onnx) — The ONNX README directly describes ONNX as an open format and open standard for machine learning interoperability.
