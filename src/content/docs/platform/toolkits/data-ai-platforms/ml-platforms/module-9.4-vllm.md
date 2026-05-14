@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 9.4: vLLM - High-Throughput LLM Serving"
 slug: platform/toolkits/data-ai-platforms/ml-platforms/module-9.4-vllm
 sidebar:
@@ -25,7 +26,7 @@ After completing this module, you will be able to:
 
 A platform team inherits an internal assistant that started as a prototype and became business critical before anyone designed the serving layer. The application team points it at a large chat model, the first launch campaign succeeds, and suddenly every slow response is visible to sales, support, and executives. GPU spend climbs faster than user growth, support tickets complain about time to first token, and on-call engineers cannot tell whether the problem is the model, the cluster, the queue, or the client.
 
-The expensive part is not only the model weights. During generation, every active sequence produces a key-value cache, usually called the KV cache, so the model can attend to previous tokens without recomputing the whole prompt each step. If the serving engine reserves too much KV cache per request, the GPU looks full even while useful compute sits idle. If the engine batches poorly, short requests wait behind long ones, and users feel the queue before the GPU ever becomes saturated.
+The expensive part is not only the model weights. During generation, [every active sequence produces a key-value cache](https://arxiv.org/abs/2309.06180), usually called the KV cache, so the model can attend to previous tokens without recomputing the whole prompt each step. If the serving engine reserves too much KV cache per request, the GPU looks full even while useful compute sits idle. If the engine batches poorly, short requests wait behind long ones, and users feel the queue before the GPU ever becomes saturated.
 
 vLLM matters because it gives platform engineers a practical serving engine for this exact failure mode. Its PagedAttention design treats KV cache memory more like paged system memory, while its scheduler continuously admits and advances requests instead of waiting for static batches to complete. That combination can turn a brittle one-request-per-worker service into a shared inference endpoint with real concurrency, observable pressure signals, and operational tuning knobs.
 
@@ -93,9 +94,9 @@ The point is not that vLLM wins every comparison. The point is that vLLM gives p
 
 ### 2. PagedAttention and Continuous Batching
 
-PagedAttention is vLLM's central memory-management idea. Instead of storing each request's KV cache in one large contiguous block sized for the worst case, vLLM divides the cache into blocks and maps logical sequence positions to physical cache blocks. That sounds like an implementation detail until you operate the system under bursty traffic, where the difference between reserved memory and used memory becomes the difference between rejecting users and keeping the GPU busy.
+PagedAttention is vLLM's central memory-management idea. Instead of storing each request's KV cache in one large contiguous block sized for the worst case, [vLLM divides the cache into blocks and maps logical sequence positions to physical cache blocks](https://arxiv.org/abs/2309.06180). That sounds like an implementation detail until you operate the system under bursty traffic, where the difference between reserved memory and used memory becomes the difference between rejecting users and keeping the GPU busy.
 
-The operating-system analogy is useful but should not be pushed too far. In an OS, virtual memory lets processes see contiguous address spaces while physical pages can live in different places. In vLLM, a sequence can grow token by token while its KV cache occupies non-contiguous blocks from a shared pool. The practical result is that short requests stop paying the memory cost of long requests.
+The [operating-system analogy](https://arxiv.org/abs/2309.06180) is useful but should not be pushed too far. In an OS, virtual memory lets processes see contiguous address spaces while physical pages can live in different places. In vLLM, a sequence can grow token by token while its KV cache occupies non-contiguous blocks from a shared pool. The practical result is that short requests stop paying the memory cost of long requests.
 
 ```ascii
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -118,7 +119,7 @@ The operating-system analogy is useful but should not be pushed too far. In an O
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-Continuous batching complements PagedAttention. Static batching waits for a group of requests, runs them together, and often waits for the slowest sequence in the group before admitting more work. Continuous batching treats the batch as a living set of active sequences. When one sequence finishes or yields capacity, the scheduler can admit another sequence without draining the whole batch.
+[Continuous batching](https://raw.githubusercontent.com/vllm-project/vllm/main/README.md) complements PagedAttention. Static batching waits for a group of requests, runs them together, and often waits for the slowest sequence in the group before admitting more work. Continuous batching treats the batch as a living set of active sequences. When one sequence finishes or yields capacity, the scheduler can admit another sequence without draining the whole batch.
 
 This matters because LLM requests vary wildly. One user asks for a one-sentence answer, another pastes a long incident report, and a third asks for generated code. If those requests are tied together in a rigid batch, short work waits behind long work. If the scheduler can continuously refill capacity, the GPU sees a more stable stream of useful tokens.
 
@@ -166,7 +167,7 @@ The platform takeaway is that PagedAttention improves the memory allocator, whil
 
 ### 3. vLLM Architecture on Kubernetes
 
-A vLLM server looks simple from the outside because it can expose OpenAI-compatible HTTP endpoints. Inside the pod, the request path crosses an API layer, scheduler, cache manager, and model executor. Kubernetes adds another set of concerns around GPU placement, model cache storage, shared memory, rollout behavior, and network routing.
+A vLLM server looks simple from the outside because it can expose [OpenAI-compatible HTTP endpoints](https://raw.githubusercontent.com/vllm-project/vllm/main/docs/serving/openai_compatible_server.md). Inside the pod, the request path crosses an API layer, scheduler, cache manager, and model executor. Kubernetes adds another set of concerns around GPU placement, model cache storage, shared memory, rollout behavior, and network routing.
 
 ```ascii
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -320,9 +321,9 @@ spec:
 
 The model cache is not a performance luxury. Without it, a restarted pod may download model weights again, which turns an ordinary rollout into a long outage or a registry-rate-limit incident. On shared clusters, a persistent cache also reduces pressure on outbound network paths and avoids repeated downloads during node churn.
 
-The shared memory mount is equally practical. vLLM and its worker processes can use shared memory for inter-process communication, and the default container `/dev/shm` may be too small under load. Mounting an in-memory `emptyDir` gives the pod a predictable shared memory budget, which is easier to reason about than debugging intermittent worker crashes after traffic increases.
+The [shared memory mount](https://raw.githubusercontent.com/vllm-project/vllm/main/docs/serving/parallelism_scaling.md) is equally practical. vLLM and its worker processes can use shared memory for inter-process communication, and the default container `/dev/shm` may be too small under load. Mounting an in-memory `emptyDir` gives the pod a predictable shared memory budget, which is easier to reason about than debugging intermittent worker crashes after traffic increases.
 
-Production placement requires more than asking for `nvidia.com/gpu: "1"`. A model that needs tensor parallelism across four GPUs must land on a node with four suitable GPUs that can communicate efficiently. If the cluster mixes GPU generations, memory sizes, or Multi-Instance GPU profiles, node labels and scheduling constraints become part of the serving design.
+Production placement requires more than asking for [`nvidia.com/gpu: "1"`](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/). A model that needs tensor parallelism across four GPUs [must land on a node with four suitable GPUs](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/) that can communicate efficiently. If the cluster mixes GPU generations, memory sizes, or Multi-Instance GPU profiles, node labels and scheduling constraints become part of the serving design.
 
 ```ascii
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -358,7 +359,7 @@ A mature platform usually wraps this manifest with policy. It pins image version
 
 ### 4. Configuration Decisions That Change Behavior
 
-vLLM exposes many flags, but most production tuning begins with a small group. The dangerous pattern is copying a command from a benchmark and applying it to a different model, GPU, and request mix. A good tuning process starts from a hypothesis, changes one control at a time, and watches metrics that correspond to the expected mechanism.
+vLLM exposes [many flags](https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/engine/arg_utils.py), but most production tuning begins with a small group. The dangerous pattern is copying a command from a benchmark and applying it to a different model, GPU, and request mix. A good tuning process starts from a hypothesis, changes one control at a time, and watches metrics that correspond to the expected mechanism.
 
 ```bash
 python -m vllm.entrypoints.openai.api_server \
@@ -384,7 +385,7 @@ python -m vllm.entrypoints.openai.api_server \
 | `--block-size` | Token granularity for KV cache blocks | Workload benefits from different allocation granularity after testing | Default behavior is stable and there is no measured reason to change |
 | `--swap-space` | CPU swap space for KV cache pressure cases | Occasional long requests should complete instead of failing | Latency-sensitive service suffers from swapping delays |
 
-Tensor parallelism is the first setting many engineers meet because it decides whether a large model can load. A model with huge FP16 weights may not fit on one GPU, but sharding it across several GPUs reduces the per-GPU weight burden. The trade-off is that each inference step now requires communication among shards, so the deployment becomes sensitive to GPU topology and node shape.
+[Tensor parallelism](https://raw.githubusercontent.com/vllm-project/vllm/main/docs/serving/parallelism_scaling.md) is the first setting many engineers meet because it decides whether a large model can load. A model with huge FP16 weights may not fit on one GPU, but sharding it across several GPUs reduces the per-GPU weight burden. The trade-off is that each inference step now requires communication among shards, so the deployment becomes sensitive to GPU topology and node shape.
 
 ```ascii
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -408,7 +409,7 @@ Tensor parallelism is the first setting many engineers meet because it decides w
 
 A senior operator separates weight fit from traffic fit. Tensor parallelism may make the model load, but it does not automatically make the endpoint handle a launch. After loading, the remaining memory must support KV cache blocks for active requests. That is why a model can fit at startup and still fail under real traffic when the context policy is too generous.
 
-Quantization changes the sizing conversation by reducing weight memory and sometimes improving throughput, but it is not a free switch. The model quality may shift, supported quantization formats vary by model and vLLM version, and some paths can reduce compatibility with specialized kernels. Treat quantization as a product and evaluation decision, not merely an infrastructure trick.
+[Quantization changes the sizing conversation](https://raw.githubusercontent.com/vllm-project/vllm/main/README.md) by reducing weight memory and sometimes improving throughput, but it is not a free switch. The model quality may shift, supported quantization formats vary by model and vLLM version, and some paths can reduce compatibility with specialized kernels. Treat quantization as a product and evaluation decision, not merely an infrastructure trick.
 
 | Decision | Good reason to choose it | Risk to evaluate |
 |---|---|---|
@@ -431,7 +432,7 @@ You should also avoid tuning solely from averages. Average latency can look acce
 
 vLLM's OpenAI-compatible API is a major adoption advantage because many applications can change the base URL without rewriting their client logic. That compatibility should not make the platform careless. Authentication, rate limits, request validation, model naming, and streaming behavior still belong in the platform contract, especially if multiple teams share the endpoint.
 
-The following example uses the OpenAI Python client against a port-forwarded vLLM Service. It keeps the base URL explicit, uses a placeholder API key because local vLLM does not require one by default, and shows the normal chat completion shape that many applications already use. In production, place authentication and authorization in front of the endpoint instead of relying on the default open behavior.
+The following example uses the OpenAI Python client against a port-forwarded vLLM Service. It keeps the base URL explicit, uses a placeholder API key because local vLLM does not require one by default, and shows the normal chat completion shape that many applications already use. In production, place authentication and authorization in front of the endpoint instead of relying on the [default open behavior](https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/entrypoints/openai/cli_args.py).
 
 ```python
 from openai import OpenAI
@@ -481,7 +482,7 @@ for chunk in stream:
 print()
 ```
 
-Prefix caching helps when many requests share an identical beginning. Chat assistants often send the same system prompt, policy text, tool instructions, or few-shot examples with every request. If the prefix can be reused, vLLM can avoid repeating some KV work for that shared portion, which can improve latency and throughput for workloads with stable prompts.
+[Prefix caching](https://raw.githubusercontent.com/vllm-project/vllm/main/docs/features/automatic_prefix_caching.md) helps when many requests share an identical beginning. Chat assistants often send the same system prompt, policy text, tool instructions, or few-shot examples with every request. If the prefix can be reused, vLLM can avoid repeating some KV work for that shared portion, which can improve latency and throughput for workloads with stable prompts.
 
 ```python
 from openai import OpenAI
@@ -535,7 +536,7 @@ Finally, review streaming and timeout behavior. Clients should not retry a long-
 
 ### 6. Monitoring, Scaling, and Troubleshooting
 
-A vLLM endpoint should be observed as a queueing system with GPU-backed workers. The metrics that matter are not only whether the pod is up, but whether requests are waiting, how quickly the first token appears, how fast output tokens stream, and how much KV cache is occupied. Kubernetes readiness tells you the server can answer health checks; vLLM metrics tell you whether the server is serving well.
+A vLLM endpoint should be [observed as a queueing system](https://raw.githubusercontent.com/vllm-project/vllm/main/docs/design/metrics.md) with GPU-backed workers. The metrics that matter are not only whether the pod is up, but whether requests are waiting, how quickly the first token appears, how fast output tokens stream, and how much KV cache is occupied. Kubernetes readiness tells you the server can answer health checks; vLLM metrics tell you whether the server is serving well.
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
@@ -1158,3 +1159,9 @@ Continue to [Module 9.5: Ray Serve](../module-9.5-ray-serve/) to learn about dis
 - [vLLM OpenAI-Compatible Server](https://raw.githubusercontent.com/vllm-project/vllm/main/docs/serving/openai_compatible_server.md) — Upstream documentation for vLLM's OpenAI-compatible APIs, including completions, chat, and embeddings endpoints.
 - [vLLM Parallelism and Scaling](https://github.com/vllm-project/vllm/blob/main/docs/serving/parallelism_scaling.md) — Upstream guidance on tensor parallelism, multi-GPU deployment, and `/dev/shm` considerations for serving.
 - [Schedule GPUs](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/) — Authoritative Kubernetes documentation for requesting GPU resources in Pods and deployments.
+- [raw.githubusercontent.com: README.md](https://raw.githubusercontent.com/vllm-project/vllm/main/README.md) — The upstream README lists continuous batching among vLLM's serving features.
+- [raw.githubusercontent.com: automatic prefix caching.md](https://raw.githubusercontent.com/vllm-project/vllm/main/docs/features/automatic_prefix_caching.md) — The upstream APC documentation says shared-prefix requests can reuse KV cache and notes that APC reduces query processing/prefill rather than generation/decoding.
+- [raw.githubusercontent.com: metrics.md](https://raw.githubusercontent.com/vllm-project/vllm/main/docs/design/metrics.md) — The upstream metrics design document lists the v1 Prometheus metrics and their meanings.
+- [raw.githubusercontent.com: parallelism scaling.md](https://raw.githubusercontent.com/vllm-project/vllm/main/docs/serving/parallelism_scaling.md) — The upstream parallelism and scaling guide explicitly shows a Kubernetes /dev/shm emptyDir mount for vLLM shared memory and IPC.
+- [raw.githubusercontent.com: arg utils.py](https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/engine/arg_utils.py) — The upstream argument parser defines these vLLM CLI arguments.
+- [raw.githubusercontent.com: cli args.py](https://raw.githubusercontent.com/vllm-project/vllm/main/vllm/entrypoints/openai/cli_args.py) — The upstream OpenAI server CLI arguments define api_key as optional and say provided keys are then required in headers.
