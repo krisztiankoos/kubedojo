@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 2.1: Linux Namespaces"
 slug: linux/foundations/container-primitives/module-2.1-namespaces
 sidebar:
@@ -77,7 +78,7 @@ A namespace boundary answers a very practical question: "would two processes see
 
 Loopback is a strong clue because `127.0.0.1` always means "this network namespace," not "this physical machine." If the database listens on node loopback and the application runs inside a different network namespace, the application is connecting to itself, not to the node service. The fix might involve a service address, a host gateway, or `hostNetwork`, but the diagnosis starts by recognizing the namespace boundary.
 
-The kernel exposes namespace membership through symbolic links under `/proc/<pid>/ns`. Each link points to a namespace object with a stable identity while it exists. Two processes are in the same namespace of a given type when the corresponding links point to the same object. That check is more reliable than guessing from container names or Kubernetes labels.
+The kernel exposes namespace membership through [symbolic links under `/proc/<pid>/ns`](https://en.wikipedia.org/wiki/Linux_namespaces). Each link points to a namespace object with a stable identity while it exists. Two processes are in the same namespace of a given type when the corresponding links point to the same object. That check is more reliable than guessing from container names or Kubernetes labels.
 
 ```bash
 ls -l /proc/$$/ns
@@ -159,7 +160,7 @@ This pattern also teaches the senior workflow: compare first, enter second. Ente
 
 ## PID Namespaces: Process Trees and PID 1
 
-A PID namespace isolates process ID numbers and process visibility. The host can usually see processes in child PID namespaces, but a process inside a child namespace sees only processes in its own namespace and descendants. That asymmetric visibility is the source of many container debugging misunderstandings.
+A PID namespace isolates process ID numbers and process visibility. [The host can usually see processes in child PID namespaces, but a process inside a child namespace sees only processes in its own namespace and descendants.](https://en.wikipedia.org/wiki/Linux_namespaces) That asymmetric visibility is the source of many container debugging misunderstandings.
 
 Without a PID namespace, every process participates in the same host process tree. A process listing from a regular shell can show system services, runtime processes, and application processes together. The process IDs are unique within that shared view.
 
@@ -185,7 +186,7 @@ flowchart LR
     end
 ```
 
-PID 1 has special responsibilities. It receives orphaned child processes, must reap zombies, and has special default signal behavior. A program that works well as a normal process can behave poorly as PID 1 if it does not forward signals or reap children. That is why production containers often use a tiny init process such as `tini` or `dumb-init`.
+PID 1 has special responsibilities. It receives orphaned child processes, must reap zombies, and has special default signal behavior. A program that works well as a normal process can behave poorly as PID 1 if it does not forward signals or reap children. [That is why production containers often use a tiny init process such as `tini` or `dumb-init`.](https://docs.docker.com/reference/cli/docker/container/run)
 
 The worked example below creates a new PID namespace and mounts a matching `/proc` view. The `--fork` flag matters because `unshare --pid` creates a new PID namespace for child processes, not for the already-running `unshare` process itself. The `--mount-proc` flag makes `ps` and `/proc` reflect the new PID namespace instead of the host process view.
 
@@ -208,7 +209,7 @@ A senior debugger watches for this kind of cross-namespace mismatch. Tools are j
 
 ## Network Namespaces: Interfaces, Routes, and Port Space
 
-A network namespace isolates the network stack. Each network namespace has its own interfaces, addresses, loopback device, routing tables, neighbor table, firewall view, and listening port space. Two processes can both listen on TCP port `80` when they are in different network namespaces because each namespace has its own port table.
+A network namespace isolates the network stack. [Each network namespace has its own interfaces, addresses, loopback device, routing tables, neighbor table, firewall view, and listening port space.](https://en.wikipedia.org/wiki/Linux_namespaces) Two processes can both listen on TCP port `80` when they are in different network namespaces because each namespace has its own port table.
 
 A newly created network namespace is intentionally lonely. It normally contains only a loopback interface, and that loopback interface may be down until you bring it up. There is no default route, no `eth0`, and no automatic path to the internet. Container runtimes add connectivity by creating virtual Ethernet pairs, moving one end into the container namespace, and connecting the host end to a bridge, overlay, or other network backend.
 
@@ -313,7 +314,7 @@ cat /tmp/ns-mount-lab/message.txt
 
 Mount namespaces interact heavily with security. Accidentally bind-mounting sensitive host paths into a container can defeat filesystem isolation even when the container has its own mount namespace. The namespace controls the view; the mounts placed into that view determine what data is exposed. A private view containing `/var/run/docker.sock` is still dangerous because the socket grants control over the container runtime.
 
-Mount propagation is the senior-level wrinkle. Some mounts can propagate between namespaces when configured as shared, slave, or private. Kubernetes volume behavior and privileged storage agents sometimes depend on propagation settings. When a mount appears or disappears unexpectedly, inspect `findmnt -o TARGET,PROPAGATION` instead of assuming mount namespaces are absolute walls.
+Mount propagation is the senior-level wrinkle. [Some mounts can propagate between namespaces when configured as shared, slave, or private.](https://kubernetes.io/docs/concepts/storage/volumes/) Kubernetes volume behavior and privileged storage agents sometimes depend on propagation settings. When a mount appears or disappears unexpectedly, inspect `findmnt -o TARGET,PROPAGATION` instead of assuming mount namespaces are absolute walls.
 
 ```bash
 findmnt -o TARGET,PROPAGATION /
@@ -349,7 +350,7 @@ A useful decision rule is to treat UTS and IPC as "small surface, sharp edge" na
 
 ## User Namespaces: Root Inside Is Not Always Root Outside
 
-A user namespace isolates user and group ID mappings. Inside the namespace, a process may believe it is UID `0`, but the kernel maps that identity to a different unprivileged UID outside the namespace. This is the core idea behind rootless containers and an important mitigation when a process is compromised inside a container.
+A user namespace isolates user and group ID mappings. Inside the namespace, [a process may believe it is UID `0`, but the kernel maps that identity to a different unprivileged UID outside the namespace](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/). This is the core idea behind rootless containers and an important mitigation when a process is compromised inside a container.
 
 Without a user namespace, UID `0` inside a container is also UID `0` from the host kernel's perspective, although capabilities and other controls may still limit what it can do. With a user namespace, UID `0` inside can map to a high unprivileged host UID. Permission checks against host files then use the mapped outside identity.
 
@@ -404,7 +405,7 @@ readlink /proc/$$/ns/cgroup
 
 In containers, cgroup namespaces reduce information leakage about the host's full cgroup layout. They also make the process's environment look more self-contained. When debugging CPU or memory limits, remember that the cgroup namespace affects visibility while the cgroup controllers enforce limits and accounting. The next module covers cgroups in depth.
 
-The time namespace can offset certain clocks, especially monotonic and boot-time clocks, for processes inside the namespace. It is less common in day-to-day Kubernetes debugging than network, PID, or mount namespaces. It matters for checkpoint and restore workflows, tests that need controlled time views, and specialized runtime behavior.
+[The time namespace can offset certain clocks, especially monotonic and boot-time clocks, for processes inside the namespace.](https://en.wikipedia.org/wiki/Linux_namespaces) It is less common in day-to-day Kubernetes debugging than network, PID, or mount namespaces. It matters for checkpoint and restore workflows, tests that need controlled time views, and specialized runtime behavior.
 
 ```bash
 readlink /proc/$$/ns/time 2>/dev/null || true
@@ -459,7 +460,7 @@ After the incident, translate the observation into a durable fix. Do not leave a
 
 ## Kubernetes Pod Namespace Layout
 
-Kubernetes uses namespaces to make a pod feel like one deployable unit while still running one or more containers. The most important default is that containers in the same pod share a network namespace. This is why they have the same pod IP and can communicate through `localhost`. It is also why two containers in the same pod cannot both bind the same TCP port on the same address.
+Kubernetes uses namespaces to make a pod feel like one deployable unit while still running one or more containers. The most important default is that [containers in the same pod share a network namespace](https://kubernetes.io/docs/concepts/workloads/pods/). This is why they have the same pod IP and can communicate through `localhost`. It is also why two containers in the same pod cannot both bind the same TCP port on the same address.
 
 ```mermaid
 flowchart TD
@@ -484,7 +485,7 @@ flowchart TD
     end
 ```
 
-The mount namespace story is different. Containers in a pod usually have separate root filesystems because each container comes from its own image. They share files only through volumes that Kubernetes mounts into both containers. This is why a logging sidecar cannot read an application file merely because it is in the same pod. Both containers need a shared volume mounted at agreed paths.
+The mount namespace story is different. Containers in a pod usually have separate root filesystems because each container comes from its own image. [They share files only through volumes that Kubernetes mounts into both containers.](https://kubernetes.io/docs/tasks/access-application-cluster/communicate-containers-same-pod-shared-volume/) This is why a logging sidecar cannot read an application file merely because it is in the same pod. Both containers need a shared volume mounted at agreed paths.
 
 The Kubernetes examples in this module target Kubernetes 1.35 and newer API behavior unless a cluster distribution documents a different runtime default. Linux namespace inspection commands still run as host commands.
 
@@ -512,7 +513,7 @@ spec:
     emptyDir: {}
 ```
 
-Kubernetes can also share the process namespace inside a pod when `shareProcessNamespace: true` is set. This lets containers see each other's processes, which can help sidecars send signals or collect diagnostics. It also weakens process isolation inside the pod, so it should be an explicit design decision rather than a default assumption.
+Kubernetes can also [share the process namespace inside a pod when `shareProcessNamespace: true` is set](https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/). This lets containers see each other's processes, which can help sidecars send signals or collect diagnostics. It also weakens process isolation inside the pod, so it should be an explicit design decision rather than a default assumption.
 
 ```yaml
 apiVersion: v1
@@ -530,7 +531,7 @@ spec:
     command: ["sh", "-c", "ps -ef; sleep 3600"]
 ```
 
-Host namespace options are stronger exceptions. `hostNetwork: true` places the pod in the node's network namespace. `hostPID: true` gives the pod visibility into node processes. `hostIPC: true` shares host IPC. These options are legitimate for some system agents, but they are dangerous defaults for application workloads because they remove important boundaries.
+Host namespace options are stronger exceptions. [`hostNetwork: true` places the pod in the node's network namespace. `hostPID: true` gives the pod visibility into node processes. `hostIPC: true` shares host IPC.](https://kubernetes.io/docs/concepts/security/pod-security-standards/) These options are legitimate for some system agents, but they are dangerous defaults for application workloads because they remove important boundaries.
 
 ```yaml
 apiVersion: v1
@@ -589,7 +590,7 @@ This sequence is slower than guessing for the first five minutes and faster for 
 
 ## Did You Know?
 
-- **Namespaces existed before modern container platforms.** The mount namespace appeared years before Docker popularized containers, and later namespace types filled in process, network, user, cgroup, and time isolation needs.
+- **Namespaces existed before modern container platforms.** [The mount namespace appeared years before Docker popularized containers](https://en.wikipedia.org/wiki/Linux_namespaces), and later namespace types filled in process, network, user, cgroup, and time isolation needs.
 
 - **A Kubernetes pod is not a tiny virtual machine.** It is a coordinated set of containers where Kubernetes and the runtime decide which namespace views are shared and which remain per-container.
 
@@ -890,6 +891,13 @@ Scenario D: A minimal image has no network tools, but you need to inspect its ro
 - [Linux time_namespaces documentation, man7.org](https://man7.org/linux/man-pages/man7/time_namespaces.7.html)
 - [Kubernetes pod share process namespace task](https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/)
 - [Kubernetes pod host namespaces reference](https://kubernetes.io/docs/concepts/security/pod-security-standards/#host-namespaces)
+- [en.wikipedia.org: Linux namespaces](https://en.wikipedia.org/wiki/Linux_namespaces) — This is a specific kernel interface claim and the allowlisted Linux namespaces article directly describes `/proc/pid/ns/*` symlinks and namespace identity comparison.
+- [kubernetes.io: pods](https://kubernetes.io/docs/concepts/workloads/pods/) — The Kubernetes Pods concept page directly states that pod containers share the network namespace, IP address, ports, and `localhost`.
+- [kubernetes.io: communicate containers same pod shared volume](https://kubernetes.io/docs/tasks/access-application-cluster/communicate-containers-same-pod-shared-volume/) — Kubernetes documentation directly teaches shared-volume communication as the mechanism for file sharing between containers in one pod.
+- [docs.docker.com: run](https://docs.docker.com/reference/cli/docker/container/run) — Docker's CLI reference directly documents PID 1 special treatment and the purpose of `--init` for signal forwarding and zombie reaping.
+- [kubernetes.io: user namespaces](https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/) — The Kubernetes user namespaces page directly states that root in the container can run as a different non-root user on the host and explains the mitigation value.
+- [kubernetes.io: volumes](https://kubernetes.io/docs/concepts/storage/volumes/) — The Kubernetes volumes documentation directly covers mount propagation behavior and the `mountPropagation` field.
+- [kubernetes.io: pod security standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/) — The Pod Security Standards page explicitly lists host namespace sharing as disallowed in Baseline and Restricted policies.
 
 ## Next Module
 
