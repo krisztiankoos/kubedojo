@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 6.1: Karpenter"
 slug: platform/toolkits/developer-experience/scaling-reliability/module-6.1-karpenter
 sidebar:
@@ -11,7 +12,7 @@ sidebar:
 
 Before you start, you should be comfortable with Kubernetes scheduling basics, including resource requests, node selectors, taints, tolerations, and topology spread constraints. You should also understand why platform teams use autoscaling: demand changes faster than humans can safely resize clusters by hand, and idle capacity is expensive when it repeats across every environment.
 
-You do not need to be an AWS expert, but the examples in this module use EKS because Karpenter's most mature provider implementation is for AWS. The same mental model applies across providers: Karpenter watches unschedulable pods, reasons about their requirements, creates a cloud instance that can run them, and later removes or replaces nodes when the cluster can run more efficiently.
+You do not need to be an AWS expert, but the examples in this module use EKS because Karpenter's most mature provider implementation is for AWS. The same mental model applies across providers: [Karpenter watches unschedulable pods, reasons about their requirements, creates a cloud instance that can run them, and later removes or replaces nodes when the cluster can run more efficiently](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/README.md).
 
 In this module, `kubectl` is the full command name. After the first worked example, the shorthand alias `k` is used in commands where a fast operator workflow matters. If you do not already have the alias, create it with `alias k=kubectl` in your shell.
 
@@ -39,7 +40,7 @@ This module teaches Karpenter as a production platform tool, not as a faster but
 
 Cluster Autoscaler solves an important problem: when pods cannot schedule because the cluster lacks capacity, it can grow a node group. The hidden cost is that a node group is a pre-commitment. You decide the instance family, purchase option, labels, taints, zones, and scaling limits before the workload appears. That works well when workloads are predictable and homogeneous, but it becomes difficult when dozens of teams deploy services with different resource profiles and different reliability needs.
 
-Karpenter starts from the pod instead. When the Kubernetes scheduler marks a pod unschedulable, Karpenter inspects the pod's constraints and groups compatible pending pods into a provisioning decision. It then searches the allowed cloud capacity options and creates a `NodeClaim`, which represents the specific node it intends to launch. The result is still a Kubernetes node, but the path to that node is more direct and more responsive to the workload's actual requirements.
+Karpenter starts from the pod instead. When the Kubernetes scheduler marks a pod unschedulable, Karpenter inspects the pod's constraints and groups compatible pending pods into a provisioning decision. It then searches the allowed cloud capacity options and [creates a `NodeClaim`, which represents the specific node it intends to launch](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/nodeclaims.md). The result is still a Kubernetes node, but the path to that node is more direct and more responsive to the workload's actual requirements.
 
 ```ascii
 CLUSTER AUTOSCALER PATH
@@ -95,13 +96,13 @@ KARPENTER PATH
 └─────────────────────┘
 ```
 
-The diagrams are intentionally simple because the first mental model should be simple. Cluster Autoscaler scales a known pool; Karpenter creates a node from a permitted search space. In both cases, the scheduler remains the authority that places pods. Karpenter does not bypass scheduling; it creates capacity that the scheduler can use.
+The diagrams are intentionally simple because the first mental model should be simple. [Cluster Autoscaler scales a known pool; Karpenter creates a node from a permitted search space](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/). In both cases, [the scheduler remains the authority that places pods](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/). Karpenter does not bypass scheduling; it creates capacity that the scheduler can use.
 
 The practical difference shows up when a team deploys a workload with a narrow constraint. Imagine a batch job that requests `arm64`, needs 16 GiB memory, and tolerates spot interruptions. With Cluster Autoscaler, the platform team must already have an Arm spot node group with a suitable instance shape and enough maximum size. With Karpenter, the platform team expresses the allowed categories, architecture, zones, and capacity types in a `NodePool`, and Karpenter chooses an instance type that satisfies the pending pods inside those limits.
 
 **Pause and predict:** A pod requests `kubernetes.io/arch=arm64`, but your only `NodePool` allows `amd64` nodes. Karpenter is installed and healthy. Will it create a node, leave the pod pending, or create an `amd64` node that the scheduler later rejects? Write down your prediction before reading on.
 
-The answer is that Karpenter should not create a node that violates the allowed requirements. The pod remains pending because the intersection between the pod's requirements and the `NodePool` requirements is empty. This is a useful failure mode: it preserves the scheduling contract instead of launching useless capacity. When debugging, you look for that empty intersection by comparing pod constraints, `NodePool` requirements, and events on the pod or `NodeClaim`.
+The answer is that Karpenter should not create a node that violates the allowed requirements. [The pod remains pending because the intersection between the pod's requirements and the `NodePool` requirements is empty](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/nodepools.md). This is a useful failure mode: it preserves the scheduling contract instead of launching useless capacity. When debugging, you look for that empty intersection by comparing pod constraints, `NodePool` requirements, and events on the pod or `NodeClaim`.
 
 | Feature | Cluster Autoscaler | Karpenter |
 |---|---|---|
@@ -154,11 +155,11 @@ KARPENTER CONTROL LOOP
                          └──────────────────────────────────────────┘
 ```
 
-A `NodePool` answers the policy question: which kinds of nodes may Karpenter create for this class of workload? It contains requirements, labels, taints, resource limits, expiration settings, and disruption policies. If you are designing a platform interface for application teams, the `NodePool` is one of the main places where platform policy becomes visible.
+A `NodePool` answers the policy question: which kinds of nodes may Karpenter create for this class of workload? It contains [requirements, labels, taints, resource limits, expiration settings, and disruption policies](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/nodepools.md). If you are designing a platform interface for application teams, the `NodePool` is one of the main places where platform policy becomes visible.
 
-An `EC2NodeClass` answers the provider question: how should AWS launch those nodes? It names the AMI family, IAM role, subnet selectors, security group selectors, block devices, metadata service settings, and tags. The separation is useful because several `NodePool` resources can share a secure provider configuration while expressing different workload constraints. For example, a `default` pool and a `batch-spot` pool might both use the same subnet and security group discovery rules, but only the batch pool allows interruption-prone spot capacity.
+An `EC2NodeClass` answers the provider question: how should AWS launch those nodes? It names the [AMI family, IAM role, subnet selectors, security group selectors, block devices, metadata service settings, and tags](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/nodeclasses.md). The separation is useful because several `NodePool` resources can share a secure provider configuration while expressing different workload constraints. For example, a `default` pool and a `batch-spot` pool might both use the same subnet and security group discovery rules, but only the batch pool allows interruption-prone spot capacity.
 
-A `NodeClaim` is the concrete provisioning object Karpenter creates when it decides to launch a node. Treat it like a receipt and a debugging handle. If a pod remains pending after Karpenter tries to help, `NodeClaim` status often tells you whether the problem is instance selection, cloud capacity, IAM, subnet discovery, AMI discovery, or node registration. In production, operators should be comfortable reading `NodeClaim` objects before escalating to the cloud console.
+A `NodeClaim` is the concrete provisioning object Karpenter creates when it decides to launch a node. Treat it like a receipt and a debugging handle. If a pod remains pending after Karpenter tries to help, [`NodeClaim` status often tells you whether the problem is instance selection, cloud capacity, IAM, subnet discovery, AMI discovery, or node registration](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/nodeclaims.md). In production, operators should be comfortable reading `NodeClaim` objects before escalating to the cloud console.
 
 | Component | Main question answered | Operator action |
 |---|---|---|
@@ -168,7 +169,7 @@ A `NodeClaim` is the concrete provisioning object Karpenter creates when it deci
 | Pending pod | What capacity does the workload need? | Check requests, selectors, affinity, tolerations, and topology constraints |
 | Existing node | Can current capacity be reused or consolidated? | Inspect utilization, labels, taints, pods, and disruption blockers |
 
-The loop has two major sides: provisioning and disruption. Provisioning adds nodes for unschedulable pods. Disruption removes or replaces nodes when they are empty, underutilized, expired, interrupted, drifted from desired configuration, or otherwise ready for controlled turnover. Many beginners only study scale-up because it is dramatic during demos, but production safety often depends more on the disruption side. A platform that can add nodes but cannot safely remove them becomes expensive. A platform that removes nodes too aggressively becomes unreliable.
+The loop has two major sides: provisioning and disruption. Provisioning adds nodes for unschedulable pods. [Disruption removes or replaces nodes when they are empty, underutilized, expired, interrupted, drifted from desired configuration, or otherwise ready for controlled turnover](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/disruption.md). Many beginners only study scale-up because it is dramatic during demos, but production safety often depends more on the disruption side. A platform that can add nodes but cannot safely remove them becomes expensive. A platform that removes nodes too aggressively becomes unreliable.
 
 ```ascii
 PROVISIONING AND DISRUPTION
@@ -192,9 +193,9 @@ PROVISIONING AND DISRUPTION
 └──────────────────────────┘                      └──────────────────────────┘
 ```
 
-**Active check:** A team says, "Karpenter deleted our node and caused an outage." Before agreeing with that conclusion, what three Kubernetes objects would you inspect? A strong answer includes the workload's `PodDisruptionBudget`, the `NodePool` disruption policy, and the affected pod events. The node deletion might be a Karpenter decision, but the outage usually reflects a missing availability contract between the workload and the platform.
+**Active check:** A team says, "Karpenter deleted our node and caused an outage." Before agreeing with that conclusion, what three Kubernetes objects would you inspect? A strong answer includes the workload's [`PodDisruptionBudget`](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/), the `NodePool` disruption policy, and the affected pod events. The node deletion might be a Karpenter decision, but the outage usually reflects a missing availability contract between the workload and the platform.
 
-Karpenter does not remove the need for good Kubernetes hygiene. Pods still need accurate requests so Karpenter can calculate useful capacity. Deployments still need enough replicas for disruption. Services still need graceful termination behavior. Stateful systems still need storage and availability-zone design. Karpenter can make capacity more responsive, but it cannot infer a business requirement that the workload never encoded.
+Karpenter does not remove the need for good Kubernetes hygiene. [Pods still need accurate requests so Karpenter can calculate useful capacity](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/). Deployments still need enough replicas for disruption. Services still need graceful termination behavior. Stateful systems still need storage and availability-zone design. Karpenter can make capacity more responsive, but it cannot infer a business requirement that the workload never encoded.
 
 A useful operating habit is to trace from symptom to decision. If a pod is pending, start with `kubectl describe pod` and read the scheduler message. Then inspect matching `NodePool` requirements and any `NodeClaim` attempts. If nodes are churning, inspect `NodePool` disruption settings, events on the node, and workload disruption budgets. This disciplined path prevents the common mistake of starting in the cloud console, where you can see instances but not the Kubernetes constraints that caused them.
 
@@ -202,7 +203,7 @@ A useful operating habit is to trace from symptom to decision. If a pod is pendi
 
 A good `NodePool` is a contract, not just a manifest. It says what the platform is willing to create automatically and what it refuses to create even when pods are waiting. That contract should be wide enough for Karpenter to find capacity and narrow enough to keep security, cost, and reliability within agreed bounds. The most common design failure is making requirements so narrow that Karpenter loses the flexibility that made it valuable.
 
-Start with a general-purpose pool for ordinary stateless services. It should allow several instance categories, multiple sizes, multiple zones through the provider class, and both spot and on-demand only if your reliability model can tolerate that mix. It should also set hard limits because an autoscaler without limits is a billing incident waiting for a trigger. Limits are not a substitute for observability, but they are a last line of defense when an HPA, queue consumer, or load test behaves unexpectedly.
+Start with a general-purpose pool for ordinary stateless services. It should allow several instance categories, multiple sizes, multiple zones through the provider class, and both spot and on-demand only if your reliability model can tolerate that mix. [It should also set hard limits because an autoscaler without limits is a billing incident waiting for a trigger](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/nodepools.md). Limits are not a substitute for observability, but they are a last line of defense when an HPA, queue consumer, or load test behaves unexpectedly.
 
 ```yaml
 apiVersion: karpenter.sh/v1
@@ -248,7 +249,7 @@ spec:
 
 The example allows Karpenter to search a useful set of compute, general-purpose, and memory-optimized instances. It excludes very small instances because tiny nodes often increase overhead and fragmentation for production services. It allows both `amd64` and `arm64`, which can reduce cost if workloads publish multi-architecture images. It also includes a business-hours disruption freeze, which is not always required but illustrates how platform teams can align automation with support expectations.
 
-The matching `EC2NodeClass` should be treated like infrastructure security policy. Subnet and security group discovery should be deterministic, node storage should be encrypted, and the instance metadata service should require IMDSv2. Tags should make ownership and cost allocation visible. The provider class is also where many failed launches originate, so do not hide it from operators who are expected to debug Karpenter.
+The matching `EC2NodeClass` should be treated like infrastructure security policy. Subnet and security group discovery should be deterministic, node storage should be encrypted, and [the instance metadata service should require IMDSv2](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/nodeclasses.md). Tags should make ownership and cost allocation visible. The provider class is also where many failed launches originate, so do not hide it from operators who are expected to debug Karpenter.
 
 ```yaml
 apiVersion: karpenter.k8s.aws/v1
@@ -357,7 +358,7 @@ spec:
 
 **Pause and decide:** Your platform supports a latency-sensitive checkout service and a nightly image-processing batch job. Both can run on `amd64`, but only the batch job can tolerate spot interruptions. Should you put both workloads in one `NodePool` that allows `spot` and `on-demand`, or create separate pools? A strong design separates them unless the checkout service has explicit scheduling constraints that prevent spot placement. Separation makes the reliability contract visible and reduces the chance that a critical workload lands on capacity with interruption risk.
 
-Workload manifests complete the contract. If a pod needs a specific architecture, it must say so. If it wants to use a tainted pool, it must tolerate the taint. If it needs a topology spread, it must declare that constraint. Karpenter reacts to Kubernetes scheduling semantics, so vague workload manifests produce vague provisioning outcomes.
+Workload manifests complete the contract. [If a pod needs a specific architecture, it must say so. If it wants to use a tainted pool, it must tolerate the taint](https://kubernetes.io/docs/reference/node/node-labels/). If it needs a topology spread, it must declare that constraint. Karpenter reacts to Kubernetes scheduling semantics, so vague workload manifests produce vague provisioning outcomes.
 
 ```yaml
 apiVersion: apps/v1
@@ -394,7 +395,7 @@ spec:
               memory: "1Gi"
 ```
 
-The worked example above gives Karpenter enough signal to act. If no existing node can run the pod, Karpenter must find a compatible `NodePool` that allows Arm nodes and zones that satisfy the topology requirement. If the only Arm-capable capacity is temporarily unavailable in one zone, the pod may remain pending until Karpenter finds a valid option or the constraint is relaxed. This is why platform policy and workload policy must be reviewed together.
+The worked example above gives Karpenter enough signal to act. If no existing node can run the pod, Karpenter must find a compatible `NodePool` that allows Arm nodes and zones that satisfy the topology requirement. If the only Arm-capable capacity is temporarily unavailable in one zone, [the pod may remain pending until Karpenter finds a valid option or the constraint is relaxed](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/). This is why platform policy and workload policy must be reviewed together.
 
 ## 4. Worked Example: Debugging a Pending Pod
 
@@ -509,7 +510,7 @@ This worked example is deliberately narrow, but the method generalizes. Start wi
 
 ## 5. Cost, Spot Capacity, and Consolidation
 
-Karpenter can reduce waste because it is allowed to replace bad fits with better fits. That power comes from consolidation, which evaluates whether pods on current nodes could run on fewer, cheaper, or better-shaped nodes. Consolidation is not a magic cost switch. It is controlled disruption, and controlled disruption must respect workload availability, budgets, and business hours.
+Karpenter can reduce waste because it is allowed to replace bad fits with better fits. That power comes from [consolidation, which evaluates whether pods on current nodes could run on fewer, cheaper, or better-shaped nodes](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/disruption.md). Consolidation is not a magic cost switch. It is controlled disruption, and controlled disruption must respect workload availability, budgets, and business hours.
 
 ```ascii
 CONSOLIDATION EXAMPLE
@@ -562,7 +563,7 @@ spec:
         duration: 10h
 ```
 
-Spot capacity adds a different trade-off. It can be much cheaper than on-demand capacity, but it can be interrupted. Karpenter can integrate spot into provisioning decisions and respond to interruption notices when the interruption queue is configured, but your workload still needs to behave well during termination. A service with one replica, no graceful shutdown, and no disruption budget is not made reliable by Karpenter.
+Spot capacity adds a different trade-off. [It can be much cheaper than on-demand capacity, but it can be interrupted](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-best-practices.html). Karpenter can integrate spot into provisioning decisions and [respond to interruption notices when the interruption queue is configured](https://docs.aws.amazon.com/eks/latest/best-practices/karpenter.html), but your workload still needs to behave well during termination. A service with one replica, no graceful shutdown, and no disruption budget is not made reliable by Karpenter.
 
 ```yaml
 apiVersion: karpenter.sh/v1
@@ -684,15 +685,15 @@ kubectl get pdb --all-namespaces
 
 Security review should include the node IAM role, metadata service settings, subnet selection, security group selection, AMI family, bootstrap configuration, and tagging. Karpenter is powerful because it can create infrastructure automatically. That same power means a loose provider class can spread mistakes across every new node. Treat `EC2NodeClass` changes with the same care you would apply to Terraform for a shared worker-node fleet.
 
-Upgrade strategy matters as well. Karpenter has evolved its APIs over time, and production clusters should not treat controller upgrades as routine dependency bumps. Review release notes, test `NodePool` and provider-class compatibility in a non-production cluster, and watch for changes to disruption behavior. When possible, keep the controller highly available and avoid combining Karpenter upgrades with unrelated cluster changes. If a capacity incident occurs after a multi-change deployment, debugging becomes unnecessarily difficult.
+Upgrade strategy matters as well. [Karpenter has evolved its APIs over time](https://aws.amazon.com/blogs/containers/announcing-karpenter-1-0/), and production clusters should not treat controller upgrades as routine dependency bumps. Review release notes, test `NodePool` and provider-class compatibility in a non-production cluster, and watch for changes to disruption behavior. When possible, keep the controller highly available and avoid combining Karpenter upgrades with unrelated cluster changes. If a capacity incident occurs after a multi-change deployment, debugging becomes unnecessarily difficult.
 
 Finally, decide what application teams own. Platform teams usually own Karpenter installation, pool definitions, provider classes, limits, and global observability. Application teams own resource requests, workload disruption budgets, architecture compatibility, graceful shutdown, and opt-in placement constraints. The line is important because Karpenter cannot compensate for a pod that requests no memory, a service with a single replica, or a batch job that cannot retry after interruption.
 
 ## Did You Know?
 
-1. Karpenter was originally created by AWS and open-sourced to address limitations that appear when node-group-based autoscaling has to support many workload shapes. The key architectural difference is that Karpenter reasons from pending pods and directly provisions cloud instances that fit allowed constraints.
+1. [Karpenter was originally created by AWS and open-sourced](https://www.cncf.io/blog/2024/11/06/karpenter-v1-0-0-beta/) to address limitations that appear when node-group-based autoscaling has to support many workload shapes. The key architectural difference is that Karpenter reasons from pending pods and directly provisions cloud instances that fit allowed constraints.
 
-2. Karpenter can consider a broad range of EC2 instance types inside the boundaries you define, which is especially useful for spot capacity. Wider compatible requirements usually improve the chance of finding available and cost-effective capacity, while overly narrow requirements can make pending pods wait even when the cloud has plenty of other usable instances.
+2. Karpenter can consider a broad range of EC2 instance types inside the boundaries you define, which is especially useful for spot capacity. [Wider compatible requirements usually improve the chance of finding available and cost-effective capacity](https://docs.aws.amazon.com/eks/latest/best-practices/karpenter.html), while overly narrow requirements can make pending pods wait even when the cloud has plenty of other usable instances.
 
 3. Consolidation can reduce compute waste, but it is not just "delete empty nodes." Karpenter can evaluate whether pods could be repacked onto fewer or better-shaped nodes, then uses disruption policy and Kubernetes availability controls to decide whether the change is allowed.
 
@@ -1013,4 +1014,20 @@ Design two production-ready pools on paper: one for latency-sensitive services a
 
 ## Next Module
 
-Continue to [Module 6.2: KEDA](../module-6.2-keda/) to learn how event-driven workload autoscaling complements Karpenter's node provisioning model. KEDA changes the number of pods based on external demand signals; Karpenter creates the node capacity those pods may need after the scheduler cannot place them.
+Continue to [Module 6.2: KEDA](../module-6.2-keda/) to learn how [event-driven workload autoscaling](https://github.com/kedacore/keda) complements Karpenter's node provisioning model. KEDA changes the number of pods based on external demand signals; Karpenter creates the node capacity those pods may need after the scheduler cannot place them.
+
+## Sources
+
+- [raw.githubusercontent.com: README.md](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/README.md) — The upstream README directly lists these Karpenter behaviors.
+- [kubernetes.io: node autoscaling](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/) — The Kubernetes Node Autoscaling page compares Cluster Autoscaler and Karpenter on this exact distinction.
+- [raw.githubusercontent.com: nodeclaims.md](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/nodeclaims.md) — The NodeClaims documentation describes NodeClaims as capacity requests created from pending pod requirements and matching NodePool/NodeClass constraints.
+- [raw.githubusercontent.com: nodepools.md](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/nodepools.md) — The NodePools documentation explicitly says nodes are chosen using both pod and NodePool requirements and no node is launched when there is no overlap.
+- [raw.githubusercontent.com: nodeclasses.md](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/nodeclasses.md) — The EC2NodeClass documentation describes those AWS-specific fields.
+- [raw.githubusercontent.com: disruption.md](https://raw.githubusercontent.com/aws/karpenter-provider-aws/main/website/content/en/docs/concepts/disruption.md) — The disruption documentation describes consolidation, drift, consolidationPolicy, consolidateAfter, and NodePool disruption budgets.
+- [kubernetes.io: disruptions](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/) — The Kubernetes disruptions page directly defines PodDisruptionBudget behavior for voluntary disruptions.
+- [kubernetes.io: node labels](https://kubernetes.io/docs/reference/node/node-labels/) — Kubernetes documents the standard node labels used in the examples; taint behavior is also documented under Kubernetes scheduling concepts.
+- [docs.aws.amazon.com: spot best practices.html](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-best-practices.html) — AWS EC2 Spot best-practices documentation states Spot uses spare capacity at savings compared with On-Demand and can be interrupted.
+- [docs.aws.amazon.com: karpenter.html](https://docs.aws.amazon.com/eks/latest/best-practices/karpenter.html) — The Amazon EKS Karpenter best-practices page describes Karpenter interruption handling and the interruption queue setting.
+- [aws.amazon.com: announcing karpenter 1 0](https://aws.amazon.com/blogs/containers/announcing-karpenter-1-0/) — The AWS Karpenter 1.0 announcement discusses API evolution from v1beta1 to v1 and related resource conversion behavior.
+- [cncf.io: karpenter v1 0 0 beta](https://www.cncf.io/blog/2024/11/06/karpenter-v1-0-0-beta/) — The CNCF Karpenter v1.0 blog directly states AWS created and open-sourced Karpenter in 2021 and describes its purpose.
+- [github.com: keda](https://github.com/kedacore/keda) — The KEDA README describes KEDA as a Kubernetes-based event-driven autoscaling component integrated with the HPA.
