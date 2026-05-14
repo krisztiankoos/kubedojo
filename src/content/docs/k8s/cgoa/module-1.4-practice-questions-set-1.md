@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "CGOA Practice Questions Set 1"
 slug: k8s/cgoa/module-1.4-practice-questions-set-1
 sidebar:
@@ -70,7 +71,7 @@ This distinction is why practice questions that mention "a pull request was merg
 
 Desired state is the configuration the organization says should exist, while actual state is what the cluster is currently running. In GitOps, desired state usually lives as Kubernetes manifests, Helm values, Kustomize overlays, policy files, or application definitions inside a Git repository. Actual state comes from the Kubernetes API server, workload controllers, admission decisions, runtime status, and sometimes human emergency action. Drift is the gap between those two states, but the meaning of that gap depends on field ownership.
 
-Drift can be harmless, intentional, dangerous, or simply misunderstood. A HorizontalPodAutoscaler changing the number of Pods is not the same kind of difference as a person manually changing a container image. A controller updating a status field is not the same kind of difference as an unreviewed change to a Service type. Good GitOps practice depends on knowing which fields are owned by Git, which fields are owned by Kubernetes controllers, and which differences should trigger synchronization, investigation, or an explicit ignore rule.
+Drift can be harmless, intentional, dangerous, or simply misunderstood. [A HorizontalPodAutoscaler changing the number of Pods](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/) is not the same kind of difference as a person manually changing a container image. A controller updating a status field is not the same kind of difference as an unreviewed change to a Service type. Good GitOps practice depends on knowing which fields are owned by Git, which fields are owned by Kubernetes controllers, and which differences should trigger synchronization, investigation, or an explicit ignore rule.
 
 ```yaml
 apiVersion: apps/v1
@@ -95,9 +96,9 @@ spec:
             - containerPort: 8080
 ```
 
-Imagine this Deployment is the version stored in Git. If a teammate runs `kubectl scale deployment/checkout --replicas=2 -n shop`, the live `spec.replicas` field changes while Git remains unchanged. A GitOps controller that manages this Deployment can detect the difference because `spec.replicas` is part of the declared configuration. Depending on configuration, it may mark the application as out of sync, automatically restore three replicas, or wait for a human to approve synchronization.
+Imagine this Deployment is the version stored in Git. If a teammate runs `kubectl scale deployment/checkout --replicas=2 -n shop`, the live `spec.replicas` field changes while Git remains unchanged. A GitOps controller that manages this Deployment can detect the difference because `spec.replicas` is part of the declared configuration. Depending on configuration, it may [mark the application as out of sync, automatically restore three replicas, or wait for a human to approve synchronization](https://argo-cd.readthedocs.io/en/stable/).
 
-Now imagine that the Deployment creates Pods and Kubernetes later writes status information such as available replicas, observed generation, and conditions. Those fields are not usually declared in Git because they are runtime observations. Treating every status difference as drift would create noise and confusion, especially in a busy cluster where controllers constantly update health and progress fields. GitOps is powerful because it is precise about ownership; it is not a blind text comparison between a YAML file and a live object dump.
+Now imagine that the Deployment creates Pods and Kubernetes later writes status information such as [available replicas, observed generation, and conditions](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). Those fields are not usually declared in Git because they are runtime observations. Treating every status difference as drift would create noise and confusion, especially in a busy cluster where controllers constantly update health and progress fields. GitOps is powerful because it is precise about ownership; it is not a blind text comparison between a YAML file and a live object dump.
 
 A practical drift investigation starts by asking three questions. First, which object and field differ between Git and the cluster? Second, who is supposed to own that field: Git, a Kubernetes controller, an autoscaler, or a human operator during a break-glass event? Third, what should the reconciliation system do now: report, sync, pause, or escalate? These questions turn a vague "GitOps is broken" complaint into a concrete diagnosis.
 
@@ -209,7 +210,7 @@ This is also why a break-glass process belongs in the design before the outage. 
 
 ### 5. Tool Responsibilities: Helm, Kustomize, Argo CD, and Flux
 
-Tool questions become easier when you separate rendering tools from reconciliation controllers. Helm packages and templates Kubernetes resources, usually through charts and values. Kustomize customizes plain YAML through bases, overlays, patches, labels, name transformations, and image substitutions without requiring a template language. Argo CD and Flux are GitOps controllers that can watch repositories, render manifests through supported tools, compare desired and live state, and reconcile changes into clusters.
+Tool questions become easier when you separate rendering tools from reconciliation controllers. Helm packages and templates Kubernetes resources, usually through charts and values. [Kustomize customizes plain YAML through bases, overlays, patches, labels, name transformations, and image substitutions without requiring a template language](https://github.com/kubernetes-sigs/kustomize). Argo CD and Flux are GitOps controllers that can watch repositories, render manifests through supported tools, compare desired and live state, and reconcile changes into clusters.
 
 The tools can be combined without becoming interchangeable. A repository might contain a Helm chart for a shared service, Kustomize overlays for environment-specific patches, and an Argo CD Application that points at the production path. Another platform might use Flux with HelmRelease resources to manage chart releases. The important exam skill is not memorizing every feature; it is identifying which layer a tool primarily occupies in a delivery design and refusing answers that assign one tool every responsibility.
 
@@ -246,9 +247,9 @@ Helm is often chosen when an application needs reusable packaging, configurable 
 
 Kustomize is often chosen when a team wants to start with readable base YAML and apply environment-specific changes as overlays. For example, a base Deployment might be shared across environments, while production adds a higher replica count, stricter resource requests, and a different image tag. The benefit is that the final output remains close to Kubernetes YAML, but large overlay stacks can still become difficult to reason about if patches are scattered. In practice questions, choose answers that describe Kustomize as customization, not as the entire GitOps operating model.
 
-Argo CD and Flux are both used for GitOps reconciliation, but their user experience and resource models differ. At the CGOA level, you do not need to turn every comparison into a product debate. You should be able to say that both can reconcile desired state from Git into Kubernetes, both can work with common manifest-generation tools, and both are part of the controller layer rather than simply being YAML templating tools. The controller layer is where desired and live state are compared, not merely where YAML is formatted.
+Argo CD and Flux are both used for GitOps reconciliation, but their user experience and resource models differ. At the CGOA level, you do not need to turn every comparison into a product debate. You should be able to say that [both can reconcile desired state from Git into Kubernetes, both can work with common manifest-generation tools, and both are part of the controller layer rather than simply being YAML templating tools](https://argo-cd.readthedocs.io/en/stable/). The controller layer is where desired and live state are compared, not merely where YAML is formatted.
 
-A common wrong answer says "Helm reconciles drift." Helm can install or upgrade a release, and Helm has release history, but plain Helm by itself is not the same as a continuously running GitOps reconciliation controller. A GitOps controller may use Helm to render manifests, then perform comparison and synchronization. The distinction is subtle enough to appear in practice questions and important enough to matter in platform design.
+A common wrong answer says "Helm reconciles drift." Helm can install or upgrade a release, and Helm has release history, but [plain Helm by itself is not the same as a continuously running GitOps reconciliation controller](https://helm.sh/docs/). A GitOps controller may use Helm to render manifests, then perform comparison and synchronization. The distinction is subtle enough to appear in practice questions and important enough to matter in platform design.
 
 Another common wrong answer says "Kustomize manages secrets." Kustomize can generate Secret manifests from local inputs, but secret management in production usually needs a stronger pattern, such as sealed secrets, external secret operators, cloud secret stores, or another approved mechanism. The exam-level trap is over-assigning tool responsibility because a tool can touch a resource type. Being able to render a Secret object is not the same as being a complete secret-management system.
 
@@ -271,7 +272,7 @@ kubectl -n shop get events --sort-by=.lastTimestamp
 
 These commands are examples of the kind of evidence an operator would collect. The exact namespace for the GitOps controller may differ, and Flux uses different custom resources from Argo CD, so the commands are not a universal script. The teaching point is the sequence: inspect controller status, inspect the workload, inspect events, and compare live state with declared state. Jumping directly to manual mutation skips diagnosis and can make the next reconciliation cycle harder to interpret.
 
-Suppose the Application status says the rendered manifest contains `v1.9`, but Kubernetes events show an admission controller denied the update because the image lacks a required signature. The GitOps controller is not failing because it forgot the commit. It is failing because the cluster policy rejected the desired state. The correct fix is to satisfy the policy, update the artifact or signature process, and let reconciliation proceed. Manually forcing the image would violate the control the organization intentionally installed.
+Suppose the Application status says the rendered manifest contains `v1.9`, but Kubernetes events show [an admission controller denied the update because the image lacks a required signature](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/). The GitOps controller is not failing because it forgot the commit. It is failing because the cluster policy rejected the desired state. The correct fix is to satisfy the policy, update the artifact or signature process, and let reconciliation proceed. Manually forcing the image would violate the control the organization intentionally installed.
 
 Now suppose the controller status says it never observed the new commit. The likely investigation moves toward repository access, branch configuration, path configuration, webhook delivery, polling interval, or controller logs. In that case, the Deployment itself may be healthy but stale, and restarting the workload will not address the actual cause. The fix is different because the failure happened before Kubernetes admission or workload rollout.
 
@@ -599,6 +600,9 @@ A strong final explanation says GitOps uses Git as the reviewed desired-state so
 - https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/
 - https://kubernetes.io/docs/concepts/configuration/secret/
 - https://kubernetes.io/docs/reference/kubectl/
+- [Argo CD Overview](https://argo-cd.readthedocs.io/en/stable/) — Useful for understanding GitOps reconciliation, OutOfSync status, and manual versus automatic sync.
+- [Flux Core Concepts](https://fluxcd.io/flux/concepts/) — Provides a concise definition of GitOps and shows how Flux models sources and reconciliation.
+- [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) — Directly relevant to the module's discussion of scoped controller permissions and production access boundaries.
 
 ## Next Module
 
