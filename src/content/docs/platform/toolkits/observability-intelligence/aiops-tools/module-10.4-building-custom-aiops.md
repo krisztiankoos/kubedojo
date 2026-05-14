@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 10.4: Building Custom AIOps"
 slug: platform/toolkits/observability-intelligence/aiops-tools/module-10.4-building-custom-aiops
 sidebar:
@@ -94,7 +95,7 @@ The build decision also has a staffing side. A custom AIOps platform needs peopl
 
 A custom AIOps pipeline is easier to reason about when each stage has one job and a clear contract. Ingestion collects signals, feature engineering reshapes them, detection scores unusual behavior, correlation groups related events, incident management chooses human or automated action, and feedback records whether the system helped. This separation lets you scale and debug stages independently.
 
-The architecture below is intentionally ordinary. Kafka is not magic; it is a durable buffer and replay mechanism between services that should not fail together. Python is not magic either; it is a convenient runtime for feature engineering and model libraries. Kubernetes provides deployment, restart, configuration, and resource controls. The value comes from the contracts between these pieces, not from any single tool.
+The architecture below is intentionally ordinary. Kafka is not magic; it is a [durable buffer and replay mechanism](https://kafka.apache.org/intro/) between services that should not fail together. Python is not magic either; it is a convenient runtime for feature engineering and model libraries. Kubernetes provides deployment, restart, configuration, and resource controls. The value comes from the contracts between these pieces, not from any single tool.
 
 ```text
 CUSTOM AIOPS ARCHITECTURE ON KUBERNETES
@@ -357,7 +358,7 @@ The simplest useful detector families are statistical thresholds, seasonal basel
 | Signal Pattern | Better Starting Detector | Why It Fits | Main Risk |
 |---|---|---|---|
 | Stable service latency with occasional spikes | Rolling z-score or robust median absolute deviation | Easy to explain and validate with local history | Noisy during deploys or traffic shifts |
-| Strong daily or weekly cycle | Seasonal baseline or Prophet-style forecast | Learns expected recurring shape over time | Needs enough clean historical data |
+| Strong daily or weekly cycle | Seasonal baseline or [Prophet-style forecast](https://github.com/facebook/prophet) | Learns expected recurring shape over time | Needs enough clean historical data |
 | Many features interacting together | Isolation Forest or similar outlier method | Finds unusual combinations without labels | Can be hard to explain during incidents |
 | Known incident classes with reviewed labels | Supervised classifier | Learns from past responder decisions | Labels may encode old bias or stale topology |
 | Rare but high-impact domain events | Rule plus model hybrid | Keeps business invariants explicit | Rules can become unmaintained policy code |
@@ -533,7 +534,7 @@ Correlation state is the reason many examples run the correlator as one replica.
 
 A custom AIOps service is part of the production control plane for humans. If it fails, it can hide incidents, spam responders, or execute unsafe remediation. Kubernetes deployment choices must therefore reflect the risk profile of each stage. Stateless detectors can usually scale horizontally. Correlators need careful state handling. Incident managers should be conservative and idempotent. Remediation should be gated until the organization has evidence that it is safe.
 
-The Kubernetes manifests below show the shape of a minimal deployment. They are not a complete production platform, but they demonstrate the controls that matter: explicit resources, health probes, configuration through ConfigMaps, credentials through Secrets, and different replica counts for stateless and stateful stages. Use `kubectl` for commands; if your shell defines `k` as an alias for `kubectl`, the shorter alias is fine after you have verified it points to the same binary.
+The Kubernetes manifests below show the shape of a minimal deployment. They are not a complete production platform, but they demonstrate the controls that matter: [explicit resources, health probes, configuration through ConfigMaps, credentials through Secrets](https://kubernetes.io/docs/concepts/configuration/), and different replica counts for stateless and stateful stages. Use `kubectl` for commands; if your shell defines `k` as an alias for `kubectl`, the shorter alias is fine after you have verified it points to the same binary.
 
 ```yaml
 apiVersion: v1
@@ -929,3 +930,11 @@ Write a short design note in your own words. Explain whether the output would he
 ## Next Module
 
 Continue with the broader reliability practice that consumes AIOps output: [SRE Discipline](/platform/disciplines/core-platform/sre/). There you will connect detection, correlation, and incident automation to service-level objectives, error budgets, escalation policy, and operational review.
+
+## Sources
+
+- [kafka.apache.org: intro](https://kafka.apache.org/intro/) — Apache Kafka's official introduction describes publishing/subscribing to event streams, durable reliable storage, and processing streams as they occur or retrospectively.
+- [kubernetes.io: configuration](https://kubernetes.io/docs/concepts/configuration/) — The Kubernetes configuration concept page links the official ConfigMaps, Secrets, liveness/readiness/startup probes, and resource-management documentation used by the manifest examples.
+- [github.com: prophet](https://github.com/facebook/prophet) — The Prophet project README states that Prophet forecasts time series with yearly, weekly, and daily seasonality and works best with strong seasonal effects and several seasons of historical data.
+- [Evaluating Real-time Anomaly Detection Algorithms](https://arxiv.org/abs/1510.03336) — Research background for evaluating streaming anomaly detectors, false alarms, timeliness, and changing time-series behavior.
+- [NIST AI RMF Core](https://airc.nist.gov/airmf-resources/airmf/5-sec-core/) — Useful grounding for ongoing monitoring, human oversight, feedback, and controlled risk management around AI-supported operational systems.

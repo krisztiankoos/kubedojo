@@ -1,0 +1,122 @@
+{
+  "module_key": "platform/toolkits/observability-intelligence/aiops-tools/module-10.4-building-custom-aiops",
+  "module_path": "src/content/docs/platform/toolkits/observability-intelligence/aiops-tools/module-10.4-building-custom-aiops.md",
+  "research_run_id": "2026-05-14T16:54:20+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening scenario states that at 02:13 a checkout team sees multiple correlated symptoms, three alerts, two suspicious deploys, and tracing pressure across half the request path.",
+      "claim_class": "war_story",
+      "span_hint": "line 38",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "At 02:13, a checkout team sees latency rise, payment retries spike, and inventory reservations drift upward. The commercial observability platform opens three alerts, the log tool highlights two suspicious deploys, and the tracing dashboard shows pressure across half the request path. No individual signal is wrong, but none of them explains the incident quickly enough for the incident commander to choose the first fix.",
+      "suggested_rewrite": "During a checkout incident, a team sees latency rise, payment retries spike, and inventory reservations drift upward. The observability stack opens multiple alerts, the log tool highlights recent deploys, and the tracing dashboard shows pressure across the request path. No individual signal is wrong, but none of them explains the incident quickly enough for the incident commander to choose the first fix.",
+      "lesson_point_url": null,
+      "rationale": "This is an incident-style anecdote with precise time and counts but no attributable real source, so the rewrite removes fake precision while preserving the operational lesson."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Kafka can act as a durable buffer and replay mechanism between pipeline services.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 97",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kafka.apache.org/intro/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Apache Kafka's official introduction describes publishing/subscribing to event streams, durable reliable storage, and processing streams as they occur or retrospectively."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Kubernetes manifests can express explicit resources, health probes, ConfigMaps, and Secrets as deployment controls.",
+      "claim_class": "standard",
+      "span_hint": "line 536",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/configuration/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes configuration concept page links the official ConfigMaps, Secrets, liveness/readiness/startup probes, and resource-management documentation used by the manifest examples."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Prophet-style forecasts are appropriate for time series with strong seasonal effects and enough historical data.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 360",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/facebook/prophet",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Prophet project README states that Prophet forecasts time series with yearly, weekly, and daily seasonality and works best with strong seasonal effects and several seasons of historical data."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Netflix built internal and open-source anomaly detection or operational intelligence components because streaming behavior has service-specific patterns generic monitoring could not fully capture.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 740",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://netflix.github.io/atlas-docs/overview/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Netflix Atlas documentation discusses Atlas as Netflix's operational-intelligence system, its scale-driven origin, internal tooling, and planned/open-source analytics including outlier and anomaly detection, but netflix.github.io is outside the current allowlist."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "LinkedIn's ThirdEye grew from the need to detect business and service anomalies across high-volume metric streams.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 742",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.linkedin.com/blog/engineering/analytics/introducing-thirdeye-linkedins-business-wide-monitoring-platfor",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "LinkedIn's engineering blog directly describes ThirdEye, high-dimensional data, real-time insights from vast LinkedIn business metrics, anomaly detection, root-cause analysis, and domain-specific monitoring needs, but linkedin.com is outside the allowlist."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kafka.apache.org/intro/",
+      "title": "Apache Kafka Introduction",
+      "tier": "upstream",
+      "why_relevant": "Grounds the event-streaming, durable storage, and retrospective processing concepts used in the custom AIOps pipeline."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/configuration/",
+      "title": "Kubernetes Configuration",
+      "tier": "standards",
+      "why_relevant": "Provides official entry points for ConfigMaps, Secrets, probes, and resource controls used in the deployment section."
+    },
+    {
+      "url": "https://arxiv.org/abs/1510.03336",
+      "title": "Evaluating Real-time Anomaly Detection Algorithms",
+      "tier": "standards",
+      "why_relevant": "Research background for evaluating streaming anomaly detectors, false alarms, timeliness, and changing time-series behavior."
+    },
+    {
+      "url": "https://airc.nist.gov/airmf-resources/airmf/5-sec-core/",
+      "title": "NIST AI RMF Core",
+      "tier": "standards",
+      "why_relevant": "Useful grounding for ongoing monitoring, human oversight, feedback, and controlled risk management around AI-supported operational systems."
+    }
+  ],
+  "notes": "Most examples, code blocks, quiz scenarios, and exercise instructions are pedagogical and do not need seed entries. The two named-company Did You Know claims need primary sources from currently off-allowlist domains rather than weak anchors.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
