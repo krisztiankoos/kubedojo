@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 6.4: FinOps with OpenCost"
 slug: platform/toolkits/developer-experience/scaling-reliability/module-6.4-finops-opencost
 sidebar:
@@ -9,7 +10,7 @@ sidebar:
 
 ## Prerequisites
 
-Before starting this module, you should be comfortable reading Kubernetes workload manifests, especially `resources.requests`, `resources.limits`, labels, namespaces, Services, and PersistentVolumeClaims. You should also understand why schedulers use requests instead of live usage when placing Pods, because most Kubernetes cost allocation starts with that scheduling contract.
+Before starting this module, you should be comfortable reading Kubernetes workload manifests, especially `resources.requests`, `resources.limits`, labels, namespaces, Services, and PersistentVolumeClaims. You should also understand why [schedulers use requests instead of live usage when placing Pods](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/), because most Kubernetes cost allocation starts with that scheduling contract.
 
 You should have completed or reviewed [Module 6.1: Karpenter](../module-6.1-karpenter/) if you want to connect cost visibility to node provisioning, spot capacity, and consolidation. Helm basics are assumed because the lab installs Prometheus and OpenCost with Helm charts. This module uses Kubernetes 1.35-compatible manifests and examples.
 
@@ -33,7 +34,7 @@ The first argument was about ownership. Finance saw a large compute line item ta
 
 The second argument was about risk. One manager wanted to halve all CPU requests, another wanted to force every stateless workload onto spot instances, and a third wanted to delete every namespace older than a sprint. Each idea could save money, but each idea could also create an incident if applied without measurement. FinOps is not a cost-cutting contest. It is an operating model for making cost visible, accountable, and adjustable while reliability remains protected.
 
-OpenCost gives platform teams the missing translation layer. It combines Kubernetes state, usage metrics, and cloud pricing so teams can see which namespaces, controllers, labels, and idle capacity consume money. Once cost is visible at the level where engineers make decisions, the conversation changes from blame to design: which requests are oversized, which environments should sleep at night, which workloads tolerate interruption, and which shared platform costs should be allocated fairly.
+OpenCost gives platform teams the missing translation layer. It combines Kubernetes state, usage metrics, and cloud pricing so teams can [see which namespaces, controllers, labels, and idle capacity consume money](https://github.com/opencost/opencost). Once cost is visible at the level where engineers make decisions, the conversation changes from blame to design: which requests are oversized, which environments should sleep at night, which workloads tolerate interruption, and which shared platform costs should be allocated fairly.
 
 ## Core Content
 
@@ -99,7 +100,7 @@ The table matters because each row has a different owner. Platform teams usually
 
 ### 2. Deploy OpenCost Where It Can See Metrics and Pricing
 
-OpenCost needs Kubernetes object data, usage metrics, and pricing inputs. Kubernetes tells it which Pods, controllers, namespaces, labels, nodes, and volumes exist. Prometheus provides time-series usage data so OpenCost can compare requested capacity with observed usage. Pricing can come from cloud integrations or configured defaults, depending on the environment and maturity of the deployment.
+[OpenCost needs Kubernetes object data, usage metrics, and pricing inputs](https://github.com/opencost/opencost). Kubernetes tells it which Pods, controllers, namespaces, labels, nodes, and volumes exist. Prometheus provides time-series usage data so OpenCost can compare requested capacity with observed usage. Pricing can come from cloud integrations or configured defaults, depending on the environment and maturity of the deployment.
 
 ```text
 OPENCOST ARCHITECTURE
@@ -163,7 +164,7 @@ kubectl get svc -n opencost
 kubectl port-forward -n opencost svc/opencost 9090:9090
 ```
 
-Open the dashboard at `http://127.0.0.1:9090` while the port-forward is running. In a real cluster, avoid exposing cost data publicly because namespace names, team labels, and workload names can reveal internal architecture. Treat cost visibility as operational data: useful to engineers and finance, but still governed by access control.
+Open the dashboard at `http://127.0.0.1:9090` while the port-forward is running. In a real cluster, avoid exposing cost data publicly because namespace names, team labels, and workload names can reveal internal architecture. Treat cost visibility as operational data: useful to engineers and finance, but still [governed by access control](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
 
 You can also query the API directly when building reports or validating allocation behavior. The API is useful for automation because dashboards are good for exploration, while scheduled reports need repeatable queries. Keep the port-forward in one terminal and run the following commands in another.
 
@@ -224,7 +225,7 @@ spec:
             memory: "768Mi"
 ```
 
-Notice that the labels are present both on the Deployment and on the Pod template. Many reporting tools allocate running Pod cost from Pod labels, not only controller labels. If labels exist only on the parent object, a report may look complete in `kubectl get deployment` but incomplete in cost allocation.
+Notice that the [labels are present both on the Deployment and on the Pod template](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). Many reporting tools allocate running Pod cost from Pod labels, not only controller labels. If labels exist only on the parent object, a report may look complete in `kubectl get deployment` but incomplete in cost allocation.
 
 A mature allocation model separates direct workload cost, shared platform cost, and idle cost. Direct workload cost belongs to the team or application that requested capacity. Shared platform cost may be divided by usage, by namespace count, by traffic, or by an agreed platform budget. Idle cost should usually remain visible to the platform team and cluster owners, because idle capacity is often caused by node sizing, autoscaler settings, or conservative request defaults across many teams.
 
@@ -257,7 +258,7 @@ The danger is over-precision. A report that claims a team owes `$12,834.19` may 
 
 **Stop and think:** Your organization has one shared ingress controller that serves all teams. Should its load balancer and controller Pod cost be charged equally to every namespace, charged by request volume, or held in a platform budget? There is no universal answer. Equal split is simple but unfair to small teams, traffic-based allocation is more accurate but requires trustworthy metrics, and platform budget ownership encourages central optimization but can hide product-level demand.
 
-When labels are missing, do not manually fix reports forever. Enforce the ownership fields where workloads enter the cluster. Kyverno, Gatekeeper, or another admission controller can require `team`, `environment`, and `cost-center` labels. That policy turns cost reporting from a cleanup task into a deployment contract.
+When labels are missing, do not manually fix reports forever. Enforce the ownership fields where workloads enter the cluster. Kyverno, Gatekeeper, or another [admission controller can require `team`, `environment`, and `cost-center` labels](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/). That policy turns cost reporting from a cleanup task into a deployment contract.
 
 ### 4. Right-Size Requests Without Breaking Reliability
 
@@ -326,7 +327,7 @@ spec:
             memory: "1Gi"
 ```
 
-The change reduces scheduled CPU from `6` CPU to `900m`, which can allow the autoscaler to pack nodes more efficiently. It does not automatically reduce the cloud bill until nodes consolidate or future scale-ups are avoided. This distinction prevents a common reporting mistake: request savings are potential savings until the infrastructure layer actually removes or avoids provisioned capacity.
+The change reduces scheduled CPU from `6` CPU to `900m`, which can allow the autoscaler to pack nodes more efficiently. It does not automatically reduce the cloud bill until nodes consolidate or future scale-ups are avoided. This distinction prevents a common reporting mistake: [request savings are potential savings until the infrastructure layer actually removes or avoids provisioned capacity](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/).
 
 ```text
 RESOURCE RIGHT-SIZING WORKFLOW
@@ -363,7 +364,7 @@ Step 5: CONSOLIDATE
 
 **Active check:** Before changing a request, ask what failure mode the original request may have been hiding. Was the service bursty during month-end processing? Did memory grow during large exports? Did CPU spike only during deploy warm-up? A right-sizing change that ignores the workload story can turn a cost win into a reliability incident.
 
-The safest rollout pattern starts with non-production, then one production replica set, then the rest of the workload. Watch `container_cpu_cfs_throttled_periods_total`, memory working set, restart count, latency percentiles, and HPA behavior if autoscaling is enabled. Cost changes should be reviewed with the same seriousness as performance changes because both alter resource contracts.
+The safest rollout pattern starts with non-production, then one production replica set, then the rest of the workload. [Watch `container_cpu_cfs_throttled_periods_total`, memory working set, restart count, latency percentiles, and HPA behavior](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) if autoscaling is enabled. Cost changes should be reviewed with the same seriousness as performance changes because both alter resource contracts.
 
 ```bash
 kubectl top pods -n payments
@@ -378,7 +379,7 @@ Resource right-sizing should not become a one-time cleanup sprint. New releases 
 
 ### 5. Use Spot, Shutdown, and Guardrails as Design Tools
 
-Spot and preemptible capacity can reduce compute cost dramatically, but they trade price for interruption risk. The right question is not “Can this run on spot?” The right question is “What happens when this Pod disappears with short notice, and can the system absorb that event without user harm?” Stateless replicas, idempotent workers, CI runners, and retryable batch jobs are usually good candidates. Single-replica databases, cluster control components, and fragile stateful workloads are usually poor candidates.
+[Spot and preemptible capacity can reduce compute cost dramatically, but they trade price for interruption risk](https://aws.amazon.com/ec2/spot/). The right question is not “Can this run on spot?” The right question is “What happens when this Pod disappears with short notice, and can the system absorb that event without user harm?” Stateless replicas, idempotent workers, CI runners, and retryable batch jobs are usually good candidates. Single-replica databases, cluster control components, and fragile stateful workloads are usually poor candidates.
 
 ```text
 SPOT INSTANCE DECISION TREE
@@ -515,9 +516,9 @@ spec:
           restartPolicy: OnFailure
 ```
 
-The service account behind a scaler needs permission only for the target namespace and only for the resources it changes. Cost automation should follow the same least-privilege principles as reliability automation. A scheduler that can scale every namespace in the cluster is a cost-control tool and also a production outage risk.
+The service account behind a scaler needs [permission only for the target namespace and only for the resources it changes](https://kubernetes.io/docs/reference/access-authn-authz/rbac/). Cost automation should follow the same least-privilege principles as reliability automation. A scheduler that can scale every namespace in the cluster is a cost-control tool and also a production outage risk.
 
-Guardrails make the desired behavior the easy behavior. ResourceQuotas cap the total requested capacity in a namespace, LimitRanges provide defaults for Pods that omit requests, and admission policies enforce cost labels. These controls are not substitutes for communication, but they prevent accidental spending patterns from reaching the cluster unnoticed.
+Guardrails make the desired behavior the easy behavior. [ResourceQuotas cap the total requested capacity in a namespace](https://kubernetes.io/docs/concepts/policy/resource-quotas/), [LimitRanges provide defaults for Pods that omit requests](https://kubernetes.io/docs/concepts/policy/limit-range/), and admission policies enforce cost labels. These controls are not substitutes for communication, but they prevent accidental spending patterns from reaching the cluster unnoticed.
 
 ```yaml
 apiVersion: v1
@@ -588,9 +589,9 @@ kubectl get pvc -n loadtest-2026-04
 kubectl get events -n loadtest-2026-04 --sort-by=.lastTimestamp
 ```
 
-Storage cleanup deserves special caution because deleting a PVC can delete data, depending on the StorageClass reclaim policy. A cost report that shows an expensive volume is a starting point, not proof that the volume is safe to remove. Confirm the owner, application dependency, backup status, and reclaim behavior before deleting anything.
+Storage cleanup deserves special caution because [deleting a PVC can delete data, depending on the StorageClass reclaim policy](https://kubernetes.io/docs/concepts/storage/persistent-volumes/). A cost report that shows an expensive volume is a starting point, not proof that the volume is safe to remove. Confirm the owner, application dependency, backup status, and reclaim behavior before deleting anything.
 
-Network cost also deserves deeper investigation. Many teams notice compute waste first because CPU and memory are familiar, but NAT gateways, cross-zone traffic, and load balancers can become major costs. A namespace with many `LoadBalancer` Services may be better served by a shared Ingress controller or Gateway API implementation. A workload that transfers large data between zones may need topology-aware placement rather than smaller CPU requests.
+Network cost also deserves deeper investigation. Many teams notice compute waste first because CPU and memory are familiar, but NAT gateways, cross-zone traffic, and load balancers can become major costs. [A namespace with many `LoadBalancer` Services may be better served by a shared Ingress controller or Gateway API implementation](https://kubernetes.io/docs/concepts/services-networking/service/). A workload that transfers large data between zones may need topology-aware placement rather than smaller CPU requests.
 
 ```text
 FINOPS ACTION SELECTION
@@ -951,7 +952,7 @@ k get deployment efficient-api -n team-beta -o yaml
 
 ### Task 4: Test Quota Enforcement
 
-Try to deploy a workload that exceeds Team Alpha's quota. The Deployment object may be created, but the namespace should not be able to admit all requested Pods because the quota limits total requests.
+Try to deploy a workload that exceeds Team Alpha's quota. The Deployment object may be created, but [the namespace should not be able to admit all requested Pods because the quota limits total requests](https://kubernetes.io/docs/concepts/policy/resource-quotas/).
 
 ```bash
 kubectl apply -f - <<'EOF'
@@ -1090,3 +1091,18 @@ kind delete cluster --name finops-lab
 You have completed the Scaling and Reliability Toolkit. Continue to the [Platforms Toolkit](/platform/toolkits/infrastructure-networking/platforms/) to learn how internal developer platforms connect reliability, self-service, governance, and cost-aware operations.
 
 Related modules worth revisiting are [Module 6.1: Karpenter](../module-6.1-karpenter/) for node provisioning and consolidation, and [Module 6.3: Velero](../module-6.3-velero/) for backup decisions that affect storage cost and recovery risk.
+
+## Sources
+
+- [kubernetes.io: manage resources containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — The Kubernetes resource management documentation states that the scheduler checks summed container requests against node capacity and can reject placement even when actual usage is low.
+- [github.com: opencost](https://github.com/opencost/opencost) — The OpenCost README describes Kubernetes workload and cloud cost monitoring, resource allocation, and allocation queries.
+- [kubernetes.io: rbac](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) — Kubernetes RBAC documentation provides the authoritative access-control model for controlling who can read cluster resources and operational data.
+- [kubernetes.io: deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) — The Deployment documentation describes the Pod template and selector/label relationship used for Pods managed by a Deployment.
+- [kubernetes.io: validating admission policy](https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/) — The ValidatingAdmissionPolicy documentation includes label-requirement examples and explains admission-time validation.
+- [kubernetes.io: node autoscaling](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/) — Kubernetes node autoscaling documentation explains provisioning and consolidation around scheduling capacity rather than billing changes from workload requests alone.
+- [aws.amazon.com: spot](https://aws.amazon.com/ec2/spot/) — The AWS EC2 Spot page directly describes discounted spare capacity and interruption characteristics.
+- [kubernetes.io: resource quotas](https://kubernetes.io/docs/concepts/policy/resource-quotas/) — The Kubernetes ResourceQuota documentation lists compute quotas and object-count quotas including services.loadbalancers and persistentvolumeclaims.
+- [kubernetes.io: limit range](https://kubernetes.io/docs/concepts/policy/limit-range/) — The LimitRange documentation directly describes default, minimum, and maximum resource constraints for namespace objects.
+- [kubernetes.io: persistent volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) — The PersistentVolume documentation explains Delete and Retain reclaim policies and how Delete can remove the associated external storage asset.
+- [kubernetes.io: service](https://kubernetes.io/docs/concepts/services-networking/service/) — The Kubernetes Service documentation describes type LoadBalancer and cloud-provider load balancer provisioning.
+- [OpenCost Advances to CNCF Incubating Status](https://www.cncf.io/blog/2024/10/31/opencost-advances-to-the-cncf-incubator/) — Provides current CNCF project status and historical context for OpenCost's origins.
