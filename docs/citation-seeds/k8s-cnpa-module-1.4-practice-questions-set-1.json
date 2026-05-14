@@ -1,0 +1,88 @@
+{
+  "module_key": "k8s/cnpa/module-1.4-practice-questions-set-1",
+  "module_path": "src/content/docs/k8s/cnpa/module-1.4-practice-questions-set-1.md",
+  "research_run_id": "2026-05-14T04:07:54+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Kubernetes makes the contract-and-reconciler pattern familiar because users submit resources to the API and controllers work to match actual state to desired state.",
+      "claim_class": "standard",
+      "span_hint": "section: 5. Self-Service Needs A Contract And A Reconciler, paragraph 1",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes object model docs directly describe desired state, current state, and the control plane actively managing actual state to match the declared state."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Kubernetes controllers run reconciliation loops, with controllers moving current cluster state toward desired state.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 1",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/architecture/controller/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The controllers concept page explicitly defines controllers as control loops and says each controller tries to move current state closer to desired state."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The Kubernetes Pod Security Standards define three policy levels: Privileged, Baseline, and Restricted.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Pod Security Standards page directly states that the standard defines three policies and names them."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "OpenTelemetry treats traces, metrics, and logs as separate telemetry signals.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 3",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://opentelemetry.io/docs/concepts/signals/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The OpenTelemetry signals page explicitly lists traces, metrics, and logs as supported signal categories."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/concepts/architecture/controller/",
+      "title": "Kubernetes Controllers",
+      "tier": "standards",
+      "why_relevant": "Best primary reference for reconciliation loops, controller behavior, and desired-versus-current state."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+      "title": "Kubernetes Pod Security Standards",
+      "tier": "standards",
+      "why_relevant": "Useful background for the module's guardrail and hard-control examples in shared clusters."
+    },
+    {
+      "url": "https://opentelemetry.io/docs/concepts/signals/",
+      "title": "OpenTelemetry Signals",
+      "tier": "upstream",
+      "why_relevant": "Directly supports the module's observability discussion by defining traces, metrics, and logs as distinct signals."
+    }
+  ],
+  "notes": "Most of the module is pedagogical reasoning, quiz material, or workflow advice and does not need inline citations. Code blocks, tables, quiz prompts/options, and generic platform-opinion prose were excluded; the main inline-citation needs are the explicit Kubernetes/OpenTelemetry standards statements and the Kubernetes desired-state/reconciliation sentence.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 revision_pending: false
 title: "CNPA Practice Questions Set 1"
 slug: k8s/cnpa/module-1.4-practice-questions-set-1
@@ -136,7 +137,7 @@ CNPA distractors often blur the language here by offering "more dashboards" as t
 
 ### 5. Self-Service Needs A Contract And A Reconciler
 
-Self-service infrastructure is not the same as letting everyone click around in cloud consoles. Good self-service exposes a safe contract: users declare what they need, the platform validates the request, automation reconciles the desired state, and status tells the user what happened. Kubernetes makes this pattern familiar because users submit resources to an API and controllers continuously work to match actual state to desired state.
+Self-service infrastructure is not the same as letting everyone click around in cloud consoles. Good self-service exposes a safe contract: users declare what they need, the platform validates the request, automation reconciles the desired state, and status tells the user what happened. [Kubernetes makes this pattern familiar because users submit resources to an API and controllers continuously work to match actual state to desired state.](https://kubernetes.io/docs/concepts/overview/working-with-objects/)
 
 A contract can be a custom resource, a portal form backed by an API, a GitOps repository pattern, or a command-line workflow. The interface matters less than the operating model. The user should not need to know every provider detail, but they should understand the choices the platform exposes. The platform team should not manually translate every request, but it should own the automation, validation, policy, and operational behavior behind the contract.
 
@@ -262,9 +263,9 @@ The tradeoff to watch is cognitive load. Platform teams exist partly because eve
 
 ## Did You Know?
 
-1. **Kubernetes controllers run reconciliation loops.** The API stores desired state, and controllers keep working toward actual state, which is why Kubernetes-style platform contracts are stronger when they expose status instead of only accepting a one-time request.
-2. **The Kubernetes Pod Security Standards define three policy levels.** Privileged, Baseline, and Restricted give platform teams a vocabulary for guardrails and hard controls without inventing every workload safety category from scratch.
-3. **OpenTelemetry treats traces, metrics, and logs as separate signals.** A platform observability path is stronger when it helps teams correlate those signals during an unknown failure rather than shipping disconnected dashboards.
+1. [**Kubernetes controllers run reconciliation loops.**](https://kubernetes.io/docs/concepts/architecture/controller/) The API stores desired state, and controllers keep working toward actual state, which is why Kubernetes-style platform contracts are stronger when they expose status instead of only accepting a one-time request.
+2. [**The Kubernetes Pod Security Standards define three policy levels.** Privileged, Baseline, and Restricted](https://kubernetes.io/docs/concepts/security/pod-security-standards/) give platform teams a vocabulary for guardrails and hard controls without inventing every workload safety category from scratch.
+3. [**OpenTelemetry treats traces, metrics, and logs as separate signals.**](https://opentelemetry.io/docs/concepts/signals/) A platform observability path is stronger when it helps teams correlate those signals during an unknown failure rather than shipping disconnected dashboards.
 4. **A platform metric is stronger when it is workflow-specific.** Measuring adoption of service bootstrap, deployment, telemetry onboarding, and infrastructure provisioning separately gives better product feedback than a single broad adoption percentage.
 
 ## Common Mistakes
@@ -524,6 +525,7 @@ Both delete commands should return a deletion message if the namespaces exist. I
 - [OpenTelemetry Signals](https://opentelemetry.io/docs/concepts/signals/)
 - [Prometheus Overview](https://prometheus.io/docs/introduction/overview/)
 - [CNCF Platforms White Paper](https://tag-app-delivery.cncf.io/whitepapers/platforms/)
+- [kubernetes.io: working with objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/) — The Kubernetes object model docs directly describe desired state, current state, and the control plane actively managing actual state to match the declared state.
 
 ## Next Module
 
