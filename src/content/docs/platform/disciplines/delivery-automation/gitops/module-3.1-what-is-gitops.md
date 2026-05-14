@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.1: What is GitOps?"
 slug: platform/disciplines/delivery-automation/gitops/module-3.1-what-is-gitops
 sidebar:
@@ -101,13 +102,13 @@ This is why "we store YAML in Git" is not enough. GitOps requires a loop that ke
 
 > **Active learning prompt**: Imagine that Git declares three replicas, production currently has eight, and the service is healthy only because of those extra replicas. Should the reconciler immediately restore three replicas, pause and alert, or allow the difference temporarily? Write down your answer before continuing, then connect it to your team's incident policy.
 
-The senior-level lesson is that GitOps is a governance model as much as a deployment model. It defines how change is proposed, reviewed, applied, observed, corrected, and audited. Tools such as Flux and Argo CD implement that model, but the model is what determines whether the tool improves operations or simply becomes another automation layer.
+The senior-level lesson is that GitOps is a governance model as much as a deployment model. It defines how change is proposed, reviewed, applied, observed, corrected, and audited. Tools such as [Flux and Argo CD](https://www.cncf.io/training/certification/cgoa/) implement that model, but the model is what determines whether the tool improves operations or simply becomes another automation layer.
 
 ---
 
 ## 2. The Four Principles, Applied
 
-The OpenGitOps principles are short, but each one carries operational consequences. The principles are declarative desired state, versioned and immutable storage, automatic pull-based application, and continuous reconciliation. The easiest way to learn them is to map each principle to a failure it prevents.
+The OpenGitOps principles are short, but each one carries operational consequences. The principles are [declarative desired state, versioned and immutable storage, automatic pull-based application, and continuous reconciliation](https://www.cncf.io/blog/2022/08/10/add-gitops-without-throwing-out-your-ci-tools/). The easiest way to learn them is to map each principle to a failure it prevents.
 
 ```mermaid
 graph TD
@@ -220,7 +221,7 @@ kubectl apply -f clusters/prod/apps/checkout-api.yaml
 kubectl rollout status deployment/checkout-api -n shop
 ```
 
-In a pull model, the pipeline may still update a manifest after publishing a new image. The difference is that the pipeline writes desired state to Git, and the reconciler applies that state from within the control boundary. The production cluster does not need to accept inbound deployment commands from the CI provider. Instead, it needs outbound read access to the desired-state source and the image registry.
+In a pull model, the pipeline may still update a manifest after publishing a new image. The difference is that [the pipeline writes desired state to Git, and the reconciler applies that state from within the control boundary](https://www.cncf.io/blog/2021/09/28/gitops-101-whats-it-all-about/). The production cluster does not need to accept inbound deployment commands from the CI provider. Instead, it needs outbound read access to the desired-state source and the image registry.
 
 ```ascii
 +-----------------------+       +-----------------------+       +-----------------------+
@@ -293,7 +294,7 @@ The best repository strategy depends on scale, ownership, and compliance needs. 
 | Monorepo for all environments | Easy global visibility and policy checks | Large repos can create noisy reviews and slow syncs | Organization values central governance |
 | Repo per cluster or tenant | Strong isolation and smaller blast radius | Harder to coordinate broad changes | Clusters have distinct owners or compliance boundaries |
 
-There is also a senior-level trap around image tags. If Git declares `image: checkout-api:latest`, the manifest looks declarative but the artifact is mutable. A Git commit should point to a specific artifact, often by immutable tag or digest, so that reverting the commit really reverts the running workload. Otherwise, Git records a name whose meaning can change outside Git.
+There is also a senior-level trap around image tags. [If Git declares `image: checkout-api:latest`, the manifest looks declarative but the artifact is mutable.](https://kubernetes.io/docs/concepts/containers/images/) A Git commit should point to a specific artifact, often by immutable tag or digest, so that reverting the commit really reverts the running workload. Otherwise, Git records a name whose meaning can change outside Git.
 
 ```yaml
 # Better for reproducibility because the digest identifies exact image content.
@@ -310,7 +311,7 @@ spec:
           image: registry.example.com/shop/checkout-api@sha256:1111111111111111111111111111111111111111111111111111111111111111
 ```
 
-Secrets require separate care. GitOps does not mean plaintext secrets belong in Git. Teams commonly use External Secrets Operator, SOPS, Sealed Secrets, Vault integrations, or cloud secret managers so that Git stores references or encrypted material rather than exposed credentials. The principle is still declarative desired state, but the sensitive value is protected by a tool designed for that purpose.
+Secrets require separate care. [GitOps does not mean plaintext secrets belong in Git.](https://kubernetes.io/docs/concepts/security/secrets-good-practices/) Teams commonly use External Secrets Operator, SOPS, Sealed Secrets, Vault integrations, or cloud secret managers so that Git stores references or encrypted material rather than exposed credentials. The principle is still declarative desired state, but the sensitive value is protected by a tool designed for that purpose.
 
 A good source-of-truth design answers three questions without a meeting. Which commit changed production? Which artifact is running? Which controller applied it? If an engineer cannot answer those questions from the repository, reconciler status, and cluster state, the GitOps design is not yet operationally mature.
 
@@ -408,7 +409,7 @@ A senior practitioner separates "cluster reconstruction" from "data recovery." G
 
 ## 6. When GitOps Fits, and When It Needs Guardrails
 
-GitOps works especially well when the managed system has a declarative API and a controller-friendly reconciliation model. Kubernetes is the classic example because the platform already operates through desired state, controllers, and observed status. GitOps extends that idea to the delivery workflow by making Git the declared source for what the controllers should maintain.
+GitOps works especially well when the managed system has a declarative API and a controller-friendly reconciliation model. [Kubernetes is the classic example because the platform already operates through desired state, controllers, and observed status.](https://www.cncf.io/blog/2024/01/18/gitops-and-mutating-policies-the-tale-of-two-loops/) GitOps extends that idea to the delivery workflow by making Git the declared source for what the controllers should maintain.
 
 | Scenario | Why GitOps helps | Guardrail to add |
 |----------|------------------|------------------|
@@ -440,7 +441,7 @@ A useful design review question is: "What happens when Git and the cluster disag
 
 ## Did You Know?
 
-1. **GitOps was named after existing operational patterns became visible in Kubernetes delivery.** The term became popular through Weaveworks, but the underlying idea of declared desired state plus reconciliation was already familiar in control-plane design.
+1. **GitOps was named after existing operational patterns became visible in Kubernetes delivery.** [The term became popular through Weaveworks](https://www.cncf.io/blog/2021/09/28/gitops-101-whats-it-all-about/), but the underlying idea of declared desired state plus reconciliation was already familiar in control-plane design.
 
 2. **GitOps is not limited to application deployments.** Teams use the same principles for cluster add-ons, policy resources, infrastructure controllers, network configuration, and platform APIs when those systems expose declarative interfaces.
 
@@ -523,7 +524,7 @@ A central environment repository improves operational visibility, policy enforce
 
 ### Question 6
 
-A team stores encrypted secrets in Git using a tool that decrypts them inside the cluster. A reviewer says this violates GitOps because secrets should never appear in Git. How would you evaluate the design?
+[A team stores encrypted secrets in Git using a tool that decrypts them inside the cluster.](https://github.com/bitnami-labs/sealed-secrets) A reviewer says this violates GitOps because secrets should never appear in Git. How would you evaluate the design?
 
 <details>
 <summary>Show Answer</summary>
@@ -555,7 +556,7 @@ You will create a local desired-state repository, apply a Kubernetes Deployment 
 
 ### Step 1: Create a Local Cluster
 
-Run the following commands from a temporary working directory. The examples target Kubernetes 1.35 or newer through `kind`; if your local `kind` image tag differs, use an available 1.35+ node image and keep the rest of the lab unchanged.
+Run the following commands from a temporary working directory. The examples target Kubernetes 1.35 or newer through `kind`; if your local `kind` image tag differs, [use an available 1.35+ node image](https://github.com/kubernetes-sigs/kind/releases) and keep the rest of the lab unchanged.
 
 ```bash
 kind create cluster --name gitops-intro --image kindest/node:v1.35.0
@@ -750,3 +751,9 @@ kind delete cluster --name gitops-intro
 ## Next Module
 
 Continue to [Module 3.2: Repository Strategies](../module-3.2-repository-strategies/) to design repository layouts, promotion paths, and ownership boundaries for real GitOps environments.
+
+## Sources
+
+- [fluxcd.io: concepts](https://fluxcd.io/flux/concepts/) — General lesson point for an illustrative rewrite.
+- [Add GitOps without throwing out your CI tools](https://www.cncf.io/blog/2022/08/10/add-gitops-without-throwing-out-your-ci-tools/) — Compact CNCF explanation of the four principles and the push-versus-pull distinction.
+- [Argo CD Overview](https://argo-cd.readthedocs.io/en/stable/) — Shows how a Kubernetes reconciler watches Git, detects OutOfSync state, and syncs live clusters.

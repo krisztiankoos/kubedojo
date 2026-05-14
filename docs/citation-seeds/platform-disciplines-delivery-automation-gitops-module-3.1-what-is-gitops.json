@@ -1,0 +1,206 @@
+{
+  "module_key": "platform/disciplines/delivery-automation/gitops/module-3.1-what-is-gitops",
+  "module_path": "src/content/docs/platform/disciplines/delivery-automation/gitops/module-3.1-what-is-gitops.md",
+  "research_run_id": "2026-05-14T10:03:18+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The four GitOps principles are declarative desired state, versioned and immutable storage, pulled automatically, and continuously reconciled.",
+      "claim_class": "standard",
+      "span_hint": "section: 2. The Four Principles, Applied | opening paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://www.cncf.io/blog/2022/08/10/add-gitops-without-throwing-out-your-ci-tools/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This CNCF page explicitly lists the four GitOps principles in the same terms used by the module."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Flux and Argo CD are GitOps tools used to implement this model in Kubernetes environments.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 1. The Problem GitOps Solves | final paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://www.cncf.io/training/certification/cgoa/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The CNCF CGOA page names Argo CD and Flux as GitOps tools in the Kubernetes GitOps context."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "In GitOps, approved changes are applied from Git and external systems do not need Kubernetes cluster credentials to make changes to the system.",
+      "claim_class": "security_claim",
+      "span_hint": "section: 3. Push Pipelines and Pull Reconciliation | pull-model discussion and quiz answer 3",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://www.cncf.io/blog/2021/09/28/gitops-101-whats-it-all-about/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This CNCF article explicitly states that automatically applied Git-based changes do not require cluster credentials."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Mutable image tags such as `latest` do not identify exact runtime content, while image digests are immutable and fixed to specific content.",
+      "claim_class": "standard",
+      "span_hint": "section: 4. Designing the Source of Truth | paragraph beginning 'There is also a senior-level trap around image tags'",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/containers/images/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes images documentation directly explains that tags can move while digests are immutable."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The exact named-tool list in the secrets paragraph is broader than the clean allowlisted support available for a single inline citation.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 4. Designing the Source of Truth | paragraph beginning 'Secrets require separate care'",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Teams commonly use External Secrets Operator, SOPS, Sealed Secrets, Vault integrations, or cloud secret managers so that Git stores references or encrypted material rather than exposed credentials.",
+      "suggested_rewrite": "Teams commonly use encrypted-secrets workflows or external secret managers so that Git stores references or protected material rather than exposed credentials.",
+      "lesson_point_url": null,
+      "rationale": "The lesson is sound, but the exact tool list mixes allowlisted and off-allowlist products and should be generalized for a clean citation pass."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Checking a Secret manifest with secret data into source control exposes that secret to anyone who can read the manifest.",
+      "claim_class": "security_claim",
+      "span_hint": "section: 4. Designing the Source of Truth | secrets discussion and Common Mistakes row 'Storing plaintext secrets in Git'",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/security/secrets-good-practices/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes good-practices documentation explicitly warns that checking Secret manifests into a source repository exposes them."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "GitOps fits Kubernetes especially well because it extends the same declarative, controller-driven reconciliation model Kubernetes already uses.",
+      "claim_class": "standard",
+      "span_hint": "section: 6. When GitOps Fits, and When It Needs Guardrails | opening paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": "https://www.cncf.io/blog/2024/01/18/gitops-and-mutating-policies-the-tale-of-two-loops/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This CNCF post explicitly describes GitOps as another form of the Kubernetes controller pattern."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Weaveworks coined the term GitOps in 2017.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know? | item 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://www.cncf.io/blog/2021/09/28/gitops-101-whats-it-all-about/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The CNCF article directly states that Weaveworks coined the term GitOps in 2017."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "GitOps is not limited to application deployments; it is also used for other declarative cluster and platform resources.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know? | item 2",
+      "disposition": "soften_to_illustration",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Teams use the same principles for cluster add-ons, policy resources, infrastructure controllers, network configuration, and platform APIs when those systems expose declarative interfaces.",
+      "suggested_rewrite": "Teams use the same principles for other declarative cluster and platform resources when those systems expose declarative interfaces.",
+      "lesson_point_url": "https://fluxcd.io/flux/concepts/",
+      "rationale": "The broader point is well supported, but the original exact list is wider than a single allowlisted source directly enumerates."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The lab's `kindest/node:v1.35.0` example corresponds to a published `kind` node image, and 1.35-series images are available for local clusters.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Hands-On Exercise | Step 1: Create a Local Cluster",
+      "disposition": "supported",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://github.com/kubernetes-sigs/kind/releases",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The `kind` releases page explicitly publishes `kindest/node:v1.35.0`."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Encrypted secret material can be stored in a GitOps workflow safely when the repository holds sealed or otherwise protected content rather than plaintext secrets.",
+      "claim_class": "security_claim",
+      "span_hint": "quiz answer 6 and section: 4. Designing the Source of Truth | secrets discussion",
+      "disposition": "supported",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://github.com/bitnami-labs/sealed-secrets",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Sealed Secrets explicitly documents that a sealed secret is safe to store in a repository, including a public one."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://www.cncf.io/blog/2022/08/10/add-gitops-without-throwing-out-your-ci-tools/",
+      "title": "Add GitOps without throwing out your CI tools",
+      "tier": "standards",
+      "why_relevant": "Compact CNCF explanation of the four principles and the push-versus-pull distinction."
+    },
+    {
+      "url": "https://argo-cd.readthedocs.io/en/stable/",
+      "title": "Argo CD Overview",
+      "tier": "upstream",
+      "why_relevant": "Shows how a Kubernetes reconciler watches Git, detects OutOfSync state, and syncs live clusters."
+    },
+    {
+      "url": "https://fluxcd.io/flux/concepts/",
+      "title": "Flux Core Concepts",
+      "tier": "upstream",
+      "why_relevant": "Good follow-on reading for sources, reconciliation, and how GitOps extends to infrastructure and platform resources."
+    }
+  ],
+  "notes": "No entries were generated for active-learning prompts, quiz questions themselves, diagrams, code blocks, or repeated restatements of the same pull-based, immutable-artifact, and drift-reconciliation facts unless they introduced a new standalone factual claim.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
