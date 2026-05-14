@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.1: The Case for On-Premises Kubernetes"
 slug: on-premises/planning/module-1.1-case-for-on-prem
 sidebar:
@@ -683,3 +684,9 @@ Phased migration is the practical bridge between evaluation and execution. Start
 ## Next Module
 
 Continue to [Module 1.2: Server Sizing & Hardware Selection](../module-1.2-server-sizing/) to learn how to translate workload requirements into server, storage, and network capacity decisions.
+
+## Sources
+
+- [Kubernetes Production Environment](https://kubernetes.io/docs/setup/production-environment/) — Upstream guidance on the availability, scaling, security, and node-management work that comes with self-managed clusters.
+- [Out of the Clouds onto the Ground](https://kubernetes.io/blog/2018/08/03/out-of-the-clouds-onto-the-ground-how-to-make-kubernetes-production-grade-anywhere/) — Kubernetes guidance specifically focused on making clusters production-grade outside public cloud environments.
+- [Google Cloud Hybrid Deployment Archetype](https://docs.cloud.google.com/architecture/deployment-archetypes/hybrid) — Concrete hybrid patterns help frame when some workload slices should stay on-premises and others should remain in cloud.

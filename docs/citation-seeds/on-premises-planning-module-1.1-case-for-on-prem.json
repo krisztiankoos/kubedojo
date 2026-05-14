@@ -1,0 +1,157 @@
+{
+  "module_key": "on-premises/planning/module-1.1-case-for-on-prem",
+  "module_path": "src/content/docs/on-premises/planning/module-1.1-case-for-on-prem.md",
+  "research_run_id": "2026-05-14T07:19:55+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Opening anecdote about a 2023 European bank running 340 microservices on EKS across three regions and being pushed into a hosting-model review.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In 2023, a mid-sized European bank ran three hundred forty microservices on AWS EKS across three regions. The platform worked well technically, but the business context changed around it. Compliance leaders needed stronger evidence that customer financial records stayed inside approved jurisdictions, risk leaders wanted operational independence from a single cloud provider, and finance leaders saw the infrastructure bill growing faster than revenue. The CTO did not ask the platform team to \"leave the cloud.\" She asked them to prove which hosting model would best serve the next five years of the business.",
+      "suggested_rewrite": "A regulated organization can find that a technically successful managed Kubernetes platform no longer fits changing compliance, concentration-risk, or cost constraints. In that situation, the right question is not whether to \"leave the cloud\" in the abstract, but which hosting model best fits the next phase of the business.",
+      "lesson_point_url": null,
+      "rationale": "This is a named, date-specific operational anecdote with precise scale details but no attributable source."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Opening anecdote's specific evaluation process and outcome, including movement of core banking workloads to two colocation sites while other services stayed in cloud.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The team built a decision model instead of starting with an opinion. They grouped workloads by data sensitivity, latency requirement, scaling profile, managed-service dependency, and recovery objective. They compared the actual cloud bill against colocation, hardware, power, network, software support, and staffing costs. They also included migration risk, procurement delay, incident response maturity, and the opportunity cost of pulling senior engineers away from product work. The final answer was not \"everything on-premises.\" It was a hybrid target: core banking workloads moved to two colocation sites, while development environments, burst analytics, and some managed services stayed in cloud.",
+      "suggested_rewrite": "A sound evaluation starts with a decision model instead of an opinion. Teams should group workloads by constraints such as data sensitivity, latency, scaling profile, managed-service dependency, and recovery objectives, then compare cloud costs against facilities, hardware, network, software support, staffing, migration risk, and opportunity cost. The answer is often hybrid rather than \"everything on-premises.\"",
+      "lesson_point_url": null,
+      "rationale": "This continues the same unsourced company story with precise actions and outcomes that cannot be left as implied fact."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "GDPR imposes demonstrable controls around processor obligations, deletion rights, and cross-border transfers for personal data.",
+      "claim_class": "standard",
+      "span_hint": "section: The Five Drivers for On-Premises > 1. Data Sovereignty and Regulatory Requirements",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32016R0679",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official GDPR text is the right primary source, but EUR-Lex is off the current allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "DORA requires EU financial entities to manage ICT risk, third-party risk, and exit planning explicitly.",
+      "claim_class": "standard",
+      "span_hint": "section: The Five Drivers for On-Premises > 1. Data Sovereignty and Regulatory Requirements",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A32022R2554",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official DORA regulation directly covers ICT risk and third-party arrangements, but EUR-Lex is off allowlist."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The HIPAA Security Rule requires administrative, physical, and technical safeguards for electronic protected health information.",
+      "claim_class": "standard",
+      "span_hint": "section: The Five Drivers for On-Premises > 1. Data Sovereignty and Regulatory Requirements",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.hhs.gov/hipaa/for-professionals/security/laws-regulations/index.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "HHS is the correct primary explainer for this rule, but the domain is off the current allowlist."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "PCI DSS scope and auditability depend heavily on effective segmentation of the cardholder data environment.",
+      "claim_class": "standard",
+      "span_hint": "section: The Five Drivers for On-Premises > 1. Data Sovereignty and Regulatory Requirements",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.pcisecuritystandards.org/faq/articles/Frequently_Asked_Question/How-does-PCI-DSS-apply-to-individual-PCs-or-workstations/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "PCI SSC is the natural primary source for the segmentation/scoping point, but the domain is off allowlist."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "ITAR-controlled technical data is subject to export-control restrictions tied to approved access and control.",
+      "claim_class": "standard",
+      "span_hint": "section: The Five Drivers for On-Premises > 1. Data Sovereignty and Regulatory Requirements",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.ecfr.gov/current/title-22/chapter-I/subchapter-M/part-120",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The governing ITAR text is the correct primary source, but eCFR is off the current allowlist."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Dropbox publicly described moving most user-data serving onto its own storage infrastructure for better unit economics, illustrating that large-scale cloud repatriation can require custom systems and substantial engineering investment.",
+      "claim_class": "war_story",
+      "span_hint": "section: Did You Know?",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://dropbox.tech/infrastructure/magic-pocket-infrastructure",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Dropbox's own engineering write-up directly discusses the move off Amazon-backed storage and the unit-economics rationale, but dropbox.tech is off allowlist."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/setup/production-environment/",
+      "title": "Kubernetes Production Environment",
+      "tier": "standards",
+      "why_relevant": "Upstream guidance on the availability, scaling, security, and node-management work that comes with self-managed clusters."
+    },
+    {
+      "url": "https://kubernetes.io/blog/2018/08/03/out-of-the-clouds-onto-the-ground-how-to-make-kubernetes-production-grade-anywhere/",
+      "title": "Out of the Clouds onto the Ground",
+      "tier": "standards",
+      "why_relevant": "Kubernetes guidance specifically focused on making clusters production-grade outside public cloud environments."
+    },
+    {
+      "url": "https://docs.cloud.google.com/architecture/deployment-archetypes/hybrid",
+      "title": "Google Cloud Hybrid Deployment Archetype",
+      "tier": "vendor",
+      "why_relevant": "Concrete hybrid patterns help frame when some workload slices should stay on-premises and others should remain in cloud."
+    }
+  ],
+  "notes": "Skipped quiz items, active-learning prompts, fenced text/code blocks, and clearly hypothetical worked scenarios per the seed rules.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://queue.acm.org/detail.cfm?id=M2898444",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    },
+    {
+      "url": "https://queue.acm.org/detail.cfm?id=M2898444",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    }
+  ]
+}
