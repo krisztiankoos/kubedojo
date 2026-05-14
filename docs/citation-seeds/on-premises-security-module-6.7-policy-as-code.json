@@ -1,29 +1,29 @@
 {
   "module_key": "on-premises/security/module-6.7-policy-as-code",
   "module_path": "src/content/docs/on-premises/security/module-6.7-policy-as-code.md",
-  "research_run_id": "2026-05-07T18:59:32+00:00-codex-gpt-5.3-codex-spark",
+  "research_run_id": "2026-05-14T08:13:53+00:00-codex-gpt-5.3-codex-spark",
   "schema_version": 3,
   "section_pool_ref": "docs/citation-pools/on-premises-security.json",
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "The opening December 2023 bare-metal Gatekeeper outage anecdote names a real firm, date, scale, duration, and business impact.",
-      "claim_class": "war_story",
-      "span_hint": "section: Why This Module Matters, paragraph 1",
-      "disposition": "cannot_be_salvaged",
+      "claim_text": "RBAC controls who can act, but admission control inspects the request payload before persistence and can reject, mutate, or log the object.",
+      "claim_class": "standard",
+      "span_hint": "line 32",
+      "disposition": "supported",
       "source_ids": [],
-      "proposed_url": null,
-      "proposed_tier": null,
-      "anchor_text": "In December 2023, a multinational financial services firm running a 600-node bare-metal Kubernetes platform suffered a six-hour outage that began with a routine policy push. A developer added a single OPA Gatekeeper constraint requiring every pod to declare resource limits and the team rolled it out cluster-wide on a Friday afternoon. Within minutes, the cluster began rejecting CoreDNS pod restarts, Cilium agent updates, and even the Gatekeeper webhook's own self-managed deployment. Service-to-service DNS lookups began failing as old CoreDNS pods rotated off cordoned nodes, and the control plane self-quarantined as health probes timed out. By the time the on-call engineer realised the problem, half the cluster's payment authorisation services were returning 503s, and the postmortem would later trace the cascade to a single missing namespace exemption in the constraint manifest.",
-      "suggested_rewrite": "A cluster-wide admission policy change can cascade into control-plane instability if critical system namespaces or dependencies are not exempted. For example, a policy that blocks essential system pods from restarting can turn a routine rollout into a widespread outage.",
+      "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "This is a named incident with precise operational details but no attributable primary source."
+      "rationale": "The Kubernetes admission-controller docs directly describe the request path and webhook capabilities."
     },
     {
       "claim_id": "C002",
-      "claim_text": "Pod Security Admission replaced PodSecurityPolicy; PSP was deprecated in v1.21 and removed in v1.25, while PSA reached stable in v1.25 and defines the privileged, baseline, and restricted levels with namespace label modes such as enforce, audit, and warn.",
+      "claim_text": "Pod Security Admission replaced PodSecurityPolicy; PSP was deprecated in v1.21, removed in v1.25, and PSA defines the `privileged`, `baseline`, and `restricted` levels with namespace label modes such as `enforce`, `audit`, and `warn`.",
       "claim_class": "standard",
-      "span_hint": "section: The Governance Architecture, paragraph 3",
+      "span_hint": "line 36",
       "disposition": "supported",
       "source_ids": [
         "S011"
@@ -33,13 +33,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The shared PSA source directly covers feature state, label-based configuration, and the three policy levels."
+      "rationale": "The shared PSA source directly covers replacement, feature state, levels, and namespace-label configuration."
     },
     {
       "claim_id": "C003",
-      "claim_text": "Mutating admission webhooks run before validating admission webhooks, and validating webhooks see the post-mutation object after API-server validation.",
+      "claim_text": "For external webhooks, mutating admission runs before schema validation and validating admission sees the post-mutation object.",
       "claim_class": "standard",
-      "span_hint": "section: The Governance Architecture, diagram explanation and following paragraph",
+      "span_hint": "lines 38-62",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/",
@@ -47,73 +47,45 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Kubernetes dynamic admission docs explicitly describe mutating webhooks first and validating webhooks after object validation."
+      "rationale": "The extensible-admission docs explicitly describe the mutating and validating phases and their order."
     },
     {
       "claim_id": "C004",
-      "claim_text": "The webhook-deadlock caution box includes an uncited retailer outage anecdote and other precise historical specifics.",
-      "claim_class": "war_story",
-      "span_hint": "section: The Governance Architecture, caution box",
-      "disposition": "cannot_be_salvaged",
-      "source_ids": [],
+      "claim_text": "A validating webhook that covers critical system namespaces can deadlock a cluster if the webhook becomes unavailable; critical namespaces should be exempted with request filtering such as `namespaceSelector` or `matchConditions`.",
+      "claim_class": "security_claim",
+      "span_hint": "lines 64-65",
+      "disposition": "supported",
+      "source_ids": [
+        "S009"
+      ],
       "proposed_url": null,
       "proposed_tier": null,
-      "anchor_text": "A platform team deployed a validating webhook with `failurePolicy: Fail` covering all namespaces, including `kube-system`. When the nodes hosting the policy engine crashed, the policy engine pods could not be rescheduled because the API server could not reach the webhook to validate the new pods. The cluster deadlocked. The same class of failure took down a Kubernetes 1.23 cluster at a major retailer in 2022 during a routine kernel patch rollout, where a CNI restart simultaneously evicted the only surviving Kyverno replica. Always use `failurePolicy: Ignore` for the namespace hosting your policy engine, or explicitly exempt it using a `namespaceSelector` or a `MatchConditions` expression. This is not a \"best practice\" in the soft sense; it is the difference between a cluster that recovers itself and one that has to be reset by hand.",
-      "suggested_rewrite": "A validating webhook that covers critical system namespaces can deadlock a cluster if the webhook service becomes unavailable, because replacement pods may be blocked from admission. Exempt critical namespaces such as `kube-system` and the policy engine's own namespace, and scope requests carefully with `namespaceSelector` or `matchConditions` so the cluster can recover without manual intervention.",
+      "anchor_text": null,
+      "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The operational lesson is valid, but the named incident and exact version/date details are not sourced."
+      "rationale": "The shared webhook-good-practices doc directly warns about dependency loops and namespace exclusion."
     },
     {
       "claim_id": "C005",
-      "claim_text": "Admission webhook match conditions were added in v1.27 and moved to beta, enabled by default, in Kubernetes v1.28.",
+      "claim_text": "ValidatingAdmissionPolicy is stable in Kubernetes v1.30, runs CEL validation in-process in the API server, and supports `Deny`, `Warn`, and `Audit` actions with `Deny` and `Warn` disallowed together.",
       "claim_class": "standard",
-      "span_hint": "section: Policy Libraries and Exemption Workflows, paragraph on `MatchConditions`",
+      "span_hint": "line 70",
       "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://kubernetes.io/blog/2023/08/15/kubernetes-v1-28-release/",
-      "proposed_tier": "standards",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Kubernetes v1.28 release notes specifically describe the feature timeline for admission webhook match conditions."
+      "rationale": "The shared VAP source directly states feature state, in-process evaluation model, and action constraints."
     },
     {
       "claim_id": "C006",
-      "claim_text": "ValidatingAdmissionPolicy is stable starting in Kubernetes v1.30 and provides in-process CEL-based validation as an alternative to validating admission webhooks.",
+      "claim_text": "MutatingAdmissionPolicy is beta in Kubernetes v1.34 and requires both a feature gate and runtime-config enablement.",
       "claim_class": "standard",
-      "span_hint": "section: Native Validating Admission Policy with CEL, opening paragraph",
-      "disposition": "supported",
-      "source_ids": [
-        "S010"
-      ],
-      "proposed_url": null,
-      "proposed_tier": null,
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The shared VAP source directly states the feature state and in-process CEL-based model."
-    },
-    {
-      "claim_id": "C007",
-      "claim_text": "ValidatingAdmissionPolicy supports `validationActions` of `Deny`, `Warn`, and `Audit`, and `Deny` and `Warn` cannot be used together.",
-      "claim_class": "standard",
-      "span_hint": "section: Native Validating Admission Policy with CEL, opening paragraph",
-      "disposition": "supported",
-      "source_ids": [
-        "S010"
-      ],
-      "proposed_url": null,
-      "proposed_tier": null,
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The shared VAP source explicitly lists the supported validation actions and the Deny/Warn restriction."
-    },
-    {
-      "claim_id": "C008",
-      "claim_text": "MutatingAdmissionPolicy is beta in Kubernetes v1.34 and requires the `MutatingAdmissionPolicy` feature gate plus `--runtime-config=admissionregistration.k8s.io/v1beta1=true` on kube-apiserver.",
-      "claim_class": "standard",
-      "span_hint": "section: Native Validating Admission Policy with CEL, opening paragraph",
+      "span_hint": "line 70",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/mutating-admission-policy/",
@@ -121,83 +93,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The MutatingAdmissionPolicy docs state the beta feature state and required control-plane flags."
+      "rationale": "The official MutatingAdmissionPolicy page states the beta status and required control-plane flags."
     },
     {
-      "claim_id": "C009",
-      "claim_text": "If any configured admission controller rejects a request, the request is rejected; for validating webhooks, if any matching webhook rejects, the request fails.",
-      "claim_class": "standard",
-      "span_hint": "section: Native Validating Admission Policy with CEL, stop-and-think answer paragraph",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/",
-      "proposed_tier": "standards",
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "Kubernetes admission control docs describe both the two-phase process and the rule that any rejection fails the request."
-    },
-    {
-      "claim_id": "C010",
-      "claim_text": "Gatekeeper adds Kubernetes-native constraint CRDs, constraint templates, mutation support, audit functionality, and external data support on top of OPA.",
+      "claim_id": "C007",
+      "claim_text": "Gatekeeper can generate native ValidatingAdmissionPolicy and binding resources for CEL-based native validation, and that VAP integration is beta in v3.20.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: OPA Gatekeeper, opening paragraph",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://github.com/open-policy-agent/gatekeeper",
-      "proposed_tier": "upstream",
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The Gatekeeper repository README lists these Kubernetes-specific capabilities explicitly."
-    },
-    {
-      "claim_id": "C011",
-      "claim_text": "Open Policy Agent became a CNCF graduated project in 2021.",
-      "claim_class": "standard",
-      "span_hint": "section: OPA Gatekeeper, opening paragraph",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://www.cncf.io/projects/open-policy-agent-opa/",
-      "proposed_tier": "standards",
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The CNCF project page gives the graduation date for OPA."
-    },
-    {
-      "claim_id": "C012",
-      "claim_text": "Gatekeeper mutation was promoted to stable in v3.10.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: OPA Gatekeeper, paragraph on mutation",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://github.com/open-policy-agent/gatekeeper/releases/tag/v3.10.0",
-      "proposed_tier": "upstream",
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The v3.10.0 Gatekeeper release notes explicitly say mutation is promoted to stable."
-    },
-    {
-      "claim_id": "C013",
-      "claim_text": "CEL-based policies enforced through Gatekeeper became GA in v3.18.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: OPA Gatekeeper, paragraph on mutation/CEL",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://github.com/open-policy-agent/gatekeeper/releases/tag/v3.18.0",
-      "proposed_tier": "upstream",
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The v3.18.0 Gatekeeper release notes explicitly mark CEL-based policies as GA."
-    },
-    {
-      "claim_id": "C014",
-      "claim_text": "Gatekeeper VAP integration is beta in v3.20 and enabled by default for the native CEL path.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: OPA Gatekeeper, paragraph on mutation/CEL",
+      "span_hint": "lines 72, 82",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/open-policy-agent/gatekeeper/releases/tag/v3.20.0",
@@ -205,83 +107,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The v3.20.0 Gatekeeper release notes describe VAP integration as beta and enabled by default."
+      "rationale": "The v3.20.0 Gatekeeper release notes explicitly describe VAP integration as beta and enabled by default."
     },
     {
-      "claim_id": "C015",
-      "claim_text": "Gatekeeper separates reusable policy definition from policy instantiation via `ConstraintTemplate` and `Constraint` resources.",
+      "claim_id": "C008",
+      "claim_text": "Kyverno's CEL-based `policies.kyverno.io` APIs, including `ValidatingPolicy`, were promoted to stable in v1.17.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: OPA Gatekeeper, paragraph on architecture",
-      "disposition": "needs_allowlist_expansion",
-      "source_ids": [],
-      "proposed_url": "https://open-policy-agent.github.io/gatekeeper/website/docs/",
-      "proposed_tier": null,
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "This is a real core Gatekeeper concept, but the best primary explanation is on Gatekeeper's off-allowlist documentation site."
-    },
-    {
-      "claim_id": "C016",
-      "claim_text": "Kyverno moved to CNCF Graduated maturity on March 16, 2026.",
-      "claim_class": "standard",
-      "span_hint": "section: Kyverno, opening paragraph",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://www.cncf.io/projects/kyverno/",
-      "proposed_tier": "standards",
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The CNCF project page records the exact graduation date."
-    },
-    {
-      "claim_id": "C017",
-      "claim_text": "Kyverno can validate, mutate, generate, and clean up resources using Kubernetes admission controls and background scans.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Kyverno, opening and differentiators paragraphs",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://github.com/kyverno/kyverno",
-      "proposed_tier": "upstream",
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The Kyverno repository README lists these capabilities directly."
-    },
-    {
-      "claim_id": "C018",
-      "claim_text": "The stated deprecation/removal timeline for legacy `ClusterPolicy` and `CleanupPolicy` kinds is too specific and not backed by the upstream evidence found.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Kyverno, paragraph on CEL transition",
-      "disposition": "cannot_be_salvaged",
-      "source_ids": [],
-      "proposed_url": null,
-      "proposed_tier": null,
-      "anchor_text": "Consequently, the older `ClusterPolicy` and `CleanupPolicy` types were deprecated in v1.17, entered a critical-fixes-only phase in v1.18 and v1.19, and are planned for complete removal in v1.20.",
-      "suggested_rewrite": "Kyverno is steering new policy authoring toward its CEL-based policy APIs, so teams standardising on Kyverno should check the current release notes and migration guidance before committing to older policy kinds.",
-      "lesson_point_url": null,
-      "rationale": "Available upstream evidence supports CEL API evolution, but not this exact legacy-kind deprecation/removal timeline."
-    },
-    {
-      "claim_id": "C019",
-      "claim_text": "Kyverno v1.14 added CEL-based `ValidatingPolicy` support and auto-generated `ValidatingAdmissionPolicy` from that policy type.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Kyverno, paragraph on CEL transition",
-      "disposition": "supported",
-      "source_ids": [],
-      "proposed_url": "https://github.com/kyverno/kyverno/releases/tag/v1.14.0",
-      "proposed_tier": "upstream",
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The v1.14.0 release notes explicitly mention `ValidatingPolicy` support and generated VAP resources."
-    },
-    {
-      "claim_id": "C020",
-      "claim_text": "Kyverno's new CEL policy APIs moved through a staged alpha/beta/v1 transition around the v1.17 release window.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Kyverno, paragraph on CEL transition",
+      "span_hint": "line 123 and comparison table",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/kyverno/kyverno/issues/14276",
@@ -289,41 +121,153 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The tracked migration issue includes an explicit version matrix for the new `policies.kyverno.io` APIs."
+      "rationale": "The Kyverno tracking issue documents the promotion path and release target for the new CEL policy APIs."
     },
     {
-      "claim_id": "C021",
-      "claim_text": "The precise `10,000+` threshold for background-scan resource spikes is unsupported.",
-      "claim_class": "benchmark",
-      "span_hint": "section: Comparison: Gatekeeper vs Kyverno, note box",
+      "claim_id": "C009",
+      "claim_text": "When multiple admission controllers evaluate the same request, a single denial is sufficient to reject it.",
+      "claim_class": "standard",
+      "span_hint": "line 74",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes admission-controller reference describes request rejection behavior across controllers."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Open Policy Agent is a CNCF graduated project, with graduation recorded in 2021.",
+      "claim_class": "standard",
+      "span_hint": "line 78",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.cncf.io/projects/open-policy-agent-opa/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The CNCF project page is the primary source for project maturity status and graduation timing."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Gatekeeper adds Kubernetes-native CRDs, an audit loop, and admission-webhook integration on top of OPA.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 78",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/open-policy-agent/gatekeeper",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Gatekeeper repository describes the Kubernetes-specific controllers, CRDs, and enforcement model."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Gatekeeper mutation became stable in v3.10.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 82",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/open-policy-agent/gatekeeper/releases/tag/v3.10.0",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The v3.10.0 release notes explicitly mark mutation as stable."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Gatekeeper's community policy corpus covers the majority of the CIS Kubernetes Benchmark.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 78",
       "disposition": "cannot_be_salvaged",
       "source_ids": [],
       "proposed_url": null,
       "proposed_tier": null,
-      "anchor_text": "In clusters with 10,000+ ConfigMaps or Secrets, these scans can cause severe CPU and memory spikes that masquerade as a noisy neighbour problem.",
-      "suggested_rewrite": "In large clusters, background scans can create noticeable CPU and memory spikes, so they should be tuned and capacity-tested before rollout.",
+      "anchor_text": "Rego has a real learning curve, especially for teams without a logic-programming background, but it pays back that investment with extreme performance, deterministic evaluation, and a body of well-tested community policies that cover the majority of the CIS Kubernetes Benchmark.",
+      "suggested_rewrite": "Rego has a real learning curve, especially for teams without a logic-programming background, but it pays back that investment with extreme performance, deterministic evaluation, and a large body of community policies covering common Kubernetes security controls.",
       "lesson_point_url": null,
-      "rationale": "The operational risk is plausible, but the exact cluster-size threshold is not sourced."
+      "rationale": "The exact 'majority of CIS' coverage claim is too specific and drifts unless it is backed by a maintained benchmark mapping."
     },
     {
-      "claim_id": "C022",
-      "claim_text": "The claim that both engines maintain exhaustive libraries covering Pod Security Standards, CIS, and many community rules is broader than the evidence found.",
+      "claim_id": "C014",
+      "claim_text": "Kyverno achieved CNCF graduated status on March 16, 2026.",
+      "claim_class": "standard",
+      "span_hint": "line 119",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.cncf.io/projects/kyverno/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The CNCF project page is the primary source for Kyverno's status and graduation date."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "Kyverno's key differentiators are native mutation and resource generation, including generating baseline resources such as NetworkPolicies, ResourceQuotas, and ServiceAccounts.",
       "claim_class": "vendor_capability",
+      "span_hint": "line 121",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/kyverno/kyverno",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kyverno repository describes validate, mutate, generate, and cleanup capabilities directly."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "Background scans in Gatekeeper and Kyverno can create noticeable CPU and memory spikes in large clusters.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Production Gotcha: Background Scans",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Both Gatekeeper and Kyverno perform periodic background scans to catch objects that were valid at creation but violate newly applied policies. In large clusters, background scans can create noticeable CPU and memory spikes, so they should be tuned and capacity-tested before rollout.",
+      "suggested_rewrite": "Both Gatekeeper and Kyverno perform periodic background scans to catch objects that were valid at creation but violate newly applied policies. Those scans add recurring controller load, so tune and capacity-test them before rollout.",
+      "lesson_point_url": null,
+      "rationale": "The operational lesson is sound, but the exact CPU and memory impact claim is too environment-specific as written."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "The `kyverno-policies` Helm chart packages over a hundred validated policies into one install.",
+      "claim_class": "statistic",
       "span_hint": "section: Policy Libraries and Exemption Workflows, opening paragraph",
       "disposition": "cannot_be_salvaged",
       "source_ids": [],
       "proposed_url": null,
       "proposed_tier": null,
-      "anchor_text": "Both projects maintain exhaustive libraries that cover the Pod Security Standards (Restricted and Baseline), the CIS Kubernetes Benchmark, and dozens of opinionated best-practice rules contributed by the community.",
-      "suggested_rewrite": "Both projects maintain large policy libraries covering common Kubernetes security and governance patterns, so starting from those libraries is usually faster and safer than writing every policy from scratch.",
+      "anchor_text": "The Gatekeeper Library lives at `open-policy-agent/gatekeeper-library` on GitHub and ships ready-to-apply ConstraintTemplates organised by category; the Kyverno equivalent is the `kyverno-policies` Helm chart, which packages over a hundred validated policies into one install.",
+      "suggested_rewrite": "The Gatekeeper Library lives at `open-policy-agent/gatekeeper-library` on GitHub and ships ready-to-apply ConstraintTemplates organised by category; the Kyverno equivalent is the `kyverno-policies` Helm chart, which packages a large collection of reusable policies into one install.",
       "lesson_point_url": null,
-      "rationale": "The existence of policy libraries is easy to verify, but the exact coverage claim is too sweeping as written."
+      "rationale": "The exact policy count is time-sensitive and should be removed unless tied to a specific versioned catalog."
     },
     {
-      "claim_id": "C023",
-      "claim_text": "`gator test` is presented as a local Gatekeeper policy test workflow for CI.",
+      "claim_id": "C018",
+      "claim_text": "MatchConditions were introduced in Kubernetes v1.28 and filter requests at the API server before the webhook is called.",
+      "claim_class": "standard",
+      "span_hint": "line 186",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/blog/2023/08/15/kubernetes-v1-28-release/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The v1.28 release notes explicitly call out webhook match conditions and their placement in request filtering."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "`gator` evaluates Gatekeeper ConstraintTemplates and Constraints locally, and `gator test` runs test suites against manifests without a cluster.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Policy CI/CD and Testing, Gatekeeper paragraph",
+      "span_hint": "line 196",
       "disposition": "needs_allowlist_expansion",
       "source_ids": [],
       "proposed_url": "https://open-policy-agent.github.io/gatekeeper/website/docs/gator/",
@@ -331,27 +275,41 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "This is a real Gatekeeper CLI capability, but the primary reference is on Gatekeeper's off-allowlist docs site."
+      "rationale": "The official Gatekeeper gator documentation directly supports this, but the primary host is off-allowlist."
     },
     {
-      "claim_id": "C024",
-      "claim_text": "`kyverno test` is presented as a YAML-driven local test workflow for Kyverno policies.",
+      "claim_id": "C020",
+      "claim_text": "The `kyverno` CLI `test` command runs YAML-defined policy tests over local folders or Git repositories and compares expected against actual results.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Policy CI/CD and Testing, Kyverno paragraph",
+      "span_hint": "line 202",
       "disposition": "needs_allowlist_expansion",
       "source_ids": [],
-      "proposed_url": "https://kyverno.io/docs/kyverno-cli/usage/test/",
+      "proposed_url": "https://kyverno.io/docs/kyverno-cli/reference/kyverno_test/",
       "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "This is a real Kyverno CLI capability, but the authoritative user documentation is on Kyverno's off-allowlist docs site."
+      "rationale": "The official Kyverno CLI docs directly describe the command behavior, but the primary host is off-allowlist."
     },
     {
-      "claim_id": "C025",
+      "claim_id": "C021",
+      "claim_text": "Managed cloud providers offer their own host- or platform-level runtime detection layers beneath Kubernetes, exemplified here by GuardDuty, Security Command Center, and Defender for Cloud.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 236",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Cloud providers offer their own runtime detection layers (GuardDuty on AWS, Security Command Center on GCP, Defender for Cloud on Azure) that sit underneath the cluster and watch the host for suspicious activity even when your in-cluster tools are blind.",
+      "suggested_rewrite": "Managed cloud platforms often include provider-level host and threat-detection integrations that bare-metal teams must assemble themselves.",
+      "lesson_point_url": null,
+      "rationale": "The named cross-vendor product comparison is broader than a single primary source and is better kept as a general platform contrast."
+    },
+    {
+      "claim_id": "C022",
       "claim_text": "Falco is a CNCF graduated project.",
       "claim_class": "standard",
-      "span_hint": "section: Runtime Security: Falco vs Tetragon, Falco subsection opening",
+      "span_hint": "line 242",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://www.cncf.io/projects/falco/",
@@ -359,13 +317,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The CNCF project page records Falco's graduation status and date."
+      "rationale": "The CNCF project page is the primary source for Falco's maturity status."
     },
     {
-      "claim_id": "C026",
-      "claim_text": "Falco's syscall capture path uses either a kernel module or an eBPF probe, with userspace libraries reading events from a ring buffer.",
+      "claim_id": "C023",
+      "claim_text": "Falco captures kernel events via kernel drivers or eBPF and evaluates them in userspace, so it is an asynchronous detect-and-alert system rather than an in-kernel blocker.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Runtime Security: Falco vs Tetragon, Falco architecture paragraphs",
+      "span_hint": "lines 242-244",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/falcosecurity/libs",
@@ -373,13 +331,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Falco libs repository describes the kernel module/eBPF drivers and the userspace ring-buffer path."
+      "rationale": "The Falco libs repository is the primary upstream source for the driver stack and userspace event-processing path."
     },
     {
-      "claim_id": "C027",
-      "claim_text": "Tetragon is an eBPF-based runtime enforcement and observability tool that can react to security-significant events.",
+      "claim_id": "C024",
+      "claim_text": "Tetragon is an eBPF-based runtime security observability and enforcement tool that can block matched activity in kernel context before syscall completion.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Runtime Security: Falco vs Tetragon, Tetragon subsection opening",
+      "span_hint": "lines 264-266 and 291",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/cilium/tetragon",
@@ -387,77 +345,72 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Tetragon repository README explicitly describes real-time eBPF-based runtime enforcement and reaction to security-significant events."
+      "rationale": "The Tetragon repository explicitly describes real-time eBPF-based runtime enforcement and tracing-policy actions."
     },
     {
-      "claim_id": "C029",
-      "claim_text": "The exact Tetragon kernel floor and preference statement (`5.10` hard floor, `6.x` preferred) is too specific for the evidence gathered.",
+      "claim_id": "C025",
+      "claim_text": "The exact kernel-floor guidance for BTF, legacy 3.10 kernels, Tetragon incompatibility, and historical Falco driver panics is too specific as written.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Runtime Security: Falco vs Tetragon, Tetragon subsection",
+      "span_hint": "line 304",
       "disposition": "cannot_be_salvaged",
       "source_ids": [],
       "proposed_url": null,
       "proposed_tier": null,
-      "anchor_text": "Tetragon requires modern kernels with BTF (BPF Type Format) enabled, currently 5.10 or later as a hard floor and 6.x preferred.",
-      "suggested_rewrite": "Tetragon depends on modern kernels with the required eBPF and BTF capabilities enabled, so kernel compatibility should be validated early in any rollout.",
+      "anchor_text": "eBPF tools require modern kernels with BTF enabled. If you operate bare-metal nodes on legacy OS versions (RHEL 7 or CentOS 7 with kernel 3.10), Tetragon will not work, and Falco must fall back to the legacy kernel module, which historically has caused node panics during driver loading. Ensure your bare-metal OS strategy includes modern kernels (5.10 minimum, 6.x preferred) with `CONFIG_DEBUG_INFO_BTF=y` and treat the kernel floor as a hard gating requirement for any runtime security tool you adopt.",
+      "suggested_rewrite": "eBPF-based runtime tooling depends on kernel features such as BTF, so validate kernel compatibility early and treat OS modernization as part of the runtime security rollout.",
       "lesson_point_url": null,
-      "rationale": "Kernel/BTF dependence is real, but the exact floor/preference values were not confirmed from an allowlisted primary source."
+      "rationale": "The high-level lesson is valid, but the precise distro/version and panic-history details need narrower primary sources than this module currently carries."
     },
     {
-      "claim_id": "C030",
-      "claim_text": "The `100ms` p99 webhook-latency threshold is an unsupported prescriptive benchmark.",
-      "claim_class": "benchmark",
-      "span_hint": "section: Policy CI/CD and Testing, final paragraph",
+      "claim_id": "C026",
+      "claim_text": "The Linux eBPF verifier checks programs before load and rejects unsafe constructs such as invalid control flow or out-of-bounds accesses.",
+      "claim_class": "standard",
+      "span_hint": "line 311",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.kernel.org/bpf/verifier.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Linux kernel verifier documentation is the right primary source, but the domain is off-allowlist."
+    },
+    {
+      "claim_id": "C027",
+      "claim_text": "Kyverno's generation feature originated from a specific Nirmata multi-tenancy onboarding problem and then spread into broader reference architectures.",
+      "claim_class": "war_story",
+      "span_hint": "line 312",
       "disposition": "cannot_be_salvaged",
       "source_ids": [],
       "proposed_url": null,
       "proposed_tier": null,
-      "anchor_text": "Any policy whose evaluation pushes the p99 webhook latency above 100ms is a production risk and should be optimised or split before rollout.",
-      "suggested_rewrite": "Any policy that adds material webhook latency under representative load is a production risk and should be optimised or split before rollout.",
+      "anchor_text": "**Kyverno's generation feature was originally added to solve a multi-tenancy onboarding problem at Nirmata**, the company that founded the project. Their platform team was manually creating a NetworkPolicy, ResourceQuota, and default ServiceAccount for every new tenant namespace, and the toil eventually justified building generation as a first-class policy primitive.",
+      "suggested_rewrite": "Kyverno's generation feature is particularly useful for multi-tenant onboarding because it can automatically create baseline resources such as NetworkPolicies, ResourceQuotas, and ServiceAccounts when a namespace appears.",
       "lesson_point_url": null,
-      "rationale": "The performance-testing recommendation is sensible, but the exact numeric threshold is not sourced."
+      "rationale": "This is a specific origin story with named-entity attribution and operational detail that should be removed unless backed by a primary historical source."
     }
   ],
   "further_reading": [
     {
-      "url": "https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/",
-      "title": "Kubernetes Validating Admission Policy",
-      "tier": "standards",
-      "why_relevant": "Primary reference for native CEL-based admission validation, bindings, match conditions, and validation actions."
-    },
-    {
       "url": "https://kubernetes.io/docs/concepts/cluster-administration/admission-webhooks-good-practices/",
       "title": "Kubernetes Admission Webhook Good Practices",
       "tier": "standards",
-      "why_relevant": "Best source for webhook scoping, failure behavior, latency, and deadlock-avoidance guidance."
+      "why_relevant": "Best single reference for webhook scoping, dependency-loop avoidance, timeout, and HA design."
     },
     {
-      "url": "https://kubernetes.io/docs/concepts/security/pod-security-admission/",
-      "title": "Kubernetes Pod Security Admission",
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy",
+      "title": "Kubernetes Validating Admission Policy",
       "tier": "standards",
-      "why_relevant": "Authoritative source for PSA labels, levels, and the built-in pod-hardening model that replaced PSP-era workflows."
-    },
-    {
-      "url": "https://github.com/falcosecurity/falco",
-      "title": "Falco Repository",
-      "tier": "upstream",
-      "why_relevant": "Useful for the current project scope, runtime-detection model, and adjacent documentation links for Falco deployments."
+      "why_relevant": "Primary reference for native CEL policies, bindings, validation actions, and API-server-native enforcement."
     },
     {
       "url": "https://github.com/cilium/tetragon",
-      "title": "Tetragon Repository",
+      "title": "Tetragon",
       "tier": "upstream",
-      "why_relevant": "Useful for the current project scope, runtime-enforcement model, and adjacent documentation links for Tetragon policies."
+      "why_relevant": "Best upstream overview of TracingPolicy-based runtime observability and enforcement."
     }
   ],
-  "notes": "Focused on prose claims outside the Quiz and Hands-On Exercise per task rules. Code blocks were not seeded. Table-only facts were only captured when they introduced unique version/capability claims already echoed in prose. Several Kyverno and Gatekeeper CLI/details claims are real but need allowlist expansion because their best primary docs live on off-allowlist project documentation sites.",
+  "notes": "Repeated facts in Did You Know and quiz explanations were consolidated into the main prose claims instead of duplicated. Quiz prompts, code blocks, Mermaid content, and exercise steps were intentionally excluded per the brief.",
   "_schema_issues": [],
-  "rejected_urls": [
-    {
-      "url": "https://www.kernel.org/doc/html/latest/bpf/verifier.html",
-      "reason": "off_allowlist",
-      "at_step": "research_validation",
-      "agent_proposed_tier": "standards"
-    }
-  ]
+  "rejected_urls": []
 }
