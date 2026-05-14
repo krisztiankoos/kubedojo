@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.1: The 4 Cs of Cloud Native Security"
 slug: k8s/kcsa/part1-cloud-native-security/module-1.1-four-cs
 sidebar:
@@ -121,7 +122,7 @@ The Cloud layer includes the infrastructure that makes the cluster possible: acc
 
 Cloud failures are powerful because cloud identities often sit outside Kubernetes authorization. If an attacker can use an infrastructure credential to create a node, attach a disk, change a firewall, read an object bucket, or modify a managed cluster, Kubernetes RBAC may never get a chance to deny the action. This is why "we locked down the cluster" is incomplete when the cloud account can still create an administrator path around the cluster. The Cloud layer asks whether the foundation is trustworthy enough for the cluster to rely on it.
 
-Managed Kubernetes changes which tasks you perform, not whether the Cloud layer exists. The provider may patch the hosted API server, run etcd, and operate availability zones. You still configure the cloud account, network reachability, workload identity, logging sinks, encryption keys, and many managed cluster options. KCSA scenarios often test this shared-responsibility boundary because learners who over-trust the provider miss customer-owned configuration. A strong answer names the provider-operated part and the customer-operated part instead of saying "managed" as though it ends the analysis.
+Managed Kubernetes changes which tasks you perform, not whether the Cloud layer exists. The provider may patch the hosted API server, run etcd, and operate availability zones. You still configure the cloud account, network reachability, workload identity, logging sinks, encryption keys, and many managed cluster options. KCSA scenarios often test this shared-responsibility boundary because learners who over-trust the provider miss customer-owned configuration. A strong answer names the [provider-operated part and the customer-operated part](https://cloud.google.com/kubernetes-engine/docs/concepts/shared-responsibility) instead of saying "managed" as though it ends the analysis.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -196,7 +197,7 @@ The most common Cluster-layer mistake is confusing authentication with authoriza
 |---|---|---|
 | RBAC | Limits what authenticated users and service accounts can do through the Kubernetes API. | It does not stop application-layer injection, unsafe cloud IAM, or traffic between Pods by itself. |
 | Admission policy | Rejects risky objects before they are persisted or scheduled, such as privileged Pods or untrusted images. | It does not patch vulnerable dependencies already inside an approved image. |
-| NetworkPolicy | Limits Pod-to-Pod and Pod-to-external communication when supported by the network plugin. | It does not replace application authorization or cloud firewall rules. |
+| NetworkPolicy | Limits Pod-to-Pod and Pod-to-external communication [when supported by the network plugin](https://v1-35.docs.kubernetes.io/docs/concepts/services-networking/network-policies/). | It does not replace application authorization or cloud firewall rules. |
 | Audit logging | Creates evidence of API activity for detection, investigation, and compliance. | It does not prevent an action unless paired with policy or response automation. |
 | etcd encryption | Protects stored Kubernetes Secret data if the datastore or backups are exposed. | It does not stop a Pod with legitimate Secret access from reading the Secret through the API. |
 
@@ -268,7 +269,7 @@ A subtle point is that some controls involve two layers at once. Image signing i
 | `allowPrivilegeEscalation` | Set false unless a tightly reviewed workload requires it. | The process should not gain more privilege than its initial container configuration grants. |
 | `capabilities` | Drop all, then add only a documented minimum set. | Linux capabilities split root-like powers into smaller pieces that should not be granted casually. |
 | `privileged` | Keep false for ordinary workloads. | Privileged containers weaken isolation and can create a path toward node compromise. |
-| `seccompProfile` | Use `RuntimeDefault` as a baseline in Kubernetes 1.35+ unless a workload needs a custom profile. | Seccomp reduces the system call surface available to the process. |
+| `seccompProfile` | Use [`RuntimeDefault` as a baseline in Kubernetes 1.35+](https://v1-35.docs.kubernetes.io/docs/concepts/security/pod-security-standards/) unless a workload needs a custom profile. | Seccomp reduces the system call surface available to the process. |
 
 The Container layer is also where supply chain risk becomes visible. A developer may not write vulnerable code directly, but a base image, operating system package, or language dependency can carry known vulnerabilities into production. Scanning is useful, but a scan result is not a boundary. The boundary comes from deciding which findings block release, which images are allowed to run, how quickly patched images are rebuilt, and whether Kubernetes admission enforces the policy consistently. Without a release rule, a vulnerability report is only a document that says a risk exists.
 
@@ -469,7 +470,7 @@ When two answers both sound secure, choose the one that changes the decision poi
 ## Did You Know?
 
 - **The 4 Cs model appears in Kubernetes security guidance** because it gives teams a shared vocabulary for layered controls instead of treating Kubernetes as the only security boundary.
-- **Kubernetes Pod Security Standards define three policy levels** named privileged, baseline, and restricted, which helps teams reason about Container-layer risk through Cluster-layer admission.
+- **Kubernetes Pod Security Standards define three policy levels** named [privileged, baseline, and restricted](https://kubernetes.io/docs/concepts/security/pod-security-standards/), which helps teams reason about Container-layer risk through Cluster-layer admission.
 - **Kubernetes 1.35+ still uses shared responsibility in managed services** because providers may operate control plane components while customers configure workloads, RBAC, admission, namespaces, and network policy.
 - **Container hardening is containment, not application repair** because non-root users, read-only filesystems, and seccomp reduce attacker options after code is already executing.
 
@@ -602,3 +603,7 @@ Immediate containment should narrow the service account, restrict namespace egre
 - [Kubernetes Documentation: Seccomp](https://kubernetes.io/docs/tutorials/security/seccomp/)
 - [Kubernetes Documentation: Good Practices for Kubernetes Secrets](https://kubernetes.io/docs/concepts/security/secrets-good-practices/)
 - [CNCF Cloud Native Security Whitepaper](https://github.com/cncf/tag-security/blob/main/security-whitepaper/v2/CNCF_cloud-native-security-whitepaper-May2022-v2.pdf)
+- [cloud.google.com: shared responsibility](https://cloud.google.com/kubernetes-engine/docs/concepts/shared-responsibility) — The GKE shared-responsibility page explicitly splits provider responsibilities for underlying and control-plane components from customer responsibilities for workloads and RBAC/IAM policy.
+- [v1-35.docs.kubernetes.io: network policies](https://v1-35.docs.kubernetes.io/docs/concepts/services-networking/network-policies/) — The Kubernetes v1.35 NetworkPolicy docs state that NetworkPolicy is implemented by the network plugin and has no effect without supporting enforcement.
+- [v1-35.docs.kubernetes.io: pod security standards](https://v1-35.docs.kubernetes.io/docs/concepts/security/pod-security-standards/) — The v1.35 Pod Security Standards page explicitly lists `RuntimeDefault` and `Localhost` as the allowed seccomp values for the Restricted policy.
+- [CNCF Cloud Native Security Whitepaper](https://github.com/cncf/tag-security/blob/main/community/resources/security-whitepaper/v2/cloud-native-security-whitepaper.md) — It provides broader cloud-native security context beyond Kubernetes primitives and helps frame layered defense decisions.

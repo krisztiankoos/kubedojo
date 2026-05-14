@@ -1,0 +1,144 @@
+{
+  "module_key": "k8s/kcsa/part1-cloud-native-security/module-1.1-four-cs",
+  "module_path": "src/content/docs/k8s/kcsa/part1-cloud-native-security/module-1.1-four-cs.md",
+  "research_run_id": "2026-05-14T05:03:35+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening incident describes a late-2019 financial-services breach where an attacker reached sensitive data by abusing SSRF and cloud instance metadata.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 1 sentence 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In late 2019, a large financial services company disclosed that an attacker had reached sensitive application data after abusing a server-side request forgery flaw and cloud instance metadata.",
+      "suggested_rewrite": "A well-known cloud breach showed how a web application flaw, reachable instance metadata, and cloud access can combine into a layered failure.",
+      "lesson_point_url": null,
+      "rationale": "The sentence clearly points to a real incident but does not provide a source precise enough to support the specific event framing as written."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The module attributes specific business consequences to that incident, including regulatory, legal, remediation, and reputational impact.",
+      "claim_class": "incident",
+      "span_hint": "section: Why This Module Matters, paragraph 1 sentence 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The reported business impact included regulatory penalties, legal costs, remediation work, and years of reputational damage, which is exactly why cloud native security cannot be reduced to one scanner, one firewall, or one Kubernetes policy.",
+      "suggested_rewrite": "Incidents like this can trigger regulatory, legal, remediation, and reputational costs, which is why cloud native security cannot be reduced to one scanner, one firewall, or one Kubernetes policy.",
+      "lesson_point_url": null,
+      "rationale": "The consequences are asserted as reported facts about a real incident but are not tied to a cited primary source in the module."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Managed Kubernetes still follows a shared-responsibility model, with the provider operating platform components while the customer remains responsible for workloads and RBAC/IAM policy.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Layer 1: Cloud, paragraph 3",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://cloud.google.com/kubernetes-engine/docs/concepts/shared-responsibility",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The GKE shared-responsibility page explicitly splits provider responsibilities for underlying and control-plane components from customer responsibilities for workloads and RBAC/IAM policy."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "NetworkPolicy enforcement depends on a networking solution that supports NetworkPolicy; creating the object without a supporting controller has no effect.",
+      "claim_class": "standard",
+      "span_hint": "section: Layer 2: Cluster, table row for NetworkPolicy; also later evidence paragraph",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://v1-35.docs.kubernetes.io/docs/concepts/services-networking/network-policies/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes v1.35 NetworkPolicy docs state that NetworkPolicy is implemented by the network plugin and has no effect without supporting enforcement."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "In Kubernetes v1.35, the Restricted Pod Security Standard requires seccomp to be explicitly set to `RuntimeDefault` or `Localhost`.",
+      "claim_class": "standard",
+      "span_hint": "section: Layer 3: Container, table row for `seccompProfile`",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://v1-35.docs.kubernetes.io/docs/concepts/security/pod-security-standards/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The v1.35 Pod Security Standards page explicitly lists `RuntimeDefault` and `Localhost` as the allowed seccomp values for the Restricted policy."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The module says the 4 Cs model appears in Kubernetes security guidance.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**The 4 Cs model appears in Kubernetes security guidance** because it gives teams a shared vocabulary for layered controls instead of treating Kubernetes as the only security boundary.",
+      "suggested_rewrite": "**The 4 Cs model is a useful teaching framework** because it gives teams a shared vocabulary for layered controls instead of treating Kubernetes as the only security boundary.",
+      "lesson_point_url": null,
+      "rationale": "Current upstream Kubernetes guidance centers on lifecycle phases and layered controls, so the attribution to Kubernetes guidance should be removed unless a precise historical source is intentionally cited."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Kubernetes Pod Security Standards define three policy levels: privileged, baseline, and restricted.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Pod Security Standards documentation explicitly defines the three policy levels and names them Privileged, Baseline, and Restricted."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The module makes a version-specific managed-services shared-responsibility claim for Kubernetes 1.35+ with a detailed provider/customer split.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know, bullet 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**Kubernetes 1.35+ still uses shared responsibility in managed services** because providers may operate control plane components while customers configure workloads, RBAC, admission, namespaces, and network policy.",
+      "suggested_rewrite": "**Managed Kubernetes still uses shared responsibility** because providers operate parts of the platform while customers remain responsible for securing the workloads and policies they run.",
+      "lesson_point_url": null,
+      "rationale": "The underlying principle is sound, but the version-specific and cross-provider wording is broader than the exact support available from a single authoritative page."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/concepts/security/overview/",
+      "title": "Kubernetes Security Overview",
+      "tier": "standards",
+      "why_relevant": "This is the upstream entry point for Kubernetes security mechanisms and related hardening topics."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/",
+      "title": "Pod Security Standards",
+      "tier": "standards",
+      "why_relevant": "This is the canonical reference for Pod hardening levels and the fields that matter at the Cluster and Container layers."
+    },
+    {
+      "url": "https://github.com/cncf/tag-security/blob/main/community/resources/security-whitepaper/v2/cloud-native-security-whitepaper.md",
+      "title": "CNCF Cloud Native Security Whitepaper",
+      "tier": "upstream",
+      "why_relevant": "It provides broader cloud-native security context beyond Kubernetes primitives and helps frame layered defense decisions."
+    }
+  ],
+  "notes": "Most of the module is pedagogical and does not need dense inline citation. The main inline-citation pressure points are the opening incident anecdote, managed-service responsibility claims, the NetworkPolicy enforcement caveat, and Pod Security Standards/seccomp specifics.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
