@@ -1,0 +1,286 @@
+{
+  "module_key": "k8s/ica/module-1.4-istio-observability",
+  "module_path": "src/content/docs/k8s/ica/module-1.4-istio-observability.md",
+  "research_run_id": "2026-05-14T04:32:33+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Modern Istio observability is configured through the Telemetry API, while Mixer-era telemetry is deprecated/historical.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 25",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S002"
+      ],
+      "proposed_url": "https://istio.io/latest/news/releases/1.5.x/announcing-1.5/upgrade-notes/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Istio's upgrade notes explicitly deprecate Mixer and current telemetry docs position Telemetry API as the first-class configuration surface."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Istio sidecar proxies generate mesh telemetry for service traffic and can provide metrics, traces, and access logs without requiring each application to add its own basic transport instrumentation.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 47-49; lines 65-67",
+      "disposition": "supported",
+      "source_ids": [
+        "S003",
+        "S007"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/concepts/observability/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Istio's observability concept page says it generates telemetry for mesh traffic without added burden on service developers, and the metrics reference documents the standard proxy-emitted metrics."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The ICA exam treats observability as a distinct domain/topic area.",
+      "claim_class": "standard",
+      "span_hint": "line 51",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S015"
+      ],
+      "proposed_url": "https://training.linuxfoundation.org/certification/istio-certified-associate-ica/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a named curriculum/exam-structure claim that should be grounded in the official ICA blueprint or exam page, which is off the current allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Kiali infers topology from traffic telemetry and can validate Istio configuration resources.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 139-141; lines 657-657; lines 704-704",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/ops/integrations/kiali/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Istio's Kiali integration page says Kiali monitors traffic flow to infer topology and provides configuration/validation capabilities."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The Telemetry API configures metrics, tracing, and access logging, with workload-specific settings overriding namespace-specific settings, which override root-namespace defaults; mesh-wide resources belong in the root namespace without a selector.",
+      "claim_class": "standard",
+      "span_hint": "lines 147-150; lines 175-179; lines 236-240",
+      "disposition": "supported",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/reference/config/telemetry/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Telemetry reference defines the hierarchy and placement rules for mesh-wide, namespace-scoped, and workload-scoped Telemetry resources."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Istio standard service metrics include `istio_requests_total` and `istio_request_duration_milliseconds`, along with request/response size metrics and TCP byte/connection metrics.",
+      "claim_class": "standard",
+      "span_hint": "lines 296-307",
+      "disposition": "supported",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/reference/config/metrics/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Istio standard metrics reference enumerates these metric names and their types."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Istio metrics use labels such as `reporter`, `destination_workload`, `response_flags`, and `connection_security_policy`, and `reporter=\"destination\"` means the series was reported by a server-side proxy while `reporter=\"source\"` means a client proxy or gateway.",
+      "claim_class": "standard",
+      "span_hint": "lines 309-337",
+      "disposition": "supported",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/reference/config/metrics/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The labels section of the Istio metrics reference defines these labels and the reporter semantics directly."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "PromQL percentile queries over classic histograms use `histogram_quantile()` on `_bucket` series and must preserve the `le` label during aggregation.",
+      "claim_class": "standard",
+      "span_hint": "lines 363-382",
+      "disposition": "supported",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://prometheus.io/docs/prometheus/latest/querying/functions/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Prometheus query-functions reference documents `histogram_quantile()`, the `_bucket` suffix, and the need to retain `le` for classic histogram aggregation."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Istio/Envoy merged Prometheus metrics are scraped from `:15020/stats/prometheus`, so checking that endpoint directly on the sidecar can distinguish proxy emission from scraping problems.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 389-415; lines 842-847",
+      "disposition": "supported",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/ops/integrations/prometheus/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Istio's Prometheus integration docs state that merged metrics are scraped from `:15020/stats/prometheus`."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Applications must propagate trace context headers such as `x-request-id`, `traceparent`, `tracestate`, and B3 headers so proxy-generated spans can be joined into a single trace; otherwise traces fragment.",
+      "claim_class": "standard",
+      "span_hint": "lines 433-476; lines 802-807",
+      "disposition": "supported",
+      "source_ids": [
+        "S004",
+        "S005"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/tasks/observability/distributed-tracing/overview/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Istio's tracing overview and tracing FAQ both say applications must forward these headers for spans to stitch into one trace."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Trace sampling and trace propagation are separate concerns: `randomSamplingPercentage` controls trace selection only when no prior sampling decision exists, and it does not fix missing propagation.",
+      "claim_class": "standard",
+      "span_hint": "lines 474-486; lines 529-531; lines 755-756",
+      "disposition": "supported",
+      "source_ids": [
+        "S004",
+        "S006"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/reference/config/telemetry/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Telemetry reference defines `randomSamplingPercentage` semantics, and the tracing overview explains that propagation is an application responsibility."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Tracing providers are defined as MeshConfig extension providers, and Telemetry references them by provider name.",
+      "claim_class": "standard",
+      "span_hint": "lines 488-516",
+      "disposition": "supported",
+      "source_ids": [
+        "S004",
+        "S006"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/tasks/observability/distributed-tracing/overview/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Istio's tracing overview says extension providers are defined in MeshConfig, and the Telemetry reference defines provider refs by MeshConfig provider name."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Jaeger collectors can accept Zipkin-format spans, which is why Istio examples can use Zipkin-style provider configuration even when the backend is Jaeger.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 527",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S014"
+      ],
+      "proposed_url": "https://www.jaegertracing.io/docs/1.76/architecture/apis/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The authoritative Jaeger API page documents Zipkin-compatible ingest endpoints, but `jaegertracing.io` is off the current allowlist."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Istio Telemetry can enable access logging and filter it with CEL expressions such as `response.code >= 500`; failed connections may have no `response.code` attribute.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 553-596; lines 812-817",
+      "disposition": "supported",
+      "source_ids": [
+        "S010",
+        "S006"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/tasks/observability/logs/telemetry-api/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Telemetry access-log task shows CEL filtering on `response.code` and explicitly notes that failed connections can lack a `response.code` attribute."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "Istio's default Envoy access log format includes fields such as response code, response flags, request ID, and upstream cluster, and mesh config can switch log encoding between JSON and text.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 604-635",
+      "disposition": "supported",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": "https://istio.io/latest/docs/tasks/observability/logs/access-log/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Istio's Envoy access-log task shows the default field layout and documents `accessLogEncoding` values `JSON` and `TEXT`."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://istio.io/latest/docs/reference/config/telemetry/",
+      "title": "Istio Telemetry Reference",
+      "tier": "upstream",
+      "why_relevant": "Canonical reference for Telemetry scope, overrides, tracing, metrics, and access-logging configuration."
+    },
+    {
+      "url": "https://istio.io/latest/docs/reference/config/metrics/",
+      "title": "Istio Standard Metrics",
+      "tier": "upstream",
+      "why_relevant": "Defines the metric names, labels, and semantics used throughout the module's PromQL and dashboard guidance."
+    },
+    {
+      "url": "https://istio.io/latest/docs/tasks/observability/distributed-tracing/overview/",
+      "title": "Distributed Tracing Overview",
+      "tier": "upstream",
+      "why_relevant": "Best source for trace propagation requirements, provider setup, and the boundary between proxy-generated spans and application behavior."
+    },
+    {
+      "url": "https://istio.io/latest/docs/tasks/observability/kiali/",
+      "title": "Visualizing Your Mesh with Kiali",
+      "tier": "upstream",
+      "why_relevant": "Shows how Kiali uses Istio telemetry for graphs and how it fits into observability workflows."
+    }
+  ],
+  "notes": "Excluded analogies, quizzes, and code blocks unless surrounding prose made a load-bearing factual claim. No rewrite dispositions were needed. Two claims need allowlist expansion: the ICA curriculum-domain reference and the Jaeger Zipkin-ingest compatibility reference.",
+  "_schema_issues": [
+    "claim[2]:needs_allowlist_expansion_but_url_is_already_allowlisted"
+  ],
+  "rejected_urls": []
+}

@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.4: Istio Observability"
 slug: k8s/ica/module-1.4-istio-observability
 sidebar:
@@ -22,7 +23,7 @@ Before starting this module, you should have completed the earlier ICA modules b
 - Basic Kubernetes operational comfort with Deployments, Services, namespaces, labels, and `kubectl logs`
 - Basic familiarity with metrics, logs, traces, and Prometheus-style time series queries
 
-This module assumes Kubernetes 1.35+ and a modern Istio installation using the Telemetry API. Older Istio material may mention Mixer, global-only tracing flags, or heavy `EnvoyFilter` customization for basic telemetry. Treat those patterns as historical unless a legacy cluster forces you to maintain them.
+This module assumes Kubernetes 1.35+ and a modern Istio installation using the [Telemetry API](https://istio.io/latest/news/releases/1.5.x/announcing-1.5/upgrade-notes/). Older Istio material may mention Mixer, global-only tracing flags, or heavy `EnvoyFilter` customization for basic telemetry. Treat those patterns as historical unless a legacy cluster forces you to maintain them.
 
 ---
 
@@ -62,7 +63,7 @@ This module therefore treats observability as an operating method, not as a tour
 
 ## 1. Build the Observability Mental Model
 
-Istio observability starts with a simple mechanism: every injected workload has an Envoy proxy, and traffic that passes through Envoy can be measured consistently. The application still matters, especially for business events and trace propagation, but the mesh gives you a shared layer of network and request telemetry.
+Istio observability starts with a simple mechanism: [every injected workload has an Envoy proxy, and traffic that passes through Envoy can be measured consistently](https://istio.io/latest/docs/concepts/observability/). The application still matters, especially for business events and trace propagation, but the mesh gives you a shared layer of network and request telemetry.
 
 The most important beginner mistake is treating metrics, logs, traces, and topology as interchangeable. They overlap, but they do not answer the same question. A metric can show that error rate rose at 14:05, but it usually cannot show the exact request headers that triggered the failure. A trace can show one slow request path, but it cannot prove how many users were affected without metrics.
 
@@ -237,7 +238,7 @@ spec:
 >
 > `checkout` should use the workload-level setting because it is the most specific matching scope. Other workloads in `payments` should use the namespace-level setting, and workloads outside `payments` should use the mesh-wide default.
 
-A common source of silent confusion is namespace placement. A mesh-wide resource belongs in `istio-system` with no selector. A namespace-wide resource belongs in the application namespace with no selector. A workload resource also belongs in the application namespace, and its selector must match the workload Pod labels, not the Kubernetes Service labels unless those labels are actually present on the Pods.
+A common source of silent confusion is namespace placement. [A mesh-wide resource belongs in `istio-system` with no selector](https://istio.io/latest/docs/reference/config/telemetry/). A namespace-wide resource belongs in the application namespace with no selector. A workload resource also belongs in the application namespace, and its selector must match the workload Pod labels, not the Kubernetes Service labels unless those labels are actually present on the Pods.
 
 You can inspect the labels before writing a workload selector. This avoids a situation where the YAML applies successfully but matches nothing useful.
 
@@ -293,7 +294,7 @@ Think about Telemetry scope the same way you think about a blast radius for a ro
 
 Istio standard metrics let you build RED dashboards: rate, errors, and duration. These three signals are enough to answer the first operational question for most HTTP and gRPC services: how much traffic is arriving, how much is failing, and how long successful or failed requests take.
 
-The main counter for request volume and errors is `istio_requests_total`. The main histogram for latency is `istio_request_duration_milliseconds`. Request and response size histograms help when payload growth or compression behavior affects performance.
+The main counter for request volume and errors is [`istio_requests_total`. The main histogram for latency is `istio_request_duration_milliseconds`](https://istio.io/latest/docs/reference/config/metrics/). Request and response size histograms help when payload growth or compression behavior affects performance.
 
 | Metric | Type | Primary question |
 |---|---|---|
@@ -306,7 +307,7 @@ The main counter for request volume and errors is `istio_requests_total`. The ma
 | `istio_tcp_connections_opened_total` | Counter | How many TCP connections opened? |
 | `istio_tcp_connections_closed_total` | Counter | How many TCP connections closed? |
 
-Istio metrics include labels that describe the reporter, source, destination, response code, protocol, and security policy. These labels make the metrics useful, but they also create opportunities for wrong queries. The same request may be observed from the source side and destination side, so you need to choose the reporter intentionally.
+Istio metrics include [labels that describe the reporter, source, destination, response code, protocol, and security policy](https://istio.io/latest/docs/reference/config/metrics/). These labels make the metrics useful, but they also create opportunities for wrong queries. The same request may be observed from the source side and destination side, so you need to choose the reporter intentionally.
 
 ```text
 istio_requests_total{
@@ -360,7 +361,7 @@ sum(rate(istio_requests_total{
 }[5m]))
 ```
 
-Now imagine the error rate is acceptable but users still complain about slowness. Latency histograms require a different shape because the raw metric has bucket series. `histogram_quantile` estimates a percentile from the per-bucket rates.
+Now imagine the error rate is acceptable but users still complain about slowness. Latency histograms require a different shape because the raw metric has bucket series. [`histogram_quantile` estimates a percentile from the per-bucket rates](https://prometheus.io/docs/prometheus/latest/querying/functions/).
 
 ```promql
 histogram_quantile(0.99,
@@ -457,7 +458,7 @@ A trace is the whole request journey. A span is one timed unit of work inside th
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Common headers include the B3 family and the W3C Trace Context family. You do not need to memorize every header for daily operations, but you do need to recognize that applications must forward the incoming context to outgoing requests.
+Common headers include the B3 family and the W3C Trace Context family. You do not need to memorize every header for daily operations, but you do need to recognize that [applications must forward the incoming context to outgoing requests](https://istio.io/latest/docs/tasks/observability/distributed-tracing/overview/).
 
 ```text
 x-request-id
@@ -473,7 +474,7 @@ tracestate
 
 > **Pause and predict:** A Java service uses an HTTP client that creates a fresh outbound request and copies no inbound headers. Istio tracing is enabled at `100.0` percent for that workload. Will the backend call join the frontend trace?
 >
-> No. Full sampling increases how often traces are recorded, but it does not repair missing propagation. The application or its tracing library still needs to copy or inject the trace context into outbound requests.
+> No. [Full sampling increases how often traces are recorded, but it does not repair missing propagation](https://istio.io/latest/docs/reference/config/telemetry/). The application or its tracing library still needs to copy or inject the trace context into outbound requests.
 
 Trace sampling is a cost and visibility trade-off. Low sampling reduces storage and query cost in high-volume systems, but it may miss rare failures. High sampling is appropriate during targeted debugging, but it can become expensive if applied broadly.
 
@@ -485,7 +486,7 @@ Trace sampling is a cost and visibility trade-off. Low sampling reduces storage 
 | `25.0` | Focused namespace debugging | Should be time-boxed |
 | `100.0` | One workload during an active investigation | Dangerous as a long-term default |
 
-Configure tracing with Telemetry after the tracing provider exists in mesh configuration. The provider name in Telemetry must match an extension provider configured for the mesh.
+Configure tracing with Telemetry after the tracing provider exists in mesh configuration. The [provider name in Telemetry must match an extension provider configured for the mesh](https://istio.io/latest/docs/tasks/observability/distributed-tracing/overview/).
 
 ```yaml
 apiVersion: install.istio.io/v1alpha1
@@ -585,7 +586,7 @@ spec:
 | Filter expression | Captures | Use case |
 |---|---|---|
 | `response.code >= 400` | Client and server errors | General failure investigation |
-| `response.code >= 500` | Server errors only | Backend reliability triage |
+| [`response.code >= 500`](https://istio.io/latest/docs/tasks/observability/logs/telemetry-api/) | Server errors only | Backend reliability triage |
 | `response.duration > 1000` | Slow requests above one second | Latency investigation |
 | `connection.mtls == false` | Plaintext or non-mTLS traffic | Security validation |
 | `response.code == 403` | Authorization denials | Policy debugging |
@@ -623,7 +624,7 @@ A text access log line can look dense because it compresses many facts into one 
 >
 > Look for non-empty response flags and upstream connection failure indicators in the sidecar access log. If Envoy could not connect to an upstream endpoint or timed out before the app handled the request, the application logs may be empty.
 
-Access log format can be configured through mesh settings and providers. JSON encoding is easier for log systems to parse, while text is easier for a human to read quickly in a terminal. The right choice depends on the downstream log pipeline, not personal preference.
+[Access log format can be configured through mesh settings and providers](https://istio.io/latest/docs/tasks/observability/logs/access-log/). JSON encoding is easier for log systems to parse, while text is easier for a human to read quickly in a terminal. The right choice depends on the downstream log pipeline, not personal preference.
 
 ```yaml
 apiVersion: install.istio.io/v1alpha1
@@ -644,7 +645,7 @@ The privacy angle matters as much as the storage angle. Even if your access log 
 
 ## 6. Operate with Kiali, Grafana, and Jaeger Together
 
-Kiali, Grafana, and Jaeger are not competing views of the same data. They are complementary tools that sit at different points in the debugging process. Kiali helps you see topology and Istio configuration health. Grafana helps you quantify behavior over time. Jaeger helps you inspect one sampled request path.
+Kiali, Grafana, and Jaeger are not competing views of the same data. They are complementary tools that sit at different points in the debugging process. [Kiali helps you see topology and Istio configuration health](https://istio.io/latest/docs/ops/integrations/kiali/). Grafana helps you quantify behavior over time. Jaeger helps you inspect one sampled request path.
 
 | Tool | Strength | Weakness | Best first use |
 |---|---|---|---|
@@ -1087,7 +1088,7 @@ Use Prometheus or raw Envoy metrics to decide whether the failure affected one r
 - [ ] A namespace-level Telemetry resource exists in `default` and overrides tracing without changing the mesh-wide default.
 - [ ] A workload-level Telemetry resource selects `productpage` Pods and filters access logs to error responses.
 - [ ] You can explain why workload Telemetry is more specific than namespace and mesh-wide Telemetry.
-- [ ] You can retrieve `istio_requests_total` directly from the Envoy stats endpoint on port `15020`.
+- [ ] You can retrieve [`istio_requests_total` directly from the Envoy stats endpoint on port `15020`](https://istio.io/latest/docs/ops/integrations/prometheus/).
 - [ ] You can write or evaluate a PromQL request-rate query using `reporter="destination"`.
 - [ ] You can write or evaluate an error-rate query that divides server-error requests by total requests for the same service.
 - [ ] You can explain why disconnected traces usually indicate missing header propagation rather than missing Envoy spans.
@@ -1133,6 +1134,10 @@ kubectl delete namespace istio-system
 - https://prometheus.io/docs/practices/histograms/
 
 ---
+- [Istio Telemetry Reference](https://istio.io/latest/docs/reference/config/telemetry/) — Canonical reference for Telemetry scope, overrides, tracing, metrics, and access-logging configuration.
+- [Istio Standard Metrics](https://istio.io/latest/docs/reference/config/metrics/) — Defines the metric names, labels, and semantics used throughout the module's PromQL and dashboard guidance.
+- [Distributed Tracing Overview](https://istio.io/latest/docs/tasks/observability/distributed-tracing/overview/) — Best source for trace propagation requirements, provider setup, and the boundary between proxy-generated spans and application behavior.
+- [Visualizing Your Mesh with Kiali](https://istio.io/latest/docs/tasks/observability/kiali/) — Shows how Kiali uses Istio telemetry for graphs and how it fits into observability workflows.
 
 ## Next Module
 
