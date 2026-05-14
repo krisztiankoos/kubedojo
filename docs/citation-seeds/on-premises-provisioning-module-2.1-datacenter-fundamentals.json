@@ -1,0 +1,224 @@
+{
+  "module_key": "on-premises/provisioning/module-2.1-datacenter-fundamentals",
+  "module_path": "src/content/docs/on-premises/provisioning/module-2.1-datacenter-fundamentals.md",
+  "research_run_id": "2026-05-14T07:50:07+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening 2019 fintech PDU/UPS outage anecdote gives named roles, a date, precise timings, root cause details, and quantified business impact without an attributable source.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters | paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "At 2:43 AM on a Tuesday in 2019, an SRE at a fintech company received an alert that read simply \"API server unreachable.\" She SSH'd into the jump box and got connection refused, tried the VPN and watched it time out, then phoned the colocation facility. The night operator answered after four rings and confirmed the bad news without much ceremony: \"Your rack is dark. Both PDU feeds tripped.\" A firmware bug in the rack PDU had caused a cascading overcurrent shutdown when a scheduled firmware update ran on the UPS during a routine power test. The UPS entered bypass mode, the PDU detected an overvoltage condition that did not actually exist, and both A and B feeds tripped within milliseconds of each other. Every layer of redundancy the team had paid for collapsed at once because the redundancy lived inside one shared firmware code path.",
+      "suggested_rewrite": "An on-prem outage can start with something as mundane as a power-system fault rather than a Kubernetes bug. When shared power infrastructure fails, an apparently redundant rack can still go dark all at once, which is why platform operators need enough facility literacy to recognize when the problem is below the OS.",
+      "lesson_point_url": null,
+      "rationale": "This is a fake-precise war story with no attributable primary source, so the safe repair is to keep the lesson and remove the invented specifics."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The attributed quote about a PhD, a 20-amp breaker, and a power strip is presented as a real quotation without a source.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters | paragraph 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "She told her team the next morning, in a sentence that has been quoted by several engineers since: \"I have a PhD in distributed systems, but the thing that brought us down was a 20-amp circuit breaker and a firmware bug in a power strip. Every layer of abstraction sits on top of physical infrastructure, and if you don't understand that physical layer, you can't debug the failures that come from it.\"",
+      "suggested_rewrite": "She summarized the incident bluntly: sophisticated distributed systems still depend on mundane physical infrastructure, and operators who cannot reason about that layer will struggle to debug failures that start below the OS.",
+      "lesson_point_url": null,
+      "rationale": "An unsourced verbatim quotation with detailed specifics cannot stay as a factual anecdote."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "A rack unit is 1.75 inches (44.45 mm), and a typical full-size rack is 42U.",
+      "claim_class": "standard",
+      "span_hint": "section: The Rack: Your Basic Unit | Standard Rack Dimensions",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://en.wikipedia.org/wiki/Rack_unit",
+      "proposed_tier": "general",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The cited page directly states both the 1U dimension and that a typical full-size rack is 42U."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "The 80% continuous-load rule is presented as coming directly from the U.S. National Electrical Code.",
+      "claim_class": "standard",
+      "span_hint": "section: Power Distribution | paragraph after power-budget example",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://docinfofiles.nfpa.org/files/AboutTheCodes/70/70_A2022_NEC_P02_SD_SRStatements.pdf",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a real standards claim, but the primary source is on an off-allowlist NFPA host."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "One ton of cooling equals about 3.517 kW of heat removal.",
+      "claim_class": "statistic",
+      "span_hint": "section: Cooling | paragraph before Cooling Capacity block",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication1038.pdf",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "NIST's SI conversion publication explicitly gives 1 ton of refrigeration as 3.516853 kW."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The prose gives specific air-cooling limits of 12 to 15 kW per rack and says 20 kW makes liquid cooling non-optional.",
+      "claim_class": "statistic",
+      "span_hint": "section: Cooling | paragraph after cooling-capacity example",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A traditional air-cooled facility tops out around 12 to 15 kW per rack before airflow becomes the limiting factor: even with perfect containment, you simply cannot move enough cubic feet per minute through a 19-inch rack to remove twenty kilowatts of heat. Above that ceiling, rear-door heat exchangers, in-row liquid coolers, or full direct-to-chip liquid cooling become non-optional.",
+      "suggested_rewrite": "A traditional air-cooled facility eventually hits a practical per-rack limit where airflow, not just power, becomes the constraint. Past that point, higher-density cooling designs such as rear-door exchangers, in-row cooling, or direct liquid cooling become necessary.",
+      "lesson_point_url": null,
+      "rationale": "The precise thresholds are presented as hard facts without a cited standard or primary engineering source."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Redfish is a RESTful, JSON-based management standard and a modern replacement for IPMI-over-LAN.",
+      "claim_class": "standard",
+      "span_hint": "section: Out-of-Band Management | IPMI / BMC / Redfish",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://redfish.dmtf.org/sites/default/files/End-to-End_Interoperable_Management-The_Standards_Requirement_for_Modern_IT-FINAL_Approved.pdf",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The authoritative source is DMTF's Redfish documentation, which is off allowlist."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The BMC or IPMI interface should be isolated from production networking and reachable only through tightly controlled management paths.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Out-of-Band Management | paragraph after command examples",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://www.cisa.gov/news-events/alerts/2013/07/26/risks-using-intelligent-platform-management-interface-ipmi",
+      "proposed_tier": "incidents",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "CISA explicitly recommends restricting IPMI access to specific management IPs and preferably a separate LAN segment."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "The module gives precise rack-weight and floor-load numbers for datacenter racks versus office floors.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know? | bullet 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**A typical datacenter rack weighs 1,000 to 2,500 pounds fully loaded.** Many office buildings physically cannot support this weight: standard office floors are rated for fifty to one hundred pounds per square foot, while a fully loaded rack exerts three hundred to five hundred pounds per square foot on a roughly six-square-foot footprint.",
+      "suggested_rewrite": "**A fully loaded datacenter rack is extremely heavy.** Many ordinary office spaces are not designed for that kind of concentrated load, which is why server-room buildouts need structural review instead of assumptions.",
+      "lesson_point_url": null,
+      "rationale": "These exact weight and pressure figures are unsourced and bundled in a way that risks overstating building-load assumptions."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The module states exact UPS battery life and degradation figures and calls batteries the most common single point of failure in power systems.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know? | bullet 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**UPS batteries last three to five years and are the most common single point of failure in power systems.** A UPS that has not had a battery replacement in four or more years may provide only thirty seconds of runtime instead of the rated ten or fifteen minutes, and you will not find that out until the next utility blip.",
+      "suggested_rewrite": "**UPS batteries are consumable components and a frequent source of power-system risk.** If they are not inspected, load-tested, and replaced on schedule, a UPS may deliver far less runtime than operators expect during the next utility event.",
+      "lesson_point_url": null,
+      "rationale": "The exact lifespan and runtime numbers are presented as universal facts without a cited manufacturer or standard."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The OVHcloud Strasbourg fire is said to have taken 3.6 million websites offline.",
+      "claim_class": "incident",
+      "span_hint": "section: Did You Know? | bullet 3 | sentence 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The OVHcloud Strasbourg fire in March 2021 destroyed an entire datacenter building and damaged another, taking 3.6 million websites offline.",
+      "suggested_rewrite": "The OVHcloud Strasbourg fire in March 2021 destroyed one datacenter building, damaged another, and caused major customer outages.",
+      "lesson_point_url": null,
+      "rationale": "The precise website-count figure is not backed here by a trustworthy primary source and should be removed."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "The module states that a faulty UPS caused the OVHcloud Strasbourg fire and that the site had no automatic fire-extinguishing system at all.",
+      "claim_class": "incident",
+      "span_hint": "section: Did You Know? | bullet 3 | sentence 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The cause was a faulty UPS, and the facility did not have an automatic fire-extinguishing system installed at all — not temporarily disabled, not under maintenance, simply never installed.",
+      "suggested_rewrite": "Investigators reported that the fire began in the battery and UPS power areas and that the Strasbourg site lacked automatic fire-extinguishing protection, which is why fire suppression details should be verified rather than assumed.",
+      "lesson_point_url": null,
+      "rationale": "The official investigation did not establish a definitive root cause at report time, so the current sentence overstates the finding."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "The module dates IPMI to 1998 and lists specific security weaknesses, including cleartext password handling and cipher-zero authentication bypass.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Did You Know? | bullet 4 | sentence 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "IPMI was designed in 1998 and has known security vulnerabilities, including cleartext password transmission in some configurations and the well-publicized cipher zero authentication bypass.",
+      "suggested_rewrite": "IPMI is an older management interface with well-documented security weaknesses, including cleartext credential handling in some deployments and the cipher-zero authentication bypass.",
+      "lesson_point_url": null,
+      "rationale": "The date is uncited here, while the security lesson is real and can be preserved without the unsupported timestamp."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://www.cisa.gov/news-events/alerts/2013/07/26/risks-using-intelligent-platform-management-interface-ipmi",
+      "title": "Risks of Using IPMI",
+      "tier": "incidents",
+      "why_relevant": "Useful primary guidance on why BMC or IPMI networks need strict isolation and credential hygiene."
+    },
+    {
+      "url": "https://en.wikipedia.org/wiki/19-inch_rack",
+      "title": "19-inch Rack",
+      "tier": "general",
+      "why_relevant": "Good quick reference for rack dimensions, rack units, and common cabinet conventions used throughout the module."
+    },
+    {
+      "url": "https://www.cisa.gov/topics/physical-security",
+      "title": "CISA Physical Security",
+      "tier": "incidents",
+      "why_relevant": "Useful background for the module's facility-access, surveillance, and site-verification sections."
+    }
+  ],
+  "notes": "Excluded tables, code blocks, quiz content, and exercise steps per prompt; focused on prose claims and the Did You Know bullets that would need inline citation support or deterministic rewrite.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

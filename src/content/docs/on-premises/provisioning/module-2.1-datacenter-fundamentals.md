@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 2.1: Datacenter Fundamentals"
 slug: on-premises/provisioning/module-2.1-datacenter-fundamentals
 sidebar:
@@ -88,7 +89,7 @@ Everything in a datacenter is organized around the 19-inch rack. The rack is the
 └─────────────────────────────────────────────────────────────┘
 ```
 
-A standard 42U rack gives you about 73.5 inches of usable vertical space, which is split between networking gear at the top, compute below it, and (usually vertical-mount) PDUs that do not consume rack-units at all. Notice that the layout above leaves real white space: blank panels for airflow, several U of growth at the bottom, and only eight servers populated even though sixteen would physically fit. That is intentional. A rack filled to the bolt is a rack with no room for the next generation of servers, no room for an unexpected NIC upgrade, and no room for the cabling sprawl that always grows over the lifetime of the cluster. Plan for sixty to seventy percent populated on day one.
+A [standard 42U rack](https://en.wikipedia.org/wiki/Rack_unit) gives you about 73.5 inches of usable vertical space, which is split between networking gear at the top, compute below it, and (usually vertical-mount) PDUs that do not consume rack-units at all. Notice that the layout above leaves real white space: blank panels for airflow, several U of growth at the bottom, and only eight servers populated even though sixteen would physically fit. That is intentional. A rack filled to the bolt is a rack with no room for the next generation of servers, no room for an unexpected NIC upgrade, and no room for the cabling sprawl that always grows over the lifetime of the cluster. Plan for sixty to seventy percent populated on day one.
 
 ### Server Form Factors
 
@@ -187,7 +188,7 @@ The 80% rule comes directly from the National Electrical Code in the United Stat
 
 ## Cooling
 
-Cooling is the silent partner of power. Every watt of electrical energy that goes into a server comes back out as heat almost immediately, and that heat has to be removed continuously or the entire room becomes a hazard within minutes. The cooling system is rated in kilowatts or in tons (one ton equals 3.517 kW of heat removal), and it is matched to the IT load by design — not by happy accident.
+Cooling is the silent partner of power. Every watt of electrical energy that goes into a server comes back out as heat almost immediately, and that heat has to be removed continuously or the entire room becomes a hazard within minutes. The cooling system is rated in kilowatts or in tons ([one ton equals 3.517 kW of heat removal](https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication1038.pdf)), and it is matched to the IT load by design — not by happy accident.
 
 ### Hot Aisle / Cold Aisle
 
@@ -327,7 +328,7 @@ curl -k -u admin:password -X PATCH \
   -d '{"Boot": {"BootSourceOverrideTarget": "Pxe", "BootSourceOverrideEnabled": "Once"}}'
 ```
 
-The non-obvious operational rule here is that the BMC must be on its own VLAN, behind a firewall, reachable only from a hardened jump host, and never directly exposed to the production network. The BMC is the most powerful interface to the server that exists — anyone who reaches it can power it off, mount a malicious ISO and boot from it, capture the console, or flash firmware that survives an OS reinstall. Treating the management network as "just another VLAN" is one of the most common and most consequential security mistakes in on-prem deployments, and it is also one of the easiest to fix on day one.
+The non-obvious operational rule here is that the BMC [must be on its own VLAN, behind a firewall, reachable only from a hardened jump host, and never directly exposed to the production network](https://www.cisa.gov/news-events/alerts/2013/07/26/risks-using-intelligent-platform-management-interface-ipmi). The BMC is the most powerful interface to the server that exists — anyone who reaches it can power it off, mount a malicious ISO and boot from it, capture the console, or flash firmware that survives an OS reinstall. Treating the management network as "just another VLAN" is one of the most common and most consequential security mistakes in on-prem deployments, and it is also one of the easiest to fix on day one.
 
 ---
 
@@ -743,3 +744,9 @@ curl -k -u admin:password -X POST \
 ## Next Module
 
 Continue to [Module 2.2: OS Provisioning & PXE Boot](../module-2.2-pxe-provisioning/) to learn how to automatically install operating systems on bare-metal servers over the network using the BMC and PXE infrastructure introduced in this module.
+
+## Sources
+
+- [Risks of Using IPMI](https://www.cisa.gov/news-events/alerts/2013/07/26/risks-using-intelligent-platform-management-interface-ipmi) — Useful primary guidance on why BMC or IPMI networks need strict isolation and credential hygiene.
+- [19-inch Rack](https://en.wikipedia.org/wiki/19-inch_rack) — Good quick reference for rack dimensions, rack units, and common cabinet conventions used throughout the module.
+- [CISA Physical Security](https://www.cisa.gov/topics/physical-security) — Useful background for the module's facility-access, surveillance, and site-verification sections.
