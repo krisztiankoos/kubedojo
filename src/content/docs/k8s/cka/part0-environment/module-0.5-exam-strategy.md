@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 revision_pending: false
 title: "Module 0.5: Exam Strategy - Three-Pass Method"
 slug: k8s/cka/part0-environment/module-0.5-exam-strategy
@@ -213,7 +214,7 @@ Pause and predict: before applying the NetworkPolicy, identify which Pods are be
 
 Pass 2 needs a stricter checkpoint than many learners expect. If you are six minutes into a medium task and your next step is still a guess, the task has become complex. You do not need to abandon it forever, but you should choose consciously whether to keep going. When several untouched medium tasks remain, moving a stuck item to Pass 3 is usually stronger than letting it absorb the entire middle of the exam.
 
-Documentation lookup belongs in Pass 2, but it needs a purpose. Opening the Kubernetes documentation to confirm the field name for a PVC or NetworkPolicy is a good use of time because you know what object you are building. Wandering through pages because you are unsure what the failure means is different; that is diagnosis, not construction. In timed practice, separate those two behaviors so you learn when documentation is accelerating work and when it is masking uncertainty.
+Documentation lookup belongs in Pass 2, but it needs a purpose. [Opening the Kubernetes documentation](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) to confirm the field name for a PVC or NetworkPolicy is a good use of time because you know what object you are building. Wandering through pages because you are unsure what the failure means is different; that is diagnosis, not construction. In timed practice, separate those two behaviors so you learn when documentation is accelerating work and when it is masking uncertainty.
 
 ## Part 5: Recover From Stuck Troubleshooting With Pass 3
 
@@ -261,7 +262,7 @@ Pass 3 is also where notes can help, as long as they stay brief. If you leave a 
 
 Wrong-context work is painful because it can look perfect in your terminal. You switch nothing, create the right object shape, verify it successfully, and move on. The grader then checks a different cluster context, and the answer earns nothing for the intended question. That failure is avoidable only if context switching is part of the first action for every question rather than a cleanup step at the end.
 
-The safest question-start routine is short enough to repeat while nervous. Read the required context. Switch context. Confirm the current context. Identify the namespace. Confirm or create the namespace only when the task tells you to create it. Then solve the actual requirement and verify it in the same context and namespace. The routine costs seconds, but a wrong context can cost an entire question.
+The safest question-start routine is short enough to repeat while nervous. Read the required context. Switch context. [Confirm the current context](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/). Identify the namespace. Confirm or create the namespace only when the task tells you to create it. Then solve the actual requirement and verify it in the same context and namespace. The routine costs seconds, but a wrong context can cost an entire question.
 
 ```bash
 # Question-start routine: replace the context and namespace with the values from the task.
@@ -283,7 +284,7 @@ kubectl get namespace production
 +------------------------+
 ```
 
-Namespaces deserve the same discipline. Many Kubernetes objects are namespace-scoped, and `default` is rarely a safe exam assumption. A Pod named `web` in `default` does not satisfy a task that asked for `web` in `production`. If you create an object in the wrong namespace, recreate it correctly first. Delete the accidental object only when cleanup is safe and does not steal time from required work.
+Namespaces deserve the same discipline. [Many Kubernetes objects are namespace-scoped](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/), and `default` is rarely a safe exam assumption. A Pod named `web` in `default` does not satisfy a task that asked for `web` in `production`. If you create an object in the wrong namespace, recreate it correctly first. Delete the accidental object only when cleanup is safe and does not steal time from required work.
 
 Output-file questions look easy, yet they are easy to lose through small formatting mistakes. If the task asks for a file path, create exactly that path. If it asks for names only, suppress headers. If it asks for sorted output, sort the output before writing it. These questions are often excellent Pass 1 wins because verification is simple: print the file and compare the content shape to the prompt.
 
@@ -470,8 +471,8 @@ Use the same framework when reviewing practice logs. For each task, write the ca
 
 ## Did You Know?
 
-- **The CKA is performance-based**: Linux Foundation describes the certification as a hands-on exam, so the important artifact is the live cluster state you create rather than an explanation of what you intended.
-- **The current public passing score is 66%**: That threshold changes the strategy because complete perfection is less important than enough verified work across enough tasks.
+- **The CKA is performance-based**: [Linux Foundation describes the certification as a hands-on exam](https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/), so the important artifact is the live cluster state you create rather than an explanation of what you intended.
+- **[The current public passing score is 66%](https://docs.linuxfoundation.org/tc-docs/certification/faq-cka-ckad-cks)**: That threshold changes the strategy because complete perfection is less important than enough verified work across enough tasks.
 - **The exam uses multiple tasks against real Kubernetes environments**: Context and namespace mistakes are costly because correct commands can still land in the wrong target.
 - **Kubernetes documentation is large enough to become a time sink**: Knowing where to look is useful, but the Three-Pass Method keeps documentation lookup from replacing execution.
 
@@ -710,6 +711,11 @@ Write a short review note after each timed drill. Include the task you misclassi
 - https://kubernetes.io/docs/concepts/storage/persistent-volumes/
 - https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/
 - https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/
+- [training.linuxfoundation.org: certified kubernetes administrator cka](https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/) — The official CKA certification page directly describes the exam as online, proctored, performance-based, command-line based, and 2 hours long.
+- [docs.linuxfoundation.org: faq cka ckad cks](https://docs.linuxfoundation.org/tc-docs/certification/faq-cka-ckad-cks) — The Linux Foundation certification FAQ explicitly states that a score of 66% or above is required to pass the CKA.
+- [docs.linuxfoundation.org: certification resources allowed](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) — The official resources-allowed page states that CKA candidates may use kubernetes.io/docs and may use its on-site search as long as they do not open external search results.
+- [kubernetes.io: organize cluster access kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) — The kubeconfig documentation explains that a context contains cluster, namespace, and user information and that kubectl uses the current context by default.
+- [kubernetes.io: namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) — The Kubernetes namespaces documentation defines namespaces as scopes for names and shows that namespaced resources are separated by namespace.
 
 ## Next Module
 

@@ -1,0 +1,102 @@
+{
+  "module_key": "k8s/cka/part0-environment/module-0.5-exam-strategy",
+  "module_path": "src/content/docs/k8s/cka/part0-environment/module-0.5-exam-strategy.md",
+  "research_run_id": "2026-05-14T02:02:53+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The CKA is an online, proctored, performance-based exam that requires solving multiple tasks from a command line running Kubernetes within 2 hours.",
+      "claim_class": "standard",
+      "span_hint": "line 41 | section: Why This Module Matters; line 473 | section: Did You Know, item 1",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://training.linuxfoundation.org/certification/certified-kubernetes-administrator-cka/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official CKA certification page directly describes the exam as online, proctored, performance-based, command-line based, and 2 hours long."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The current public passing score for the CKA is 66%.",
+      "claim_class": "statistic",
+      "span_hint": "line 474 | section: Did You Know, item 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://docs.linuxfoundation.org/tc-docs/certification/faq-cka-ckad-cks",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Linux Foundation certification FAQ explicitly states that a score of 66% or above is required to pass the CKA."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "CKA candidates are allowed to use the Kubernetes documentation site and its built-in search during the exam.",
+      "claim_class": "standard",
+      "span_hint": "line 39 | section: Why This Module Matters; line 216 | section: Part 4; line 703 | section: Sources list",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official resources-allowed page states that CKA candidates may use kubernetes.io/docs and may use its on-site search as long as they do not open external search results."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "A kubeconfig context combines cluster, user, and namespace settings, and kubectl uses the current context by default.",
+      "claim_class": "standard",
+      "span_hint": "line 264 | section: Design A Question-Start Routine For Context, Namespace, And Output Files",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The kubeconfig documentation explains that a context contains cluster, namespace, and user information and that kubectl uses the current context by default."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Namespaces scope object names, so the same object name in `default` is distinct from the same name in another namespace.",
+      "claim_class": "standard",
+      "span_hint": "line 286 | section: Design A Question-Start Routine For Context, Namespace, And Output Files",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes namespaces documentation defines namespaces as scopes for names and shows that namespaced resources are separated by namespace."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://docs.linuxfoundation.org/tc-docs/certification/faq-cka-ckad-cks",
+      "title": "Linux Foundation CKA FAQ",
+      "tier": "upstream",
+      "why_relevant": "Best primary source for the current passing score, exam duration, and current exam-environment version."
+    },
+    {
+      "url": "https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed",
+      "title": "Resources Allowed for CKA and CKAD",
+      "tier": "upstream",
+      "why_relevant": "This is the authoritative policy for what documentation and tools candidates may access during the exam."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/",
+      "title": "Organizing Cluster Access Using kubeconfig Files",
+      "tier": "standards",
+      "why_relevant": "It directly supports the module's question-start routine around contexts, clusters, and namespace defaults."
+    }
+  ],
+  "notes": "No shared citation pool exists yet for `k8s/cka/part0-environment`, so `section_pool_ref` is null and `source_ids` remain empty. I skipped analogies, quiz content, exercise steps, code blocks, and the heuristic timing tables as pedagogical scaffolding rather than citation-mandated hard claims; Did You Know item 4 reads as advisory rather than a discrete sourceable fact.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
