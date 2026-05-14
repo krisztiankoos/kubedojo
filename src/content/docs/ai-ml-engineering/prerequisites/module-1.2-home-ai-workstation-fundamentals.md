@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Home AI Workstation Fundamentals"
 slug: ai-ml-engineering/prerequisites/module-1.2-home-ai-workstation-fundamentals
 sidebar:
@@ -89,17 +90,17 @@ The diagram shows why workstation design is not solved by one purchase. Each tas
 
 #### VRAM: The First Hard Wall For Local Models
 
-VRAM is the memory physically attached to the GPU. For modern local model work, it is often the first hard wall because a model either fits comfortably, fits with compromises, or does not fit in a useful way. When it does not fit, the system may fall back to slower memory paths, reduce context length, lower batch size, use heavier quantization, or fail with out-of-memory errors.
+VRAM is the memory physically attached to the GPU. For modern local model work, it is often the first hard wall because a model either fits comfortably, fits with compromises, or does not fit in a useful way. When it does not fit, the system may [fall back to slower memory paths](https://huggingface.co/docs/transformers/en/quantization/bitsandbytes), reduce context length, lower batch size, use heavier quantization, or fail with out-of-memory errors.
 
-VRAM affects model size, quantization choices, batch size, sequence length, and whether small fine-tuning is realistic. A developer running a tiny local model for code completion has different needs from someone testing longer-context inference, embedding batches, or LoRA-style adaptation. The key is to treat VRAM as capacity planning rather than a trophy number.
+VRAM affects model size, quantization choices, [batch size](https://huggingface.co/docs/transformers/v4.53.3/en/perf_train_gpu_one), sequence length, and whether small fine-tuning is realistic. A developer running a tiny local model for code completion has different needs from someone testing longer-context inference, embedding batches, or LoRA-style adaptation. The key is to treat VRAM as capacity planning rather than a trophy number.
 
 A useful beginner mistake to avoid is comparing GPUs only by raw compute. Compute matters after the workload fits. If the model, context, and batch do not fit in memory, theoretical speed becomes secondary. This is similar to having a fast truck that cannot carry the load you need to move.
 
-For learning, think in bands rather than exact product names. Low VRAM is suitable for small quantized models, experimentation, and understanding the workflow. Midrange VRAM makes local inference much more comfortable and reduces the number of compromises. Higher VRAM on one card is where selected single-machine fine-tuning experiments start to become practical, especially with quantization and parameter-efficient methods.
+For learning, think in bands rather than exact product names. Low VRAM is suitable for small quantized models, experimentation, and understanding the workflow. Midrange VRAM makes local inference much more comfortable and reduces the number of compromises. Higher VRAM on one card is where [selected single-machine fine-tuning experiments start to become practical, especially with quantization and parameter-efficient methods](https://arxiv.org/abs/2305.14314).
 
 **Pause and predict:** A model loads successfully with a short prompt, but the same model fails or becomes unstable when you increase context length and batch size. Which constraint should you investigate first, and why is CPU speed probably not your first suspect?
 
-The first suspect is VRAM because context length and batch size directly increase memory pressure. CPU speed can affect latency, preprocessing, and parts of the pipeline, but the symptom described is capacity failure under a larger model memory footprint. Good debugging begins by mapping the symptom to the resource being stressed.
+The first suspect is VRAM because [context length and batch size directly increase memory pressure](https://huggingface.co/docs/trl/en/reducing_memory_usage). CPU speed can affect latency, preprocessing, and parts of the pipeline, but the symptom described is capacity failure under a larger model memory footprint. Good debugging begins by mapping the symptom to the resource being stressed.
 
 #### System RAM: The Second Wall That Shapes Comfort
 
@@ -113,7 +114,7 @@ Do not treat RAM as a binary pass or fail. A smaller amount can be workable for 
 
 #### Storage: The Constraint That Grows Quietly
 
-AI workflows create and duplicate large files. Model weights, tokenizer files, datasets, embeddings, vector indexes, container layers, package caches, notebook outputs, fine-tuning checkpoints, evaluation logs, and experiment artifacts all compete for space. Storage problems often arrive later than RAM problems, which makes learners underestimate them at purchase time.
+AI workflows create and duplicate large files. Model weights, tokenizer files, datasets, embeddings, vector indexes, container layers, package caches, notebook outputs, [fine-tuning checkpoints, evaluation logs, and experiment artifacts all compete for space](https://huggingface.co/docs/transformers/v4.55.4/trainer). Storage problems often arrive later than RAM problems, which makes learners underestimate them at purchase time.
 
 Fast NVMe storage matters for productivity, not just benchmark pride. Slow storage turns environment creation, model loading, dataset reads, checkpoint writes, and container operations into repeated delays. If every experiment starts with waiting, the cost is not just time. It is lost iteration frequency.
 
@@ -371,8 +372,8 @@ The best workstation is the one whose constraints you understand. If you know wh
 
 ## Did You Know?
 
-- **Quantization changes the memory conversation**: Lower-precision model representations can make larger models fit on smaller hardware, but they can also change speed, accuracy behavior, and supported operations, so they are a trade-off rather than magic.
-- **Checkpoint growth can surprise learners**: Fine-tuning experiments may create repeated checkpoints, logs, and adapter files, which means storage planning matters even when the model itself already fits.
+- **Quantization changes the memory conversation**: [Lower-precision model representations can make larger models fit on smaller hardware](https://huggingface.co/docs/transformers/en/quantization/bitsandbytes), but they can also change speed, accuracy behavior, and supported operations, so they are a trade-off rather than magic.
+- **Checkpoint growth can surprise learners**: Fine-tuning experiments may create repeated checkpoints, logs, and [adapter files](https://huggingface.co/docs/peft/en/developer_guides/checkpoint), which means storage planning matters even when the model itself already fits.
 - **Sustained performance is different from peak performance**: A machine can look impressive in a short benchmark and still be a poor learning workstation if heat or noise makes long runs unpleasant.
 - **Cloud and local hardware are complements**: Many strong learning setups use local machines for daily iteration and cloud hardware only for occasional jobs that exceed home constraints.
 
@@ -600,3 +601,7 @@ Write one final paragraph using this format: "For the next stage, I will choose 
 - [huggingface.co: perf train gpu one](https://huggingface.co/docs/transformers/main/en/perf_train_gpu_one) — The official Transformers GPU training guide states that batch size affects memory usage and that the feasible batch size depends on the GPU.
 - [huggingface.co: reducing memory usage](https://huggingface.co/docs/trl/reducing_memory_usage) — The TRL memory guide explains that large max_length values can spike memory usage and lead to OOM errors.
 - [arxiv.org: 2305.14314](https://arxiv.org/abs/2305.14314) — The QLoRA paper shows that quantized LoRA-style fine-tuning can reduce memory use enough to make single-GPU fine-tuning feasible.
+- [huggingface.co: perf train gpu one](https://huggingface.co/docs/transformers/v4.53.3/en/perf_train_gpu_one) — The official Transformers GPU training guide directly states that batch size affects memory usage and that viable batch size depends on the GPU and data type.
+- [huggingface.co: reducing memory usage](https://huggingface.co/docs/trl/en/reducing_memory_usage) — The TRL memory guide explicitly says large `max_length` values can spike memory usage and cause OOM errors.
+- [huggingface.co: trainer](https://huggingface.co/docs/transformers/v4.55.4/trainer) — The Transformers Trainer docs explicitly describe checkpoint directories and built-in training logging behavior.
+- [huggingface.co: checkpoint](https://huggingface.co/docs/peft/en/developer_guides/checkpoint) — The PEFT checkpoint guide directly documents that `save_pretrained()` stores adapter files and configuration separately from the base model.
