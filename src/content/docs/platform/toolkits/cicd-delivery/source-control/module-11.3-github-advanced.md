@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 11.3: GitHub Advanced - Beyond Basic Git Hosting"
 slug: platform/toolkits/cicd-delivery/source-control/module-11.3-github-advanced
 sidebar:
@@ -91,7 +92,7 @@ The best answer is usually "it depends on the intended control." If CodeQL was s
 
 ## 2. GitHub Advanced Security as Pull Request Feedback
 
-GitHub Advanced Security is most useful when learners think of it as feedback in the change path rather than as a dashboard someone checks later. Code scanning, secret scanning, dependency review, and security overview are related, but they operate at different moments. CodeQL evaluates code behavior, dependency review evaluates package changes, secret scanning watches for exposed credentials, and security overview helps teams prioritize risk across repositories.
+[GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) is most useful when learners think of it as feedback in the change path rather than as a dashboard someone checks later. Code scanning, secret scanning, dependency review, and security overview are related, but they operate at different moments. CodeQL evaluates code behavior, dependency review evaluates package changes, secret scanning watches for exposed credentials, and [security overview helps teams prioritize risk across repositories](https://docs.github.com/en/code-security/security-overview/about-security-overview).
 
 ```text
 GITHUB ADVANCED SECURITY STACK
@@ -131,7 +132,7 @@ GITHUB ADVANCED SECURITY STACK
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-CodeQL is different from a simple pattern scanner because it models code as data. For many languages, CodeQL builds a database that represents syntax, control flow, and data flow. A query can then ask whether user-controlled input reaches a dangerous sink without sanitization. That is why CodeQL can find issues such as SQL injection and cross-site scripting more precisely than a search for suspicious strings.
+CodeQL is different from a simple pattern scanner because it models code as data. [For many languages, CodeQL builds a database that represents syntax, control flow, and data flow.](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/about-code-scanning-with-codeql) A query can then ask whether user-controlled input reaches a dangerous sink without sanitization. That is why CodeQL can find issues such as SQL injection and cross-site scripting more precisely than a search for suspicious strings.
 
 A minimal CodeQL workflow should run on pull requests, pushes to the default branch, and a schedule. Pull request runs catch newly introduced problems, default branch runs maintain the main security signal, and scheduled runs catch improvements from updated queries even when code has not changed. Matrix jobs let one workflow handle multiple languages, but you should only include languages that actually exist in the repository; a noisy scanner loses trust quickly.
 
@@ -179,7 +180,7 @@ jobs:
           category: "/language:${{ matrix.language }}"
 ```
 
-Secret scanning works differently because credentials are dangerous even if the application code is perfect. The important design choice is prevention versus detection. Detection tells you that a secret appeared somewhere in history or in a commit. Push protection tries to stop supported secrets during push, before they become part of the remote repository. For private internal token formats, custom patterns extend coverage beyond public provider formats.
+Secret scanning works differently because credentials are dangerous even if the application code is perfect. The important design choice is prevention versus detection. Detection tells you that a secret appeared somewhere in history or in a commit. [Push protection tries to stop supported secrets during push, before they become part of the remote repository.](https://docs.github.com/en/code-security/concepts/secret-security/about-push-protection) For private internal token formats, custom patterns extend coverage beyond public provider formats.
 
 ```text
 SECRET SCANNING DECISION FLOW
@@ -211,7 +212,7 @@ Push accepted      Push blocked or alert created
 
 The key should be rotated because Git history is the exposure boundary, not the final file contents. If the secret reached a commit that was pushed, cloned, logged, mirrored, or scanned by another system, deletion from a later commit does not prove the credential stayed private. A strong GitHub security program therefore treats secret response as three steps: remove the secret from code, rotate or revoke the credential, and investigate whether the credential was used.
 
-Dependency review closes another common gap. Dependabot alerts tell you about vulnerable dependencies already present in the repository, while dependency review evaluates what a pull request is adding or changing. That distinction matters during review. If a pull request upgrades a package but also introduces a restrictive license or a new high-severity vulnerability, the reviewer should see that risk before it merges.
+Dependency review closes another common gap. [Dependabot alerts tell you about vulnerable dependencies already present in the repository, while dependency review evaluates what a pull request is adding or changing.](https://docs.github.com/en/enterprise-cloud%40latest/code-security/concepts/supply-chain-security/about-dependency-review) That distinction matters during review. If a pull request upgrades a package but also introduces a restrictive license or a new high-severity vulnerability, the reviewer should see that risk before it merges.
 
 ```yaml
 # .github/workflows/dependency-review.yml
@@ -281,7 +282,7 @@ git add package.json package-lock.json index.js
 git commit -m "Create demo service"
 ```
 
-Second, add CodeQL and dependency review workflows. Notice that each workflow uses the narrowest permissions it needs. This is not cosmetic. GitHub Actions permissions are part of your supply-chain boundary, because a compromised action or script can only do what the job token allows. Many incidents become worse because every workflow quietly inherited broad write permissions.
+Second, add CodeQL and dependency review workflows. Notice that each workflow uses the narrowest permissions it needs. This is not cosmetic. [GitHub Actions permissions are part of your supply-chain boundary](https://docs.github.com/en/actions/reference/security/secure-use), because a compromised action or script can only do what the job token allows. Many incidents become worse because every workflow quietly inherited broad write permissions.
 
 ```bash
 mkdir -p .github/workflows
@@ -344,7 +345,7 @@ git add .github/workflows
 git commit -m "Add security review workflows"
 ```
 
-Third, replace stored cloud credentials with an OIDC deployment pattern. OIDC lets GitHub Actions ask a cloud provider for a short-lived token based on the workflow identity, branch, environment, repository, and other claims. The cloud provider decides whether that identity is allowed to assume a role. That means there is no long-lived AWS, Azure, or Google Cloud key sitting in GitHub secrets waiting to leak.
+Third, replace stored cloud credentials with an OIDC deployment pattern. [OIDC lets GitHub Actions ask a cloud provider for a short-lived token based on the workflow identity, branch, environment, repository, and other claims.](https://docs.github.com/en/actions/concepts/security/openid-connect) The cloud provider decides whether that identity is allowed to assume a role. That means there is no long-lived AWS, Azure, or Google Cloud key sitting in GitHub secrets waiting to leak.
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -423,7 +424,7 @@ The worked example teaches the sequence you will reuse in the exercise: start wi
 
 Actions starts as a convenient CI system and becomes a platform concern when dozens or hundreds of repositories copy workflow files. At small scale, duplication is tolerable because each repository can move quickly. At platform scale, duplication becomes a control problem: security fixes must be repeated, caching mistakes spread, deployment permissions drift, and every team reinvents the same build logic.
 
-There are three reuse tools to understand. Reusable workflows package whole jobs and can own their own runner selection, permissions, secrets contract, and deployment gates. Composite actions package repeated steps inside a job, such as setting up a language runtime or installing common tools. YAML anchors and local conventions can reduce repetition, but they do not create a centrally governable interface the way reusable workflows do.
+There are three reuse tools to understand. [Reusable workflows package whole jobs and can own their own runner selection, permissions, secrets contract, and deployment gates. Composite actions package repeated steps inside a job](https://docs.github.com/en/actions/concepts/workflows-and-actions/reusing-workflow-configurations), such as setting up a language runtime or installing common tools. YAML anchors and local conventions can reduce repetition, but they do not create a centrally governable interface the way reusable workflows do.
 
 | Reuse Pattern | Best Use | Governance Trade-Off |
 |---------------|----------|----------------------|
@@ -620,9 +621,9 @@ RUNNER STRATEGY DECISION MAP
                   └─────────────────────────────┘
 ```
 
-Actions Runner Controller, now commonly discussed through runner scale sets, is GitHub's Kubernetes-oriented path for running self-hosted runners at scale. The key idea is to create homogeneous groups of runners that autoscale based on workflow demand. A platform team can place those runners in restricted namespaces, apply network policies, use ephemeral runner pods, and separate high-risk workloads from trusted release jobs.
+Actions Runner Controller, now commonly discussed through runner scale sets, is GitHub's Kubernetes-oriented path for running self-hosted runners at scale. The key idea is to [create homogeneous groups of runners that autoscale based on workflow demand](https://docs.github.com/en/actions/tutorials/use-actions-runner-controller). A platform team can place those runners in restricted namespaces, apply network policies, use ephemeral runner pods, and separate high-risk workloads from trusted release jobs.
 
-A modern runner scale set is different from treating a long-lived virtual machine as a shared build box. Long-lived runners accumulate credentials, caches, workspaces, and tools from previous jobs. Ephemeral runners reduce that risk because each job starts from a cleaner environment and disappears afterward. For sensitive workloads, the platform should also restrict which repositories can use which runner groups.
+A modern runner scale set is different from treating a long-lived virtual machine as a shared build box. Long-lived runners accumulate credentials, caches, workspaces, and tools from previous jobs. [Ephemeral runners reduce that risk because each job starts from a cleaner environment and disappears afterward.](https://docs.github.com/en/actions/reference/runners/self-hosted-runners) For sensitive workloads, the platform should also [restrict which repositories can use which runner groups](https://docs.github.com/en/enterprise-cloud%40latest/actions/how-tos/manage-runners/self-hosted-runners/manage-access).
 
 ```yaml
 # Example workflow targeting a runner scale set by name
@@ -699,7 +700,7 @@ Runner isolation and OIDC reinforce each other. Ephemeral runners reduce the cha
 
 ## 6. Enterprise Governance: Identity, Rulesets, Audit, and Copilot
 
-Enterprise GitHub governance begins with identity. SAML SSO centralizes authentication, SCIM automates user lifecycle, and Enterprise Managed Users go further by making GitHub accounts controlled by the identity provider. These controls matter because repository policy is only as strong as the account lifecycle behind it. If departing employees retain access, or if personal accounts become the route into production code, technical branch rules cannot compensate.
+Enterprise GitHub governance begins with identity. [SAML SSO centralizes authentication](https://docs.github.com/en/enterprise-cloud%40latest/organizations/managing-saml-single-sign-on-for-your-organization/about-identity-and-access-management-with-saml-single-sign-on), SCIM automates user lifecycle, and Enterprise Managed Users go further by making GitHub accounts controlled by the identity provider. These controls matter because repository policy is only as strong as the account lifecycle behind it. If departing employees retain access, or if personal accounts become the route into production code, technical branch rules cannot compensate.
 
 ```text
 ENTERPRISE IDENTITY ARCHITECTURE
@@ -725,9 +726,9 @@ system. They are useful when the organization requires centralized lifecycle
 control and does not want personal GitHub accounts to own enterprise access.
 ```
 
-Rulesets are the modern place to express repository and organization policy. Branch protection is still widely used, but rulesets provide a more flexible model for applying rules across branches, tags, and repositories. The important learning point is not the UI location. The important point is that rulesets translate governance intent into merge behavior.
+Rulesets are the modern place to express repository and organization policy. Branch protection is still widely used, but [rulesets provide a more flexible model for applying rules across branches, tags, and repositories](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets). The important learning point is not the UI location. The important point is that rulesets translate governance intent into merge behavior.
 
-A strong production ruleset usually requires pull requests, code owner review for sensitive files, required status checks, signed commits where appropriate, and restrictions on force pushes and deletions. For platform-owned workflows, require review on workflow file changes too. A pull request that changes `.github/workflows/deploy.yml` can change the deployment path, so it deserves the same scrutiny as application code that handles payments or user data.
+A strong production ruleset usually requires pull requests, [code owner review for sensitive files](https://docs.github.com/articles/about-code-owners), required status checks, signed commits where appropriate, and restrictions on force pushes and deletions. For platform-owned workflows, require review on workflow file changes too. A pull request that changes `.github/workflows/deploy.yml` can change the deployment path, so it deserves the same scrutiny as application code that handles payments or user data.
 
 ```yaml
 # Example CODEOWNERS entries for platform-sensitive paths
@@ -737,7 +738,7 @@ infra/** @my-org/platform-engineering @my-org/cloud-security
 src/payments/** @my-org/payments-team @my-org/security-reviewers
 ```
 
-Audit log streaming closes the investigation gap. GitHub's web audit log is useful for interactive review, but platform teams usually need events in a SIEM or data platform where they can correlate GitHub activity with cloud access, identity events, and incident timelines. When a production deployment behaves strangely, you want to answer who changed the workflow, who approved the environment, which runner executed the job, and which cloud role was issued.
+Audit log streaming closes the investigation gap. GitHub's web audit log is useful for interactive review, but platform teams usually need [events in a SIEM or data platform](https://docs.github.com/en/enterprise-cloud@latest/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/streaming-the-audit-log-for-your-enterprise) where they can correlate GitHub activity with cloud access, identity events, and incident timelines. When a production deployment behaves strangely, you want to answer who changed the workflow, who approved the environment, which runner executed the job, and which cloud role was issued.
 
 ```bash
 # Query recent repository creation audit events.
@@ -748,7 +749,7 @@ curl -H "Authorization: Bearer $GITHUB_TOKEN" \
 
 IP allow lists can reduce exposure for organizations with predictable network boundaries, but they must be designed carefully. Developers, automation, GitHub Apps, runners, and integrations may all need access paths. A strict allow list without runner planning can break deployments or force teams into exceptions. Treat IP restrictions as one layer, not as a substitute for identity, repository policy, and workflow permissions.
 
-Copilot governance belongs in this enterprise picture because AI assistance changes how code is produced and reviewed. Copilot can improve developer flow, explain unfamiliar code, and help generate tests, but it should not be allowed to blur sensitive boundaries. Organizations with Copilot Business or Enterprise can configure policies such as content exclusions for sensitive files, public code suggestion settings, and seat management. Learners should treat Copilot as a developer tool that needs guardrails, not as an autonomous reviewer.
+Copilot governance belongs in this enterprise picture because AI assistance changes how code is produced and reviewed. Copilot can improve developer flow, explain unfamiliar code, and help generate tests, but it should not be allowed to blur sensitive boundaries. Organizations with Copilot Business or Enterprise can configure policies such as content exclusions for sensitive files, [public code suggestion settings](https://docs.github.com/en/copilot/concepts/completions/code-suggestions), and seat management. Learners should treat Copilot as a developer tool that needs guardrails, not as an autonomous reviewer.
 
 ```text
 COPILOT GOVERNANCE MODEL
@@ -856,7 +857,7 @@ A good platform team publishes a control ownership map. It says which tool block
 | Copying workflows into every repository | Security fixes and performance improvements must be repeated manually, which causes drift | Use reusable workflows for complete processes and composite actions for shared setup steps |
 | Using long-lived cloud keys for deployments | Repository secrets become high-value targets and may be copied across environments | Use OIDC with specific cloud trust policies and environment approval gates |
 | Running sensitive jobs on shared long-lived runners | Workspaces, caches, tools, or credentials can leak between jobs or repositories | Prefer ephemeral runners, restricted runner groups, and network segmentation for sensitive workloads |
-| Letting Copilot touch sensitive areas without policy | AI suggestions may be generated in contexts that include proprietary or regulated files | Configure content exclusions and keep human review, tests, and security scanning in the path |
+| Letting Copilot touch sensitive areas without policy | AI suggestions may be generated in contexts that include proprietary or regulated files | [Configure content exclusions](https://docs.github.com/en/enterprise-cloud@latest/copilot/concepts/context/content-exclusion) and keep human review, tests, and security scanning in the path |
 | Streaming no audit logs | Incident response depends on manual UI checks and may miss correlated identity or cloud events | Stream audit logs to a SIEM or data platform and retain events according to investigation needs |
 
 ---
@@ -930,7 +931,7 @@ A regulated company uses SAML SSO but allows engineers to access enterprise repo
 <details>
 <summary>Show Answer</summary>
 
-Evaluate SCIM provisioning for automated lifecycle management and Enterprise Managed Users if the organization requires centrally controlled GitHub identities. SCIM helps create, update, and suspend access based on identity provider state. EMU goes further by using enterprise-managed accounts rather than personal accounts for enterprise work.
+Evaluate SCIM provisioning for automated lifecycle management and Enterprise Managed Users if the organization requires centrally controlled GitHub identities. [SCIM helps create, update, and suspend access based on identity provider state.](https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-saml-single-sign-on-for-your-organization/about-scim-for-organizations) [EMU goes further by using enterprise-managed accounts rather than personal accounts for enterprise work.](https://docs.github.com/en/enterprise-cloud%40latest/admin/concepts/identity-and-access-management/enterprise-managed-users)
 
 The trade-off is user flexibility versus administrative control. EMU can be appropriate for strict lifecycle and compliance requirements, but it changes how users interact with GitHub outside the enterprise and requires careful migration planning.
 </details>
@@ -956,7 +957,7 @@ A team adopts Copilot Enterprise and then asks whether Copilot-generated code ca
 
 Copilot should be treated as an assistant, not as an approval authority. Generated code still needs tests, human review, security scanning, dependency review, and ownership from the team merging it. AI can help write code, summarize changes, or explain unfamiliar functions, but it does not replace accountability for the resulting system behavior.
 
-The platform response should include governance controls such as content exclusions for sensitive files, seat and policy management, and continued enforcement through rulesets and required checks. AI assistance belongs inside the delivery system, not outside its controls.
+The platform response should include governance controls such as content exclusions for sensitive files, [seat and policy management](https://docs.github.com/en/copilot/reference/copilot-billing/seat-assignment), and continued enforcement through rulesets and required checks. AI assistance belongs inside the delivery system, not outside its controls.
 </details>
 
 ---
@@ -1207,3 +1208,21 @@ Next, continue to [Module 12.3: CodeQL](/platform/toolkits/security-quality/code
 - [docs.github.com: managing allowed ip addresses for your organization](https://docs.github.com/en/enterprise-cloud%40latest/organizations/keeping-your-organization-secure/managing-allowed-ip-addresses-for-your-organization) — The official IP allow-list docs explicitly describe protection across web, API, and Git access paths.
 - [docs.github.com: enterprise managed users](https://docs.github.com/en/enterprise-cloud%40latest/admin/concepts/identity-and-access-management/enterprise-managed-users) — The EMU docs directly describe IdP-controlled lifecycle/authentication and the outside-collaboration restriction.
 - [docs.github.com: about rulesets](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/about-rulesets) — The official rulesets docs explicitly describe org-level scope and advantages over branch protection.
+- [docs.github.com: about security overview](https://docs.github.com/en/code-security/security-overview/about-security-overview) — GitHub's security overview docs explicitly describe aggregated organization/enterprise views for prioritization.
+- [docs.github.com: about code scanning with codeql](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/about-code-scanning-with-codeql) — The official CodeQL docs directly describe database generation, queries, and the code-as-data model.
+- [docs.github.com: about push protection](https://docs.github.com/en/code-security/concepts/secret-security/about-push-protection) — GitHub's push protection docs cover blocking before repository entry, bypass behavior, and custom pattern support.
+- [docs.github.com: supported secret scanning patterns](https://docs.github.com/en/code-security/reference/secret-security/supported-secret-scanning-patterns) — The supported secret-scanning patterns reference explicitly distinguishes partner alerts from repository/user alerts.
+- [docs.github.com: about dependency review](https://docs.github.com/en/enterprise-cloud%40latest/code-security/concepts/supply-chain-security/about-dependency-review) — The official dependency review docs explicitly contrast pull-request review with Dependabot's existing-dependency alerts.
+- [docs.github.com: workflow syntax](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax) — The workflow syntax reference defines what `security-events: write` permits for `GITHUB_TOKEN`.
+- [docs.github.com: secure use](https://docs.github.com/en/actions/reference/security/secure-use) — GitHub's secure-use guidance explicitly frames secrets and workflow privileges as a security boundary and recommends least privilege.
+- [docs.github.com: about code owners](https://docs.github.com/articles/about-code-owners) — GitHub's CODEOWNERS docs explicitly describe review-request and required-review behavior for owned paths.
+- [docs.github.com: reusing workflow configurations](https://docs.github.com/en/actions/concepts/workflows-and-actions/reusing-workflow-configurations) — The reusable-workflow documentation explicitly contrasts reusable workflows and composite actions on jobs, steps, and runner context.
+- [Use Actions Runner Controller](https://docs.github.com/en/actions/tutorials/use-actions-runner-controller) — Backs self-hosted GitHub Actions runners on Kubernetes, runner scale sets, and ARC-based operational patterns.
+- [docs.github.com: self hosted runners](https://docs.github.com/en/actions/reference/runners/self-hosted-runners) — GitHub's self-hosted-runner reference explicitly recommends ephemeral autoscaling and explains the one-job clean-environment benefit.
+- [docs.github.com: manage access](https://docs.github.com/en/enterprise-cloud%40latest/actions/how-tos/manage-runners/self-hosted-runners/manage-access) — The runner-group access docs cover selected-repository/workflow restrictions and include the warning about self-hosted runners with public repos.
+- [docs.github.com: about identity and access management with saml single sign on](https://docs.github.com/en/enterprise-cloud%40latest/organizations/managing-saml-single-sign-on-for-your-organization/about-identity-and-access-management-with-saml-single-sign-on) — GitHub's SAML SSO documentation directly states that an IdP can be used to protect organization resources.
+- [docs.github.com: about scim for organizations](https://docs.github.com/en/enterprise-cloud@latest/organizations/managing-saml-single-sign-on-for-your-organization/about-scim-for-organizations) — The SCIM-for-organizations docs explicitly describe automated membership lifecycle management.
+- [docs.github.com: streaming the audit log for your enterprise](https://docs.github.com/en/enterprise-cloud@latest/admin/monitoring-activity-in-your-enterprise/reviewing-audit-logs-for-your-enterprise/streaming-the-audit-log-for-your-enterprise) — GitHub's audit-log-streaming docs explicitly describe exporting audit and Git events to external systems.
+- [docs.github.com: content exclusion](https://docs.github.com/en/enterprise-cloud@latest/copilot/concepts/context/content-exclusion) — The content-exclusion docs explicitly describe Business/Enterprise availability and scope, including Copilot code review.
+- [docs.github.com: code suggestions](https://docs.github.com/en/copilot/concepts/completions/code-suggestions) — The Copilot code-suggestions docs explicitly describe the 'suggestions matching public code' policy.
+- [docs.github.com: seat assignment](https://docs.github.com/en/copilot/reference/copilot-billing/seat-assignment) — GitHub's seat-assignment docs describe seat allocation and management at the organization and enterprise level.
