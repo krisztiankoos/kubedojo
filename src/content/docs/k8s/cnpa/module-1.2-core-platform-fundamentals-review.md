@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "CNPA Core Platform Fundamentals Review"
 revision_pending: false
 slug: k8s/cnpa/module-1.2-core-platform-fundamentals-review
@@ -32,7 +33,7 @@ A company can spend months building a platform and still make delivery worse. De
 
 The CNPA core domain focuses on this exact distinction. The exam is not asking whether you can name popular platform tools from memory. It is testing whether you can reason about why platform engineering exists, how it differs from adjacent practices, and what makes a platform capability mature enough for real teams to trust. If a question describes developers waiting on manual tickets, copying unsafe templates, or bypassing the official path, the best answer usually starts with the operating model rather than the user interface.
 
-This module teaches the core mental model from beginner to senior level. At the beginner level, platform engineering is the practice of building shared capabilities that help teams ship safely. At the practitioner level, it is a product discipline that must balance autonomy, governance, reliability, cost, and adoption. At the senior level, it is an organizational design choice: the platform team accepts responsibility for reducing repeated complexity so product teams can spend more of their attention on business problems.
+This module teaches the core mental model from beginner to senior level. At the beginner level, platform engineering is the practice of building shared capabilities that help teams ship safely. At the practitioner level, it is a product discipline that must balance autonomy, governance, reliability, cost, and adoption. At the senior level, it is an organizational design choice: the platform team accepts responsibility for [reducing repeated complexity](https://tag-app-delivery.cncf.io/whitepapers/platforms/) so product teams can spend more of their attention on business problems.
 
 ## Core Content
 
@@ -74,7 +75,7 @@ A platform team should therefore avoid becoming a new bottleneck. If the officia
 
 ### 2. Platform Engineering, DevOps, And SRE Are Related But Not The Same
 
-DevOps, SRE, and platform engineering overlap because all three try to improve software delivery and operations. The exam expects you to separate them without creating false competition between them. DevOps is a culture and operating model that reduces silos between development and operations. SRE is a reliability discipline that applies engineering practices to operations, often using service level objectives, error budgets, automation, and incident learning. Platform engineering builds internal products that make delivery and operations easier for teams.
+DevOps, SRE, and platform engineering overlap because all three try to improve software delivery and operations. The exam expects you to separate them without creating false competition between them. [DevOps is a culture and operating model that reduces silos between development and operations](https://tag-app-delivery.cncf.io/wgs/platforms/glossary/). SRE is a reliability discipline that applies engineering practices to operations, often using service level objectives, error budgets, automation, and incident learning. Platform engineering builds internal products that make delivery and operations easier for teams.
 
 The distinction matters because the same organization may use all three. DevOps shapes how teams collaborate. SRE shapes how reliability is measured and improved. Platform engineering shapes the shared capabilities that teams consume. A platform team may embed SRE practices into its golden paths, and a DevOps culture may make platform adoption easier, but those relationships do not make the terms interchangeable.
 
@@ -111,7 +112,7 @@ Senior practitioners pay attention to incentives. DevOps fails when ownership be
 
 ### 3. Internal Developer Platforms Are Product Surfaces, Not Just Portals
 
-An internal developer platform, often shortened to IDP, is the developer-facing product surface for platform capabilities. It may include a portal, templates, APIs, command-line tools, documentation, service catalogs, workflow engines, policy checks, and integrations with infrastructure systems. The key idea is the abstraction boundary. Developers interact with a supported workflow, while the platform hides or automates lower-level complexity that most teams should not repeat manually.
+An internal developer platform, often shortened to IDP, is the developer-facing product surface for platform capabilities. It may include [a portal, templates, APIs, command-line tools, documentation, service catalogs, workflow engines, policy checks, and integrations with infrastructure systems](https://tag-app-delivery.cncf.io/wgs/platforms/glossary/). The key idea is the abstraction boundary. Developers interact with a supported workflow, while the platform hides or automates lower-level complexity that most teams should not repeat manually.
 
 The portal is only one possible surface. A team might consume the platform through Git pull requests, a CLI, a Backstage plugin, a service catalog, an API, or a Kubernetes custom resource. The exam may present a shiny portal as though it proves platform maturity. Be skeptical. The mature platform question is not "is there a UI?" but "can developers complete common work safely, quickly, and consistently?"
 
@@ -198,7 +199,7 @@ The escape hatch is especially important in exam scenarios. A platform that forb
 
 ### 5. Self-Service Must Include Guardrails, Not Just Automation
 
-Self-service means developers can request or change platform capabilities without waiting for a manual platform ticket for every routine action. It does not mean developers bypass governance. Mature self-service combines automation, policy, identity, quotas, auditability, and recovery. The goal is to make safe actions fast and unsafe actions clear, explainable, and remediable.
+Self-service means [developers can request or change platform capabilities without waiting for a manual platform ticket for every routine action](https://tag-app-delivery.cncf.io/whitepapers/platforms/). It does not mean developers bypass governance. Mature self-service combines automation, policy, identity, quotas, auditability, and recovery. The goal is to make safe actions fast and unsafe actions clear, explainable, and remediable.
 
 This is one of the most common CNPA traps. A question may describe self-service as "developers can provision anything they want without review." That is not mature platform engineering. Another question may describe governance as "all requests must be manually approved by operations." That is not mature self-service. The stronger answer is usually automated self-service with guardrails that encode policy close to the workflow.
 
@@ -279,7 +280,7 @@ The senior-level nuance is that self-service is not only about speed. It also im
 
 ### 6. Platform As A Product Means Adoption Is Earned
 
-"Platform as a product" is not a slogan. It changes how the platform team chooses work, measures success, and handles feedback. A product team does not simply ship features because they are technically interesting. It understands users, prioritizes problems, validates assumptions, measures adoption, and iterates. Platform teams need the same discipline because their users are internal developers with real delivery pressure.
+"Platform as a product" is not a slogan. It changes how the platform team chooses work, measures success, and handles feedback. A product team does not simply ship features because they are technically interesting. It [understands users, prioritizes problems, validates assumptions, measures adoption, and iterates](https://tag-app-delivery.cncf.io/whitepapers/platform-eng-maturity-model/). Platform teams need the same discipline because their users are internal developers with real delivery pressure.
 
 A platform product has a value proposition. For example, "Create a production-ready HTTP service in one hour with built-in deployment, ownership metadata, and observability." That promise is specific enough to test. If developers still need several days of platform support, the promise is not yet true. If the generated service lacks alerts, the promise is incomplete. If only one team uses the workflow because everyone else finds it too rigid, adoption data is telling the platform team something important.
 
@@ -315,7 +316,7 @@ The platform product mindset also changes prioritization. A platform team should
 
 ### 7. GitOps And Infrastructure As Code Are Enablers, Not The Whole Platform
 
-GitOps and Infrastructure as Code often appear in platform engineering discussions because they support repeatability, reviewability, and automation. Infrastructure as Code describes managing infrastructure definitions as versioned code rather than manual console changes. GitOps uses Git as the desired-state source and relies on automated reconciliation to apply changes to environments. Both can be powerful platform building blocks, but neither is the same thing as platform engineering.
+GitOps and Infrastructure as Code often appear in platform engineering discussions because they support repeatability, reviewability, and automation. [Infrastructure as Code describes managing infrastructure definitions as versioned code rather than manual console changes](https://www.hashicorp.com/en/resources/what-is-infrastructure-as-code). [GitOps uses Git as the desired-state source and relies on automated reconciliation to apply changes to environments](https://raw.githubusercontent.com/open-gitops/documents/main/PRINCIPLES.md). Both can be powerful platform building blocks, but neither is the same thing as platform engineering.
 
 The exam may try to make a tool or practice sound like the whole discipline. "The company uses Terraform, so it has a platform" is not enough. "The company uses GitOps, so developers have self-service" is also not enough. IaC and GitOps can enable self-service if they are wrapped in usable workflows, policy, ownership, and support. Without those pieces, they may simply move manual complexity into pull requests.
 
@@ -378,7 +379,7 @@ spec:
               memory: "256Mi"
 ```
 
-If you use `kubectl` often, many Kubernetes learners create a short interactive alias after they understand that it is only a local shell shortcut. Training material and platform documentation should still use the full command because learners copy examples into scripts, CI jobs, and runbooks where aliases may not expand. In a real cluster, a developer could validate the manifest locally before sending it through the platform workflow. The following command performs a client-side dry run and does not change cluster state.
+If you use `kubectl` often, many Kubernetes learners create a short interactive alias after they understand that it is only a local shell shortcut. Training material and platform documentation should still use the full command because learners copy examples into scripts, CI jobs, and runbooks where aliases may not expand. In a real cluster, a developer could validate the manifest locally before sending it through the platform workflow. The following command [performs a client-side dry run and does not change cluster state](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_apply/).
 
 ```bash
 kubectl apply --dry-run=client -f orders-api.yaml
@@ -390,7 +391,7 @@ The YAML alone is not a golden path. It becomes part of a golden path when the p
 
 Consider this scenario. A growing company has twenty product teams. Each team provisions Kubernetes namespaces by opening a ticket with the operations team. The ticket asks for namespace name, owner, environment, quota, network access, and cost center. Tickets wait several days because operations manually checks naming rules, creates the namespace, applies ResourceQuota, grants RBAC, and sends a message when finished. Developers complain that the queue slows experiments, while operations complains that many tickets are incomplete.
 
-A weak response is to build a portal form that sends the same ticket with a nicer interface. That may improve discoverability slightly, but it does not remove the bottleneck. Another weak response is to let every developer create namespaces directly with cluster-admin permissions. That improves speed but removes governance. A platform-engineering response turns the repeated namespace request into a self-service workflow with policy, defaults, audit, and support.
+A weak response is to build a portal form that sends the same ticket with a nicer interface. That may improve discoverability slightly, but it does not remove the bottleneck. Another weak response is to let every developer create namespaces directly with cluster-admin permissions. That improves speed but removes governance. A platform-engineering response turns the repeated namespace request into a [self-service workflow with policy, defaults, audit, and support](https://tag-app-delivery.cncf.io/whitepapers/platform-eng-maturity-model/).
 
 Step one is to identify the repeated decision points. Namespace name, owner, environment, quota, network access, and cost center are not random. They are governance inputs. Step two is to encode the easy checks: required fields, allowed environments, naming convention, default quota sizes, and ownership metadata. Step three is to automate the standard path while routing unusual requests through a visible exception process. Step four is to measure whether lead time falls, ticket quality improves, and support questions decrease.
 
@@ -790,6 +791,13 @@ When you answer CNPA questions, use the framework as a filtering tool. Reject an
 - https://sre.google/workbook/error-budget-policy/
 - https://tag-app-delivery.cncf.io/whitepapers/platforms/
 - https://tag-app-delivery.cncf.io/wgs/platforms/maturity-model/readme/
+- [tag-app-delivery.cncf.io: platforms](https://tag-app-delivery.cncf.io/whitepapers/platforms/) — The CNCF Platforms White Paper explicitly describes platforms as user-defined capability collections that reduce common work and cognitive load for internal users.
+- [tag-app-delivery.cncf.io: glossary](https://tag-app-delivery.cncf.io/wgs/platforms/glossary/) — The CNCF Platforms glossary directly defines DevOps and explains platform engineering as a way to scale DevOps principles through a unified platform.
+- [tag-app-delivery.cncf.io: platform eng maturity model](https://tag-app-delivery.cncf.io/whitepapers/platform-eng-maturity-model/) — The CNCF Platform Engineering Maturity Model explicitly contrasts manual custom processes with self-service solutions and names self-serve portals and golden-path templates as maturity signals.
+- [raw.githubusercontent.com: PRINCIPLES.md](https://raw.githubusercontent.com/open-gitops/documents/main/PRINCIPLES.md) — The upstream OpenGitOps principles file states the four defining properties: declarative, versioned and immutable, pulled automatically, and continuously reconciled.
+- [hashicorp.com: what is infrastructure as code](https://www.hashicorp.com/en/resources/what-is-infrastructure-as-code) — HashiCorp's IaC primer directly defines infrastructure as code in terms of configuration files replacing manual GUI or command-line processes and emphasizes versioning and repeatability.
+- [kubernetes.io: kubectl apply](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_apply/) — The official `kubectl apply` reference explicitly says client dry-run prints the object that would be sent without sending or persisting it.
+- [CNCF CNPA Certification Page](https://www.cncf.io/training/certification/cnpa/) — This is the canonical public overview of the CNPA exam context that this review module is preparing learners for.
 
 ## Next Module
 
