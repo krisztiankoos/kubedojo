@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 10.3: Observability AI Features"
 slug: platform/toolkits/observability-intelligence/aiops-tools/module-10.3-observability-ai-features
 sidebar:
@@ -347,7 +348,7 @@ Topology-aware analysis is powerful, but only when instrumentation coverage and 
 | Root-cause entity | Identifies the likely entity that started the chain. | Inspect logs, traces, resource events, and recent changes for that entity. |
 
 Consider a Kubernetes payment incident.
-A pod is OOMKilled after memory usage exceeds its limit.
+A pod is [OOMKilled after memory usage exceeds its limit](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/).
 The payment service loses capacity, checkout calls begin timing out, and user actions fail.
 A topology-aware platform can present this as a cause-and-effect chain instead of showing four unrelated alerts.
 That lets the responder verify the pod restart, compare it with memory limits, and decide whether to roll back, increase memory, or patch a leak.
@@ -558,7 +559,7 @@ Teams define anomaly detection jobs, forecasting jobs, and outlier analyses agai
 This is useful when the team wants control over the job, data view, and detection logic.
 The trade-off is ownership: every ML job needs someone to tune it, review false positives, and retire it when the underlying service changes.
 
-Grafana's AI-assisted features usually sit closer to the operator interface.
+[Grafana's AI-assisted features](https://grafana.com/docs/grafana-cloud/machine-learning/intro/) usually sit closer to the operator interface.
 They may help users write queries, summarize panels, explain alert history, or explore data across connected sources.
 This is valuable because Grafana often spans Prometheus, Loki, Tempo, Mimir, Pyroscope, and third-party data sources.
 The limitation is that an assistant in the visualization layer may not know everything the source systems know about topology, deployment events, or alert ownership.
@@ -701,7 +702,7 @@ HUMAN-IN-THE-LOOP TRUST MODEL
 ```
 
 Governance matters because observability data is sensitive.
-Logs may contain customer identifiers, traces may reveal business workflows, and incident summaries may expose security-relevant architecture details.
+[Logs may contain customer identifiers](https://csrc.nist.gov/pubs/sp/800/92/final), traces may reveal business workflows, and incident summaries may expose security-relevant architecture details.
 AI features that send data to vendor-hosted assistants or large language models require review by security, privacy, and legal stakeholders.
 Even when data stays inside the observability platform, access controls should prevent broad query assistants from revealing telemetry a user could not otherwise inspect.
 
@@ -1197,3 +1198,10 @@ This is the difference between feature evaluation and operational evaluation.
 ## Next Module
 
 Continue to [Building Custom AIOps](../module-10.4-building-custom-aiops/) to learn how to build your own AIOps pipelines when built-in platform AI is not enough.
+
+## Sources
+
+- [grafana.com: intro](https://grafana.com/docs/grafana-cloud/machine-learning/intro/) — Grafana's official AI documentation lists Grafana Assistant, anomaly detection and forecasting, Sift investigations, incident auto-summary, and dashboard metadata generation.
+- [kubernetes.io: assign memory resource](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/) — Kubernetes documentation directly explains that a container exceeding its memory limit may be terminated and shows OOMKilled output.
+- [csrc.nist.gov: final](https://csrc.nist.gov/pubs/sp/800/92/final) — NIST SP 800-92 is authoritative guidance for computer security log management and supports treating log data as security-sensitive operational data.
+- [OpenTelemetry Traces](https://opentelemetry.io/docs/concepts/signals/traces/) — Explains the trace and span evidence that observability AI features should expose when making causation claims.

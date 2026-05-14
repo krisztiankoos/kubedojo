@@ -1,0 +1,227 @@
+{
+  "module_key": "platform/toolkits/observability-intelligence/aiops-tools/module-10.3-observability-ai-features",
+  "module_path": "src/content/docs/platform/toolkits/observability-intelligence/aiops-tools/module-10.3-observability-ai-features.md",
+  "research_run_id": "2026-05-14T16:50:01+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening scenario says a staff engineer is paged at 02:10 because checkout latency crossed the customer-facing SLO for the third time in a week.",
+      "claim_class": "war_story",
+      "span_hint": "line 35",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A staff engineer is paged at 02:10 because checkout latency has crossed the customer-facing SLO for the third time in a week.",
+      "suggested_rewrite": "A staff engineer is paged because checkout latency has crossed the customer-facing SLO again.",
+      "lesson_point_url": null,
+      "rationale": "This is a precise incident-style teaching anecdote with time and recurrence details but no attributable real source, so the rewrite removes fake precision while preserving the operational setup."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Datadog Watchdog provides automatic anomaly detection and surfaces anomaly stories with impact and root-cause context.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 113, 155, 212",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.datadoghq.com/watchdog/alerts/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Datadog's official Watchdog Alerts documentation directly describes proactive anomaly detection and anomaly context, but docs.datadoghq.com is outside the current allowlist."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Dynatrace Davis/Dynatrace Intelligence performs topology-aware root cause and impact analysis using Smartscape, OneAgent, and dependency context.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 114, 156, 300-303",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.dynatrace.com/docs/dynatrace-intelligence/root-cause-analysis/concepts",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Dynatrace's official root-cause-analysis documentation directly describes context-aware analysis across topology, services, hosts, transactions, Smartscape, OneAgent, and impact, but docs.dynatrace.com is not allowlisted."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "New Relic Applied Intelligence/AIOps supports alert correlation, noise reduction, causal context, and incident workflow automation.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 115, 157, 437",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://newrelic.com/platform/applied-intelligence",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "New Relic's official Applied Intelligence page directly discusses anomaly detection, alert correlation, noise reduction, root-cause context, workflows, and incident lifecycle features, but newrelic.com is not on the allowlist."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Splunk ITSI provides service modeling, service/KPI health, and Event Analytics for notable event grouping into episodes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 116, 158, 516-519",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.splunk.com/Documentation/ITSI/latest/EA",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Splunk's official ITSI Event Analytics documentation supports event ingestion, service/KPI context, and notable-event aggregation, but docs.splunk.com is not allowlisted."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Elastic machine learning supports anomaly detection, outlier detection, and forecasting over Elastic data.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 159, 556-559",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.elastic.co/docs/explore-analyze/machine-learning",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Elastic's official machine-learning documentation directly describes anomaly detection, outlier detection, and forecasting, but elastic.co is outside the current allowlist."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Grafana AI includes assistant workflows, query help, AI-powered investigations, incident summaries, anomaly detection, and forecasting.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 160, 561-564",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://grafana.com/docs/grafana-cloud/machine-learning/intro/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Grafana's official AI documentation lists Grafana Assistant, anomaly detection and forecasting, Sift investigations, incident auto-summary, and dashboard metadata generation."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The module says Datadog is often strongest for broad automatic detection across cloud-native telemetry with minimal setup.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 148",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Datadog is often strongest when a team wants broad automatic detection across cloud-native telemetry with minimal setup.",
+      "suggested_rewrite": "Datadog may fit teams that want broad automatic detection across cloud-native telemetry with minimal setup.",
+      "lesson_point_url": null,
+      "rationale": "This is an uncited comparative superlative rather than a directly sourced benchmark; the rewrite removes the ranking while preserving selection guidance."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "The module says Dynatrace is often strongest for complex environments where dependency topology and deterministic analysis matter more than time-window grouping.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 149",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Dynatrace is often strongest when the environment is complex enough that dependency topology and deterministic analysis are more valuable than simple time-window grouping.",
+      "suggested_rewrite": "Dynatrace may fit environments where dependency topology and deterministic analysis are more valuable than simple time-window grouping.",
+      "lesson_point_url": null,
+      "rationale": "This is an uncited comparative superlative rather than a directly sourced benchmark; the rewrite removes the ranking while preserving selection guidance."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The module says New Relic is often strongest when the operational problem is too many alerts and not enough incident structure.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 150",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "New Relic is often strongest when the operational problem is too many alerts and not enough incident structure.",
+      "suggested_rewrite": "New Relic may fit teams whose operational problem is too many alerts and not enough incident structure.",
+      "lesson_point_url": null,
+      "rationale": "This is an uncited comparative superlative rather than a directly sourced benchmark; the rewrite removes the ranking while preserving selection guidance."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The module says Splunk ITSI is often strongest where an organization already models business services and runs a large Splunk estate.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 151",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Splunk ITSI is often strongest where the organization already models business services and runs a large Splunk estate.",
+      "suggested_rewrite": "Splunk ITSI may fit organizations that already model business services and run a large Splunk estate.",
+      "lesson_point_url": null,
+      "rationale": "This is an uncited comparative superlative rather than a directly sourced benchmark; the rewrite removes the ranking while preserving selection guidance."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "In Kubernetes, a container that continues to consume memory beyond its memory limit can be terminated and reported as OOMKilled.",
+      "claim_class": "standard",
+      "span_hint": "line 350",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes documentation directly explains that a container exceeding its memory limit may be terminated and shows OOMKilled output."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Logs can contain sensitive information and therefore need security-conscious management and access controls.",
+      "claim_class": "security_claim",
+      "span_hint": "lines 703-706",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://csrc.nist.gov/pubs/sp/800/92/final",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "NIST SP 800-92 is authoritative guidance for computer security log management and supports treating log data as security-sensitive operational data."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://grafana.com/docs/grafana-cloud/machine-learning/intro/",
+      "title": "Introduction to Grafana AI",
+      "tier": "upstream",
+      "why_relevant": "Provides allowlisted official grounding for Grafana Assistant, anomaly detection, forecasting, Sift, and AI incident summaries."
+    },
+    {
+      "url": "https://opentelemetry.io/docs/concepts/signals/traces/",
+      "title": "OpenTelemetry Traces",
+      "tier": "upstream",
+      "why_relevant": "Explains the trace and span evidence that observability AI features should expose when making causation claims."
+    },
+    {
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/",
+      "title": "Assign Memory Resources to Containers and Pods",
+      "tier": "standards",
+      "why_relevant": "Grounds the Kubernetes OOMKilled and memory-limit behavior used in the module's incident examples."
+    },
+    {
+      "url": "https://csrc.nist.gov/pubs/sp/800/92/final",
+      "title": "NIST SP 800-92: Guide to Computer Security Log Management",
+      "tier": "standards",
+      "why_relevant": "Useful background for treating logs and telemetry as sensitive operational data that needs governance."
+    }
+  ],
+  "notes": "Vendor primary documentation for Datadog, Dynatrace, New Relic, Splunk, and Elastic is the right evidence for their product-capability claims, but those hosts are outside the current trusted-domain allowlist, so those claims are marked needs_allowlist_expansion. Quiz prompts, code blocks, and exercise outputs were intentionally not cited unless they stated a real platform behavior outside the exercise mechanics.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+      "reason": "pdf_no_adapter",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    }
+  ]
+}
