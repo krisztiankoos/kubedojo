@@ -259,6 +259,142 @@ def test_fix_title_no_issue_anywhere_accepts_test_if_in_pr(tmp_path: Path) -> No
     assert result.returncode == 0, result.stderr
 
 
+def test_fix_pr_with_test_in_files_but_unreadable_is_denied(tmp_path: Path) -> None:
+    # File is listed in PR files but absent from the fixture dir — exercises
+    # the `_fetch_file` returns None path (e.g. moved/inaccessible at PR head).
+    pr = {
+        "body": (
+            "Fixes #1212.\n\n"
+            "Regression test: tests/test_backfill_seed_restore.py\n"
+        ),
+        "files": [
+            {"path": "scripts/quality/pipeline.py"},
+            {"path": "tests/test_backfill_seed_restore.py"},
+        ],
+        "headRefOid": "abc123",
+        "title": "fix(pipeline): restore seed on inject failure",
+        "number": 9107,
+    }
+    result = run_hook(
+        "gh pr merge 9107 --squash",
+        pr_json=pr,
+        fixture_files={
+            # Test file omitted on purpose; only the source file is provided.
+            "scripts/quality/pipeline.py": "pass\n",
+        },
+        tmp_path=tmp_path,
+    )
+    assert result.returncode == 2
+    assert "Could not read regression test file" in result.stderr
+
+
+def test_fix_pr_with_fixes_issue_keyword_recognized(tmp_path: Path) -> None:
+    # GitHub-recognized closing keywords include `Fixes issue #N` patterns
+    # — the issue ref regex should match this so the hook treats it as a
+    # bugfix PR.
+    pr = {
+        "body": (
+            "Fixes issue #1212 — restores the seed JSON on inject failure.\n"
+        ),
+        "files": [{"path": "scripts/quality/pipeline.py"}],
+        "headRefOid": "abc123",
+        "title": "chore: restore seed on inject failure",
+        "number": 9108,
+    }
+    result = run_hook(
+        "gh pr merge 9108 --squash",
+        pr_json=pr,
+        fixture_files=None,
+        tmp_path=tmp_path,
+    )
+    assert result.returncode == 2
+    assert "missing a 'Regression test:' line" in result.stderr
+
+
+def test_git_show_fallback_exercises_subprocess_when_no_fixture(tmp_path: Path) -> None:
+    # Without KUBEDOJO_HOOK_FILE_FIXTURE_DIR, `_fetch_file` falls back to
+    # `git show <oid>:<path>`. Build a real git repo, commit the test file,
+    # and verify the hook reads it through that path. This is the only
+    # test that exercises the production read path.
+    subprocess.run(
+        ["git", "init", "-b", "main", str(tmp_path)],
+        check=True, capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "agent@example.test"],
+        cwd=tmp_path, check=True, capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Agent"],
+        cwd=tmp_path, check=True, capture_output=True,
+    )
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_real.py").write_text(TEST_FILE_WITH_ISSUE)
+    subprocess.run(
+        ["git", "add", "tests/test_real.py"],
+        cwd=tmp_path, check=True, capture_output=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "initial"],
+        cwd=tmp_path, check=True, capture_output=True,
+    )
+    head_oid = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=tmp_path, check=True, capture_output=True, text=True,
+    ).stdout.strip()
+
+    pr_json_path = tmp_path / "pr.json"
+    pr_json_path.write_text(json.dumps({
+        "body": "Fixes #1212.\n\nRegression test: tests/test_real.py\n",
+        "files": [{"path": "tests/test_real.py"}],
+        "headRefOid": head_oid,
+        "title": "fix: real bug",
+        "number": 9109,
+    }))
+    env = os.environ.copy()
+    env["CLAUDE_PROJECT_DIR"] = str(tmp_path)
+    env["KUBEDOJO_HOOK_GH_JSON"] = str(pr_json_path)
+    env.pop("KUBEDOJO_HOOK_FILE_FIXTURE_DIR", None)
+    payload = {
+        "tool_name": "Bash",
+        "tool_input": {"command": "gh pr merge 9109 --squash", "cwd": str(tmp_path)},
+    }
+    result = subprocess.run(
+        [BASH, str(HOOK)],
+        input=json.dumps(payload),
+        text=True, capture_output=True, check=False,
+        env=env, cwd=tmp_path,
+    )
+    assert result.returncode == 0, result.stderr
+
+
+def test_command_starting_with_dash_e_not_swallowed_by_echo(tmp_path: Path) -> None:
+    # On bash 3.2 (/bin/bash on macOS), `echo` consumes leading -n/-e flags.
+    # The hook uses `printf '%s\n'` to defend against this. Verify by passing
+    # a command string that starts with `-e` and confirm the hook still
+    # detects `gh pr merge`.
+    pr = {
+        "body": "Fixes #1212.\n\nRegression test: tests/t.py\n",
+        "files": [
+            {"path": "scripts/quality/pipeline.py"},
+            {"path": "tests/t.py"},
+        ],
+        "headRefOid": "abc123",
+        "title": "fix: thing",
+        "number": 9110,
+    }
+    result = run_hook(
+        '-e ; gh pr merge 9110 --squash',
+        pr_json=pr,
+        fixture_files={"tests/t.py": TEST_FILE_WITH_ISSUE},
+        tmp_path=tmp_path,
+    )
+    # printf-based detection should match `gh pr merge` regardless of
+    # leading dash-flag-looking tokens; with valid test the hook allows.
+    assert result.returncode == 0, result.stderr
+
+
 def test_gh_failure_fails_open(tmp_path: Path) -> None:
     pr_json_path = tmp_path / "pr.json"
     pr_json_path.write_text("not valid json {{{")

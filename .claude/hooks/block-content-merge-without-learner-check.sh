@@ -32,7 +32,7 @@ if [ -z "$COMMAND" ]; then
   exit 0
 fi
 
-if ! echo "$COMMAND" | grep -Eq '(^|[;&|[:space:]])gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
+if ! printf '%s\n' "$COMMAND" | grep -Eq '(^|[;&|[:space:]])gh[[:space:]]+pr[[:space:]]+merge([[:space:]]|$)'; then
   exit 0
 fi
 

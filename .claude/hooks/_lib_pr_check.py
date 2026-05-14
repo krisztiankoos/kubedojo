@@ -134,7 +134,7 @@ def check_regression_test(pr_json: str, fixture_dir: str) -> tuple[str, str]:
     is_fix_title = bool(re.match(r"^fix(\([^)]+\))?:", title, re.IGNORECASE))
     issue_refs: set[str] = set()
     for match in re.finditer(
-        r"(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?)\s*[:#]?\s*#(\d+)",
+        r"(?:fix(?:es|ed)?|close[sd]?|resolve[sd]?)\s*(?:issue\s*)?[:#]?\s*#(\d+)",
         body,
         flags=re.IGNORECASE,
     ):
