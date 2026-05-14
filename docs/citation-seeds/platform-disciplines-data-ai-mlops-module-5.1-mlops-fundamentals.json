@@ -1,0 +1,192 @@
+{
+  "module_key": "platform/disciplines/data-ai/mlops/module-5.1-mlops-fundamentals",
+  "module_path": "src/content/docs/platform/disciplines/data-ai/mlops/module-5.1-mlops-fundamentals.md",
+  "research_run_id": "2026-05-14T09:18:28+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The war story claims the fraud model achieved 96% accuracy before deployment.",
+      "claim_class": "war_story",
+      "span_hint": "line 283 | section: War Story: The Model That Worked Until It Didn't",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "It reached 96% accuracy in testing.",
+      "suggested_rewrite": "It reached strong offline metrics in testing.",
+      "lesson_point_url": null,
+      "rationale": "This is a precise quantitative anecdote with no attributable source, so the fake-specific number should be removed rather than hedged."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The war story claims fraud losses tripled three months after deployment.",
+      "claim_class": "war_story",
+      "span_hint": "line 289 | section: War Story: The Model That Worked Until It Didn't",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Three months later, fraud losses tripled.",
+      "suggested_rewrite": "Later, fraud losses rose sharply enough for the team to notice a business problem.",
+      "lesson_point_url": null,
+      "rationale": "This is an unsupported pseudo-incident with a precise time and impact multiplier, so the false specifics should be collapsed to the operational lesson."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Most organizations are at Level 0 or Level 1 of MLOps maturity.",
+      "claim_class": "statistic",
+      "span_hint": "line 367 | section: MLOps Maturity Levels",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Most organizations are at Level 0 or Level 1.",
+      "suggested_rewrite": "Many organizations begin at Level 0 or Level 1.",
+      "lesson_point_url": null,
+      "rationale": "The module states a majority/prevalence claim without a cited survey or dataset, so the unsupported quantifier should be removed."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "A team might use DVC for data versioning, MLflow for experiment tracking and registry, GitHub Actions for pipeline automation, KServe for serving, and Evidently for drift checks.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 1274 | section: The MLOps Tool Landscape",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "For example, a team might use DVC for data versioning, MLflow for experiment tracking and registry, GitHub Actions for pipeline automation, KServe for Kubernetes serving, and Evidently for drift checks.",
+      "suggested_rewrite": "For example, a team might combine separate tools for data versioning, experiment tracking, pipeline automation, model serving, and drift checks.",
+      "lesson_point_url": "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
+      "rationale": "This is an illustrative stack sketch spanning several products, some of whose primary docs are off-allowlist, so a generalized example preserves the lesson without forcing mixed-product inline citations."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Kubernetes Jobs are a run-to-completion primitive and are a natural fit for one-off or batch ML training workloads.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 1350 | section: Kubernetes and MLOps",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes Jobs documentation explicitly defines Jobs as one-off tasks that run to completion and even includes a distributed-training example."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "A Kubernetes-based MLOps setup may use Argo Workflows or Kubeflow Pipelines for orchestration.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 1352 | section: Kubernetes and MLOps",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "It may use Argo Workflows or Kubeflow Pipelines for orchestration.",
+      "suggested_rewrite": "It may use a workflow orchestrator to coordinate ML pipeline steps.",
+      "lesson_point_url": "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
+      "rationale": "This is an illustrative tool-choice sentence, and softening avoids attaching one citation to a mixed on/off-allowlist product pair."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "A Kubernetes-based MLOps setup may use KServe or Seldon for inference.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 1354 | section: Kubernetes and MLOps",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "It may use KServe or Seldon for inference.",
+      "suggested_rewrite": "It may use a model-serving layer for inference.",
+      "lesson_point_url": "https://cloud.google.com/architecture/guidelines-for-developing-high-quality-ml-solutions",
+      "rationale": "This sentence is serving-tool illustration rather than a load-bearing product comparison, so a generalized rewrite is cleaner than forcing unsupported mixed-product anchoring."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "A Kubernetes-based MLOps setup may use Prometheus and Grafana for infrastructure metrics.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 1356 | section: Kubernetes and MLOps",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "It may use Prometheus and Grafana for infrastructure metrics.",
+      "suggested_rewrite": "It may use standard observability tooling for infrastructure metrics.",
+      "lesson_point_url": "https://cloud.google.com/architecture/guidelines-for-developing-high-quality-ml-solutions",
+      "rationale": "The lesson is the need for infrastructure observability, not these exact product names, so a generic rewrite is sufficient."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Most ML projects struggle to reach production because operational gaps outlast modeling work.",
+      "claim_class": "statistic",
+      "span_hint": "line 1900 | section: Did You Know?",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Most ML projects struggle to reach production because operational gaps outlast modeling work**: deployment, monitoring, ownership, and reproducibility often become the limiting factors.",
+      "suggested_rewrite": "- **Operational gaps often become the limiting factor in getting ML systems to production**: deployment, monitoring, ownership, and reproducibility can outlast the modeling work.",
+      "lesson_point_url": null,
+      "rationale": "This asserts an uncited majority outcome about ML projects as a whole, so the unsupported prevalence claim should be rewritten as a non-quantified observation."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "ML-specific issues such as training-serving skew and drift can degrade predictions without ordinary service errors, so models can fail silently if they are not properly monitored.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 1901 | section: Did You Know?",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://cloud.google.com/architecture/guidelines-for-developing-high-quality-ml-solutions",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Google's predictive-ML quality guide explicitly says deployed model performance can degrade over time, can fail silently if not monitored, and can be harmed by training-serving skew and drift."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Experiment tracking logs run metadata so teams can compare experiments and reproduce results later.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 1902 | section: Did You Know?",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://mlflow.org/docs/latest/ml/tracking/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The MLflow Tracking docs directly describe logging parameters, code versions, metrics, and output files for later analysis and comparison, but mlflow.org is off the current allowlist."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning",
+      "title": "MLOps: Continuous delivery and automation pipelines in machine learning",
+      "tier": "vendor",
+      "why_relevant": "This is the strongest high-level reference for the module's maturity model, pipeline automation, and staged adoption framing."
+    },
+    {
+      "url": "https://cloud.google.com/architecture/guidelines-for-developing-high-quality-ml-solutions",
+      "title": "Guidelines for developing high-quality, predictive ML solutions",
+      "tier": "vendor",
+      "why_relevant": "It directly covers silent failure, training-serving skew, drift, monitoring, validation, and production-quality controls for ML systems."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/",
+      "title": "Kubernetes Jobs",
+      "tier": "standards",
+      "why_relevant": "This is the canonical reference for the run-to-completion workload primitive used in the Kubernetes-and-MLOps section."
+    },
+    {
+      "url": "https://argoproj.github.io/workflows/",
+      "title": "Argo Workflows",
+      "tier": "upstream",
+      "why_relevant": "It is a concrete example of the workflow-orchestrator role mentioned in the Kubernetes-based MLOps stack discussion."
+    }
+  ],
+  "notes": "No shared citation pool appears to exist for this module, so `section_pool_ref` is null and `source_ids` are empty. I skipped Mermaid diagrams, code fences, quiz items and answers, and hands-on exercise steps per instructions. Several tool-name example lines mix products whose best primary docs are split across allowlisted and off-allowlist domains (for example MLflow, Kubeflow, KServe), so I favored illustrative rewrites there instead of forcing weak or mismatched citations.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

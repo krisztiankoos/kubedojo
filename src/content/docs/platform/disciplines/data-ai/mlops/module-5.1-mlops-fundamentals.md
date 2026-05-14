@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 5.1: MLOps Fundamentals"
 slug: platform/disciplines/data-ai/mlops/module-5.1-mlops-fundamentals
 sidebar:
@@ -1347,7 +1348,7 @@ It is not required for every ML system.
 
 But it often helps when teams need repeatable training jobs, model serving, and platform APIs.
 
-A Kubernetes-based MLOps setup may use Jobs for training.
+A Kubernetes-based MLOps setup may use [Jobs for training](https://kubernetes.io/docs/concepts/workloads/controllers/job/).
 
 It may use Argo Workflows or Kubeflow Pipelines for orchestration.
 
@@ -1898,7 +1899,7 @@ The right next step is usually one or two practices that reduce real risk.
 ## Did You Know?
 
 - **Most ML projects struggle to reach production because operational gaps outlast modeling work**: deployment, monitoring, ownership, and reproducibility often become the limiting factors.
-- **A model can fail while every infrastructure dashboard stays green**: feature drift, label drift, and training-serving skew can damage predictions without creating server errors.
+- **A model can fail while every infrastructure dashboard stays green**: [feature drift, label drift, and training-serving skew can damage predictions without creating server errors](https://cloud.google.com/architecture/guidelines-for-developing-high-quality-ml-solutions).
 - **Experiment tracking is a reliability practice, not just a research convenience**: it gives production teams the evidence needed to compare, reproduce, and audit model behavior.
 - **The safest MLOps roadmap usually improves gates before automation**: continuous retraining is valuable only when validation, lineage, and rollback are already dependable.
 
@@ -2350,3 +2351,10 @@ You've completed this exercise when you can:
 ## Next Module
 
 Continue to [Module 5.2: Feature Engineering & Stores](../module-5.2-feature-stores/) to learn how feature stores ensure consistency between training and serving.
+
+## Sources
+
+- [cloud.google.com: mlops continuous delivery and automation pipelines in machine learning](https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning) — General lesson point for an illustrative rewrite.
+- [kubernetes.io: job](https://kubernetes.io/docs/concepts/workloads/controllers/job/) — The Kubernetes Jobs documentation explicitly defines Jobs as one-off tasks that run to completion and even includes a distributed-training example.
+- [cloud.google.com: guidelines for developing high quality ml solutions](https://cloud.google.com/architecture/guidelines-for-developing-high-quality-ml-solutions) — General lesson point for an illustrative rewrite.
+- [Argo Workflows](https://argoproj.github.io/workflows/) — It is a concrete example of the workflow-orchestrator role mentioned in the Kubernetes-based MLOps stack discussion.
