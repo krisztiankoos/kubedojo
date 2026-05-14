@@ -1,0 +1,264 @@
+{
+  "module_key": "k8s/ckad/part3-observability/module-3.1-probes",
+  "module_path": "src/content/docs/k8s/ckad/part3-observability/module-3.1-probes.md",
+  "research_run_id": "2026-05-14T03:36:35+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The CKAD exam explicitly covers implementing probes and health checks under Application Observability and Maintenance.",
+      "claim_class": "standard",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "supported",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is an official curriculum/exam-scope claim and the Linux Foundation CKAD page names probes and health checks as a domain competency."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Liveness failures restart containers, while readiness failures leave containers running but stop Service traffic to them.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Mental Model: Three Questions, Three Actions",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://v1-35.docs.kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes v1.35 probe docs directly define the action taken for liveness and readiness failures."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Repeated liveness failures can produce restart-loop behavior that surfaces as CrashLoopBackOff.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: The Mental Model: Three Questions, Three Actions",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S006"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The probe docs establish that liveness triggers restarts, and the Pod lifecycle docs define CrashLoopBackOff as repeated failed restarts."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Startup probes disable liveness and readiness checks until startup succeeds, and they are the intended way to protect slow-starting containers instead of using very large liveness delays.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Startup Probe: Protect Slow Boot Without Weakening Liveness Forever",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The v1.35 docs explicitly describe startupProbe gating and recommend it instead of long liveness startup intervals."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Kubernetes 1.35 supports four probe mechanisms: HTTP GET, TCP socket, exec, and gRPC.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Probe Mechanisms: How Kubernetes Checks Health",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The versioned Kubernetes 1.35 probes page enumerates these four mechanisms."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "HTTP probes treat status codes 200 through 399 as success, so a redirecting endpoint can appear healthy.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: HTTP GET Probes",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official probe docs define HTTP success as status >=200 and <400 and document redirect handling."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "A TCP probe only verifies that the port is open; it does not validate higher-level application protocol behavior.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: TCP Socket Probes",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes probe docs define TCP success as opening the port, which is weaker than an application-level check."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Exec probes run a command inside the container, succeed only on exit status 0, and add process-creation overhead on each run.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Exec Probes",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official docs describe exec success semantics and explicitly warn about per-execution process overhead."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "gRPC probes require the gRPC Health Checking Protocol and replace the older exec-probe workaround that bundled a separate probing binary.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: gRPC Probes",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S004"
+      ],
+      "proposed_url": "https://kubernetes.io/blog/2022/05/13/grpc-probes-now-in-beta/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The concept docs define the protocol requirement, and the Kubernetes blog explains the prior grpc-health-probe executable workaround and the native replacement."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Probe defaults and constraints include initialDelaySeconds=0, periodSeconds=10, timeoutSeconds=1, failureThreshold=3, and successThreshold must remain 1 for liveness and startup probes.",
+      "claim_class": "statistic",
+      "span_hint": "section: Timing Parameters: Fast Recovery Without False Positives",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "These are exact documented Kubernetes probe defaults and field constraints."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The module's startup-budget rule of thumb uses initialDelaySeconds + failureThreshold * periodSeconds, and Kubernetes recommends a startupProbe when normal startup exceeds that budget.",
+      "claim_class": "statistic",
+      "span_hint": "section: Timing Parameters: Fast Recovery Without False Positives",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The v1.35 docs use this exact formula in their startupProbe guidance."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "A Pod can be in Running phase but not yet Ready, and Pods that are not Ready are removed from Service endpoints/load-balancing pools.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Debugging Readiness and Service Endpoints",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-condition/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Pod conditions docs explicitly distinguish Running from Ready and state that unready Pods are removed from Service endpoints."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Service backends are selected by Pod labels, so missing endpoints can be caused by selector/label mismatch as well as readiness failure.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Debugging Readiness and Service Endpoints",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The labels and selectors docs state that a Service targets Pods through its label selector."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Probe fields on a directly managed Pod are generally not mutable in place, so changing probe configuration usually requires recreating or replacing the Pod.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Worked Example: Fix a Restart Loop Caused by Liveness",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/pods/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Pods docs list the small set of mutable Pod fields, and probe configuration is not among them."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://v1-35.docs.kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/",
+      "title": "Kubernetes v1.35: Liveness, Readiness, and Startup Probes",
+      "tier": "standards",
+      "why_relevant": "This is the canonical v1.35 reference for probe semantics, mechanisms, defaults, and failure behavior."
+    },
+    {
+      "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/",
+      "title": "Configure Liveness, Readiness and Startup Probes",
+      "tier": "standards",
+      "why_relevant": "This task page provides runnable examples and concrete event output for probe troubleshooting."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-condition/",
+      "title": "Pod Conditions",
+      "tier": "standards",
+      "why_relevant": "It clarifies the difference between Running and Ready and explains why readiness affects Service endpoint membership."
+    },
+    {
+      "url": "https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad/",
+      "title": "Certified Kubernetes Application Developer (CKAD)",
+      "tier": "upstream",
+      "why_relevant": "It shows the official CKAD v1.35 domain coverage, including probes and health checks."
+    }
+  ],
+  "notes": "Source map: S001=v1.35 probes concept doc; S002=Pods concept doc; S003=Pod Conditions; S004=Kubernetes blog on native gRPC probes; S005=Labels and Selectors; S006=Pod Lifecycle; S007=Linux Foundation CKAD page. Excluded analogies, quiz prompts, hands-on exercise steps, and code blocks; only hard factual prose and table-default claims were seeded.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

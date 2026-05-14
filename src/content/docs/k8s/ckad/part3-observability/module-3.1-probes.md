@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.1: Application Probes"
 slug: k8s/ckad/part3-observability/module-3.1-probes
 sidebar:
@@ -37,7 +38,7 @@ A team ships a new checkout service on Friday afternoon. The container starts, t
 
 Probes are the contract between your application and the kubelet. They tell Kubernetes whether a container should be restarted, whether a Pod should receive traffic, and whether a slow-starting application deserves more time before normal health checks begin. Without probes, Kubernetes can only observe process-level facts such as "the container exists" and "the main process has not exited." Those facts are useful, but they are not the same as "the service can answer real requests."
 
-The CKAD exam tests probes because they sit at the boundary between YAML fluency and operational judgment. You need to write valid manifests quickly, but you also need to know which probe failure restarts a container and which probe failure removes a Pod from Service endpoints. In real clusters, that distinction decides whether an outage heals itself, hides a broken Pod from users, or becomes worse because Kubernetes restarts healthy but slow containers.
+[The CKAD exam tests probes](https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad/) because they sit at the boundary between YAML fluency and operational judgment. You need to write valid manifests quickly, but you also need to know which probe failure restarts a container and which probe failure removes a Pod from Service endpoints. In real clusters, that distinction decides whether an outage heals itself, hides a broken Pod from users, or becomes worse because Kubernetes restarts healthy but slow containers.
 
 > **The Hospital Monitoring Analogy**
 >
@@ -72,7 +73,7 @@ A probe is not just a health check endpoint. It is a health check endpoint plus 
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The most important operational distinction is that liveness changes container lifetime, while readiness changes traffic routing. A failing liveness probe increases restart counts and can create `CrashLoopBackOff` behavior if the application never satisfies the check. A failing readiness probe does not restart the container; it changes whether Services send traffic to that Pod. Startup probes gate the other two so that slow applications are not punished before they have had a fair chance to initialize.
+The most important operational distinction is that [liveness changes container lifetime, while readiness changes traffic routing](https://v1-35.docs.kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/). A failing liveness probe increases restart counts and [can create `CrashLoopBackOff` behavior](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) if the application never satisfies the check. A failing readiness probe does not restart the container; it changes whether Services send traffic to that Pod. Startup probes gate the other two so that slow applications are not punished before they have had a fair chance to initialize.
 
 > **Active Learning Prompt: Predict the Action**
 >
@@ -256,7 +257,7 @@ The power of exec probes comes with overhead and image coupling. The command mus
 
 ### gRPC Probes
 
-A gRPC probe checks a service using the gRPC health checking protocol. It is a good fit when the application already implements the standard health service and exposes it on a known port. It avoids bundling a separate probing binary into the image, which used to be a common workaround for gRPC workloads.
+A gRPC probe checks a service using the [gRPC health checking protocol](https://kubernetes.io/blog/2022/05/13/grpc-probes-now-in-beta/). It is a good fit when the application already implements the standard health service and exposes it on a known port. It avoids bundling a separate probing binary into the image, which used to be a common workaround for gRPC workloads.
 
 ```yaml
 livenessProbe:
@@ -393,7 +394,7 @@ k describe pod broken-liveness
 
 You should see events indicating that the liveness probe failed. The exact wording can vary by Kubernetes version and image behavior, but the important details are the probe type, the failing path, and the restart action. In an exam, this event section is often the fastest way to confirm whether the problem is a wrong path, wrong port, timeout, or command failure.
 
-Now replace the Pod with a valid probe path. Pods are mostly immutable for container probe changes in practical exam workflows, so deleting and recreating the Pod is usually faster than trying to patch nested fields under pressure.
+Now replace the Pod with a valid probe path. [Pods are mostly immutable for container probe changes](https://kubernetes.io/docs/concepts/workloads/pods/) in practical exam workflows, so deleting and recreating the Pod is usually faster than trying to patch nested fields under pressure.
 
 ```bash
 k delete pod broken-liveness --ignore-not-found=true
@@ -487,7 +488,7 @@ k get pods -l app=ready-demo
 k get endpoints ready-demo
 ```
 
-When readiness is broken, use the same three-layer approach. If Pods are `Running` but not `Ready`, inspect `k describe pod`. If Pods are `Ready` but endpoints are missing, inspect Service selectors and Pod labels. If endpoints exist but traffic still fails, move on to Service ports, NetworkPolicy, application behavior, or node-level networking.
+When readiness is broken, use the same three-layer approach. If Pods are `Running` but not `Ready`, inspect `k describe pod`. [If Pods are `Ready` but endpoints are missing, inspect Service selectors and Pod labels.](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) If endpoints exist but traffic still fails, move on to Service ports, NetworkPolicy, application behavior, or node-level networking.
 
 ```bash
 k describe pod -l app=ready-demo
@@ -655,7 +656,7 @@ k describe pod webapp | grep -E "Liveness|Readiness|Startup"
 k get pod webapp
 ```
 
-For readiness tasks, always verify endpoint membership if a Service is involved. A Pod can be `Running` without being a Service backend, and the exam often rewards checking the exact resource affected by the configuration.
+For readiness tasks, always verify endpoint membership if a Service is involved. [A Pod can be `Running` without being a Service backend](https://kubernetes.io/docs/concepts/workloads/pods/pod-condition/), and the exam often rewards checking the exact resource affected by the configuration.
 
 ```bash
 k get endpoints
@@ -1215,3 +1216,10 @@ Finally, verify behavior with the Kubernetes resources that actually change. Use
 ## Next Module
 
 [Module 3.2: Container Logging](../module-3.2-logging/) - Access, manage, and troubleshoot container logs.
+
+## Sources
+
+- [Kubernetes v1.35: Liveness, Readiness, and Startup Probes](https://v1-35.docs.kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) — This is the canonical v1.35 reference for probe semantics, mechanisms, defaults, and failure behavior.
+- [Configure Liveness, Readiness and Startup Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/) — This task page provides runnable examples and concrete event output for probe troubleshooting.
+- [Pod Conditions](https://kubernetes.io/docs/concepts/workloads/pods/pod-condition/) — It clarifies the difference between Running and Ready and explains why readiness affects Service endpoint membership.
+- [Certified Kubernetes Application Developer (CKAD)](https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad/) — It shows the official CKAD v1.35 domain coverage, including probes and health checks.
