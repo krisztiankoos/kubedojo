@@ -26,6 +26,7 @@ scripts can detect issues), 3 when aborted by dispatcher unavailability.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -44,6 +45,210 @@ _CONTENT_ROOT = _REPO_ROOT / "src" / "content" / "docs"
 WORKER_CAP = 3
 """Hard cap per project memory ``feedback_batch_worker_cap.md`` —
 above 3, Gemini 429s and user's Mac lags."""
+
+
+_MODULE_NUMBER_RE = re.compile(r"-module-(\d+)\.(\d+)-")
+_LEGACY_MODULE_NUMBER_RE = re.compile(r"-module-(\d+)-")
+
+# Flattened from astro.config.mjs sidebar entries and src/content/docs/.
+# Unknown tracks/sections sort after the known learner path.
+_READING_ORDER_SECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "prerequisites",
+        (
+            "prerequisites-zero-to-terminal",
+            "linux-foundations-everyday-use",
+            "prerequisites-cloud-native-101",
+            "prerequisites-kubernetes-basics",
+            "prerequisites-git-deep-dive",
+            "prerequisites-philosophy-design",
+            "prerequisites-modern-devops",
+        ),
+    ),
+    (
+        "linux",
+        (
+            "linux-foundations-system-essentials",
+            "linux-foundations-container-primitives",
+            "linux-foundations-networking",
+            "linux-operations-shell-scripting",
+            "linux-operations-performance",
+            "linux-operations-troubleshooting",
+            "linux-operations",
+            "linux-security-hardening",
+            "k8s-lfcs",
+        ),
+    ),
+    (
+        "ai",
+        (
+            "ai-foundations",
+            "ai-ai-native-work",
+            "ai-ai-building",
+            "ai-open-models-local-inference",
+            "ai-ai-for-kubernetes-platform-work",
+            "ai-history",
+        ),
+    ),
+    (
+        "cloud",
+        (
+            "cloud-hyperscaler-rosetta-stone",
+            "cloud-aws-essentials",
+            "cloud-eks-deep-dive",
+            "cloud-gcp-essentials",
+            "cloud-gke-deep-dive",
+            "cloud-azure-essentials",
+            "cloud-aks-deep-dive",
+            "cloud-architecture-patterns",
+            "cloud-advanced-operations",
+            "cloud-managed-services",
+            "cloud-enterprise-hybrid",
+        ),
+    ),
+    (
+        "k8s",
+        (
+            "k8s-kcna",
+            "k8s-kcsa",
+            "k8s-cka",
+            "k8s-ckad",
+            "k8s-cks",
+            "k8s-extending",
+            "k8s-bridges",
+            "k8s-pca",
+            "k8s-ica",
+            "k8s-cca",
+            "k8s-cgoa",
+            "k8s-cba",
+            "k8s-otca",
+            "k8s-kca",
+            "k8s-capa",
+            "k8s-cnpe",
+            "k8s-cnpa",
+            "k8s-finops",
+        ),
+    ),
+    (
+        "platform",
+        (
+            "platform-foundations-advanced-networking",
+            "platform-foundations-distributed-systems",
+            "platform-foundations-engineering-leadership",
+            "platform-foundations-observability-theory",
+            "platform-foundations-reliability-engineering",
+            "platform-foundations-security-principles",
+            "platform-foundations-systems-thinking",
+            "platform-foundations",
+            "platform-disciplines-core-platform-sre",
+            "platform-disciplines-core-platform-platform-engineering",
+            "platform-disciplines-core-platform-leadership",
+            "platform-disciplines-delivery-automation-release-engineering",
+            "platform-disciplines-delivery-automation-gitops",
+            "platform-disciplines-delivery-automation-iac",
+            "platform-disciplines-reliability-security-networking",
+            "platform-disciplines-reliability-security-chaos-engineering",
+            "platform-disciplines-reliability-security-devsecops",
+            "platform-disciplines-data-ai-data-engineering",
+            "platform-disciplines-data-ai-mlops",
+            "platform-disciplines-data-ai-aiops",
+            "platform-disciplines-data-ai-ai-infrastructure",
+            "platform-disciplines-business-value-finops",
+            "platform-disciplines",
+            "platform-toolkits-cicd-delivery-ci-cd-pipelines",
+            "platform-toolkits-cicd-delivery-gitops-deployments",
+            "platform-toolkits-cicd-delivery-source-control",
+            "platform-toolkits-cicd-delivery-container-registries",
+            "platform-toolkits-observability-intelligence-observability",
+            "platform-toolkits-observability-intelligence-aiops-tools",
+            "platform-toolkits-infrastructure-networking-iac-tools",
+            "platform-toolkits-infrastructure-networking-k8s-distributions",
+            "platform-toolkits-infrastructure-networking-networking",
+            "platform-toolkits-infrastructure-networking-platforms",
+            "platform-toolkits-infrastructure-networking-storage",
+            "platform-toolkits-security-quality-security-tools",
+            "platform-toolkits-security-quality-code-quality",
+            "platform-toolkits-developer-experience-devex-tools",
+            "platform-toolkits-developer-experience-scaling-reliability",
+            "platform-toolkits-data-ai-platforms-ml-platforms",
+            "platform-toolkits-data-ai-platforms-cloud-native-databases",
+            "platform-toolkits",
+        ),
+    ),
+    (
+        "ai-ml-engineering",
+        (
+            "ai-ml-engineering-prerequisites",
+            "ai-ml-engineering-ai-native-development",
+            "ai-ml-engineering-generative-ai",
+            "ai-ml-engineering-vector-rag",
+            "ai-ml-engineering-frameworks-agents",
+            "ai-ml-engineering-mlops",
+            "ai-ml-engineering-ai-infrastructure",
+            "ai-ml-engineering-advanced-genai",
+            "ai-ml-engineering-multimodal-ai",
+            "ai-ml-engineering-deep-learning",
+            "ai-ml-engineering-machine-learning",
+            "ai-ml-engineering-reinforcement-learning",
+            "ai-ml-engineering-bridges",
+            "ai-ml-engineering-history",
+        ),
+    ),
+    (
+        "on-premises",
+        (
+            "on-premises-planning",
+            "on-premises-provisioning",
+            "on-premises-networking",
+            "on-premises-storage",
+            "on-premises-multi-cluster",
+            "on-premises-security",
+            "on-premises-operations",
+            "on-premises-resilience",
+            "on-premises-ai-ml-infrastructure",
+        ),
+    ),
+)
+
+
+def _slug_matches_prefix(slug: str, prefix: str) -> bool:
+    return slug == prefix or slug.startswith(f"{prefix}-")
+
+
+def _reading_order_position(slug: str) -> tuple[int, int]:
+    unknown_track_idx = len(_READING_ORDER_SECTIONS)
+    for track_idx, (track_prefix, sections) in enumerate(_READING_ORDER_SECTIONS):
+        for section_idx, section_prefix in enumerate(sections):
+            if _slug_matches_prefix(slug, section_prefix):
+                return track_idx, section_idx
+
+    fallback_matches = [
+        (len(track_prefix), track_idx, len(sections))
+        for track_idx, (track_prefix, sections) in enumerate(_READING_ORDER_SECTIONS)
+        if _slug_matches_prefix(slug, track_prefix)
+    ]
+    if fallback_matches:
+        _, track_idx, section_idx = max(fallback_matches, key=lambda item: item[0])
+        return track_idx, section_idx
+    return unknown_track_idx, 0
+
+
+def _module_number_key(slug: str) -> tuple[int, int]:
+    match = _MODULE_NUMBER_RE.search(slug)
+    if match is not None:
+        return int(match.group(1)), int(match.group(2))
+
+    legacy_match = _LEGACY_MODULE_NUMBER_RE.search(slug)
+    if legacy_match is not None:
+        return int(legacy_match.group(1)), 0
+
+    return 0, -1
+
+
+def _reading_order_key(slug: str) -> tuple[int, int, int, int, str]:
+    track_idx, section_idx = _reading_order_position(slug)
+    major, minor = _module_number_key(slug)
+    return track_idx, section_idx, major, minor, slug
 
 
 # ---- bootstrap --------------------------------------------------------
@@ -117,7 +322,7 @@ def iter_states(slug_filter: Iterable[str] | None = None) -> list[dict[str, Any]
         st = state.load_state(slug)
         if st is not None:
             out.append(st)
-    return out
+    return sorted(out, key=lambda st: _reading_order_key(st["slug"]))
 
 
 def cmd_status(args: argparse.Namespace) -> int:
