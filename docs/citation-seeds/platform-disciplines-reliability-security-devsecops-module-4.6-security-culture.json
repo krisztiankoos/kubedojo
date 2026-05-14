@@ -1,0 +1,87 @@
+{
+  "module_key": "platform/disciplines/reliability-security/devsecops/module-4.6-security-culture",
+  "module_path": "src/content/docs/platform/disciplines/reliability-security/devsecops/module-4.6-security-culture.md",
+  "research_run_id": "2026-05-14T11:18:45+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The module says the most common DevSecOps failure pattern starts with a tool-first investment.",
+      "claim_class": "statistic",
+      "span_hint": "line 54 | section: Culture Is the Operating System for Security Work",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The most common DevSecOps failure pattern begins with a tool-first investment.",
+      "suggested_rewrite": "A common DevSecOps failure pattern begins with a tool-first investment.",
+      "lesson_point_url": null,
+      "rationale": "This is a prevalence claim without a cited survey or dataset, so the unsupported superlative should be removed."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Effective security champions programs need management buy-in and protected time rather than title-only designation.",
+      "claim_class": "security_claim",
+      "span_hint": "line 776 | section: Did You Know? | item 1",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://owasp.org/www-project-security-culture/v11/4-Security_Champions/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OWASP's Security Champions guidance directly says champions need management buy-in and a percentage of time set aside from regular work."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Blameless postmortem culture in tech drew on safety-critical fields such as healthcare and avionics.",
+      "claim_class": "security_claim",
+      "span_hint": "line 780 | section: Did You Know? | item 3",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://sre.google/sre-book/postmortem-culture/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Google's SRE postmortem-culture chapter directly states this origin story, but `sre.google` is outside the current allowlist."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://owasp.org/www-project-security-culture/v11/4-Security_Champions/",
+      "title": "OWASP Security Champions",
+      "tier": "standards",
+      "why_relevant": "Direct guidance on champion scope, time allocation, management buy-in, and program design."
+    },
+    {
+      "url": "https://csrc.nist.gov/projects/ssdf",
+      "title": "NIST Secure Software Development Framework (SSDF)",
+      "tier": "standards",
+      "why_relevant": "Provides an authoritative framework for organizational preparation, vulnerability response, and secure-development governance."
+    }
+  ],
+  "notes": "Skipped code fences, YAML examples, quiz items, hands-on exercise steps, and hypothetical scorecard/example numbers as pedagogical or non-inline-citation material per the prompt. The only off-allowlist claim retained is the safety-critical origin of blameless postmortems.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://owasp.org/www-project-developer-guide/assets/exports/OWASP_Developer_Guide.pdf",
+      "reason": "pdf_no_adapter",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    },
+    {
+      "url": "https://www.cisa.gov/sites/default/files/2024-02/Incident-Response-Plan-Basics_508c_1Feb2024.pdf",
+      "reason": "http_404",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "incidents"
+    },
+    {
+      "url": "https://www.cisa.gov/sites/default/files/2024-02/Incident-Response-Plan-Basics_508c_1Feb2024.pdf",
+      "reason": "http_404",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "incidents"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 4.6: Security Culture and Automation"
 slug: platform/disciplines/reliability-security/devsecops/module-4.6-security-culture
 sidebar:
@@ -773,7 +774,7 @@ The reusable method is simple but demanding. Start with the failed outcome, deco
 
 ## Did You Know?
 
-1. **Security champions programs work best when they are designed as enablement systems, not honor badges.** The title matters less than protected time, manager support, escalation paths, and a steady stream of realistic practice.
+1. **Security champions programs work best when they are designed as enablement systems, not honor badges.** The title matters less than [protected time, manager support, escalation paths](https://owasp.org/www-project-security-culture/v11/4-Security_Champions/), and a steady stream of realistic practice.
 
 2. **A security metric can become harmful when people are punished for the number alone.** Teams that fear bad metrics may underreport findings, overuse exceptions, close tickets without evidence, or avoid deeper scanning that would reveal hidden risk.
 
@@ -1233,3 +1234,8 @@ Then review the plan as if you were a developer on a product team. Does the work
 ## Next Module
 
 Continue to the [DevSecOps Toolkit](/platform/toolkits/security-quality/security-tools/) to apply these culture and automation patterns with concrete security tools.
+
+## Sources
+
+- [owasp.org: 4 Security Champions](https://owasp.org/www-project-security-culture/v11/4-Security_Champions/) — OWASP's Security Champions guidance directly says champions need management buy-in and a percentage of time set aside from regular work.
+- [NIST Secure Software Development Framework (SSDF)](https://csrc.nist.gov/projects/ssdf) — Provides an authoritative framework for organizational preparation, vulnerability response, and secure-development governance.
