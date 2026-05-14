@@ -1,0 +1,548 @@
+{
+  "module_key": "on-premises/planning/module-1.2-server-sizing",
+  "module_path": "src/content/docs/on-premises/planning/module-1.2-server-sizing.md",
+  "research_run_id": "2026-05-14T07:32:33+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening Dell/logistics anecdote presents a specific 2022 procurement event with named hardware and costs.",
+      "claim_class": "war_story",
+      "span_hint": "Why This Module Matters, opening anecdote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In September 2022, a logistics company ordered twelve Dell PowerEdge R750xs servers for their new Kubernetes platform.",
+      "suggested_rewrite": "A platform team can lock in an expensive hardware mismatch if it sizes a new Kubernetes platform before testing real workload and control-plane requirements.",
+      "lesson_point_url": null,
+      "rationale": "This is a named, dated war story with precise specifics but no attributable source."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The vehicle-tracking anecdote gives specific pod ratios, stranded CPU, and a three-year consequence.",
+      "claim_class": "war_story",
+      "span_hint": "Why This Module Matters, second anecdote paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Second, the vehicle-tracking pods needed 2 GB of RAM each but only 0.5 vCPU — a 1:4 CPU-to-RAM ratio per pod.",
+      "suggested_rewrite": "Second, the workload's memory demand can be much higher than its CPU demand, so a CPU-heavy server shape can strand cores while the cluster runs out of RAM first.",
+      "lesson_point_url": null,
+      "rationale": "This preserves the lesson while removing unverifiable per-pod numbers and the implied real incident."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Hardware mistakes impose a three-to-five-year lifecycle penalty.",
+      "claim_class": "statistic",
+      "span_hint": "Why This Module Matters, lifecycle sentence",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "You live with them for three to five years, every quarter, on every capacity-planning call, and they tend to compound:",
+      "suggested_rewrite": "You live with them for years, every quarter, on every capacity-planning call, and they tend to compound:",
+      "lesson_point_url": null,
+      "rationale": "The exact lifecycle window is asserted as fact without a source."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "NUMA can change in-memory database throughput by 30-50 percent on identical silicon.",
+      "claim_class": "statistic",
+      "span_hint": "What You'll Learn, bullet 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "NUMA architecture and why it can change in-memory database throughput by thirty to fifty percent on identical silicon.",
+      "suggested_rewrite": "NUMA architecture and why it can materially change in-memory database throughput on identical silicon.",
+      "lesson_point_url": null,
+      "rationale": "The magnitude is plausible but not backed here by a cited benchmark."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The module presents a representative 2024-2026 dual-socket server layout with specific CPU families, DIMM counts, NVMe, and NIC counts.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Server Architecture for Kubernetes, Anatomy of a Modern Server",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The diagram below shows the layout of a typical 2U dual-socket server in the 2024–2026 generation: dual Intel Sapphire Rapids or AMD Genoa CPUs, eight DIMMs per socket on a DDR5 channel, four front-bay NVMe drives wired to PCIe Gen5, and two 25 GbE or 100 GbE network interfaces.",
+      "suggested_rewrite": "The diagram below shows a representative dual-socket server layout with per-socket memory, PCIe-attached NVMe, and high-speed network interfaces.",
+      "lesson_point_url": null,
+      "rationale": "This is illustrative hardware composition, not a single citable canonical server design."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Partial or asymmetric DIMM population reduces bandwidth in direct proportion.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Server Architecture for Kubernetes, paragraph after first server diagram",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Each socket pins eight DIMMs to its own integrated memory controller; if you populate fewer slots, you lose memory bandwidth in proportion, which is why DDR5 reference designs are unforgiving about asymmetric DIMM populations.",
+      "suggested_rewrite": "Each socket pins its DIMMs to its own integrated memory controller, so partial or asymmetric population can reduce available memory bandwidth.",
+      "lesson_point_url": null,
+      "rationale": "The proportionality claim is too exact without a vendor or architectural source."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Local DDR5 latency is about 80 ns and cross-socket latency about 180 ns, a 2.25x penalty.",
+      "claim_class": "statistic",
+      "span_hint": "NUMA: Why CPU Topology Matters, opening paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "On modern servers local DDR5 latency is roughly 80 nanoseconds and cross-socket latency is roughly 180 nanoseconds, a 2.25x penalty.",
+      "suggested_rewrite": "On modern servers, remote memory access is materially slower than local memory access because it has to cross the inter-socket interconnect.",
+      "lesson_point_url": null,
+      "rationale": "These exact latency numbers vary by platform and are not sourced."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Cross-NUMA placement can cut throughput by a third or more on identical hardware.",
+      "claim_class": "statistic",
+      "span_hint": "NUMA: Why CPU Topology Matters, opening paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "it can cut throughput by a third or more on otherwise identical hardware.",
+      "suggested_rewrite": "it can cut throughput materially on otherwise identical hardware.",
+      "lesson_point_url": null,
+      "rationale": "The specific reduction needs a benchmark source or should be generalized."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Kubernetes supports `single-numa-node` Topology Manager policy, and pods that cannot be aligned to one NUMA node can be rejected at admission.",
+      "claim_class": "vendor_capability",
+      "span_hint": "NUMA: Why CPU Topology Matters, fix/verification discussion",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/tasks/administer-cluster/topology-manager",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes documents the `single-numa-node` policy and its admission-failure behavior directly."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Cross-NUMA access adds about 100 ns per access and degrades throughput by 30-50 percent under realistic load.",
+      "claim_class": "statistic",
+      "span_hint": "NUMA-aware kubelet config explanation",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "where cross-NUMA memory access would add 100 ns per access — enough to degrade throughput by thirty to fifty percent under realistic load:",
+      "suggested_rewrite": "where cross-NUMA memory access would add measurable latency and degrade throughput under realistic load:",
+      "lesson_point_url": null,
+      "rationale": "The exact per-access and aggregate performance numbers are not sourced here."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Once etcd fsync latency exceeds 10 ms at p99, other control-plane symptoms are downstream of that bottleneck.",
+      "claim_class": "statistic",
+      "span_hint": "Control Plane Sizing, opening paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "once etcd's fsync latency exceeds ten milliseconds at p99, every other control-plane symptom you will see is downstream of that one number.",
+      "suggested_rewrite": "once etcd storage latency becomes too high, many control-plane symptoms you see are downstream of that bottleneck.",
+      "lesson_point_url": null,
+      "rationale": "The exact threshold is asserted as universal fact without a source."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "The module requires sub-10 ms p99 fsync, says NVMe is mandatory, and says SATA SSDs trigger etcd leader elections at meaningful scale.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Control Plane Sizing, etcd bullet list, low-latency storage bullet",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "under ten milliseconds at p99 for fsync. NVMe is required at any meaningful cluster size; SATA SSDs spike past this threshold under load and trigger leader elections.",
+      "suggested_rewrite": "low and predictable fsync latency on the actual storage path; benchmark the device under an etcd-like workload, because slow or inconsistent storage can trigger leader elections.",
+      "lesson_point_url": null,
+      "rationale": "The qualitative lesson is sound, but the hard threshold and absolute NVMe requirement need stronger sourcing than is provided."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "A 100-node cluster needs 500-1000 sustained writes per second and scales roughly with object count rather than node count.",
+      "claim_class": "statistic",
+      "span_hint": "Control Plane Sizing, etcd bullet list, consistent IOPS bullet",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "500 to 1000 sustained writes per second for a hundred-node cluster, scaling roughly linearly with object count rather than node count.",
+      "suggested_rewrite": "sustained write performance should be validated against the cluster's object count and write pattern rather than assumed from a generic node-count heuristic.",
+      "lesson_point_url": null,
+      "rationale": "This combines a specific performance range with an unsupported scaling law."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "etcd needs about 1 GB of RAM per 10,000 objects.",
+      "claim_class": "statistic",
+      "span_hint": "Control Plane Sizing, etcd bullet list, RAM bullet",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "with a rough estimate of one gigabyte per ten thousand objects.",
+      "suggested_rewrite": "with memory needs driven by key count, watch count, and workload characteristics.",
+      "lesson_point_url": null,
+      "rationale": "This heuristic is too specific to leave uncited."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "Typical production etcd deployments need two to four dedicated CPU cores.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Control Plane Sizing, etcd bullet list, CPU bullet",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://etcd.io/docs/v3.7/op-guide/hardware/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The primary source is official etcd documentation, but `etcd.io` is off the current allowlist."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "A three-member control plane tolerates one failure, while a five-member control plane tolerates two.",
+      "claim_class": "statistic",
+      "span_hint": "Control Plane Sizing, paragraph after sizing guide",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://etcd.io/docs/v3.4/faq/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is standard etcd quorum math, but the direct primary is off-allowlist."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "Seven-member etcd clusters write more slowly than five-member clusters at the same hardware spec.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Control Plane Sizing, paragraph after sizing guide",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://etcd.io/docs/v3.4/faq/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The etcd FAQ explicitly recommends five members over larger clusters for write performance, but the official host is off-allowlist."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "A vendor RAID controller path can add 2 ms of fsync latency to supposedly NVMe-backed etcd storage.",
+      "claim_class": "war_story",
+      "span_hint": "Control Plane Sizing, paragraph after fio benchmark",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "only to discover that the vendor configured the drives behind a hardware RAID controller with a battery-backed write cache that adds two milliseconds of latency on every fsync.",
+      "suggested_rewrite": "only to discover that the delivered storage path introduces enough extra latency to fail the benchmark even though the bill of materials looked correct.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed war-story detail with a fake-precise latency number."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "vCluster runs each tenant control plane as pods inside a host cluster with its own virtual control plane components.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Shared Control Planes: Multiple Clusters on Three Servers, vCluster paragraph",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://www.vcluster.com/docs/vcluster/0.26.0/introduction/architecture",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This appears real and directly documented by the vendor, but the vendor domain is off-allowlist."
+    },
+    {
+      "claim_id": "C020",
+      "claim_text": "Kamaji runs tenant control planes as pods in a management cluster while workers join remotely as if attached to a dedicated control plane.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Shared Control Planes: Multiple Clusters on Three Servers, Kamaji paragraph",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://kamaji.clastix.io/concepts/tenant-control-plane/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The primary documentation is off the current allowlist."
+    },
+    {
+      "claim_id": "C021",
+      "claim_text": "Three physical servers can host ten or more virtual control planes.",
+      "claim_class": "statistic",
+      "span_hint": "Shared Control Planes: Multiple Clusters on Three Servers, closing sentence",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Both let three physical servers host ten or more virtual control planes;",
+      "suggested_rewrite": "Both can consolidate multiple tenant control planes onto a smaller shared management footprint;",
+      "lesson_point_url": null,
+      "rationale": "The exact consolidation ratio is a capacity claim without a source."
+    },
+    {
+      "claim_id": "C022",
+      "claim_text": "The module decomposes 30 percent headroom into three specific 10 percent buckets.",
+      "claim_class": "statistic",
+      "span_hint": "Worker Node Sizing, paragraph after sizing formula",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Roughly ten percent goes to scheduling fragmentation: the bin-packing problem is NP-hard, and even a perfect scheduler leaves slivers of unallocatable capacity behind. Another ten percent absorbs request-versus-actual drift, because pod authors set requests conservatively and actual usage drifts upward over time as features are added. The last ten percent is your operational reserve for surge events: a Black Friday spike, a noisy neighbour, a node taken out for emergency patching.",
+      "suggested_rewrite": "That headroom covers real inefficiencies such as imperfect packing, conservative requests, growth drift, and operational surge capacity, but the exact split should come from your own workload history.",
+      "lesson_point_url": null,
+      "rationale": "The three-way 10/10/10 budgeting rule is presented as fact but is not sourced."
+    },
+    {
+      "claim_id": "C023",
+      "claim_text": "The Intel Xeon Sapphire Rapids row asserts current-generation core-count, memory, PCIe-lane, price-per-core, and power figures.",
+      "claim_class": "vendor_capability",
+      "span_hint": "CPU: Intel vs AMD table, Intel column",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": "https://www.intel.com/content/www/us/en/products/sku/231737/intel-xeon-gold-6430-processor-60m-cache-2-10-ghz/specifications.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The obvious primary is Intel's own product data, which is off-allowlist."
+    },
+    {
+      "claim_id": "C024",
+      "claim_text": "The AMD EPYC Genoa row asserts current-generation core-count, memory, PCIe-lane, price-per-core, and power figures.",
+      "claim_class": "vendor_capability",
+      "span_hint": "CPU: Intel vs AMD table, AMD column",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://www.amd.com/content/dam/amd/en/documents/epyc-business-docs/datasheets/amd-epyc-9004-series-processors-datasheet.pdf",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The vendor datasheet is the right primary, but `amd.com` is off-allowlist."
+    },
+    {
+      "claim_id": "C025",
+      "claim_text": "AMD EPYC is the better default for most Kubernetes platforms.",
+      "claim_class": "vendor_capability",
+      "span_hint": "CPU: Intel vs AMD, recommendation sentence",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "For most Kubernetes platforms, AMD EPYC is the better default.",
+      "suggested_rewrite": "For many Kubernetes platforms, AMD EPYC is a strong option worth evaluating alongside Intel against your own workload and procurement constraints.",
+      "lesson_point_url": null,
+      "rationale": "This is an unbenchmarked superlative recommendation."
+    },
+    {
+      "claim_id": "C026",
+      "claim_text": "Kubernetes documents 110 pods per node as the standard large-cluster sizing criterion.",
+      "claim_class": "standard",
+      "span_hint": "How Many Pods Per Node, opening sentence",
+      "disposition": "supported",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/setup/best-practices/cluster-large/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes large-cluster guidance explicitly lists 110 pods per node."
+    },
+    {
+      "claim_id": "C027",
+      "claim_text": "Calico allocates a /26 block per node by default, yielding 64 addresses.",
+      "claim_class": "vendor_capability",
+      "span_hint": "How Many Pods Per Node, CNI ceiling paragraph",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://docs.tigera.io/calico/latest/networking/ipam/change-block-size",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The direct product documentation is off-allowlist."
+    },
+    {
+      "claim_id": "C028",
+      "claim_text": "Training-class GPUs such as the NVIDIA H100 or B200 draw roughly 700-1000 W and consume 16 PCIe Gen5 lanes each.",
+      "claim_class": "vendor_capability",
+      "span_hint": "GPU Node Considerations, opening paragraph",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://www.nvidia.com/en-us/data-center/h100/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "These are vendor hardware specifications from an off-allowlist domain."
+    },
+    {
+      "claim_id": "C029",
+      "claim_text": "GPU nodes should have 2-3x aggregate GPU memory in host RAM, including the 8xH100 equals 1.5-2 TB example.",
+      "claim_class": "statistic",
+      "span_hint": "GPU Node Considerations, host RAM paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "you want roughly two to three times the aggregate GPU memory, which on an eight-H100 server (640 GB of HBM3 across the GPUs) means 1.5 to 2 TB of host RAM.",
+      "suggested_rewrite": "host RAM for GPU nodes often needs to be substantial relative to GPU memory so staging and caching do not push the workload back onto storage.",
+      "lesson_point_url": null,
+      "rationale": "This sizing rule is presented as fact without a cited primary."
+    },
+    {
+      "claim_id": "C030",
+      "claim_text": "The NVIDIA Kubernetes device plugin exposes GPU resources as `nvidia.com/gpu`, and sharing requires explicit time-slicing or MIG-style configuration rather than two pods implicitly sharing one device.",
+      "claim_class": "vendor_capability",
+      "span_hint": "GPU Node Considerations, scheduling paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": "https://github.com/NVIDIA/k8s-device-plugin",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The upstream plugin README documents both the `nvidia.com/gpu` resource and explicit sharing modes."
+    },
+    {
+      "claim_id": "C031",
+      "claim_text": "25 GbE is the modern production minimum because microservices plus Ceph/Rook/Longhorn quickly saturate 10 GbE, especially during rebuilds.",
+      "claim_class": "vendor_capability",
+      "span_hint": "Networking, paragraph after speed table",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Twenty-five gigabit Ethernet is the modern minimum for any production Kubernetes cluster because the east-west traffic patterns of a typical microservices fleet plus a software-defined storage layer (Ceph, Rook, Longhorn) saturate 10 GbE quickly, especially during a node failure when the storage layer has to rebuild.",
+      "suggested_rewrite": "For production clusters, choose network speeds based on measured east-west traffic and storage-rebuild behavior rather than assuming 10 GbE will be sufficient.",
+      "lesson_point_url": null,
+      "rationale": "This is an uncited cross-product performance assertion."
+    },
+    {
+      "claim_id": "C032",
+      "claim_text": "A single modern server can replace 20-30 cloud instances, with an 8-14 month bare-metal break-even.",
+      "claim_class": "pricing",
+      "span_hint": "Did You Know, cloud instance bullet",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A 2U server with dual 64-core AMD EPYC processors (128 cores, 256 threads), 1 TB of RAM, and eight NVMe drives provides more compute than a fleet of m6i.xlarge instances — at a fraction of the three-year cost. The break-even point on bare metal versus on-demand cloud is typically eight to fourteen months for steady-state workloads, and shrinks every generation as core counts climb faster than cloud per-core pricing falls.",
+      "suggested_rewrite": "A well-sized modern server can consolidate a substantial amount of steady-state cloud capacity, but the cost crossover depends on workload shape, utilization, facilities, and operations assumptions.",
+      "lesson_point_url": null,
+      "rationale": "These cost and break-even figures are not stable facts without a dated methodology and source."
+    },
+    {
+      "claim_id": "C033",
+      "claim_text": "Non-ECC RAM experiences about one bit error per 8 GB per 72 hours, yielding multiple silent corruptions per day in a 512 GB server, while ECC costs about 10 percent more.",
+      "claim_class": "statistic",
+      "span_hint": "Did You Know, ECC bullet",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Non-ECC RAM experiences approximately one bit error per 8 GB per 72 hours of runtime under normal cosmic-ray flux. In a 512 GB server, that is multiple undetected memory corruptions per day, any of which could land in an etcd page, a database B-tree node, or a filesystem journal entry. ECC costs roughly ten percent more but converts those silent corruptions into logged, recoverable events; it is the single cheapest reliability upgrade in the rack.",
+      "suggested_rewrite": "Memory errors do occur in production systems, and ECC is valuable because it can detect or correct some classes of faults that non-ECC memory would surface as silent corruption.",
+      "lesson_point_url": null,
+      "rationale": "The exact rates and price delta are unsupported here and too precise to leave in place."
+    },
+    {
+      "claim_id": "C034",
+      "claim_text": "The most common server lifecycle is five years, but most organizations refresh at three because of warranty, parts, and 30-50 percent better performance per watt.",
+      "claim_class": "statistic",
+      "span_hint": "Did You Know, lifecycle bullet",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "**The most common server lifecycle is five years**, but most organizations refresh at three years because warranty, performance per watt, and parts availability all tilt against keeping older gear. After three years, maintenance contracts get expensive and newer hardware offers thirty to fifty percent better performance per watt, which on a fully populated rack pays for the refresh in electricity savings alone over the next two years.",
+      "suggested_rewrite": "Server refresh cycles are often constrained by warranty terms, parts availability, operating costs, and efficiency, so organizations should model lifecycle decisions against their own fleet economics.",
+      "lesson_point_url": null,
+      "rationale": "This bundles several industry-wide statistics without a source."
+    },
+    {
+      "claim_id": "C035",
+      "claim_text": "NUMA placement can change workload performance by roughly a factor of two on the same hardware.",
+      "claim_class": "benchmark",
+      "span_hint": "Did You Know, NUMA bullet",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://www.usenix.org/publications/login/oct15/lepers",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The cited USENIX article reports best placement outperforming worst placement by almost two times on NUMA systems."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/concepts/policy/node-resource-managers/",
+      "title": "Kubernetes Node Resource Managers",
+      "tier": "standards",
+      "why_relevant": "Covers CPU, memory, and topology-aware allocation behavior that directly affects server-sizing decisions."
+    },
+    {
+      "url": "https://kubernetes.io/docs/setup/best-practices/cluster-large/",
+      "title": "Considerations for Large Clusters",
+      "tier": "standards",
+      "why_relevant": "Provides upstream scaling criteria such as pods-per-node and general control-plane scaling guidance."
+    },
+    {
+      "url": "https://www.usenix.org/publications/login/oct15/lepers",
+      "title": "Thread and Memory Placement on NUMA Systems: Asymmetry Matters",
+      "tier": "standards",
+      "why_relevant": "Gives a concrete, authoritative reference for how NUMA placement can materially alter performance on identical hardware."
+    }
+  ],
+  "notes": "Source IDs are local to this seed and keyed by the listed proposed URLs. Quiz items, hands-on exercise steps, Mermaid/code blocks, and most purely prescriptive table rows were omitted per instructions unless surrounding prose made a concrete factual claim. Official etcd.io, vCluster, Kamaji, Intel, AMD, NVIDIA, and Calico primaries are all off the current allowlist, so real claims that depend on them are marked needs_allowlist_expansion rather than supported.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

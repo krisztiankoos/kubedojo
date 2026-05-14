@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 revision_pending: true
 title: "Module 1.2: Server Sizing & Hardware Selection"
 slug: on-premises/planning/module-1.2-server-sizing
@@ -152,7 +153,7 @@ numactl --hardware
 # memoryManagerPolicy: "Static"
 ```
 
-The trade-off is admission failure: under `single-numa-node`, a pod that requests more cores than fit on one socket cannot be scheduled at all, even if the cluster has plenty of free capacity in aggregate. That is the right behaviour for a Redis pod where cross-NUMA access would silently cost you a third of throughput, and the wrong behaviour for a stateless web service where the variance does not matter. Apply the policy at the node-pool level, not cluster-wide, and label the pool so workloads can opt in.
+The trade-off is admission failure: [under `single-numa-node`, a pod that requests more cores than fit on one socket cannot be scheduled at all](https://kubernetes.io/docs/tasks/administer-cluster/topology-manager), even if the cluster has plenty of free capacity in aggregate. That is the right behaviour for a Redis pod where cross-NUMA access would silently cost you a third of throughput, and the wrong behaviour for a stateless web service where the variance does not matter. Apply the policy at the node-pool level, not cluster-wide, and label the pool so workloads can opt in.
 
 ---
 
@@ -350,7 +351,7 @@ The answer turns on the workload's CPU-to-RAM ratio: 0.5 CPU and 2 GB RAM is a 1
 
 ### How Many Pods Per Node?
 
-Kubernetes ships with a default of 110 pods per node, but the practical limit is rarely set by that number. It is set by whichever of CPU, RAM, or CNI IP address pool runs out first. Calculate all three before you raise the limit, because raising `--max-pods` past the binding constraint just changes which symptom you see when the node fills up.
+Kubernetes ships with a [default of 110 pods per node](https://kubernetes.io/docs/setup/best-practices/cluster-large/), but the practical limit is rarely set by that number. It is set by whichever of CPU, RAM, or CNI IP address pool runs out first. Calculate all three before you raise the limit, because raising `--max-pods` past the binding constraint just changes which symptom you see when the node fills up.
 
 ```bash
 # Kubernetes default: 110 pods per node
@@ -381,7 +382,7 @@ GPU nodes break most of the rules above because the GPU itself dominates the cos
 
 Sizing the host RAM for GPU nodes is counter-intuitive: you want roughly two to three times the aggregate GPU memory, which on an eight-H100 server (640 GB of HBM3 across the GPUs) means 1.5 to 2 TB of host RAM. The reason is that training pipelines stage data in host memory before pushing it to the GPU, and inference servers cache model shards and KV caches on the host between requests. Under-provisioning host RAM forces every batch through the storage subsystem and turns a GPU-bound workload into a storage-bound one, which is the worst kind of stranded capacity because GPUs are the most expensive silicon in the rack.
 
-Kubernetes also forces you to think about scheduling: a single H100 cannot be split across pods without MIG (Multi-Instance GPU), and even with MIG the granularity is fixed by hardware. The NVIDIA device plugin advertises GPUs as `nvidia.com/gpu: 1`, so two pods cannot share one device unless you opt into time-slicing or MIG; both have throughput penalties relative to dedicated allocation. Plan capacity at the GPU-per-pod level, not the GPU-per-node level, and reserve at least one GPU per node as headroom because evicting a GPU pod is far slower than evicting a CPU pod (model load times dominate).
+Kubernetes also forces you to think about scheduling: a single H100 cannot be split across pods without MIG (Multi-Instance GPU), and even with MIG the granularity is fixed by hardware. [The NVIDIA device plugin advertises GPUs as `nvidia.com/gpu: 1`, so two pods cannot share one device unless you opt into time-slicing or MIG](https://github.com/NVIDIA/k8s-device-plugin); both have throughput penalties relative to dedicated allocation. Plan capacity at the GPU-per-pod level, not the GPU-per-node level, and reserve at least one GPU per node as headroom because evicting a GPU pod is far slower than evicting a CPU pod (model load times dominate).
 
 ---
 
@@ -421,7 +422,7 @@ Twenty-five gigabit Ethernet is the modern minimum for any production Kubernetes
 
 - **ECC (Error-Correcting Code) memory is non-negotiable for servers.** Non-ECC RAM experiences approximately one bit error per 8 GB per 72 hours of runtime under normal cosmic-ray flux. In a 512 GB server, that is multiple undetected memory corruptions per day, any of which could land in an etcd page, a database B-tree node, or a filesystem journal entry. ECC costs roughly ten percent more but converts those silent corruptions into logged, recoverable events; it is the single cheapest reliability upgrade in the rack.
 
-- **NUMA topology can cause a 2x performance difference** for the same workload on the same hardware. A database running entirely within one NUMA node can be twice as fast as one whose memory is split across two NUMA nodes, because every cache miss on the slow path has to traverse the inter-socket interconnect. Kubernetes Topology Manager was created specifically to solve this, but it is opt-in: clusters using the default `none` policy give up the entire benefit silently.
+- **NUMA topology can cause a [2x performance difference](https://www.usenix.org/publications/login/oct15/lepers)** for the same workload on the same hardware. A database running entirely within one NUMA node can be twice as fast as one whose memory is split across two NUMA nodes, because every cache miss on the slow path has to traverse the inter-socket interconnect. Kubernetes Topology Manager was created specifically to solve this, but it is opt-in: clusters using the default `none` policy give up the entire benefit silently.
 
 - **The most common server lifecycle is five years**, but most organizations refresh at three years because warranty, performance per watt, and parts availability all tilt against keeping older gear. After three years, maintenance contracts get expensive and newer hardware offers thirty to fifty percent better performance per watt, which on a fully populated rack pays for the refresh in electricity savings alone over the next two years.
 
@@ -646,3 +647,9 @@ The interesting result here is that on-prem and cloud are roughly comparable at 
 ## Next Module
 
 Continue to [Module 1.3: Cluster Topology Planning](../module-1.3-cluster-topology/) to learn how to organize your clusters — how many, where, and what architecture pattern to use.
+
+## Sources
+
+- [Kubernetes Node Resource Managers](https://kubernetes.io/docs/concepts/policy/node-resource-managers/) — Covers CPU, memory, and topology-aware allocation behavior that directly affects server-sizing decisions.
+- [Considerations for Large Clusters](https://kubernetes.io/docs/setup/best-practices/cluster-large/) — Provides upstream scaling criteria such as pods-per-node and general control-plane scaling guidance.
+- [Thread and Memory Placement on NUMA Systems: Asymmetry Matters](https://www.usenix.org/publications/login/oct15/lepers) — Gives a concrete, authoritative reference for how NUMA placement can materially alter performance on identical hardware.
