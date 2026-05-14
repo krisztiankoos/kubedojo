@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 15.1: CockroachDB - Distributed SQL That Survives Anything"
 slug: platform/toolkits/data-ai-platforms/cloud-native-databases/module-15.1-cockroachdb
 sidebar:
@@ -60,7 +61,7 @@ The rest of the module teaches CockroachDB as an operating system for distribute
 
 ### 1. The Mental Model: SQL at the Door, Distributed Storage Behind It
 
-CockroachDB looks familiar at the connection boundary because applications speak the PostgreSQL wire protocol and issue SQL statements. That familiarity is useful, but it can also be misleading. A single SQL transaction may coordinate work across multiple nodes, multiple ranges, and multiple Raft groups. The client sees one database endpoint, while the database internally routes requests through layers that split, replicate, rebalance, and persist data across the cluster.
+CockroachDB looks familiar at the connection boundary because [applications speak the PostgreSQL wire protocol](https://github.com/cockroachdb/cockroach/blob/master/docs/design.md) and issue SQL statements. That familiarity is useful, but it can also be misleading. A single SQL transaction may coordinate work across multiple nodes, multiple ranges, and multiple Raft groups. The client sees one database endpoint, while the database internally routes requests through layers that split, replicate, rebalance, and persist data across the cluster.
 
 ```ascii
 COCKROACHDB REQUEST PATH
@@ -144,7 +145,7 @@ A beginner often asks, "Is CockroachDB just PostgreSQL with more nodes?" A bette
 
 ### 2. Ranges, Raft, and Failure Behavior
 
-Raft is the mechanism that lets CockroachDB replicas agree on the order of writes for each range. When a write touches one range, the replicas for that range must replicate the write to a quorum before the write is acknowledged. With three replicas, a quorum is two replicas. If one replica fails, the range can continue accepting writes as long as two replicas can still communicate and one can act as leader for the consensus group.
+Raft is the mechanism that lets CockroachDB replicas agree on the order of writes for each range. When a write touches one range, the replicas for that range must replicate the write to a quorum before the write is acknowledged. [With three replicas, a quorum is two replicas.](https://www.usenix.org/conference/atc14/technical-sessions/presentation/ongaro) If one replica fails, the range can continue accepting writes as long as two replicas can still communicate and one can act as leader for the consensus group.
 
 ```ascii
 ONE RANGE WITH THREE REPLICAS
@@ -165,7 +166,7 @@ ONE RANGE WITH THREE REPLICAS
 Result: the write is acknowledged after the required quorum confirms the log entry.
 ```
 
-The failure behavior is more granular than a traditional primary/replica database because each range has its own replication group. Node A might be the leader for one range, a follower for another range, and not involved at all for many others. When Node A fails, only the ranges with replicas or leadership on Node A need to react. Other ranges continue without caring about that node.
+The failure behavior is more granular than a traditional primary/replica database because [each range has its own replication group](https://github.com/cockroachdb/cockroach/blob/master/docs/design.md). Node A might be the leader for one range, a follower for another range, and not involved at all for many others. When Node A fails, only the ranges with replicas or leadership on Node A need to react. Other ranges continue without caring about that node.
 
 **Stop and think:** Your cluster has three nodes and the replication target is three. One node is deleted and Kubernetes starts recreating it. Should you expect zero operational impact, partial impact, or total outage? The right expectation is partial impact. Available ranges can keep serving through quorum, but some leadership changes, connection resets, and temporary under-replication are normal until the node returns and replicas catch up.
 
@@ -243,7 +244,7 @@ helm install cockroachdb cockroachdb/cockroachdb \
   --set conf.max-sql-memory=256MiB
 ```
 
-After installation, the first operational check is not "Can I connect?" but "Did Kubernetes give the database stable pods, stable volumes, and enough readiness to initialize?" StatefulSet ordering matters because each pod gets a stable ordinal identity. PersistentVolumeClaims matter because losing a volume is different from restarting a process. Services matter because CockroachDB nodes need predictable peer addresses.
+After installation, the first operational check is not "Can I connect?" but "Did Kubernetes give the database stable pods, stable volumes, and enough readiness to initialize?" StatefulSet ordering matters because [each pod gets a stable ordinal identity](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/). PersistentVolumeClaims matter because losing a volume is different from restarting a process. Services matter because CockroachDB nodes need predictable peer addresses.
 
 ```bash
 k rollout status statefulset/cockroachdb -n cockroachdb --timeout=300s
@@ -266,7 +267,7 @@ k exec -n cockroachdb cockroachdb-0 -- \
   /cockroach/cockroach node status --insecure
 ```
 
-A Kubernetes deployment also needs scheduling intent. If your cluster has zone labels, use anti-affinity and topology spread constraints so pods do not collapse into one failure domain. The database cannot infer your cloud architecture unless Kubernetes exposes it and your manifests use it. The following fragment illustrates the intent: keep CockroachDB pods apart by hostname and spread them across zones when possible.
+A Kubernetes deployment also needs scheduling intent. If your cluster has zone labels, use anti-affinity and [topology spread constraints](https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/) so pods do not collapse into one failure domain. The database cannot infer your cloud architecture unless Kubernetes exposes it and your manifests use it. The following fragment illustrates the intent: keep CockroachDB pods apart by hostname and spread them across zones when possible.
 
 ```yaml
 apiVersion: apps/v1
@@ -1022,3 +1023,6 @@ rm -rf /tmp/crdb-lab-backups-control \
 ## Sources
 
 - [In Search of an Understandable Consensus Algorithm](https://www.usenix.org/conference/atc14/technical-sessions/presentation/ongaro) — Primary reference for Raft, the consensus algorithm discussed in the module.
+- [github.com: design.md](https://github.com/cockroachdb/cockroach/blob/master/docs/design.md) — The CockroachDB design document directly states support for the PostgreSQL wire protocol.
+- [kubernetes.io: statefulset](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/) — The Kubernetes StatefulSet documentation directly covers stable identities and persistent storage.
+- [kubernetes.io: topology spread constraints](https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/) — Kubernetes documentation directly describes topology spread constraints and their topology keys.
