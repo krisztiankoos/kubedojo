@@ -1,0 +1,116 @@
+{
+  "module_key": "platform/disciplines/core-platform/platform-engineering/module-2.5-self-service-infrastructure",
+  "module_path": "src/content/docs/platform/disciplines/core-platform/platform-engineering/module-2.5-self-service-infrastructure.md",
+  "research_run_id": "2026-05-14T08:44:34+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "OPA and Gatekeeper are common tools for Kubernetes admission policy.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 459 | section: 3. Control Plane Architecture and Guardrails",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "OPA and Gatekeeper are common for Kubernetes admission policy, but the principle is broader than one tool.",
+      "suggested_rewrite": "OPA and Gatekeeper are examples of tools used for Kubernetes admission policy, but the principle is broader than one tool.",
+      "lesson_point_url": null,
+      "rationale": "Allowlisted upstream sources can support what OPA and Gatekeeper are, but not the prevalence claim that they are 'common' in practice."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Crossplane supports claim-based custom APIs so users can request platform resources through Kubernetes-style objects.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 634 | section: 4. Provisioning Engines and Implementation Approaches",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.crossplane.io/v1.19/concepts/claims/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Crossplane's official documentation directly explains claims and how they expose custom APIs, but docs.crossplane.io is outside the current allowlist."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Crossplane reconciles composite resources and surfaces status conditions on them.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 634 | section: 4. Provisioning Engines and Implementation Approaches",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.crossplane.io/latest/composition/composite-resources/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official Crossplane docs describe reconciliation and the Synced/Ready conditions on composite resources, but the host is off-allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Crossplane compositions let platform teams expose a simplified custom resource that creates provider resources behind the scenes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 634 | section: 4. Provisioning Engines and Implementation Approaches",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.crossplane.io/latest/composition/compositions/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official Composition docs directly show a custom resource driving creation of provider-managed resources, but docs.crossplane.io is not allowlisted."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Self-service infrastructure predates modern cloud portals.",
+      "claim_class": "standard",
+      "span_hint": "line 998 | section: Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Mainframe, database, and enterprise IT teams used request catalogs long before public cloud, but modern platforms add automated validation, provisioning, lifecycle operations, and policy-as-code.",
+      "suggested_rewrite": "Self-service infrastructure predates modern cloud portals, but modern platforms add automated validation, provisioning, lifecycle operations, and policy-as-code.",
+      "lesson_point_url": null,
+      "rationale": "The teaching point is sound, but the specific historical framing about mainframe and database teams would need a stronger source than the current allowlist provides."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Crossplane can use Kubernetes-style APIs to manage non-Kubernetes infrastructure.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 1000 | section: Did You Know",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.crossplane.io/latest/whats-new/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Crossplane's official docs directly describe composing non-Kubernetes resources behind Kubernetes-style APIs, but the canonical docs host is off-allowlist."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://github.com/crossplane/crossplane",
+      "title": "Crossplane GitHub repository",
+      "tier": "upstream",
+      "why_relevant": "Useful upstream entry point for the control-plane and composition model discussed throughout the module."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/",
+      "title": "Kubernetes Docs: Custom Resources",
+      "tier": "standards",
+      "why_relevant": "Explains the Kubernetes API-extension model that underpins several self-service infrastructure patterns in the module."
+    },
+    {
+      "url": "https://github.com/open-policy-agent/gatekeeper",
+      "title": "Gatekeeper GitHub repository",
+      "tier": "upstream",
+      "why_relevant": "Concrete upstream reference for policy and admission-control patterns mentioned in the guardrails section."
+    }
+  ],
+  "notes": "Seeded only prose claims that make named historical or tool-capability assertions; excluded diagrams, code blocks, quiz items, exercise scaffolds, and illustrative tables.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

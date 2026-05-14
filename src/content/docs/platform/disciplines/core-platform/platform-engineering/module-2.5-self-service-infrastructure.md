@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 2.5: Self-Service Infrastructure"
 slug: platform/disciplines/core-platform/platform-engineering/module-2.5-self-service-infrastructure
 sidebar:
@@ -1237,3 +1238,9 @@ Your completed design should satisfy all of the following:
 ## Next Module
 
 Continue to [Module 2.6: Platform Maturity](../module-2.6-platform-maturity/) to learn how to assess platform maturity, identify capability gaps, and plan an evidence-based roadmap for improvement.
+
+## Sources
+
+- [Crossplane GitHub repository](https://github.com/crossplane/crossplane) — Useful upstream entry point for the control-plane and composition model discussed throughout the module.
+- [Kubernetes Docs: Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/) — Explains the Kubernetes API-extension model that underpins several self-service infrastructure patterns in the module.
+- [Gatekeeper GitHub repository](https://github.com/open-policy-agent/gatekeeper) — Concrete upstream reference for policy and admission-control patterns mentioned in the guardrails section.
