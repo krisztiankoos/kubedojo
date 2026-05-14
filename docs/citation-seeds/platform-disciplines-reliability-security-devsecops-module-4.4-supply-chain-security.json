@@ -1,0 +1,306 @@
+{
+  "module_key": "platform/disciplines/reliability-security/devsecops/module-4.4-supply-chain-security",
+  "module_path": "src/content/docs/platform/disciplines/reliability-security/devsecops/module-4.4-supply-chain-security.md",
+  "research_run_id": "2026-05-14T11:05:58+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A signature or attestation proves provenance/identity, not that an artifact is secure or vulnerability-free.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Prerequisites | paragraph 2",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://docs.github.com/actions/concepts/security/artifact-attestations",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official GitHub attestation docs explicitly state that attestations are not a guarantee that an artifact is secure, but `docs.github.com` is off the current allowlist."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Image digests are immutable content hashes, while tags can move, so digest-based image references remove tag-time ambiguity.",
+      "claim_class": "standard",
+      "span_hint": "section: 1. Model the Supply Chain Before Choosing Tools | paragraphs after the pause prompt",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/containers/images/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes documentation directly states that image digests are hashes of image content and are immutable."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "CycloneDX is a Bill of Materials standard used for SBOM and related software supply-chain evidence.",
+      "claim_class": "standard",
+      "span_hint": "section: 2. Build SBOMs That Answer Incident Questions | opening paragraphs",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://github.com/CycloneDX/specification",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official CycloneDX specification repository identifies CycloneDX as a BOM standard supporting SBOM and related supply-chain use cases."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "SPDX is an open standard used for SBOM exchange with strong roots in license-compliance workflows.",
+      "claim_class": "standard",
+      "span_hint": "section: 2. Build SBOMs That Answer Incident Questions | format comparison paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://github.com/spdx/spdx-spec",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official SPDX specification repository describes SPDX as standardizing license information exchange across the software supply chain."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "CycloneDX can represent components, services, vulnerabilities, and dependency relationships in security workflows.",
+      "claim_class": "standard",
+      "span_hint": "section: 2. Build SBOMs That Answer Incident Questions | format comparison paragraph",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://cyclonedx.org/specification/overview",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official CycloneDX overview directly documents components, services, vulnerabilities, and dependency modeling, but `cyclonedx.org` is off the current allowlist."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Sigstore keyless signing binds an ephemeral signing key to an OIDC identity via a short-lived certificate and records the event in Rekor.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 3. Sign Artifacts and Verify Identity | opening paragraphs",
+      "disposition": "supported",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": "https://github.com/sigstore/docs/blob/main/content/en/quickstart/quickstart-cosign.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official Sigstore quickstart on GitHub explicitly describes OIDC identity checks, short-lived certificates from Fulcio, and Rekor logging."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Sigstore is popular in cloud-native environments because it supports keyless signing.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 3. Sign Artifacts and Verify Identity | first paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Sigstore is popular in cloud-native environments because it supports keyless signing.",
+      "suggested_rewrite": "Sigstore supports keyless signing for cloud-native supply chains.",
+      "lesson_point_url": null,
+      "rationale": "The adoption claim is sociological and not load-bearing here; the module can keep the technical point without asserting popularity."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "GitHub Actions workflows must grant `id-token:[REDACTED_SECRET] to request an OIDC token.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 3. Sign Artifacts and Verify Identity | paragraph before the GitHub Actions workflow",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://docs.github.com/en/actions/reference/openid-connect-reference",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The GitHub OIDC reference directly documents the required `id-token:[REDACTED_SECRET] permission, but `docs.github.com` is off the current allowlist."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Pinning a GitHub Action to a full-length commit SHA is the only way to treat that action reference as immutable.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 3. Sign Artifacts and Verify Identity | paragraph after the GitHub Actions workflow",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "GitHub's security hardening guidance explicitly says full-length commit SHAs are the only immutable action references, but the host is off-allowlist."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Kyverno `verifyImages` policies can enforce keyless verification by matching an expected issuer and subject before admission.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 3. Sign Artifacts and Verify Identity | admission policy paragraph and Kyverno example",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://kyverno.io/docs/policy-types/cluster-policy/verify-images/sigstore/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kyverno's official verify-images documentation directly covers keyless issuer/subject matching, but `kyverno.io` is off the current allowlist."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "SLSA Build Level 1 requires provenance to exist, Level 2 adds a hosted build platform with authenticated/signed provenance, and Level 3 adds hardened builds.",
+      "claim_class": "standard",
+      "span_hint": "section: 5. Raise Maturity with SLSA and Dependency Controls | SLSA levels diagram and following paragraphs",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://slsa.dev/spec/v1.0/levels",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The SLSA levels page directly defines these build levels, but `slsa.dev` is off the current allowlist."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "GitHub's attestation actions generate signed attestations for workflow artifacts and can auto-generate SLSA build provenance.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 5. Raise Maturity with SLSA and Dependency Controls | paragraph introducing GitHub Actions provenance",
+      "disposition": "supported",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": "https://github.com/actions/attest",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official `actions/attest` repository documents signed attestations and auto-generated SLSA build provenance."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "SLSA provenance describes the artifact subject, builder, and input materials used to produce the artifact.",
+      "claim_class": "standard",
+      "span_hint": "section: 5. Raise Maturity with SLSA and Dependency Controls | paragraph beginning 'The exact implementation changes over time'",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://slsa.dev/spec/draft/provenance",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The SLSA provenance spec directly defines subject, builder, and materials, but `slsa.dev` is off the current allowlist."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "For npm, package scope and registry configuration determine which registry is used to resolve packages.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 5. Raise Maturity with SLSA and Dependency Controls | dependency confusion paragraph",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S013"
+      ],
+      "proposed_url": "https://docs.npmjs.com/cli/v11/using-npm/registry",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The npm registry docs explicitly state that registry resolution is determined by package scope and config, but `docs.npmjs.com` is off-allowlist."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "`package-lock.json` records exact dependency-tree data including `resolved` and `integrity`, enabling reproducible installs.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 5. Raise Maturity with SLSA and Dependency Controls | npm lockfile paragraph",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S014"
+      ],
+      "proposed_url": "https://docs.npmjs.com/cli/v6/configuring-npm/package-lock-json/?v=true",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The package-lock reference directly documents reproducible installs plus `resolved` and `integrity`, but the official npm docs host is off-allowlist."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "pip `--require-hashes` uses local hashes in requirements files to protect against remote tampering.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 5. Raise Maturity with SLSA and Dependency Controls | Python hash-checking paragraph",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S015"
+      ],
+      "proposed_url": "https://pip.pypa.io/en/stable/topics/secure-installs/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official pip secure-installs guide directly states that `--require-hashes` uses local hashes to protect against tampering, but `pip.pypa.io` is off-allowlist."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "The SolarWinds compromise demonstrated that a trusted software update path can be used to distribute malicious code when the software supply chain is compromised.",
+      "claim_class": "incident",
+      "span_hint": "section: Did You Know | item 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S016"
+      ],
+      "proposed_url": "https://www.cisa.gov/news-events/alerts/2021/01/07/supply-chain-compromise",
+      "proposed_tier": "incidents",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "CISA's SolarWinds advisory directly describes the Orion software update supply-chain compromise."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://github.com/sigstore/docs/blob/main/content/en/quickstart/quickstart-cosign.md",
+      "title": "Sigstore Cosign Quickstart",
+      "tier": "upstream",
+      "why_relevant": "Best compact primary walkthrough for keyless signing, verification, and transparency-log concepts used throughout this module."
+    },
+    {
+      "url": "https://github.com/actions/attest",
+      "title": "GitHub Actions Attest",
+      "tier": "upstream",
+      "why_relevant": "Shows the current GitHub-native path for signed attestations and SLSA build provenance in CI."
+    },
+    {
+      "url": "https://www.cisa.gov/news-events/alerts/2021/04/26/cisa-and-nist-release-new-interagency-resource-defending-against",
+      "title": "CISA/NIST: Defending Against Software Supply Chain Attacks",
+      "tier": "incidents",
+      "why_relevant": "Provides authoritative incident-driven guidance that connects supply-chain controls to real attack patterns and mitigations."
+    }
+  ],
+  "notes": "Local source IDs are introduced on first use and then reused. Official primary docs for GitHub Docs, Kyverno, SLSA.dev, npm Docs, and pip Docs are off the current allowlist, so those claims are marked `needs_allowlist_expansion` rather than forced to weaker adjacent URLs. No claims were emitted for quiz items, exercise steps, code blocks, or purely connective pedagogy.",
+  "_schema_issues": [
+    "claim[0]:needs_allowlist_expansion_but_url_is_already_allowlisted",
+    "claim[7]:needs_allowlist_expansion_but_url_is_already_allowlisted",
+    "claim[8]:needs_allowlist_expansion_but_url_is_already_allowlisted"
+  ],
+  "rejected_urls": []
+}

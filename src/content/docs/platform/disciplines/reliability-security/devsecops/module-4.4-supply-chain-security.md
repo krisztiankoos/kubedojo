@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 4.4: Supply Chain Security"
 slug: platform/disciplines/reliability-security/devsecops/module-4.4-supply-chain-security
 sidebar:
@@ -83,7 +84,7 @@ A useful supply chain design names the evidence each stage must produce. Source 
 
 > **Pause and predict:** If an attacker can replace `ghcr.io/acme/payments:v1.2.0` in the registry but cannot change the digest `sha256:...`, which deployments are still vulnerable? Write down whether a manifest using the tag, the digest, or both the tag and digest would run the attacker's image before you continue.
 
-The safest Kubernetes manifests deploy immutable digests, because tags are names that can move. A tag is convenient for humans, but the digest is the content identity. A manifest such as `image: ghcr.io/acme/payments@sha256:...` says exactly which bytes should run. A manifest such as `image: ghcr.io/acme/payments:v1.2.0` asks the registry what that tag means today, which creates a trust decision at pull time.
+The safest Kubernetes manifests deploy [immutable digests, because tags are names that can move](https://kubernetes.io/docs/concepts/containers/images/). A tag is convenient for humans, but the digest is the content identity. A manifest such as `image: ghcr.io/acme/payments@sha256:...` says exactly which bytes should run. A manifest such as `image: ghcr.io/acme/payments:v1.2.0` asks the registry what that tag means today, which creates a trust decision at pull time.
 
 This does not mean tags are useless. Teams often publish tags for discoverability and release communication, then resolve those tags to digests during promotion. The promotion system can record, "release `v1.2.0` means digest `sha256:abc...`," and GitOps can deploy the digest. That pattern gives developers readable releases while giving the cluster immutable content.
 
@@ -143,7 +144,7 @@ A Software Bill of Materials, or SBOM, is an inventory of the components inside 
 
 An SBOM is not a security verdict. It is evidence. A clean SBOM can still describe a malicious package that has no known CVE. A noisy SBOM can include a vulnerable package that is not reachable in the deployed application. Treat the SBOM as the starting point for investigation, then combine it with exploitability analysis, runtime exposure, and business impact.
 
-The two common formats you will see are SPDX and CycloneDX. SPDX has strong roots in license compliance and is widely used for legal and open source governance. CycloneDX is common in application security workflows because it models components, services, vulnerabilities, and dependency relationships in a way many security tools consume naturally. Either format is better than having no searchable inventory, and many organizations store both when tooling allows it.
+The two common formats you will see are SPDX and [CycloneDX](https://github.com/CycloneDX/specification). [SPDX has strong roots in license compliance](https://github.com/spdx/spdx-spec) and is widely used for legal and open source governance. CycloneDX is common in application security workflows because it models components, services, vulnerabilities, and dependency relationships in a way many security tools consume naturally. Either format is better than having no searchable inventory, and many organizations store both when tooling allows it.
 
 | Format | Strong Fit | Typical Consumers | Trade-Off |
 |---|---|---|---|
@@ -259,7 +260,7 @@ Image signing answers a different question than vulnerability scanning. Scanning
 
 Sigstore is popular in cloud-native environments because it supports keyless signing. Traditional signing often requires teams to create, store, rotate, and protect long-lived private keys. Keyless signing uses workload identity through OIDC, short-lived certificates, and a transparency log. The result is still a cryptographic signature, but the human or workflow identity becomes part of the verification story.
 
-Cosign is the command-line tool most teams use with Sigstore. Fulcio issues short-lived signing certificates based on OIDC identity. Rekor records transparency log entries so signatures can be audited. Policy controllers and admission systems can verify that an image digest was signed by a specific identity, such as a GitHub Actions workflow in a specific repository.
+Cosign is the command-line tool most teams use with Sigstore. [Fulcio issues short-lived signing certificates based on OIDC identity. Rekor records transparency log entries so signatures can be audited.](https://github.com/sigstore/docs/blob/main/content/en/quickstart/quickstart-cosign.md) Policy controllers and admission systems can verify that an image digest was signed by a specific identity, such as a GitHub Actions workflow in a specific repository.
 
 | Component | Role in the Signing Flow | Operational Question It Answers |
 |---|---|---|
@@ -541,7 +542,7 @@ SLSA is not a badge you earn once and forget. It is a way to reason about how mu
 | Tamper-resistant provenance | Basic | Better | Strong |
 | Suitable default for production platforms | Limited | Common target | High assurance target |
 
-GitHub Actions can produce provenance through artifact attestations or SLSA generator workflows. The exact implementation changes over time, but the principle stays stable: provenance must describe the subject artifact, the build type, the source material, and the builder identity. A policy engine can then verify whether the artifact came from the expected source and build path.
+GitHub Actions can produce provenance through [artifact attestations or SLSA generator workflows](https://github.com/actions/attest). The exact implementation changes over time, but the principle stays stable: provenance must describe the subject artifact, the build type, the source material, and the builder identity. A policy engine can then verify whether the artifact came from the expected source and build path.
 
 ```yaml
 name: provenance
@@ -673,7 +674,7 @@ Finally, SLSA and dependency controls should feed platform policy. If a service 
 
 ## Did You Know?
 
-1. The SolarWinds compromise <!-- incident-xref: solarwinds-2020 --> showed that a trusted software update mechanism can become the delivery path for malicious code when the build process itself is compromised. For the full case study, see [CI/CD Pipelines](../../../../prerequisites/modern-devops/module-1.3-cicd-pipelines/).
+1. [The SolarWinds compromise](https://www.cisa.gov/news-events/alerts/2021/01/07/supply-chain-compromise) <!-- incident-xref: solarwinds-2020 --> showed that a trusted software update mechanism can become the delivery path for malicious code when the build process itself is compromised. For the full case study, see [CI/CD Pipelines](../../../../prerequisites/modern-devops/module-1.3-cicd-pipelines/).
 
 2. SBOMs are most useful when they are generated for released artifacts, because source-only inventories can miss base image packages and build-time additions.
 
@@ -937,3 +938,9 @@ Your answers should reveal whether the control design is coherent. If you cannot
 ## Next Module
 
 Continue to [Module 4.5: Runtime Security](../module-4.5-runtime-security/), where you will extend supply chain assurance into running workloads by detecting suspicious behavior, constraining privilege, and responding when prevention is not enough.
+
+## Sources
+
+- [Sigstore Cosign Quickstart](https://github.com/sigstore/docs/blob/main/content/en/quickstart/quickstart-cosign.md) — Best compact primary walkthrough for keyless signing, verification, and transparency-log concepts used throughout this module.
+- [GitHub Actions Attest](https://github.com/actions/attest) — Shows the current GitHub-native path for signed attestations and SLSA build provenance in CI.
+- [CISA/NIST: Defending Against Software Supply Chain Attacks](https://www.cisa.gov/news-events/alerts/2021/04/26/cisa-and-nist-release-new-interagency-resource-defending-against) — Provides authoritative incident-driven guidance that connects supply-chain controls to real attack patterns and mitigations.
