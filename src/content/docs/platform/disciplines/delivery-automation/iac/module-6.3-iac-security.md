@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 6.3: Infrastructure as Code Security"
 slug: platform/disciplines/delivery-automation/iac/module-6.3-iac-security
 sidebar:
@@ -132,7 +133,7 @@ Static scanning and plan scanning answer different questions. Static scanning re
 
 A good gate has a severity model that matches business risk. Critical findings should block immediately when they expose credentials, public databases, unauthenticated administrative access, or privilege escalation. Medium findings might block in production but warn in a sandbox. Low findings can be tracked as hygiene when they do not create a realistic attack path, but they still need an owner and an expiration date if they become exceptions.
 
-Tool choice matters less than rule coverage and workflow design. Checkov is useful when one pipeline must scan Terraform, Kubernetes manifests, Helm charts, CloudFormation, and other IaC formats. Trivy is useful when the same team wants one scanner for configuration, container images, and filesystem secrets. OPA and Conftest are useful when you need organization-specific policies written in Rego. Terraform Cloud and Enterprise Sentinel policies are useful when your plan and apply workflow already lives there.
+Tool choice matters less than rule coverage and workflow design. [Checkov is useful when one pipeline must scan Terraform, Kubernetes manifests, Helm charts, CloudFormation, and other IaC formats](https://github.com/bridgecrewio/checkov). [Trivy is useful when the same team wants one scanner for configuration, container images, and filesystem secrets](https://github.com/aquasecurity/trivy). OPA and Conftest are useful when you need organization-specific policies written in Rego. [Terraform Cloud and Enterprise Sentinel policies are useful when your plan and apply workflow already lives there](https://developer.hashicorp.com/sentinel/docs/terraform).
 
 | Tool pattern | Best fit | Strength | Watch out |
 |---|---|---|---|
@@ -196,7 +197,7 @@ checkov -d terraform --framework terraform
 
 When you read scanner output, do not treat it as a pass/fail oracle. Treat each finding as a question about an attack path. "S3 bucket has no encryption" asks what data could land in the bucket and who could read raw objects. "Security group allows SSH from everywhere" asks whether a management port is reachable by the internet. "RDS is public and unencrypted" asks whether network exposure and data-at-rest exposure combine into a more severe incident.
 
-A strong remediation changes architecture, not only syntax. For the S3 bucket, adding encryption is necessary but incomplete without public access blocks and ownership controls. For SSH, replacing `0.0.0.0/0` with a corporate CIDR might be acceptable in a legacy environment, but a better platform pattern is to remove direct SSH and use session manager access with audit logs. For the database, private subnets, security groups, encryption, final snapshots, and password rotation all matter.
+A strong remediation changes architecture, not only syntax. For the S3 bucket, adding encryption is necessary but incomplete without [public access blocks](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html) and ownership controls. For SSH, replacing `0.0.0.0/0` with a corporate CIDR might be acceptable in a legacy environment, but a better platform pattern is to remove direct SSH and use session manager access with audit logs. For the database, private subnets, security groups, encryption, final snapshots, and password rotation all matter.
 
 ```hcl
 terraform {
@@ -290,11 +291,11 @@ resource "aws_security_group" "web" {
 
 Notice what the remediation does not do. It does not create a password in a variable default, it does not publish a plan artifact, and it does not grant the Terraform role administrator access so the example is easier to apply. Secure IaC often feels slower at first because every convenience is inspected for what it exposes to the next actor in the chain.
 
-> **Active learning prompt:** The secure S3 example enables encryption, versioning, and public access blocks. Which of those controls protects confidentiality, which protects recoverability, and which protects exposure prevention?
+> **Active learning prompt:** The secure S3 example enables encryption, [versioning](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html), and public access blocks. Which of those controls protects confidentiality, which protects recoverability, and which protects exposure prevention?
 
 Custom policies become useful when built-in checks cannot express your organization’s actual standard. For example, a healthcare platform might require every storage bucket with patient data to use a customer-managed KMS key, a data classification tag, and access logging to a central account. A generic scanner can catch missing encryption, but it cannot know your internal retention owner unless you teach it.
 
-The following Rego policy is runnable with Conftest against Terraform plan JSON or simplified JSON input. In production you would write tests for the policy itself, version the policy bundle, and publish examples that developers can run locally before opening a pull request. The point is to make the rule executable, not merely documented in a wiki.
+The following Rego policy is runnable with [Conftest against Terraform plan JSON or simplified JSON input](https://github.com/open-policy-agent/conftest). In production you would write tests for the policy itself, version the policy bundle, and publish examples that developers can run locally before opening a pull request. The point is to make the rule executable, not merely documented in a wiki.
 
 ```rego
 package terraform.security
@@ -329,7 +330,7 @@ A useful gate also teaches developers how to fix findings. A scanner message tha
 
 ## 3. Keep Secrets Out of Code, Plans, and State Whenever Possible
 
-Secrets in IaC are dangerous because Terraform and similar tools are designed to remember the world. State exists so the tool can compare desired infrastructure to real infrastructure, but that same memory can retain generated passwords, access keys, database connection strings, certificate material, and provider-returned attributes. Marking a value as sensitive hides it in some CLI output; it does not guarantee the value is absent from state or plan files.
+Secrets in IaC are dangerous because Terraform and similar tools are designed to remember the world. State exists so the tool can compare desired infrastructure to real infrastructure, but that same memory can retain generated passwords, access keys, database connection strings, certificate material, and provider-returned attributes. [Marking a value as sensitive hides it in some CLI output; it does not guarantee the value is absent from state or plan files](https://developer.hashicorp.com/terraform/language/manage-sensitive-data).
 
 The first rule is simple: do not put long-lived secrets in source code. A committed secret is still compromised even if the next commit deletes it, because Git history, forks, CI logs, package mirrors, and external scanners may already have a copy. The correct incident response is rotation and investigation, not editing the file and hoping nobody noticed.
 
@@ -401,7 +402,7 @@ resource "aws_iam_policy" "orders_secret_read" {
 
 The previous example stores no secret value. A separate rotation workflow, break-glass procedure, or database bootstrap job can set the value. That separation improves security because the Terraform role no longer needs to know the password, and state no longer becomes the easiest place to steal it.
 
-When Kubernetes is part of the platform, External Secrets Operator or a similar controller can bridge cloud secret stores into cluster-native Secrets. Terraform installs the controller and IAM relationship, while the controller reconciles specific secret values at runtime. In Kubernetes examples, this course uses `kubectl`; many operators shorten it to `k` after configuring an alias such as `alias k=kubectl`, but the examples here use full commands for clarity.
+When Kubernetes is part of the platform, [External Secrets Operator or a similar controller can bridge cloud secret stores into cluster-native Secrets](https://github.com/external-secrets/external-secrets). Terraform installs the controller and IAM relationship, while the controller reconciles specific secret values at runtime. In Kubernetes examples, this course uses `kubectl`; many operators shorten it to `k` after configuring an alias such as `alias k=kubectl`, but the examples here use full commands for clarity.
 
 ```yaml
 apiVersion: external-secrets.io/v1
@@ -428,9 +429,9 @@ spec:
         property: password
 ```
 
-This pattern still has risks. A Kubernetes Secret is base64-encoded, not magically encrypted from every cluster reader. You still need Kubernetes RBAC, encryption at rest for the Kubernetes API server, namespace isolation, controller permissions scoped to exact secret paths, and audit logging for reads. The advantage is that the IaC state manages the wiring while the secret value lives in a system built for rotation and access control.
+This pattern still has risks. [A Kubernetes Secret is base64-encoded, not magically encrypted from every cluster reader](https://kubernetes.io/docs/concepts/configuration/secret/). You still need Kubernetes RBAC, encryption at rest for the Kubernetes API server, namespace isolation, controller permissions scoped to exact secret paths, and audit logging for reads. The advantage is that the IaC state manages the wiring while the secret value lives in a system built for rotation and access control.
 
-Some teams use SOPS to encrypt secret files that live beside IaC code. This can be a reasonable GitOps pattern when the encrypted file is the deployable artifact and the decryption key is tightly controlled. It becomes risky when pipelines decrypt the file too early, print it during templating, or feed it into Terraform resources that store the plaintext in state anyway.
+Some teams use [SOPS to encrypt secret files that live beside IaC code](https://github.com/getsops/sops). This can be a reasonable GitOps pattern when the encrypted file is the deployable artifact and the decryption key is tightly controlled. It becomes risky when pipelines decrypt the file too early, print it during templating, or feed it into Terraform resources that store the plaintext in state anyway.
 
 ```bash
 mkdir -p secrets-demo
@@ -592,7 +593,7 @@ resource "aws_iam_policy" "production_state_access" {
 }
 ```
 
-Plan files deserve the same classification as state files. Terraform’s human-readable plan output hides sensitive values in many places, but the binary plan and JSON-rendered plan can still contain enough detail to be sensitive. Uploading raw plans as public or broadly readable CI artifacts is a common way to bypass an otherwise careful state backend.
+Plan files deserve the same classification as state files. Terraform’s human-readable plan output hides sensitive values in many places, but the [binary plan and JSON-rendered plan can still contain enough detail to be sensitive](https://developer.hashicorp.com/terraform/cli/commands/plan). Uploading raw plans as public or broadly readable CI artifacts is a common way to bypass an otherwise careful state backend.
 
 A safer plan workflow keeps plan artifacts short-lived, encrypted, and scoped to the apply job that needs them. It also avoids running privileged plan jobs on untrusted fork events. When a pull request needs feedback from a fork, run static scanning and formatting checks first. Save credentialed plan generation for trusted branches, protected environments, or workflows that require approval before secrets and cloud roles are issued.
 
@@ -656,7 +657,7 @@ jobs:
           retention-days: 1
 ```
 
-Provider credentials are another state-adjacent risk because they are powerful and often under-reviewed. Static cloud access keys in CI secrets are long-lived bearer tokens; if they leak, an attacker can use them outside the pipeline. OIDC federation is safer because the CI provider exchanges a short-lived signed identity token for temporary cloud credentials, and the trust policy can bind that exchange to a specific repository, branch, workflow, or environment.
+Provider credentials are another state-adjacent risk because they are powerful and often under-reviewed. Static cloud access keys in CI secrets are long-lived bearer tokens; if they leak, an attacker can use them outside the pipeline. OIDC federation is safer because [the CI provider exchanges a short-lived signed identity token for temporary cloud credentials](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc.html), and [the trust policy can bind that exchange to a specific repository, branch, workflow, or environment](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html).
 
 ```hcl
 resource "aws_iam_openid_connect_provider" "github" {
@@ -766,7 +767,7 @@ resource "aws_iam_policy" "terraform_orders_apply" {
 }
 ```
 
-Permission boundaries are especially important when Terraform creates IAM roles. A permission boundary does not grant access by itself; it limits the maximum access an identity can have. That makes it useful when you want application teams to define their own workload roles but prevent those roles from gaining administrator permissions, disabling logging, or modifying organization-wide controls.
+Permission boundaries are especially important when Terraform creates IAM roles. [A permission boundary does not grant access by itself; it limits the maximum access an identity can have](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html). That makes it useful when you want application teams to define their own workload roles but prevent those roles from gaining administrator permissions, disabling logging, or modifying organization-wide controls.
 
 ```hcl
 resource "aws_iam_policy" "workload_boundary" {
@@ -1223,3 +1224,20 @@ Finish by reviewing your own work from the perspective of a platform security re
 ## Next Module
 
 Continue to [Module 6.4: IaC at Scale](../module-6.4-iac-at-scale/) to learn how teams manage infrastructure as code across many environments, repositories, ownership boundaries, and platform standards.
+
+## Sources
+
+- [developer.hashicorp.com: plan](https://developer.hashicorp.com/terraform/cli/commands/plan) — HashiCorp's `terraform plan` reference directly states both behaviors.
+- [github.com: checkov](https://github.com/bridgecrewio/checkov) — The Checkov project README lists the IaC formats it scans.
+- [github.com: trivy](https://github.com/aquasecurity/trivy) — The Trivy README directly describes its supported targets and scanners.
+- [github.com: conftest](https://github.com/open-policy-agent/conftest) — The Conftest README explicitly says it uses Rego and can test Kubernetes and Terraform configuration.
+- [developer.hashicorp.com: terraform](https://developer.hashicorp.com/sentinel/docs/terraform) — HashiCorp's Sentinel Terraform integration page states this execution point and data access model.
+- [developer.hashicorp.com: manage sensitive data](https://developer.hashicorp.com/terraform/language/manage-sensitive-data) — HashiCorp's sensitive-data guidance directly explains that state and plan files may contain sensitive values.
+- [github.com: external secrets](https://github.com/external-secrets/external-secrets) — The External Secrets Operator project README describes this exact controller behavior.
+- [kubernetes.io: secret](https://kubernetes.io/docs/concepts/configuration/secret/) — The Kubernetes Secrets documentation explicitly notes that base64 encoding obscures data but does not make it secret.
+- [github.com: sops](https://github.com/getsops/sops) — The SOPS project README directly describes the tool and supported file types.
+- [docs.aws.amazon.com: access control block public access.html](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-control-block-public-access.html) — AWS S3 documentation directly states that Block Public Access overrides public policies and permissions.
+- [docs.aws.amazon.com: Versioning.html](https://docs.aws.amazon.com/AmazonS3/latest/userguide/Versioning.html) — AWS S3 Versioning documentation directly describes recoverability from accidental deletion and overwrite.
+- [docs.aws.amazon.com: id roles providers oidc.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_oidc.html) — AWS IAM's OIDC federation guidance explicitly recommends this pattern and describes the token exchange.
+- [docs.aws.amazon.com: id roles create for idp oidc.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-idp_oidc.html) — AWS's GitHub OIDC role-creation guidance directly warns about leaving the `sub` condition insufficiently scoped.
+- [docs.aws.amazon.com: access policies boundaries.html](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_boundaries.html) — AWS IAM documentation directly defines permissions boundaries this way.
