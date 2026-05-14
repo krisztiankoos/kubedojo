@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.1: Prometheus"
 slug: platform/toolkits/observability-intelligence/observability/module-1.1-prometheus
 sidebar:
@@ -1074,3 +1075,18 @@ Continue to [Module 1.2: OpenTelemetry](../module-1.2-opentelemetry/) to learn h
 - [prometheus.io: alertmanager](https://prometheus.io/docs/alerting/latest/alertmanager/) — The official Alertmanager concepts page directly documents these responsibilities.
 - [prometheus.io: federation](https://prometheus.io/docs/prometheus/latest/federation/) — The federation documentation explicitly defines federation as scraping selected time series from another Prometheus server.
 - [prometheus.io: basics](https://prometheus.io/docs/prometheus/latest/querying/basics/) — The querying basics page explicitly warns about slow or overload-prone queries and recommends pre-recording expensive expressions.
+- [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) — Backs the Collector as the vendor-neutral layer for receiving, processing, and exporting telemetry, including the receiver/processor/exporter pipeline model and backend-neutral architecture.
+- [OTLP Specification 1.10.0](https://opentelemetry.io/docs/specs/otlp/) — Backs OTLP as the OpenTelemetry transport protocol, including gRPC and HTTP transport details, request/response behavior, default ports, retry semantics, and signal transport expectations.
+- [Grafana Alerting](https://grafana.com/docs/grafana/latest/alerting/) — Backs Grafana-managed alert rules, evaluation behavior, notification routing, contact points, grouping, silences, and other alerting concepts relevant to dashboard-adjacent operations.
+- [Grafana Documentation](https://grafana.com/docs/grafana/latest/) — Broad official docs hub for Grafana dashboards, variables, data sources, panels, Explore, correlations, and operational workflows that connect metrics, logs, and traces.
+- [OpenTelemetry: Sampling](https://opentelemetry.io/docs/concepts/sampling/) — Backs head-vs-tail sampling concepts, cost-control rationale, and practical guidance about reducing trace volume while preserving useful signal.
+- [Grafana Tempo: Architecture](https://grafana.com/docs/tempo/latest/introduction/architecture/) — Backs Tempo’s backend architecture, object-storage-based trace retention, TraceQL search, ingestion/query path, and tradeoff discussions for self-managed tracing backends.
+- [OpenSLO Specification](https://github.com/OpenSLO/OpenSLO) — Backs OpenSLO as a vendor-neutral specification for expressing SLOs, SLIs, objectives, alert policies, services, and budgeting methods in portable YAML.
+- [Grafana Loki: Query Loki (LogQL)](https://grafana.com/docs/loki/latest/logql/) — Backs Loki’s label-based query model, log streams, compressed chunk storage, label indexing instead of full-content indexing, and LogQL basics for log exploration and metric extraction from logs.
+- [OpenTelemetry: Traces](https://opentelemetry.io/docs/concepts/signals/traces/) — Backs core tracing concepts: traces, spans, parent-child relationships, span context, attributes, events, links, status, and how a request path is represented across services.
+- [Parca Agent README](https://github.com/parca-dev/parca-agent) — Backs Parca Agent claims: always-on sampling profiler, eBPF-based stack collection, Kubernetes/systemd target discovery, zero code changes or restarts, supported languages, Linux/BTF requirements, and currently supported profile scope.
+- [Parca README](https://github.com/parca-dev/parca) — Backs Parca server/product claims: continuous profiling over time, line-level analysis, pprof interoperability, optimized storage/querying, infrastructure-wide aggregation, and comparison across dimensions for regression analysis.
+- [grafana.com: the red method how to instrument your services](https://grafana.com/blog/2018/08/02/the-red-method-how-to-instrument-your-services/) — Grafana's RED Method article is an allowlisted source that directly defines the named pattern.
+- [Pyroscope and Profiling in Grafana](https://grafana.com/docs/pyroscope/latest/introduction/pyroscope-in-grafana/) — Backs Pyroscope/Grafana workflow claims: continuous profiling in Grafana, correlation with metrics/logs/traces, traces-to-profiles navigation, and dashboard integration.
+- [kubernetes.io: endpoint slices](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/) — The Kubernetes EndpointSlice documentation directly supports the EndpointSlice discovery behavior described in the module.
+- [PromQL Functions](https://prometheus.io/docs/prometheus/latest/querying/functions/) — Defines `rate()`, `irate()`, histogram functions, and counter handling used throughout the module.
