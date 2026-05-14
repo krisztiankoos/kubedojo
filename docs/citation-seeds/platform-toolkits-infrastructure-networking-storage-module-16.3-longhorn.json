@@ -1,0 +1,342 @@
+{
+  "module_key": "platform/toolkits/infrastructure-networking/storage/module-16.3-longhorn",
+  "module_path": "src/content/docs/platform/toolkits/infrastructure-networking/storage/module-16.3-longhorn.md",
+  "research_run_id": "2026-05-14T16:39:59+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A logistics company with three compact servers per warehouse adopted Kubernetes for unreliable-WAN warehouse workloads and needed storage that survived node failure and deletion.",
+      "claim_class": "war_story",
+      "span_hint": "line 41",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A logistics company rolled Kubernetes out to regional warehouses because every site needed local inventory, label printing, barcode scanning, and queue processing even when the WAN link was unreliable. Each warehouse had three compact servers, a handful of NVMe disks, and no local storage engineer. The central platform team wanted persistent storage that could survive a single node failure, recover from accidental deletion, and remain simple enough for an on-call engineer to operate during a shipping outage.",
+      "suggested_rewrite": "At many edge sites, Kubernetes has to support local inventory, printing, scanning, and queue-processing workloads even when WAN links are unreliable. Those clusters often have small hardware footprints and no dedicated storage engineer, so the platform team needs persistent storage that can survive routine node failure, support recovery from deletion, and remain operable during an outage.",
+      "lesson_point_url": null,
+      "rationale": "The paragraph presents a specific operational anecdote with quantitative details but provides no attributable source."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The same team first used Rook/Ceph in a controlled pilot, then suffered operational problems during a busy-shift server failure.",
+      "claim_class": "war_story",
+      "span_hint": "line 43",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Their first design used Rook/Ceph because it was powerful and familiar from larger datacenter clusters. It worked during a controlled pilot, but the operating model did not fit the edge environment. Ceph monitor memory, OSD recovery traffic, raw disk preparation, version upgrades, and specialist troubleshooting all competed with the actual goal: keeping warehouse applications online. When a server failed during a busy shift, the platform engineer was not solving an abstract storage problem; they were explaining why scanners could not write completed picks back to the local database.",
+      "suggested_rewrite": "A first design might use a full storage platform because it is powerful and familiar from larger datacenter clusters, but that operating model can be too heavy for a small edge environment. Control-plane overhead, recovery traffic, disk preparation, upgrades, and specialist troubleshooting can compete with the practical goal of keeping local applications online during a site incident.",
+      "lesson_point_url": null,
+      "rationale": "The controlled-pilot and busy-shift failure narrative reads as a real incident but is unattributed."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The team replaced Rook/Ceph with Longhorn for edge sites and saw operational improvement from per-volume recovery and built-in backups.",
+      "claim_class": "war_story",
+      "span_hint": "line 53",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The team replaced that design with Longhorn for the edge sites. Longhorn did not try to be a complete storage platform; it gave them Kubernetes-native replicated block volumes, snapshots, S3-compatible backups, a usable dashboard, and predictable per-volume recovery. The operational improvement came from narrowing the problem. The warehouses mostly needed ReadWriteOnce block storage for databases and stateful services, not a shared filesystem or object gateway inside every cluster.",
+      "suggested_rewrite": "For this edge pattern, a narrower storage design can be easier to operate: Kubernetes-native replicated block volumes, snapshots, S3-compatible backups, a practical dashboard, and volume-level recovery may be enough when the workloads mostly need ReadWriteOnce block storage for databases and stateful services rather than a shared filesystem or object gateway inside every cluster.",
+      "lesson_point_url": null,
+      "rationale": "The replacement story is presented as a real customer outcome but has no source."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Longhorn/SUSE Storage implements distributed block storage by synchronously replicating block volumes across replicas on multiple nodes, while Kubernetes ReadWriteOnce means a volume can be mounted read-write by a single node.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 73",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S002"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "SUSE Storage architecture documents the Longhorn-derived synchronous replicated block design, and Kubernetes documents ReadWriteOnce access-mode semantics."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Replicas help with node or disk failures inside the cluster, while backups are stored in an external backupstore and support recovery outside the local replica set.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 98",
+      "disposition": "supported",
+      "source_ids": [
+        "S003",
+        "S004"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/latest/en/introduction/terminology.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "SUSE terminology and backup-target documentation define the backupstore as external to the Kubernetes cluster and distinguish backups from local volume data."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The Longhorn Manager runs on each node as a DaemonSet, handles Longhorn volume management and API calls, and the CSI driver formats and mounts the block device for Pods.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 102",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The architecture page directly describes the Manager DaemonSet and the CSI driver mount path."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The Longhorn Engine runs with the consuming Pod and synchronously replicates writes across replicas stored on multiple nodes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 104 and 178",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The architecture page states that the engine runs on the Pod's node and synchronously replicates across replicas."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Longhorn replicas are built using Linux sparse files and faulty replicas are rebuilt by adding and syncing a replacement replica from a healthy replica.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 106 and 619",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The concepts page explicitly documents sparse-file replicas and the faulty-replica rebuild flow."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Longhorn/SUSE Storage v1 volumes use iSCSI and may require node packages such as open-iscsi or iscsiadm.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 180 and 761",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The architecture page states that v1 volumes use iSCSI and may require open-iscsi or iscsiadm."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Longhorn StorageClass parameters include numberOfReplicas, dataLocality, diskSelector, nodeSelector, and the Kubernetes reclaimPolicy Delete behavior.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 313",
+      "disposition": "supported",
+      "source_ids": [
+        "S005",
+        "S006"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/latest/en/volumes/storageclass-parameters.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "SUSE StorageClass parameter docs list the Longhorn-specific parameters, while Kubernetes StorageClass docs define reclaimPolicy behavior."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "StatefulSet volumeClaimTemplates create stable per-replica PVCs such as data-postgres-0 for StatefulSet Pods.",
+      "claim_class": "standard",
+      "span_hint": "line 368",
+      "disposition": "supported",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes StatefulSet documentation describes stable storage and PVCs created from volumeClaimTemplates."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Longhorn snapshots are local point-in-time volume states, while backups are copied to an off-cluster backupstore and can be restored later.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 389",
+      "disposition": "supported",
+      "source_ids": [
+        "S003",
+        "S008"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/latest/en/introduction/terminology.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "SUSE terminology defines backups, backupstores, and backups created from snapshots, including their external storage role."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "The Kubernetes VolumeSnapshot API provides VolumeSnapshot and VolumeSnapshotContent resources for CSI snapshot workflows.",
+      "claim_class": "standard",
+      "span_hint": "line 415",
+      "disposition": "supported",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/storage/volume-snapshots/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes VolumeSnapshot concept page directly defines these snapshot API resources."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Longhorn RecurringJob resources can schedule snapshot or backup tasks with cron, retain, concurrency, groups, and labels, and can be associated with PVCs or volumes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 428",
+      "disposition": "supported",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/1.10/en/snapshots-backups/volume-snapshots-backups/create-recurring-backup-snapshot-job.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The recurring job documentation lists the RecurringJob CRD fields and label-based assignment patterns."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "Longhorn can restore a volume from backup and provision a new PVC from an associated backup snapshot.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 453",
+      "disposition": "supported",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/latest/en/snapshots-backups/csi-snapshots/csi-snapshot-longhorn-backup.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The CSI backup snapshot documentation shows restoring a PVC from a VolumeSnapshot associated with a Longhorn backup."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "Longhorn exposes metrics for volume state, robustness, capacity, node storage, disk status, backup state, and CSI sidecar operations.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 510 and 528",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/1.11/en/observability/longhorn-metrics.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The metrics page lists the exact Longhorn metric families used in the module."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "Longhorn/SUSE Storage performs delta/incremental backups by default, uploading only changed data since the previous backup.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 620",
+      "disposition": "supported",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/1.10/en/snapshots-backups/volume-snapshots-backups/create-recurring-backup-snapshot-job.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The recurring backup documentation states that delta backups are the default and upload only changed data."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "Longhorn best-effort data locality tries to co-locate a replica with the workload but permits another node when co-location is not possible.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 622",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://documentation.suse.com/cloudnative/storage/latest/en/volumes/storageclass-parameters.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The StorageClass parameter documentation defines best-effort data locality in those terms."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "Rook/Ceph provides file, block, and object storage for Kubernetes, while MinIO is S3-compatible object storage and Longhorn is primarily a replicated block-storage system.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 565-609",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S013",
+        "S014"
+      ],
+      "proposed_url": "https://github.com/rook/rook",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Rook and MinIO GitHub READMEs document their storage interfaces, and SUSE Storage docs document Longhorn-derived replicated block storage."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html",
+      "title": "SUSE Storage Architecture and Concepts",
+      "tier": "vendor",
+      "why_relevant": "Primary architecture reference for Longhorn-derived managers, engines, replicas, CSI, synchronous replication, snapshots, and rebuilds."
+    },
+    {
+      "url": "https://documentation.suse.com/cloudnative/storage/latest/en/volumes/storageclass-parameters.html",
+      "title": "SUSE StorageClass Parameters",
+      "tier": "vendor",
+      "why_relevant": "Documents Longhorn StorageClass parameters such as replica count, data locality, node selectors, disk selectors, and backup options."
+    },
+    {
+      "url": "https://documentation.suse.com/cloudnative/storage/1.11/en/observability/longhorn-metrics.html",
+      "title": "SUSE Storage Metrics for Monitoring",
+      "tier": "vendor",
+      "why_relevant": "Lists the Longhorn Prometheus metrics needed for degraded-volume, capacity, disk, backup, and CSI monitoring."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/storage/persistent-volumes/",
+      "title": "Kubernetes Persistent Volumes",
+      "tier": "standards",
+      "why_relevant": "Defines PVCs, access modes such as ReadWriteOnce and ReadWriteMany, and the Kubernetes storage abstraction used throughout the module."
+    }
+  ],
+  "notes": "The direct Longhorn documentation host longhorn.io is not on the current allowlist; where possible, this seed uses SUSE documentation for SUSE Storage/Longhorn-derived behavior and Kubernetes upstream docs for Kubernetes API semantics.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

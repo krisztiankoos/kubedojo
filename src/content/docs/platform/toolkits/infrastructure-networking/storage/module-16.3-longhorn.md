@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 16.3: Longhorn - Lightweight Distributed Block Storage for Kubernetes"
 slug: platform/toolkits/infrastructure-networking/storage/module-16.3-longhorn
 sidebar:
@@ -70,9 +71,9 @@ Longhorn matters because many Kubernetes teams need durable block storage withou
 
 Kubernetes makes stateful workloads look deceptively simple because a PersistentVolumeClaim hides most of the storage machinery. A developer asks for `20Gi`, a StorageClass provisions a volume, and the Pod receives a mounted filesystem. The platform engineer has to answer the questions behind that abstraction: where the bytes live, how many copies exist, which failures are tolerated, how recovery is triggered, and what happens when the whole cluster is lost.
 
-Longhorn solves a specific version of that problem. It provides replicated block storage for Kubernetes by storing each volume as replicas on node-local disks and presenting that volume back to Pods through the CSI driver. The normal access mode is ReadWriteOnce, which means one node mounts the volume for one workload at a time. If the workload is a PostgreSQL StatefulSet, a queue worker with local state, or a single-writer application, that model can be a strong fit.
+Longhorn solves a specific version of that problem. It provides [replicated block storage for Kubernetes](https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html) by storing each volume as replicas on node-local disks and presenting that volume back to Pods through the CSI driver. The normal access mode is ReadWriteOnce, which means one node mounts the volume for one workload at a time. If the workload is a PostgreSQL StatefulSet, a queue worker with local state, or a single-writer application, that model can be a strong fit.
 
-Longhorn is not a replacement for every storage pattern. If the workload needs many Pods writing to the same shared filesystem, Longhorn is usually the wrong first choice. If the team needs an S3-compatible object API for artifacts, logs, or model files, MinIO or cloud object storage is a more direct fit. If the organization needs block, file, and object storage from one large storage platform with deep tuning options, Rook/Ceph may be justified despite the operational cost.
+Longhorn is not a replacement for every storage pattern. If the workload needs many Pods writing to the same shared filesystem, Longhorn is usually the wrong first choice. If the team needs an S3-compatible object API for artifacts, logs, or model files, MinIO or cloud object storage is a more direct fit. If the organization needs block, file, and object storage from one large storage platform with deep tuning options, [Rook/Ceph may be justified](https://github.com/rook/rook) despite the operational cost.
 
 ```text
 STORAGE QUESTION FIRST
@@ -95,15 +96,15 @@ STORAGE QUESTION FIRST
 
 **Pause and predict:** A team tells you they have three worker nodes, one PostgreSQL instance, and a requirement to survive one worker-node loss. They also say they do not need ReadWriteMany. Before reading further, predict whether the important design choice is "which filesystem should Kubernetes mount" or "how many Longhorn replicas should exist and where they should be placed." The second answer is the platform decision; the filesystem inside the volume matters, but the reliability behavior comes from replica placement and backup design.
 
-The key distinction is that local replicas and external backups protect against different failures. Replicas help the application continue when a node or disk fails inside the cluster. Backups help recover when data is deleted, corrupted, encrypted by a bad job, or lost with the cluster. Treating replicas as backups is one of the fastest ways to design a system that survives routine failure but loses data during the incident that actually matters.
+The key distinction is that [local replicas and external backups protect against different failures](https://documentation.suse.com/cloudnative/storage/latest/en/introduction/terminology.html). Replicas help the application continue when a node or disk fails inside the cluster. Backups help recover when data is deleted, corrupted, encrypted by a bad job, or lost with the cluster. Treating replicas as backups is one of the fastest ways to design a system that survives routine failure but loses data during the incident that actually matters.
 
 ### 2. Longhorn Architecture: Manager, Engine, Replica, And CSI
 
-Longhorn has a small set of moving parts, but each part has a different responsibility. The Longhorn manager runs on every node as a DaemonSet and reconciles Longhorn custom resources such as volumes, replicas, engines, nodes, settings, backups, and recurring jobs. The CSI components integrate Longhorn with Kubernetes so a PVC can become an attached block device mounted into a Pod. For each attached volume, Longhorn runs an engine process that coordinates reads and writes to that volume's replicas.
+Longhorn has a small set of moving parts, but each part has a different responsibility. [The Longhorn manager runs on every node as a DaemonSet](https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html) and reconciles Longhorn custom resources such as volumes, replicas, engines, nodes, settings, backups, and recurring jobs. The CSI components integrate Longhorn with Kubernetes so a PVC can become an attached block device mounted into a Pod. For each attached volume, Longhorn runs an engine process that coordinates reads and writes to that volume's replicas.
 
-The engine is the center of the live I/O path. When the application writes to the mounted filesystem, the write reaches the Longhorn engine for that volume. The engine synchronously sends the write to the configured replicas and only acknowledges success after the required replica writes complete. This is why replica count affects both reliability and write latency: more replicas improve failure tolerance, but every synchronous write has more destinations.
+The engine is the center of the live I/O path. When the application writes to the mounted filesystem, the write reaches the Longhorn engine for that volume. [The engine synchronously sends the write to the configured replicas](https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html) and only acknowledges success after the required replica writes complete. This is why replica count affects both reliability and write latency: more replicas improve failure tolerance, but every synchronous write has more destinations.
 
-Replicas are stored on node disks as sparse files under Longhorn's data path. The replica is not a Kubernetes object pretending to be data; it is the actual block data for the volume, managed by Longhorn processes and represented through Longhorn CRDs. If a replica becomes unavailable, Longhorn can rebuild a replacement replica on another suitable node by copying data from a healthy replica. The volume can remain attached during that rebuild, but performance and risk posture change while it is degraded.
+[Replicas are stored on node disks as sparse files](https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html) under Longhorn's data path. The replica is not a Kubernetes object pretending to be data; it is the actual block data for the volume, managed by Longhorn processes and represented through Longhorn CRDs. If a replica becomes unavailable, Longhorn can rebuild a replacement replica on another suitable node by copying data from a healthy replica. The volume can remain attached during that rebuild, but performance and risk posture change while it is degraded.
 
 ```text
 LONGHORN ARCHITECTURE
@@ -310,7 +311,7 @@ reclaimPolicy: Delete
 volumeBindingMode: Immediate
 ```
 
-The `numberOfReplicas` parameter is the most visible reliability setting, but it is not the only one that matters. `dataLocality: best-effort` attempts to place a replica on the same node as the consuming workload, which can reduce read latency when the local replica is healthy. Disk and node selectors let the platform team constrain placement to appropriate hardware. `reclaimPolicy: Delete` means the volume is deleted when the PVC is deleted, which may be convenient for ephemeral environments and risky for production databases unless backups and retention are well defined.
+[The `numberOfReplicas` parameter is the most visible reliability setting](https://documentation.suse.com/cloudnative/storage/latest/en/volumes/storageclass-parameters.html), but it is not the only one that matters. `dataLocality: best-effort` attempts to place a replica on the same node as the consuming workload, which can reduce read latency when the local replica is healthy. Disk and node selectors let the platform team constrain placement to appropriate hardware. `reclaimPolicy: Delete` means the volume is deleted when the PVC is deleted, which may be convenient for ephemeral environments and risky for production databases unless backups and retention are well defined.
 
 ```yaml
 apiVersion: v1
@@ -365,7 +366,7 @@ spec:
             storage: 20Gi
 ```
 
-This StatefulSet uses `volumeClaimTemplates`, which is usually better than a separately named PVC when a StatefulSet owns the volume lifecycle. The template causes Kubernetes to create a PVC with a stable name for each replica, such as `data-postgres-0`. For a single PostgreSQL instance, that matches the single-writer model. If you scale this StatefulSet to more application replicas without database clustering, the storage layer will not turn it into a safe multi-primary database.
+This StatefulSet uses `volumeClaimTemplates`, which is usually better than a separately named PVC when a StatefulSet owns the volume lifecycle. [The template causes Kubernetes to create a PVC with a stable name for each replica](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/), such as `data-postgres-0`. For a single PostgreSQL instance, that matches the single-writer model. If you scale this StatefulSet to more application replicas without database clustering, the storage layer will not turn it into a safe multi-primary database.
 
 ```bash
 kubectl apply -f postgres-longhorn.yaml
@@ -386,7 +387,7 @@ A useful mental model is that Kubernetes owns the claim and workload relationshi
 
 ### 5. Snapshots, Backups, And Restore Workflows
 
-Longhorn snapshots and backups are related but not interchangeable. A snapshot is a local point-in-time view of a volume, stored with the volume's replica data. It is fast and useful before migrations, upgrades, or risky application changes. A backup copies snapshot data to an external target, which is what makes it useful when the cluster or all replicas are lost.
+Longhorn snapshots and backups are related but not interchangeable. [A snapshot is a local point-in-time view of a volume](https://documentation.suse.com/cloudnative/storage/latest/en/introduction/terminology.html), stored with the volume's replica data. It is fast and useful before migrations, upgrades, or risky application changes. A backup copies snapshot data to an external target, which is what makes it useful when the cluster or all replicas are lost.
 
 This distinction should guide recovery planning. If the team needs a quick rollback after a failed schema migration and the cluster is otherwise healthy, a snapshot may be enough. If the team needs to recover after a mistaken namespace deletion, a ransomware event, a storage-node loss beyond replica tolerance, or a region-level failure, backups matter. A serious platform design uses both and tests both.
 
@@ -412,7 +413,7 @@ SNAPSHOT AND BACKUP FLOW
   └────────────────────┘
 ```
 
-The Kubernetes VolumeSnapshot API provides a standard way to request snapshots through CSI. This example assumes the Longhorn snapshot class exists in the cluster. In a production workflow, snapshot creation should be coordinated with application consistency. For databases, that may mean using database-native backup mode, flushing writes, or taking logical backups alongside volume snapshots.
+[The Kubernetes VolumeSnapshot API provides a standard way to request snapshots through CSI](https://kubernetes.io/docs/concepts/storage/volume-snapshots/). This example assumes the Longhorn snapshot class exists in the cluster. In a production workflow, snapshot creation should be coordinated with application consistency. For databases, that may mean using database-native backup mode, flushing writes, or taking logical backups alongside volume snapshots.
 
 ```yaml
 apiVersion: snapshot.storage.k8s.io/v1
@@ -425,7 +426,7 @@ spec:
     persistentVolumeClaimName: data-postgres-0
 ```
 
-Recurring backup jobs turn backup from a human memory test into cluster policy. The job below creates backups on a schedule and retains a bounded number of restore points. The labels connect a Longhorn volume or PVC to the recurring job group. The exact retention should come from recovery requirements, not from a random default.
+Recurring backup jobs turn backup from a human memory test into cluster policy. [The job below creates backups on a schedule and retains a bounded number of restore points](https://documentation.suse.com/cloudnative/storage/1.10/en/snapshots-backups/volume-snapshots-backups/create-recurring-backup-snapshot-job.html). The labels connect a Longhorn volume or PVC to the recurring job group. The exact retention should come from recovery requirements, not from a random default.
 
 ```yaml
 apiVersion: longhorn.io/v1beta2
@@ -450,7 +451,7 @@ kubectl label pvc data-postgres-0 recurring-job-group.longhorn.io/default=enable
 kubectl -n longhorn-system get recurringjobs.longhorn.io
 ```
 
-A restore workflow should be practiced before it is needed. Longhorn can restore a volume from backup into a cluster, and the restored PVC can then be attached to a workload. The important operational question is not only whether restore succeeds, but how long it takes and how much data the application can afford to lose. Those are recovery time objective and recovery point objective decisions, and storage configuration should be evaluated against them.
+A restore workflow should be practiced before it is needed. [Longhorn can restore a volume from backup into a cluster](https://documentation.suse.com/cloudnative/storage/latest/en/snapshots-backups/csi-snapshots/csi-snapshot-longhorn-backup.html), and the restored PVC can then be attached to a workload. The important operational question is not only whether restore succeeds, but how long it takes and how much data the application can afford to lose. Those are recovery time objective and recovery point objective decisions, and storage configuration should be evaluated against them.
 
 ```yaml
 apiVersion: v1
@@ -507,7 +508,7 @@ DEGRADED VOLUME TRIAGE
       └── remove alert only after redundancy is restored
 ```
 
-Prometheus metrics make this process alertable. Alert on degraded volumes, faulted volumes, nodes not ready, high storage usage, and failed backup state. Avoid alerts that fire only when applications are already down. The best Longhorn alerts tell the platform team that redundancy has been reduced while there is still time to repair it.
+[Prometheus metrics make this process alertable](https://documentation.suse.com/cloudnative/storage/1.11/en/observability/longhorn-metrics.html). Alert on degraded volumes, faulted volumes, nodes not ready, high storage usage, and failed backup state. Avoid alerts that fire only when applications are already down. The best Longhorn alerts tell the platform team that redundancy has been reduced while there is still time to repair it.
 
 ```yaml
 apiVersion: monitoring.coreos.com/v1
@@ -617,9 +618,9 @@ The senior-level conclusion is that Longhorn is an excellent choice when the pla
 ## Did You Know?
 
 - **Longhorn stores replicas as files on node disks rather than requiring raw disks for every storage device.** This makes lab and edge deployments approachable, but it also means node filesystem health and capacity planning remain part of the storage design.
-- **Longhorn backups are incremental at the block level after the initial backup.** That reduces repeated transfer volume for changed data, but backup duration still depends on changed blocks, target performance, network path, and concurrency settings.
+- **[Longhorn backups are incremental at the block level after the initial backup](https://documentation.suse.com/cloudnative/storage/1.10/en/snapshots-backups/volume-snapshots-backups/create-recurring-backup-snapshot-job.html).** That reduces repeated transfer volume for changed data, but backup duration still depends on changed blocks, target performance, network path, and concurrency settings.
 - **A healthy Longhorn volume can still contain bad application data.** Replication protects availability after infrastructure failures; it does not validate whether an application wrote the correct bytes.
-- **Data locality is a performance hint, not a hard guarantee.** `best-effort` tries to place a replica near the consuming Pod, but Longhorn may still attach the volume when perfect locality is impossible.
+- **Data locality is a performance hint, not a hard guarantee.** [`best-effort` tries to place a replica near the consuming Pod](https://documentation.suse.com/cloudnative/storage/latest/en/volumes/storageclass-parameters.html), but Longhorn may still attach the volume when perfect locality is impossible.
 
 ---
 
@@ -758,7 +759,7 @@ kubectl get nodes -o wide
 
 ### Step 2: Prepare Node Dependencies For The Lab
 
-Longhorn requires node-level storage support. In many real clusters, the operating system image is prepared before Kubernetes joins the node. In this local `kind` lab, install `open-iscsi` inside the worker containers so the Longhorn attach path can function.
+Longhorn requires node-level storage support. In many real clusters, the operating system image is prepared before Kubernetes joins the node. In this local `kind` lab, [install `open-iscsi` inside the worker containers](https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html) so the Longhorn attach path can function.
 
 ```bash
 for node in longhorn-lab-worker longhorn-lab-worker2 longhorn-lab-worker3; do
@@ -955,3 +956,10 @@ rm -f kind-longhorn-config.yaml longhorn-test-pvc.yaml
 ## Next Module
 
 Continue to [Module 16.4: Storage Performance And Capacity Planning](../module-16.4-storage-performance-capacity/) to design storage classes, capacity limits, rebuild budgets, and performance guardrails for production stateful workloads.
+
+## Sources
+
+- [SUSE Storage Architecture and Concepts](https://documentation.suse.com/cloudnative/storage/1.11/en/introduction/concepts.html) — Primary architecture reference for Longhorn-derived managers, engines, replicas, CSI, synchronous replication, snapshots, and rebuilds.
+- [SUSE StorageClass Parameters](https://documentation.suse.com/cloudnative/storage/latest/en/volumes/storageclass-parameters.html) — Documents Longhorn StorageClass parameters such as replica count, data locality, node selectors, disk selectors, and backup options.
+- [SUSE Storage Metrics for Monitoring](https://documentation.suse.com/cloudnative/storage/1.11/en/observability/longhorn-metrics.html) — Lists the Longhorn Prometheus metrics needed for degraded-volume, capacity, disk, backup, and CSI monitoring.
+- [Kubernetes Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) — Defines PVCs, access modes such as ReadWriteOnce and ReadWriteMany, and the Kubernetes storage abstraction used throughout the module.
