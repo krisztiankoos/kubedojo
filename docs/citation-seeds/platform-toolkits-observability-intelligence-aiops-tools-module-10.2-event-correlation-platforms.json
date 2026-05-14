@@ -1,0 +1,158 @@
+{
+  "module_key": "platform/toolkits/observability-intelligence/aiops-tools/module-10.2-event-correlation-platforms",
+  "module_path": "src/content/docs/platform/toolkits/observability-intelligence/aiops-tools/module-10.2-event-correlation-platforms.md",
+  "research_run_id": "2026-05-14T16:44:32+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening scenario states that at 02:14 an on-call engineer receives thirty pages within four minutes, including failures from three regions.",
+      "claim_class": "war_story",
+      "span_hint": "line 33",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "At 02:14, an on-call engineer receives thirty separate pages within four minutes. The first alert says the checkout API is slow, the second says the payment queue is backing up, the third says the database connection pool is saturated, and the next wave complains about synthetic checks failing from three regions. Every alert is technically true, but the incident commander does not need thirty truths. They need one useful story: what started first, what depends on it, which customers are affected, and which team can act.",
+      "suggested_rewrite": "During a noisy outage, an on-call engineer can receive a burst of separate alerts. One alert says the checkout API is slow, another says the payment queue is backing up, another says the database connection pool is saturated, and the next wave complains about synthetic checks failing from multiple regions. Every alert is technically true, but the incident commander does not need every individual symptom. They need one useful story: what started first, what depends on it, which customers are affected, and which team can act.",
+      "lesson_point_url": null,
+      "rationale": "This is a precise incident-style anecdote with time and volume details but no attributable real source, so the deterministic rewrite removes the fake precision while preserving the operational lesson."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "BigPanda provides incident correlation that clusters related incidents using shared attributes, infrastructure dependencies, behaviors, topology maps, and AI-assisted root-cause context.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: BigPanda, Topology-Aware Correlation, and Event Hygiene; line 144",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.bigpanda.io/en/incident-correlation",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "BigPanda's official documentation directly describes incident clustering by shared attributes, infrastructure dependencies, behaviors, IT Knowledge Graph/AI, topology maps, and root-cause identification, but docs.bigpanda.io is not on the current allowlist."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Moogsoft Onprem uses machine-learning algorithms to deduplicate raw events into alerts, group alerts into Situations, reduce noise, suggest root cause, and support cross-team collaboration.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Moogsoft, ML Clustering, and Heterogeneous Event Streams; line 220",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.moogsoft.com/v9/en/moogsoft-onprem-overview.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Moogsoft's official documentation directly describes ML-powered deduplication, alert correlation into Situations, noise reduction, root-cause suggestions, and collaboration, but docs.moogsoft.com is not on the current allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Moogsoft Situation Rooms show impacted services, assigned teams, alert counts, timelines, collaboration, topology, visualization of the clustering method, related changes, and probable-root-cause workflows.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Moogsoft-style architecture diagram; lines 245-249",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.moogsoft.com/v9/en/situation-rooms.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Moogsoft Situation Rooms documentation directly covers these response-context features, but the domain is outside the allowlist."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "PagerDuty AIOps uses Event Orchestration for routing, enrichment, noise reduction, automation, and service-level orchestration in an incident-response workflow.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: PagerDuty AIOps, Incident-Native Correlation, and Adoption Speed; lines 298 and 327",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://support.pagerduty.com/main/docs/event-orchestration",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "PagerDuty's official Event Orchestration documentation directly supports routing, field transformation, enrichment, deduplication, and automation behavior, but support.pagerduty.com is not allowlisted."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "PagerDuty Intelligent Alert Grouping automatically consolidates related alerts into a single incident using machine learning and is part of PagerDuty AIOps/noise-reduction workflows.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: PagerDuty AIOps, Incident-Native Correlation, and Adoption Speed; line 327",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://support.pagerduty.com/main/docs/intelligent-alert-grouping",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "PagerDuty's official Intelligent Alert Grouping page directly supports this capability claim, but support.pagerduty.com is not on the allowlist."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "ServiceNow Event Management collects events from different sources, converts them into alerts, analyzes and groups them, and integrates with monitoring tools through connectors and listeners.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: ServiceNow ITOM, ITSM-Native Correlation, and Enterprise Governance; lines 377 and 412",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.servicenow.com/docs/r/it-operations-management/event-management/c_EM.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "ServiceNow's official Event Management documentation directly describes event collection, alert conversion, grouping, and connector/listener integration, but servicenow.com is not allowlisted."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "ServiceNow CMDB-based alert grouping organizes alerts according to related configuration items and current CI relationships in the CMDB.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: ServiceNow ITOM, ITSM-Native Correlation, and Enterprise Governance; lines 412-414",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.servicenow.com/docs/r/it-operations-management/event-management/cmdb-alert-groups.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "ServiceNow's official CMDB alert grouping page directly supports the CMDB relationship-based grouping claim, but servicenow.com is not allowlisted."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "ServiceNow Event Management setup includes event field mappings, binding alerts to CIs, service mapping/discovery for CI relationships, impact calculation, alert grouping, and Predictive Intelligence for similar-alert detection.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: ServiceNow-style architecture diagram and evaluation table; lines 389-422",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://www.servicenow.com/docs/r/it-operations-management/event-management/c_EMConfiguration.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "ServiceNow's setup documentation directly lists these Event Management setup steps and related capabilities, but servicenow.com is not allowlisted."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://arxiv.org/abs/2108.00344",
+      "title": "Groot: An Event-graph-based Approach for Root Cause Analysis in Industrial Settings",
+      "tier": "standards",
+      "why_relevant": "Research background on event-graph-based root-cause analysis for large-scale distributed systems."
+    },
+    {
+      "url": "https://opentelemetry.io/docs/collector/",
+      "title": "OpenTelemetry Collector",
+      "tier": "upstream",
+      "why_relevant": "Explains the vendor-neutral telemetry collection and processing pipeline that often feeds event-correlation platforms."
+    },
+    {
+      "url": "https://grafana.com/docs/grafana/latest/alerting/",
+      "title": "Grafana Alerting",
+      "tier": "upstream",
+      "why_relevant": "Useful grounding for alert rule evaluation, routing, silences, and notification behavior before alerts enter an AIOps layer."
+    }
+  ],
+  "notes": "Vendor primary documentation for BigPanda, Moogsoft, PagerDuty, and ServiceNow is the right evidence for product-capability claims, but those domains are outside the current trusted-domain allowlist, so they are marked needs_allowlist_expansion rather than supported.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

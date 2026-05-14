@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 10.2: Event Correlation Platforms"
 slug: platform/toolkits/observability-intelligence/aiops-tools/module-10.2-event-correlation-platforms
 sidebar:
@@ -849,3 +850,9 @@ You have completed this exercise when:
 ## Next Module
 
 Continue to [Module 10.3: Observability AI Features](../module-10.3-observability-ai-features/) to learn how AI capabilities appear inside observability platforms and how to evaluate them without confusing useful assistance with operational magic.
+
+## Sources
+
+- [Groot: An Event-graph-based Approach for Root Cause Analysis in Industrial Settings](https://arxiv.org/abs/2108.00344) — Research background on event-graph-based root-cause analysis for large-scale distributed systems.
+- [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) — Explains the vendor-neutral telemetry collection and processing pipeline that often feeds event-correlation platforms.
+- [Grafana Alerting](https://grafana.com/docs/grafana/latest/alerting/) — Useful grounding for alert rule evaluation, routing, silences, and notification behavior before alerts enter an AIOps layer.
