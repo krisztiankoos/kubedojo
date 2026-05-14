@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "CGOA GitOps Principles Review"
 slug: k8s/cgoa/module-1.2-gitops-principles-review
 sidebar:
@@ -96,7 +97,7 @@ spec:
 
 This manifest does not say "create three Pods, then wait, then replace failed Pods." It says the intended workload is a Deployment named `checkout` with a replica target of three and a specific container image. Kubernetes and the GitOps agent can compare that intent with the running cluster. That comparison enables drift detection, health assessment, and repeatable recovery because the desired state remains visible even when the cluster has temporarily moved away from it.
 
-A senior-level nuance is that not every field in the live object should be treated as desired state. Kubernetes adds status fields, managed fields, default values, resource versions, and observed generation data. Other controllers may own fields that Git should not fight, such as replica counts controlled by a HorizontalPodAutoscaler or sidecars inserted by policy. GitOps tools must compare the parts of actual state that matter while ignoring fields owned by the API server or other controllers; otherwise, reconciliation becomes noisy and operators stop trusting the signal.
+A senior-level nuance is that not every field in the live object should be treated as desired state. Kubernetes adds status fields, managed fields, default values, resource versions, and observed generation data. Other controllers may own fields that Git should not fight, such as replica counts controlled by a HorizontalPodAutoscaler or [sidecars inserted by policy](https://kubernetes.io/docs/concepts/cluster-administration/admission-webhooks-good-practices/). GitOps tools must compare the parts of actual state that matter while ignoring fields owned by the API server or other controllers; otherwise, reconciliation becomes noisy and operators stop trusting the signal.
 
 Before running this mentally, what output do you expect if a live Deployment has the right image but a different status condition? A healthy GitOps comparison should usually ignore status because status reports observed reality, not desired intent. If the tool treats every status update as drift, the team will see constant false alarms, and the practical lesson is that declarative ownership is about meaningful fields, not raw text equality between two YAML documents.
 
@@ -344,7 +345,7 @@ The practical decision is about ownership. CI should usually own artifact creati
 
 - **OpenGitOps separates principle from product**: The principles describe properties of a system, so an exam scenario can be GitOps-aligned even when it does not name Argo CD, Flux, or any specific vendor tool.
 
-- **Pull-based does not mean passive**: A pull agent can still respond quickly through webhooks, polling, or event notifications, but the trusted environment-side agent remains responsible for fetching and reconciling desired state.
+- **Pull-based does not mean passive**: A pull agent can still [respond quickly through webhooks, polling, or event notifications](https://argo-cd.readthedocs.io/en/latest/operator-manual/webhook/), but the trusted environment-side agent remains responsible for fetching and reconciling desired state.
 
 - **Rollback is a reconciliation event**: In a mature GitOps workflow, rollback usually changes desired state to a previous known-good version, then lets the control loop converge the environment instead of relying on manual repair commands.
 
@@ -546,6 +547,9 @@ The log should show at least two commits, the manifest should show the debug ima
 - https://kubernetes.io/docs/concepts/overview/working-with-objects/object-management/
 - https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
 - https://kubernetes.io/docs/reference/kubectl/
+- [argo-cd.readthedocs.io: webhook](https://argo-cd.readthedocs.io/en/latest/operator-manual/webhook/) — Argo CD's webhook documentation explicitly describes polling plus webhook-triggered refresh, which directly supports this claim.
+- [Argo CD Core Concepts](https://argo-cd.readthedocs.io/en/stable/core_concepts/) — It shows a concrete GitOps controller model with desired state, live state, sync, and health.
+- [Flux Kustomizations](https://fluxcd.io/flux/components/kustomize/kustomizations/) — It provides a concrete upstream example of continuous reconciliation from Git-managed desired state.
 
 ## Next Module
 

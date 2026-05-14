@@ -1,0 +1,200 @@
+{
+  "module_key": "k8s/cgoa/module-1.2-gitops-principles-review",
+  "module_path": "src/content/docs/k8s/cgoa/module-1.2-gitops-principles-review.md",
+  "research_run_id": "2026-05-14T01:40:39+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/k8s-cgoa-module-1.2-gitops-principles-review.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "GitOps requires desired state to be declared, stored in a versioned and immutable system, pulled automatically by software agents, and continuously reconciled against the running environment.",
+      "claim_class": "standard",
+      "span_hint": "section: Why This Module Matters, paragraph 2",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a direct restatement of the OpenGitOps principles and should cite the principles page."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The first OpenGitOps principle is that the system is managed through declarative descriptions.",
+      "claim_class": "standard",
+      "span_hint": "section: Principle 1: Declarative Desired State, paragraph 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This names a specific OpenGitOps principle and should cite the canonical principles page."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "A Deployment manifest declares intended workload state, including template, selector, and replica target.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Principle 1: Declarative Desired State, paragraph 1, sentence 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "In Kubernetes 1.35 and later, a Deployment manifest declares that a certain workload should exist with a certain template, selector, and replica target.",
+      "suggested_rewrite": "A Deployment manifest declares that a certain workload should exist with a certain template, selector, and replica target.",
+      "lesson_point_url": null,
+      "rationale": "The declarative behavior is real, but the exact \"1.35 and later\" qualifier is unnecessary and not directly supported by the cited source set."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Kubernetes adds system-managed fields to live objects, and some fields or mutations may be owned by other controllers such as HPAs or admission policy/webhook mechanisms rather than Git.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Principle 1: Declarative Desired State, final paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S010",
+        "S011"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/cluster-administration/admission-webhooks-good-practices/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This combines Kubernetes object-management behavior with HPA-owned replica changes and policy-driven mutation, so it needs Kubernetes documentation rather than uncited explanation."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The second OpenGitOps principle is that desired state is stored in a versioned and immutable source of truth.",
+      "claim_class": "standard",
+      "span_hint": "section: Principle 2: Versioned And Immutable Source Of Truth, paragraph 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This names a specific OpenGitOps principle and should cite the principles page."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The third OpenGitOps principle is that software agents automatically pull desired state.",
+      "claim_class": "standard",
+      "span_hint": "section: Principle 3: Pulled Automatically By Software Agents, paragraph 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This names a specific OpenGitOps principle and should cite the canonical principles page."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "The fourth OpenGitOps principle is that software agents continuously reconcile actual state toward desired state.",
+      "claim_class": "standard",
+      "span_hint": "section: Principle 4: Continuously Reconciled Actual State, paragraph 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is the fourth named OpenGitOps principle and should cite the same canonical source."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "OpenGitOps defines principles independently of any specific product such as Argo CD or Flux.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 1",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "This is a factual statement about the OpenGitOps project framing and should cite the project site or principles page."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Pull-based GitOps can still react quickly through mechanisms such as polling and webhooks while keeping the environment-side agent responsible for fetching changes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know, bullet 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/latest/operator-manual/webhook/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Argo CD's webhook documentation explicitly describes polling plus webhook-triggered refresh, which directly supports this claim."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Controllers, admission components, status updates, and autoscalers can mutate live Kubernetes objects, so drift analysis must distinguish controller-owned changes from Git-owned configuration drift.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know, bullet 4",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "As of Kubernetes 1.35, controllers, admission plugins, status updates, and autoscalers still mutate live objects, so GitOps drift analysis must separate expected controller-owned change from Git-owned configuration drift.",
+      "suggested_rewrite": "Controllers, admission plugins, status updates, and autoscalers can mutate live objects, so GitOps drift analysis must separate expected controller-owned change from Git-owned configuration drift.",
+      "lesson_point_url": null,
+      "rationale": "The behavior is real, but the exact \"As of Kubernetes 1.35\" timestamp is not needed and is not directly backed by the cited source set."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://argo-cd.readthedocs.io/en/stable/core_concepts/",
+      "title": "Argo CD Core Concepts",
+      "tier": "upstream",
+      "why_relevant": "It shows a concrete GitOps controller model with desired state, live state, sync, and health."
+    },
+    {
+      "url": "https://fluxcd.io/flux/components/kustomize/kustomizations/",
+      "title": "Flux Kustomizations",
+      "tier": "upstream",
+      "why_relevant": "It provides a concrete upstream example of continuous reconciliation from Git-managed desired state."
+    }
+  ],
+  "notes": "source_ids map to the module's existing Sources list in order: S001=opengitops.dev, S002=opengitops.dev/#principles, S003=Argo CD core concepts, S004=Argo CD sync options, S005=Argo CD RBAC, S006=Flux concepts, S007=Flux GitRepositories, S008=Flux Kustomizations, S009=Kubernetes declarative config, S010=Kubernetes object management, S011=Horizontal Pod Autoscaler, S012=kubectl reference. Repeated pedagogical hypotheticals, quiz stems, and exercise mechanics were intentionally omitted.",
+  "_schema_issues": [
+    "missing_section_pool:docs/citation-pools/k8s-cgoa-module-1.2-gitops-principles-review.json",
+    "claim[0]:section_pool_unavailable_for_source_id:S002",
+    "claim[1]:section_pool_unavailable_for_source_id:S002",
+    "claim[3]:section_pool_unavailable_for_source_id:S010",
+    "claim[3]:section_pool_unavailable_for_source_id:S011",
+    "claim[4]:section_pool_unavailable_for_source_id:S002",
+    "claim[5]:section_pool_unavailable_for_source_id:S002",
+    "claim[6]:section_pool_unavailable_for_source_id:S002",
+    "claim[7]:section_pool_unavailable_for_source_id:S001",
+    "claim[7]:section_pool_unavailable_for_source_id:S002"
+  ],
+  "rejected_urls": [
+    {
+      "url": "https://opengitops.dev/#principles",
+      "reason": "off_allowlist",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    }
+  ]
+}
