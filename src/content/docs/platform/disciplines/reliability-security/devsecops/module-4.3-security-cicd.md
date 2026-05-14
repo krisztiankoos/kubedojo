@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 4.3: Security in CI/CD Pipelines"
 slug: platform/disciplines/reliability-security/devsecops/module-4.3-security-cicd
 sidebar:
@@ -135,7 +136,7 @@ The first design principle is least privilege per job. A job that scans source c
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The second design principle is artifact immutability. A pipeline should promote image digests, not mutable tags. If the test job scans `myapp:latest` and the deploy job later deploys `myapp:latest`, there is no guarantee that the deployed image is the image that passed scanning. When possible, the build job should output a digest, downstream jobs should consume that digest, and deployment manifests should reference the digest or a signed provenance record.
+The second design principle is artifact immutability. A pipeline should [promote image digests, not mutable tags](https://kubernetes.io/docs/concepts/containers/images/). If the test job scans `myapp:latest` and the deploy job later deploys `myapp:latest`, there is no guarantee that the deployed image is the image that passed scanning. When possible, the build job should output a digest, downstream jobs should consume that digest, and deployment manifests should reference the digest or a signed provenance record.
 
 The third design principle is controlled dependency on third-party pipeline components. GitHub Actions, GitLab includes, containerized build steps, shared Jenkins libraries, and marketplace plugins all execute code inside the delivery path. A compromised action or plugin can read environment variables, alter artifacts, modify scan output, or publish malicious packages. Treat external pipeline components as supply-chain dependencies, not harmless configuration snippets.
 
@@ -353,7 +354,7 @@ SCA answers a different question: what third-party code is included, and does an
 
 A dependency finding should not be reduced to "critical equals block, everything else equals ignore." The meaningful question is whether the vulnerable package is present, reachable, exploitable in this service, and fixable without unacceptable operational risk. A critical vulnerability in a development-only dependency may have lower urgency than a high vulnerability in a public authentication path. Policy should encode these distinctions where possible, while still keeping the default conservative for internet-facing services.
 
-Trivy, Grype, Snyk, Dependabot, OWASP Dependency-Check, npm audit, and language-native tools all solve part of the SCA problem. Trivy is popular because it can scan filesystems, containers, repositories, SBOMs, and configuration. Dependabot is useful because it turns some findings into pull requests. Commercial tools may add reachability analysis, prioritization, and management workflows. Tool choice matters less than whether the team has a reliable path from finding to fix.
+Trivy, Grype, Snyk, Dependabot, OWASP Dependency-Check, npm audit, and language-native tools all solve part of the SCA problem. Trivy is popular because it can [scan filesystems, containers, repositories, SBOMs, and configuration](https://github.com/aquasecurity/trivy-action). Dependabot is useful because it turns some findings into pull requests. Commercial tools may add reachability analysis, prioritization, and management workflows. Tool choice matters less than whether the team has a reliable path from finding to fix.
 
 | SCA tool | Common use | Strength | Practitioner caution |
 |---|---|---|---|
@@ -527,7 +528,7 @@ spec:
       resources: {}
 ```
 
-The manifest above is runnable YAML, but it is intentionally unsafe. It uses a mutable image tag, grants privileged mode, runs as root, and omits resource requests and limits. An IaC scanner or policy engine should flag these issues before anyone applies the manifest. In a Kubernetes 1.35+ environment, a safer baseline would pin the image, run as a non-root user, drop capabilities, use a read-only root filesystem when possible, and define resource constraints.
+The manifest above is runnable YAML, but it is intentionally unsafe. It uses a mutable image tag, grants privileged mode, runs as root, and omits resource requests and limits. An IaC scanner or policy engine should flag these issues before anyone applies the manifest. In a Kubernetes 1.35+ environment, a safer baseline would pin the image, [run as a non-root user, drop capabilities, use a read-only root filesystem when possible](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/), and define resource constraints.
 
 ```yaml
 apiVersion: v1
@@ -905,7 +906,7 @@ This workflow has one important limitation: it rebuilds for publication after sc
 
 The scheduled trigger is also intentional. Pull-request scans catch new changes, but they do not automatically respond when a vulnerability database learns about a new CVE affecting an old dependency. Scheduled scans rescan existing code and artifacts against updated advisories. This is how the pipeline helps during a zero-day response: it can answer "where are we affected?" without waiting for every team to open a pull request.
 
-A mature pipeline produces dashboards, not only pass/fail checks. SARIF uploads make code findings visible in the repository. SBOMs make artifact contents queryable. Vulnerability-management tools help track ownership and due dates. Deployment systems can display whether the running artifact is signed and whether it passed policy. These reporting paths matter because vulnerabilities often require work across multiple sprints, teams, and services.
+A mature pipeline produces dashboards, not only pass/fail checks. [SARIF uploads make code findings visible in the repository](https://github.com/github/codeql-action). SBOMs make artifact contents queryable. Vulnerability-management tools help track ownership and due dates. Deployment systems can display whether the running artifact is signed and whether it passed policy. These reporting paths matter because vulnerabilities often require work across multiple sprints, teams, and services.
 
 ---
 
@@ -947,9 +948,9 @@ The strongest pipelines also teach. A good finding links to remediation guidance
 
 ## Did You Know?
 
-1. **SARIF is useful because it separates finding data from scanner branding.** When tools emit SARIF, repositories and dashboards can show code-scanning findings consistently, which makes it easier to compare tools, migrate scanners, and preserve historical findings across pipeline changes.
+1. **SARIF is useful because it separates finding data from scanner branding.** [When tools emit SARIF](https://www.oasis-open.org/2020/03/30/static-analysis-results-interchange-format-sarif-v2-1-0-is-approved-as-an-oasis-s/), repositories and dashboards can show code-scanning findings consistently, which makes it easier to compare tools, migrate scanners, and preserve historical findings across pipeline changes.
 
-2. **SBOMs are most valuable after an incident, not only during normal builds.** When a new vulnerability is announced, teams with searchable SBOMs can ask which images contain the affected package instead of manually inspecting every repository and Dockerfile.
+2. **SBOMs are most valuable after an incident, not only during normal builds.** When a new vulnerability is announced, [teams with searchable SBOMs can ask which images contain the affected package](https://www.nist.gov/itl/executive-order-14028-improving-nations-cybersecurity/software-security-supply-chains-software-1) instead of manually inspecting every repository and Dockerfile.
 
 3. **A mutable tag can make a security gate meaningless.** If the pipeline scans one image behind `latest` and later deploys a different image behind the same tag, the scan evidence no longer describes the running artifact.
 
@@ -1385,3 +1386,12 @@ Write a short note in your pull request or learning journal explaining which job
 ## Next Module
 
 Continue to [Module 4.4: Supply Chain Security](../module-4.4-supply-chain-security/) to learn how source identity, artifact provenance, signing, SBOMs, dependency trust, and deployment admission fit together across the full software supply chain.
+
+## Sources
+
+- [kubernetes.io: images](https://kubernetes.io/docs/concepts/containers/images/) — The Kubernetes images documentation directly states that digests are immutable hashes of image content and that tags can be moved.
+- [github.com: codeql action](https://github.com/github/codeql-action) — The upstream CodeQL Action repository directly documents `upload-sarif` and the required `security-events: write` permission.
+- [github.com: trivy action](https://github.com/aquasecurity/trivy-action) — The upstream Trivy Action README documents `fs`, `image`, and config-oriented scan modes plus SARIF output examples.
+- [kubernetes.io: security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) — The Kubernetes security-context task directly documents these hardening controls and what each field does.
+- [oasis-open.org: static analysis results interchange format sarif v2 1 0 is approved as an oasis s](https://www.oasis-open.org/2020/03/30/static-analysis-results-interchange-format-sarif-v2-1-0-is-approved-as-an-oasis-s/) — OASIS is the standards body for SARIF and its announcement page directly identifies SARIF v2.1.0 as an OASIS Standard.
+- [nist.gov: software security supply chains software 1](https://www.nist.gov/itl/executive-order-14028-improving-nations-cybersecurity/software-security-supply-chains-software-1) — NIST's SBOM guidance explicitly says SBOMs increase the speed at which vulnerabilities can be identified and remediated.
