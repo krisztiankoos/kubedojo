@@ -1,0 +1,240 @@
+{
+  "module_key": "platform/disciplines/delivery-automation/gitops/module-3.4-drift-detection",
+  "module_path": "src/content/docs/platform/disciplines/delivery-automation/gitops/module-3.4-drift-detection.md",
+  "research_run_id": "2026-05-14T10:12:42+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening outage anecdote presents a specific drift incident with emergency CPU-limit changes and hours of wasted debugging, but no real source is identified.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters | opening anecdote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "During one outage, the repository said the checkout service had conservative CPU limits, but production was running with much higher limits that had been added during a previous emergency. The team spent hours tuning database pools and retry logic before realizing that the real workload shape did not match the file everyone trusted.",
+      "suggested_rewrite": "If Git no longer matches production, responders can waste time debugging the wrong bottleneck because the live workload no longer matches the repository they trust.",
+      "lesson_point_url": null,
+      "rationale": "This reads like a concrete incident report but provides no attributable real event, so the fake-specific storyline should be collapsed into a general operational lesson."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The module pins its behavioral assumptions to Kubernetes 1.35+ across defaults, reconciliation, managed fields, and autoscaling.",
+      "claim_class": "standard",
+      "span_hint": "line 16 | prerequisites",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "This module assumes Kubernetes 1.35+ behavior for server-side defaults, controller reconciliation, managed fields, and autoscaling resources.",
+      "suggested_rewrite": "This module assumes current Kubernetes behavior for server-side defaults, controller reconciliation, managed fields, and autoscaling resources.",
+      "lesson_point_url": null,
+      "rationale": "The bundled version pin is broader than a clean single inline source can directly support, so removing the exact version is safer."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "When an HPA owns scaling, GitOps comparison should ignore `/spec/replicas` for that workload rather than ignoring the whole Deployment.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 1 and section: 2 | HPA ownership discussion",
+      "disposition": "supported",
+      "source_ids": [
+        "S001",
+        "S002"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes documents that HPA manages a workload's replica count, and Argo CD documents targeted ignore rules for `/spec/replicas`."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Runtime state such as `status`, `resourceVersion`, timestamps, and managed field ownership is system-managed and should not be treated as desired configuration in GitOps diffs.",
+      "claim_class": "standard",
+      "span_hint": "section: 1 and section: 2 | runtime metadata discussion",
+      "disposition": "supported",
+      "source_ids": [
+        "S003",
+        "S004",
+        "S005",
+        "S002"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/overview/working-with-objects/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes object and API docs describe desired-state spec versus system-updated status and resourceVersion, Server-Side Apply documents `managedFields`, and Argo CD recommends ignoring status during diffing."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The controller-drift paragraph uses specific tool examples for generated fields and child resources without a clean inline source set.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 2 | controller drift paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "HPAs adjust replica counts, cert-manager writes certificate status and secret data, service meshes inject sidecars or annotations, and operators manage child objects from higher-level custom resources.",
+      "suggested_rewrite": "Other controllers may adjust replica counts, update status, inject sidecars or annotations, or manage child objects from higher-level custom resources.",
+      "lesson_point_url": null,
+      "rationale": "The ownership principle is sound, but the exact mixed vendor/tool examples would require several separate product sources beyond this clean allowlisted pass."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Argo CD tracks sync state separately from health state, so an application can be OutOfSync while still having an independent health assessment.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 4 | opening ArgoCD paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S006",
+        "S007"
+      ],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/operator-manual/health/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Argo CD documents health states separately from sync state, and the getting-started example shows sync and health reported as distinct fields."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Argo CD exposes an `argocd_app_info` Prometheus metric with labels including `sync_status` and `health_status`.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 4 | ArgoCD metrics paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/release-3.4/operator-manual/metrics/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Argo CD metrics reference explicitly documents `argocd_app_info` and its `sync_status` and `health_status` labels."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Flux Kustomizations and HelmReleases report reconciliation via status conditions such as `Ready` and `Reconciling`, rather than a single sync-status field.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 4 | Flux status paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S009",
+        "S010"
+      ],
+      "proposed_url": "https://fluxcd.io/flux/components/kustomize/kustomizations/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Flux documents `Ready` and `Reconciling` style conditions for both Kustomizations and HelmReleases in their status models."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "For a Flux Kustomization, `.status.lastAttemptedRevision` is the revision attempted and `.status.lastAppliedRevision` is the revision successfully applied.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 4 | Flux revision paragraph and YAML example",
+      "disposition": "supported",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://fluxcd.io/flux/components/kustomize/kustomizations/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Flux Kustomization docs explicitly define both status fields."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The exact `gotk_reconcile_condition` metric reference in the Flux alerting paragraph comes from archived Flux monitoring docs rather than the current canonical metrics page.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 4 | Flux alerting paragraph",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://v2-0.docs.fluxcd.io/flux/guides/monitoring/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The exact metric name is documented in Flux's archived versioned monitoring docs, but not on the current allowlisted canonical page."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "In Argo CD, `selfHeal` restores tracked resources to Git state, while `prune` deletes live resources that are no longer declared in source.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 5 | auto-heal and pruning paragraphs",
+      "disposition": "supported",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Argo CD's automated sync policy docs distinguish automatic self-healing from automatic pruning."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "In Flux, `spec.prune: true` garbage-collects objects previously applied by a Kustomization when they disappear from the current source revision.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 5 | Flux pruning paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://fluxcd.io/flux/components/kustomize/kustomizations/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Flux Kustomization docs explicitly define prune and garbage-collection behavior for previously applied objects."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "`Service.spec.clusterIP` is ordinarily assigned by the cluster control plane unless explicitly set, so it is usually treated as runtime state in drift comparison.",
+      "claim_class": "standard",
+      "span_hint": "Hands-On Exercise Part 1 table | Service `checkout-api` row",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/concepts/services-networking/cluster-ip-allocation/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes documents that Service ClusterIPs can be dynamically allocated by the control plane, making them cluster-owned runtime values unless explicitly set."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/",
+      "title": "Argo CD Diff Customization",
+      "tier": "upstream",
+      "why_relevant": "Best primary reference for precise ignore rules, manager-owned fields, and status-field handling in drift detection."
+    },
+    {
+      "url": "https://fluxcd.io/flux/components/kustomize/kustomizations/",
+      "title": "Flux Kustomization",
+      "tier": "upstream",
+      "why_relevant": "Covers reconciliation conditions, revision tracking, inventory, drift correction, and prune behavior in Flux."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/",
+      "title": "Horizontal Pod Autoscaling",
+      "tier": "standards",
+      "why_relevant": "Primary source for replica ownership and autoscaling behavior, which is central to distinguishing real drift from delegated scaling."
+    }
+  ],
+  "notes": "No claim entries were generated for diagrams, code blocks, quiz prompts, worked-example file contents, or repeated restatements of the same HPA/health/prune facts unless they introduced a new standalone citable claim. The lead anecdote was treated as an unsupported composite story, and the Flux `gotk_reconcile_condition` reference was isolated because the exact metric name is documented only in archived versioned docs.",
+  "_schema_issues": [
+    "claim[9]:needs_allowlist_expansion_but_url_is_already_allowlisted"
+  ],
+  "rejected_urls": []
+}

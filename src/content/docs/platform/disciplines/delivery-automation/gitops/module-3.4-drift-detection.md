@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.4: Drift Detection and Remediation"
 slug: platform/disciplines/delivery-automation/gitops/module-3.4-drift-detection
 sidebar:
@@ -80,7 +81,7 @@ A GitOps controller usually compares rendered manifests with live objects, then 
 +----------------------+                   +----------------------+
 ```
 
-The comparison is not a plain text diff between files. Kubernetes adds fields such as `uid`, `resourceVersion`, `generation`, timestamps, status, and managed ownership details after an object is created. Admission webhooks may also default or mutate fields before storage. A drift detector that treats every runtime field as an application defect will be noisy enough that humans stop trusting it.
+The comparison is not a plain text diff between files. [Kubernetes adds fields such as `uid`, `resourceVersion`, `generation`, timestamps, status, and managed ownership details after an object is created](https://kubernetes.io/docs/concepts/overview/working-with-objects/). Admission webhooks may also default or mutate fields before storage. A drift detector that treats every runtime field as an application defect will be noisy enough that humans stop trusting it.
 
 The better mental model is ownership. Git should own the fields that define application intent, such as images, ports, policies, resource requests, and most environment variables. Kubernetes should own identity and status fields. Autoscalers, operators, and admission controllers may own specific fields when the platform has intentionally delegated that responsibility.
 
@@ -157,7 +158,7 @@ spec:
               memory: 512Mi
 ```
 
-If this deployment is paired with an HPA, the `replicas` field becomes conditional. Git may still set the initial replica count, but day-to-day scaling belongs to the autoscaler. A precise drift configuration ignores only `/spec/replicas` for this workload, not the entire deployment, because the image, resources, selector, and security fields still matter.
+If this deployment is paired with an HPA, the `replicas` field becomes conditional. Git may still set the initial replica count, but day-to-day scaling belongs to the autoscaler. A precise drift configuration [ignores only `/spec/replicas` for this workload, not the entire deployment](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/), because the image, resources, selector, and security fields still matter.
 
 Kubernetes internal changes are the least interesting but the most common source of noisy diffs. The API server writes object identity, versioning, timestamps, managed fields, and status. Controllers update observed generation, conditions, and readiness data. These fields belong in live state; they do not belong in Git for ordinary application manifests.
 
@@ -318,7 +319,7 @@ The worked example shows why drift detection is not a button-clicking exercise. 
 
 ## 4. Reading Drift Signals in ArgoCD and Flux
 
-ArgoCD usually presents drift through sync status. An application can be `Synced` or `OutOfSync`, and it can separately be `Healthy`, `Progressing`, `Degraded`, or another health state. That distinction matters because an application may be healthy while drifted, or synchronized while unhealthy. Drift answers "does live match desired," while health answers "is the workload behaving."
+ArgoCD usually presents drift through sync status. [An application can be `Synced` or `OutOfSync`, and it can separately be `Healthy`, `Progressing`, `Degraded`, or another health state.](https://argo-cd.readthedocs.io/en/stable/operator-manual/health/) That distinction matters because an application may be healthy while drifted, or synchronized while unhealthy. Drift answers "does live match desired," while health answers "is the workload behaving."
 
 ```mermaid
 graph TD
@@ -345,7 +346,7 @@ argocd app list --sync-status OutOfSync
 argocd app history checkout-api
 ```
 
-ArgoCD also exposes metrics that can feed Prometheus alerts. A useful alert should wait long enough to avoid transient reconciliation noise but not so long that drift becomes normal. The labels in your environment may differ by chart and version, so confirm metric names from your running controller before making the alert a paging rule.
+[ArgoCD also exposes metrics that can feed Prometheus alerts.](https://argo-cd.readthedocs.io/en/release-3.4/operator-manual/metrics/) A useful alert should wait long enough to avoid transient reconciliation noise but not so long that drift becomes normal. The labels in your environment may differ by chart and version, so confirm metric names from your running controller before making the alert a paging rule.
 
 ```yaml
 groups:
@@ -362,7 +363,7 @@ groups:
           description: "Application {{ $labels.name }} has reported OutOfSync for more than ten minutes."
 ```
 
-Flux reports reconciliation through Kubernetes custom resources and status conditions. A `Kustomization` or `HelmRelease` has conditions such as `Ready`, `Reconciling`, and failure reasons. Flux is CLI-first, but the diagnostic question is the same: what revision did it try, what revision is applied, and which object blocked convergence?
+Flux reports reconciliation through Kubernetes custom resources and status conditions. [A `Kustomization` or `HelmRelease` has conditions such as `Ready`, `Reconciling`, and failure reasons.](https://fluxcd.io/flux/components/kustomize/kustomizations/) Flux is CLI-first, but the diagnostic question is the same: what revision did it try, what revision is applied, and which object blocked convergence?
 
 ```bash
 flux get kustomizations --all-namespaces
@@ -371,7 +372,7 @@ kubectl get kustomization checkout-api -n flux-system -o yaml
 kubectl describe kustomization checkout-api -n flux-system
 ```
 
-A healthy Flux status includes the last attempted and last applied revision. If those revisions differ, Flux may be unable to apply the current Git state. If they match but live resources differ, a controller, manual edit, or ignored field may be involved. Read conditions closely because "ready" and "applied latest commit" are related but not identical ideas.
+A healthy Flux status includes the [last attempted and last applied revision](https://fluxcd.io/flux/components/kustomize/kustomizations/). If those revisions differ, Flux may be unable to apply the current Git state. If they match but live resources differ, a controller, manual edit, or ignored field may be involved. Read conditions closely because "ready" and "applied latest commit" are related but not identical ideas.
 
 ```yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -465,9 +466,9 @@ spec:
       allowEmpty: false
 ```
 
-Pruning deserves special attention. `selfHeal` reverts live changes to tracked objects, while `prune` deletes live objects that are no longer declared. Pruning is essential for preventing orphaned services, policies, and roles, but it can be destructive when ownership is unclear. Mature teams use pruning broadly after inventory is clean, while protecting shared namespaces and generated resources with explicit ownership rules.
+Pruning deserves special attention. [`selfHeal` reverts live changes to tracked objects, while `prune` deletes live objects that are no longer declared](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/). Pruning is essential for preventing orphaned services, policies, and roles, but it can be destructive when ownership is unclear. Mature teams use pruning broadly after inventory is clean, while protecting shared namespaces and generated resources with explicit ownership rules.
 
-Flux uses reconciliation intervals and pruning behavior rather than the same ArgoCD sync policy model. A Kustomization with `prune: true` will remove objects previously applied by that Kustomization when they disappear from source. The controller should be given a clear inventory boundary so it does not fight other systems.
+Flux uses reconciliation intervals and pruning behavior rather than the same ArgoCD sync policy model. [A Kustomization with `prune: true` will remove objects previously applied by that Kustomization when they disappear from source.](https://fluxcd.io/flux/components/kustomize/kustomizations/) The controller should be given a clear inventory boundary so it does not fight other systems.
 
 ```yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -716,7 +717,7 @@ Start by listing fields that may differ between Git and the cluster. Do not mark
 | Deployment `checkout-api` | Container image | Git review process | Harmful configuration drift | Alert and sync or backport after investigation |
 | Deployment `checkout-api` | Memory limits | Git review process | Harmful configuration drift | Investigate before sync because capacity changes can be risky |
 | Deployment `checkout-api` | Platform webhook annotations | Admission webhook | Expected mutation if documented | Ignore exact annotation prefix or move stable labels into Git |
-| Service `checkout-api` | `/spec/clusterIP` | Kubernetes API server | Expected runtime assignment | Exclude from comparison |
+| Service `checkout-api` | [`/spec/clusterIP`](https://kubernetes.io/docs/concepts/services-networking/cluster-ip-allocation/) | Kubernetes API server | Expected runtime assignment | Exclude from comparison |
 | Any managed object | `/status` | Kubernetes controllers | Expected runtime status | Exclude from comparison |
 | Old Service not in Git | Entire object | No current owner | Orphan resource drift | Prune after ownership review |
 
@@ -964,3 +965,9 @@ Before calling the exercise complete, challenge your own plan. A drift system th
 ## Next Module
 
 Continue to [Module 3.5: Secrets in GitOps](../module-3.5-secrets/) to learn how to manage sensitive values without breaking the GitOps source-of-truth model.
+
+## Sources
+
+- [Argo CD Diff Customization](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/) — Best primary reference for precise ignore rules, manager-owned fields, and status-field handling in drift detection.
+- [Flux Kustomization](https://fluxcd.io/flux/components/kustomize/kustomizations/) — Covers reconciliation conditions, revision tracking, inventory, drift correction, and prune behavior in Flux.
+- [Horizontal Pod Autoscaling](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/) — Primary source for replica ownership and autoscaling behavior, which is central to distinguishing real drift from delegated scaling.
