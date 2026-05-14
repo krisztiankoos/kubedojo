@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.8: AI/ML on Cloud Native Infrastructure"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.8-ai-ml-cloud-native
 sidebar:
@@ -76,7 +77,7 @@ A useful mental model is to separate Kubernetes into two layers. The core platfo
 
 > **Pause and predict:** A cluster has three CPU-only nodes and one GPU node. A Pod requests `nvidia.com/gpu: 1` but does not include any node selector or affinity. If the NVIDIA device plugin is installed only on the GPU node, where can the scheduler place the Pod, and what status will you expect if that GPU is already allocated?
 
-The answer is that the Pod can only run where the requested extended resource is available. If the GPU is already allocated, the Pod remains Pending because GPU resources are non-compressible. CPU can sometimes be oversubscribed and throttled, but a Pod that requests an integer GPU either receives the device or it does not start.
+The answer is that the Pod can only run where the requested extended resource is available. If the GPU is already allocated, the Pod remains Pending because GPU resources are non-compressible. CPU can sometimes be oversubscribed and throttled, but [a Pod that requests an integer GPU either receives the device or it does not start](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/).
 
 That non-compressible property changes how you evaluate capacity. A CPU-heavy Deployment might limp along while throttled, which gives an operator time to add nodes or tune requests. A GPU-bound inference replica that cannot receive a device does not become a slower replica; it never starts, and the Service has no additional endpoint to receive traffic. This distinction is especially important during autoscaling because an HPA can create more Pods faster than the cluster can create accelerator nodes, download drivers, start the device plugin, pull a large model image, and warm the model server.
 
@@ -84,7 +85,7 @@ Cloud native AI/ML platforms therefore need a capacity story before they need a 
 
 ## 2. How GPUs Become Schedulable Kubernetes Resources
 
-Kubernetes does not automatically discover every accelerator in the data center. The kubelet receives accelerator capacity from a device plugin, and the plugin usually runs as a DaemonSet on nodes that have the hardware. The device plugin reports resources such as `nvidia.com/gpu`, and the node status then includes that resource as allocatable capacity.
+Kubernetes does not automatically discover every accelerator in the data center. The kubelet receives accelerator capacity from a device plugin, and the plugin usually runs as a DaemonSet on nodes that have the hardware. [The device plugin reports resources such as `nvidia.com/gpu`, and the node status then includes that resource as allocatable capacity](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/).
 
 A Pod requests GPUs in the `resources.limits` field. Extended resources are requested as whole units in limits, and for many common GPU configurations the request and limit are effectively the same scheduling signal. The scheduler then checks node allocatable capacity and existing allocations before binding the Pod to a node.
 
@@ -114,7 +115,7 @@ This manifest is intentionally small because the important lesson is the resourc
 | **MIG** | Multi-Instance GPU partitioning on supported NVIDIA hardware, exposing hardware-isolated GPU slices. | It gives stronger isolation than time-slicing for suitable workloads, but it requires compatible hardware and planning. |
 | **Whole GPU allocation** | One Pod receives exclusive access to a full physical GPU. | It is the simplest model and often best for heavy training or latency-sensitive inference. |
 
-Node labels and taints often appear alongside GPU resources. Labels help target workloads to specific node groups, such as nodes with a particular GPU model. Taints help keep ordinary workloads away from expensive accelerator nodes unless those workloads explicitly tolerate the taint. The GPU resource request itself is still essential because a label alone says "run on this kind of node" while `nvidia.com/gpu: 1` says "allocate one device to this container."
+Node labels and taints often appear alongside GPU resources. [Labels help target workloads to specific node groups, such as nodes with a particular GPU model. Taints help keep ordinary workloads away from expensive accelerator nodes unless those workloads explicitly tolerate the taint](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/). The GPU resource request itself is still essential because a label alone says "run on this kind of node" while `nvidia.com/gpu: 1` says "allocate one device to this container."
 
 ```yaml
 apiVersion: apps/v1
@@ -154,7 +155,7 @@ spec:
 
 Notice the separation of concerns in this Deployment. The `nodeSelector` and toleration steer the Pod toward the GPU node group, while the GPU limit reserves the accelerator. CPU and memory requests tell the scheduler how much ordinary capacity the Pod needs, and the memory limit prevents one model server from exhausting the node. This is the kind of combined reasoning KCNA expects: not just naming a feature, but applying several platform mechanisms together.
 
-The resource request also becomes an operational contract between the application team and the platform team. If the platform exposes full GPUs, the application asks for full GPUs and pays the scheduling cost of exclusive allocation. If the platform exposes MIG slices or time-sliced resources, the application may request smaller advertised resources, but the team must understand the isolation and performance trade-off. A manifest that says `nvidia.com/gpu: 1` is not just syntax; it is a claim about hardware, accounting, and failure behavior.
+The resource request also becomes an operational contract between the application team and the platform team. If the platform exposes full GPUs, the application asks for full GPUs and pays the scheduling cost of exclusive allocation. If the platform exposes [MIG slices or time-sliced resources](https://github.com/NVIDIA/k8s-device-plugin), the application may request smaller advertised resources, but the team must understand the isolation and performance trade-off. A manifest that says `nvidia.com/gpu: 1` is not just syntax; it is a claim about hardware, accounting, and failure behavior.
 
 War story: a team once moved a prototype image classifier from a single development node to a shared cluster and kept the same `nodeSelector` but accidentally dropped the GPU limit during a chart refactor. The Pod still landed on the GPU node because the selector matched, so the deployment looked correct during a quick review. Under load, the container failed when the model runtime could not find an assigned device, and ordinary CPU workloads also started landing on the expensive node because the taint policy was inconsistent. The fix was not one magic label; the fix was to make selectors, taints, tolerations, and extended resource requests tell the same story.
 
@@ -199,7 +200,7 @@ The biggest beginner mistake is calling every model-related container "AI" and t
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Training is usually a batch problem. A data science team starts a run, waits for it to finish, and expects artifacts such as model weights, metrics, or checkpoints. Kubernetes Jobs fit simple training because they track completion and do not restart successful Pods forever. Larger teams may use training operators such as PyTorchJob or TFJob because those operators understand worker roles, distributed launch behavior, and training-specific lifecycle events.
+Training is usually a batch problem. A data science team starts a run, waits for it to finish, and expects artifacts such as model weights, metrics, or checkpoints. [Kubernetes Jobs fit simple training because they track completion and do not restart successful Pods forever](https://kubernetes.io/docs/concepts/workloads/controllers/job/). Larger teams may use training operators such as PyTorchJob or TFJob because those operators understand worker roles, distributed launch behavior, and training-specific lifecycle events.
 
 Real-time inference is usually a service problem. A model endpoint accepts requests, returns predictions, and must stay available while traffic changes. Deployments, Services, autoscalers, and rollout strategies fit this shape because replicas can be replaced gradually and traffic can be routed away from unhealthy Pods. Inference also has special constraints: model startup may take minutes, GPU memory may be the limiting factor, and CPU utilization may not reflect the actual bottleneck.
 
@@ -285,7 +286,7 @@ Organizations self-host inference for several reasons. Privacy is a common drive
 
 The trade-off is operational responsibility. A public model API hides GPU drivers, capacity planning, batching, runtime tuning, and model-server upgrades. A self-hosted platform exposes all of those concerns to the organization. Kubernetes helps coordinate the system, but it does not remove the need to understand accelerator scarcity, model memory, autoscaling metrics, or release safety.
 
-For inference, readiness probes are especially important. A container can be running while the model is still loading, and sending traffic too early creates failed requests. A readiness probe should report ready only after the server can actually answer predictions. For large models, startup probes may also be necessary so Kubernetes does not kill a slow-loading container before it has a fair chance to become healthy.
+For inference, readiness probes are especially important. A container can be running while the model is still loading, and sending traffic too early creates failed requests. [A readiness probe should report ready only after the server can actually answer predictions. For large models, startup probes may also be necessary so Kubernetes does not kill a slow-loading container before it has a fair chance to become healthy](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/).
 
 ```yaml
 apiVersion: apps/v1
@@ -340,17 +341,17 @@ Before running this in a real platform, what output would convince you that the 
 
 The AI/ML on Kubernetes ecosystem is large because the lifecycle is larger than "run a container." Teams need notebooks for exploration, pipelines for repeatable training, registries for model versions, serving systems for inference, schedulers for batch jobs, and monitoring for performance drift. No single tool should be selected just because it appears in an AI/ML architecture diagram.
 
-Kubeflow is often discussed as an end-to-end ML platform on Kubernetes. It can include notebooks, pipelines, training operators, and serving integrations. It is useful when the organization wants a platform for data scientists and ML engineers rather than isolated YAML files. It also increases platform complexity, so a small team serving one model may not need the full stack.
+[Kubeflow is often discussed as an end-to-end ML platform on Kubernetes](https://github.com/kubeflow/kubeflow). It can include notebooks, pipelines, training operators, and serving integrations. It is useful when the organization wants a platform for data scientists and ML engineers rather than isolated YAML files. It also increases platform complexity, so a small team serving one model may not need the full stack.
 
-KServe focuses on model serving. It provides abstractions for inference services, canary rollout patterns, autoscaling integrations, and model-server conventions. vLLM is a high-throughput inference engine often used for large language models, where batching and memory management strongly affect cost and latency. Ray is a distributed computing framework used for training, data processing, and serving patterns that need flexible distributed execution.
+[KServe focuses on model serving. It provides abstractions for inference services, canary rollout patterns, autoscaling integrations, and model-server conventions](https://github.com/kserve/kserve). vLLM is a high-throughput inference engine often used for large language models, where batching and memory management strongly affect cost and latency. Ray is a distributed computing framework used for training, data processing, and serving patterns that need flexible distributed execution.
 
 | Tool | What It Does | Best-Fit Scenario |
 |------|-------------|-------------------|
 | **Kubeflow** | Provides a Kubernetes-native ML platform with notebooks, pipelines, training components, and serving integrations. | A platform team wants a shared ML workflow environment for multiple teams. |
 | **KServe** | Standardizes model inference serving on Kubernetes with rollout and scaling patterns. | A team needs production model endpoints rather than only training jobs. |
-| **Ray** | Runs distributed Python workloads for training, data processing, and serving. | A workload needs flexible distributed execution beyond a single Pod. |
-| **vLLM** | Serves large language models efficiently using optimized batching and memory handling. | An organization self-hosts LLM inference and needs high throughput per GPU. |
-| **NVIDIA GPU Operator** | Automates GPU driver, container runtime, monitoring, and device plugin setup. | A platform team manages NVIDIA GPU node pools and wants repeatable operations. |
+| **Ray** | [Runs distributed Python workloads for training, data processing, and serving.](https://github.com/ray-project/ray) | A workload needs flexible distributed execution beyond a single Pod. |
+| **vLLM** | [Serves large language models efficiently using optimized batching and memory handling.](https://github.com/vllm-project/vllm) | An organization self-hosts LLM inference and needs high throughput per GPU. |
+| **NVIDIA GPU Operator** | [Automates GPU driver, container runtime, monitoring, and device plugin setup.](https://github.com/NVIDIA/gpu-operator) | A platform team manages NVIDIA GPU node pools and wants repeatable operations. |
 | **Volcano** | Adds batch scheduling features such as gang scheduling, queues, and fair sharing. | Distributed training jobs need all workers scheduled together or predictable queue behavior. |
 
 ```text
@@ -770,6 +771,13 @@ For extra practice, modify the manifest by adding a fake node selector such as `
 - [Ray documentation: Ray on Kubernetes](https://docs.ray.io/en/latest/cluster/kubernetes/index.html)
 - [vLLM documentation](https://docs.vllm.ai/en/latest/)
 - [Volcano documentation](https://volcano.sh/en/docs/)
+- [kubernetes.io: scheduling gpus](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/) — The Kubernetes GPU scheduling documentation directly covers plugin installation, `nvidia.com/gpu`, and the `limits`-based request semantics.
+- [kubernetes.io: liveness readiness startup probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) — The probes documentation directly explains startup-probe gating and failed-readiness behavior.
+- [github.com: kubeflow](https://github.com/kubeflow/kubeflow) — The Kubeflow repository overview explicitly describes Kubeflow as a foundation of tools and an AI reference platform on Kubernetes.
+- [github.com: kserve](https://github.com/kserve/kserve) — The KServe repository README explicitly describes the platform, its autoscaling, advanced deployment, and multi-framework inference features.
+- [github.com: ray](https://github.com/ray-project/ray) — The Ray repository overview directly describes Ray's distributed runtime and its Train, Data, and Serve libraries, and notes Kubernetes support.
+- [github.com: vllm](https://github.com/vllm-project/vllm) — The vLLM repository directly describes the project as a high-throughput, memory-efficient LLM serving engine.
+- [github.com: gpu operator](https://github.com/NVIDIA/gpu-operator) — The GPU Operator README explicitly lists the automated GPU software components it manages on Kubernetes.
 
 ## Next Module
 
