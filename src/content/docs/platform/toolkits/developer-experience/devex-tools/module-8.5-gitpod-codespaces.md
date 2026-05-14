@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 8.5: Gitpod & GitHub Codespaces - Cloud Development Environments"
 slug: platform/toolkits/developer-experience/devex-tools/module-8.5-gitpod-codespaces
 sidebar:
@@ -773,7 +774,7 @@ The VP of Engineering presented the ROI to the board: "We spent $45,000 on Gitpo
 
 - **Stripe's 3,000 engineers have never set up a local environment** — Stripe banned local development entirely in 2021. Every engineer, from new hire to staff+, uses Gitpod. Their onboarding guide is literally: "Click this link." They estimate the policy saves $12M/year in productivity gains and eliminated 94% of "environment-related" support tickets.
 
-- **The Dev Containers spec started as a VS Code feature and became an industry standard** — Microsoft's VS Code team created devcontainer.json for local Docker development. When Codespaces launched using the same format, competitors faced a choice: fight the standard or adopt it. DevPod, JetBrains, and even Gitpod now support devcontainer.json. Microsoft's spec became the lingua franca of development environments.
+- **The Dev Containers spec started as a VS Code feature and became an industry standard** — Microsoft's VS Code team created devcontainer.json for local Docker development. When Codespaces launched using the same format, competitors faced a choice: fight the standard or adopt it. [DevPod, JetBrains, and even Gitpod now support devcontainer.json](https://github.com/devcontainers/spec/blob/main/docs/specs/supporting-tools.md). Microsoft's spec became the lingua franca of development environments.
 
 - **One Codespaces customer reduced their laptop budget by $2.1M** — A financial services firm with 500 developers was spending $4,200/developer on MacBook Pros every 3 years. After migrating to Codespaces, they switched to $800 Chromebooks. The savings: $1.7M in hardware plus $400K in IT support. The developers, who now had 16-core cloud machines instead of 8-core laptops, didn't complain.
 
@@ -786,7 +787,7 @@ The VP of Engineering presented the ROI to the board: "We spent $45,000 on Gitpo
 | No prebuilds | 10-minute wait for each workspace | Enable prebuilds for all branches |
 | Huge base images | Slow to download, slow to start | Use minimal images, install only what's needed |
 | No idle timeout | Runaway costs, orphaned workspaces | Set 30-minute idle timeout |
-| Secrets in config | Exposed in repository | Use secret management features |
+| Secrets in config | Exposed in repository | [Use secret management features](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html) |
 | Same specs for all | Over-provisioned or under-resourced | Right-size per repository |
 | No retention policy | Storage costs accumulate | Auto-delete after 14 days |
 | Ignoring port forwarding | Confusing "can't access app" | Configure port visibility |
@@ -1116,3 +1117,10 @@ Then create a *fresh* workspace on each platform and time the cold start again. 
 ---
 
 *"The laptop is becoming what the thin client was supposed to be—a window into compute that happens elsewhere. CDEs make this vision actually work for developers."*
+
+## Sources
+
+- [GitHub Codespaces](https://github.com/features/codespaces) — Official GitHub product page for repeatable cloud development environments and free included usage.
+- [GitHub Pricing Calculator](https://github.com/pricing/calculator) — Live source for Codespaces machine and storage cost estimates.
+- [Development Containers Specification](https://github.com/devcontainers/spec) — Canonical source for devcontainer.json and the Dev Containers ecosystem.
+- [Gitpod Project Repository](https://github.com/gitpod-io/gitpod) — Public Gitpod project repository for product background and links into Gitpod's documentation ecosystem.
