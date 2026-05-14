@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Prerequisites & Environment Setup"
 slug: ai-ml-engineering/prerequisites/module-1.1-prerequisites-environment-setup
 sidebar:
@@ -26,11 +27,11 @@ Professional software development requires treating your local workstation with 
 
 ## Establishing Python Environment Isolation
 
-The cornerstone of modern Python development is the virtual environment, a mechanism that provides independent execution contexts for different projects residing on the same machine. When developers install packages globally, they inevitably encounter version conflicts because different applications frequently require mutually exclusive versions of the same foundational libraries. Virtual environments solve this problem by creating an isolated directory structure containing a dedicated Python binary, a distinct package manager, and an independent repository for installed libraries.
+The cornerstone of modern Python development is the virtual environment, a mechanism that provides independent execution contexts for different projects residing on the same machine. When developers install packages globally, they inevitably encounter version conflicts because different applications frequently require mutually exclusive versions of the same foundational libraries. Virtual environments solve this problem by creating [an isolated directory structure containing a dedicated Python binary, a distinct package manager, and an independent repository for installed libraries](https://github.com/python/cpython/blob/3.12/Doc/library/venv.rst).
 
 ### Constructing the Workspace
 
-Creating a virtual environment requires explicit intention before installing any third-party dependencies. Modern Python distributions bundle the environment creation tool directly within the standard library, ensuring developers always have access to this critical isolation mechanism without requiring external package downloads. When you initialize a new workspace, the system constructs a mirrored directory tree that prioritizes local binaries over global system executables.
+Creating a virtual environment requires explicit intention before installing any third-party dependencies. Modern Python distributions [bundle the environment creation tool directly within the standard library](https://github.com/python/cpython/blob/3.12/Doc/library/venv.rst), ensuring developers always have access to this critical isolation mechanism without requiring external package downloads. When you initialize a new workspace, the system constructs a mirrored directory tree that prioritizes local binaries over global system executables.
 
 ```bash
 # Navigate to your dedicated projects directory and create a new workspace
@@ -71,7 +72,7 @@ Understanding the internal architecture of a virtual environment demystifies muc
 └─────────────────────────────────────────────────────────┘
 ```
 
-When you execute the activation script, it modifies your current shell session by prepending the environment's binary directory to your system path. This path manipulation guarantees that subsequent invocations of Python or the package manager resolve to your local workspace rather than traversing up to the operating system's default utilities. Deactivating the environment simply reverses this path modification, returning your shell to its original configuration state and restoring access to the global tools without leaving permanent modifications on your system.
+When you execute the activation script, it modifies your current shell session by [prepending the environment's binary directory to your system path](https://github.com/python/cpython/blob/3.12/Doc/library/venv.rst). This path manipulation guarantees that subsequent invocations of Python or the package manager resolve to your local workspace rather than traversing up to the operating system's default utilities. Deactivating the environment simply reverses this path modification, returning your shell to its original configuration state and restoring access to the global tools without leaving permanent modifications on your system.
 
 ## Development Tooling and Editor Selection
 
@@ -113,7 +114,7 @@ When developing applications powered by language models, your application progra
 
 ### Implementing Secure Credential Storage
 
-The industry standard methodology for managing sensitive configuration values relies on environmental variables injected during the application startup phase. Instead of embedding keys directly within your Python scripts, you construct a dedicated local configuration file that remains completely isolated from your version control tracking system. This approach ensures that your codebase can be shared safely while individual developers maintain their own distinct authorization credentials.
+The industry standard methodology for managing sensitive configuration values relies on environmental variables injected during the application startup phase. Instead of embedding keys directly within your Python scripts, you construct a dedicated local configuration file that remains completely isolated from your version control tracking system. This approach ensures that your [codebase can be shared safely](https://github.com/security/advanced-security/secret-protection) while individual developers maintain their own distinct authorization credentials.
 
 ```bash
 # Generate a hidden configuration file in your project root
@@ -127,7 +128,7 @@ echo "ANTHROPIC_API_KEY=sk-ant-your-secure-key-here" >> .env
 echo "OPENAI_API_KEY=sk-proj-your-secure-key-here" >> .env
 ```
 
-Once the physical file exists, your Python application must parse these values and inject them into the active execution context. The `python-dotenv` package provides a standardized utility for loading these local files into memory, allowing your application logic to retrieve the keys as if they were provisioned by the host operating system. This mechanism bridges the gap between local development convenience and production deployment security without requiring complex infrastructure orchestration.
+Once the physical file exists, your Python application must parse these values and inject them into the active execution context. [The `python-dotenv` package provides a standardized utility for loading these local files into memory, allowing your application logic to retrieve the keys as if they were provisioned by the host operating system.](https://github.com/theskumar/python-dotenv) This mechanism bridges the gap between local development convenience and production deployment security without requiring complex infrastructure orchestration.
 
 ```python
 import os
@@ -305,7 +306,7 @@ Consider a scenario where your application attempts to invoke the language model
 
 1. The concept of software dependency isolation gained significant traction in the late 1990s as application complexity outgrew traditional system-wide installations, leading to the colloquial term "dependency hell" among systems administrators trying to reconcile version conflicts.
 2. Modern virtual environments manipulate the execution context without duplicating core binaries, utilizing clever symbolic links to reference the original interpreter, which keeps the total storage footprint of an isolated workspace remarkably small and efficient.
-3. The underlying tokenization algorithms utilized by modern language models are heavily influenced by Byte Pair Encoding, a data compression technique originally developed in the 1990s to replace frequently occurring byte pairs with unused sequence markers for transmission efficiency.
+3. The underlying tokenization algorithms utilized by modern language models are heavily influenced by [Byte Pair Encoding, a data compression technique originally developed in the 1990s](https://en.wikipedia.org/wiki/Byte-pair_encoding) to replace frequently occurring byte pairs with unused sequence markers for transmission efficiency.
 4. Security researchers frequently deploy automated scanning bots across public source code repositories to detect exposed authentication credentials, often identifying and revoking leaked application programming interface keys within minutes of the initial repository commit.
 
 ## Common Mistakes
@@ -386,3 +387,6 @@ Now that you have established a secure and isolated foundation, you are prepared
 
 - [CPython venv docs](https://github.com/python/cpython/blob/3.12/Doc/library/venv.rst) — Primary reference for how Python virtual environments work and what isolation they provide.
 - [Anthropic Pricing](https://www.anthropic.com/pricing) — Useful for checking current Claude API costs instead of relying on stale course estimates.
+- [github.com: python dotenv](https://github.com/theskumar/python-dotenv) — The project README directly documents `load_dotenv()` and `.env` loading behavior.
+- [github.com: secret protection](https://github.com/security/advanced-security/secret-protection) — GitHub's product page explicitly describes continuous monitoring, push protection, and provider-partner remediation.
+- [en.wikipedia.org: Byte pair encoding](https://en.wikipedia.org/wiki/Byte-pair_encoding) — The cited page directly covers BPE's 1994 compression origin and its later use in language-model tokenization.
