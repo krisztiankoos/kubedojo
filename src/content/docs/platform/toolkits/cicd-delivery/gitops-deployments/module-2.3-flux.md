@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 2.3: Flux"
 slug: platform/toolkits/cicd-delivery/gitops-deployments/module-2.3-flux
 sidebar:
@@ -32,17 +33,17 @@ After completing this module, you will be able to:
 
 At 03:05, a platform engineer watches the deployment board turn red across one region. The application code was already tested, the image existed in the registry, and the Git change looked small: one version bump and one environment variable addition. The cluster did exactly what it had been told to do, but nobody had modeled what should happen when a required cluster substitution was missing, a dependency was only applied rather than healthy, and the rollout notification path only reported success.
 
-Flux matters because incidents like that are rarely caused by one broken command. They happen when teams treat GitOps as a synchronization trick instead of an operating model. Flux gives each part of the model a Kubernetes API object: one object describes where configuration comes from, another describes how manifests are applied, another manages Helm releases, another scans image tags, and another sends reconciliation events. That design is powerful because it makes the delivery system inspectable through Kubernetes itself.
+Flux matters because incidents like that are rarely caused by one broken command. They happen when teams treat [GitOps](https://www.cncf.io/blog/2021/09/28/gitops-101-whats-it-all-about/) as a synchronization trick instead of an operating model. Flux gives each part of the model a Kubernetes API object: one object describes where configuration comes from, another describes how manifests are applied, another manages Helm releases, another scans image tags, and another sends reconciliation events. That design is powerful because it makes the delivery system inspectable through Kubernetes itself.
 
 Flux also raises the engineering bar. A team cannot hide behind a friendly deployment button and call that governance. They must decide what counts as ready, how dependencies are ordered, which branches are allowed to change production, how image automation writes back to Git, and what signal should wake a human when reconciliation fails. This module teaches Flux from beginner to senior level by starting with the controller loop, then layering sources, workload reconciliation, Helm, image automation, multi-cluster patterns, and incident debugging.
 
 ## Read Flux as a Reconciliation System
 
-Flux is the GitOps Toolkit, which means it is not one application that owns every deployment concept. It is a set of Kubernetes controllers that cooperate through custom resources. This is the first mental shift: when you operate Flux, you are not mainly clicking a release button; you are designing a graph of resources that controllers continuously reconcile.
+[Flux is the GitOps Toolkit](https://fluxcd.io/flux/components/), which means it is not one application that owns every deployment concept. It is a set of Kubernetes controllers that cooperate through custom resources. This is the first mental shift: when you operate Flux, you are not mainly clicking a release button; you are designing a graph of resources that controllers continuously reconcile.
 
 A controller watches a resource, compares desired state to observed state, performs work, and writes status back to the Kubernetes API. Flux uses that same Kubernetes-native pattern for delivery. The source-controller fetches artifacts, the kustomize-controller applies Kustomize trees, the helm-controller manages Helm releases, the notification-controller sends events, and the image controllers connect registry changes back to Git.
 
-That separation gives Flux a composable shape. You can install only the controllers you need, scale or shard controllers independently, and reason about failures at the boundary where they happen. A Git authentication problem is usually a Source problem. A failed Deployment readiness check is usually a Kustomization problem. A chart render failure is usually a HelmRelease problem. The practical skill is learning to map symptoms to the controller that owns the contract.
+That separation gives Flux a composable shape. You can [install only the controllers you need](https://v2-6.docs.fluxcd.io/flux/installation/configuration/optional-components/), scale or shard controllers independently, and reason about failures at the boundary where they happen. A Git authentication problem is usually a Source problem. A failed Deployment readiness check is usually a Kustomization problem. A chart render failure is usually a HelmRelease problem. The practical skill is learning to map symptoms to the controller that owns the contract.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -82,7 +83,7 @@ That separation gives Flux a composable shape. You can install only the controll
 
 The diagram shows why Flux feels different from a traditional deployment tool. A pipeline may push a command into a cluster and then exit. Flux leaves a set of controllers inside the cluster, and those controllers keep checking whether the cluster still matches the declared source. That makes drift visible and recoverable, but it also means bad desired state can be faithfully applied until you fix Git.
 
-The smallest useful Flux system has a source and a reconciler. The source tells Flux where to fetch content. The reconciler tells Flux which path or chart to apply from that content. If you remember only one beginner-level rule, remember this: Source objects fetch artifacts; Kustomization and HelmRelease objects consume those artifacts.
+The smallest useful Flux system has a source and a reconciler. The source tells Flux where to fetch content. The reconciler tells Flux which path or chart to apply from that content. If you remember only one beginner-level rule, remember this: [Source objects fetch artifacts](https://fluxcd.io/flux/components/source/); Kustomization and HelmRelease objects consume those artifacts.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -160,7 +161,7 @@ k describe kustomization -n flux-system
 
 The first command verifies the namespace exists. The alias line defines `k` for the rest of this module. `flux check` tests whether the installed controllers and Kubernetes API are reachable. `flux get all` gives a concise inventory, while `k describe` exposes raw conditions and events when the concise view hides too much detail.
 
-When comparing Flux to ArgoCD, avoid the simplistic answer that one is modern and the other is old. Both are mature CNCF projects. The meaningful comparison is operating model. ArgoCD makes Applications highly visible through a UI and API. Flux makes delivery primitives first-class Kubernetes resources that platform teams can compose, template, secure, and monitor like the rest of the cluster.
+When comparing Flux to ArgoCD, avoid the simplistic answer that one is modern and the other is old. Both are mature CNCF projects. The meaningful comparison is operating model. [ArgoCD makes Applications highly visible through a UI and API](https://argo-cd.readthedocs.io/en/stable/operator-manual/architecture/). Flux makes delivery primitives first-class Kubernetes resources that platform teams can compose, template, secure, and monitor like the rest of the cluster.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -205,7 +206,7 @@ A useful rule for senior design reviews is to ask, "Where is the source of truth
 
 ## Bootstrap Sources Before You Reconcile Workloads
 
-Bootstrapping Flux installs the controllers and creates the initial GitRepository and Kustomization that allow Flux to manage itself. This is why Flux bootstrap is more than an installer. It creates a self-referential loop where the cluster watches the repository path that contains the Flux components and sync configuration.
+Bootstrapping Flux installs the controllers and [creates the initial GitRepository and Kustomization that allow Flux to manage itself](https://fluxcd.io/flux/installation/bootstrap/github/). This is why Flux bootstrap is more than an installer. It creates a self-referential loop where the cluster watches the repository path that contains the Flux components and sync configuration.
 
 A beginner often sees bootstrap as a one-time command and then forgets the repository structure it created. A senior operator treats bootstrap output as production configuration. The path you choose becomes the cluster's entry point. The branch becomes part of the deployment trust boundary. The Git provider credential becomes an identity that can change cluster state.
 
@@ -315,7 +316,7 @@ spec:
 
 **Stop and think:** your GitRepository reports Ready, but no Deployment appears in the target namespace. Before changing YAML, what should you inspect? You should look for a Kustomization or HelmRelease that references the source, verify its `path` or chart reference, then read its status conditions to see whether the artifact was consumed.
 
-A clean repository structure reduces accidental coupling. The following layout separates cluster entry points from shared infrastructure and app overlays. The cluster directories contain small Kustomization resources that point outward. Shared directories contain reusable declarations. Environment overlays contain the differences that reviewers should inspect carefully.
+A clean repository structure reduces accidental coupling. The following layout [separates cluster entry points from shared infrastructure and app overlays](https://fluxcd.io/flux/guides/repository-structure/). The cluster directories contain small Kustomization resources that point outward. Shared directories contain reusable declarations. Environment overlays contain the differences that reviewers should inspect carefully.
 
 ```text
 fleet-infra/
@@ -420,7 +421,7 @@ spec:
 
 This example treats cert-manager as a dependency whose readiness matters. The `healthChecks` list makes the dependency concrete. If the webhook Deployment is not healthy, dependent Kustomizations should not continue as if certificate resources are safe to apply. This is how Flux turns a deployment graph into an operational graph.
 
-Dependencies are declared with `dependsOn`. They should describe real readiness requirements, not just a preferred visual order. If an app requires ingress classes, certificate issuers, or CRDs, use dependencies. If two apps are independent, avoid unnecessary dependencies because they serialize delivery and create larger failure domains.
+[Dependencies are declared with `dependsOn`](https://fluxcd.io/flux/components/kustomize/kustomizations/). They should describe real readiness requirements, not just a preferred visual order. If an app requires ingress classes, certificate issuers, or CRDs, use dependencies. If two apps are independent, avoid unnecessary dependencies because they serialize delivery and create larger failure domains.
 
 ```yaml
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -559,7 +560,7 @@ A reviewer should flag this Deployment if no required substitution source is vis
 
 **Pause and predict:** if `optional: false` is set and the ConfigMap is missing, should Flux apply a partially rendered Deployment and then mark it unhealthy, or should reconciliation fail before applying that rendered object? The safer expectation is that the Kustomization fails during build or substitution, preventing a bad rendered manifest from becoming cluster state.
 
-HelmRelease is the Flux resource for Helm charts. Use it when a component is primarily distributed and upgraded as a Helm chart, or when chart lifecycle semantics are useful. Avoid wrapping every simple internal app in Helm just because Helm exists. If a Kustomize overlay is clearer and easier to review, Flux does not require Helm.
+[HelmRelease is the Flux resource for Helm charts](https://fluxcd.io/docs/components/helm/). Use it when a component is primarily distributed and upgraded as a Helm chart, or when chart lifecycle semantics are useful. Avoid wrapping every simple internal app in Helm just because Helm exists. If a Kustomize overlay is clearer and easier to review, Flux does not require Helm.
 
 ```yaml
 apiVersion: helm.toolkit.fluxcd.io/v2
@@ -713,7 +714,7 @@ If you manually scale a Deployment while Flux is active, Flux will usually recon
 
 Image automation is where Flux often surprises learners. Many deployment systems detect a new image and push it directly to a cluster. Flux can detect a new image, but the image-automation-controller updates Git instead. That preserves the GitOps rule that the cluster converges from Git, not from an invisible registry event.
 
-The automation flow has three conceptual steps. ImageRepository scans a registry. ImagePolicy selects the desired tag from the observed tags. ImageUpdateAutomation edits files in Git and pushes a commit. After that, the normal source and Kustomization reconciliation path deploys the changed manifest.
+The automation flow has three conceptual steps. [ImageRepository scans a registry. ImagePolicy selects the desired tag from the observed tags. ImageUpdateAutomation edits files in Git and pushes a commit](https://fluxcd.io/flux/components/image/imageupdateautomations/). After that, the normal source and Kustomization reconciliation path deploys the changed manifest.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -765,7 +766,7 @@ spec:
     name: ghcr-credentials
 ```
 
-The ImagePolicy expresses selection logic. Semver works well when tags follow version semantics. Alphabetical or numerical policies can work for timestamped build tags, but only if the tag pattern is disciplined. The policy is not a magic quality gate; it only chooses from tags that already exist.
+The ImagePolicy expresses selection logic. [Semver works well when tags follow version semantics. Alphabetical or numerical policies can work for timestamped build tags](https://fluxcd.io/flux/components/image/imagepolicies/), but only if the tag pattern is disciplined. The policy is not a magic quality gate; it only chooses from tags that already exist.
 
 ```yaml
 apiVersion: image.toolkit.fluxcd.io/v1beta2
@@ -942,7 +943,7 @@ spec:
 
 Alerts should start narrow enough to be useful. Sending every info event from every source and reconciler into one channel creates noise, and noisy channels train teams to ignore failures. Begin with error events for critical delivery resources, then add informational notifications where they support a real workflow such as release tracking.
 
-Flux can also update Git commit status through notification providers. That is valuable when reviewers want pull requests or commits to show whether reconciliation succeeded. The important nuance is timing. A commit may pass CI before Flux applies it, and Flux may fail after CI is green because the cluster-specific environment rejected the change.
+Flux can also [update Git commit status through notification providers](https://fluxcd.io/flux/components/notification/providers/). That is valuable when reviewers want pull requests or commits to show whether reconciliation succeeded. The important nuance is timing. A commit may pass CI before Flux applies it, and Flux may fail after CI is green because the cluster-specific environment rejected the change.
 
 ```yaml
 apiVersion: notification.toolkit.fluxcd.io/v1beta3
@@ -1104,7 +1105,7 @@ Capacity planning for Flux is usually less dramatic than people expect. The cont
 
 Do not tune intervals only for speed. Short intervals increase responsiveness, but they also increase fetches, event churn, and the chance that a bad commit propagates quickly. For critical production paths, combine reasonable intervals with health checks, staged promotion, alerts, and the ability to revert quickly.
 
-Scaling Flux can mean increasing controller resources, adjusting concurrency, sharding by label selectors, or splitting large repositories. The first step is usually not horizontal complexity. Start by measuring reconcile durations, artifact sizes, error rates, and API throttling. Then decide whether the bottleneck is Git fetch, manifest build, Helm render, Kubernetes apply, or workload readiness.
+Scaling Flux can mean [increasing controller resources, adjusting concurrency](https://fluxcd.io/flux/installation/configuration/vertical-scaling/), [sharding by label selectors](https://fluxcd.io/flux/installation/configuration/sharding/), or splitting large repositories. The first step is usually not horizontal complexity. Start by measuring reconcile durations, artifact sizes, error rates, and API throttling. Then decide whether the bottleneck is Git fetch, manifest build, Helm render, Kubernetes apply, or workload readiness.
 
 Senior teams also design ownership around Flux resources. A platform team may own infrastructure Kustomizations, source credentials, and controller configuration. Service teams may own app overlays and image policies within guardrails. Security teams may own admission controls and signing policy. The Git repository should make those ownership boundaries enforceable through CODEOWNERS, branch protection, and review rules.
 
@@ -1113,9 +1114,9 @@ Flux is strongest when it becomes part of a larger delivery control system. Git 
 ## Did You Know?
 
 - **[Weaveworks invented the term "GitOps" in 2017](https://www.cncf.io/blog/2021/09/28/gitops-101-whats-it-all-about/)**, and Flux became one of the early Kubernetes tools associated with that operating model.
-- **[Flux v2 was a complete rewrite](https://fluxcd.io/flux/migration/faq-migration/)** from the earlier monolithic Flux design into the current toolkit of specialized controllers.
+- **[Flux v2 was a complete rewrite](https://fluxcd.io/flux/migration/faq-migration/)** from the earlier monolithic Flux design into the current toolkit of [specialized controllers](https://fluxcd.io/flux/migration/faq-migration/).
 - **[Flux can scale through controller configuration, concurrency tuning, and sharding](https://fluxcd.io/flux/installation/configuration/vertical-scaling/)**, but the right scaling move depends on the bottleneck you measure.
-- **Flux and Argo CD are both CNCF graduated GitOps projects**, so senior tool selection should focus on workflow, ownership, and operating model rather than assuming one is inherently more mature.
+- **[Flux](https://www.cncf.io/announcements/2022/11/30/flux-graduates-from-cncf-incubator/) and [Argo CD](https://www.cncf.io/projects/argo/) are both CNCF graduated GitOps projects**, so senior tool selection should focus on workflow, ownership, and operating model rather than assuming one is inherently more mature.
 
 ## Common Mistakes
 
@@ -1509,3 +1510,15 @@ Continue to [Module 2.4: Helm & Kustomize](../module-2.4-helm-kustomize/) where 
 - [fluxcd.io: kustomizations](https://fluxcd.io/flux/components/kustomize/kustomizations/) — The Kustomization docs explicitly define `dependsOn`, `wait`, `healthChecks`, and Ready-condition behavior.
 - [fluxcd.io: providers](https://fluxcd.io/flux/components/notification/providers/) — The Provider documentation explicitly documents Slack and Microsoft Teams provider types.
 - [cncf.io: argo](https://www.cncf.io/projects/argo/) — The CNCF Argo project page explicitly lists Argo at Graduated maturity.
+- [fluxcd.io: components](https://fluxcd.io/flux/components/) — This is a product-architecture claim about how Flux is structured and should point to upstream component documentation.
+- [fluxcd.io: source](https://fluxcd.io/flux/components/source/) — This is a concrete upstream capability claim about supported Flux source types and source-controller behavior.
+- [v2-6.docs.fluxcd.io: optional components](https://v2-6.docs.fluxcd.io/flux/installation/configuration/optional-components/) — The module makes a specific installation-scope claim that upstream installation docs directly describe.
+- [fluxcd.io: github](https://fluxcd.io/flux/installation/bootstrap/github/) — This is a specific behavior of `flux bootstrap github` and should be backed by the official bootstrap guide.
+- [fluxcd.io: helm](https://fluxcd.io/docs/components/helm/) — This is a direct Helm controller capability claim about what HelmRelease does and which source types it consumes.
+- [fluxcd.io: imagepolicies](https://fluxcd.io/flux/components/image/imagepolicies/) — The tag-selection modes are concrete documented capabilities and should point to the ImagePolicy docs.
+- [fluxcd.io: imageupdateautomations](https://fluxcd.io/flux/components/image/imageupdateautomations/) — This is a specific workflow claim about how Flux image automation mutates Git-managed manifests.
+- [fluxcd.io: sharding](https://fluxcd.io/flux/installation/configuration/sharding/) — The module names a specific scaling mechanism that is directly documented by Flux.
+- [argo-cd.readthedocs.io: architecture](https://argo-cd.readthedocs.io/en/stable/operator-manual/architecture/) — This is a specific Argo CD architecture claim used in the Flux-vs-Argo comparison.
+- [fluxcd.io: repository structure](https://fluxcd.io/flux/guides/repository-structure/) — The module makes a concrete claim about recommended Flux repository organization that the official guide documents.
+- [Flux Concepts](https://fluxcd.io/flux/concepts/) — Good companion reading for the reconciliation model, source types, and controller roles introduced in this module.
+- [Automate Image Updates to Git](https://fluxcd.io/flux/guides/image-update/) — Expands the module’s image-automation section with end-to-end setup details and policy examples.
