@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.5: Secrets in GitOps"
 slug: platform/disciplines/delivery-automation/gitops/module-3.5-secrets
 sidebar:
@@ -76,7 +77,7 @@ hide the existence of a secret; the goal is to make the secret delivery mechanis
 the plaintext value outside the repository.
 
 A Kubernetes `Secret` object is not automatically safe to commit. The `data` field is base64 encoded so
-binary values can fit into YAML, but base64 is reversible without any key. Anyone who can read the commit
+binary values can fit into YAML, but [base64 is reversible without any key](https://kubernetes.io/docs/concepts/security/secrets-good-practices/). Anyone who can read the commit
 can decode the value, and anyone who can read old commits can decode values that were later removed. In
 GitOps, the damage can spread further because mirrored repositories, local clones, CI logs, pull request
 patches, and artifact caches may all retain the original content.
@@ -255,7 +256,7 @@ might still need a restart.
 
 Sealed Secrets uses asymmetric encryption. The controller in the cluster owns a private key and exposes a
 public key. A developer or pipeline uses the public key to encrypt a normal Kubernetes Secret into a
-`SealedSecret` custom resource. Only the controller with the matching private key can decrypt it, so the
+`SealedSecret` custom resource. [Only the controller with the matching private key can decrypt it](https://github.com/bitnami-labs/sealed-secrets), so the
 resulting YAML can be committed safely as ciphertext.
 
 This workflow is approachable because it maps directly to the Kubernetes Secret object the application
@@ -304,7 +305,7 @@ k -n kube-system get pods -l app.kubernetes.io/name=sealed-secrets
 ```
 
 Create a namespace and a disposable working directory. The namespace matters because Sealed Secrets can be
-scoped to a name and namespace; changing either later can make the ciphertext invalid depending on the
+scoped to a name and namespace; [changing either later can make the ciphertext invalid](https://github.com/bitnami-labs/sealed-secrets) depending on the
 sealing scope you choose.
 
 ```bash
@@ -424,7 +425,7 @@ spec:
 ```
 
 The production review checklist for Sealed Secrets should focus on controller key custody. If the private
-key is lost, existing sealed manifests cannot be decrypted. If the private key is leaked, ciphertext in
+key is lost, [existing sealed manifests cannot be decrypted](https://github.com/bitnami-labs/sealed-secrets). If the private key is leaked, ciphertext in
 Git can be decrypted by the attacker. That means backup, restore testing, access control, and key rotation
 are not optional operational tasks.
 
@@ -466,7 +467,7 @@ rotation from an external source is a hard requirement.
 
 ## 4. Worked Example: SOPS with Age and GitOps Decryption
 
-SOPS encrypts values inside structured files instead of wrapping the entire Kubernetes object in a custom
+[SOPS encrypts values inside structured files](https://github.com/getsops/sops) instead of wrapping the entire Kubernetes object in a custom
 resource. That distinction matters for review. A pull request can still show `kind: Secret`, `metadata.name`,
 labels, annotations, and non-sensitive structure while hiding the `data` or `stringData` values. Reviewers
 can reason about where the secret will land without seeing the secret itself.
@@ -511,7 +512,7 @@ brew install sops age
 ```
 
 Create an age key pair for the demo. The private key stays out of Git; the public recipient is safe to
-place in SOPS configuration because it can encrypt but not decrypt. Treat the private key like any other
+place in SOPS configuration because [it can encrypt but not decrypt](https://github.com/FiloSottile/age). Treat the private key like any other
 production secret.
 
 ```bash
@@ -536,7 +537,7 @@ EOF
 ```
 
 Create a normal Kubernetes Secret manifest using `stringData`. This is readable and convenient before
-encryption because Kubernetes accepts clear strings in `stringData` and converts them into `data` during
+encryption because [Kubernetes accepts clear strings in `stringData` and converts them into `data`](https://kubernetes.io/docs/concepts/configuration/secret/) during
 storage. Again, the plaintext file is a temporary input, not a file to commit.
 
 ```bash
@@ -584,7 +585,7 @@ SOPS_AGE_KEY_FILE=../../age.agekey sops --decrypt db-secret.enc.yaml | k apply -
 k -n payments get secret db-creds
 ```
 
-Flux has native SOPS integration through the `Kustomization` resource. The controller needs the private
+[Flux has native SOPS integration through the `Kustomization` resource.](https://fluxcd.io/flux/components/kustomize/kustomizations/) The controller needs the private
 age key in a Kubernetes Secret, usually in the `flux-system` namespace. The Git repository still contains
 only encrypted files; the controller receives decryption authority through cluster configuration.
 
@@ -679,7 +680,7 @@ ciphertext may be technically strong while the operating model remains weak.
 ## 5. Worked Example: External Secrets Operator with a Referenced Backend
 
 External Secrets Operator changes the shape of the problem. Instead of committing ciphertext, you commit
-a reference that says which external record should become which Kubernetes Secret. The sensitive value
+a reference that says [which external record should become which Kubernetes Secret](https://github.com/external-secrets/external-secrets). The sensitive value
 lives in a backend such as Vault or a cloud secret manager, and the operator periodically refreshes the
 cluster Secret from that backend.
 
@@ -922,7 +923,7 @@ and how the team proves that the new value is actually in use.
 
 The most important operational distinction is the difference between updating a Kubernetes Secret object
 and updating the application process. When a Pod reads a Secret as environment variables, those values are
-captured when the container starts. Updating the Secret later does not change the running process. When a
+captured when the container starts. [Updating the Secret later does not change the running process.](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/) When a
 Pod reads a Secret as a mounted volume, kubelet eventually updates the files, but the application still
 must re-read them or receive a signal. Some applications support dynamic reload; many do not.
 
@@ -1467,3 +1468,14 @@ Completion criteria for the whole exercise:
 
 Continue to [Module 3.6: Multi-Cluster GitOps](../module-3.6-multi-cluster/) to learn how secret patterns,
 environment overlays, and reconciliation boundaries change when one repository manages many clusters.
+
+## Sources
+
+- [kubernetes.io: secrets good practices](https://kubernetes.io/docs/concepts/security/secrets-good-practices/) — Kubernetes good-practices docs explicitly say Secret values are base64-encoded, stored unencrypted by default, and that checking a base64 Secret manifest into a repository makes it available to anyone who can read the manifest.
+- [github.com: sealed secrets](https://github.com/bitnami-labs/sealed-secrets) — The official Sealed Secrets README states that `kubeseal` uses asymmetric crypto, only the controller can decrypt, and the unsealed result is a normal Kubernetes Secret.
+- [github.com: sops](https://github.com/getsops/sops) — The official SOPS README says it supports YAML, JSON, ENV, INI, and BINARY formats and that diffs remain meaningful because changing one value only changes that value in the diff.
+- [github.com: age](https://github.com/FiloSottile/age) — The age README shows `age-keygen` producing a public key, encrypting to that recipient, and decrypting with the identity file, which directly supports the encrypt-only public key and decrypt-with-private-key workflow.
+- [kubernetes.io: secret](https://kubernetes.io/docs/concepts/configuration/secret/) — The Kubernetes Secret docs explicitly state that key-value pairs in `stringData` are internally merged into the `data` field.
+- [fluxcd.io: kustomizations](https://fluxcd.io/flux/components/kustomize/kustomizations/) — Flux's Kustomization docs explicitly describe the fetch-decrypt-build-validate-apply pipeline and the `.spec.decryption` fields including `provider` and `secretRef.name`.
+- [github.com: external secrets](https://github.com/external-secrets/external-secrets) — The official External Secrets Operator repository README explicitly states that ESO integrates external secret management systems and injects values as Kubernetes Secrets.
+- [kubernetes.io: distribute credentials secure](https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/) — Kubernetes docs explicitly say Secret-backed environment variables are not updated until restart; the related Secret concept docs state mounted Secret volumes update using an eventually-consistent approach.
