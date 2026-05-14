@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Part 2 Cumulative Quiz: Application Deployment"
 sidebar:
   order: 5
@@ -46,7 +47,7 @@ This cumulative module turns Part 2 into a connected deployment practice. You wi
 
 A Deployment is a declarative controller for ReplicaSets, and a ReplicaSet is the controller that keeps matching Pods at the requested count. When you change the Pod template inside a Deployment, Kubernetes creates a new ReplicaSet because the desired pod identity has changed. The Deployment then moves replicas between the old and new ReplicaSets according to its strategy. This means a rollout problem is rarely solved by staring only at the Deployment object; the evidence is spread across the Deployment, its ReplicaSets, the Pods they own, and the events attached to those Pods.
 
-The simplest mental model is that a Deployment does not "run" your application directly. It writes intent, creates or scales ReplicaSets, and waits for enough Pods to become available. The Pod template is the boundary that matters for rollout history. Changing `replicas` scales the current ReplicaSet, but changing the image, command, environment, probes, labels, or other fields inside `spec.template` creates a new revision. CKAD questions often hide this distinction by mixing scale operations with image updates, so slow down enough to decide whether you are changing capacity or changing application identity.
+The simplest mental model is that a Deployment does not "run" your application directly. It writes intent, creates or scales ReplicaSets, and waits for enough Pods to become available. The Pod template is the boundary that matters for rollout history. [Changing `replicas` scales the current ReplicaSet, but changing the image, command, environment, probes, labels, or other fields inside `spec.template` creates a new revision.](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) CKAD questions often hide this distinction by mixing scale operations with image updates, so slow down enough to decide whether you are changing capacity or changing application identity.
 
 ```ascii
 +--------------------------- Deployment: api ----------------------------+
@@ -71,13 +72,13 @@ The simplest mental model is that a Deployment does not "run" your application d
 
 A rolling update is safe only when the application can tolerate two versions running at the same time. For stateless web workloads, that is usually the default assumption. For applications with strict schema coupling, leader election limits, or single-writer constraints, the default may be wrong. Kubernetes will happily run old and new Pods together if you ask for a rolling update; it does not know whether your application protocol supports that mix. Your job is to choose the strategy that matches the workload's compatibility boundary.
 
-`maxSurge` and `maxUnavailable` describe the temporary capacity envelope during a rolling update. `maxSurge: 1` with four replicas allows five Pods briefly, which can preserve capacity while new Pods start. `maxUnavailable: 0` means Kubernetes should avoid dropping below the desired number of available replicas during the update. These fields are not abstract tuning knobs; they encode the business promise you are making while replacing a workload. If there is no spare cluster capacity, aggressive surge settings may still leave Pods pending, so rollout verification must include scheduling and readiness signals.
+[`maxSurge` and `maxUnavailable` describe the temporary capacity envelope during a rolling update.](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) `maxSurge: 1` with four replicas allows five Pods briefly, which can preserve capacity while new Pods start. `maxUnavailable: 0` means Kubernetes should avoid dropping below the desired number of available replicas during the update. These fields are not abstract tuning knobs; they encode the business promise you are making while replacing a workload. If there is no spare cluster capacity, aggressive surge settings may still leave Pods pending, so rollout verification must include scheduling and readiness signals.
 
 > **Active Learning Prompt**: Before reading the next paragraph, predict what happens when a four-replica Deployment uses `maxSurge: 1`, `maxUnavailable: 0`, and every new Pod fails its readiness probe. Which objects should show the failure first, and why would the old Pods remain important?
 
-The answer is that the new ReplicaSet can grow only as far as the surge budget and readiness constraints allow. Failed or unready new Pods prevent the Deployment from considering them available, so the controller should avoid scaling down too many old available Pods. The Deployment status may say the rollout is not progressing, but the Pod events and readiness probe failures explain why. In practice, you verify the rollout with `k rollout status deploy/name`, inspect ReplicaSets with `k get rs`, and then move to `k describe pod` or `k logs` for the failing new Pods.
+The answer is that the new ReplicaSet can grow only as far as the surge budget and readiness constraints allow. Failed or unready new Pods prevent the Deployment from considering them available, so the controller should avoid scaling down too many old available Pods. The Deployment status may say the rollout is not progressing, but the Pod events and [readiness probe failures](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) explain why. In practice, you verify the rollout with `k rollout status deploy/name`, inspect ReplicaSets with `k get rs`, and then move to `k describe pod` or `k logs` for the failing new Pods.
 
-A useful Deployment workflow always separates intent, rollout, and serving traffic. The manifest expresses intent. The rollout machinery creates or scales ReplicaSets. The Service chooses which Pods receive traffic based on labels. When those layers are confused, teams patch the wrong thing. For example, scaling a Deployment will not fix a Service selector that matches zero Pods, and changing a Service selector will not repair a crashing container image. The fastest path is to ask which layer is broken before choosing the command.
+A useful Deployment workflow always separates intent, rollout, and serving traffic. The manifest expresses intent. The rollout machinery creates or scales ReplicaSets. [The Service chooses which Pods receive traffic based on labels.](https://kubernetes.io/docs/concepts/services-networking/service/index.html) When those layers are confused, teams patch the wrong thing. For example, scaling a Deployment will not fix a Service selector that matches zero Pods, and changing a Service selector will not repair a crashing container image. The fastest path is to ask which layer is broken before choosing the command.
 
 ```bash
 k get deploy api
@@ -136,7 +137,7 @@ Helm packages Kubernetes objects into charts and tracks each install or upgrade 
 
 A Helm release is useful because many applications are more than one Deployment. A chart may include Deployments, Services, ConfigMaps, ServiceAccounts, Ingress objects, and policies that must change together. If you manually patch one object that Helm manages, the next Helm upgrade may overwrite that patch because Helm still believes the chart-rendered object is the source of truth. In exam tasks, that means you should use Helm commands when the question describes a Helm release. In production, it means you should avoid creating configuration drift that future upgrades will erase.
 
-The most important Helm values skill is knowing the difference between default chart values, user-supplied values, and currently applied values. `helm show values` displays chart defaults. `helm get values RELEASE` displays custom values supplied to the installed release, and `--all` includes computed values. `helm upgrade --reuse-values` starts from the release's existing custom values and applies the changes you add. Without that flag, an upgrade can accidentally drop previous customizations if you do not provide them again.
+The most important Helm values skill is knowing the difference between default chart values, user-supplied values, and currently applied values. [`helm show values` displays chart defaults.](https://helm.sh/docs/helm/helm_show_values/) [`helm get values RELEASE` displays custom values supplied to the installed release, and `--all` includes computed values.](https://helm.sh/docs/helm/helm_get_values/) [`helm upgrade --reuse-values` starts from the release's existing custom values and applies the changes you add.](https://helm.sh/docs/helm/helm_upgrade/) Without that flag, an upgrade can accidentally drop previous customizations if you do not provide them again.
 
 | Task | Strong Command Choice | Why It Fits the Situation |
 |---|---|---|
@@ -147,7 +148,7 @@ The most important Helm values skill is knowing the difference between default c
 | Recover a bad chart upgrade | `helm rollback name REVISION` | Helm restores the rendered release state for that revision. |
 | Remove a release cleanly | `helm uninstall name -n ns` | Helm deletes the objects it owns for that namespaced release. |
 
-Helm can be deceptively fast during CKAD practice because one command creates many objects. That speed is valuable only if you verify what was rendered and what was applied. `helm template` previews manifests without installing. `helm upgrade --dry-run` checks the rendered output for an upgrade. After applying, `helm status`, `k get all`, and workload-specific rollout checks confirm whether the chart's objects are healthy. Helm success means Kubernetes accepted the release; it does not guarantee the application is ready to serve traffic.
+Helm can be deceptively fast during CKAD practice because one command creates many objects. That speed is valuable only if you verify what was rendered and what was applied. [`helm template` previews manifests without installing.](https://helm.sh/docs/helm/helm_template/) `helm upgrade --dry-run` checks the rendered output for an upgrade. After applying, `helm status`, `k get all`, and workload-specific rollout checks confirm whether the chart's objects are healthy. Helm success means Kubernetes accepted the release; it does not guarantee the application is ready to serve traffic.
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -162,7 +163,7 @@ k rollout status deploy -n web
 
 The risk is that the upgrade may render from chart defaults plus the newly supplied setting, not from every previous custom override. The exact behavior depends on how values were supplied and chart defaults, which is why evidence matters. Use `helm get values app --all` to inspect the current computed values and `helm history app` to see release revisions. If you need to preserve previous custom values while changing one field, use `--reuse-values` or provide a complete values file that represents the desired state.
 
-Helm rollback deserves the same caution as Deployment rollback. Rolling back a release may change multiple Kubernetes objects, not only a Deployment image. That is often exactly what you want after a bad chart upgrade, because the Service, ConfigMap, and Deployment may need to return together. It can also surprise teams that manually patched one object outside Helm. The professional habit is to inspect `helm history`, choose the target revision intentionally, roll back, and then verify the workloads and Services that matter to users.
+Helm rollback deserves the same caution as Deployment rollback. Rolling back a release may change multiple Kubernetes objects, not only a Deployment image. That is often exactly what you want after a bad chart upgrade, because the Service, ConfigMap, and Deployment may need to return together. It can also surprise teams that manually patched one object outside Helm. The professional habit is to [inspect `helm history`, choose the target revision intentionally, roll back](https://helm.sh/docs/helm/helm_rollback/), and then verify the workloads and Services that matter to users.
 
 ```bash
 helm history my-app -n production
@@ -175,7 +176,7 @@ k get all -n production -l app.kubernetes.io/instance=my-app
 
 ## Kustomize: Overlays Without Losing Object Identity
 
-Kustomize builds Kubernetes manifests by layering transformations over plain YAML. A base describes common resources, and overlays adjust those resources for a target environment such as development, staging, or production. This is different from Helm's templating model. Kustomize does not require a chart language or template expressions; it modifies structured Kubernetes objects through fields such as `resources`, `namespace`, `namePrefix`, `labels`, `patches`, and `images`.
+Kustomize builds Kubernetes manifests by layering transformations over plain YAML. A base describes common resources, and overlays adjust those resources for a target environment such as development, staging, or production. This is different from Helm's templating model. Kustomize does not require a chart language or template expressions; [it modifies structured Kubernetes objects through fields such as `resources`, `namespace`, `namePrefix`, `labels`, `patches`, and `images`.](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/)
 
 The professional value of Kustomize is that it makes environment differences explicit while preserving reviewable YAML. A base Deployment can define the container, ports, probes, and labels that every environment shares. A production overlay can set the namespace, replica count, image tag, resource limits, and name prefix. The danger is that transformations can affect object references. If you add a `namePrefix`, object names change. If a Service selector no longer matches the Deployment's Pod labels, traffic breaks even though both objects applied successfully.
 
@@ -203,7 +204,7 @@ The professional value of Kustomize is that it makes environment differences exp
 +----------------------------------------------------------------------------+
 ```
 
-A reliable Kustomize workflow has two separate steps: preview and apply. `kubectl kustomize ./path` renders the final YAML so you can inspect names, namespaces, labels, selectors, image tags, and patches before the cluster sees them. `k apply -k ./path` applies the rendered result. On the exam, previewing may feel slower, but it is often the fastest way to catch a prefix, namespace, or image override mistake before it costs you several troubleshooting commands.
+A reliable Kustomize workflow has two separate steps: preview and apply. [`kubectl kustomize ./path` renders the final YAML so you can inspect names, namespaces, labels, selectors, image tags, and patches before the cluster sees them. `k apply -k ./path` applies the rendered result.](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) On the exam, previewing may feel slower, but it is often the fastest way to catch a prefix, namespace, or image override mistake before it costs you several troubleshooting commands.
 
 ```bash
 kubectl kustomize overlays/prod
@@ -211,7 +212,7 @@ k apply -k overlays/prod
 k get deploy,svc -n production
 ```
 
-The `images` transformer is one of the most exam-relevant Kustomize features. It lets you replace an image tag or full image name without editing the base Deployment. This keeps the base stable while allowing each overlay to choose a release artifact. The image name must match the image name in the base, so `name: nginx` matches `nginx:1.21`, while a base that uses `registry.example.com/nginx` may need that full name as the match target. When an override appears to do nothing, inspect the rendered output before assuming Kubernetes ignored the change.
+[The `images` transformer is one of the most exam-relevant Kustomize features. It lets you replace an image tag or full image name without editing the base Deployment.](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) This keeps the base stable while allowing each overlay to choose a release artifact. The image name must match the image name in the base, so `name: nginx` matches `nginx:1.21`, while a base that uses `registry.example.com/nginx` may need that full name as the match target. When an override appears to do nothing, inspect the rendered output before assuming Kubernetes ignored the change.
 
 ```yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -253,7 +254,7 @@ Kustomize and Helm can be combined in real organizations, but CKAD tasks usually
 
 A release strategy is a traffic and availability decision, not just a Kubernetes field. Rolling updates, recreate deployments, blue/green cutovers, and canary releases all answer the same question: how should users move from one version to another? Kubernetes provides primitives such as Deployments, Services, labels, and replica counts. You assemble those primitives into a release pattern that matches application compatibility, risk tolerance, and operational speed.
 
-Rolling update is the default Deployment strategy because it fits many stateless services. It gradually replaces old Pods with new Pods while trying to maintain availability according to `maxSurge` and `maxUnavailable`. It is a poor fit when old and new versions cannot run at the same time. It also does not provide a clean instant traffic switch; traffic follows whichever ready Pods match the Service selector. If both old and new Pods match the same selector during the rollout, both may receive traffic.
+[Rolling update is the default Deployment strategy](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) because it fits many stateless services. It gradually replaces old Pods with new Pods while trying to maintain availability according to `maxSurge` and `maxUnavailable`. It is a poor fit when old and new versions cannot run at the same time. It also does not provide a clean instant traffic switch; traffic follows whichever ready Pods match the Service selector. If both old and new Pods match the same selector during the rollout, both may receive traffic.
 
 Recreate strategy terminates old Pods before creating new ones. This creates downtime, but it preserves the single-version guarantee. It is appropriate for workloads that cannot safely run two versions concurrently, such as simple database-like applications in exam scenarios or tightly coupled single-writer services. In production, many stateful systems should use StatefulSets or external migration strategies instead, but CKAD questions often use Recreate to test whether you understand the concurrency trade-off.
 
@@ -308,7 +309,7 @@ Canary deployment sends a small portion of traffic to a new version while most t
 +------------------------------+   +------------------------------+
 ```
 
-A canary should be observable before it is expanded. That means you need a way to identify canary Pods, check their logs, and compare readiness or error signals with stable Pods. If every Pod has only `app=myapp`, the Service can route to both, but you lose easy operational separation. A better label set includes a shared selector label for traffic and a separate version or track label for diagnosis. The Service selector uses the shared label, while your debugging commands filter by the track label.
+A canary should be observable before it is expanded. That means you need a way to identify canary Pods, check their logs, and compare readiness or error signals with stable Pods. If every Pod has only `app=myapp`, the Service can route to both, but you lose easy operational separation. [A better label set includes a shared selector label for traffic and a separate version or track label for diagnosis.](https://kubernetes.io/docs/concepts/workloads/management/) The Service selector uses the shared label, while your debugging commands filter by the track label.
 
 ```bash
 k scale deploy stable-app --replicas=9
@@ -341,7 +342,7 @@ The second step is the smallest correct change. For a bad Deployment image, `k s
 
 The third step is verification. A command that exits successfully means Kubernetes accepted your request, not that the application works. Use rollout status for Deployments, Helm status for releases, rendered output for Kustomize, and endpoints for Services. When a Service should route to Pods, endpoint discovery is stronger evidence than the Service YAML alone. When a rollout should create a new revision, ReplicaSet state is stronger evidence than a single Deployment line.
 
-The final step is recovery. Know whether recovery means `k rollout undo`, `helm rollback`, reapplying a previous Kustomize overlay, or switching a Service selector back. Each rollback mechanism has a different scope. A Deployment rollback does not restore a ConfigMap changed by Helm. A Service selector switch does not change the broken Pods; it only moves traffic away. Recovery should match the blast radius of the change you made.
+The final step is recovery. Know whether recovery means `k rollout undo`, `helm rollback`, reapplying a previous Kustomize overlay, or switching a Service selector back. Each rollback mechanism has a different scope. [A Deployment rollback does not restore a ConfigMap changed by Helm.](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) A Service selector switch does not change the broken Pods; it only moves traffic away. Recovery should match the blast radius of the change you made.
 
 ```bash
 # Raw Deployment recovery
@@ -364,7 +365,7 @@ k patch svc shop-svc -p '{"spec":{"selector":{"app":"shop","version":"blue"}}}'
 k get endpointslice -l kubernetes.io/service-name=shop-svc
 ```
 
-A senior deployment habit is to write down the verification target before running the change. If you patch a Service to green, the verification target is EndpointSlices that contain green Pods and exclude blue Pods. If you upgrade a Helm release, the target is release status plus healthy workloads. If you apply a Kustomize overlay, the target is rendered names, namespaces, labels, and healthy rollout. This prevents the common exam mistake of stopping at the first command that returns no error.
+A senior deployment habit is to write down the verification target before running the change. If you patch a Service to green, [the verification target is EndpointSlices that contain green Pods and exclude blue Pods](https://kubernetes.io/docs/concepts/services-networking/service/index.html). If you upgrade a Helm release, the target is release status plus healthy workloads. If you apply a Kustomize overlay, the target is rendered names, namespaces, labels, and healthy rollout. This prevents the common exam mistake of stopping at the first command that returns no error.
 
 ---
 
@@ -912,3 +913,19 @@ Success criteria:
 ## Next Module
 
 [Part 3: Application Observability and Maintenance](/k8s/ckad/part3-observability/module-3.1-probes/) - Probes, logging, debugging, and API deprecations.
+
+## Sources
+
+- [training.linuxfoundation.org: certified kubernetes application developer ckad](https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad/) — The Linux Foundation CKAD page names Kubernetes v1.35 and lists deployment-strategy, Helm, and Kustomize competencies.
+- [kubernetes.io: deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) — The Deployment concept page directly documents declarative updates, new ReplicaSets on Pod template changes, and the fact that scaling does not create a new revision.
+- [kubernetes.io: index.html](https://kubernetes.io/docs/concepts/services-networking/service/index.html) — The Service docs directly describe selector-based targeting and continuous EndpointSlice updates for matching Pods.
+- [kubernetes.io: liveness readiness startup probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) — The probes documentation states this behavior explicitly for failed readiness probes.
+- [helm.sh: helm rollback](https://helm.sh/docs/helm/helm_rollback/) — The Helm rollback command reference directly defines rollback-by-revision and points readers to `helm history` for revision numbers.
+- [helm.sh: helm show values](https://helm.sh/docs/helm/helm_show_values/) — The Helm command reference says `helm show values` inspects a chart and displays the contents of `values.yaml`.
+- [helm.sh: helm get values](https://helm.sh/docs/helm/helm_get_values/) — The Helm get-values reference documents `--all` as dumping all computed values for the named release.
+- [helm.sh: helm upgrade](https://helm.sh/docs/helm/helm_upgrade/) — The Helm upgrade reference directly defines the `--reuse-values` merge behavior.
+- [helm.sh: helm template](https://helm.sh/docs/helm/helm_template/) — The Helm template reference describes it as locally rendering templates and displaying the output.
+- [kubernetes.io: kustomization](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) — The Kustomize task page enumerates these customization fields and explains the kustomization-based workflow.
+- [kubernetes.io: management](https://kubernetes.io/docs/concepts/workloads/management/) — The Kubernetes workload-management docs explicitly present the `track`-label canary pattern, shared Service selector, and 3:1 replica example.
+- [EndpointSlices](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/) — Best reference for how Services track ready backends and how endpoint conditions change during updates and termination.
+- [Helm Commands](https://helm.sh/docs/helm/) — Central CLI reference for `helm show values`, `get values`, `upgrade`, `history`, `rollback`, and `template`.
