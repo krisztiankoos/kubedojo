@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.3: Argo Workflows"
 slug: platform/toolkits/cicd-delivery/ci-cd-pipelines/module-3.3-argo-workflows
 sidebar:
@@ -25,9 +26,9 @@ A platform team inherited a nightly model-training pipeline that looked reliable
 
 The team moved each stage into a container and scheduled the work on Kubernetes, but a plain set of Jobs was still not enough. The pipeline needed to extract data, validate it, train several candidates in parallel, compare metrics, publish artifacts, and notify the model registry only if the right branches succeeded. They needed a workflow engine that treated Kubernetes pods as the execution units while still letting engineers describe dependencies, retries, artifacts, and cleanup as one versioned object.
 
-[Argo Workflows is a container-native workflow engine for orchestrating parallel jobs on Kubernetes](https://argoproj.github.io/workflows/). It is not just "CI inside Kubernetes." While [Tekton focuses on CI/CD pipelines](https://tekton.dev/docs/concepts/overview/), Argo Workflows is strongest when the shape of the work is a graph: data pipelines, ML workflows, simulation batches, security scans, report generation, or delivery flows where some branches run together and others wait for a merge point.
+[Argo Workflows is a container-native workflow engine for orchestrating parallel jobs on Kubernetes](https://argoproj.github.io/workflows/). It is not just "CI inside Kubernetes." While [Tekton focuses on CI/CD pipelines](https://tekton.dev/docs/concepts/overview/), [Argo Workflows is strongest when the shape of the work is a graph](https://argoproj.github.io/workflows/): data pipelines, ML workflows, simulation batches, security scans, report generation, or delivery flows where some branches run together and others wait for a merge point.
 
-The senior-level lesson is that Argo gives you power that Kubernetes alone does not constrain for you. A workflow that creates ten pods is convenient; a workflow that creates thousands of pods can stress the API server, scheduler, etcd, storage system, and neighboring workloads. Good Argo design is therefore two skills at once: expressing the dependency graph clearly, and putting operational limits around how that graph runs on a real cluster.
+The senior-level lesson is that Argo gives you power that Kubernetes alone does not constrain for you. A workflow that creates ten pods is convenient; [a workflow that creates thousands of pods can stress the API server, scheduler, etcd, storage system, and neighboring workloads](https://argo-workflows.readthedocs.io/en/latest/running-at-massive-scale/). Good Argo design is therefore two skills at once: expressing the dependency graph clearly, and putting operational limits around how that graph runs on a real cluster.
 
 ## Prerequisites
 
@@ -41,7 +42,7 @@ alias k=kubectl
 
 ## Core Concepts: How Argo Thinks About Work
 
-Argo Workflows turns a workflow specification into Kubernetes pods. The specification says what tasks exist, which template each task runs, which tasks must finish before another task can start, and what values or files move between tasks. The controller watches the custom resource, creates pods for runnable nodes, records status back onto the Workflow object, and repeats that loop until the graph succeeds, fails, or is terminated.
+[Argo Workflows turns a workflow specification into Kubernetes pods](https://argoproj.github.io/workflows/). The specification says what tasks exist, which template each task runs, which tasks must finish before another task can start, and what values or files move between tasks. [The controller watches the custom resource, creates pods for runnable nodes, records status back onto the Workflow object](https://argo-workflows.readthedocs.io/en/latest/architecture/), and repeats that loop until the graph succeeds, fails, or is terminated.
 
 ```ascii
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -106,7 +107,7 @@ A Workflow contains templates, and templates are reusable task definitions insid
 
 Installation is simple, but the field choices around installation are not trivial. Argo installs a controller, a server, service accounts, CRDs, and supporting RBAC. In a learning cluster, it is reasonable to install the upstream manifest into an `argo` namespace. In a shared platform cluster, the safer pattern is to treat Argo like any other control-plane extension: pin a release, review RBAC, decide authentication mode, decide artifact storage, and decide which namespaces may submit workflows.
 
-The commands below use a local or disposable cluster. They install Argo Workflows into the `argo` namespace, wait for the controller, and port-forward the UI. The example uses the upstream `latest` install URL because it is convenient for a lab, but production teams should pin a tested release artifact so a rebuild of the same environment does not silently change controller behavior.
+The commands below use a local or disposable cluster. They install Argo Workflows into the `argo` namespace, wait for the controller, and port-forward the UI. The example uses the upstream `latest` install URL because it is convenient for a lab, but [production teams should pin a tested release artifact](https://argo-workflows.readthedocs.io/en/latest/installation/) so a rebuild of the same environment does not silently change controller behavior.
 
 ```bash
 k create namespace argo
@@ -191,7 +192,7 @@ argo get -n argo @latest
 argo logs -n argo @latest
 ```
 
-The first important design choice is whether you need `steps` or `dag`. A `steps` template is stage-oriented: each outer list item is a stage, and all inner items in the same stage can run in parallel. A `dag` template is dependency-oriented: each task declares what it depends on, and Argo runs tasks as soon as their dependencies are satisfied.
+The first important design choice is whether you need `steps` or `dag`. [A `steps` template is stage-oriented: each outer list item is a stage, and all inner items in the same stage can run in parallel. A `dag` template is dependency-oriented: each task declares what it depends on, and Argo runs tasks as soon as their dependencies are satisfied.](https://argo-workflows.readthedocs.io/en/latest/workflow-concepts/)
 
 | Shape | Best fit | Why it helps | Common trap |
 |-------|----------|--------------|-------------|
@@ -480,7 +481,7 @@ spec:
             echo "Processed artifact"
 ```
 
-For a local lab, Argo may use a default artifact mechanism depending on the installation mode. For a production platform, configure an explicit artifact repository such as S3-compatible storage, GCS, or another supported backend. The workflow should not pretend artifacts are invisible; they are a storage system with cost, permissions, lifecycle policy, and failure modes.
+For a local lab, Argo may use a default artifact mechanism depending on the installation mode. For a production platform, [configure an explicit artifact repository such as S3-compatible storage, GCS, or another supported backend](https://argo-workflows.readthedocs.io/en/latest/configure-artifact-repository/). The workflow should not pretend artifacts are invisible; they are a storage system with cost, permissions, lifecycle policy, and failure modes.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -548,7 +549,7 @@ A senior design habit is to write the task contract in words before writing YAML
 
 ## Loops, Fan-Out, and Controlled Parallelism
 
-Loops are where Argo starts to feel more powerful than a traditional CI system. `withItems` expands a task over a static list, while `withParam` expands a task over a JSON array produced at runtime. The result is fan-out: one logical task definition becomes many node executions.
+Loops are where Argo starts to feel more powerful than a traditional CI system. [`withItems` expands a task over a static list, while `withParam` expands a task over a JSON array produced at runtime](https://argo-workflows.readthedocs.io/en/latest/walk-through/loops/). The result is fan-out: one logical task definition becomes many node executions.
 
 The static loop below processes three items. Each item becomes the `item` input parameter for one task execution. Argo can run the expanded tasks concurrently unless dependencies or parallelism limits prevent it.
 
@@ -586,7 +587,7 @@ spec:
         args: ["Processing: {{inputs.parameters.item}}"]
 ```
 
-The `parallelism: 3` field is not decorative. It tells Argo the maximum number of pods from the workflow that may run at once. In a tiny lab that limit may not matter, but in a shared cluster it is the difference between a batch job that coexists with production and a batch job that floods the control plane.
+[The `parallelism: 3` field is not decorative. It tells Argo the maximum number of pods from the workflow that may run at once.](https://argo-workflows.readthedocs.io/en/latest/synchronization/) In a tiny lab that limit may not matter, but in a shared cluster it is the difference between a batch job that coexists with production and a batch job that floods the control plane.
 
 A dynamic loop uses a producer task to generate the list. The producer prints a JSON array as its result, and the fan-out task consumes that JSON with `withParam`. This pattern is common for nightly data processing because the list of partitions, files, tenants, or experiments may not be known until the workflow starts.
 
@@ -733,7 +734,7 @@ The batching approach is slower than launching every record as a pod, but it is 
 
 ## Reuse with WorkflowTemplates
 
-A `WorkflowTemplate` is a reusable workflow definition stored in the cluster. It is useful when platform teams want to publish a supported pipeline shape, such as "clone, test, build, scan, publish," while application teams provide only the repository, branch, image, and environment values. Reuse matters because copy-pasted workflow YAML ages badly: one team gets the new timeout, another team keeps the old risky retry policy, and a third team quietly removes resource limits to make a deadline.
+[A `WorkflowTemplate` is a reusable workflow definition stored in the cluster](https://argo-workflows.readthedocs.io/en/latest/workflow-templates/). It is useful when platform teams want to publish a supported pipeline shape, such as "clone, test, build, scan, publish," while application teams provide only the repository, branch, image, and environment values. Reuse matters because copy-pasted workflow YAML ages badly: one team gets the new timeout, another team keeps the old risky retry policy, and a third team quietly removes resource limits to make a deadline.
 
 The example below defines a reusable CI pipeline. The workflow-level arguments declare the public contract: callers must provide a repository and image, while `branch` defaults to `main`. The graph then passes those values into templates at the point where they are needed.
 
@@ -838,7 +839,7 @@ Errors in Argo Workflows fall into several categories. Your application can fail
 | Optional branch failure | A report or non-blocking scan fails while core output is still useful. | Continue only if the business rule allows degraded output. | `continueOn` and explicit downstream handling. |
 | Hung task | Pod runs far longer than the expected envelope. | Terminate and retry only when the operation is safe. | `activeDeadlineSeconds` and external idempotency. |
 
-A retry strategy belongs on a template because the operation knows whether retrying is safe. Pulling a file from object storage is often retryable. Charging a customer, publishing a release, or sending a deployment command may not be retryable unless the operation is idempotent. The YAML cannot know that business rule for you.
+[A retry strategy belongs on a template](https://argo-workflows.readthedocs.io/en/latest/fields/) because the operation knows whether retrying is safe. Pulling a file from object storage is often retryable. Charging a customer, publishing a release, or sending a deployment command may not be retryable unless the operation is idempotent. The YAML cannot know that business rule for you.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -949,7 +950,7 @@ The most common debugging mistake is reading the workflow YAML only. The YAML te
 
 Argo Workflows can be submitted manually, scheduled by CronWorkflow, created by another controller, or triggered through Argo Events. Event integration is useful when the workflow is naturally caused by something outside the cluster: a Git push, an object appearing in storage, a message on a queue, or a webhook from a data platform.
 
-The example below shows a Sensor creating a Workflow from a GitHub push event. The important idea is not the exact GitHub fields; it is the mapping from event payload into workflow parameters. A trigger should create a workflow with explicit inputs, not a workflow that reaches back into an opaque event blob at every task.
+The example below shows a Sensor creating a Workflow from a GitHub push event. The important idea is not the exact GitHub fields; it is [the mapping from event payload into workflow parameters](https://argoproj.github.io/argo-events/sensors/triggers/argo-workflow/). A trigger should create a workflow with explicit inputs, not a workflow that reaches back into an opaque event blob at every task.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -1429,7 +1430,7 @@ Tool choice should follow workload shape. Tekton is often a better fit for stand
 
 | Scenario | Stronger default | Why that choice usually wins | When to reconsider |
 |----------|------------------|------------------------------|--------------------|
-| Standard clone-test-build-publish for many services | Tekton | CI/CD primitives, catalog tasks, and supply-chain tooling match the job. | Use Argo if the pipeline becomes graph-heavy or batch-oriented. |
+| Standard clone-test-build-publish for many services | [Tekton](https://tekton.dev/docs/getting-started/) | CI/CD primitives, catalog tasks, and supply-chain tooling match the job. | Use Argo if the pipeline becomes graph-heavy or batch-oriented. |
 | ML training with many parameter combinations | Argo Workflows | Dynamic fan-out, artifact passing, pod-native execution, and long-running jobs fit naturally. | Use Airflow if most work happens in external managed services. |
 | Nightly warehouse orchestration across many SaaS APIs | Airflow | Mature scheduling and provider ecosystem can reduce custom glue. | Use Argo if each stage is containerized and Kubernetes is the execution plane. |
 | Event-driven image or document processing | Argo Workflows plus Argo Events | Event payloads can create bounded Kubernetes workflows with clear graph status. | Add a queue if events can arrive faster than the cluster should process them. |
@@ -1444,7 +1445,7 @@ A practical evaluation question is: where should the state live? If the most imp
 - **Argo Workflows runs each workflow step as a Kubernetes pod**, which means normal cluster controls such as service accounts, resource limits, node selection, and pod events remain central to debugging.
 - **WorkflowTemplates are API contracts as much as reusable YAML**, because changing an argument name, default value, retry policy, or artifact convention can break teams that submit against the template.
 - **Large workflows usually fail operationally before they fail syntactically**, because API server throughput, scheduler capacity, artifact storage, and namespace quota become the limiting systems.
-- **The Argo project includes Workflows, CD, Events, and Rollouts**, and many production platforms combine them rather than expecting one tool to cover every delivery concern.
+- **[The Argo project includes Workflows, CD, Events, and Rollouts](https://argoproj.github.io/)**, and many production platforms combine them rather than expecting one tool to cover every delivery concern.
 
 ## Common Mistakes
 
@@ -1762,3 +1763,14 @@ Continue to [Security Tools Toolkit](/platform/toolkits/security-quality/securit
 - [Tekton Overview](https://tekton.dev/docs/concepts/overview/) — Official Tekton overview describing its Kubernetes-native CI/CD model and core concepts.
 - [Argo Project Overview](https://argoproj.github.io/) — Official project landing page summarizing the Argo ecosystem tools, including Workflows, CD, Events, and Rollouts.
 - [Considerations for Large Clusters](https://kubernetes.io/docs/setup/best-practices/cluster-large/) — Kubernetes guidance on control-plane, scheduler, and etcd limits in large clusters.
+- [tekton.dev: getting started](https://tekton.dev/docs/getting-started/) — Tekton's official getting-started page describes Tekton as an open-source cloud native CI/CD solution.
+- [argo-workflows.readthedocs.io: running at massive scale](https://argo-workflows.readthedocs.io/en/latest/running-at-massive-scale/) — Argo's scale guidance warns that large amounts of work and parallel nodes can overwhelm the Kubernetes API and require explicit controls.
+- [argo-workflows.readthedocs.io: architecture](https://argo-workflows.readthedocs.io/en/latest/architecture/) — The architecture documentation describes controller reconciliation and states that each Step and each DAG Task generate a pod.
+- [argo-workflows.readthedocs.io: installation](https://argo-workflows.readthedocs.io/en/latest/installation/) — The installation guide says `latest` is the tip of `main` and recommends using a specific release version in production.
+- [argo-workflows.readthedocs.io: workflow concepts](https://argo-workflows.readthedocs.io/en/latest/workflow-concepts/) — The core concepts page describes both `steps` and `dag` with these execution semantics.
+- [argo-workflows.readthedocs.io: workflow templates](https://argo-workflows.readthedocs.io/en/latest/workflow-templates/) — The WorkflowTemplate documentation defines it this way and explains cross-reference behavior.
+- [argo-workflows.readthedocs.io: configure artifact repository](https://argo-workflows.readthedocs.io/en/latest/configure-artifact-repository/) — Argo's artifact repository docs say artifact workflows must configure a repository and list supported backends including AWS, GCS, and MinIO.
+- [argo-workflows.readthedocs.io: loops](https://argo-workflows.readthedocs.io/en/latest/walk-through/loops/) — The loops documentation defines `withItems` and `withParam` exactly in these terms.
+- [argo-workflows.readthedocs.io: synchronization](https://argo-workflows.readthedocs.io/en/latest/synchronization/) — The synchronization docs state that `parallelism` restricts concurrent task or step executions within a workflow or template.
+- [argo-workflows.readthedocs.io: fields](https://argo-workflows.readthedocs.io/en/latest/fields/) — The Argo field reference defines all three fields and their semantics.
+- [argoproj.github.io: argo workflow](https://argoproj.github.io/argo-events/sensors/triggers/argo-workflow/) — The Argo Events workflow-trigger documentation shows webhook-triggered workflow creation, WorkflowTemplate submission, and parameterization from event data.
