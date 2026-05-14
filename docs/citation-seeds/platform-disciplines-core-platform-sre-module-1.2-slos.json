@@ -1,7 +1,7 @@
 {
   "module_key": "platform/disciplines/core-platform/sre/module-1.2-slos",
   "module_path": "src/content/docs/platform/disciplines/core-platform/sre/module-1.2-slos.md",
-  "research_run_id": "2026-05-07T20:08:43+00:00-codex-gpt-5.3-codex-spark",
+  "research_run_id": "2026-05-14T08:51:32+00:00-codex-gpt-5.3-codex-spark",
   "schema_version": 3,
   "section_pool_ref": "docs/citation-pools/platform-disciplines-core-platform-sre.json",
   "claims": [
@@ -17,7 +17,7 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Google Cloud's SLO API reference directly defines both ServiceLevelObjective and ServiceLevelIndicator in these terms."
+      "rationale": "The Cloud Monitoring SLO API reference directly defines both ServiceLevelObjective and ServiceLevelIndicator in these terms."
     },
     {
       "claim_id": "C002",
@@ -31,7 +31,7 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Google Cloud Observability SLA page directly describes an SLA-backed SLO and eligibility for financial credits when the commitment is missed."
+      "rationale": "The Google Cloud Observability SLA page describes the contractual commitment and financial-credit consequences of missing the service commitment."
     },
     {
       "claim_id": "C003",
@@ -45,7 +45,7 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Prometheus tutorial page defines counters and explains that `rate()` computes how fast a counter is increasing per second."
+      "rationale": "The Prometheus metric-types tutorial defines counters and states that `rate()` calculates how fast a counter is increasing per second."
     },
     {
       "claim_id": "C004",
@@ -61,7 +61,7 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The shared Prometheus recording-rules source is the primary reference for precomputing expressions into reusable series."
+      "rationale": "The shared Prometheus recording-rules source directly describes recording rules as precomputed reusable time series for repeated queries."
     },
     {
       "claim_id": "C005",
@@ -93,7 +93,7 @@
     },
     {
       "claim_id": "C007",
-      "claim_text": "The four DORA metrics are deployment frequency, lead time for changes, change failure rate, and time to restore service/mean time to recovery.",
+      "claim_text": "The four DORA metrics are deployment frequency, lead time for changes, change failure rate, and mean time to recovery/time to restore service.",
       "claim_class": "standard",
       "span_hint": "section: DORA Metrics and SLOs, opening paragraphs and table",
       "disposition": "supported",
@@ -103,7 +103,7 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Google Cloud DORA article enumerates the four metrics and explicitly equates Time to Restore Service with MTTR."
+      "rationale": "The Google Cloud DORA article enumerates the four metrics and explicitly equates time to restore service with MTTR."
     },
     {
       "claim_id": "C008",
@@ -117,7 +117,7 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Google Cloud's service-monitoring concepts page explains that request-based SLOs measure the percentage of work done properly over the compliance period regardless of load distribution."
+      "rationale": "Google Cloud's service-monitoring concepts page explains request-based SLIs and notes that they count atomic units of service over the compliance period, aligning failure with traffic volume."
     }
   ],
   "further_reading": [
@@ -140,7 +140,7 @@
       "why_relevant": "Useful companion for the module's DORA section because it defines the four metrics and ties them to SLO-driven operations."
     }
   ],
-  "notes": "Quiz prompts, hands-on exercise instructions, and arithmetic derived entirely inside the worked examples were excluded from the seed because they are pedagogical or internally calculated rather than external factual assertions needing citation.",
+  "notes": "Quiz prompts, hands-on exercise instructions, code blocks, tables used as worked examples, and arithmetic derived entirely inside the module were excluded because they function as pedagogy rather than external factual assertions needing inline citation.",
   "_schema_issues": [],
   "rejected_urls": []
 }
