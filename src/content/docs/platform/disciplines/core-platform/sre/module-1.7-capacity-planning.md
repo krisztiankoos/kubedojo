@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.7: Capacity Planning"
 slug: platform/disciplines/core-platform/sre/module-1.7-capacity-planning
 sidebar:
@@ -395,7 +396,7 @@ scaling_schedule:
 
 ### Reactive Autoscaling
 
-Reactive autoscaling responds to measured demand. In Kubernetes 1.35+, [the Horizontal Pod Autoscaler can scale workloads based on CPU, memory, or custom metrics through the autoscaling API](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/). The example below uses CPU because it is common and easy to understand, but production teams often add request rate, queue depth, or business metrics when CPU is not the actual bottleneck.
+[Reactive autoscaling responds to measured demand.](https://v1-35.docs.kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/) In Kubernetes 1.35+, [the Horizontal Pod Autoscaler can scale workloads based on CPU, memory, or custom metrics through the autoscaling API](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/). The example below uses CPU because it is common and easy to understand, but production teams often add request rate, queue depth, or business metrics when CPU is not the actual bottleneck.
 
 ```yaml
 apiVersion: autoscaling/v2
@@ -574,7 +575,7 @@ The curve is steep because the last increments of reliability require redundancy
 
 ### Right-Sizing and Resource Requests
 
-In Kubernetes, capacity planning must include resource requests and limits because [the scheduler uses requests to place pods](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/). If requests are too high, nodes appear full while real utilization is low. If requests are too low, the cluster overcommits and pods fight under load. Limits add another layer: CPU limits can throttle latency-sensitive services, while missing memory limits can let one pod pressure a node.
+In Kubernetes, capacity planning must include [resource requests and limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) because [the scheduler uses requests to place pods](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/). If requests are too high, [nodes appear full while real utilization is low](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/). If requests are too low, the cluster overcommits and pods fight under load. Limits add another layer: CPU limits can throttle latency-sensitive services, while missing memory limits can let one pod pressure a node.
 
 | Signal | Likely Meaning | Action |
 |--------|----------------|--------|
@@ -923,3 +924,4 @@ Continue with [Platform Engineering Discipline](/platform/disciplines/core-platf
 - [Kubernetes Docs: Horizontal Pod Autoscaling](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/) — Primary source for reactive workload scaling in Kubernetes, including the HPA control loop, metric targets, scaling behavior, stabilization windows, and limits of resource-utilization-based autoscaling.
 - [Kubernetes Docs: Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — Primary source for Kubernetes compute-resource requests and limits, pod/container resource accounting, and the implementation details that underpin capacity models and scheduling assumptions in cluster-based systems.
 - [Kubernetes Docs: Node Autoscaling](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/) — Covers how node provisioning and consolidation interact with workload scaling and cluster-level capacity buffers.
+- [v1-35.docs.kubernetes.io: horizontal pod autoscale](https://v1-35.docs.kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/) — The v1.35 HPA docs directly state that autoscaling/v2 supports scaling on memory and custom metrics, and the same page documents resource-metric scaling for CPU.
