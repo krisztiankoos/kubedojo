@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 revision_pending: false
 title: "Module 3.10: Green Computing and Sustainability"
 slug: k8s/kcna/part3-cloud-native-architecture/module-3.10-green-computing
@@ -40,7 +41,7 @@ The working principle for this module is simple: the greenest compute is the com
 
 ## From Cloud Waste to Carbon Impact
 
-The first step is to connect an ordinary Kubernetes decision to an environmental consequence. When a Pod requests CPU and memory, Kubernetes reserves capacity for that Pod during scheduling. If the Pod requests far more than it uses, the cluster may need extra nodes even though the real application load would fit on fewer machines. Those machines still draw power, produce heat, require cooling, and eventually contribute to hardware replacement cycles.
+The first step is to connect an ordinary Kubernetes decision to an environmental consequence. When a Pod requests CPU and memory, [Kubernetes reserves capacity for that Pod during scheduling](https://kubernetes.io/docs/concepts/workloads/pods/). If the Pod requests far more than it uses, the cluster may need extra nodes even though the real application load would fit on fewer machines. Those machines still draw power, produce heat, require cooling, and eventually contribute to hardware replacement cycles.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -95,7 +96,7 @@ There is also a boundary around what Kubernetes can solve. Kubernetes can improv
 
 ## The CNCF Sustainability Context
 
-The CNCF community treats environmental sustainability as a cloud native concern because cloud native tools decide where workloads run, how many replicas exist, how much infrastructure is reserved, and what telemetry operators can see. The CNCF TAG Environmental Sustainability supports initiatives related to building, deploying, managing, and operating cloud native applications with lower environmental impact. It is a community group, not a magic product, and its value comes from shared guidance, working groups, landscapes, and project collaboration.
+The CNCF community treats environmental sustainability as a cloud native concern because cloud native tools decide where workloads run, how many replicas exist, how much infrastructure is reserved, and what telemetry operators can see. [The CNCF TAG Environmental Sustainability supports initiatives related to building, deploying, managing, and operating cloud native applications with lower environmental impact.](https://tag-env-sustainability.cncf.io/about/) It is a community group, not a magic product, and its value comes from shared guidance, working groups, landscapes, and project collaboration.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -123,7 +124,7 @@ The CNCF community treats environmental sustainability as a cloud native concern
 
 This matters because sustainability needs shared language. If one team talks only about cost, another talks only about carbon, and another talks only about performance, they may miss the fact that many first actions are identical. Right-sizing, cleanup, scale-to-zero, and better scheduling usually improve more than one objective. The conflict appears later, when the greener option has a latency, availability, compliance, or migration cost.
 
-The CNCF ecosystem also includes projects and adjacent tools that help teams measure and act. Kepler measures energy-related workload signals and exports Prometheus metrics. KEDA and Knative can support event-driven scaling and scale-to-zero patterns. Goldilocks uses Vertical Pod Autoscaler data to recommend resource settings. The Carbon Aware SDK from the Green Software Foundation can help applications and automation choose cleaner times or locations when workloads are flexible enough.
+The CNCF ecosystem also includes projects and adjacent tools that help teams measure and act. Kepler measures energy-related workload signals and exports Prometheus metrics. KEDA and [Knative can support event-driven scaling and scale-to-zero patterns.](https://github.com/knative/serving) Goldilocks uses Vertical Pod Autoscaler data to recommend resource settings. [The Carbon Aware SDK from the Green Software Foundation can help applications and automation choose cleaner times or locations when workloads are flexible enough.](https://github.com/Green-Software-Foundation/carbon-aware-sdk)
 
 | Community Area | Practitioner Question | Example Tooling or Practice |
 |---|---|---|
@@ -144,7 +145,7 @@ That is why CNCF-style practices fit the topic. Cloud native teams already know 
 
 Teams often start green computing work by guessing. They assume the biggest service is the worst offender, or that deleting small workloads cannot matter, or that moving to a famous renewable region automatically solves the problem. Those guesses may be wrong because energy use depends on utilization, hardware, replicas, request patterns, cooling, and the electricity grid. Measurement does not make the decision for you, but it keeps the decision honest.
 
-Kepler, the Kubernetes-based Efficient Power Level Exporter, is a Prometheus exporter that estimates energy consumption at container, Pod, process, and node levels. It uses hardware energy counters where available and workload attribution models to connect node-level power information to Kubernetes objects. The result is similar in spirit to cost allocation: instead of seeing only a monthly cloud bill, teams can ask which namespace, workload, or service is contributing most to energy use.
+Kepler, the Kubernetes-based Efficient Power Level Exporter, is [a Prometheus exporter that estimates energy consumption at container, Pod, process, and node levels](https://github.com/sustainable-computing-io/kepler). It uses hardware energy counters where available and workload attribution models to connect node-level power information to Kubernetes objects. The result is similar in spirit to cost allocation: instead of seeing only a monthly cloud bill, teams can ask which namespace, workload, or service is contributing most to energy use.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -200,7 +201,7 @@ Another practical habit is to store the business context next to the technical s
 
 Right-sizing is the practice of setting resource requests and limits close to what a workload actually needs, with enough headroom for normal variation. In Kubernetes, this is one of the highest-value sustainability practices because requests affect scheduling. A Pod that requests two CPU cores reserves that amount from the scheduler's perspective even if it usually consumes a small fraction of a core.
 
-Bin packing is the scheduler's ability to place workloads efficiently onto nodes. If requests are accurate, more Pods can fit on fewer nodes without increasing risk. If requests are inflated, the scheduler sees nodes as full while real CPU sits idle. The cluster autoscaler may then add nodes even though the existing nodes could have handled the real demand.
+Bin packing is the scheduler's ability to place workloads efficiently onto nodes. If requests are accurate, more Pods can fit on fewer nodes without increasing risk. If requests are inflated, the scheduler sees nodes as full while real CPU sits idle. [The cluster autoscaler may then add nodes even though the existing nodes could have handled the real demand.](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/)
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -234,7 +235,7 @@ Bin packing is the scheduler's ability to place workloads efficiently onto nodes
 
 Right-sizing is not the same as making everything tiny. A service with unpredictable spikes may need higher CPU requests, horizontal autoscaling, or a performance test before requests are reduced. A memory-heavy service may need generous memory requests because memory pressure can cause eviction or out-of-memory failures. Sustainable engineering is not reckless minimization; it is evidence-based allocation.
 
-Vertical Pod Autoscaler can recommend or adjust requests based on observed usage. Goldilocks presents VPA recommendations in a way that is easier for teams to review. Human review still matters because tools see metrics, not product launches, one-off migrations, upcoming traffic events, or the cost of a restart. The safest first workflow is to observe, recommend, apply a conservative change, monitor, and repeat.
+[Vertical Pod Autoscaler can recommend or adjust requests based on observed usage.](https://github.com/kubernetes/autoscaler/blob/master/vertical-pod-autoscaler/docs/quickstart.md) [Goldilocks presents VPA recommendations in a way that is easier for teams to review.](https://github.com/FairwindsOps/goldilocks) Human review still matters because tools see metrics, not product launches, one-off migrations, upcoming traffic events, or the cost of a restart. The safest first workflow is to observe, recommend, apply a conservative change, monitor, and repeat.
 
 ```yaml
 apiVersion: apps/v1
@@ -286,7 +287,7 @@ Worked right-sizing usually starts outside production. A staging or internal wor
 
 ## Autoscaling, Scale-to-Zero, and Zombie Workloads
 
-Autoscaling reduces waste when it connects supply to demand. Horizontal Pod Autoscaler changes the number of Pod replicas. Cluster Autoscaler changes the number of nodes. KEDA can scale workloads based on event sources such as queue length, and some platforms can scale services to zero when they have no traffic. These mechanisms are powerful because they remove the assumption that yesterday's peak should run all day.
+Autoscaling reduces waste when it connects supply to demand. Horizontal Pod Autoscaler changes the number of Pod replicas. Cluster Autoscaler changes the number of nodes. [KEDA can scale workloads based on event sources such as queue length, and some platforms can scale services to zero when they have no traffic.](https://github.com/kedacore/keda) These mechanisms are powerful because they remove the assumption that yesterday's peak should run all day.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -632,7 +633,7 @@ Use the framework as a review conversation, not as a mechanical checklist. Some 
 
 ## Did You Know?
 
-- **Kepler is a CNCF Sandbox project for Kubernetes energy metrics**: It exports Prometheus metrics that help teams estimate energy consumption at workload levels, which makes GreenOps conversations more concrete than node-level guessing.
+- [**Kepler is a CNCF Sandbox project for Kubernetes energy metrics**](https://www.cncf.io/projects/kepler/): It exports Prometheus metrics that help teams estimate energy consumption at workload levels, which makes GreenOps conversations more concrete than node-level guessing.
 - **Idle does not mean free**: A quiet container can still reserve memory, keep processes alive, hold scheduling capacity, and contribute to a node staying powered even when users send no traffic.
 - **Carbon-aware scheduling depends on flexibility**: The same idea that works well for batch jobs can be wrong for user-facing APIs, because delayed work is only acceptable when the workload has deadline slack.
 - **Embodied carbon changes the hardware conversation**: Replacing servers with newer efficient hardware can reduce operational energy, but manufacturing and disposal impacts mean the best answer depends on lifecycle analysis, not only power draw.
@@ -835,6 +836,14 @@ When you finish, ask whether your plan saves carbon by removing actual waste or 
 - [Fairwinds Goldilocks project](https://github.com/FairwindsOps/goldilocks)
 - [Green Software Foundation: Carbon Aware SDK](https://github.com/Green-Software-Foundation/carbon-aware-sdk)
 - [Green Software Foundation: Software Carbon Intensity specification](https://sci.greensoftware.foundation/)
+- [kubernetes.io: pods](https://kubernetes.io/docs/concepts/workloads/pods/) — The Pods documentation explicitly says the kube-scheduler uses resource requests to decide node placement.
+- [kubernetes.io: node autoscaling](https://kubernetes.io/docs/concepts/cluster-administration/node-autoscaling/) — The Node Autoscaling docs cover provisioning for unschedulable Pods, consolidation, and the fact that consolidation decisions use requests rather than actual usage.
+- [tag-env-sustainability.cncf.io: about](https://tag-env-sustainability.cncf.io/about/) — The TAG's official About page directly describes its purpose and scope.
+- [github.com: kepler](https://github.com/sustainable-computing-io/kepler) — The Kepler repository README describes it as a Prometheus exporter that measures energy consumption metrics for Kubernetes workloads.
+- [github.com: quickstart.md](https://github.com/kubernetes/autoscaler/blob/master/vertical-pod-autoscaler/docs/quickstart.md) — The VPA quickstart says VPA is ready to recommend and set resource requests for Pods.
+- [github.com: keda](https://github.com/kedacore/keda) — The KEDA README describes KEDA as event-driven autoscaling for Kubernetes and explicitly mentions scaling including to and from zero.
+- [github.com: serving](https://github.com/knative/serving) — The Knative Serving README explicitly lists automatic scaling up and down to zero among its primitives.
+- [cncf.io: kepler](https://www.cncf.io/projects/kepler/) — The CNCF project page directly states that Kepler was accepted at the Sandbox maturity level.
 
 ## Next Module
 
