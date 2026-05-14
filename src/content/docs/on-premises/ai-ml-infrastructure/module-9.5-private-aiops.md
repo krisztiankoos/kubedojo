@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Private AIOps"
 description: Implement anomaly detection, predictive scaling, and AI-augmented incident response on bare-metal Kubernetes using Robusta, Prometheus, and local LLMs.
 slug: on-premises/ai-ml-infrastructure/module-9.5-private-aiops
@@ -147,14 +148,14 @@ AIOps is only as good as the telemetry it can reason over. The model may write t
 
 The retention and density trade-offs should be explicit:
 
-- VictoriaMetrics is often used when teams need longer retention, lower storage cost, or larger query volume.
-- Thanos and Cortex-style architectures extend Prometheus by adding long-term storage and distributed query capabilities.
+- [VictoriaMetrics is often used when teams need longer retention, lower storage cost, or larger query volume.](https://github.com/VictoriaMetrics/VictoriaMetrics)
+- [Thanos and Cortex-style architectures extend Prometheus by adding long-term storage and distributed query capabilities.](https://github.com/thanos-io/thanos)
 - The important design point is that anomaly detection needs history.
 - A static alert may only need the last five minutes.
 - A baseline alert may need days or weeks.
 - A predictive scaler may need enough clean data to understand seasonality.
 - The amount of history changes the architecture.
-- Single-node Prometheus can evaluate simple alerts efficiently.
+- [Single-node Prometheus](https://prometheus.io/docs/prometheus/latest/storage/) can evaluate simple alerts efficiently.
 - It may struggle when rules repeatedly compute week-long standard deviations across high-cardinality series.
 - Long windows require more samples to be scanned.
 - More samples require more memory, more CPU, and more query time.
@@ -236,7 +237,7 @@ groups:
 
 ```
 
-The key function is `clamp_min`; it prevents division by a near-zero standard deviation; the second condition prevents alerts when absolute usage is too low to matter; this pattern is not limited to CPU. You can use it for latency, request rate, queue depth, error rate, and saturation metrics; you must adjust the floor to the metric; a queue depth floor might be `10`; an error rate floor might be based on request volume. A latency floor might require enough requests to make the histogram meaningful.
+The key function is [`clamp_min`](https://prometheus.io/docs/prometheus/latest/querying/functions/); it prevents division by a near-zero standard deviation; the second condition prevents alerts when absolute usage is too low to matter; this pattern is not limited to CPU. You can use it for latency, request rate, queue depth, error rate, and saturation metrics; you must adjust the floor to the metric; a queue depth floor might be `10`; an error rate floor might be based on request volume. A latency floor might require enough requests to make the histogram meaningful.
 
 **Worked example:** A team has an internal API with steady weekday traffic, so the engineer can compare current latency against a meaningful historical baseline instead of reacting to a single isolated sample.
 
@@ -291,9 +292,9 @@ Single-node Prometheus must read many samples for each series in the window; if 
 
 ## 3. AI-Augmented Incident Response with Robusta
 
-Alert enrichment is the most practical first use case for private AIOps; it gives engineers faster context without handing control of the cluster to a model; it also creates clear success criteria. A good enriched alert should help the on-call engineer decide the next command faster than the raw alert; robusta is useful because it already sits in the alert path; it can receive Alertmanager webhooks; it can fetch Kubernetes context.
+Alert enrichment is the most practical first use case for private AIOps; it gives engineers faster context without handing control of the cluster to a model; it also creates clear success criteria. A good enriched alert should help the on-call engineer decide the next command faster than the raw alert; robusta is useful because it already sits in the alert path; [it can receive Alertmanager webhooks; it can fetch Kubernetes context.](https://github.com/robusta-dev/robusta)
 
-It can run playbooks; it can send messages to sinks; it can call an OpenAI-compatible endpoint when configured to do so; a local LLM endpoint is usually served by Ollama or vLLM; ollama is simple for labs and smaller environments. vLLM is often preferred for higher throughput and GPU-backed serving; both can expose an API shape that many OpenAI-compatible clients understand; the compatibility layer is an interface choice, not a privacy guarantee.
+It can run playbooks; it can send messages to sinks; it can call an OpenAI-compatible endpoint when configured to do so; a local LLM endpoint is usually served by Ollama or vLLM; ollama is simple for labs and smaller environments. vLLM is often preferred for higher throughput and GPU-backed serving; [both can expose an API shape that many OpenAI-compatible clients understand](https://github.com/vllm-project/vllm); the compatibility layer is an interface choice, not a privacy guarantee.
 
 The privacy guarantee comes from network design, endpoint placement, prompt handling, and egress control; the triage path should be intentionally narrow; alertmanager sends selected alerts to Robusta; robusta gathers bounded context; robusta builds a prompt with clear instructions. The local LLM returns a diagnosis and suggested investigation steps; robusta posts the result to a sink; the human decides whether to act; the prompt should ask for evidence-based output; a weak prompt asks, "What is wrong? " A better prompt asks the model to separate observed facts, likely causes, uncertainty, and next commands; that structure makes the answer easier to review under pressure.
 
@@ -333,7 +334,7 @@ customPlaybooks:
 
 The dummy API key is not a secret; some OpenAI-compatible client libraries require a string during initialization even when the local endpoint ignores it; the endpoint must remain internal; a `ClusterIP` Service is the normal shape. An Ingress is usually unnecessary and risky; if another namespace needs access, use NetworkPolicy to allow only that source; a local LLM service should have explicit resources; for a small lab model, CPU inference may be tolerable.
 
-For production triage, slow inference can break the incident path; alertmanager and HTTP clients have timeouts; if the model takes longer than the timeout, the alert may arrive without AI enrichment or may produce a gateway timeout in the runner logs. That is acceptable if the base alert still reaches the human; it is unacceptable if AI enrichment is required for delivery; the Robusta service account should begin read-only. A minimal role can allow reads for Pods, Events, ReplicaSets, Deployments, StatefulSets, DaemonSets, Jobs, and Namespaces; logs are accessed through the `pods/log` subresource; do not grant wildcard verbs; do not grant wildcard resources. Do not grant cluster-admin because "it is only an internal tool; "
+For production triage, slow inference can break the incident path; alertmanager and HTTP clients have timeouts; if the model takes longer than the timeout, the alert may arrive without AI enrichment or may produce a gateway timeout in the runner logs. That is acceptable if the base alert still reaches the human; it is unacceptable if AI enrichment is required for delivery; the Robusta service account should begin read-only. A minimal role can allow reads for Pods, Events, ReplicaSets, Deployments, StatefulSets, DaemonSets, Jobs, and Namespaces; logs are accessed through the [`pods/log` subresource; do not grant wildcard verbs; do not grant wildcard resources.](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) Do not grant cluster-admin because "it is only an internal tool; "
 
 ```yaml
 # robusta-readonly-rbac.yaml
@@ -410,7 +411,7 @@ Horizontal Pod Autoscaler is reactive; it observes current metrics; it changes r
 
 This is useful only when the future resembles the clean parts of the past; predictive scaling becomes dangerous when the past contains incidents; a DDoS event can look like a seasonal spike; a load test can look like normal demand. A failed dependency can distort latency and queue depth; a data migration can create unusual traffic; if the model trains on those windows without labels, it may reproduce bad decisions later.
 
-The safest design treats prediction as an advisory signal with hard bounds; reactive HPA remains the fallback; the predictive system writes a custom or external metric; the autoscaler uses that metric only within `minReplicas` and `maxReplicas`. The maximum is a capacity decision, not a model decision; a model may request more; the cluster should refuse. A common pattern is to expose a predicted request rate or desired replica count through the Kubernetes custom metrics API; kEDA can consume external metrics.
+The safest design treats prediction as an advisory signal with hard bounds; reactive HPA remains the fallback; [the predictive system writes a custom or external metric; the autoscaler uses that metric only within `minReplicas` and `maxReplicas`.](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/) The maximum is a capacity decision, not a model decision; a model may request more; the cluster should refuse. A common pattern is to expose a predicted request rate or desired replica count through the Kubernetes custom metrics API; [kEDA can consume external metrics](https://github.com/kedacore/keda).
 
 A custom controller can also compute a desired replica count and patch an HPA-like object; the implementation varies; the operational questions remain the same; what data trained the model; how are incident windows excluded; how often is the forecast updated? What happens when the forecast service is down; what is the maximum replica count; which workloads are allowed to use prediction; who approves a prediction model change; the following table helps compare scaling behaviors.
 
@@ -459,7 +460,7 @@ customPlaybooks:
 
 The example is intentionally short; it shows the shape of a state-changing playbook; it should not be copied into production without approval controls. A safer production design inserts an approval service between the recommendation and the write action; robusta posts an incident message with an "Approve rollback" action; the approval service receives the click. The service validates the namespace, deployment, alert name, time window, and actor; the service checks an allowlist; the service records an audit event; only then does it use a separate write-capable service account.
 
-The write-capable token is not mounted into the LLM-facing runner; this split is important; it prevents prompt injection or model hallucination from directly reaching the Kubernetes API with write privileges; it also gives the organization an audit trail. A human can explain why an action was approved; a reviewer can see whether the action matched policy. An incident commander can stop the automation path if the situation changes; a guardrail policy should include at least these rules; the LLM-facing component is read-only; the model never receives long-lived write credentials.
+The write-capable token is not mounted into the LLM-facing runner; this split is important; it prevents prompt injection or model hallucination from directly reaching the Kubernetes API with write privileges; it also gives the organization an audit trail. A human can explain why an action was approved; a reviewer can see whether the action matched policy. [An incident commander can stop the automation path if the situation changes; a guardrail policy should include at least these rules;](https://kubernetes.io/docs/tasks/run-application/configure-pdb/) the LLM-facing component is read-only; the model never receives long-lived write credentials.
 
 The model may suggest commands but may not execute them; every state-changing action has an allowlist; every state-changing action has a rate limit; every state-changing action writes an audit event; every rollback includes the previous and target revision. Every node action respects PodDisruptionBudgets and maintenance policy; every automated path has a disable switch; rate limiting deserves special attention. Imagine a node-level anomaly detector fires for all nodes in a rack; a naive remediation loop cordons the first node; workloads move; the second node now looks pressured; the loop cordons it too.
 
@@ -545,7 +546,7 @@ If the LLM endpoint is unavailable, the base alert should still be delivered; if
 
 ## Did You Know?
 
-- **Prometheus was the second project to graduate from the CNCF**, which is why many Kubernetes observability designs still treat Prometheus-style metrics and alert rules as the default operational language.
+- [**Prometheus was the second project to graduate from the CNCF**](https://www.cncf.io/announcements/2018/08/09/prometheus-graduates/), which is why many Kubernetes observability designs still treat Prometheus-style metrics and alert rules as the default operational language.
 - **OpenAI-compatible APIs are interfaces, not privacy controls**, so a local endpoint is private only when network policy, logging, egress control, and prompt handling keep the data inside the intended boundary.
 - **Anomaly detection often fails because of dirty history**, since load tests, migrations, outages, and attacks can be misread as normal seasonality unless the training window is labeled or filtered.
 - **Read-only AIOps can still create risk**, because copied logs, model prompts, sink messages, and runner debug output may retain sensitive incident data even when no Kubernetes write action is performed.
@@ -1132,6 +1133,14 @@ Answer these questions before considering the design production-ready, because a
 - [VictoriaMetrics anomaly detection](https://docs.victoriametrics.com/anomaly-detection/)
 - [vLLM OpenAI-compatible server](https://docs.vllm.ai/en/latest/serving/openai_compatible_server.html)
 - [Ollama API documentation](https://github.com/ollama/ollama/blob/main/docs/api.md)
+- [github.com: robusta](https://github.com/robusta-dev/robusta) — The Robusta repository overview explicitly says it integrates with Prometheus by webhook and lists alert enrichment, AI investigation, and self-healing among its core capabilities.
+- [github.com: vllm](https://github.com/vllm-project/vllm) — The vLLM repository README explicitly lists an OpenAI-compatible API server among the project's serving features.
+- [prometheus.io: storage](https://prometheus.io/docs/prometheus/latest/storage/) — The Prometheus storage documentation explicitly describes local TSDB behavior, head/WAL handling, single-node limits, and remote storage interfaces.
+- [github.com: thanos](https://github.com/thanos-io/thanos) — The Thanos repository overview states that it adds long-term storage and a global query view on top of existing Prometheus deployments.
+- [github.com: keda](https://github.com/kedacore/keda) — The KEDA repository README explicitly says KEDA serves as a Kubernetes Metrics Server and integrates natively with the HPA.
+- [github.com: VictoriaMetrics](https://github.com/VictoriaMetrics/VictoriaMetrics) — The VictoriaMetrics repository README describes the project as cost-effective and scalable and explicitly lists long-term storage for Prometheus among its prominent features.
+- [kubernetes.io: horizontal pod autoscale](https://kubernetes.io/docs/concepts/workloads/autoscaling/horizontal-pod-autoscale/) — The Kubernetes HPA documentation directly covers automatic scaling behavior, custom and external metrics support, and stabilization-window configuration.
+- [cncf.io: prometheus graduates](https://www.cncf.io/announcements/2018/08/09/prometheus-graduates/) — The CNCF graduation announcement explicitly says Prometheus became the foundation's second graduated project after Kubernetes.
 
 ## Next Module
 
