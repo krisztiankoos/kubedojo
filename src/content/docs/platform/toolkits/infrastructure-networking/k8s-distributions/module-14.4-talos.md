@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 14.4: Talos Linux - The OS That IS Kubernetes"
 slug: platform/toolkits/infrastructure-networking/k8s-distributions/module-14.4-talos
 sidebar:
@@ -40,7 +41,7 @@ A platform team inherited a Kubernetes estate that looked normal on paper. The n
 
 The breach report did not describe an exotic zero-day. It described a chain of ordinary conveniences becoming attacker primitives. SSH made lateral movement easier. A mutable filesystem made persistence easier. A package manager made tooling installation easier. Human users and local credentials gave the attacker more places to search. The team had hardened Linux, but they were still operating a general-purpose operating system under Kubernetes.
 
-Talos Linux starts from a more radical question: what if a Kubernetes node did not need to be a general-purpose server at all? If the machine exists only to run Kubernetes, then shell access, SSH, local users, a package manager, and ad hoc host mutation become liabilities rather than features. Talos removes them and replaces traditional host administration with a small API surface managed by `talosctl` over mutual TLS.
+Talos Linux starts from a more radical question: what if a Kubernetes node did not need to be a general-purpose server at all? If the machine exists only to run Kubernetes, then [shell access, SSH, local users, a package manager, and ad hoc host mutation become liabilities rather than features](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/learn-more/philosophy.mdx). Talos removes them and [replaces traditional host administration with a small API surface managed by `talosctl` over mutual TLS](https://github.com/siderolabs/talos).
 
 That design changes the platform engineer's job. You do not log into a node and fix things by hand. You inspect state through APIs, update declarative machine configuration, roll nodes, and keep the cluster reproducible from version-controlled intent. Talos is not only a smaller Linux image. It is an operational model where the operating system behaves more like Kubernetes: declared, reconciled, audited, and replaceable.
 
@@ -93,7 +94,7 @@ daemon, no interactive host shell, no package manager, and no local
 user administration path.
 ```
 
-The senior-level lesson is that Talos narrows the host compromise story, but it does not eliminate the Kubernetes compromise story. If an attacker has cluster-admin, they can still damage Kubernetes resources, steal Kubernetes secrets, deploy workloads, and abuse cloud permissions attached to workloads. Talos reduces what happens after a workload reaches toward the host, but it is not a substitute for RBAC, Pod Security Admission, network policy, secret hygiene, or runtime detection.
+The senior-level lesson is that [Talos narrows the host compromise story, but it does not eliminate the Kubernetes compromise story](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/security/talos-security-checklist.mdx). If an attacker has cluster-admin, they can still damage Kubernetes resources, steal Kubernetes secrets, deploy workloads, and abuse cloud permissions attached to workloads. Talos reduces what happens after a workload reaches toward the host, but it is not a substitute for RBAC, Pod Security Admission, network policy, secret hygiene, or runtime detection.
 
 **Pause and predict:** Your team allows privileged pods in a namespace because a storage driver once needed that access. An attacker steals a kubeconfig that can create pods in that namespace. Before reading the next table, decide which parts of the attack Talos blocks and which parts Kubernetes policy still needs to block.
 
@@ -106,7 +107,7 @@ The senior-level lesson is that Talos narrows the host compromise story, but it 
 | Persist with cron or systemd | Common persistence target | Not available as a traditional host mechanism | Kubernetes object auditing |
 | Move through SSH keys | Possible when keys or users exist | SSH daemon and local users are absent | Credential rotation and identity boundaries |
 
-The table shows the central trade-off honestly. Talos breaks many host-level follow-on moves, but the first line still says "works" if Kubernetes policy allows a dangerous pod. That is why experienced Talos operators pair it with strong admission controls. Talos makes the node less useful to an attacker; Kubernetes policy should prevent the attacker from getting dangerous placement in the first place.
+The table shows the central trade-off honestly. Talos breaks many host-level follow-on moves, but the first line still says "works" if [Kubernetes policy allows a dangerous pod](https://kubernetes.io/docs/concepts/security/pod-security-standards/). That is why experienced Talos operators pair it with strong admission controls. Talos makes the node less useful to an attacker; Kubernetes policy should prevent the attacker from getting dangerous placement in the first place.
 
 A useful analogy is an appliance instead of a workshop. A traditional Linux node is a workshop full of tools, and a skilled operator can fix almost anything inside it. Talos is closer to a sealed network appliance: you configure it through a defined interface, replace it when necessary, and avoid improvising inside the box. The appliance model is less flexible, but it is also much harder to abuse when an attacker gets near it.
 
@@ -118,7 +119,7 @@ The design also changes incident response. On a traditional node, responders may
 
 Talos is still Linux, but it is not a general-purpose Linux distribution in the way Ubuntu, Debian, Rocky Linux, or Flatcar are. The kernel is Linux, containers are still containers, and Kubernetes components behave like Kubernetes components. The difference is in the host userland, management plane, and mutation model.
 
-The most important Talos process is `machined`. It is the init process, the Talos API server, the service manager, and the component responsible for applying machine configuration. When you run `talosctl logs kubelet`, you are not SSHing and reading `/var/log` manually. You are asking the Talos API for service logs. When you patch machine configuration, you are not editing a file in `/etc` by hand. You are sending desired configuration to the API, and Talos applies it according to its rules.
+The most important Talos process is [`machined`](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/learn-more/components.mdx). It is the init process, the Talos API server, the service manager, and the component responsible for applying machine configuration. When you run `talosctl logs kubelet`, you are not SSHing and reading `/var/log` manually. You are asking the Talos API for service logs. When you patch machine configuration, you are not editing a file in `/etc` by hand. You are sending desired configuration to the API, and Talos applies it according to its rules.
 
 ```ascii
 TALOS MANAGEMENT PATH
@@ -170,7 +171,7 @@ talosctl version --client
 
 A production platform should pin tool versions deliberately. The exact Talos version should be selected from the team's support matrix, tested with the target Kubernetes version, and rolled through environments. In examples in this module, replace image tags and version values with the versions approved by your organization.
 
-The API-first model also affects access control. The `talosconfig` file is sensitive because it contains client identity material for the Talos API. Treat it like a privileged kubeconfig. Store it in a secure secret manager, avoid putting it in broad developer repositories, rotate it when an operator leaves, and use separate credentials where your access model requires separation.
+The API-first model also affects access control. The [`talosconfig` file is sensitive](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/troubleshooting/faqs.mdx) because it contains client identity material for the Talos API. Treat it like a privileged kubeconfig. Store it in a secure secret manager, avoid putting it in broad developer repositories, rotate it when an operator leaves, and use separate credentials where your access model requires separation.
 
 **Stop and think:** If a team stores `talosconfig` next to application manifests in a repository that many developers can read, what new risk did they create? The OS no longer has SSH keys to steal, but the management API still needs client credentials, and those credentials must be governed with the same seriousness as cluster-admin kubeconfigs.
 
@@ -178,7 +179,7 @@ The API-first model also affects access control. The `talosconfig` file is sensi
 
 ## 3. Machine Configuration Is The Operating System Contract
 
-Talos machine configuration is the declarative contract between your platform intent and the node. It describes how the machine installs, how it joins the cluster, what certificates it trusts, which Kubernetes version and settings it uses, which network configuration it applies, and which extensions it should include. That configuration is not a convenience wrapper around manual setup. It is the primary source of truth for the host.
+[Talos machine configuration is the declarative contract](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/reference/configuration/overview.mdx) between your platform intent and the node. It describes how the machine installs, how it joins the cluster, what certificates it trusts, which Kubernetes version and settings it uses, which network configuration it applies, and which extensions it should include. That configuration is not a convenience wrapper around manual setup. It is the primary source of truth for the host.
 
 A good Talos configuration strategy separates what is shared from what is specific. Cluster-wide network ranges, CNI choice, API endpoint, and common kubelet settings belong in shared patches. Control plane settings, etcd behavior, and API server options belong in control plane patches. Worker-specific labels, taints, storage extensions, and node classes belong in worker patches. Environment differences such as disk names, load balancer endpoints, and IP assignments should be handled explicitly rather than hidden in one large file.
 
@@ -206,14 +207,14 @@ The generated base configuration contains sensitive cluster material. Do not tre
 # Replace the endpoint with the stable Kubernetes API endpoint for your design.
 talosctl gen config dojo-talos https://10.10.10.10:6443
 
-# The command produces three important files in the current directory:
+# The command produces [three important files](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/getting-started/getting-started.mdx) in the current directory:
 # controlplane.yaml
 # worker.yaml
 # talosconfig
 ls -1 controlplane.yaml worker.yaml talosconfig
 ```
 
-A patch-oriented workflow is easier to review than repeatedly editing generated files. The base files contain many fields that are not relevant to a particular design decision, so reviewers can miss important changes. Small patches let you ask narrow questions: did we change the CNI, add a registry mirror, enable a kubelet argument, configure a storage extension, or change the install disk?
+A [patch-oriented workflow](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/configure-your-talos-cluster/system-configuration/patching.mdx) is easier to review than repeatedly editing generated files. The base files contain many fields that are not relevant to a particular design decision, so reviewers can miss important changes. Small patches let you ask narrow questions: did we change the CNI, add a registry mirror, enable a kubelet argument, configure a storage extension, or change the install disk?
 
 ```yaml
 # patches/shared.yaml
@@ -287,7 +288,7 @@ A practical control is to require every machine configuration patch to start as 
 
 ## 4. Deployment Flow: From Booted Machine To Cluster
 
-A Talos deployment has three phases that are easy to blur together: booting the Talos image, applying machine configuration, and bootstrapping Kubernetes. The machine can boot Talos before it is a member of your cluster. Applying configuration tells the node its role, certificates, endpoint, install disk, and cluster intent. Bootstrapping is a one-time control plane action that initializes etcd and brings the Kubernetes control plane into service.
+A Talos deployment has three phases that are easy to blur together: [booting the Talos image, applying machine configuration, and bootstrapping Kubernetes](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/getting-started/getting-started.mdx). The machine can boot Talos before it is a member of your cluster. Applying configuration tells the node its role, certificates, endpoint, install disk, and cluster intent. Bootstrapping is a one-time control plane action that initializes etcd and brings the Kubernetes control plane into service.
 
 This distinction helps with troubleshooting. If a node does not answer the Talos API, you are probably dealing with boot, network, or endpoint reachability. If Talos answers but Kubernetes is not healthy, you inspect services, config, CNI, certificates, and control plane state. If Kubernetes is healthy but nodes are not schedulable, you move into normal Kubernetes debugging around taints, CNI readiness, kubelet conditions, and workload scheduling.
 
@@ -324,7 +325,7 @@ TALOS CLUSTER CREATION SEQUENCE
 +--------------------+
 ```
 
-For a first local learning cluster, Docker is the fastest path because it lets you practice the Talos management model without provisioning hardware. The Docker provider is not a substitute for production testing, but it is excellent for learning commands, observing the absence of shell access, and validating that Kubernetes workloads behave normally on top of Talos.
+For a first [local learning cluster](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/getting-started/quickstart.mdx), Docker is the fastest path because it lets you practice the Talos management model without provisioning hardware. The Docker provider is not a substitute for production testing, but it is excellent for learning commands, observing the absence of shell access, and validating that Kubernetes workloads behave normally on top of Talos.
 
 ```bash
 # Create a local Talos cluster using Docker.
@@ -345,11 +346,11 @@ alias k=kubectl
 k get nodes -o wide
 ```
 
-Production deployments usually replace Docker with bare metal, virtual machines, or cloud instances. Bare metal often uses PXE, an ISO, or an image provisioning system. Cloud deployments often pass Talos machine configuration as instance user data or platform metadata. The important constant is that the node receives declarative configuration before it becomes a trusted cluster member.
+Production deployments usually replace Docker with bare metal, virtual machines, or cloud instances. Bare metal often uses PXE, an ISO, or an image provisioning system. Cloud deployments often pass Talos machine configuration as [instance user data or platform metadata](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/configure-your-talos-cluster/system-configuration/acquire.mdx). The important constant is that the node receives declarative configuration before it becomes a trusted cluster member.
 
 ```bash
 # Apply configuration to a newly booted control plane node.
-# The --insecure flag is only for the initial configuration path before
+# The --insecure flag is only for the [initial configuration path](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/configure-your-talos-cluster/system-configuration/insecure.mdx) before
 # the node has the final trust material. Do not use it as a normal habit.
 talosctl apply-config --insecure \
   --nodes 10.10.10.11 \
@@ -370,7 +371,7 @@ talosctl --talosconfig ./talosconfig kubeconfig \
   --endpoints 10.10.10.11
 ```
 
-The phrase "bootstrap exactly one" deserves attention. In an HA control plane, etcd forms a quorum cluster, but the first member must initialize the cluster. Accidentally running bootstrap in the wrong place or at the wrong time can create confusing failure modes. Treat bootstrap as a controlled operation with a runbook, peer review, and clear evidence that you are targeting the intended first control plane node.
+The phrase "[bootstrap exactly one](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/getting-started/prodnotes.mdx)" deserves attention. In an HA control plane, etcd forms a quorum cluster, but the first member must initialize the cluster. Accidentally running bootstrap in the wrong place or at the wrong time can create confusing failure modes. Treat bootstrap as a controlled operation with a runbook, peer review, and clear evidence that you are targeting the intended first control plane node.
 
 | Phase | Primary Tool | Evidence To Check | Typical Failure |
 |---|---|---|---|
@@ -380,9 +381,9 @@ The phrase "bootstrap exactly one" deserves attention. In an HA control plane, e
 | Join nodes | `talosctl apply-config` plus health checks | New nodes register with Kubernetes | Certificate, endpoint, CNI, or network routing issue |
 | Operate cluster | `talosctl`, `kubectl`, GitOps tools | Nodes Ready, workloads scheduled, policies enforced | Treating Talos like SSH-managed Linux |
 
-A senior production design also considers the management network. Talos exposes its API on a dedicated port, and that API should not be broadly reachable from every workload, developer laptop, or untrusted network. Restrict it to approved automation, bastion paths, or management networks. The absence of SSH is valuable, but exposing the replacement management API carelessly gives back too much risk.
+A senior production design also considers the [management network](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/learn-more/talos-network-connectivity.mdx). Talos exposes its API on a dedicated port, and that API should not be broadly reachable from every workload, developer laptop, or untrusted network. Restrict it to approved automation, bastion paths, or management networks. The absence of SSH is valuable, but exposing the replacement management API carelessly gives back too much risk.
 
-For cloud deployments, infrastructure as code should create instances, load balancers, security groups, DNS records, and user data in one coherent plan. The Talos provider for Terraform can help generate machine secrets and configuration, but the same design principles apply even if you use another tool. Separate secrets from policy, review destructive disk choices carefully, and make cluster endpoint stability a first-class requirement.
+For cloud deployments, infrastructure as code should create instances, load balancers, security groups, DNS records, and user data in one coherent plan. The [Talos provider for Terraform](https://github.com/siderolabs/terraform-provider-talos/blob/main/docs/data-sources/machine_configuration.md) can help generate machine secrets and configuration, but the same design principles apply even if you use another tool. Separate secrets from policy, review destructive disk choices carefully, and make cluster endpoint stability a first-class requirement.
 
 ```hcl
 terraform {
@@ -417,7 +418,7 @@ The Terraform example is intentionally partial because cloud provider resources 
 
 ## 5. Debugging Without SSH: A Worked Example
 
-The most uncomfortable Talos moment for many operators is the first incident where muscle memory says "SSH to the node." Talos forces a different question: what evidence did you actually need from SSH? Most host troubleshooting tasks are not really about the shell itself. They are about logs, service status, process state, disk state, network state, container runtime state, or Kubernetes node conditions. Talos exposes those through APIs.
+The most uncomfortable Talos moment for many operators is the first incident where muscle memory says "SSH to the node." Talos forces a different question: what evidence did you actually need from SSH? Most host troubleshooting tasks are not really about the shell itself. They are about logs, service status, process state, disk state, network state, container runtime state, or Kubernetes node conditions. Talos [exposes those through APIs](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/learn-more/talos-for-linux-admins.mdx).
 
 Here is a worked example. A worker node is `NotReady` after a configuration change that added a new CNI. On a traditional node, an operator might SSH in, check `systemctl status kubelet`, read logs, inspect routes, and run container runtime commands. On Talos, the sequence is similar in reasoning but different in interface.
 
@@ -472,7 +473,7 @@ The table is also a decision guard. If the evidence says the CNI is broken, addi
 
 **Stop and think:** A teammate asks to add a debugging extension with many network tools to every production node because a single incident was hard to diagnose. How would you evaluate that request? A senior answer balances evidence and blast radius: add narrow tooling only when it solves repeated, well-defined diagnostic gaps, prefer ephemeral debug workloads where possible, and avoid turning Talos back into a general-purpose host by accumulation.
 
-Talos does support system extensions for cases where the host genuinely needs more capability, such as storage tools, GPU support, or specific hardware integration. The key is that extensions are planned into the image or install configuration. They are not installed during a frantic SSH session. That makes them reviewable, reproducible, and testable across environments.
+Talos does support [system extensions](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/build-and-extend-talos/custom-images-and-development/system-extensions.mdx) for cases where the host genuinely needs more capability, such as storage tools, GPU support, or specific hardware integration. The key is that extensions are planned into the image or install configuration. They are not installed during a frantic SSH session. That makes them reviewable, reproducible, and testable across environments.
 
 ```yaml
 # patches/worker-iscsi.yaml
@@ -498,9 +499,9 @@ When you patch machine configuration, read the command output and plan the rollo
 
 ## 6. Day-2 Operations: Upgrades, Backups, And Safe Change
 
-Day-2 Talos work is where the design either pays off or frustrates the team. Because the OS is immutable and API-managed, upgrades are image-based rather than package-by-package. That removes many dependency problems, but it does not remove the need for sequencing, health checks, maintenance windows, rollback thinking, and workload disruption planning.
+Day-2 Talos work is where the design either pays off or frustrates the team. Because the OS is immutable and API-managed, [upgrades are image-based rather than package-by-package](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/configure-your-talos-cluster/lifecycle-management/upgrading-talos.mdx). That removes many dependency problems, but it does not remove the need for sequencing, health checks, maintenance windows, rollback thinking, and workload disruption planning.
 
-Talos OS upgrades and Kubernetes upgrades are related but separate operations. Upgrading Talos changes the node operating system image and Talos components. Upgrading Kubernetes changes the control plane and node Kubernetes components. Treat them as separate changes unless the release notes and your test plan justify combining them. Smaller changes produce clearer failure signals.
+Talos OS upgrades and Kubernetes upgrades are related but separate operations. Upgrading Talos changes the node operating system image and Talos components. [Upgrading Kubernetes changes the control plane and node Kubernetes components](https://github.com/siderolabs/docs/blob/main/public/kubernetes-guides/advanced-guides/upgrading-kubernetes.mdx). Treat them as separate changes unless the release notes and your test plan justify combining them. Smaller changes produce clearer failure signals.
 
 ```bash
 # Inspect Talos and Kubernetes versions before planning.
@@ -509,7 +510,7 @@ k version
 k get nodes -o wide
 ```
 
-A conservative production upgrade starts with release notes, compatibility checks, a staging cluster, and a written order of operations. Control plane nodes usually roll one at a time while maintaining etcd quorum. Workers can often roll in batches, but PodDisruptionBudgets, workload topology spread, storage attachment, and node pool capacity should determine the batch size. "Can reboot" is not the same as "can reboot without user impact."
+A conservative production upgrade starts with release notes, compatibility checks, a staging cluster, and a written order of operations. Control plane nodes usually roll one at a time while maintaining etcd quorum. Workers can often roll in batches, but [PodDisruptionBudgets, workload topology spread, storage attachment, and node pool capacity should determine the batch size](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/). "Can reboot" is not the same as "can reboot without user impact."
 
 ```bash
 # Upgrade one Talos node at a time with an approved installer image.
@@ -548,7 +549,7 @@ The command examples are short, but the operational plan around them should not 
 | Extension addition | Small worker class first | Need proven and image source trusted | Reboot loop or driver conflict | Required device or capability visible |
 | Certificate rotation | Controlled maintenance workflow | Access path validated and backups available | Operators lose management access | New credentials work and old ones retired |
 
-Backups require the same seriousness as upgrades. Talos makes it convenient to manage etcd snapshots, but convenience is not a backup strategy by itself. A backup strategy includes where snapshots are stored, how they are protected, how often restore is tested, who can access them, and how the team decides between restoring etcd and rebuilding from GitOps state.
+[Backups require the same seriousness as upgrades](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/). Talos makes it convenient to [manage etcd snapshots](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance.mdx), but convenience is not a backup strategy by itself. A backup strategy includes where snapshots are stored, how they are protected, how often restore is tested, who can access them, and how the team decides between restoring etcd and rebuilding from GitOps state.
 
 ```bash
 # Create an etcd snapshot from a control plane node.
@@ -570,9 +571,9 @@ A final operational concern is observability. Talos can expose logs and state th
 
 ## 7. Security Evaluation: What Talos Solves And What It Does Not
 
-Talos is often described as secure by default, but senior engineers should translate that phrase into specific claims. Talos reduces host attack surface by removing services and tools. It improves reproducibility by making configuration declarative. It reduces drift by limiting mutable host state. It strengthens operational auditability by pushing management through an API. Those are meaningful controls.
+Talos is often described as [secure by default](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/security/talos-security-checklist.mdx), but senior engineers should translate that phrase into specific claims. Talos reduces host attack surface by removing services and tools. It improves reproducibility by making configuration declarative. It reduces drift by limiting mutable host state. It strengthens operational auditability by pushing management through an API. Those are meaningful controls.
 
-Talos does not automatically make a permissive Kubernetes cluster safe. If every developer has cluster-admin, if privileged pods are allowed broadly, if secrets are mounted everywhere, if workloads can egress freely, and if admission policy is absent, the cluster still has serious risk. Talos changes the blast radius after certain host-oriented attacks, but it should sit inside a broader defense-in-depth program.
+Talos does not automatically make a permissive Kubernetes cluster safe. If every developer has [cluster-admin](https://kubernetes.io/docs/reference/access-authn-authz/rbac/), if privileged pods are allowed broadly, if [secrets are mounted everywhere](https://kubernetes.io/docs/concepts/security/secrets-good-practices/), if workloads can egress freely, and if admission policy is absent, the cluster still has serious risk. Talos changes the blast radius after certain host-oriented attacks, but it should sit inside a broader defense-in-depth program.
 
 ```ascii
 DEFENSE-IN-DEPTH WITH TALOS
@@ -611,8 +612,8 @@ The main trade-off is flexibility. Traditional Linux nodes let operators install
 | Approach | Strength | Weakness | Best Fit |
 |---|---|---|---|
 | Talos Linux | Minimal Kubernetes-only OS with API management and no SSH | Steeper operational shift and less host customization | Security-focused Kubernetes platforms with strong automation |
-| Flatcar Container Linux | Container-oriented immutable OS with more familiar host access options | Larger host surface and more traditional operations | Teams needing container hosts with some Linux flexibility |
-| Bottlerocket | Purpose-built container OS with strong cloud integration, especially in AWS contexts | Cloud and ecosystem fit may shape choices | AWS-heavy teams wanting managed minimal hosts |
+| [Flatcar Container Linux](https://github.com/flatcar/Flatcar) | Container-oriented immutable OS with more familiar host access options | Larger host surface and more traditional operations | Teams needing container hosts with some Linux flexibility |
+| [Bottlerocket](https://aws.amazon.com/bottlerocket/) | Purpose-built container OS with strong cloud integration, especially in AWS contexts | Cloud and ecosystem fit may shape choices | AWS-heavy teams wanting managed minimal hosts |
 | Ubuntu Pro or similar enterprise Linux | Familiar tooling, broad vendor support, general-purpose flexibility | Larger patch surface and more drift paths | Mixed workloads, strict vendor requirements, or legacy operations |
 | Managed Kubernetes node images | Provider handles much of node lifecycle | Less control and provider-specific constraints | Teams prioritizing operational simplicity over OS ownership |
 
@@ -929,3 +930,32 @@ Write three sentences after completing the lab. First, name one SSH habit you ca
 ## Next Module
 
 [Module 14.5: OpenShift](../module-14.5-openshift/) — evaluate an enterprise Kubernetes platform that takes a different approach: integrated distribution, opinionated platform services, and a larger managed surface rather than a minimal node operating system.
+
+## Sources
+
+- [github.com: talos](https://github.com/siderolabs/talos) — The Talos README directly states API-only management, no shell or interactive console, and mTLS-secured API access.
+- [github.com: philosophy.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/learn-more/philosophy.mdx) — The Talos philosophy documentation states that Talos has no shell, SSH, GNU utilities, or packages and is API-driven.
+- [github.com: talos security checklist.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/security/talos-security-checklist.mdx) — The Talos security checklist explicitly says Talos secures the OS while Kubernetes still needs pod security controls, network policies, and monitoring.
+- [kubernetes.io: pod security standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/) — The Kubernetes Pod Security Standards document defines privileged policy as unrestricted and lists hostPath, host namespaces, and privilege escalation controls.
+- [github.com: components.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/learn-more/components.mdx) — The Talos components documentation describes machined as the init replacement and states that it handles machine configuration, API handling, resources, and controllers.
+- [github.com: talos network connectivity.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/learn-more/talos-network-connectivity.mdx) — The Talos network connectivity documentation lists TCP inbound port 50000 for apid.
+- [github.com: faqs.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/troubleshooting/faqs.mdx) — The Talos FAQ states that talosconfig contains client credentials to access the Talos Linux API.
+- [github.com: overview.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/reference/configuration/overview.mdx) — The configuration reference directly defines Talos machine configuration and how Talos parses and merges documents.
+- [github.com: getting started.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/getting-started/getting-started.mdx) — The getting started guide lists the three generated files and their purposes.
+- [github.com: patching.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/configure-your-talos-cluster/system-configuration/patching.mdx) — The patching guide documents configuration patching and strategic merge patch behavior.
+- [github.com: quickstart.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/getting-started/quickstart.mdx) — The Talos quickstart is explicitly a local Docker cluster guide and shows talosctl cluster create.
+- [github.com: acquire.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/configure-your-talos-cluster/system-configuration/acquire.mdx) — The acquiring machine configuration guide lists platform metadata and nocloud user-data as configuration sources.
+- [github.com: insecure.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/configure-your-talos-cluster/system-configuration/insecure.mdx) — The Talos insecure-flag guide explains maintenance mode, mTLS behavior, and that --insecure should stop after machine config is applied.
+- [github.com: prodnotes.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/getting-started/prodnotes.mdx) — The production notes explicitly instruct users to run bootstrap once on one control plane node.
+- [github.com: machine configuration.md](https://github.com/siderolabs/terraform-provider-talos/blob/main/docs/data-sources/machine_configuration.md) — The provider documentation shows talos_machine_configuration using talos_machine_secrets to generate machine configuration.
+- [github.com: talos for linux admins.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/learn-more/talos-for-linux-admins.mdx) — The Talos for Linux admins guide maps familiar Linux inspection tasks to talosctl/API commands.
+- [github.com: system extensions.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/build-and-extend-talos/custom-images-and-development/system-extensions.mdx) — The system extensions guide states that extensions are activated during installation or upgrade and remain part of an immutable root filesystem.
+- [github.com: upgrading talos.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/configure-your-talos-cluster/lifecycle-management/upgrading-talos.mdx) — The Talos upgrade guide states that OS upgrades are API calls using installer images and that Kubernetes upgrades are separate.
+- [github.com: upgrading kubernetes.mdx](https://github.com/siderolabs/docs/blob/main/public/kubernetes-guides/advanced-guides/upgrading-kubernetes.mdx) — The Talos Kubernetes upgrade guide documents the upgrade-k8s command and its phases.
+- [kubernetes.io: configure upgrade etcd](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/) — The Kubernetes etcd operations documentation states that periodic etcd backups are important for disaster recovery.
+- [github.com: etcd maintenance.mdx](https://github.com/siderolabs/docs/blob/main/public/talos/v1.13/build-and-extend-talos/cluster-operations-and-maintenance/etcd-maintenance.mdx) — The Talos etcd maintenance documentation covers snapshot and restore workflows.
+- [kubernetes.io: disruptions](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/) — Kubernetes disruption documentation explains voluntary disruptions, eviction, and PodDisruptionBudgets as controls around node maintenance.
+- [kubernetes.io: rbac](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) — The RBAC documentation identifies cluster-admin as a super-user role and defines RBAC as Kubernetes authorization control.
+- [kubernetes.io: secrets good practices](https://kubernetes.io/docs/concepts/security/secrets-good-practices/) — The Kubernetes Secrets good practices page recommends least-privilege access controls for Secret objects.
+- [github.com: Flatcar](https://github.com/flatcar/Flatcar) — The Flatcar GitHub project description directly describes Flatcar as an open-source, minimal-footprint, secure-by-default distribution for containers at scale.
+- [aws.amazon.com: bottlerocket](https://aws.amazon.com/bottlerocket/) — The AWS Bottlerocket page directly describes Bottlerocket as Linux-based, open-source, and purpose-built for containers.
