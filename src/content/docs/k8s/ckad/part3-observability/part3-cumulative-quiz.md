@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Part 3 Cumulative Quiz: Application Observability and Maintenance"
 sidebar:
   order: 6
@@ -10,7 +11,7 @@ sidebar:
 >
 > **Prerequisites**: Completed Part 3 modules on probes, logs, debugging, resource monitoring, and API versions
 >
-> **Cluster Assumption**: Kubernetes 1.35 or later, with the Metrics Server installed for `kubectl top`
+> **Cluster Assumption**: Kubernetes 1.35 or later, with the [Metrics Server installed](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/) for `kubectl top`
 >
 > **Command Note**: This module uses `k` as a short alias for `kubectl`; configure it with `alias k=kubectl` before starting.
 
@@ -20,7 +21,7 @@ By the end of this cumulative module, you will be able to **debug** unhealthy ap
 
 You will be able to **design** probe strategies that separate slow startup, process health, and traffic readiness without causing unnecessary restarts or sending traffic to an unprepared container.
 
-You will be able to **evaluate** observability evidence from `kubectl describe`, `k logs`, `k top`, and API discovery commands to choose the next highest-value troubleshooting action under CKAD exam pressure.
+You will be able to **evaluate** [observability evidence from `kubectl describe`, `k logs`, `k top`, and API discovery commands](https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad/) to choose the next highest-value troubleshooting action under CKAD exam pressure.
 
 You will be able to **compare** common failure modes such as CrashLoopBackOff, NotReady Pods, empty Endpoints, missing metrics, and deprecated API manifests, then justify the command sequence that confirms or rejects each hypothesis.
 
@@ -30,7 +31,7 @@ You will be able to **implement** a complete diagnostic workflow for a realistic
 
 A team deploys a payment API minutes before a busy sale begins, and the rollout looks green because the Deployment reports the desired number of replicas. A few minutes later, customer requests start timing out, the Service has fewer endpoints than expected, and one container is restarting so quickly that its current logs only show the latest boot banner. Nobody is helped by a memorized command if the operator cannot decide whether the next move is `describe`, `logs --previous`, `top`, endpoint inspection, or a probe change.
 
-This is the point where CKAD observability stops being a list of commands and becomes a diagnostic craft. Kubernetes gives you many signals, but those signals are uneven: Events are short-lived, logs can belong to the wrong container instance, readiness affects traffic without restarting a container, and liveness can hide a slow startup problem by repeatedly killing the process. A capable application operator does not run every command randomly; they build a hypothesis, gather the cheapest evidence, and then change only the field that matches the failure.
+This is the point where CKAD observability stops being a list of commands and becomes a diagnostic craft. Kubernetes gives you many signals, but those signals are uneven: [Events are short-lived](https://kubernetes.io/docs/reference/glossary/?all=true&term-control-plane=), logs can belong to the wrong container instance, [readiness affects traffic without restarting a container](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/), and liveness can hide a slow startup problem by repeatedly killing the process. A capable application operator does not run every command randomly; they build a hypothesis, gather the cheapest evidence, and then change only the field that matches the failure.
 
 Part 3 is cumulative because real incidents are cumulative. A failing application might involve a bad readiness path, a Service selector typo, a memory limit that forces restarts, and a manifest copied from an older API version. Each isolated topic from earlier modules is useful, but the exam and the workplace both reward learners who can combine them quickly. This module teaches that combination: read the symptom, narrow the system boundary, inspect the right evidence, make the smallest safe fix, and verify through Kubernetes state.
 
@@ -59,13 +60,13 @@ Use this mental model before touching YAML. If a Service has no endpoints, the i
 
 The diagram is deliberately simple because the first pass through an incident should be simple. You are trying to locate the broken boundary before you dive into details. When the boundary is Service-to-Pod, inspect selectors and endpoints. When the boundary is kubelet-to-container, inspect probes, restart counts, Events, and logs. When the boundary is scheduler-to-node resources, inspect requests, limits, node pressure, and metrics.
 
-A useful CKAD habit is to ask, “What would have to be true for this symptom to appear?” A Service with no endpoints requires either no matching Pods, matching Pods that are not Ready, or a selector that points at the wrong labels. A CrashLoopBackOff requires a container that exits, is killed by a probe, or cannot start successfully. A missing `kubectl top` result requires either missing Metrics Server, a scrape delay, or an object that is not currently emitting metrics. Each symptom has a small set of likely causes, and that set determines the next command.
+A useful CKAD habit is to ask, “What would have to be true for this symptom to appear?” [A Service with no endpoints requires either no matching Pods, matching Pods that are not Ready, or a selector that points at the wrong labels.](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/) A CrashLoopBackOff requires a container that exits, is killed by a probe, or cannot start successfully. A missing `kubectl top` result requires either missing Metrics Server, a scrape delay, or an object that is not currently emitting metrics. Each symptom has a small set of likely causes, and that set determines the next command.
 
 **Active learning prompt**: Before reading further, imagine a Pod that says `Running` but receives no traffic from its Service. Write down two different reasons this can happen. One reason should involve the Pod itself, and one reason should involve the Service object that routes to it.
 
 ### 2. Probe Strategy: Startup, Liveness, and Readiness Have Different Jobs
 
-Probes are often taught as three similar YAML blocks, but their meanings are different enough that mixing them up creates outages. A startup probe protects slow initialization by delaying liveness and readiness checks until the application has had enough time to boot. A liveness probe answers, “Should kubelet restart this container because it is broken?” A readiness probe answers, “Should this Pod receive traffic right now?” Those questions point to different risks, so the probe configuration should reflect different failure behavior.
+Probes are often taught as three similar YAML blocks, but their meanings are different enough that mixing them up creates outages. A startup probe protects slow initialization by [delaying liveness and readiness checks until the application has had enough time to boot](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/). A liveness probe answers, “Should kubelet restart this container because it is broken?” A readiness probe answers, “Should this Pod receive traffic right now?” Those questions point to different risks, so the probe configuration should reflect different failure behavior.
 
 Readiness should usually be more conservative than liveness. If an application temporarily loses a database connection, it might be correct to remove the Pod from Service endpoints while keeping the process alive so it can reconnect. If liveness checks the same dependency too aggressively, kubelet may restart a process that would have recovered on its own. That creates extra load during an outage and can make the incident worse.
 
@@ -141,7 +142,7 @@ k -n observability-lab expose deployment checkout-api --name=checkout-svc --port
 k -n observability-lab patch svc checkout-svc -p '{"spec":{"selector":{"app":"checkout"}}}'
 ```
 
-Now inspect the symptom from the Service boundary. The first command confirms the Service selector, and the second command checks whether Kubernetes found any Ready Pods that match it. Depending on your cluster version and display settings, `k get endpoints` may show `<none>` for the Service, while EndpointSlices provide the newer representation of the same routing data.
+Now inspect the symptom from the Service boundary. The first command confirms the Service selector, and the second command checks whether Kubernetes found any Ready Pods that match it. Depending on your cluster version and display settings, `k get endpoints` may show `<none>` for the Service, while [EndpointSlices provide the newer representation of the same routing data](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/).
 
 ```bash
 k -n observability-lab describe svc checkout-svc
@@ -178,9 +179,9 @@ This worked example also shows why verification must observe cluster state, not 
 
 ### 4. CrashLoopBackOff: Preserve Evidence Before It Disappears
 
-CrashLoopBackOff is not a root cause; it is Kubernetes telling you that a container repeatedly started and then stopped. The cause may be an application exception, a missing file, bad command arguments, a failed probe, an image issue that appears before the loop begins, or resource pressure. Your job is to separate “the process exited” from “kubelet killed the process” and then inspect the evidence from the container instance that failed.
+[CrashLoopBackOff is not a root cause; it is Kubernetes telling you that a container repeatedly started and then stopped.](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) The cause may be an application exception, a missing file, bad command arguments, a failed probe, an image issue that appears before the loop begins, or resource pressure. Your job is to separate “the process exited” from “kubelet killed the process” and then inspect the evidence from the container instance that failed.
 
-The most important habit is checking previous logs early. Current logs belong to the currently running or recently started container instance. If the container starts, prints a boot message, crashes, and restarts, current logs might not include the stack trace from the previous instance. The `--previous` flag asks Kubernetes for the logs from the last terminated container instance, which is often the only place the root cause appears.
+The most important habit is checking previous logs early. Current logs belong to the currently running or recently started container instance. If the container starts, prints a boot message, crashes, and restarts, current logs might not include the stack trace from the previous instance. The `--previous` flag asks Kubernetes for [the logs from the last terminated container instance](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/), which is often the only place the root cause appears.
 
 ```bash
 k get pod crashing-pod
@@ -252,7 +253,7 @@ A senior troubleshooting stance is to change one thing at a time and verify the 
 
 ### 5. Logs, Metrics, and API Discovery Under Exam Pressure
 
-CKAD tasks often reward speed, but speed should come from practiced command selection rather than from guessing. Logs answer “what did the process emit?” Metrics answer “what resources are objects consuming now?” API discovery answers “what schema does this cluster accept?” These tools are complementary, and confusing them leads to shallow troubleshooting.
+CKAD tasks often reward speed, but speed should come from practiced command selection rather than from guessing. Logs answer “what did the process emit?” [Metrics answer “what resources are objects consuming now?”](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/) API discovery answers “what schema does this cluster accept?” These tools are complementary, and confusing them leads to shallow troubleshooting.
 
 Logs are strongest for application behavior and container output. Use `--tail` to keep output focused, `-f` to follow active logs, `--previous` for restarted containers, and `-c` for a specific container. Use label selectors when the question is about all replicas of a Deployment, but remember that combined logs from multiple Pods can interleave lines and hide sequence. For exact diagnosis, narrow the evidence when needed.
 
@@ -272,7 +273,7 @@ k top pod checkout-api-abc123 --containers
 k top nodes
 ```
 
-API discovery prevents stale-manifest mistakes. Kubernetes 1.35 accepts current stable APIs for common CKAD resources such as `networking.k8s.io/v1` Ingress, `batch/v1` CronJob, and `networking.k8s.io/v1` NetworkPolicy. Instead of relying on memory during an exam, use `k explain` or `k api-resources` to confirm the group and version that the cluster serves.
+API discovery prevents stale-manifest mistakes. [Kubernetes 1.35 accepts current stable APIs for common CKAD resources such as `networking.k8s.io/v1` Ingress, `batch/v1` CronJob, and `networking.k8s.io/v1` NetworkPolicy.](https://v1-35.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/) Instead of relying on memory during an exam, use `k explain` or `k api-resources` to confirm the group and version that the cluster serves.
 
 ```bash
 k explain ingress | grep VERSION
@@ -281,7 +282,7 @@ k explain networkpolicy | grep VERSION
 k api-resources | grep -E 'ingresses|cronjobs|networkpolicies'
 ```
 
-The subtle point is that discovery commands teach you what the API server knows, not whether your particular manifest is semantically correct. A CronJob might use `batch/v1` and still fail because field names are wrong. An Ingress might use the right API version and still route incorrectly because `pathType` or backend service names are wrong. Discovery is the first gate, not the full validation story.
+The subtle point is that discovery commands teach you what the API server knows, not whether your particular manifest is semantically correct. A CronJob might use `batch/v1` and still fail because field names are wrong. [An Ingress might use the right API version and still route incorrectly because `pathType` or backend service names are wrong.](https://v1-35.docs.kubernetes.io/docs/reference/using-api/deprecation-guide/) Discovery is the first gate, not the full validation story.
 
 A useful pressure-tested sequence is symptom, scope, evidence, fix, verification. Symptom is what the user or task reports. Scope identifies whether the object boundary is Service, Pod, container, metrics, or manifest API. Evidence uses the smallest command that tests that boundary. Fix changes one relevant thing. Verification observes the state that should change as a result. This sequence is slower than guessing once, but faster than guessing three times.
 
@@ -308,13 +309,13 @@ If you miss a question, classify the miss. Was the problem that you chose the wr
 
 ## Did You Know?
 
-1. Readiness failures do not restart a container; they remove the Pod from Service endpoints until the readiness condition becomes true again.
+1. [Readiness failures do not restart a container; they remove the Pod from Service endpoints until the readiness condition becomes true again.](https://kubernetes.io/docs/concepts/workloads/pods/pod-condition/)
 
-2. `k logs --previous` only works when Kubernetes still has a terminated container instance to read, so repeated restarts and cleanup can make this evidence disappear.
+2. [`k logs --previous` only works when Kubernetes still has a terminated container instance to read](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/), so repeated restarts and cleanup can make this evidence disappear.
 
-3. EndpointSlices are the scalable successor to the older Endpoints object, but `k get endpoints` remains useful for quick CKAD-style checks on small Services.
+3. [EndpointSlices are the scalable successor to the older Endpoints object, but `k get endpoints` remains useful for quick CKAD-style checks on small Services.](https://kubernetes.io/docs/concepts/services-networking/service/index.html)
 
-4. `kubectl top` reports metrics collected through the resource metrics pipeline, so it is a live usage view rather than a historical incident recorder.
+4. [`kubectl top` reports metrics collected through the resource metrics pipeline, so it is a live usage view rather than a historical incident recorder.](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/)
 
 ## Common Mistakes
 
@@ -712,3 +713,18 @@ k delete namespace part3-observability
 ## Next Module
 
 [Part 4: Application Environment, Configuration and Security](/k8s/ckad/part4-environment/module-4.1-configmaps/) — move from observing running applications to configuring environment data, Secrets, and security settings that shape how applications behave in the cluster.
+
+## Sources
+
+- [training.linuxfoundation.org: certified kubernetes application developer ckad](https://training.linuxfoundation.org/certification/certified-kubernetes-application-developer-ckad/) — The official CKAD page names Kubernetes v1.35 and lists these observability-and-maintenance competencies.
+- [kubernetes.io: kubectl top](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/) — The kubectl reference directly states that Metrics Server must be installed and running for `kubectl top` to work.
+- [kubernetes.io: glossary](https://kubernetes.io/docs/reference/glossary/?all=true&term-control-plane=) — The Kubernetes glossary entry for Event explicitly describes limited retention and best-effort, supplemental semantics.
+- [kubernetes.io: liveness readiness startup probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/) — The probes documentation states that failed readiness does not restart the container and sets the Pod Ready condition to false.
+- [kubernetes.io: endpoint slices](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/) — EndpointSlice docs explain that Services with selectors track matching Pods and that endpoint readiness maps to Pod readiness.
+- [kubernetes.io: pod lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) — The Pod lifecycle docs define CrashLoopBackOff as the backoff state for a container that keeps failing and restarting.
+- [kubernetes.io: kubectl logs](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/) — The kubectl logs reference explicitly defines `--previous` as printing logs from the previous container instance if it exists.
+- [v1-35.docs.kubernetes.io: v1.35](https://v1-35.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/) — The Kubernetes v1.35 API reference lists these resources under those served API group/version pairs.
+- [v1-35.docs.kubernetes.io: deprecation guide](https://v1-35.docs.kubernetes.io/docs/reference/using-api/deprecation-guide/) — The v1.35 deprecation guide documents removal of old Ingress APIs and the required field-shape changes for `networking.k8s.io/v1`.
+- [kubernetes.io: pod condition](https://kubernetes.io/docs/concepts/workloads/pods/pod-condition/) — The Pod conditions docs state that Pods not Ready are removed from Service endpoints, and the probes docs define readiness failure behavior.
+- [kubernetes.io: index.html](https://kubernetes.io/docs/concepts/services-networking/service/index.html) — The Service docs directly support EndpointSlice primacy and legacy Endpoints limitations; the quick-check guidance is practical advice rather than an exact documentation statement.
+- [Debug Services](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/) — It walks through selector, port, and EndpointSlice debugging in the same boundary-first style this module teaches.
