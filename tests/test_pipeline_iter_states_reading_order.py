@@ -49,6 +49,20 @@ def test_iter_states_orders_by_track_then_section_then_module_number() -> None:
     ]
 
 
+def test_k8s_certifications_sort_before_cloud_modules() -> None:
+    _write_states(
+        [
+            "cloud-aws-essentials-module-1.1-iam",
+            "k8s-cka-module-1.1-cluster-architecture",
+        ]
+    )
+
+    assert _iter_state_slugs() == [
+        "k8s-cka-module-1.1-cluster-architecture",
+        "cloud-aws-essentials-module-1.1-iam",
+    ]
+
+
 def test_module_numbers_sort_numerically_not_lexicographically() -> None:
     _write_states(
         [
@@ -62,6 +76,20 @@ def test_module_numbers_sort_numerically_not_lexicographically() -> None:
         "cloud-aws-essentials-module-1.2-vpc",
         "cloud-aws-essentials-module-1.3-ec2",
         "cloud-aws-essentials-module-1.10-cloudwatch",
+    ]
+
+
+def test_ai_history_chapters_sort_numerically_not_lexicographically() -> None:
+    _write_states(
+        [
+            "ai-history-ch-10-the-imitation-game",
+            "ai-history-ch-2-the-universal-machine",
+        ]
+    )
+
+    assert _iter_state_slugs() == [
+        "ai-history-ch-2-the-universal-machine",
+        "ai-history-ch-10-the-imitation-game",
     ]
 
 

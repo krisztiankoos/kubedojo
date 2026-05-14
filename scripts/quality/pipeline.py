@@ -48,6 +48,7 @@ above 3, Gemini 429s and user's Mac lags."""
 
 
 _MODULE_NUMBER_RE = re.compile(r"-module-(\d+)\.(\d+)-")
+_CH_NUMBER_RE = re.compile(r"-ch-(\d+)-")
 _LEGACY_MODULE_NUMBER_RE = re.compile(r"-module-(\d+)-")
 
 # Flattened from astro.config.mjs sidebar entries and src/content/docs/.
@@ -91,22 +92,6 @@ _READING_ORDER_SECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "cloud",
-        (
-            "cloud-hyperscaler-rosetta-stone",
-            "cloud-aws-essentials",
-            "cloud-eks-deep-dive",
-            "cloud-gcp-essentials",
-            "cloud-gke-deep-dive",
-            "cloud-azure-essentials",
-            "cloud-aks-deep-dive",
-            "cloud-architecture-patterns",
-            "cloud-advanced-operations",
-            "cloud-managed-services",
-            "cloud-enterprise-hybrid",
-        ),
-    ),
-    (
         "k8s",
         (
             "k8s-kcna",
@@ -127,6 +112,55 @@ _READING_ORDER_SECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "k8s-cnpe",
             "k8s-cnpa",
             "k8s-finops",
+        ),
+    ),
+    (
+        "cloud",
+        (
+            "cloud-hyperscaler-rosetta-stone",
+            "cloud-aws-essentials",
+            "cloud-eks-deep-dive",
+            "cloud-gcp-essentials",
+            "cloud-gke-deep-dive",
+            "cloud-azure-essentials",
+            "cloud-aks-deep-dive",
+            "cloud-architecture-patterns",
+            "cloud-advanced-operations",
+            "cloud-managed-services",
+            "cloud-enterprise-hybrid",
+        ),
+    ),
+    (
+        "ai-ml-engineering",
+        (
+            "ai-ml-engineering-prerequisites",
+            "ai-ml-engineering-ai-native-development",
+            "ai-ml-engineering-generative-ai",
+            "ai-ml-engineering-vector-rag",
+            "ai-ml-engineering-frameworks-agents",
+            "ai-ml-engineering-mlops",
+            "ai-ml-engineering-ai-infrastructure",
+            "ai-ml-engineering-advanced-genai",
+            "ai-ml-engineering-multimodal-ai",
+            "ai-ml-engineering-deep-learning",
+            "ai-ml-engineering-machine-learning",
+            "ai-ml-engineering-reinforcement-learning",
+            "ai-ml-engineering-bridges",
+            "ai-ml-engineering-history",
+        ),
+    ),
+    (
+        "on-premises",
+        (
+            "on-premises-planning",
+            "on-premises-provisioning",
+            "on-premises-networking",
+            "on-premises-storage",
+            "on-premises-multi-cluster",
+            "on-premises-security",
+            "on-premises-operations",
+            "on-premises-resilience",
+            "on-premises-ai-ml-infrastructure",
         ),
     ),
     (
@@ -175,39 +209,6 @@ _READING_ORDER_SECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "platform-toolkits",
         ),
     ),
-    (
-        "ai-ml-engineering",
-        (
-            "ai-ml-engineering-prerequisites",
-            "ai-ml-engineering-ai-native-development",
-            "ai-ml-engineering-generative-ai",
-            "ai-ml-engineering-vector-rag",
-            "ai-ml-engineering-frameworks-agents",
-            "ai-ml-engineering-mlops",
-            "ai-ml-engineering-ai-infrastructure",
-            "ai-ml-engineering-advanced-genai",
-            "ai-ml-engineering-multimodal-ai",
-            "ai-ml-engineering-deep-learning",
-            "ai-ml-engineering-machine-learning",
-            "ai-ml-engineering-reinforcement-learning",
-            "ai-ml-engineering-bridges",
-            "ai-ml-engineering-history",
-        ),
-    ),
-    (
-        "on-premises",
-        (
-            "on-premises-planning",
-            "on-premises-provisioning",
-            "on-premises-networking",
-            "on-premises-storage",
-            "on-premises-multi-cluster",
-            "on-premises-security",
-            "on-premises-operations",
-            "on-premises-resilience",
-            "on-premises-ai-ml-infrastructure",
-        ),
-    ),
 )
 
 
@@ -237,6 +238,10 @@ def _module_number_key(slug: str) -> tuple[int, int]:
     match = _MODULE_NUMBER_RE.search(slug)
     if match is not None:
         return int(match.group(1)), int(match.group(2))
+
+    chapter_match = _CH_NUMBER_RE.search(slug)
+    if chapter_match is not None:
+        return int(chapter_match.group(1)), 0
 
     legacy_match = _LEGACY_MODULE_NUMBER_RE.search(slug)
     if legacy_match is not None:
