@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 6.5: Predictive Operations"
 slug: platform/disciplines/data-ai/aiops/module-6.5-predictive-operations
 sidebar:
@@ -459,7 +460,7 @@ graph TD
     end
 ```
 
-Kubernetes adds useful implementation hooks, but the architectural idea is platform-agnostic. Prometheus can hold the metrics. A CronJob can run hourly forecasts. The output can be written to a small database, pushed to Alertmanager, or exposed as custom metrics that existing alerting tools consume. For automated scaling, the forecast should pass through guardrails such as maximum scale factor, business-hour restrictions, and owner approval for risky actions.
+Kubernetes adds useful implementation hooks, but the architectural idea is platform-agnostic. [Prometheus can hold the metrics](https://prometheus.io/docs/introduction/overview/). [A CronJob can run hourly forecasts](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/). The output can be written to a small database, [pushed to Alertmanager](https://prometheus.io/docs/alerting/latest/alerts_api/), or exposed as custom metrics that existing alerting tools consume. For automated scaling, the forecast should pass through guardrails such as maximum scale factor, business-hour restrictions, and owner approval for risky actions.
 
 The same architecture also supports failure prediction. Instead of forecasting one capacity threshold, the system combines degradation signals such as error rate, p99 latency increase, retry rate, CPU pressure, and memory pressure. Each signal contributes to a risk score, and the risk score is trended over time. This is less precise than disk forecasting, so the response should usually begin with investigation rather than immediate remediation.
 
@@ -526,7 +527,7 @@ Predictive operations reaches senior maturity when it influences planning, not j
 
 ## Did You Know?
 
-- **Predictive maintenance ideas came from physical operations before software adopted them**: manufacturing and aviation teams used degradation signals because replacing parts during scheduled maintenance was cheaper than waiting for failure.
+- **[Predictive maintenance ideas came from physical operations before software adopted them](https://www.ibm.com/topics/predictive-maintenance)**: manufacturing and aviation teams used degradation signals because replacing parts during scheduled maintenance was cheaper than waiting for failure.
 - **Seasonality can be more important than growth**: a service with flat weekly average traffic can still fail every weekday afternoon if its peak demand is close to capacity.
 - **A prevented breach needs special accounting**: if engineers expand capacity after a good prediction, the threshold may never be crossed, but that outcome should be recorded as a successful intervention rather than a false alarm.
 - **Confidence is part of the product**: teams trust forecasts more when the system explains uncertainty, input windows, and recommended action instead of presenting one predicted timestamp as a certainty.
@@ -866,3 +867,10 @@ You've completed this exercise when:
 ## Next Module
 
 Continue to [Module 6.6: Auto-Remediation](../module-6.6-auto-remediation/) to learn how to safely automate corrective actions after predictions, alerts, and guardrails agree that automation is appropriate.
+
+## Sources
+
+- [prometheus.io: overview](https://prometheus.io/docs/introduction/overview/) — The Prometheus overview directly states that Prometheus collects and stores metrics as time series data.
+- [kubernetes.io: cron jobs](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/) — The Kubernetes CronJob documentation directly says a CronJob creates Jobs on a repeating schedule.
+- [prometheus.io: alerts api](https://prometheus.io/docs/alerting/latest/alerts_api/) — The Prometheus Alerts API page explicitly documents sending alerts to Alertmanager via `api/v2/alerts`.
+- [ibm.com: predictive maintenance](https://www.ibm.com/topics/predictive-maintenance) — IBM's predictive-maintenance overview directly discusses the technique's WWII aircraft-maintenance origin and its modern use in manufacturing and transportation sectors.

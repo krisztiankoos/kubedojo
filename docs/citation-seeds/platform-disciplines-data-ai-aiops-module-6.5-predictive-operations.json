@@ -1,0 +1,88 @@
+{
+  "module_key": "platform/disciplines/data-ai/aiops/module-6.5-predictive-operations",
+  "module_path": "src/content/docs/platform/disciplines/data-ai/aiops/module-6.5-predictive-operations.md",
+  "research_run_id": "2026-05-14T09:05:53+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "Prometheus can store the operational metrics used by a predictive-operations workflow.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Predictive Operations Architecture",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://prometheus.io/docs/introduction/overview/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Prometheus overview directly states that Prometheus collects and stores metrics as time series data."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "A Kubernetes CronJob can be used to run forecasts on a repeating schedule, such as hourly.",
+      "claim_class": "standard",
+      "span_hint": "section: Predictive Operations Architecture",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes CronJob documentation directly says a CronJob creates Jobs on a repeating schedule."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Forecast outputs can be sent to Alertmanager as alerts in a production workflow.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Predictive Operations Architecture",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://prometheus.io/docs/alerting/latest/alerts_api/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Prometheus Alerts API page explicitly documents sending alerts to Alertmanager via `api/v2/alerts`."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Predictive maintenance predates software operations and is rooted in physical-asset maintenance, with examples spanning wartime aircraft maintenance and modern manufacturing.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.ibm.com/topics/predictive-maintenance",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "IBM's predictive-maintenance overview directly discusses the technique's WWII aircraft-maintenance origin and its modern use in manufacturing and transportation sectors."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://prometheus.io/docs/introduction/overview/",
+      "title": "Prometheus Docs: Overview",
+      "tier": "upstream",
+      "why_relevant": "Useful primary reference for the time-series storage and alerting model the module uses in its example architecture."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/",
+      "title": "Kubernetes Docs: CronJob",
+      "tier": "standards",
+      "why_relevant": "Shows the native Kubernetes scheduling primitive that fits the module's hourly forecast-job example."
+    },
+    {
+      "url": "https://www.ibm.com/topics/predictive-maintenance",
+      "title": "IBM: What Is Predictive Maintenance?",
+      "tier": "vendor",
+      "why_relevant": "Provides concise background on predictive-maintenance history, condition-based monitoring, and why teams act before failure."
+    }
+  ],
+  "notes": "Excluded quizzes, exercise scaffolding, code blocks, Mermaid diagrams, and purely illustrative numeric examples unless they made a named-product or historical claim that needs inline support.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
