@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 0.3: Vim for YAML"
 slug: k8s/cka/part0-environment/module-0.3-vim-yaml
 sidebar:
@@ -345,7 +346,7 @@ EOF
 kubectl apply -f broken-pod-edit.yaml --dry-run=client
 ```
 
-This file may parse as YAML, but it does not describe the intended Kubernetes object. The `labels` field is aligned at the top level instead of living under `metadata`. Kubernetes expects labels under `metadata.labels`, so the fix is structural: move `labels:` two spaces to the right and `app: web` so it remains a child of `labels`.
+This file may parse as YAML, but it does not describe the intended Kubernetes object. The `labels` field is aligned at the top level instead of living under `metadata`. [Kubernetes expects labels under `metadata.labels`](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/), so the fix is structural: move `labels:` two spaces to the right and `app: web` so it remains a child of `labels`.
 
 Open the file and repair it with a structural edit instead of manually tapping spaces on each line. Because both affected lines belong to the same misplaced label block, selecting them together is faster and less error-prone than editing their indentation independently.
 
@@ -672,7 +673,7 @@ kubectl apply -f schema-error.yaml --dry-run=client
 rm -f schema-error.yaml
 ```
 
-The lesson is not that quotes are always bad. Many Kubernetes fields are strings and should be quoted when values look like booleans, numbers, or URLs. The lesson is that Kubernetes schema determines the expected type. `containerPort` is an integer; environment variable `value` is a string. Good editing means knowing when YAML syntax and Kubernetes schema are separate concerns.
+The lesson is not that quotes are always bad. Many Kubernetes fields are strings and should be quoted when values look like booleans, numbers, or URLs. The lesson is that Kubernetes schema determines the expected type. [`containerPort` is an integer; environment variable `value` is a string.](https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/workload-resources/pod-v1/) Good editing means knowing when YAML syntax and Kubernetes schema are separate concerns.
 
 ### 5.3 Intent Error: Valid Object, Wrong Location
 
@@ -704,7 +705,7 @@ The `metadata.labels` near the top describes the Deployment object. The `spec.te
 
 > **What would happen if** you changed only the top-level `metadata.labels.app` to `api` but left `spec.selector.matchLabels.app` and `spec.template.metadata.labels.app` as `web`? Would the Deployment still create Pods selected by its own selector?
 
-The Deployment could remain structurally valid because the top-level object label is independent from the Pod selector relationship. The Pods would still be selected based on the selector and template labels, both of which remain `web`. This is a classic valid-but-wrong edit: the field changed, but not the field that controlled the required behavior.
+The Deployment could remain structurally valid because the top-level object label is independent from the Pod selector relationship. [The Pods would still be selected based on the selector and template labels](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/), both of which remain `web`. This is a classic valid-but-wrong edit: the field changed, but not the field that controlled the required behavior.
 
 ---
 
@@ -712,7 +713,7 @@ The Deployment could remain structurally valid because the top-level object labe
 
 Exam-speed editing is about reducing decisions. When a task begins, choose a pattern quickly: generate then edit, open then patch, copy then modify, search then replace, or abandon a bad edit and regenerate. Each pattern has a small command sequence. Practicing those sequences makes the editor fade into the background.
 
-The most useful pattern for resource creation is generate then edit. For example, you can ask Kubernetes to produce a Pod skeleton and send it to a file, then use vim to add labels, ports, resources, or environment variables. This avoids memorizing every field placement from scratch.
+The most useful pattern for resource creation is generate then edit. For example, you can ask Kubernetes to [produce a Pod skeleton and send it to a file](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_run/), then use vim to add labels, ports, resources, or environment variables. This avoids memorizing every field placement from scratch.
 
 ```bash
 kubectl run generated-web --image=nginx:1.25 --dry-run=client -o yaml > generated-web.yaml
@@ -774,10 +775,10 @@ The practical recommendation is to choose one primary editor before the exam and
 
 ## Did You Know?
 
-- **Vim is often present on minimal Linux systems** because it is small, terminal-native, and useful over SSH. That makes the skill portable beyond the CKA exam, especially during production troubleshooting sessions where graphical tools are unavailable.
+- **[Vim is often present on minimal Linux systems](https://github.com/vim/vim)** because it is small, terminal-native, and useful over SSH. That makes the skill portable beyond the CKA exam, especially during production troubleshooting sessions where graphical tools are unavailable.
 - **YAML indentation is semantic, not cosmetic**. Moving a line two spaces can change which parent owns that field, even when the file still parses successfully.
 - **`vimtutor` is an interactive practice tool** installed with many vim packages. Running `vimtutor` for half an hour teaches movement, editing, undo, search, and save habits in a guided environment.
-- **Client-side dry-run is an editing companion**. `kubectl apply --dry-run=client -f file.yaml` can catch many syntax and schema errors before you spend time applying a broken object to the cluster.
+- **Client-side dry-run is an editing companion**. [`kubectl apply --dry-run=client -f file.yaml` can catch many syntax and schema errors](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_apply/) before you spend time applying a broken object to the cluster.
 
 ---
 
@@ -1195,6 +1196,12 @@ Use `Ctrl+O`, `Enter`, and `Ctrl+X` to save and exit. Compare your error rate, n
 - https://vimhelp.org/options.txt.html
 - https://vimhelp.org/change.txt.html
 - https://www.nano-editor.org/dist/latest/nanorc.5.html
+- [kubernetes.io: labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/) — The Kubernetes labels documentation explicitly shows labels attached in object metadata via `metadata.labels`.
+- [kubernetes.io: kubectl run](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_run/) — The `kubectl run` reference explicitly documents client dry-run and YAML output for printing a generated object without creating it.
+- [kubernetes.io: pod v1](https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/workload-resources/pod-v1/) — The official Pod API reference explicitly types `ports.containerPort` as `int32` and `env.value` as `string`.
+- [kubernetes.io: deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) — The Deployment documentation explicitly distinguishes `.metadata.labels` from `.spec.template.metadata.labels` and states that `.spec.selector` must match the Pod template labels.
+- [github.com: vim](https://github.com/vim/vim) — The official Vim repository README says `vim.tiny` is used by many Linux distributions as the default vi editor and that a small Vim is pre-installed on Mac and Linux.
+- [kubernetes.io: kubectl apply](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_apply/) — The `kubectl apply` reference documents client dry-run as printing the object without sending it, and its validation flags explain the validation behavior relevant to this workflow.
 
 ## Next Module
 
