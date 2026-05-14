@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.4: Volumes for Developers"
 slug: k8s/ckad/part1-design-build/module-1.4-volumes
 sidebar:
@@ -48,7 +49,7 @@ The exam also rewards precision under time pressure. A single wrong `mountPath`,
 
 ### 1. Build the Storage Mental Model Before Writing YAML
 
-Kubernetes separates the volume source from the place where a container sees that source. The `spec.volumes` list says what storage exists for the Pod, while each container's `volumeMounts` list says where that storage appears inside that particular container. This two-part model is the root of most volume bugs: defining a volume does nothing for a container until that container mounts it.
+Kubernetes separates the volume source from the place where a container sees that source. [The `spec.volumes` list says what storage exists for the Pod, while each container's `volumeMounts` list says where that storage appears inside that particular container](https://kubernetes.io/docs/concepts/storage/volumes/). This two-part model is the root of most volume bugs: defining a volume does nothing for a container until that container mounts it.
 
 A Pod can have several volumes, and each container can mount different subsets of those volumes at different paths. This is powerful because a sidecar can share a scratch directory with the main container, while a Secret can be mounted only into the container that needs credentials. It also means you must reason at container scope, not just Pod scope, when debugging file visibility.
 
@@ -87,7 +88,7 @@ The third design question is "What existing files are at the mount path?" Mounti
 
 ### 2. Use `emptyDir` for Pod-Lifetime Scratch and Sharing
 
-An `emptyDir` volume is created when the Pod is assigned to a node and exists as long as that Pod object exists on that node. If a container crashes and restarts inside the same Pod, the `emptyDir` contents remain. If the Pod is deleted, replaced by a Deployment rollout, evicted, or scheduled elsewhere, the contents are gone.
+[An `emptyDir` volume is created when the Pod is assigned to a node and exists as long as that Pod object exists on that node. If a container crashes and restarts inside the same Pod, the `emptyDir` contents remain. If the Pod is deleted, replaced by a Deployment rollout, evicted, or scheduled elsewhere, the contents are gone](https://kubernetes.io/docs/concepts/storage/volumes/).
 
 That lifecycle makes `emptyDir` ideal for temporary files, intermediate processing, and handoff between containers. It is not a durable storage solution, but it is often the right answer for multi-container Pods because both containers can mount the same volume. In CKAD tasks, `emptyDir` commonly appears with init containers, sidecars, and adapters that prepare or transform files before the main container reads them.
 
@@ -181,7 +182,7 @@ A subtle but important exam detail is that a container restart is not the same t
 
 ### 3. Mount ConfigMaps and Secrets as Files Without Hiding Needed Directories
 
-ConfigMap and Secret volumes turn Kubernetes API object data into files inside a container. Each key becomes a file by default, and the file content is the value stored under that key. This lets you keep environment-specific configuration and sensitive material out of the image while still presenting ordinary files to applications that expect file-based input.
+[ConfigMap and Secret volumes turn Kubernetes API object data into files inside a container. Each key becomes a file by default, and the file content is the value stored under that key](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/). This lets you keep environment-specific configuration and sensitive material out of the image while still presenting ordinary files to applications that expect file-based input.
 
 ```bash
 k create configmap app-config \
@@ -243,7 +244,7 @@ spec:
       name: app-config
 ```
 
-When you need only one file, use `items` to choose the key and `subPath` to mount that single file at a precise location. This avoids replacing the whole directory, but it introduces another trade-off: `subPath` mounts do not receive live ConfigMap or Secret updates in the same way as ordinary projected directory mounts.
+[When you need only one file, use `items` to choose the key and `subPath` to mount that single file at a precise location. This avoids replacing the whole directory, but it introduces another trade-off: `subPath` mounts do not receive live ConfigMap or Secret updates in the same way as ordinary projected directory mounts](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/).
 
 ```bash
 k create configmap single-file-config \
@@ -274,7 +275,7 @@ spec:
         path: config.yaml
 ```
 
-Secrets use the same volume pattern, but they are intended for sensitive values such as passwords, tokens, and private keys. Mount Secret volumes read-only unless the application has a very specific reason to write into the mount path. The files are made available from memory-backed storage on the node, but Kubernetes Secrets are still not a complete secrets-management system by themselves.
+[Secrets use the same volume pattern, but they are intended for sensitive values such as passwords, tokens, and private keys. Mount Secret volumes read-only unless the application has a very specific reason to write into the mount path. The files are made available from memory-backed storage on the node](https://kubernetes.io/docs/concepts/storage/volumes/), but Kubernetes Secrets are still not a complete secrets-management system by themselves.
 
 ```bash
 k create secret generic db-creds \
@@ -307,7 +308,7 @@ File modes matter when applications run as non-root users. If a process cannot r
 
 ### 4. Combine Multiple Sources with Projected Volumes
 
-A projected volume combines several sources into one directory. This is useful when an application expects all runtime inputs under one path but the data comes from different Kubernetes objects. You can project ConfigMaps, Secrets, Downward API fields, and service account tokens into a single volume with explicit paths.
+[A projected volume combines several sources into one directory. This is useful when an application expects all runtime inputs under one path but the data comes from different Kubernetes objects. You can project ConfigMaps, Secrets, Downward API fields, and service account tokens into a single volume with explicit paths](https://kubernetes.io/docs/concepts/storage/projected-volumes/).
 
 ```bash
 k create configmap projected-config \
@@ -387,7 +388,7 @@ spec:
       storage: 1Gi
 ```
 
-The PVC lifecycle is separate from the Pod lifecycle. If the Pod is deleted, the claim remains unless you delete it. The underlying storage behavior after PVC deletion depends on the PersistentVolume reclaim policy and storage class, which is more of an administration concern, but a developer still needs to understand that the PVC is the durable contract the Pod consumes.
+[The PVC lifecycle is separate from the Pod lifecycle. If the Pod is deleted, the claim remains unless you delete it](https://v1-35.docs.kubernetes.io/docs/concepts/storage/persistent-volumes/). The underlying storage behavior after PVC deletion depends on the PersistentVolume reclaim policy and storage class, which is more of an administration concern, but a developer still needs to understand that the PVC is the durable contract the Pod consumes.
 
 ```yaml
 apiVersion: v1
@@ -407,7 +408,7 @@ spec:
       claimName: data-pvc
 ```
 
-PVC access modes describe how the volume may be mounted by nodes, not how many processes can open files inside one container. `ReadWriteOnce` means the volume can be mounted read-write by one node at a time. For many developer workloads, especially a single-replica Pod, that is enough. Multi-replica workloads that write shared files need a storage class and access mode that actually support the intended sharing pattern.
+[PVC access modes describe how the volume may be mounted by nodes, not how many processes can open files inside one container. `ReadWriteOnce` means the volume can be mounted read-write by one node at a time](https://v1-35.docs.kubernetes.io/docs/concepts/storage/persistent-volumes/). For many developer workloads, especially a single-replica Pod, that is enough. Multi-replica workloads that write shared files need a storage class and access mode that actually support the intended sharing pattern.
 
 | Access Mode | Short Name | What It Allows | Common Developer Interpretation |
 |---|---|---|---|
@@ -416,7 +417,7 @@ PVC access modes describe how the volume may be mounted by nodes, not how many p
 | `ReadWriteMany` | RWX | Many nodes can mount the volume read-write. | Required for true multi-node shared writes, if the cluster storage supports it. |
 | `ReadWriteOncePod` | RWOP | One Pod can mount the volume read-write. | Useful when the storage contract must be exclusive to a single Pod. |
 
-A PVC can stay `Pending` when no matching PersistentVolume exists or dynamic provisioning cannot satisfy the request. The Pod that references it will also remain blocked because kubelet cannot mount storage that has not been bound. This is one of the most common volume troubleshooting paths in labs and exams.
+[A PVC can stay `Pending` when no matching PersistentVolume exists or dynamic provisioning cannot satisfy the request. The Pod that references it will also remain blocked because kubelet cannot mount storage that has not been bound](https://kubernetes.io/docs/concepts/storage/persistent-volumes/). This is one of the most common volume troubleshooting paths in labs and exams.
 
 ```bash
 k get pvc
@@ -451,7 +452,7 @@ spec:
       type: Directory
 ```
 
-The `type` field gives Kubernetes a simple expectation about what should exist at the node path. For example, `Directory` requires an existing directory, while `DirectoryOrCreate` creates one if missing. That convenience can hide portability problems, so use it deliberately and avoid treating `hostPath` as a replacement for persistent storage.
+[The `type` field gives Kubernetes a simple expectation about what should exist at the node path. For example, `Directory` requires an existing directory, while `DirectoryOrCreate` creates one if missing. That convenience can hide portability problems, so use it deliberately and avoid treating `hostPath` as a replacement for persistent storage](https://kubernetes.io/docs/concepts/storage/volumes/).
 
 For CKAD-style development work, `hostPath` is rarely the best default. If the application needs durable data, prefer a PVC. If it needs scratch space, prefer `emptyDir`. If it needs node diagnostics or access to a specific node file path, then `hostPath` may be appropriate because the coupling is the point of the design.
 
@@ -529,7 +530,7 @@ spec:
       claimName: data-pvc
 ```
 
-Do not blindly add `fsGroup` to every Pod. It can change ownership behavior for supported volume types and may add startup overhead for large volumes. Use it when the symptom points to group access or when the application image is intentionally non-root and needs write access to a mounted filesystem.
+Do not blindly add `fsGroup` to every Pod. [It can change ownership behavior for supported volume types and may add startup overhead for large volumes](https://v1-35.docs.kubernetes.io/docs/tasks/configure-pod-container/security-context/). Use it when the symptom points to group access or when the application image is intentionally non-root and needs write access to a mounted filesystem.
 
 ### 9. Worked Example: Share Generated Content Between Containers
 
@@ -950,3 +951,12 @@ k delete namespace volumes-lab --ignore-not-found
 ## Next Module
 
 Continue to the [Part 1 Cumulative Quiz](./part1-cumulative-quiz/) to practice designing and debugging Pods, Jobs, multi-container patterns, and volume-backed workloads together.
+
+## Sources
+
+- [kubernetes.io: volumes](https://kubernetes.io/docs/concepts/storage/volumes/) — The Kubernetes volumes concept page explicitly says volumes are provided in `.spec.volumes` and mounted into containers via `.spec.containers[*].volumeMounts`.
+- [kubernetes.io: configure pod configmap](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/) — The ConfigMap task page directly states that each key becomes a file under `mountPath` and that existing files at that directory become inaccessible after the mount.
+- [kubernetes.io: projected volumes](https://kubernetes.io/docs/concepts/storage/projected-volumes/) — The projected volumes concept page directly defines a projected volume as mapping several existing volume sources into the same directory and lists those source types.
+- [v1-35.docs.kubernetes.io: persistent volumes](https://v1-35.docs.kubernetes.io/docs/concepts/storage/persistent-volumes/) — The Persistent Volumes concept page directly defines PVCs as storage requests and documents PVCs and Pods as separate resources with separate lifecycles.
+- [kubernetes.io: persistent volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) — The Persistent Volumes concept page directly says unmatched claims remain unbound and documents dynamic provisioning as the alternative when a matching static volume does not exist.
+- [v1-35.docs.kubernetes.io: security context](https://v1-35.docs.kubernetes.io/docs/tasks/configure-pod-container/security-context/) — The Kubernetes security-context task page directly states that `fsGroup` changes ownership and permissions on supported volumes and that this can slow startup for large volumes.
