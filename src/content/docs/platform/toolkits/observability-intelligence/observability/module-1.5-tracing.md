@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 revision_pending: true
 title: "Module 1.5: Distributed Tracing"
 slug: platform/toolkits/observability-intelligence/observability/module-1.5-tracing
@@ -44,7 +45,7 @@ This module teaches tracing as a production debugging skill, not as a vendor fea
 
 [A trace is the complete recorded journey of one logical operation through a distributed system](https://opentelemetry.io/docs/concepts/signals/traces/). In a simple service, that operation might be one HTTP request handled by one process. In a real platform, the same operation might touch an API gateway, authentication service, checkout service, inventory database, payment provider, message broker, and notification worker. The trace gives that operation one stable identity so the system can be read as a sequence instead of as disconnected logs.
 
-A span is one timed unit of work inside that trace. A span usually represents an inbound HTTP request, an outbound HTTP call, a database query, a cache lookup, a queue publish, or a manually instrumented block of business logic. The span records when the work started, when it ended, which span was its parent, whether it failed, and which attributes describe the work. The parent-child relationship is what turns a pile of timings into a tree that explains causality.
+[A span is one timed unit of work inside that trace](https://opentelemetry.io/docs/concepts/signals/traces/). A span usually represents an inbound HTTP request, an outbound HTTP call, a database query, a cache lookup, a queue publish, or a manually instrumented block of business logic. The span records when the work started, when it ended, which span was its parent, whether it failed, and which attributes describe the work. The parent-child relationship is what turns a pile of timings into a tree that explains causality.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -72,7 +73,7 @@ A span is one timed unit of work inside that trace. A span usually represents an
 
 The first senior habit is to read a trace from the outside in. Start with the root span and ask whether the total duration matches the symptom that users saw. Then follow the longest branch, because latency is often hidden in one branch rather than evenly spread across all services. Finally, inspect error status, retry attributes, and missing children, because a trace can reveal both explicit failures and uninstrumented gaps.
 
-A trace ID identifies the whole request, while a span ID identifies one span inside that trace. A parent span ID connects a child span back to the operation that caused it. When service A calls service B, service A must inject the current trace context into the outbound request, and service B must extract that context before creating its server span. If either side fails, the backend sees two unrelated traces instead of one continuous request story.
+[A trace ID identifies the whole request, while a span ID identifies one span inside that trace](https://opentelemetry.io/docs/concepts/signals/traces/). A parent span ID connects a child span back to the operation that caused it. When service A calls service B, service A must inject the current trace context into the outbound request, and service B must extract that context before creating its server span. If either side fails, the backend sees two unrelated traces instead of one continuous request story.
 
 | Term | What It Means | Debugging Question It Answers |
 |------|---------------|-------------------------------|
@@ -193,7 +194,7 @@ def checkout(cart_id: str) -> dict[str, str]:
     return {"cart_id": cart_id, "status": "confirmed"}
 ```
 
-Install the dependencies into the repository virtual environment or into an equivalent local virtual environment. In this repository, commands use `.venv/bin/python` explicitly because the project standard is to avoid ambiguous interpreter selection. The command below also installs the OpenTelemetry bootstrap instrumentation packages for the libraries it detects. If the bootstrap command reports that a package is already installed, that is fine.
+Install the dependencies into the repository virtual environment or into an equivalent local virtual environment. In this repository, commands use `.venv/bin/python` explicitly because the project standard is to avoid ambiguous interpreter selection. The command below also [installs the OpenTelemetry bootstrap instrumentation packages for the libraries it detects](https://opentelemetry.io/docs/zero-code/python/). If the bootstrap command reports that a package is already installed, that is fine.
 
 ```bash
 .venv/bin/python -m pip install -r requirements.txt
@@ -245,7 +246,7 @@ A shortened console span will look similar to the following. Your exact span IDs
 
 This worked example demonstrates the minimum useful loop for initial instrumentation. First, set a stable `service.name` so traces can be grouped by workload. Second, enable automatic instrumentation for inbound and outbound framework boundaries. Third, add manual spans only where business operations clarify the request story. Fourth, generate known normal, slow, and failing traffic so you can verify the trace shape before depending on it during an incident.
 
-When you move this pattern into Kubernetes, the same environment variables usually become Deployment configuration. The service emits spans to an OpenTelemetry Collector or directly to a backend over OTLP. [A collector is preferred in production because it centralizes retries, batching, redaction, sampling, and routing](https://opentelemetry.io/docs/collector/). Direct-to-backend export can be acceptable in a lab, but it spreads operational policy across every service.
+When you move this pattern into Kubernetes, the same environment variables usually become Deployment configuration. [The service emits spans to an OpenTelemetry Collector or directly to a backend over OTLP](https://opentelemetry.io/docs/collector/). [A collector is preferred in production because it centralizes retries, batching, redaction, sampling, and routing](https://opentelemetry.io/docs/collector/). Direct-to-backend export can be acceptable in a lab, but it spreads operational policy across every service.
 
 ```yaml
 apiVersion: apps/v1
@@ -289,7 +290,7 @@ A tracing backend stores traces and lets engineers retrieve them during investig
 
 Jaeger is often chosen for teams that want a dedicated tracing backend and flexible trace-search workflows, but the exact search experience and storage trade-offs depend on the storage backend and deployment design.
 
-Grafana Tempo takes a different position. Tempo is optimized around cheap trace storage and trace-ID lookup, with strong integration into Grafana workflows. Instead of indexing every span attribute heavily, [Tempo expects you to arrive with a trace ID from metrics exemplars, logs, or TraceQL-supported search paths](https://grafana.com/docs/tempo/latest/introduction/architecture/) depending on deployment mode and version. This can be a better fit for teams already using Prometheus, Grafana, and Loki, especially when trace volume is high and cost pressure is real.
+Grafana Tempo takes a different position. [Tempo is optimized around cheap trace storage and trace-ID lookup, with strong integration into Grafana workflows](https://grafana.com/docs/tempo/latest/introduction/architecture/). Instead of indexing every span attribute heavily, [Tempo expects you to arrive with a trace ID from metrics exemplars, logs, or TraceQL-supported search paths](https://grafana.com/docs/tempo/latest/introduction/architecture/) depending on deployment mode and version. This can be a better fit for teams already using Prometheus, Grafana, and Loki, especially when trace volume is high and cost pressure is real.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -323,7 +324,7 @@ Grafana Tempo takes a different position. Tempo is optimized around cheap trace 
 | Managed tracing service | Reduced backend operations and cloud integration. | Pricing, data residency, and vendor-specific workflow constraints. | Teams that prefer buying storage and UI operations over running them. |
 | OpenTelemetry Collector plus multiple exporters | Flexible routing to several destinations. | More policy design and collector capacity planning. | Migration periods, hybrid environments, and teams separating hot and cold trace paths. |
 
-A practical architecture puts the OpenTelemetry Collector between services and the backend. The collector receives OTLP from applications, batches spans, applies processors, and exports traces to storage. It can also redact attributes, drop noisy spans, add Kubernetes metadata, perform tail sampling, and route different traces to different destinations. This keeps application teams focused on instrumentation while platform teams manage policy centrally.
+A practical architecture puts the OpenTelemetry Collector between services and the backend. [The collector receives OTLP from applications, batches spans, applies processors, and exports traces to storage](https://opentelemetry.io/docs/collector/). It can also redact attributes, drop noisy spans, add Kubernetes metadata, perform tail sampling, and route different traces to different destinations. This keeps application teams focused on instrumentation while platform teams manage policy centrally.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -348,7 +349,7 @@ A practical architecture puts the OpenTelemetry Collector between services and t
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-A minimal Jaeger all-in-one deployment is useful for development and workshops. [It stores data in memory by default, exposes the UI, and accepts OTLP when enabled](https://github.com/jaegertracing/jaeger). It is not a production architecture, because it has one pod, ephemeral storage, and no durable index. Its value is speed: learners can send spans, open a UI, and see trace structure without deploying a storage cluster.
+[A minimal Jaeger all-in-one deployment is useful for development and workshops](https://github.com/jaegertracing/jaeger). [It stores data in memory by default, exposes the UI, and accepts OTLP when enabled](https://github.com/jaegertracing/jaeger). It is not a production architecture, because it has one pod, ephemeral storage, and no durable index. Its value is speed: learners can send spans, open a UI, and see trace structure without deploying a storage cluster.
 
 ```yaml
 apiVersion: v1
@@ -507,7 +508,7 @@ spec:
       targetPort: 4318
 ```
 
-TraceQL gives Tempo users a query language for finding and analyzing traces. You should treat it as an investigation tool rather than a substitute for good service-level metrics. Metrics tell you whether the system is violating an objective. TraceQL helps you inspect the shape of traces matching service, duration, status, or attribute conditions. Logs then explain local details that should not be stuffed into span attributes.
+[TraceQL gives Tempo users a query language for finding and analyzing traces](https://grafana.com/docs/tempo/latest/introduction/architecture/). You should treat it as an investigation tool rather than a substitute for good service-level metrics. Metrics tell you whether the system is violating an objective. TraceQL helps you inspect the shape of traces matching service, duration, status, or attribute conditions. Logs then explain local details that should not be stuffed into span attributes.
 
 ```traceql
 { resource.service.name = "checkout-api" }
@@ -555,7 +556,7 @@ The first calculation is simple enough to do during design reviews. Multiply req
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-[Head-based sampling decides at the beginning of the trace whether the request will be sampled](https://opentelemetry.io/docs/concepts/sampling/). It is simple, cheap, and easy to propagate because the sampled decision travels in the trace context. The weakness is that the decision happens before the system knows whether the request will be slow, fail, or hit an unusual path. A random decision at the start can discard the one trace that would have explained the incident.
+[Head-based sampling decides at the beginning of the trace whether the request will be sampled](https://opentelemetry.io/docs/concepts/sampling/). [It is simple, cheap, and easy to propagate because the sampled decision travels in the trace context](https://opentelemetry.io/docs/concepts/sampling/). The weakness is that the decision happens before the system knows whether the request will be slow, fail, or hit an unusual path. A random decision at the start can discard the one trace that would have explained the incident.
 
 Tail-based sampling waits until enough of the trace has arrived to make a smarter decision. The collector can keep traces with errors, traces above a latency threshold, traces for important routes, or traces for selected tenants. The cost is that [the collector must receive and buffer many traces before deciding, which uses memory and adds operational complexity](https://opentelemetry.io/docs/concepts/sampling/). Tail sampling is powerful, but it is not free.
 
@@ -628,7 +629,7 @@ service:
         - otlp/jaeger
 ```
 
-Sampling depends on correct span status and attributes. If application code catches an exception, logs it, returns a fallback, and never marks the span as error, a tail-sampling error policy may drop the trace. If the route attribute contains raw IDs instead of route templates, policies become noisy and expensive. If services disagree on propagation format, the collector sees fragments rather than complete traces. Sampling is therefore not just a collector problem; it is an instrumentation quality problem.
+[Sampling depends on correct span status and attributes](https://opentelemetry.io/docs/concepts/sampling/). If application code catches an exception, logs it, returns a fallback, and never marks the span as error, a tail-sampling error policy may drop the trace. If the route attribute contains raw IDs instead of route templates, policies become noisy and expensive. If services disagree on propagation format, the collector sees fragments rather than complete traces. Sampling is therefore not just a collector problem; it is an instrumentation quality problem.
 
 > **Stop and think:** A team says, "We sample ten percent of all traces, so we should have enough data." Their production error rate is tiny but business-critical, and some failures happen only once every few minutes. What would you challenge in their reasoning, and what sampling rule would you add first?
 
@@ -638,7 +639,7 @@ The weak assumption is that random coverage guarantees diagnostic coverage. Ten 
 
 Observability becomes much stronger when the three major signals share identifiers. Metrics are often the fastest way to notice a broad symptom, such as elevated latency or error rate. Traces show where a specific request spent time or crossed a failing dependency. Logs provide local detail, such as the exact exception message, retry count, database lock, or business rule decision. Correlation means you can move between these signals without starting the investigation over each time.
 
-The best incident workflow often starts with metrics because metrics are compact and objective-oriented. A latency alert points to a service-level objective burn, a route, or a dependency. [An exemplar can attach a trace ID to a specific metric observation](https://grafana.com/docs/grafana/latest/fundamentals/exemplars/), letting an engineer jump from a slow histogram bucket to a real trace. The trace then identifies the suspicious span, and logs filtered by `trace_id` reveal the local details around that span.
+The best incident workflow often starts with metrics because metrics are compact and objective-oriented. A latency alert points to a service-level objective burn, a route, or a dependency. [An exemplar can attach a trace ID to a specific metric observation](https://grafana.com/docs/grafana/latest/fundamentals/exemplars/), [letting an engineer jump from a slow histogram bucket to a real trace](https://grafana.com/docs/grafana/latest/fundamentals/exemplars/). The trace then identifies the suspicious span, and logs filtered by `trace_id` reveal the local details around that span.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────────────┐
@@ -699,7 +700,7 @@ A common senior-level design question is which attributes belong on spans, logs,
 | Traces | Request path, timing, dependency shape, and causal relationships. | Service name, operation name, status, route template, dependency attributes, and trace ID. | Huge payloads, secrets, and spans for every tiny helper call. |
 | Logs | Local details, exceptions, retries, decisions, and audit-style facts. | Trace ID, span ID, severity, message, error type, and structured context. | Being the main place where cross-service request identity exists. |
 
-Trace context can also cross asynchronous boundaries, but it usually needs explicit attention. HTTP libraries commonly propagate headers automatically once instrumented. Messaging systems vary by client and instrumentation maturity, so a producer may need to inject context into message headers and a consumer may need to extract it before starting work. If this is missing, [the producer trace and consumer trace become disconnected](https://opentelemetry.io/docs/concepts/signals/traces/), which is exactly when teams lose visibility into background workflows.
+Trace context can also cross asynchronous boundaries, but it usually needs explicit attention. HTTP libraries commonly propagate headers automatically once instrumented. Messaging systems vary by client and instrumentation maturity, so [a producer may need to inject context into message headers and a consumer may need to extract it before starting work](https://opentelemetry.io/docs/concepts/signals/traces/). If this is missing, [the producer trace and consumer trace become disconnected](https://opentelemetry.io/docs/concepts/signals/traces/), which is exactly when teams lose visibility into background workflows.
 
 ```python
 from opentelemetry import propagate, trace
@@ -725,7 +726,7 @@ def consume_order_created(message) -> None:
         process_order(message.value)
 ```
 
-The careful part is privacy and data minimization. Trace data often travels farther and is retained differently from application logs. Do not put secrets, tokens, full addresses, payment details, or sensitive personal data into span attributes. If a support workflow needs to find traces by business identifiers, prefer stable internal IDs that are permitted by your data policy, and consider hashing or redaction at the collector. Tracing is evidence, and evidence needs governance.
+The careful part is privacy and data minimization. Trace data often travels farther and is retained differently from application logs. [Do not put secrets, tokens, full addresses, payment details, or sensitive personal data into span attributes](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html). If a support workflow needs to find traces by business identifiers, prefer stable internal IDs that are permitted by your data policy, and consider hashing or redaction at the collector. Tracing is evidence, and evidence needs governance.
 
 ### 6. Production Operations: Make Tracing Boring Before The Incident
 
@@ -755,9 +756,9 @@ Start by defining trace coverage for critical journeys. A checkout journey might
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-Set service resource attributes consistently. `service.name` should be stable and human-readable. `service.version` should let you compare traces before and after a deploy. `deployment.environment`, `k8s.namespace.name`, and cluster attributes help separate production from staging and one cluster from another. Without consistent resource attributes, trace queries become brittle and incident responders waste time guessing which workload emitted a span.
+[Set service resource attributes consistently](https://opentelemetry.io/docs/concepts/resources/). `service.name` should be stable and human-readable. `service.version` should let you compare traces before and after a deploy. `deployment.environment`, `k8s.namespace.name`, and cluster attributes help separate production from staging and one cluster from another. Without consistent resource attributes, trace queries become brittle and incident responders waste time guessing which workload emitted a span.
 
-Use route templates instead of raw paths. The attribute `http.route=/checkout/{cart_id}` is useful because many requests aggregate under one route. The attribute `http.target=/checkout/9f31a2` is useful in logs but dangerous as a metric or high-cardinality span search dimension. The same principle applies to database statements, queue names, tenant identifiers, and user identifiers. Useful observability data is descriptive without being unbounded.
+[Use route templates instead of raw paths](https://opentelemetry.io/docs/specs/semconv/http/http-spans/). The attribute `http.route=/checkout/{cart_id}` is useful because many requests aggregate under one route. The attribute `http.target=/checkout/9f31a2` is useful in logs but dangerous as a metric or high-cardinality span search dimension. The same principle applies to database statements, queue names, tenant identifiers, and user identifiers. Useful observability data is descriptive without being unbounded.
 
 Plan collector capacity as part of the platform, not as a sidecar afterthought. Tail sampling needs memory because traces must wait for a decision. Batching needs CPU and network capacity. Redaction processors need testing so they remove sensitive fields without deleting the attributes responders need. Exporters need retry behavior that does not back up indefinitely when the backend is down. The collector is now on the telemetry path for many services, so it deserves operational ownership.
 
@@ -1001,7 +1002,7 @@ Success criteria for this step:
 
 ### Step 3: Deploy A Traced Demo Application
 
-The HotROD demo is intentionally small but useful for trace reading because one user action creates several spans. It is not a model for production code structure, but it gives you a working trace source without building a custom image. The important platform lesson is to inspect whether the trace tree helps you answer where latency appears.
+[The HotROD demo is intentionally small but useful for trace reading because one user action creates several spans](https://github.com/jaegertracing/jaeger/tree/main/examples/hotrod). It is not a model for production code structure, but it gives you a working trace source without building a custom image. The important platform lesson is to inspect whether the trace tree helps you answer where latency appears.
 
 ```bash
 k apply -f - <<'EOF'
@@ -1181,3 +1182,8 @@ Continue to [GitOps & Deployments Toolkit](/platform/toolkits/cicd-delivery/gito
 - [OpenTelemetry: Sampling](https://opentelemetry.io/docs/concepts/sampling/) — Backs head-vs-tail sampling concepts, cost-control rationale, and practical guidance about reducing trace volume while preserving useful signal.
 - [grafana.com: exemplars](https://grafana.com/docs/grafana/latest/fundamentals/exemplars/) — Grafana's exemplar docs directly explain exemplars as links from metric observations to individual traces and show drill-down from metrics and Loki logs.
 - [Grafana Loki: Query Loki (LogQL)](https://grafana.com/docs/loki/latest/logql/) — Backs Loki’s label-based query model, log streams, compressed chunk storage, label indexing instead of full-content indexing, and LogQL basics for log exploration and metric extraction from logs.
+- [opentelemetry.io: python](https://opentelemetry.io/docs/zero-code/python/) — The OpenTelemetry Python zero-code instrumentation docs cover bootstrap installation, opentelemetry-instrument, and exporter configuration.
+- [cheatsheetseries.owasp.org: Logging Cheat Sheet.html](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html) — OWASP logging guidance directly warns against recording sensitive data and supports redaction/minimization principles for telemetry-like records.
+- [opentelemetry.io: resources](https://opentelemetry.io/docs/concepts/resources/) — OpenTelemetry resource documentation defines resources and resource attributes used to identify telemetry-producing entities.
+- [opentelemetry.io: http spans](https://opentelemetry.io/docs/specs/semconv/http/http-spans/) — OpenTelemetry HTTP semantic conventions document route-template attributes and HTTP span attributes.
+- [github.com: hotrod](https://github.com/jaegertracing/jaeger/tree/main/examples/hotrod) — The Jaeger HotROD example repository is the primary source for the demo application used in the lab.
