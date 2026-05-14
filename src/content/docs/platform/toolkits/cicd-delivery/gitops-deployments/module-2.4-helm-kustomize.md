@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 2.4: Helm & Kustomize"
 slug: platform/toolkits/cicd-delivery/gitops-deployments/module-2.4-helm-kustomize
 sidebar:
@@ -28,7 +29,7 @@ A platform engineer at a payments company once reviewed a production incident th
 
 That pattern breaks quietly before it breaks loudly. The first failure is usually wasted review time, because engineers must inspect entire manifests to understand one environment-specific difference. The second failure is drift, because a critical field gets fixed in one environment and forgotten in another. The third failure is an incident, because production no longer represents a controlled promotion of tested state; it becomes a manually maintained sibling of tested state.
 
-Helm and Kustomize solve the same broad problem from different angles. Helm packages Kubernetes applications as charts with templates, defaults, dependencies, and release history. Kustomize keeps Kubernetes YAML recognizable and applies structured transformations through bases, overlays, patches, generators, and image substitutions. A senior platform engineer needs both tools, not because every deployment should use both, but because every organization eventually has both kinds of problems: reusable application packaging and environment-specific customization.
+Helm and Kustomize solve the same broad problem from different angles. [Helm packages Kubernetes applications as charts with templates, defaults, dependencies, and release history](https://helm.sh/docs/topics/charts/). [Kustomize keeps Kubernetes YAML recognizable and applies structured transformations through bases, overlays, patches, generators, and image substitutions](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/). A senior platform engineer needs both tools, not because every deployment should use both, but because every organization eventually has both kinds of problems: reusable application packaging and environment-specific customization.
 
 This module teaches the tools through the deployment decisions they support. You will start with the packaging problem Helm solves, then switch to the overlay problem Kustomize solves, then combine them in GitOps patterns used by ArgoCD and Flux. Along the way, you will practice predicting rendered output, debugging bad changes before they reach a cluster, and choosing the smallest configuration mechanism that makes the system easier to review.
 
@@ -94,7 +95,7 @@ A good rule is to put invariant safety requirements in the shared layer and true
 
 ## 2. Helm Fundamentals: Packaging Applications
 
-Helm treats an application as a package called a chart. A chart contains metadata, default values, Kubernetes templates, optional helper templates, tests, and dependency declarations. When Helm renders a chart, it combines the templates with values and produces ordinary Kubernetes manifests that can be installed, upgraded, rolled back, inspected, and stored as a release.
+Helm treats an application as a package called a chart. [A chart contains metadata, default values, Kubernetes templates, optional helper templates, tests, and dependency declarations](https://helm.sh/docs/topics/charts/). When Helm renders a chart, it combines the templates with values and produces ordinary Kubernetes manifests that can be installed, upgraded, rolled back, inspected, and stored as a release.
 
 The package model is useful when the application is reused across teams, clusters, or customers. A chart can encode common naming conventions, labels, resource templates, optional features, and dependencies such as PostgreSQL or Redis. That does not mean every possible choice should become a value. The best charts expose meaningful variation while keeping security, identity, and operational invariants simple to review.
 
@@ -119,7 +120,7 @@ my-app/
 ────────────────────────────────────────────────────────────────────
 ```
 
-The `Chart.yaml` file describes the package rather than the deployed runtime state. Its `version` describes the chart package version, while `appVersion` describes the application version. Those two numbers may move together in simple projects, but they are not the same thing. A chart bug fix can change the chart version without changing the application image, and an application release can change `appVersion` while chart structure stays stable.
+The `Chart.yaml` file describes the package rather than the deployed runtime state. [Its `version` describes the chart package version, while `appVersion` describes the application version](https://helm.sh/docs/topics/charts/). Those two numbers may move together in simple projects, but they are not the same thing. A chart bug fix can change the chart version without changing the application image, and an application release can change `appVersion` while chart structure stays stable.
 
 ```yaml
 apiVersion: v2
@@ -255,7 +256,7 @@ spec:
               containerPort: 80
 ```
 
-**Active check:** Before reading the next paragraph, predict what would happen if `image.tag` were supplied as the unquoted value `1.10` in a YAML values file. Would Helm preserve it as the string `1.10`, or could YAML parsing change the value before the template sees it? The practical lesson is that image tags, environment variable values, and anything that must remain textual should be quoted in values files and usually quoted again in rendered YAML.
+**Active check:** Before reading the next paragraph, predict what would happen if `image.tag` were supplied as the unquoted value `1.10` in a YAML values file. Would Helm preserve it as the string `1.10`, or could [YAML parsing change the value before the template sees it](https://helm.sh/docs/chart_template_guide/yaml_techniques/)? The practical lesson is that image tags, environment variable values, and anything that must remain textual should be quoted in values files and usually quoted again in rendered YAML.
 
 Helm helper templates reduce repetition, especially for names and labels. They also centralize decisions that must remain consistent across resources. A Service selector must match the Pod template labels, so it is safer to define selector labels once and include them everywhere than to type them manually in each template.
 
@@ -285,7 +286,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 ```
 
-Helm's release object is another reason teams adopt it. When you run `helm install`, Helm stores release information in the cluster. When you run `helm upgrade`, Helm renders a new manifest and compares it to the previous release. When you run `helm rollback`, Helm can move the release back to a previous revision. This is useful, but it also creates a debugging trap: Helm's release status is not the same thing as application health.
+Helm's release object is another reason teams adopt it. When you run `helm install`, [Helm stores release information in the cluster](https://helm.sh/docs/v3/faq/changes_since_helm2/). When you run `helm upgrade`, Helm renders a new manifest and compares it to the previous release. When you run `helm rollback`, Helm can move the release back to a previous revision. This is useful, but it also creates a debugging trap: Helm's release status is not the same thing as application health.
 
 ```bash
 helm lint ./my-app
@@ -372,7 +373,7 @@ resources:
 
 A senior chart design habit is to distinguish release variation from environment policy. Release variation includes image tags, replica counts, feature enablement, and dependency toggles. Environment policy includes labels required by the platform, node placement rules, admission-control requirements, and organization-wide security settings. You can put both in Helm, but you should notice when environment policy is being repeated across many charts; that may be a sign that Kustomize overlays or platform admission policies would be more reviewable.
 
-Schema validation helps keep values files honest. A `values.schema.json` file lets Helm validate supplied values before rendering. It cannot prove that your application will behave correctly, but it can catch missing required fields, wrong types, invalid ranges, and unsafe values such as `latest` when your release process requires immutable tags.
+Schema validation helps keep values files honest. [A `values.schema.json` file lets Helm validate supplied values before rendering](https://helm.sh/docs/topics/charts/#schema-files). It cannot prove that your application will behave correctly, but it can catch missing required fields, wrong types, invalid ranges, and unsafe values such as `latest` when your release process requires immutable tags.
 
 ```json
 {
@@ -492,7 +493,7 @@ This prediction moment is not just a learning trick. It is the mental model seni
 
 ## 4. Kustomize Fundamentals: Bases, Overlays, and Patches
 
-Kustomize starts with ordinary Kubernetes YAML and a `kustomization.yaml` file. A base is a reusable set of resources. An overlay references the base and applies transformations such as namespace assignment, name prefixes, labels, annotations, patches, image changes, ConfigMap generation, Secret generation, replacements, and components.
+[Kustomize starts with ordinary Kubernetes YAML and a `kustomization.yaml` file](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/). A base is a reusable set of resources. An overlay references the base and applies transformations such as namespace assignment, name prefixes, labels, annotations, patches, image changes, ConfigMap generation, Secret generation, replacements, and components.
 
 The strongest feature of Kustomize is reviewability. A base Deployment looks like a Deployment, not like a Go template. A production overlay can be small enough to show only the production differences. That makes Kustomize especially useful for your own applications, where you already control the manifests and mainly need environment variation without duplication.
 
@@ -643,7 +644,7 @@ spec:
 
 **Active check:** Your production patch targets `kind: Deployment` but does not specify `name` or `labelSelector`. What happens when the base later gains a second Deployment for a worker process? The patch may apply more broadly than intended, or it may fail depending on the patch content. A precise target is not ceremony; it is how you keep a future base change from silently widening the blast radius.
 
-Kustomize generators create ConfigMaps and Secrets from literals, files, or environment files. By default, generated resource names include a content hash, which helps Kubernetes roll workloads when referenced configuration changes. This behavior is useful, but it must be understood by GitOps reviewers because the name in the rendered output may not match the base name exactly.
+Kustomize generators create ConfigMaps and Secrets from literals, files, or environment files. By default, [generated resource names include a content hash](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/), which helps Kubernetes roll workloads when referenced configuration changes. This behavior is useful, but it must be understood by GitOps reviewers because the name in the rendered output may not match the base name exactly.
 
 ```yaml
 configMapGenerator:
@@ -721,7 +722,7 @@ components:
   - ../../components/security
 ```
 
-The core Kustomize command is `kustomize build`, which renders the final manifests without applying them. Because Kustomize is built into `kubectl`, you can also run `kubectl apply -k` and `kubectl diff -k`. In this module's examples, `k` means `kubectl` after you define the alias in your shell with `alias k=kubectl`.
+The core Kustomize command is `kustomize build`, which renders the final manifests without applying them. Because [Kustomize is built into `kubectl`](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/), you can also run `kubectl apply -k` and `kubectl diff -k`. In this module's examples, `k` means `kubectl` after you define the alias in your shell with `alias k=kubectl`.
 
 ```bash
 kustomize build overlays/production
@@ -752,7 +753,7 @@ Apply only after the diff matches the intent:
 ────────────────────────────────────────────────────────────────────
 ```
 
-One subtle Kustomize risk involves labels and selectors. Older examples often use `commonLabels`, which may add labels to selectors as well as metadata. Changing selectors on an existing Deployment can fail because Kubernetes treats selectors as immutable. Newer label transformer patterns allow you to add labels to metadata without touching selectors, which is safer for existing workloads.
+One subtle Kustomize risk involves labels and selectors. Older examples often use [`commonLabels`, which may add labels to selectors as well as metadata](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/). Changing selectors on an existing Deployment can fail because [Kubernetes treats selectors as immutable](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). Newer label transformer patterns allow you to add labels to metadata without touching selectors, which is safer for existing workloads.
 
 ```yaml
 labels:
@@ -870,7 +871,7 @@ helm template my-app ./chart -f chart/values.yaml > base/all.yaml
 kustomize build overlays/production
 ```
 
-ArgoCD supports Helm sources and Kustomize sources, but combining them depends on repository structure and controller capabilities. In practice, many teams keep the Helm chart as the primary source and use ArgoCD configuration for values, or they use a Kustomize layer that points to rendered or remote resources. The goal is not to use every feature in one Application; the goal is to make the final desired state reproducible and reviewable.
+[ArgoCD supports Helm sources](https://argo-cd.readthedocs.io/en/stable/user-guide/helm/) and [Kustomize sources](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/), but combining them depends on repository structure and controller capabilities. In practice, many teams keep the Helm chart as the primary source and use ArgoCD configuration for values, or they use a Kustomize layer that points to rendered or remote resources. The goal is not to use every feature in one Application; the goal is to make the final desired state reproducible and reviewable.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -897,7 +898,7 @@ spec:
       selfHeal: true
 ```
 
-Flux has a clear HelmRelease model and supports Kustomize post-renderers for Helm releases. This pattern is valuable when the chart is external, but the platform team needs to apply standardized changes after rendering. The patch is recorded in Git and reconciled by Flux, so it remains part of desired state rather than a manual mutation.
+Flux has a clear HelmRelease model and [supports Kustomize post-renderers for Helm releases](https://fluxcd.io/flux/components/helm/helmreleases/#post-renderers). This pattern is valuable when the chart is external, but the platform team needs to apply standardized changes after rendering. The patch is recorded in Git and reconciled by Flux, so it remains part of desired state rather than a manual mutation.
 
 ```yaml
 apiVersion: helm.toolkit.fluxcd.io/v2
@@ -1008,7 +1009,7 @@ Source decision:
 
 **Stop and think:** If `helm get manifest` shows the correct image tag but the live Deployment shows an older image tag, which layer is suspect? The answer is probably not the chart template. You would check GitOps reconciliation status, drift, paused automation, failed syncs, or another controller changing the object.
 
-Jsonnet is worth recognizing because some advanced platform teams use it for Kubernetes configuration. Jsonnet treats configuration as programmable data and is often used through tools such as Tanka. It can solve duplication with functions and object composition rather than Helm templates or Kustomize patches. In most Kubernetes organizations, Helm and Kustomize are still the dominant tools, so you should learn them first and treat Jsonnet as a specialized pattern you may encounter in mature platform repositories.
+Jsonnet is worth recognizing because some advanced platform teams use it for Kubernetes configuration. [Jsonnet treats configuration as programmable data and is often used through tools such as Tanka](https://github.com/grafana/tanka). It can solve duplication with functions and object composition rather than Helm templates or Kustomize patches. In most Kubernetes organizations, Helm and Kustomize are still the dominant tools, so you should learn them first and treat Jsonnet as a specialized pattern you may encounter in mature platform repositories.
 
 ## 7. Worked Example: Refactoring Drift into Helm Plus Kustomize
 
@@ -1288,10 +1289,10 @@ The lesson is that configuration mechanisms should reduce review burden, not tra
 
 ## Did You Know?
 
-- **[Helm v3 removed Tiller entirely](https://helm.sh/docs/v3/faq/changes_since_helm2/)**, which means modern Helm no longer requires the Helm v2 server-side component that created security and RBAC concerns.
-- **[Kustomize is built into kubectl](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization)**, so you can use `kubectl apply -k` for overlays without installing a separate binary in many workflows.
-- **Helm charts can include `values.schema.json`**, allowing invalid configuration to fail during rendering instead of waiting for a workload to fail after deployment.
-- **Jsonnet and Tanka solve a related configuration problem**, but they use programmable data composition rather than Helm's template package model or Kustomize's patch-and-overlay model.
+- **[Helm v3 removed Tiller entirely](https://helm.sh/docs/v3/faq/changes_since_helm2/)**, which means [modern Helm no longer requires the Helm v2 server-side component that created security and RBAC concerns](https://helm.sh/docs/v3/faq/changes_since_helm2/).
+- **[Kustomize is built into kubectl](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization)**, so [you can use `kubectl apply -k` for overlays without installing a separate binary in many workflows](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/).
+- **[Helm charts can include `values.schema.json`](https://helm.sh/docs/topics/charts/#schema-files)**, allowing invalid configuration to fail during rendering instead of waiting for a workload to fail after deployment.
+- **[Jsonnet and Tanka solve a related configuration problem](https://github.com/grafana/tanka)**, but they use programmable data composition rather than Helm's template package model or Kustomize's patch-and-overlay model.
 
 ## Common Mistakes
 
@@ -1733,3 +1734,11 @@ Continue to [CI/CD Pipelines Toolkit](/platform/toolkits/cicd-delivery/ci-cd-pip
 - [helm.sh: changes since helm2](https://helm.sh/docs/v3/faq/changes_since_helm2/) — Helm's official Helm 2 to Helm 3 changes page directly explains Tiller's removal and the RBAC/security motivation.
 - [kubernetes.io: kustomization](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization) — The Kubernetes docs explicitly state that kubectl has supported Kustomize since 1.14 and show `kubectl apply -k`.
 - [Flux HelmRelease Post Renderers](https://v2-0.docs.fluxcd.io/flux/components/helm/helmreleases/) — Useful for the module's Helm-plus-Kustomize pattern because it documents Kustomize post-rendering in Flux HelmRelease.
+- [kubernetes.io: kustomization](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) — The Kubernetes Kustomize task page documents resources, overlays, generators, patches, images, and kubectl integration.
+- [helm.sh: yaml techniques](https://helm.sh/docs/chart_template_guide/yaml_techniques/) — Helm's YAML techniques appendix explicitly describes scalar type inference for unquoted and quoted values.
+- [helm.sh: charts](https://helm.sh/docs/topics/charts/#schema-files) — Helm's schema file documentation describes JSON Schema validation for values.
+- [kubernetes.io: deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) — The Kubernetes Deployment documentation states that .spec.selector is immutable after creation.
+- [argo-cd.readthedocs.io: helm](https://argo-cd.readthedocs.io/en/stable/user-guide/helm/) — The Argo CD Helm user guide documents using Helm charts and values in Argo CD Applications.
+- [argo-cd.readthedocs.io: kustomize](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/) — The Argo CD Kustomize user guide documents Kustomize applications and configuration.
+- [fluxcd.io: helmreleases](https://fluxcd.io/flux/components/helm/helmreleases/#post-renderers) — The Flux HelmRelease documentation directly documents postRenderers with Kustomize patches and images.
+- [github.com: tanka](https://github.com/grafana/tanka) — The Tanka repository describes it as flexible reusable Kubernetes configuration based on Jsonnet.
