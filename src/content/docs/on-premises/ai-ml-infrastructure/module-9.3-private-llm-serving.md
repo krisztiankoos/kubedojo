@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Private LLM Serving"
 description: "Deploy, scale, and optimize large language models on bare-metal Kubernetes using vLLM, TGI, and KServe."
 slug: on-premises/ai-ml-infrastructure/module-9.3-private-llm-serving
@@ -75,7 +76,7 @@ The operator's job is to keep the API view and the engine view connected. The AP
 
 ## The Physics of LLM Inference
 
-LLM inference has two phases that stress hardware differently. During prefill, the model processes the input prompt and builds attention state for the sequence; this phase is often compute-heavy because the GPU can run large matrix operations over the prompt. During decode, the model emits output tokens one at a time; this phase repeatedly reads weights and attention state from high-bandwidth GPU memory, so memory bandwidth and cache management dominate more often than raw floating-point peak. If you tune a serving stack without separating these phases, you will misread both latency and utilization.
+LLM inference has two phases that stress hardware differently. During prefill, the model processes the input prompt and builds attention state for the sequence; this phase is often compute-heavy because the GPU can run large matrix operations over the prompt. During decode, the model emits output tokens one at a time; this phase repeatedly reads weights and attention state from high-bandwidth GPU memory, so [memory bandwidth and cache management dominate more often than raw floating-point peak](https://arxiv.org/abs/2601.05047). If you tune a serving stack without separating these phases, you will misread both latency and utilization.
 
 1. **Prefill phase, also called time to first token or TTFT:** The model processes the prompt all at once and prepares the first generated token. Long documents, large retrieved contexts, and verbose chat history increase prefill work and KV cache allocation.
 2. **Decode phase, often measured as time per output token or TPOT:** The model generates one token after another autoregressively. Long answers, code generation, and batch jobs keep decode running long after the first token appears.
@@ -99,7 +100,7 @@ A single request moves through the serving engine in stages, and each stage give
 
 Traditional static batching wastes GPU work when sequence lengths vary because the batch behaves like a group reservation: if one request finishes early, its slot can sit idle until the longest request completes. Modern LLM engines use continuous batching, also called in-flight batching, so finished sequences can leave and new sequences can enter between decoding iterations. This keeps memory bandwidth busier and improves throughput under mixed traffic, but it also means the runtime needs a careful way to remember the attention state for sequences that are still active.
 
-PagedAttention solves the cache-fragmentation problem by treating the KV cache more like virtual memory than one giant contiguous buffer per request. The engine divides cache memory into fixed-size blocks, maps each active sequence to the blocks it needs, and returns blocks when a sequence completes or is evicted. This is the mechanism that lets continuous batching admit new work without constantly copying huge cache regions, and it is why context length policy has a direct effect on how many users the endpoint can serve.
+[PagedAttention solves the cache-fragmentation problem](https://arxiv.org/abs/2309.06180) by treating the KV cache more like virtual memory than one giant contiguous buffer per request. The engine divides cache memory into fixed-size blocks, maps each active sequence to the blocks it needs, and returns blocks when a sequence completes or is evicted. This is the mechanism that lets continuous batching admit new work without constantly copying huge cache regions, and it is why context length policy has a direct effect on how many users the endpoint can serve.
 
 ```text
 +----------------------+        +--------------------------------------+
@@ -145,15 +146,15 @@ Do not tune only for maximum tokens per second. A batch summarization service ma
 
 ## Inference Engine Landscape
 
-The inference engine dictates container flags, model formats, metrics, request APIs, multi-GPU behavior, and many failure modes. vLLM is commonly chosen for high-throughput GPU serving, continuous batching, PagedAttention, and OpenAI-compatible API serving. Text Generation Inference, or TGI, is common where Hugging Face model lifecycle and production server features are already part of the platform. Ollama is useful for local development, edge-style experiments, and small internal tools, but it is rarely the first choice for a shared high-concurrency enterprise endpoint.
+The inference engine dictates container flags, model formats, metrics, request APIs, multi-GPU behavior, and many failure modes. [vLLM is commonly chosen for high-throughput GPU serving, continuous batching, PagedAttention, and OpenAI-compatible API serving](https://github.com/vllm-project/vllm). Text Generation Inference, or TGI, is common where Hugging Face model lifecycle and production server features are already part of the platform. Ollama is useful for local development, edge-style experiments, and small internal tools, but it is rarely the first choice for a shared high-concurrency enterprise endpoint.
 
 | Feature / Engine | vLLM | Text Generation Inference (TGI) | Ollama |
 | :--- | :--- | :--- | :--- |
 | **Primary Use Case** | High-throughput production serving | Production serving (Hugging Face ecosystem) | Local dev, edge, simple low-scale deployments |
 | **KV Cache Mgmt** | PagedAttention | PagedAttention | Static / Basic |
-| **Quantization** | AWQ, GPTQ, FP8, Marlin | AWQ, GPTQ, EETQ, BitsAndBytes | GGUF |
-| **API Format** | OpenAI Compatible API | Custom REST, OpenAI wrapper available | Custom REST, OpenAI compatible API |
-| **Multi-GPU** | Tensor Parallelism (Ray/NCCL) | Tensor Parallelism (NCCL) | Limited/Basic |
+| **Quantization** | AWQ, GPTQ, FP8, Marlin | [AWQ, GPTQ, EETQ, BitsAndBytes](https://huggingface.co/docs/text-generation-inference/en/conceptual/quantization) | GGUF |
+| **API Format** | OpenAI Compatible API | [Custom REST, OpenAI wrapper available](https://huggingface.co/docs/text-generation-inference/messages_api) | Custom REST, OpenAI compatible API |
+| **Multi-GPU** | Tensor Parallelism (Ray/NCCL) | [Tensor Parallelism (NCCL)](https://huggingface.co/docs/text-generation-inference/conceptual/tensor_parallelism) | Limited/Basic |
 | **Metrics** | Prometheus endpoint built-in | Prometheus endpoint built-in | None native (requires exporters) |
 
 Commercial serving paths also appear in private Kubernetes environments. NVIDIA NIM packages optimized containers and supported model paths for teams that value vendor-tested runtime packaging, while NVIDIA Triton Inference Server can be useful when the platform already standardizes on multi-backend inference and TensorRT-LLM style optimization. These options can reduce operational ambiguity, but they do not remove the need to set context policy, provision GPUs, observe latency, and test the real workload.
@@ -220,7 +221,7 @@ nodeSelector:
   nvidia.com/gpu.present: "true"
 ```
 
-NCCL, the NVIDIA Collective Communications Library, becomes part of your serving reliability story when tensor-parallel workers need to coordinate across GPUs. NCCL failures often look like random model crashes unless you connect them to shared memory, topology, CPU contention, and timeout behavior. The default container shared memory allocation can be too small, so multi-GPU inference commonly mounts a memory-backed `emptyDir` at `/dev/shm`.
+[NCCL, the NVIDIA Collective Communications Library](https://github.com/NVIDIA/nccl), becomes part of your serving reliability story when tensor-parallel workers need to coordinate across GPUs. NCCL failures often look like random model crashes unless you connect them to shared memory, topology, CPU contention, and timeout behavior. The default container shared memory allocation can be too small, so multi-GPU inference commonly mounts a memory-backed `emptyDir` at `/dev/shm`.
 
 ```yaml
 volumeMounts:
@@ -239,7 +240,7 @@ The `2Gi` value is a starting point from the preserved lab pattern, not a univer
 
 Running raw Deployments of vLLM is a useful first step because it exposes the mechanics: resource requests, model loading, cache volumes, service routing, probes, and logs. Production teams often need a higher-level serving abstraction once they operate multiple models, rollout patterns, autoscaling policies, traffic splits, and governance rules. KServe can provide that Kubernetes-native abstraction through custom resources, but it does not remove the physics of model memory, cache pressure, or request shape.
 
-KServe is useful when the organization wants a standard API for model serving across runtimes and model types. It can integrate with Knative Serving for request-based routing and autoscaling, or run in modes that behave more like conventional Kubernetes Deployments depending on installation and runtime choices. The important point is that the controller organizes serving resources; the selected runtime still needs enough GPU memory, a sane context limit, a useful metrics path, and an authentication boundary.
+KServe is useful when the organization wants a standard API for model serving across runtimes and model types. [It can integrate with Knative Serving for request-based routing and autoscaling](https://github.com/kserve/kserve), or run in modes that behave more like conventional Kubernetes Deployments depending on installation and runtime choices. The important point is that the controller organizes serving resources; the selected runtime still needs enough GPU memory, a sane context limit, a useful metrics path, and an authentication boundary.
 
 ```mermaid
 graph TD
@@ -631,8 +632,8 @@ The framework is not a substitute for measurement. It helps you decide what to m
 
 1. LLM decode can be memory-bandwidth-bound, so a GPU may show modest compute utilization while still being the limiting resource for output token speed.
 2. vLLM's `--gpu-memory-utilization` default has historically been documented as `0.9`, which is a planning limit for the vLLM instance rather than a guarantee that every model will start.
-3. TGI exposes Prometheus metrics such as queue duration, generated tokens, input length, and request duration, which makes it possible to separate demand from generation speed.
-4. Kubernetes device plugins advertise GPUs as extended resources such as `nvidia.com/gpu`, so a pod can be `Pending` for GPU capacity reasons even when CPU and memory are available.
+3. [TGI exposes Prometheus metrics such as queue duration, generated tokens, input length, and request duration](https://huggingface.co/docs/text-generation-inference/main/en/reference/metrics), which makes it possible to separate demand from generation speed.
+4. [Kubernetes device plugins advertise GPUs as extended resources such as `nvidia.com/gpu`, so a pod can be `Pending` for GPU capacity reasons even when CPU and memory are available](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/).
 
 ## Common Mistakes
 
@@ -1018,6 +1019,16 @@ If multi-GPU experiments show NCCL errors, confirm `/dev/shm` is mounted, inspec
 - https://knative.dev/docs/serving/autoscaling/concurrency/
 - https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/index.html
 - https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/overview.html
+- [arxiv.org: 2309.06180](https://arxiv.org/abs/2309.06180) — This is a named paper-backed technique plus a specific benchmark result.
+- [arxiv.org: 2601.05047](https://arxiv.org/abs/2601.05047) — This is a specific technical performance characterization that should point to a primary paper.
+- [github.com: vllm](https://github.com/vllm-project/vllm) — These are concrete product capabilities stated in the upstream project README.
+- [huggingface.co: messages api](https://huggingface.co/docs/text-generation-inference/messages_api) — This is a precise API-compatibility claim documented by the vendor.
+- [huggingface.co: quantization](https://huggingface.co/docs/text-generation-inference/en/conceptual/quantization) — This is an enumerated capability list from the vendor docs.
+- [huggingface.co: metrics](https://huggingface.co/docs/text-generation-inference/main/en/reference/metrics) — These are exact exported metric names and should cite the metrics reference.
+- [huggingface.co: tensor parallelism](https://huggingface.co/docs/text-generation-inference/conceptual/tensor_parallelism) — This is a concrete multi-GPU capability documented by TGI.
+- [github.com: kserve](https://github.com/kserve/kserve) — These are product-level platform capabilities stated in the upstream KServe README.
+- [kubernetes.io: device plugins](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/) — This is a Kubernetes API/behavior claim that should cite the core docs.
+- [github.com: nccl](https://github.com/NVIDIA/nccl) — This is a concrete library-description claim from the upstream project.
 
 ## Next Module
 
