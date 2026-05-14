@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 11.2: Gitea & Forgejo - Lightweight Self-Hosted Git"
 slug: platform/toolkits/cicd-delivery/source-control/module-11.2-gitea-forgejo
 sidebar:
@@ -41,7 +42,7 @@ This module treats Gitea and Forgejo as platform components rather than hobby to
 
 A lightweight forge is most valuable when the constraint is sharper than "we want our own Git server." Good constraints sound like operational facts: the network is air-gapped, the hardware is small, licensing is capped, developers need familiar pull requests, or the organization wants control over source code without adopting a full DevOps suite. If the real problem is "we need integrated security scanning, portfolio reporting, and enterprise workflow governance," a small forge may create more glue work than it removes.
 
-Gitea and Forgejo occupy the middle ground between bare Git hosting and a full platform such as GitLab. They provide repository browsing, access control, code review, issues, release artifacts, package hosting, webhooks, and Actions-compatible workflow execution. They do not turn every delivery concern into a single product boundary, so you still design the surrounding platform deliberately.
+Gitea and Forgejo occupy the middle ground between bare Git hosting and a full platform such as GitLab. They provide [repository browsing, access control, code review, issues, release artifacts, package hosting, webhooks, and Actions-compatible workflow execution](https://github.com/go-gitea/gitea). They do not turn every delivery concern into a single product boundary, so you still design the surrounding platform deliberately.
 
 The beginner mistake is to compare tools only by feature checkboxes. A senior comparison starts with failure modes: what happens when the database is lost, when object storage is unavailable, when a runner is compromised, when the identity provider changes group names, or when a repository mirror silently stops syncing. A tool is lightweight only if the complete operating model remains understandable.
 
@@ -85,7 +86,7 @@ LIGHTWEIGHT FORGE DECISION FRAME
 
 The responsibilities that remain are usually state, identity, and execution. The database still stores users, issues, pull requests, permissions, releases, and metadata. Git repositories still need consistent backups and corruption checks. CI runners still execute untrusted code, and a runner with access to the Docker socket can often affect the host. Lightweight software reduces overhead, but it does not eliminate platform engineering.
 
-Gitea and Forgejo share a close technical lineage, so most operational patterns apply to both. Gitea forked from Gogs when contributors wanted faster community-driven development. Forgejo later forked from Gitea after governance concerns, with Codeberg e.V. providing a non-profit home for the project. That history matters because governance is not decorative when the service becomes part of your delivery control plane.
+Gitea and Forgejo share a close technical lineage, so most operational patterns apply to both. [Gitea forked from Gogs](https://github.com/go-gitea/gitea) when contributors wanted faster community-driven development. Forgejo later forked from Gitea after governance concerns, with Codeberg e.V. providing a non-profit home for the project. That history matters because governance is not decorative when the service becomes part of your delivery control plane.
 
 ```text
 GITEA AND FORGEJO LINEAGE
