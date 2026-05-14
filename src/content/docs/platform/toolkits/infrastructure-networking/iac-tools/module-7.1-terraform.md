@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 7.1: Terraform Deep Dive"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.1-terraform
 sidebar:
@@ -51,9 +52,9 @@ This module teaches Terraform as a production change engine rather than a syntax
 
 ### 1. Terraform's Operating Model: Code, State, Reality, and the Graph
 
-Terraform is easiest to understand when you separate the four things it compares during every serious operation. Configuration describes the desired shape, state records Terraform's last known mapping to real objects, provider reads describe current remote reality, and the dependency graph determines the order in which changes can safely happen. A weak mental model collapses those into "Terraform knows my infrastructure," which is the beginning of many incidents.
+Terraform is easiest to understand when you separate the four things it compares during every serious operation. Configuration describes the desired shape, state records Terraform's last known mapping to real objects, provider reads describe current remote reality, and [the dependency graph determines the order in which changes can safely happen](https://developer.hashicorp.com/terraform/internals/graph). A weak mental model collapses those into "Terraform knows my infrastructure," which is the beginning of many incidents.
 
-The configuration files are not the infrastructure and the state file is not the infrastructure either. Configuration is the intent, state is Terraform's memory, and the cloud provider remains the source of live behavior. When you run a plan, Terraform refreshes state by asking providers about real objects, compares the refreshed state to configuration, and then builds an action graph. That graph is why a subnet can be created before an instance, why some resources can update in parallel, and why one tiny address change can become a replacement.
+The configuration files are not the infrastructure and the state file is not the infrastructure either. Configuration is the intent, state is Terraform's memory, and the cloud provider remains the source of live behavior. When you run a plan, [Terraform refreshes state by asking providers about real objects, compares the refreshed state to configuration, and then builds an action graph](https://developer.hashicorp.com/terraform/cli/commands/plan). That graph is why a subnet can be created before an instance, why some resources can update in parallel, and why one tiny address change can become a replacement.
 
 ```ascii
 +-----------------------------------------------------------------------+
@@ -88,7 +89,7 @@ This model explains why plans deserve careful review instead of blind approval. 
 
 **Pause and predict:** Your teammate renames `aws_security_group.web` to `aws_security_group.frontend` without a moved block. The resource arguments are identical, and the remote security group still exists. Before reading further, predict what `terraform plan` will propose and explain which part of Terraform's operating model caused that result.
 
-The likely plan is "destroy the old address and create a new address," even though the underlying settings look unchanged. Terraform tracks resources by address in state, not by human intent. The old address disappeared from configuration, and a new address appeared that has no state mapping. A senior review catches this before apply and asks for a `moved` block so Terraform updates its memory rather than replacing infrastructure.
+The likely plan is "destroy the old address and create a new address," even though the underlying settings look unchanged. [Terraform tracks resources by address in state](https://developer.hashicorp.com/terraform/language/state), not by human intent. The old address disappeared from configuration, and a new address appeared that has no state mapping. A senior review catches this before apply and asks for a `moved` block so Terraform updates its memory rather than replacing infrastructure.
 
 ```hcl
 moved {
@@ -99,7 +100,7 @@ moved {
 
 There are two important lessons in that small example. First, Terraform resource addresses are part of the API of your infrastructure code, so renaming is a migration, not a harmless cleanup. Second, "no cloud diff" and "no Terraform replacement" are different claims. A reviewer must read the plan through the lens of state addresses, provider behavior, and lifecycle constraints.
 
-Terraform's architecture supports that workflow by keeping the CLI small and delegating resource-specific logic to providers. The AWS provider knows which EC2 arguments require replacement, the Kubernetes provider knows how to talk to the API server, and the Helm provider knows how releases are represented. Terraform Core handles graph construction, expression evaluation, state operations, and the common planning lifecycle.
+Terraform's architecture supports that workflow by keeping the CLI small and [delegating resource-specific logic to providers](https://developer.hashicorp.com/terraform/language/providers). The AWS provider knows which EC2 arguments require replacement, the Kubernetes provider knows how to talk to the API server, and the Helm provider knows how releases are represented. Terraform Core handles graph construction, expression evaluation, state operations, and the common planning lifecycle.
 
 ```ascii
 +-----------------------------------------------------------------------+
@@ -144,13 +145,13 @@ terraform plan -out=tfplan
 terraform show -json tfplan > tfplan.json
 ```
 
-Those commands are runnable in any initialized Terraform directory. The JSON output is intentionally machine-readable, which is useful for policy engines and CI gates. Humans should still read the normal plan, because the text plan is optimized for review conversations and tends to make replacements and deletes more visible.
+Those commands are runnable in any initialized Terraform directory. [The JSON output is intentionally machine-readable](https://developer.hashicorp.com/terraform/cli/commands/show), which is useful for policy engines and CI gates. Humans should still read the normal plan, because the text plan is optimized for review conversations and tends to make replacements and deletes more visible.
 
 ### 2. Provider Configuration: Authentication, Aliases, and Operational Boundaries
 
 Provider configuration is where Terraform connects intent to a real control plane. A provider block answers questions that are operationally sensitive: which account, which region, which credentials, which Kubernetes cluster, and which default tags. When provider configuration is vague, plans become hard to trust because the same resource block may target the wrong account or region.
 
-A production Terraform repository usually pins provider versions because provider schemas are part of the behavior of a plan. A new provider version can add defaults, change validation, fix a drift bug, or mark a field as requiring replacement. Version constraints and the `.terraform.lock.hcl` file do not remove the need for upgrades; they make upgrades visible, reviewable, and repeatable.
+A production Terraform repository usually pins provider versions because provider schemas are part of the behavior of a plan. A new provider version can add defaults, change validation, fix a drift bug, or mark a field as requiring replacement. [Version constraints and the `.terraform.lock.hcl` file](https://developer.hashicorp.com/terraform/language/files/dependency-lock) do not remove the need for upgrades; they make upgrades visible, reviewable, and repeatable.
 
 ```hcl
 terraform {
@@ -194,7 +195,7 @@ provider "aws" {
 
 This configuration teaches several production habits at once. The version constraints keep provider upgrades deliberate, default tags make ownership visible in cloud inventory, and `assume_role` separates the human or CI identity from the account role that changes infrastructure. Those details matter when the platform grows beyond one engineer and one sandbox account.
 
-Provider aliases let one stack use multiple configurations of the same provider. The most common cases are multi-region networking, centralized DNS, shared identity accounts, and hub-spoke cloud organizations. Aliases are powerful because they make account and region selection explicit at the resource or module boundary, but they also increase review burden. A reviewer must confirm that each resource uses the intended provider alias, especially when production and non-production accounts live side by side.
+[Provider aliases let one stack use multiple configurations of the same provider](https://developer.hashicorp.com/terraform/language/providers/configuration). The most common cases are multi-region networking, centralized DNS, shared identity accounts, and hub-spoke cloud organizations. Aliases are powerful because they make account and region selection explicit at the resource or module boundary, but they also increase review burden. A reviewer must confirm that each resource uses the intended provider alias, especially when production and non-production accounts live side by side.
 
 ```hcl
 provider "aws" {
@@ -244,7 +245,7 @@ module "central_dns" {
 
 The immediate check is which provider configuration Terraform selected for the new resource. If the unaliased default provider points at development, the bucket may be created in the wrong account. If the default provider points at production, a developer might accidentally create production infrastructure from a change that looked harmless. A safer design often uses directory-per-environment stacks, with one account target per stack, and reserves aliases for genuinely cross-account resources.
 
-Kubernetes and Helm providers add another layer because they often depend on cloud resources created by the same Terraform stack. The provider needs an API endpoint, a cluster certificate, and an authentication method. That means a plan may involve both cloud control plane resources and Kubernetes resources, which can become fragile if the cluster is not reachable during planning or if authentication differs between CI and local machines.
+Kubernetes and Helm providers add another layer because they often depend on cloud resources created by the same Terraform stack. [The provider needs an API endpoint, a cluster certificate, and an authentication method](https://developer.hashicorp.com/terraform/tutorials/kubernetes/helm-provider). That means a plan may involve both cloud control plane resources and Kubernetes resources, which can become fragile if the cluster is not reachable during planning or if authentication differs between CI and local machines.
 
 ```hcl
 data "aws_eks_cluster" "main" {
@@ -289,9 +290,9 @@ The decision is not "always split" or "always combine." A small team may accept 
 
 ### 3. State Management: Remote Backends, Drift, Locks, and Recovery
 
-Terraform state is the most misunderstood part of the tool because it feels like an implementation detail until it becomes the incident. State maps Terraform addresses to real resource IDs and stores attributes that providers need for planning. It may also contain sensitive values. Losing it, corrupting it, or letting multiple writers modify it concurrently can turn a normal change into a recovery exercise.
+Terraform state is the most misunderstood part of the tool because it feels like an implementation detail until it becomes the incident. State maps Terraform addresses to real resource IDs and stores attributes that providers need for planning. [It may also contain sensitive values](https://developer.hashicorp.com/terraform/language/manage-sensitive-data). Losing it, corrupting it, or letting multiple writers modify it concurrently can turn a normal change into a recovery exercise.
 
-Local state is acceptable for learning and throwaway experiments, but teams need remote state with locking for shared infrastructure. A remote backend gives everyone the same source of Terraform memory, while locking prevents two applies from racing. Encryption and access control matter because state can include secrets, generated passwords, private endpoints, and other operationally sensitive information.
+Local state is acceptable for learning and throwaway experiments, but teams need remote state with locking for shared infrastructure. A remote backend gives everyone the same source of Terraform memory, while [locking prevents two applies from racing](https://developer.hashicorp.com/terraform/language/state/locking). Encryption and access control matter because state can include secrets, generated passwords, private endpoints, and other operationally sensitive information.
 
 ```hcl
 terraform {
@@ -308,7 +309,7 @@ terraform {
 }
 ```
 
-Backend configuration is intentionally static in Terraform. You cannot use normal variables inside the backend block because Terraform must initialize the backend before it evaluates the rest of the configuration. Teams usually handle this with one directory per environment, backend configuration files passed to `terraform init`, or a higher-level wrapper. The important principle is that the state path should be obvious during review.
+Backend configuration is intentionally static in Terraform. [You cannot use normal variables inside the backend block because Terraform must initialize the backend before it evaluates the rest of the configuration](https://developer.hashicorp.com/terraform/language/settings/backends/configuration). Teams usually handle this with one directory per environment, backend configuration files passed to `terraform init`, or a higher-level wrapper. The important principle is that the state path should be obvious during review.
 
 State commands are powerful, but they are operational tools rather than everyday formatting commands. Use them when importing existing resources, renaming addresses, splitting states, or recovering from drift. Always take a backup before state surgery, and prefer declarative `moved` and `import` blocks when they fit the change because they create reviewable history inside configuration.
 
@@ -322,7 +323,7 @@ terraform import aws_instance.web i-1234567890abcdef0
 terraform force-unlock LOCK_ID
 ```
 
-The dangerous command in that list is not only `force-unlock`, although that one deserves caution. `terraform state rm` is also risky because it tells Terraform to forget a resource without deleting it. That can be useful when moving ownership to another stack, but it can also create unmanaged infrastructure that no future plan controls. Every state command should answer three questions: what address changes, what remote object remains, and how will the next plan prove success?
+The dangerous command in that list is not only `force-unlock`, although that one deserves caution. [`terraform state rm` is also risky because it tells Terraform to forget a resource without deleting it](https://developer.hashicorp.com/terraform/cli/commands/state/rm). That can be useful when moving ownership to another stack, but it can also create unmanaged infrastructure that no future plan controls. Every state command should answer three questions: what address changes, what remote object remains, and how will the next plan prove success?
 
 ```json
 {
@@ -361,7 +362,7 @@ The dangerous command in that list is not only `force-unlock`, although that one
 }
 ```
 
-You should understand the shape of state, but you should not manually edit it as normal practice. Terraform includes state commands because the state file has provider-specific internals and consistency metadata. Manual edits bypass those safeguards and can produce subtle failures later. When someone proposes opening a state file in an editor, ask which supported command or declarative block would express the same migration.
+You should understand the shape of state, but [you should not manually edit it as normal practice](https://developer.hashicorp.com/terraform/cli/commands/state). Terraform includes state commands because the state file has provider-specific internals and consistency metadata. Manual edits bypass those safeguards and can produce subtle failures later. When someone proposes opening a state file in an editor, ask which supported command or declarative block would express the same migration.
 
 Drift occurs when live infrastructure no longer matches Terraform's recorded and desired view. Some drift is accidental, such as a console edit during an outage. Some drift is intentional, such as an autoscaling group changing desired capacity at runtime. Terraform's job is not to shame every drift event; its job is to make drift visible so the team can decide whether to reconcile code, revert the manual change, or ignore a field deliberately.
 
@@ -369,13 +370,13 @@ Drift occurs when live infrastructure no longer matches Terraform's recorded and
 terraform plan -refresh-only
 ```
 
-A refresh-only plan is useful when you want to detect and record drift without proposing configuration-driven changes. It can show whether a manual change exists before you combine that investigation with a feature change. In production workflows, drift checks are often scheduled separately from normal delivery so teams can investigate surprises before they become part of a larger deployment.
+A refresh-only plan is useful when you want to [detect and record drift without proposing configuration-driven changes](https://developer.hashicorp.com/terraform/tutorials/state/refresh). It can show whether a manual change exists before you combine that investigation with a feature change. In production workflows, drift checks are often scheduled separately from normal delivery so teams can investigate surprises before they become part of a larger deployment.
 
 **Pause and predict:** An operator changes a database instance class in the cloud console during an urgent capacity incident. The Terraform configuration still says the smaller class. The next pull request changes only tags. What do you expect Terraform to propose, and what should the reviewer do before approving?
 
 Terraform will refresh the database attributes, notice that live reality differs from configuration, and likely propose changing the instance class back to the configured value along with the tag update. The reviewer should separate the tag change from the drift decision. If the emergency size should remain, update Terraform configuration in a dedicated change and include the incident context. If the larger size was temporary, schedule the downsizing deliberately instead of hiding it inside a tag change.
 
-Cross-state references are useful when one stack needs outputs from another, but they create contracts between state files. A networking stack might expose subnet IDs to an application stack, or a cluster stack might expose an OIDC provider ARN to an identity stack. Keep those outputs stable, small, and intentionally named. Do not expose entire resource objects just because Terraform allows it.
+[Cross-state references are useful when one stack needs outputs from another](https://developer.hashicorp.com/terraform/language/state/remote-state-data), but they create contracts between state files. A networking stack might expose subnet IDs to an application stack, or a cluster stack might expose an OIDC provider ARN to an identity stack. Keep those outputs stable, small, and intentionally named. Do not expose entire resource objects just because Terraform allows it.
 
 ```hcl
 data "terraform_remote_state" "networking" {
@@ -453,7 +454,7 @@ modules/
         └── vpc_test.tftest.hcl
 ```
 
-The most important part of a module is often its variables. Input validation moves failure earlier, closer to the person making the change. A clear validation error is cheaper than a failed apply after Terraform has already created half the graph. Validation also teaches callers what the module considers safe or supported.
+The most important part of a module is often its variables. [Input validation moves failure earlier](https://developer.hashicorp.com/terraform/language/validate), closer to the person making the change. A clear validation error is cheaper than a failed apply after Terraform has already created half the graph. Validation also teaches callers what the module considers safe or supported.
 
 ```hcl
 variable "name" {
@@ -532,7 +533,7 @@ This example uses `for_each` rather than `count` because availability zones make
 
 **Stop and think:** A module creates three subnets with `count` from a list of CIDR blocks. A pull request removes the first CIDR from the list because that zone is being retired. Before running a plan, predict what might happen to the remaining subnet addresses and why `for_each` with stable keys changes the risk.
 
-With `count`, Terraform addresses the subnets as `aws_subnet.private[0]`, `aws_subnet.private[1]`, and `aws_subnet.private[2]`. Removing the first list element can cause later elements to shift indexes, which may make Terraform update or replace resources that were not intended to change. With `for_each`, Terraform addresses each subnet by a stable key such as the availability zone, so removing one key does not rename every later resource.
+With `count`, Terraform addresses the subnets as `aws_subnet.private[0]`, `aws_subnet.private[1]`, and `aws_subnet.private[2]`. Removing the first list element can cause later elements to shift indexes, which may make Terraform update or replace resources that were not intended to change. [With `for_each`, Terraform addresses each subnet by a stable key](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each) such as the availability zone, so removing one key does not rename every later resource.
 
 Module outputs should be minimal and intentional. Expose values that callers need to connect systems, such as IDs, ARNs, endpoints, and names. Avoid exposing full resource objects unless callers truly need them, because full objects leak provider implementation details and create fragile dependencies. A good output is a promise you are willing to maintain.
 
@@ -659,7 +660,7 @@ resource "aws_security_group" "main" {
 }
 ```
 
-Lifecycle rules change how Terraform handles resource changes, so they deserve the same review attention as IAM policies or networking rules. `create_before_destroy` can reduce downtime for replaceable resources, but it may fail if names must be unique. `prevent_destroy` can protect critical resources, but it can also block legitimate migration unless the team has a documented procedure. `ignore_changes` can quiet expected runtime drift, but it can also hide configuration drift that should be fixed.
+[Lifecycle rules change how Terraform handles resource changes](https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle), so they deserve the same review attention as IAM policies or networking rules. `create_before_destroy` can reduce downtime for replaceable resources, but it may fail if names must be unique. `prevent_destroy` can protect critical resources, but it can also block legitimate migration unless the team has a documented procedure. `ignore_changes` can quiet expected runtime drift, but it can also hide configuration drift that should be fixed.
 
 ```hcl
 resource "aws_instance" "web" {
@@ -690,7 +691,7 @@ resource "aws_db_instance" "main" {
 
 A mature review asks why each lifecycle rule exists. Ignoring a tag maintained by automation is reasonable. Ignoring an AMI might be reasonable if another system owns image rollout, but dangerous if Terraform is supposed to own patching. Preventing database destroy is usually wise, but the team still needs a tested migration path for replacements. Lifecycle rules are not substitutes for operational design.
 
-Moved blocks and import blocks are Terraform's safer answer to common state migrations. A moved block records an address refactor inside code, so every collaborator and CI run sees the same migration. An import block records that an existing remote object should become managed at a specific address. Both features make infrastructure history easier to review than one-off local state commands.
+Moved blocks and import blocks are Terraform's safer answer to common state migrations. [A moved block records an address refactor inside code](https://developer.hashicorp.com/terraform/language/moved), so every collaborator and CI run sees the same migration. [An import block records that an existing remote object should become managed at a specific address](https://developer.hashicorp.com/terraform/language/block/import). Both features make infrastructure history easier to review than one-off local state commands.
 
 ```hcl
 moved {
@@ -752,7 +753,7 @@ Terraform will calculate an additional CIDR for the new zone and likely propose 
 
 ### 6. Worked Scenario: Migrating from Workspaces to Directory-Based State
 
-Workspaces are frequently misunderstood because they look like environment separation. They can be useful for small, nearly identical copies of a stack, but they are not a strong boundary for different environments with different ownership, policies, or resource shapes. A workspace shares configuration and changes only the selected state. That can be elegant for simple duplication and risky for production platforms that evolve differently over time.
+Workspaces are frequently misunderstood because they look like environment separation. They can be useful for small, nearly identical copies of a stack, but [they are not a strong boundary for different environments with different ownership, policies, or resource shapes](https://developer.hashicorp.com/terraform/language/state/workspaces). A workspace shares configuration and changes only the selected state. That can be elegant for simple duplication and risky for production platforms that evolve differently over time.
 
 A team starts with one Terraform directory and three workspaces: `dev`, `staging`, and `production`. At first, all environments are identical except instance sizes. After two years, production has extra monitoring, staging has test integrations, and development uses a cheaper network layout. The shared configuration now contains many conditionals. Plans are harder to review because every change requires asking which workspace is selected.
 
@@ -923,7 +924,7 @@ terraform show -no-color tfplan > tfplan.txt
 
 Those commands do not replace human judgment, but they make the review reproducible. `fmt` catches formatting drift, `validate` catches static configuration errors, `plan` evaluates provider schemas and state, and the saved plan output gives reviewers a stable artifact. In CI, you can also generate JSON for policy checks that block deletes in protected states or require explicit approval labels.
 
-Security review deserves special attention. State access is often more sensitive than engineers expect, because state may include generated passwords, private IPs, kubeconfig data, and provider-specific secrets. Marking an output as `sensitive = true` prevents casual display in CLI output, but it does not remove the value from state. The real controls are secret design, state encryption, backend IAM, and minimizing secret material in Terraform-managed values.
+Security review deserves special attention. State access is often more sensitive than engineers expect, because state may include generated passwords, private IPs, kubeconfig data, and provider-specific secrets. [Marking an output as `sensitive = true` prevents casual display in CLI output, but it does not remove the value from state](https://developer.hashicorp.com/terraform/language/values/outputs). The real controls are secret design, state encryption, backend IAM, and minimizing secret material in Terraform-managed values.
 
 ```hcl
 variable "db_password" {
@@ -1281,3 +1282,25 @@ Continue to [Module 7.2: OpenTofu](../module-7.2-opentofu/) to learn about the o
 - [HashiCorp Terraform Announcement](https://www.hashicorp.com/blog/terraform-announcement) — Primary-source background on Terraform's original 2014 release and early goals.
 - [Terraform v1.1.0 Release Notes](https://github.com/hashicorp/terraform/releases/tag/v1.1.0) — Documents moved blocks and other refactoring-related language features.
 - [Terraform v1.5.0 Release Notes](https://github.com/hashicorp/terraform/releases/tag/v1.5.0) — Documents declarative import blocks and generated configuration support.
+- [developer.hashicorp.com: plan](https://developer.hashicorp.com/terraform/cli/commands/plan) — The Terraform plan command reference directly describes the refresh, comparison, and proposed-action workflow.
+- [developer.hashicorp.com: graph](https://developer.hashicorp.com/terraform/internals/graph) — The dependency graph internals page states that Terraform builds a graph and uses it for operations such as plans and refreshes.
+- [developer.hashicorp.com: state](https://developer.hashicorp.com/terraform/language/state) — The state documentation describes state as the binding between declared resource instances and remote objects.
+- [developer.hashicorp.com: providers](https://developer.hashicorp.com/terraform/language/providers) — The provider documentation directly defines providers as plugins for interacting with external APIs.
+- [developer.hashicorp.com: show](https://developer.hashicorp.com/terraform/cli/commands/show) — The show command reference says the -json flag generates machine-readable output for state and plan files.
+- [developer.hashicorp.com: dependency lock](https://developer.hashicorp.com/terraform/language/files/dependency-lock) — The dependency lock file documentation explains that Terraform records selected provider versions for future runs and recommends committing the lock file for review.
+- [developer.hashicorp.com: configuration](https://developer.hashicorp.com/terraform/language/providers/configuration) — The provider configuration reference documents aliases and provider configuration behavior.
+- [developer.hashicorp.com: helm provider](https://developer.hashicorp.com/terraform/tutorials/kubernetes/helm-provider) — The HashiCorp Helm provider tutorial demonstrates host, cluster_ca_certificate, and exec token configuration against EKS.
+- [developer.hashicorp.com: manage sensitive data](https://developer.hashicorp.com/terraform/language/manage-sensitive-data) — The sensitive-data documentation states that state and plan files can contain secret values and should be secured.
+- [developer.hashicorp.com: locking](https://developer.hashicorp.com/terraform/language/state/locking) — The state locking documentation explains Terraform's locking behavior for write operations.
+- [developer.hashicorp.com: configuration](https://developer.hashicorp.com/terraform/language/settings/backends/configuration) — The backend configuration reference explicitly says backend blocks cannot refer to named values such as variables, locals, or data source attributes.
+- [developer.hashicorp.com: state](https://developer.hashicorp.com/terraform/cli/commands/state) — The state command reference recommends state subcommands for advanced state management and documents backups for state modification commands.
+- [developer.hashicorp.com: rm](https://developer.hashicorp.com/terraform/cli/commands/state/rm) — The state rm command reference directly states that it removes the binding without destroying the remote object.
+- [developer.hashicorp.com: refresh](https://developer.hashicorp.com/terraform/tutorials/state/refresh) — The refresh-only tutorial describes using plan -refresh-only to update state to match remote objects without modifying infrastructure.
+- [developer.hashicorp.com: remote state data](https://developer.hashicorp.com/terraform/language/state/remote-state-data) — The remote-state data source documentation warns that consumers must access the entire state snapshot even though only outputs are exposed.
+- [developer.hashicorp.com: validate](https://developer.hashicorp.com/terraform/language/validate) — The validation documentation explains input variable validations and states that failed validations stop operation execution.
+- [developer.hashicorp.com: for each](https://developer.hashicorp.com/terraform/language/meta-arguments/for_each) — The for_each reference states that Terraform identifies instances by the map key or set member supplied to for_each.
+- [developer.hashicorp.com: lifecycle](https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle) — The lifecycle meta-argument reference documents these rules and how they affect replacement, destroy protection, and ignored changes.
+- [developer.hashicorp.com: moved](https://developer.hashicorp.com/terraform/language/moved) — The moved block reference states that moved blocks specify previous and new resource addresses.
+- [developer.hashicorp.com: import](https://developer.hashicorp.com/terraform/language/block/import) — The import block reference directly defines import blocks as importing existing infrastructure into Terraform.
+- [developer.hashicorp.com: workspaces](https://developer.hashicorp.com/terraform/language/state/workspaces) — The workspaces documentation explicitly warns against using workspaces for system decomposition or deployments requiring separate credentials and access controls.
+- [developer.hashicorp.com: outputs](https://developer.hashicorp.com/terraform/language/values/outputs) — The output values reference states that Terraform stores sensitive output values in state.
