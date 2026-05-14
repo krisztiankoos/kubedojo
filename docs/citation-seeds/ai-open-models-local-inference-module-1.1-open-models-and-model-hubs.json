@@ -1,109 +1,294 @@
 {
   "module_key": "ai/open-models-local-inference/module-1.1-open-models-and-model-hubs",
   "module_path": "src/content/docs/ai/open-models-local-inference/module-1.1-open-models-and-model-hubs.md",
-  "research_run_id": "2026-04-20T00:13:03+00:00-codex-gpt-5.3-codex-spark",
-  "schema_version": 2,
+  "research_run_id": "2026-05-14T00:50:49+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "Learners may encounter openly documented models that still require approval or terms before access.",
+      "claim_text": "A public model page does not guarantee unrestricted download; gated repositories can require account login, agreement to terms, and manual or automatic approval before files can be accessed.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Open Is Not One Thing",
+      "span_hint": "section: Decoding the Illusion of Open, paragraphs on gated access",
       "disposition": "supported",
-      "proposed_url": "https://huggingface.co/docs/hub/en/models-gated",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://huggingface.co/docs/hub/models-gated",
       "proposed_tier": "vendor",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "Hugging Face documents gated models that have public model pages but still require access requests or approval before files can be downloaded."
+      "rationale": "The Hugging Face gated-models documentation directly describes request access, approval modes, authentication, and download requirements."
     },
     {
       "claim_id": "C002",
-      "claim_text": "Model cards on a model hub typically carry intended use, limitations, license metadata, and information about derivative relationships such as fine-tunes or quantized versions.",
+      "claim_text": "Model publishers often use custom licenses with materially different restrictions from standard open-source software licenses.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: What A Model Hub Actually Does",
+      "span_hint": "section: Decoding the Illusion of Open, paragraph on custom licenses",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Some licenses allow commercial use with attribution and policy restrictions. Others permit research only, require a separate agreement above a usage threshold, forbid using outputs to train competing models, or restrict deployment in regulated domains.",
+      "suggested_rewrite": "Publishers often use custom licenses with terms that differ materially from standard open-source software licenses.",
+      "lesson_point_url": null,
+      "rationale": "This sentence bundles several license-specific subclauses that are true only for some models and needs to be generalized unless each example is sourced individually."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Commercial-use review may apply to internal business workflows as well as directly sold AI features.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Decoding the Illusion of Open, paragraph on commercial use",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "If it supports a private support assistant, helps employees triage customer tickets, drafts product documentation, ranks sales leads, or summarizes contracts for a revenue-generating company, the work may still fall under commercial use.",
+      "suggested_rewrite": "Commercial-use terms can apply to internal business workflows as well as directly sold products, so teams should review the license before operational use.",
+      "lesson_point_url": null,
+      "rationale": "The underlying lesson is sound, but the listed examples assert a broad legal conclusion that varies by license and should be stated more carefully."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "A model card should document intended use, out-of-scope use, limitations, training data, evaluation details, and hardware or software requirements.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Working Through a Model Card, opening and later review paragraphs",
       "disposition": "supported",
-      "proposed_url": "https://huggingface.co/docs/hub/model-cards",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://huggingface.co/docs/hub/en/model-card-annotated",
       "proposed_tier": "vendor",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Hugging Face Model Cards documentation directly describes intended uses, limitations, license metadata, and base-model relationships including fine-tuned and quantized variants."
-    },
-    {
-      "claim_id": "C003",
-      "claim_text": "Gemma family: strong Google-backed open-model ecosystem, now including Gemma 4.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Examples Of Model Families You Will Encounter",
-      "disposition": "cannot_be_salvaged",
-      "proposed_url": null,
-      "proposed_tier": null,
-      "anchor_text": "strong Google-backed open-model ecosystem, now including Gemma 4",
-      "suggested_rewrite": "a Google-backed model family worth comparing alongside other open-model options",
-      "lesson_point_url": null,
-      "rationale": "Google's official Gemma documentation shows released Gemma families such as Gemma 3 and Gemma 3n, but not a supported 'Gemma 4' claim, so the version-specific statement should be removed."
-    },
-    {
-      "claim_id": "C004",
-      "claim_text": "Llama family: widely used reference point in open-model discussion.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Examples Of Model Families You Will Encounter",
-      "disposition": "cannot_be_salvaged",
-      "proposed_url": null,
-      "proposed_tier": null,
-      "anchor_text": "widely used reference point in open-model discussion",
-      "suggested_rewrite": "another model family to include in side-by-side comparisons",
-      "lesson_point_url": null,
-      "rationale": "This is a popularity judgment without a defined benchmark or source, so it should be rewritten as neutral instructional guidance."
+      "rationale": "The annotated model-card template explicitly enumerates these sections and their purpose."
     },
     {
       "claim_id": "C005",
-      "claim_text": "Qwen family: strong multilingual and practical deployment interest.",
+      "claim_text": "Instruction-tuned chat models expect model-specific chat formatting or control tokens, and using the wrong template can significantly degrade performance.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: Examples Of Model Families You Will Encounter",
-      "disposition": "cannot_be_salvaged",
-      "proposed_url": null,
-      "proposed_tier": null,
-      "anchor_text": "strong multilingual and practical deployment interest",
-      "suggested_rewrite": "a model family worth checking when multilingual support matters to your use case",
+      "span_hint": "section: Working Through a Model Card, tokenizer configuration paragraph",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://huggingface.co/docs/transformers/chat_templating",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The line mixes a real capability area with an uncited qualitative judgment, so it should be reframed as comparison guidance rather than asserted as fact."
+      "rationale": "The Transformers chat-templating docs directly explain that different models use different control tokens and that wrong formatting causes much worse performance."
     },
     {
       "claim_id": "C006",
-      "claim_text": "Mistral family: popular for efficient open-weight deployments.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Examples Of Model Families You Will Encounter",
+      "claim_text": "Safetensors was designed as a safer alternative to pickle-based model serialization because pickle formats can carry arbitrary code execution risk.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Reading a Model Hub Like a Deployment Registry, paragraph on Safetensors",
+      "disposition": "supported",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": "https://huggingface.co/docs/hub/security-pickle",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Hugging Face's security documentation directly states the arbitrary-code-execution risk of pickle files and frames Safetensors as the safer alternative."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Serving memory requirements can exceed raw weight size because active context and caches increase runtime memory use.",
+      "claim_class": "statistic",
+      "span_hint": "section: Working Through a Model Card, hardware sizing paragraph",
       "disposition": "cannot_be_salvaged",
+      "source_ids": [
+        "S007"
+      ],
       "proposed_url": null,
       "proposed_tier": null,
-      "anchor_text": "popular for efficient open-weight deployments",
-      "suggested_rewrite": "a model family worth checking when you care about smaller open-weight deployment options",
+      "anchor_text": "A seven or eight billion parameter model in half precision can require far more memory during real serving than the raw weights suggest, especially when multiple concurrent requests hold long contexts in memory.",
+      "suggested_rewrite": "Even mid-sized models can require substantially more memory during serving than raw weight size alone suggests, especially when long contexts and concurrent requests increase cache pressure.",
       "lesson_point_url": null,
-      "rationale": "The bullet makes an unsupported popularity-and-efficiency judgment, so it should be rewritten to preserve the learning cue without the unbounded claim."
+      "rationale": "The exact parameter-count example is configuration-dependent and should be generalized unless it is tied to a specific published benchmark or serving setup."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Base causal language models are pretrained next-token predictors, while instruct or chat variants receive additional tuning for instruction-following behavior.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Choosing Among Base, Instruction Tuned, and Quantized Variants, opening paragraphs",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://huggingface.co/docs/transformers/chat_templating",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The chat-templating docs explicitly describe pretraining as creating a base model and later fine-tuning for chat."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Quantization reduces memory and compute costs by storing weights in lower precision such as 8-bit or 4-bit formats, often making larger models fit on constrained hardware.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Choosing Among Base, Instruction Tuned, and Quantized Variants, paragraph on quantization",
+      "disposition": "supported",
+      "source_ids": [
+        "S008"
+      ],
+      "proposed_url": "https://huggingface.co/docs/transformers/quantization/overview",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Transformers quantization overview directly states that quantization lowers memory requirements by using lower-precision weights."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "GGUF is a model file format for GGML-based executors that is designed for fast loading and single-file deployment in local inference workflows.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Choosing Among Base, Instruction Tuned, and Quantized Variants, paragraph on GGUF",
+      "disposition": "supported",
+      "source_ids": [
+        "S009"
+      ],
+      "proposed_url": "https://github.com/ggml-org/ggml/blob/master/docs/gguf.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The GGUF specification directly states that the format is for inference with GGML executors and highlights fast loading and single-file deployment."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "A LoRA adapter is loaded on top of a pretrained base model rather than replacing it with a standalone full model.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Choosing Among Base, Instruction Tuned, and Quantized Variants, paragraph on fine-tunes and adapters",
+      "disposition": "supported",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://huggingface.co/docs/peft/developer_guides/lora",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The PEFT LoRA guide shows adapters being loaded into a base model and discusses unloading or switching adapters while retaining the base."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Mistral is positioned as a model family that balances performance with efficient inference, using attention techniques that reduce memory requirements.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Evaluating Major Model Families, paragraph on Mistral",
+      "disposition": "supported",
+      "source_ids": [
+        "S011"
+      ],
+      "proposed_url": "https://huggingface.co/docs/transformers/model_doc/mistral",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official Transformers Mistral page explicitly frames the model around efficient inference and reduced memory use."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Qwen's official materials describe multilingual pretraining and also publish coding-oriented model lines such as CodeQwen and Qwen-Coder.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Evaluating Major Model Families, paragraph on Qwen",
+      "disposition": "supported",
+      "source_ids": [
+        "S012"
+      ],
+      "proposed_url": "https://github.com/QwenLM/Qwen/blob/main/README.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official Qwen repository README discusses multilingual data and coding capabilities directly."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Gemma is a lightweight open-model family from Google with pretrained and instruction-tuned variants and is described as suitable for limited-resource environments.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Evaluating Major Model Families, paragraph on Gemma",
+      "disposition": "supported",
+      "source_ids": [
+        "S013"
+      ],
+      "proposed_url": "https://huggingface.co/google/gemma-2-2b-it",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official Gemma Hugging Face model card directly states these characteristics."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "Longer active contexts increase inference memory pressure because the key-value cache grows and can become a bottleneck for long-context generation.",
+      "claim_class": "statistic",
+      "span_hint": "section: Evaluating Major Model Families, paragraph on context window size",
+      "disposition": "supported",
+      "source_ids": [
+        "S014"
+      ],
+      "proposed_url": "https://huggingface.co/docs/transformers/v4.52.3/en/kv_cache",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The KV-cache documentation explicitly says the cache can occupy a significant portion of memory and become a bottleneck for long-context generation."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "A context window corresponds to the maximum input length a model can accept in a given workflow, and overlong inputs are typically truncated unless the application handles them another way.",
+      "claim_class": "statistic",
+      "span_hint": "section: Did You Know, bullet on context window",
+      "disposition": "supported",
+      "source_ids": [
+        "S015"
+      ],
+      "proposed_url": "https://huggingface.co/docs/transformers/v4.44.1/pad_truncation",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The padding-and-truncation docs directly describe truncating inputs to the maximum length a model can accept."
     }
   ],
   "further_reading": [
     {
-      "url": "https://huggingface.co/docs/hub/en/models-the-hub",
-      "title": "The Model Hub",
+      "url": "https://huggingface.co/docs/hub/en/model-card-annotated",
+      "title": "Annotated Model Card Template",
       "tier": "vendor",
-      "why_relevant": "Gives a primary-source overview of what a modern model hub is for and how model repositories are organized."
+      "why_relevant": "Best primary reference for what engineers should extract from a model card during intake."
     },
     {
-      "url": "https://huggingface.co/docs/hub/model-cards",
-      "title": "Model Cards",
+      "url": "https://huggingface.co/docs/hub/models-gated",
+      "title": "Hugging Face Gated Models",
       "tier": "vendor",
-      "why_relevant": "Shows exactly what information responsible learners should look for before downloading or deploying a model."
+      "why_relevant": "Covers access requests, approval modes, authentication, and operational implications of gated model downloads."
     },
     {
-      "url": "https://huggingface.co/docs/hub/en/models-gated",
-      "title": "Gated Models",
+      "url": "https://huggingface.co/docs/transformers/quantization/overview",
+      "title": "Transformers Quantization Overview",
       "tier": "vendor",
-      "why_relevant": "Explains why some public model pages still require approval, license acknowledgment, or extra access conditions."
+      "why_relevant": "Useful background for comparing full-precision, 8-bit, and 4-bit artifacts in local inference planning."
+    },
+    {
+      "url": "https://github.com/ggml-org/ggml/blob/master/docs/gguf.md",
+      "title": "GGUF Specification",
+      "tier": "upstream",
+      "why_relevant": "Primary source for what GGUF stores and why it is common in local GGML-based inference stacks."
     }
   ],
-  "notes": "Most of the module is pedagogical framing. The citation-relevant material is concentrated in the model-hub mechanics and the named model-family examples, especially the incorrect Gemma 4 reference.",
+  "notes": "Excluded quiz prompts, hands-on instructions, diagrams, and the sources list itself per brief. `source_ids` are local placeholders paired with each claim's `proposed_url` because no shared section pool was selected.",
   "_schema_issues": [],
   "rejected_urls": []
 }
