@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 13.2: Zot - The Minimal OCI-Native Registry"
 slug: platform/toolkits/cicd-delivery/container-registries/module-13.2-zot
 sidebar:
@@ -81,7 +82,7 @@ This is the first senior-level lesson: minimal components do not remove architec
 
 ## 2. Trace Zot from Client Request to Storage
 
-Zot implements the OCI Distribution API, which means standard clients such as Docker, containerd, nerdctl, skopeo, oras, Helm, and cosign can talk to it using familiar registry operations. A push is not one magical upload. It is a sequence of blob checks, blob uploads, and manifest writes. A pull is a sequence of manifest lookup, layer existence checks, and blob downloads. When you can trace that path, registry debugging becomes much less mysterious.
+Zot implements the OCI Distribution API, which means standard clients such as Docker, containerd, nerdctl, skopeo, oras, Helm, and cosign can talk to it using familiar registry operations. [A push is not one magical upload. It is a sequence of blob checks, blob uploads, and manifest writes. A pull is a sequence of manifest lookup, layer existence checks, and blob downloads.](https://github.com/opencontainers/distribution-spec/blob/main/spec.md) When you can trace that path, registry debugging becomes much less mysterious.
 
 ```ascii
 ZOT REQUEST PATH
@@ -158,13 +159,13 @@ The same logic explains many confusing failures. If blob upload succeeds but man
 
 > **Active check:** You push an image and see successful blob uploads followed by a `403` on the manifest `PUT`. Which part of the request path should you inspect first: storage capacity, access control actions, or Trivy database updates? The best first check is access control, because the final manifest write is the operation that turns uploaded content into a visible tag.
 
-Zot also stores non-image OCI artifacts through the same underlying pattern. Helm charts, cosign signatures, SBOMs, and attestations are not special side databases. They are manifests, blobs, tags, annotations, and referrers. That uniformity is one reason Zot works well as a small artifact registry. The learner's mistake is to assume "minimal" means "image-only"; the registry is minimal in architecture, not in OCI artifact shape.
+Zot also stores non-image OCI artifacts through the same underlying pattern. [Helm charts, cosign signatures, SBOMs, and attestations are not special side databases. They are manifests, blobs, tags, annotations, and referrers.](https://github.com/opencontainers/image-spec/blob/main/manifest.md) That uniformity is one reason Zot works well as a small artifact registry. The learner's mistake is to assume "minimal" means "image-only"; the registry is minimal in architecture, not in OCI artifact shape.
 
 ## 3. Deploy Zot from the Smallest Useful Configuration
 
 A minimal Zot deployment has four decisions: which version to run, where to store content, which address and port to bind, and which clients are allowed to reach it. Everything else is an extension of those decisions. Starting small is not just convenient. It gives you a baseline that you can verify before adding TLS, authentication, mirroring, search, vulnerability scanning, or policies.
 
-The following local run uses an explicit release variable instead of a moving `latest` tag. In production, pinning a version gives you rollback control and lets you test upgrades deliberately. The command uses `127.0.0.1` for local access because this repository standard avoids ambiguous `localhost` examples.
+[The following local run uses an explicit release variable instead of a moving `latest` tag.](https://github.com/project-zot/zot/releases/tag/v2.1.14) In production, pinning a version gives you rollback control and lets you test upgrades deliberately. The command uses `127.0.0.1` for local access because this repository standard avoids ambiguous `localhost` examples.
 
 ```bash
 ZOT_VERSION="v2.1.14"
@@ -478,9 +479,9 @@ Zot configuration is JSON, and the shape of the file mirrors the registry respon
 }
 ```
 
-Storage is the first production decision because it defines durability and performance. A local filesystem is simple and fast, but it ties registry state to the volume lifecycle. Object storage can fit larger or shared deployments, but it introduces network dependency and backend-specific operational work. Subpaths let you route repository prefixes to different storage roots, which can be useful when production images deserve faster or more durable storage than disposable cache content.
+Storage is the first production decision because it defines durability and performance. [A local filesystem is simple and fast, but it ties registry state to the volume lifecycle. Object storage can fit larger or shared deployments, but it introduces network dependency and backend-specific operational work. Subpaths let you route repository prefixes to different storage roots](https://github.com/project-zot/zot/blob/main/examples/README.md), which can be useful when production images deserve faster or more durable storage than disposable cache content.
 
-Authentication answers "who are you?" while access control answers "what may you do here?" For small teams, htpasswd can be a pragmatic starting point. For larger organizations, LDAP or OpenID Connect may fit existing identity systems better. The policy model should be designed around repository prefixes and actions rather than around vague roles, because registry actions are concrete: read, create, update, and delete.
+Authentication answers "who are you?" while access control answers "what may you do here?" For small teams, [htpasswd can be a pragmatic starting point. For larger organizations, LDAP or OpenID Connect may fit existing identity systems better. The policy model should be designed around repository prefixes and actions rather than around vague roles, because registry actions are concrete: read, create, update, and delete.](https://github.com/project-zot/zot/blob/main/examples/README.md)
 
 ```bash
 mkdir -p ./auth
@@ -545,13 +546,13 @@ Here is a worked example. A platform team wants developers to pull all images, C
 
 > **Active check:** Your team asks for a "CI user that can publish releases." Before granting broad access, map the exact repository prefix and the exact actions. If the CI system should never remove production images, its policy should not include `delete`, even if deleting would make cleanup scripts easier.
 
-Operational extensions should be treated as control loops. Garbage collection reclaims unreferenced content after tags or manifests are removed. Scrub checks stored content for integrity problems. Metrics make request volume, status codes, and storage behavior visible. Search and CVE scanning add useful inspection capabilities, but they also consume resources and may require database updates. Turning on every extension without a purpose is not maturity; it is an untested configuration.
+Operational extensions should be treated as control loops. Garbage collection reclaims unreferenced content after tags or manifests are removed. Scrub checks stored content for integrity problems. [Metrics make request volume, status codes, and storage behavior visible. Search and CVE scanning add useful inspection capabilities, but they also consume resources and may require database updates.](https://github.com/project-zot/zot/blob/main/examples/README.md) Turning on every extension without a purpose is not maturity; it is an untested configuration.
 
 A senior operator also plans backup and restore before the first incident. If Zot uses filesystem storage, the backup unit is the configured storage root plus the configuration and authentication material. If Zot uses object storage, the backup and versioning strategy may belong partly to the object store. In both cases, test a restore by starting a separate Zot instance against restored data and pulling a known digest, not merely by checking that backup files exist.
 
 ## 5. Mirror, Cache, and Move OCI Artifacts
 
-Mirroring is where Zot often earns its place. The registry can operate as a pull-through cache, a scheduled mirror, or a downstream replica of another registry. These modes sound similar, but they answer different operational questions. On-demand caching optimizes bandwidth by fetching only what clients request. Scheduled mirroring optimizes readiness by fetching content before clients ask for it. Zot-to-Zot replication can place content closer to clusters while keeping an upstream registry authoritative.
+Mirroring is where Zot often earns its place. [The registry can operate as a pull-through cache, a scheduled mirror, or a downstream replica of another registry. These modes sound similar, but they answer different operational questions. On-demand caching optimizes bandwidth by fetching only what clients request. Scheduled mirroring optimizes readiness by fetching content before clients ask for it.](https://github.com/project-zot/zot/blob/main/examples/README.md) Zot-to-Zot replication can place content closer to clusters while keeping an upstream registry authoritative.
 
 ```mermaid
 flowchart LR
@@ -664,7 +665,7 @@ ZOT-TO-ZOT EDGE REPLICATION
 
 > **Pause and predict:** A site has never pulled `library/postgres:16` through its local Zot cache. The upstream network link fails, and a deployment now tries to pull that tag from the local cache. Predict whether the deployment starts, then explain which mirroring mode would have changed the outcome.
 
-OCI artifacts beyond images use the same distribution foundation, but each tool has its own command shape. Helm stores charts as OCI artifacts. Cosign stores signatures and attestations as OCI-related content. SBOM tools can attach documents to images. Zot's job is to store and serve the artifacts according to OCI distribution behavior; your job is to make sure the client workflow and access policy allow the right writes.
+OCI artifacts beyond images use the same distribution foundation, but each tool has its own command shape. [Helm stores charts as OCI artifacts.](https://v3.helm.sh/docs/topics/registries/) Cosign stores signatures and attestations as OCI-related content. SBOM tools can attach documents to images. Zot's job is to store and serve the artifacts according to OCI distribution behavior; your job is to make sure the client workflow and access policy allow the right writes.
 
 ```bash
 helm create payment-chart
@@ -694,7 +695,7 @@ COSIGN_PASSWORD="" cosign attach sbom --sbom alpine-sbom.spdx.json 127.0.0.1:500
 cosign download sbom 127.0.0.1:5000/demo/alpine:3.20 > downloaded-sbom.spdx.json
 ```
 
-These commands also show why registry policy needs to account for referrers and related artifacts. If CI can push an image but cannot push its signature or SBOM, the release may appear complete to Kubernetes but incomplete to your supply-chain controls. When you design repository prefixes, think about the image and its evidence as a bundle. The bundle must move together, be retained together, and be discoverable during an incident.
+These commands also show why registry policy needs to account for referrers and related artifacts. If CI can push an image but cannot push its signature or SBOM, the release may appear complete to Kubernetes but incomplete to your supply-chain controls. When you design repository prefixes, think about [the image and its evidence as a bundle](https://github.com/sigstore/cosign). The bundle must move together, be retained together, and be discoverable during an incident.
 
 ## 6. Operate Zot Under Failure
 
@@ -769,7 +770,7 @@ The lesson is not that every remote site should run Zot. The lesson is that regi
 ## Did You Know?
 
 - **OCI referrers make evidence discoverable**: Signatures, attestations, and SBOMs can be associated with an image digest, which helps tooling find supply-chain evidence without inventing a separate naming convention.
-- **Tags are not content identity**: A tag can move to a different manifest, but a digest identifies specific content, which is why incident response and release promotion should record digests.
+- **Tags are not content identity**: [A tag can move to a different manifest, but a digest identifies specific content](https://kubernetes.io/docs/concepts/containers/images/), which is why incident response and release promotion should record digests.
 - **On-demand cache is not the same as offline readiness**: A pull-through cache only serves content it has already fetched, so critical images should be pre-warmed before planned disconnection.
 - **A small registry can still need serious backups**: Zot has fewer services to recover, but the stored blobs, indexes, configuration, credentials, and TLS material are still production state.
 
@@ -1069,3 +1070,13 @@ rm -f zot-lab.yaml
 ## Next Module
 
 Continue to [Module 13.3: Dragonfly](../module-13.3-dragonfly/) to learn how peer-to-peer image distribution changes the design problem when the bottleneck is massive fan-out rather than local registry simplicity.
+
+## Sources
+
+- [github.com: manifest.md](https://github.com/opencontainers/image-spec/blob/main/manifest.md) — The OCI image manifest spec explicitly covers artifact usage beyond images and the `subject` linkage used by referrers.
+- [github.com: README.md](https://github.com/project-zot/zot/blob/main/examples/README.md) — The upstream configuration guide documents these concrete Zot capabilities directly.
+- [github.com: spec.md](https://github.com/opencontainers/distribution-spec/blob/main/spec.md) — The OCI Distribution Specification directly defines `/v2/`, blob and manifest endpoints, and the push ordering.
+- [github.com: v2.1.14](https://github.com/project-zot/zot/releases/tag/v2.1.14) — The official Zot GitHub releases page shows a published `v2.1.14` release.
+- [v3.helm.sh: registries](https://v3.helm.sh/docs/topics/registries/) — The Helm OCI registries documentation directly shows `helm push` and `helm pull` against OCI registries.
+- [github.com: cosign](https://github.com/sigstore/cosign) — The upstream Cosign README states that signatures are stored in OCI registries and explicitly advises signing by digest, not tag.
+- [kubernetes.io: images](https://kubernetes.io/docs/concepts/containers/images/) — The Kubernetes images documentation directly explains that tags can move while digests are immutable content identifiers.
