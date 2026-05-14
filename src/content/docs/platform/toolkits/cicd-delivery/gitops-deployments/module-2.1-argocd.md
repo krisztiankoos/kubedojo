@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 2.1: ArgoCD"
 slug: platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd
 sidebar:
@@ -127,7 +128,7 @@ what extra fact do you need before deciding whether to sync? The important quest
 important question is "who changed it and why?" If an HPA owns replica count, you probably need an ignore rule. If an
 operator manually scaled during an incident, syncing immediately may remove emergency capacity before the incident is over.
 
-ArgoCD's main components divide this work so failures are easier to isolate. The API server serves the UI, CLI, API, SSO,
+[ArgoCD's main components divide this work so failures are easier to isolate.](https://argo-cd.readthedocs.io/en/stable/operator-manual/architecture/) The API server serves the UI, CLI, API, SSO,
 and RBAC checks. The repo server clones repositories and renders manifests through Helm, Kustomize, Jsonnet, or plain YAML.
 The application controller watches Application resources, compares desired and live state, and performs sync operations.
 Redis caches expensive state so the system does not repeatedly render and fetch the same material under load.
@@ -155,7 +156,7 @@ must create the `argocd` namespace and install the ArgoCD controllers. Many team
 Terraform, or a cluster lifecycle tool for this bootstrap. After ArgoCD is running, it can manage many other resources,
 and mature teams often make ArgoCD manage its own configuration as well.
 
-For a lab, the upstream install manifest is acceptable because it creates a complete working control plane quickly. For
+For a lab, [the upstream install manifest is acceptable](https://argo-cd.readthedocs.io/en/stable/getting_started/) because it creates a complete working control plane quickly. For
 production, teams usually prefer Helm or Kustomize so they can pin versions, configure replicas, set resource requests,
 enable SSO, define ingress, and manage values through review. The important distinction is that the bootstrap path should
 be repeatable and versioned even if ArgoCD is not yet available to reconcile it.
@@ -178,7 +179,7 @@ k -n argocd wait \
 k -n argocd get pods
 ```
 
-The initial admin password is stored in a Kubernetes Secret. In production, you should rotate or disable this default admin
+[The initial admin password is stored in a Kubernetes Secret.](https://argo-cd.readthedocs.io/en/stable/getting_started/) In production, you should rotate or disable this default admin
 path after SSO and RBAC are configured. In a lab, retrieving the password lets you access the UI and CLI quickly.
 
 ```bash
@@ -300,7 +301,7 @@ argocd app sync guestbook-staging
 argocd app wait guestbook-staging --health --timeout 180
 ```
 
-When you use Helm, the Application source points at a chart repository or Git repository and provides values. This is
+When you use Helm, [the Application source points at a chart repository or Git repository](https://argo-cd.readthedocs.io/en/stable/user-guide/application-specification/) and provides values. This is
 powerful because teams can expose a small set of environment differences without duplicating whole manifest trees. It is
 also a source of confusion because the rendered manifest, not the values file alone, is what ArgoCD compares against the
 cluster. Debugging Helm-based apps often starts by asking ArgoCD to show the rendered manifests it is actually applying.
@@ -390,7 +391,7 @@ you have in the source, the review process, and the reversibility of the resourc
 
 The two flags that deserve the most scrutiny are `selfHeal` and `prune`. `selfHeal` tells ArgoCD to undo live changes that
 were not made in Git. That is excellent for preventing configuration drift, but it can also undo a carefully documented
-emergency scale-up. `prune` tells ArgoCD to delete live resources that are no longer in the desired state. That is useful
+emergency scale-up. [`prune` tells ArgoCD to delete live resources that are no longer in the desired state.](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/) That is useful
 for cleanup, but it turns file deletions into Kubernetes deletions.
 
 ```yaml
@@ -417,14 +418,14 @@ spec:
       - PruneLast=true
 ```
 
-`PruneLast=true` is a small but important example of sequencing judgment. If a change replaces one resource with another,
+[`PruneLast=true`](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/) is a small but important example of sequencing judgment. If a change replaces one resource with another,
 you often want new resources created and healthy before old resources are removed. This does not make pruning harmless,
 but it reduces avoidable downtime during replacement operations. The larger safety decision remains whether the application
 should prune automatically at all.
 
 Sync waves give you ordering inside a sync. ArgoCD already applies some Kubernetes resource kinds in a sensible order,
 but explicit waves become useful when an application contains namespaces, CRDs, controllers, migrations, workloads, and
-ingress resources that have real dependencies. Lower wave numbers run first, and ArgoCD waits for health before advancing
+ingress resources that have real dependencies. [Lower wave numbers run first](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/), and ArgoCD waits for health before advancing
 when health checks are available.
 
 ```yaml
@@ -537,9 +538,9 @@ automation. The goal is automation that matches the team's ability to predict an
 Managing one Application manually is straightforward. Managing many Applications across teams, clusters, and environments
 requires a generation pattern. ArgoCD has two common answers: App of Apps and ApplicationSets. App of Apps lets one root
 Application manage other Application manifests stored in Git. ApplicationSets generate Applications from templates and
-generators such as Git directories, cluster registrations, lists, pull requests, or matrix combinations.
+generators such as [Git directories, cluster registrations, lists, pull requests, or matrix combinations](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/).
 
-The App of Apps pattern is easy to understand because it uses the same Application resource recursively. A root app points
+[The App of Apps pattern](https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/) is easy to understand because it uses the same Application resource recursively. A root app points
 at a directory of child Application manifests. The root app syncs those child Application CRs into the `argocd` namespace,
 and each child Application manages its own workload. This is useful for platform bootstrap because installing ingress,
 cert-manager, observability, and team apps can be represented as reviewed child Application files.
@@ -690,7 +691,7 @@ generated Applications, and review from people who understand the target cluster
 ## Projects and RBAC: The Real Multi-Tenancy Boundary
 
 ArgoCD AppProjects are where platform teams turn "please use the shared ArgoCD instance" into enforceable boundaries.
-A project can restrict source repositories, destination clusters and namespaces, allowed resource kinds, denied resource
+[A project can restrict source repositories, destination clusters and namespaces](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/), allowed resource kinds, denied resource
 kinds, and project-scoped roles. Without projects, a shared ArgoCD instance becomes a shared deployment credential, which
 is the opposite of platform self-service.
 
@@ -743,7 +744,7 @@ It means secrets should arrive through an approved mechanism such as External Se
 secret delivery process. The policy separates application deployment from credential management, which is a common and
 valuable platform boundary.
 
-Instance-level RBAC maps users and groups to ArgoCD capabilities. Project roles then narrow what those users can do inside
+[Instance-level RBAC maps users and groups to ArgoCD capabilities.](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/) Project roles then narrow what those users can do inside
 a project. Both layers matter. Instance RBAC can decide whether a group can create Applications at all; project roles can
 decide which project applications they may get, sync, or inspect. When SSO is configured, group claims from the identity
 provider become part of this enforcement chain.
@@ -838,7 +839,7 @@ k -n argocd logs deploy/argocd-application-controller --tail=100
 A common OutOfSync pattern appears when another controller owns a field that Git also declares. Replica counts managed by
 an HPA are the classic example. If Git says three replicas and the HPA scales to six, ArgoCD can report drift forever or
 fight the autoscaler if self-heal is enabled. The fix is not to disable GitOps for the whole app. The fix is to stop
-declaring ownership of that field in the wrong place or configure an ignore rule for the controller-owned field.
+declaring ownership of that field in the wrong place or [configure an ignore rule for the controller-owned field](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/).
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -879,7 +880,7 @@ k -n argocd get events --sort-by=.lastTimestamp | tail -n 20
 
 Rollbacks should usually start in Git. Reverting the commit that introduced the bad desired state preserves the audit trail
 and lets ArgoCD reconcile normally. The ArgoCD rollback command can be useful when you need to return quickly to a previous
-application revision, but automated sync may move the app back to the current Git head unless you pause or change policy.
+application revision, but [automated sync may move the app back to the current Git head unless you pause or change policy](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/).
 That is why incident runbooks should say exactly when to suspend auto-sync and who may do it.
 
 ```bash
@@ -1007,7 +1008,7 @@ Kubernetes commands. The point is not to memorize one ignore rule. The point is 
 
 - **ArgoCD can render several source styles before applying anything**: plain YAML, Helm charts, Kustomize overlays,
   Jsonnet, and configured plugins all become Kubernetes manifests before comparison.
-- **Application health is not the same as sync status**: an app can be Synced because manifests match and still be Degraded
+- **[Application health is not the same as sync status](https://argo-cd.readthedocs.io/en/stable/user-guide/status-badge/)**: an app can be Synced because manifests match and still be Degraded
   because a Deployment, Job, or custom resource reports unhealthy state.
 - **ApplicationSets create Application resources, not workload resources directly**: the generated Applications then
   perform their own reconciliation against clusters and namespaces.
@@ -1345,3 +1346,11 @@ blue-green, analysis, and progressive promotion strategies.
 - [argo-cd.readthedocs.io: release 3.1](https://argo-cd.readthedocs.io/en/release-3.1/) — General lesson point for an illustrative rewrite.
 - [Introduction to ApplicationSet Controller](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/) — Covers ApplicationSet concepts, generators, monorepo patterns, and multi-cluster app generation.
 - [Argo CD RBAC Configuration](https://argo-cd.readthedocs.io/en/stable/operator-manual/rbac/) — Explains Argo CD RBAC, built-in roles, SSO group mapping, and project-scoped access control.
+- [argo-cd.readthedocs.io: getting started](https://argo-cd.readthedocs.io/en/stable/getting_started/) — The getting-started guide shows the stable-manifest install and explicitly recommends a pinned version for production.
+- [argo-cd.readthedocs.io: application specification](https://argo-cd.readthedocs.io/en/stable/user-guide/application-specification/) — The Application specification reference directly defines these fields and notes that `repoURL` may target Git or Helm sources.
+- [argo-cd.readthedocs.io: auto sync](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/) — The automated-sync documentation directly defines auto-sync, self-heal, and automatic pruning behavior.
+- [argo-cd.readthedocs.io: sync options](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/) — The sync-options documentation explicitly defines `PruneLast=true` as a final implicit sync wave after resources become healthy.
+- [argo-cd.readthedocs.io: sync waves](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/) — The sync-phases-and-waves reference directly defines the hook lifecycle and the lowest-to-highest sync-wave ordering model.
+- [argo-cd.readthedocs.io: cluster bootstrapping](https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/) — The cluster-bootstrapping guide documents the App of Apps pattern and warns that it is an admin-only capability.
+- [argo-cd.readthedocs.io: projects](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/) — The projects guide directly lists these restriction types and explains that the default project initially allows any repo, cluster, and kind.
+- [argo-cd.readthedocs.io: status badge](https://argo-cd.readthedocs.io/en/stable/user-guide/status-badge/) — The status-badge documentation explicitly describes health status and sync status as separate application status dimensions.

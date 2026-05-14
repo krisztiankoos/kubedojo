@@ -1,0 +1,262 @@
+{
+  "module_key": "platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd",
+  "module_path": "src/content/docs/platform/toolkits/cicd-delivery/gitops-deployments/module-2.1-argocd.md",
+  "research_run_id": "2026-05-14T13:04:00+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/platform-toolkits-cicd-delivery-gitops-deployments.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening paragraph frames a concrete production incident at a payments company without naming a real attributable source.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters | opening sentence",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A platform engineer at a payments company watches a deployment dashboard turn red at the start of a busy business day.",
+      "suggested_rewrite": "A GitOps deployment can turn red even when the cluster itself is healthy, because the controller may be reconciling a repository change rather than responding to a cluster failure.",
+      "lesson_point_url": null,
+      "rationale": "This is presented as a real incident setup but no attributable company, postmortem, or dated source is provided."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The opening anecdote attributes the failure to a cleanup pull request deleting a manifest directory that Argo CD still treated as production intent.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters | incident cause clause",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "a cleanup pull request removed a manifest directory that ArgoCD still treated as production intent",
+      "suggested_rewrite": "a repository change removed resources from the desired state in Git",
+      "lesson_point_url": null,
+      "rationale": "The operational lesson is sound, but the narrative presents a specific unsourced incident trigger as fact."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Argo CD separates responsibilities across the API server, repo server, application controller, and Redis cache.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Core Concept: Reconciliation Is the Product | components paragraph and component table",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared architecture source directly documents these core Argo CD components and their responsibilities."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "The official getting-started flow installs Argo CD into the `argocd` namespace from the stable install manifest, and production should pin a version instead of tracking stable.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Installing ArgoCD Without Confusing Bootstrap and Delivery | install paragraph before first bash block",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/getting_started/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The getting-started guide shows the stable-manifest install and explicitly recommends a pinned version for production."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "The default install uses a self-signed certificate, supports local access via `kubectl port-forward`, and stores the generated admin password in `argocd-initial-admin-secret` until you change it.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Installing ArgoCD Without Confusing Bootstrap and Delivery | password and port-forward paragraphs",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/getting_started/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The getting-started guide explicitly documents the self-signed default, port-forward access, the initial admin secret, and the warning to delete it after changing the password."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "An Argo CD `Application` specifies project, source, destination, and sync policy, and the source can point to either a Git repository or a Helm chart repository.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Modeling an Application: Source, Destination, Project, Sync | opening paragraph and first YAML example",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/user-guide/application-specification/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Application specification reference directly defines these fields and notes that `repoURL` may target Git or Helm sources."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Automated sync applies changes when live state differs from Git, `selfHeal` retriggers sync on live drift, and pruning controls automatic deletion of resources removed from desired state.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Sync Policy: Automation With a Blast Radius | opening paragraphs",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The automated-sync documentation directly defines auto-sync, self-heal, and automatic pruning behavior."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "`PruneLast=true` makes pruning happen as a final implicit wave after other resources are deployed, healthy, and prior waves succeed.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Sync Policy: Automation With a Blast Radius | `PruneLast=true` paragraph",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The sync-options documentation explicitly defines `PruneLast=true` as a final implicit sync wave after resources become healthy."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Argo CD supports hook phases such as `PreSync`, `Sync`, `PostSync`, `SyncFail`, and `PostDelete`, and it orders sync waves from lower numbers to higher numbers.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Sync Policy: Automation With a Blast Radius | sync waves paragraph, hook paragraph, and hook table",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The sync-phases-and-waves reference directly defines the hook lifecycle and the lowest-to-highest sync-wave ordering model."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The App of Apps pattern uses a parent Application to create child Applications, and Argo CD documents it as an admin-level cluster-bootstrapping tool.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: ApplicationSets and App of Apps: Scaling Without Copying Risk | App of Apps paragraphs",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The cluster-bootstrapping guide documents the App of Apps pattern and warns that it is an admin-only capability."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "ApplicationSets generate `Application` resources from generators such as Git directories, lists, clusters, matrix, merge, and pull requests.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: ApplicationSets and App of Apps: Scaling Without Copying Risk | opening paragraph, generator examples, and generator table",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared ApplicationSet source covers generator-driven creation of Application resources and the documented generator families used here."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "Projects can restrict trusted source repositories, destination clusters and namespaces, object kinds, and project roles, and the default project is intentionally permissive for initial testing.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Projects and RBAC: The Real Multi-Tenancy Boundary | AppProject discussion and Common Mistakes row about the `default` project",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/user-guide/projects/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The projects guide directly lists these restriction types and explains that the default project initially allows any repo, cluster, and kind."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "Argo CD RBAC can map SSO or OIDC groups to roles, and AppProject roles narrow what users can do inside a project.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Projects and RBAC: The Real Multi-Tenancy Boundary | RBAC paragraph and `argocd-rbac-cm` example",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared RBAC source directly covers group mapping, built-in roles, and project-scoped access control."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "Argo CD tracks application health separately from sync status.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Core Concept: Reconciliation Is the Product | Degraded paragraph; section: Did You Know? | health vs sync bullet",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/user-guide/status-badge/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The status-badge documentation explicitly describes health status and sync status as separate application status dimensions."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "Argo CD supports a targeted `ignoreDifferences` rule for `/spec/replicas`, which is the documented pattern for not syncing Deployment replica count changes.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Troubleshooting: From Symptom to Owner | HPA drift paragraph and ignoreDifferences YAML",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The sync-options documentation includes the canonical `ignoreDifferences` example for ignoring `spec.replicas` during sync."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "Rollback cannot be performed against an application with automated sync enabled, and `selfHeal` causes Argo CD to retry sync after live drift recurs.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Troubleshooting: From Symptom to Owner | rollback paragraph",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The automated-sync semantics page directly states both behaviors."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://argo-cd.readthedocs.io/en/stable/operator-manual/architecture/",
+      "title": "Argo CD Architectural Overview",
+      "tier": "upstream",
+      "why_relevant": "Best primary reference for controller roles, repo rendering, sync flow, and control-plane responsibilities."
+    },
+    {
+      "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/",
+      "title": "Sync Phases and Waves",
+      "tier": "upstream",
+      "why_relevant": "Direct reference for hooks, ordering, and the operational blast radius of sync sequencing."
+    },
+    {
+      "url": "https://argo-cd.readthedocs.io/en/stable/user-guide/projects/",
+      "title": "Projects",
+      "tier": "upstream",
+      "why_relevant": "Most relevant follow-on reading for multi-team boundaries, the default project's risks, and AppProject policy design."
+    }
+  ],
+  "notes": "No claim entries were generated for code blocks, Mermaid-style ASCII diagrams, checklist success criteria, quiz prompts, or purely pedagogical analogies. I emitted only the load-bearing Argo CD product-behavior and policy claims that would need inline support if kept in prose.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
