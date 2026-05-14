@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.1: OTel API & SDK Deep Dive"
 slug: k8s/otca/module-1.1-otel-sdk-deep-dive
 sidebar:
@@ -6,7 +7,7 @@ sidebar:
 revision_pending: false
 ---
 
-> **Complexity**: `[COMPLEX]` - Core domain, 46% of OTCA exam weight
+> **Complexity**: `[COMPLEX]` - Core domain, [46% of OTCA exam weight](https://www.cncf.io/training/certification/otca/)
 >
 > **Time to Complete**: 90-120 minutes
 >
@@ -38,7 +39,7 @@ When the company later moved from one trace backend to another, teams had to tou
 The migration risk came from a design mistake: the telemetry pipeline was embedded in application logic instead of being treated as a configurable SDK boundary.
 
 OpenTelemetry changes that boundary.
-Application code creates spans, metrics, logs, attributes, and context using a stable API, while the SDK decides how telemetry is sampled, batched, aggregated, and exported.
+Application code creates spans, metrics, logs, attributes, and context [using a stable API, while the SDK decides how telemetry is sampled, batched, aggregated, and exported](https://opentelemetry.io/docs/specs/otel/overview/).
 That separation is the reason a team can keep business instrumentation in source code while changing exporters, collectors, sampling policies, or backends through configuration.
 For OTCA, this is not trivia; it is the mechanism behind almost every scenario question in the API and SDK domain.
 
@@ -129,9 +130,9 @@ That is why batch processing is the normal production default.
 | Custom filtering processor | Drops or changes spans before export | Reducing cost or removing unsafe attributes | Can hide failures if filtering is too broad |
 
 A batch processor is not a magic lossless queue.
-It has a queue size, a flush interval, and a maximum export batch size, so the tuning question is really about tradeoffs.
+It has [a queue size, a flush interval, and a maximum export batch size](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/), so the tuning question is really about tradeoffs.
 A larger queue absorbs bursts but uses more memory, a shorter delay gives fresher traces but increases export overhead, and a larger batch improves throughput but may create bigger export spikes.
-For OTCA, focus on the behavior first: batch means asynchronous buffering; simple means synchronous export.
+For OTCA, focus on the behavior first: [batch means asynchronous buffering; simple means synchronous export](https://opentelemetry.io/docs/languages/python/exporters/).
 
 | Batch Setting | Common Environment Variable | What You Tune | Failure Mode When Wrong |
 |---|---|---|---|
@@ -140,7 +141,7 @@ For OTCA, focus on the behavior first: batch means asynchronous buffering; simpl
 | Batch size | `OTEL_BSP_MAX_EXPORT_BATCH_SIZE` | How many spans go in one export call | Export calls become too small or too bursty |
 
 Metrics use the same provider idea but a different middle component.
-A meter creates instruments, instruments record measurements, and the reader decides when collection happens and which temporality the exporter prefers.
+[A meter creates instruments, instruments record measurements, and the reader decides when collection happens and which temporality the exporter prefers.](https://opentelemetry.io/docs/concepts/signals/metrics/)
 This distinction matters because metrics are not shipped one measurement at a time; the SDK aggregates many recordings into sums, histograms, last values, or other forms.
 When a metric looks wrong in a backend, the bug is often in instrument choice, aggregation, label cardinality, or temporality rather than in the exporter.
 
@@ -162,13 +163,13 @@ When a metric looks wrong in a backend, the bug is often in instrument choice, a
 
 | Metric Reader | Collection Model | Best Fit | Design Implication |
 |---|---|---|---|
-| `PeriodicExportingMetricReader` | Push on an interval | OTLP exporters and collector pipelines | Application initiates exports on schedule |
-| Prometheus reader | Pull through a scrape endpoint | Prometheus-native environments | Prometheus controls scrape timing |
+| [`PeriodicExportingMetricReader`](https://opentelemetry.io/docs/specs/otel/metrics/sdk/) | Push on an interval | OTLP exporters and collector pipelines | Application initiates exports on schedule |
+| Prometheus reader | [Pull through a scrape endpoint](https://opentelemetry.io/docs/specs/otel/metrics/sdk_exporters/prometheus/) | Prometheus-native environments | Prometheus controls scrape timing |
 | Manual collection reader | Explicit collection trigger | Tests and specialized integrations | Caller must remember to collect |
 
 Logs complete the three-signal picture, but they are easy to misunderstand.
 OpenTelemetry usually does not replace the logging API that application teams already use; instead, a bridge connects existing log records into the OTel log pipeline.
-That bridge can attach trace context so a log line written inside a request span carries the same trace and span identifiers as the trace data.
+That bridge can [attach trace context so a log line written inside a request span carries the same trace and span identifiers as the trace data](https://opentelemetry.io/docs/concepts/signals/logs/).
 This lets logs, metrics, and traces point at the same incident without forcing every team to abandon familiar logging libraries.
 
 ```ascii
@@ -253,7 +254,7 @@ Mislabeling outbound calls as internal makes dependency maps and latency breakdo
 | `INTERNAL` | Work stays inside the process | Validation, pricing calculation, template rendering | Using it for every custom span |
 
 Attributes and resources are different because they answer different questions.
-A resource describes the entity producing telemetry, such as the service, deployment environment, version, host, process, or Kubernetes pod.
+[A resource describes the entity producing telemetry, such as the service, deployment environment, version, host, process, or Kubernetes pod.](https://opentelemetry.io/docs/concepts/resources/)
 An attribute describes one operation or one metric data point, such as HTTP method, route, status code, database system, order type, or queue name.
 Putting `service.name` on every span attribute instead of on the resource creates noisy telemetry and breaks resource-based grouping.
 
@@ -268,7 +269,7 @@ Putting `service.name` on every span attribute instead of on the resource create
 Events are useful when a span needs a timeline inside the timeline.
 For example, a checkout span may add events for `cart.validated`, `payment.authorized`, and `inventory.reserved`, especially when those steps are too small or too numerous to deserve separate spans.
 Exception recording is a special case of events: the SDK records exception type, message, and stack trace as an event.
-However, recording an exception event does not automatically prove the span failed in every SDK and configuration; setting error status makes the outcome visible to trace readers and alert rules.
+However, [recording an exception event does not automatically prove the span failed in every SDK and configuration; setting error status makes the outcome visible to trace readers and alert rules](https://opentelemetry.io/docs/specs/otel/trace/exceptions/).
 
 | Span Detail | Best Use | Poor Use | Better Alternative |
 |---|---|---|---|
@@ -277,7 +278,7 @@ However, recording an exception event does not automatically prove the span fail
 | Status | Final operation result | Setting error for every handled retry | Set error when the span's operation failed |
 | Link | Relationship across traces | Replacing normal parent-child propagation | Use parent-child when one operation directly caused another |
 
-Links are the right tool when a parent-child tree would lie.
+[Links are the right tool when a parent-child tree would lie.](https://opentelemetry.io/docs/concepts/signals/traces/)
 A batch worker may process messages that came from several independent requests, so one consumer span cannot have all of those producer spans as parents.
 A span link lets the worker say, "this processing is related to those earlier spans," while keeping its own trace structure.
 Links are especially important in fan-in, batching, and retry designs where causal relationships are real but not tree-shaped.
@@ -324,7 +325,7 @@ For performance debugging, histograms are often the bridge from "something got s
 | Observe queue depth | Observable Gauge | Value exists outside request flow | `queue.name=orders` |
 | Observe total CPU time | Observable Counter | OS counter increases over time | `cpu.state=user` |
 
-Temporality defines what a metric value means over time.
+[Temporality defines what a metric value means over time.](https://opentelemetry.io/docs/reference/specification/metrics/data-model/)
 Cumulative temporality reports the total since a starting point, while delta temporality reports the change since the last collection.
 If a counter records increments of ten, twenty, and five across three collection windows, cumulative reports ten, thirty, and thirty-five, while delta reports ten, twenty, and five.
 Neither is universally better; the backend and reader must agree on interpretation.
@@ -400,7 +401,7 @@ This is why propagation bugs often show up as "we have spans, but they are in se
 ```
 
 The W3C TraceContext format is the default propagation standard in modern OpenTelemetry configurations.
-The `traceparent` header carries a version, trace ID, parent span ID, and trace flags, while `tracestate` carries vendor-specific state.
+The [`traceparent` header carries a version, trace ID, parent span ID, and trace flags](https://opentelemetry.io/docs/concepts/context-propagation/), while `tracestate` carries vendor-specific state.
 In a debugging scenario, you rarely need to recite the header grammar; you need to recognize whether the same trace ID survived the boundary and whether the downstream service used the extracted parent.
 That practical interpretation matters more than memorizing field widths.
 
@@ -427,7 +428,7 @@ That practical interpretation matters more than memorizing field widths.
 Baggage is separate from trace identity.
 It carries application context as key-value pairs, and that context travels downstream with requests.
 This can be useful for routing, experiment cohort, tenant tier, or other non-sensitive operational hints.
-The danger is that baggage is transmitted in headers or metadata, so it must be treated as data visible to downstream systems and infrastructure.
+The danger is that [baggage is transmitted in headers or metadata, so it must be treated as data visible to downstream systems and infrastructure](https://opentelemetry.io/docs/concepts/signals/baggage/).
 
 | Baggage Candidate | Good or Bad | Reason | Safer Alternative |
 |---|---|---|---|
@@ -465,14 +466,14 @@ The practical rule is to keep business instrumentation in code and keep deployme
 | Trace sampling | Sampler object | `OTEL_TRACES_SAMPLER` | Platform owns sampling policy |
 | Signal enablement | Provider setup | `OTEL_TRACES_EXPORTER` | Service needs quick disable or console debug |
 
-Signal-specific configuration generally overrides general configuration.
+[Signal-specific configuration generally overrides general configuration.](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/)
 For example, a platform may set a general OTLP endpoint for all signals but send traces to a specialized trace collector during a migration.
 This precedence lets teams change one signal without disturbing the others.
 In exam scenarios, look for the more specific variable when two settings appear to conflict.
 
 | Environment Variable | Purpose | Example Value | Operational Meaning |
 |---|---|---|---|
-| `OTEL_SERVICE_NAME` | Sets `service.name` resource attribute | `checkout` | Groups telemetry by service |
+| [`OTEL_SERVICE_NAME`](https://opentelemetry.io/docs/languages/sdk-configuration/general/) | Sets `service.name` resource attribute | `checkout` | Groups telemetry by service |
 | `OTEL_RESOURCE_ATTRIBUTES` | Adds resource attributes | `deployment.environment=prod,service.version=2.4.1` | Enriches every signal from the process |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | General OTLP endpoint | `http://collector:4317` | Default destination for OTLP signals |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Trace-specific OTLP endpoint | `http://trace-collector:4317` | Overrides the general endpoint for traces |
@@ -482,7 +483,7 @@ In exam scenarios, look for the more specific variable when two settings appear 
 
 OTLP is the standard export protocol you should expect to see in modern OTel designs.
 The exporter may send directly to a backend, but many production architectures send to an OpenTelemetry Collector first.
-The collector can receive telemetry, batch it, filter it, enrich it, and fan it out to one or more backends.
+The collector can [receive telemetry, batch it, filter it, enrich it, and fan it out to one or more backends](https://opentelemetry.io/docs/collector/).
 This module focuses on the SDK side, but the export choice should already make you think about the collector architecture in the next module.
 
 | Exporter Choice | Good Fit | Tradeoff | Senior-Level Question |
@@ -495,7 +496,7 @@ This module focuses on the SDK side, but the export choice should already make y
 
 Semantic conventions are naming standards that make telemetry portable.
 They help dashboards, alert rules, and queries work across libraries and languages.
-For HTTP spans, current stable conventions use names such as `http.request.method` and `http.response.status_code`.
+For HTTP spans, current stable conventions use names such as [`http.request.method` and `http.response.status_code`](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/).
 Old names may still appear in older dashboards or examples, but exam scenarios expect you to understand that semantic conventions evolve and that consistent naming is part of portability.
 
 | Domain | Recommended Attribute | Example Value | Why It Helps |
@@ -516,7 +517,7 @@ Instrumentation is not just about creating telemetry; it is about creating telem
 ## Part 6: Auto-Instrumentation, Manual Instrumentation, and the Boundary Between Them
 
 Auto-instrumentation wraps supported libraries without requiring application developers to edit every call site.
-In Java, an agent can modify bytecode at class load time; in Python, instrumentation commonly patches libraries during import; in Node.js, require hooks can wrap modules; in .NET, profiling and startup hooks can attach instrumentation.
+[In Java, an agent can modify bytecode at class load time](https://opentelemetry.io/docs/zero-code/java/agent/); [in Python, instrumentation commonly patches libraries during import](https://opentelemetry.io/docs/zero-code/python/); [in Node.js, require hooks can wrap modules](https://opentelemetry.io/docs/zero-code/js/); [in .NET, profiling and startup hooks can attach instrumentation](https://opentelemetry.io/docs/zero-code/dotnet/configuration/).
 This is powerful because it gives teams baseline traces for HTTP frameworks, clients, databases, messaging libraries, and gRPC quickly.
 It is not enough for business observability because libraries do not know what your checkout, renewal, refund, or fraud decision means.
 
@@ -1279,6 +1280,23 @@ If you used `SimpleSpanProcessor`, switch to batch processing and explain how re
 - [OpenTelemetry Go instrumentation](https://opentelemetry.io/docs/languages/go/instrumentation/)
 - [W3C Trace Context Recommendation](https://www.w3.org/TR/trace-context/)
 - [OpenTelemetry Kubernetes getting started](https://opentelemetry.io/docs/kubernetes/getting-started/)
+- [cncf.io: otca](https://www.cncf.io/training/certification/otca/) — The official CNCF OTCA exam page lists The OpenTelemetry API and SDK domain at 46%.
+- [opentelemetry.io: overview](https://opentelemetry.io/docs/specs/otel/overview/) — The OpenTelemetry overview specification explicitly distinguishes API packages from the SDK implementation.
+- [opentelemetry.io: data model](https://opentelemetry.io/docs/reference/specification/metrics/data-model/) — The metrics data model specification defines delta vs cumulative temporality and exemplars with trace_id and span_id.
+- [opentelemetry.io: exporters](https://opentelemetry.io/docs/languages/python/exporters/) — The official exporters documentation contrasts simple and batched processing and explicitly recommends batching.
+- [opentelemetry.io: sdk environment variables](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/) — The SDK environment variable specification defines these exact batch span processor variables.
+- [opentelemetry.io: sdk](https://opentelemetry.io/docs/specs/otel/metrics/sdk/) — The metrics SDK specification defines the periodic exporting MetricReader as the push-oriented reader implementation.
+- [opentelemetry.io: prometheus](https://opentelemetry.io/docs/specs/otel/metrics/sdk_exporters/prometheus/) — The Prometheus exporter specification explicitly defines it as a pull metric exporter that responds to HTTP requests.
+- [opentelemetry.io: exceptions](https://opentelemetry.io/docs/specs/otel/trace/exceptions/) — The exceptions specification shows exceptions recorded as events and the paired setting of span status to ERROR.
+- [opentelemetry.io: resources](https://opentelemetry.io/docs/concepts/resources/) — The resources concepts page directly states that resources are attached at provider creation and documents service.name plus the unknown_service fallback.
+- [opentelemetry.io: general](https://opentelemetry.io/docs/languages/sdk-configuration/general/) — The general SDK configuration page documents these exact variables and the OTEL_SERVICE_NAME precedence rule.
+- [opentelemetry.io: otlp exporter](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) — The OTLP exporter configuration page documents general and signal-specific endpoint/protocol variables and the usual 4317/4318 defaults.
+- [opentelemetry.io: collector](https://opentelemetry.io/docs/collector/) — The Collector introduction explicitly describes it as a vendor-agnostic component that can process and export to one or more backends.
+- [opentelemetry.io: http migration](https://opentelemetry.io/docs/specs/semconv/non-normative/http-migration/) — The HTTP semantic-convention migration guide directly maps older HTTP attribute names to the current stable forms.
+- [opentelemetry.io: agent](https://opentelemetry.io/docs/zero-code/java/agent/) — The Java agent page explicitly describes zero-code Java instrumentation as a Java agent that dynamically injects bytecode.
+- [opentelemetry.io: python](https://opentelemetry.io/docs/zero-code/python/) — The Python zero-code documentation shows configuration and launch through the opentelemetry-instrument command.
+- [opentelemetry.io: configuration](https://opentelemetry.io/docs/zero-code/dotnet/configuration/) — The .NET automatic-instrumentation configuration docs explicitly document CLR profiler variables and DOTNET_STARTUP_HOOKS.
+- [opentelemetry.io: js](https://opentelemetry.io/docs/zero-code/js/) — The JavaScript zero-code documentation gives this exact NODE_OPTIONS-based require-hook pattern.
 
 ## Next Module
 
