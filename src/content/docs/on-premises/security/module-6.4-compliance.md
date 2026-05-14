@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 revision_pending: false
 title: "Module 6.4: Compliance for Regulated Industries"
 slug: on-premises/security/module-6.4-compliance
@@ -215,9 +216,9 @@ The Kubernetes audit policy controls what the API server logs. A well-designed p
 
 ### Understanding Audit Levels
 
-The Kubernetes API server supports four audit levels, each picking a point on the trade-off between detail and risk. `None` writes no event at all — appropriate for high-volume, low-value endpoints like health checks or the metrics scrape that runs every fifteen seconds and otherwise floods the log. `Metadata` records who, what, when, and against which object, but not the request body; this is the right default for Secrets because it answers "who looked at this secret and when" without writing the secret value into a place the auditor can see. `Request` adds the request body, which is the right level for things like Role creation where the body is what you actually need to audit and is not itself sensitive. `RequestResponse` adds the response body and is the right level for `pods/exec` and `pods/attach`, where you may need to reconstruct exactly what command an engineer ran and what the pod returned to them.
+[The Kubernetes API server supports four audit levels](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/), each picking a point on the trade-off between detail and risk. `None` writes no event at all — appropriate for high-volume, low-value endpoints like health checks or the metrics scrape that runs every fifteen seconds and otherwise floods the log. `Metadata` records who, what, when, and against which object, but not the request body; this is the right default for Secrets because it answers "who looked at this secret and when" without writing the secret value into a place the auditor can see. `Request` adds the request body, which is the right level for things like Role creation where the body is what you actually need to audit and is not itself sensitive. `RequestResponse` adds the response body and is the right level for `pods/exec` and `pods/attach`, where you may need to reconstruct exactly what command an engineer ran and what the pod returned to them.
 
-The reason logging Secrets at `RequestResponse` is dangerous is that the API server's response to `kubectl get secret` includes the base64-encoded value of the secret. Any administrator with read access to the audit log — which is a much wider population than the set of administrators with read access to the secret itself — can decode the value. The audit log, which is supposed to be your strongest evidence, becomes your weakest credential store. This is the canonical example of how a well-meaning compliance change ("let's log everything!") can produce a worse security posture than the system you started with.
+The reason logging Secrets at `RequestResponse` is dangerous is that [the API server's response to `kubectl get secret` includes the base64-encoded value of the secret](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/). Any administrator with read access to the audit log — which is a much wider population than the set of administrators with read access to the secret itself — can decode the value. The audit log, which is supposed to be your strongest evidence, becomes your weakest credential store. This is the canonical example of how a well-meaning compliance change ("let's log everything!") can produce a worse security posture than the system you started with.
 
 ### Compliance-Grade Audit Policy
 
@@ -301,7 +302,7 @@ rules:
     - RequestReceived
 ```
 
-Order matters in audit policies, because the API server applies the first rule that matches and stops. The `None` rules at the top are deliberately first so health-check noise is dropped before any subsequent rule has a chance to log it. The `RequestResponse` rules for `pods/exec` and RBAC changes sit in the middle so they take precedence over the `Metadata` catch-all near the bottom. The catch-all itself is essential — without it, anything not specifically matched would default to no logging at all, which is exactly the failure mode that bit the healthcare SaaS company in the opening story.
+[Order matters in audit policies, because the API server applies the first rule that matches and stops. The `None` rules at the top are deliberately first so health-check noise is dropped before any subsequent rule has a chance to log it. The `RequestResponse` rules for `pods/exec` and RBAC changes sit in the middle so they take precedence over the `Metadata` catch-all near the bottom. The catch-all itself is essential — without it, anything not specifically matched would default to no logging at all, which is exactly the failure mode that bit the healthcare SaaS company in the opening story.](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/)
 
 ### Configure the API Server
 
@@ -417,7 +418,7 @@ To enforce regulatory controls continuously rather than as a quarterly cleanup e
 
 ### Why Kyverno for Compliance Reporting
 
-Kyverno is a CNCF graduated project that uses Kubernetes-native YAML for policy definitions, which means platform engineers do not have to learn Rego (the policy language used by OPA) before they can write or read a policy. For compliance work, Kyverno's most valuable feature is the PolicyReport CRD: every time a policy is evaluated against a resource — whether it passes, fails, is skipped, or is in warn mode — Kyverno writes the result to a PolicyReport object that lives in the same namespace as the resource. PolicyReports are queryable with `kubectl`, exportable as JSON, and easy to render as human-readable HTML for an assessor.
+[Kyverno is a CNCF graduated project](https://www.cncf.io/announcements/2026/03/24/cloud-native-computing-foundation-announces-kyvernos-graduation/) that uses Kubernetes-native YAML for policy definitions, which means platform engineers do not have to learn Rego (the policy language used by OPA) before they can write or read a policy. For compliance work, Kyverno's most valuable feature is the PolicyReport CRD: every time a policy is evaluated against a resource — whether it passes, fails, is skipped, or is in warn mode — Kyverno writes the result to a PolicyReport object that lives in the same namespace as the resource. PolicyReports are queryable with `kubectl`, exportable as JSON, and easy to render as human-readable HTML for an assessor.
 
 ### A Compliance Policy, End to End
 
@@ -677,7 +678,7 @@ The approach is flawed for two compounding reasons.
 
 **Noise and performance degradation.** Logging every health check, every metrics scrape, and every internal controller reconcile at `RequestResponse` generates a volume of events that the API server, the disk, and the downstream pipeline cannot keep up with. The practical failure mode is that the API server starts dropping events under load, which means you have *less* evidence than you would have had with a disciplined policy. The legal failure mode is that even if everything is captured, the relevant events become impossible to find amid the noise, and "we logged it but cannot find it" is treated identically to "we did not log it."
 
-The compliant alternative is surgical: `None` for high-volume non-resource URLs, `Metadata` for most operations including Secrets, and `RequestResponse` only for high-risk interactive verbs like `pods/exec`, `pods/attach`, and RBAC mutations.
+The compliant alternative is surgical: `None` for high-volume non-resource URLs, [`Metadata` for most operations including Secrets, and `RequestResponse` only for high-risk interactive verbs like `pods/exec`, `pods/attach`, and RBAC mutations](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/).
 </details>
 
 ### Question 3
@@ -939,6 +940,8 @@ For RBAC, expect create and delete events for `test-binding` at `RequestResponse
 - [HIPAA Security Rule, 45 CFR Part 164 Subpart C](https://www.ecfr.gov/current/title-45/subtitle-A/subchapter-C/part-164/subpart-C)
 - [PCI Security Standards Council document library](https://www.pcisecuritystandards.org/standards/)
 - [GDPR Regulation (EU) 2016/679 official text](https://eur-lex.europa.eu/eli/reg/2016/679/oj)
+- [cncf.io: cloud native computing foundation announces kyvernos graduation](https://www.cncf.io/announcements/2026/03/24/cloud-native-computing-foundation-announces-kyvernos-graduation/) — The CNCF graduation announcement directly supports the graduation status and Kubernetes-native positioning.
+- [NIST SP 800-53 Rev. 5](https://csrc.nist.gov/Pubs/sp/800/53/r5/upd1/Final) — It provides a broad control catalog that helps map technical Kubernetes controls to recognizable compliance control families.
 
 ## Next Module
 
