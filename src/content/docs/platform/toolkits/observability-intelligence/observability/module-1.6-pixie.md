@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.6: Pixie - Zero-Instrumentation Observability"
 slug: platform/toolkits/observability-intelligence/observability/module-1.6-pixie
 sidebar:
@@ -13,7 +14,7 @@ sidebar:
 
 **Kubernetes Version Target**: 1.35+
 
-**Environment Assumption**: The examples assume a Linux Kubernetes cluster where privileged DaemonSets are allowed and eBPF is supported by the worker-node kernel.
+**Environment Assumption**: The examples assume a Linux Kubernetes cluster where [privileged DaemonSets are allowed and eBPF is supported by the worker-node kernel](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/02-installing-pixie/01-requirements.md).
 
 ---
 
@@ -79,9 +80,9 @@ Pixie's starting point is different. It observes selected events from the kernel
 +-----------------------------------------------------------------------+
 ```
 
-The eBPF programs Pixie uses are not arbitrary kernel hacks. eBPF programs are verified before loading, run in a constrained environment, and exchange data with user-space collectors through kernel data structures such as maps and ring buffers. This does not make eBPF risk-free, but it explains why modern observability, security, and networking tools increasingly use it for low-overhead visibility.
+The eBPF programs Pixie uses are not arbitrary kernel hacks. [eBPF programs are verified before loading, run in a constrained environment](https://raw.githubusercontent.com/torvalds/linux/master/Documentation/bpf/verifier.rst), and exchange data with user-space collectors through kernel data structures such as maps and ring buffers. This does not make eBPF risk-free, but it explains why modern observability, security, and networking tools increasingly use it for low-overhead visibility.
 
-Pixie is most powerful when you treat it as a short-loop investigation tool. You ask a question, inspect live evidence, refine the query, and then either fix the immediate issue or decide what permanent telemetry should exist. It is less suitable as the only observability system for compliance reports, quarter-long trend analysis, or business-level SLO reporting, because its default storage model is intentionally local and short-lived.
+Pixie is most powerful when you treat it as a short-loop investigation tool. You ask a question, inspect live evidence, refine the query, and then either fix the immediate issue or decide what permanent telemetry should exist. It is less suitable as the only observability system for compliance reports, quarter-long trend analysis, or business-level SLO reporting, because [its default storage model is intentionally local and short-lived](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/01-about-pixie/05-faq.md).
 
 **Stop and think:** Your team owns a service that already emits OpenTelemetry spans, but a downstream dependency does not. A request is slow only when that dependency is called. Before reading further, decide which part of the request path application spans can prove, and which part a kernel-observed tool like Pixie might reveal faster.
 
@@ -101,7 +102,7 @@ The distinction is not a contest between tools. Senior platform engineers combin
 
 ## Pixie Architecture: What Runs in the Cluster
 
-Pixie installs a set of Kubernetes components that separate collection, query execution, metadata enrichment, and optional cloud connectivity. The most important component to recognize during troubleshooting is the Pixie Edge Module, usually abbreviated as PEM. It runs on each node and collects local telemetry through eBPF programs and user-space protocol parsing.
+Pixie installs a set of Kubernetes components that separate collection, query execution, metadata enrichment, and optional cloud connectivity. The most important component to recognize during troubleshooting is the Pixie Edge Module, usually abbreviated as PEM. [It runs on each node and collects local telemetry](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/05-reference/02-architecture.md) through eBPF programs and user-space protocol parsing.
 
 ```ascii
 +--------------------------------------------------------------------------------+
@@ -136,17 +137,17 @@ Pixie installs a set of Kubernetes components that separate collection, query ex
 +--------------------------------------------------------------------------------+
 ```
 
-Vizier is the in-cluster query layer. When you run a PxL script, Vizier coordinates the query, requests data from the relevant PEMs, and returns a table or visualization. This split is why Pixie can query live distributed telemetry without sending every raw event to an external system first.
+Vizier is the in-cluster query layer. When you run a PxL script, [Vizier coordinates the query, requests data from the relevant PEMs](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/05-reference/02-architecture.md), and returns a table or visualization. This split is why Pixie can query live distributed telemetry without sending every raw event to an external system first.
 
-The metadata service connects low-level observations to Kubernetes names that humans can use. A packet alone is not helpful during an incident; a packet enriched with namespace, pod, service, container, and node information becomes actionable. This enrichment is the difference between saying "there is traffic on port 8080" and saying "the `checkout-api` pod in the `payments` namespace is calling `fraud-api` with increasing latency."
+The metadata service connects low-level observations to Kubernetes names that humans can use. A packet alone is not helpful during an incident; a packet enriched with [namespace, pod, service, container, and node information](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/01-about-pixie/05-faq.md) becomes actionable. This enrichment is the difference between saying "there is traffic on port 8080" and saying "the `checkout-api` pod in the `payments` namespace is calling `fraud-api` with increasing latency."
 
-NATS and other internal components support communication inside the Pixie control plane. In normal day-to-day use, you rarely tune these directly, but you should know they exist because failed deployments often show up as missing pods or unhealthy services in the `pl` namespace. When Pixie looks broken, check the health of the platform components before assuming eBPF collection failed.
+[NATS and other internal components support communication inside the Pixie control plane](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/05-reference/02-architecture.md). In normal day-to-day use, you rarely tune these directly, but you should know they exist because failed deployments often show up as missing pods or unhealthy services in the `pl` namespace. When Pixie looks broken, check the health of the platform components before assuming eBPF collection failed.
 
-The cloud connector is optional depending on the deployment model. Some teams use Pixie Cloud or a vendor-hosted interface for dashboards and script management; stricter environments may prefer self-hosted control planes or limited export paths. The platform decision is not only technical. It also includes privacy boundaries, audit requirements, operational support, and whether request payloads may ever leave the cluster.
+The cloud connector is optional depending on the deployment model. Some teams use [Pixie Cloud or a vendor-hosted interface](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/01-about-pixie/05-faq.md) for dashboards and script management; stricter environments may prefer self-hosted control planes or limited export paths. The platform decision is not only technical. It also includes privacy boundaries, audit requirements, operational support, and whether request payloads may ever leave the cluster.
 
 | Component | Role | What You Check During Troubleshooting |
 |---|---|---|
-| PEM | Per-node data collection through eBPF and protocol parsing. | Confirm the DaemonSet has one healthy pod per schedulable Linux node. |
+| PEM | Per-node data collection through eBPF and protocol parsing. | Confirm the [DaemonSet has one healthy pod per schedulable Linux node](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/). |
 | Vizier | Query execution and coordination across PEMs. | Check that queries reach the cluster and return data for expected namespaces. |
 | Metadata service | Kubernetes context enrichment for observed events. | Validate that tables include pod, namespace, service, and node context. |
 | NATS | Internal message bus used by Pixie components. | Inspect logs if components are healthy individually but cannot communicate. |
@@ -182,7 +183,7 @@ A useful preflight check is to inspect node kernels and operating systems. The e
 k get nodes -o custom-columns=NAME:.metadata.name,KERNEL:.status.nodeInfo.kernelVersion,OS:.status.nodeInfo.osImage,ARCH:.status.nodeInfo.architecture,CONTAINER_RUNTIME:.status.nodeInfo.containerRuntimeVersion
 ```
 
-If your cluster allows the Pixie CLI workflow, the install path is direct. The CLI performs compatibility checks, deploys Pixie, and provides a convenient way to run scripts. In production, many platform teams still wrap this in change management and document the exact cluster, namespace, and access model.
+If your cluster allows the Pixie CLI workflow, the install path is direct. [The CLI performs compatibility checks, deploys Pixie](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/02-installing-pixie/04-install-schemes/03-helm.md), and provides a convenient way to run scripts. In production, many platform teams still wrap this in change management and document the exact cluster, namespace, and access model.
 
 ```bash
 bash -c "$(curl -fsSL https://withpixie.ai/install.sh)"
@@ -235,13 +236,13 @@ cd pixie
 px deploy --cloud_addr="${PIXIE_CLOUD_ADDR}"
 ```
 
-The first senior-level deployment decision is scope. You do not have to make Pixie available to every namespace on day one. A platform team may start with staging clusters, selected production namespaces, or incident-only access granted through break-glass controls. The right answer depends on your sensitivity to captured headers and payloads, your incident response model, and how mature your existing observability stack already is.
+The first senior-level deployment decision is scope. You do not have to make Pixie available to every namespace on day one. A platform team may start with staging clusters, [selected production namespaces](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/05-reference/01-admin/03-deploy-options.md), or incident-only access granted through break-glass controls. The right answer depends on your sensitivity to captured headers and payloads, your incident response model, and how mature your existing observability stack already is.
 
 ---
 
 ## PxL Querying: Turning Raw Events into Evidence
 
-PxL, the Pixie Language, is a Python-like query language built around DataFrames. The important habit is to begin with a concrete operational question, not with a table name. "Show me all HTTP events" is rarely a good final query; "which endpoint in `checkout` has the highest p99 latency over the last five minutes, and does it correlate with errors?" is much closer to an incident-response question.
+PxL, the Pixie Language, is a [Python-like query language built around DataFrames](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/05-reference/pxl/index.md). The important habit is to begin with a concrete operational question, not with a table name. "Show me all HTTP events" is rarely a good final query; "which endpoint in `checkout` has the highest p99 latency over the last five minutes, and does it correlate with errors?" is much closer to an incident-response question.
 
 A minimal query starts with a DataFrame, filters the time window and scope, derives useful fields, aggregates by dimensions, and displays the result. This shape should feel familiar if you have used pandas, SQL, PromQL aggregation, or log analytics tools. The syntax is only the surface; the deeper skill is choosing dimensions that reduce noise without hiding the faulty path.
 
@@ -271,7 +272,7 @@ The next filter should reflect the user's symptom. If users report checkout fail
 
 | DataFrame | Best First Question | Example Investigation |
 |---|---|---|
-| `http_events` | Which services, paths, or status codes are slow or failing? | API latency, error spikes, unexpected internal calls. |
+| [`http_events`](https://github.com/pixie-io/docs.px.dev/blob/main/external/datatable_documentation.json) | Which services, paths, or status codes are slow or failing? | API latency, error spikes, unexpected internal calls. |
 | `pgsql_events` | Which SQL statements or client services have high latency? | Slow database calls, repeated queries, missing indexes. |
 | `mysql_events` | Which MySQL requests are frequent, slow, or failing? | Legacy service database pressure. |
 | `dns_events` | Which names fail to resolve or take too long? | CoreDNS overload, bad service names, external lookup delays. |
@@ -283,7 +284,7 @@ A common mistake is to group too early by high-cardinality values such as full U
 
 **Stop and think:** A query grouped by `req_path` shows hundreds of paths such as `/users/1001`, `/users/1002`, and `/users/1003`. What would you change before deciding that hundreds of endpoints are slow? The right move is to normalize or filter the paths so dynamic IDs do not masquerade as unique operational routes.
 
-You also need to understand what Pixie can and cannot see. If traffic is encrypted inside the process and the payload never appears in a parsable form at the observation point, Pixie may show connection and timing metadata without useful body content. That is still valuable for latency and dependency mapping, but it changes the kind of conclusion you can draw.
+You also need to understand what Pixie can and cannot see. [If traffic is encrypted inside the process](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/01-about-pixie/02-data-sources.md) and the payload never appears in a parsable form at the observation point, Pixie may show connection and timing metadata without useful body content. That is still valuable for latency and dependency mapping, but it changes the kind of conclusion you can draw.
 
 ```python
 import px
@@ -459,7 +460,7 @@ k get configmap -n kube-system coredns -o yaml
 
 ### Step 4: Recommend the Fix and the Permanent Signal
 
-A senior response does not stop at identifying DNS as "the issue." It states the immediate mitigation, the evidence supporting it, and the telemetry that should remain after the incident. For example, the team might scale CoreDNS, add NodeLocal DNSCache, fix excessive client lookups, or change application connection reuse behavior.
+A senior response does not stop at identifying DNS as "the issue." It states the immediate mitigation, the evidence supporting it, and the telemetry that should remain after the incident. For example, the team might scale CoreDNS, [add NodeLocal DNSCache](https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/), fix excessive client lookups, or change application connection reuse behavior.
 
 The permanent signal should probably not be "run Pixie manually every time checkout is slow." Pixie helped discover the gap, but the follow-up may be Prometheus alerts on CoreDNS latency, OpenTelemetry spans around dependency calls, or a dashboard that correlates checkout latency with DNS failures. This is how Pixie complements the rest of the observability stack instead of becoming an isolated incident tool.
 
@@ -516,7 +517,7 @@ Decision: If one endpoint dominates tail latency, assign investigation to that s
 
 Problem: A single customer workflow triggers failures, but the team does not have a trace ID because the application was not instrumented. You know the route, customer-safe identifier, or request shape and need to inspect recent traffic around it.
 
-Solution approach: Filter HTTP events by path or header patterns that are safe to inspect under your privacy policy. Select fields that help compare request timing, status, and response behavior. Be careful with body fields in production because Pixie may expose sensitive payloads when protocol parsing is enabled.
+Solution approach: Filter HTTP events by path or header patterns that are safe to inspect under your privacy policy. Select fields that help compare request timing, status, and response behavior. Be careful with body fields in production because [Pixie may expose sensitive payloads](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/05-reference/01-admin/03-deploy-options.md) when protocol parsing is enabled.
 
 ```python
 import px
@@ -628,7 +629,7 @@ Decision: If failures concentrate on one service name, check Kubernetes Service 
 
 Problem: Pixie helped identify a latency signal that should become part of normal operations. The team needs to export an aggregate, not every raw request, to avoid privacy and cost problems.
 
-Solution approach: Aggregate the signal in PxL and send the summarized data through an approved export path such as an OpenTelemetry collector. In production, design the export with labels, retention, and ownership before relying on it for alerts.
+Solution approach: Aggregate the signal in PxL and send the summarized data through an approved export path such as an [OpenTelemetry collector](https://opentelemetry.io/docs/collector/). In production, design the export with labels, retention, and ownership before relying on it for alerts.
 
 ```python
 import px
@@ -672,7 +673,7 @@ The third question is performance overhead. eBPF observability is efficient, but
 | Export design | Export aggregates with stable labels. | Raw exports increase cost and risk without necessarily improving decisions. |
 | Tool ownership | Assign platform ownership for upgrades and compatibility. | eBPF tools depend on node and kernel behavior, not only Kubernetes YAML. |
 
-Pixie also fits into a broader observability architecture. Prometheus remains the standard choice for durable numeric metrics and alerting. OpenTelemetry remains the preferred path for application-owned traces and semantic spans. Logs remain essential for discrete application events and error details. Pixie fills the exploratory gap when you need to see what is happening before you know what should have been instrumented.
+Pixie also fits into a broader observability architecture. [Prometheus remains the standard choice for durable numeric metrics and alerting](https://prometheus.io/docs/introduction/overview/). OpenTelemetry remains the preferred path for application-owned traces and semantic spans. Logs remain essential for discrete application events and error details. Pixie fills the exploratory gap when you need to see what is happening before you know what should have been instrumented.
 
 ```ascii
 +--------------------------------------------------------------------------------+
@@ -697,7 +698,7 @@ A strong platform practice is to close the loop after every Pixie-assisted incid
 
 ## Did You Know?
 
-- Pixie can observe many common application protocols without application code changes, which makes it especially useful for services that are legacy, third-party, or temporarily deployed during an incident.
+- Pixie can observe many common application protocols [without application code changes](https://github.com/pixie-io/pixie), which makes it especially useful for services that are legacy, third-party, or temporarily deployed during an incident.
 - Pixie's in-cluster data model helps reduce unnecessary external data movement, but access controls still matter because observed headers, statements, and payload-like fields can be sensitive.
 - eBPF programs are verified before loading into the Linux kernel, which is one reason modern observability and networking projects can use kernel-level hooks without shipping custom kernel modules.
 - Pixie is often most valuable as an instrumentation gap detector: it shows what the platform should later measure permanently with OpenTelemetry, Prometheus, logs, or SLO dashboards.
@@ -813,7 +814,7 @@ A demo application in the `pixie-demo` namespace has several services and a data
 
 ### Setup
 
-Create a namespace and deploy the sample application. The manifest comes from the Pixie demo repository, so run it only in a disposable lab cluster where external manifest application is allowed.
+Create a namespace and deploy the sample application. The manifest comes from the [Pixie demo repository](https://github.com/pixie-io/pixie-demos/tree/main/simple-gotracing), so run it only in a disposable lab cluster where external manifest application is allowed.
 
 ```bash
 k create namespace pixie-demo
@@ -987,3 +988,16 @@ Continue to [Module 1.7: Hubble - Network Observability with Cilium](../module-1
 - [github.com: pixie](https://github.com/pixie-io/pixie) — The Pixie GitHub README directly states that Pixie uses eBPF for automatic telemetry collection without manual instrumentation.
 - [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/) — Relevant for the module's recommendation to turn Pixie discoveries into durable exported telemetry.
 - [Kubernetes DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) — Useful background for understanding why Pixie validates PEM coverage node by node.
+- [raw.githubusercontent.com: 01 requirements.md](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/02-installing-pixie/01-requirements.md) — Pixie's requirements document states Linux node support, kernel requirements, and privileged access requirements for `vizier-pem-*` pods.
+- [raw.githubusercontent.com: verifier.rst](https://raw.githubusercontent.com/torvalds/linux/master/Documentation/bpf/verifier.rst) — The Linux BPF verifier documentation describes verifier safety checks, pointer types, bounds checks, and function-call constraints.
+- [raw.githubusercontent.com: 05 faq.md](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/01-about-pixie/05-faq.md) — Pixie's FAQ states that telemetry is stored in memory on nodes, retention is generally on the order of hours, and long-term retention requires integrations.
+- [raw.githubusercontent.com: 02 architecture.md](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/05-reference/02-architecture.md) — The Pixie architecture reference identifies PEMs as data collectors deployed to each node via a DaemonSet and short-term in-memory stores.
+- [raw.githubusercontent.com: 03 helm.md](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/02-installing-pixie/04-install-schemes/03-helm.md) — The Helm install guide documents requirement checks and verification commands including `px get viziers` and `px get pems`.
+- [raw.githubusercontent.com: 03 deploy options.md](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/05-reference/01-admin/03-deploy-options.md) — Pixie's deploy-options reference lists these deployment controls and shows CLI and Helm examples.
+- [raw.githubusercontent.com: index.md](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/05-reference/pxl/index.md) — The PxL reference describes PxL as a Python dialect influenced by Pandas and using DataFrames; the Using Pixie docs state that UI, CLI, and API execute PxL scripts.
+- [github.com: datatable documentation.json](https://github.com/pixie-io/docs.px.dev/blob/main/external/datatable_documentation.json) — Pixie's data table documentation lists these tables and their descriptions.
+- [raw.githubusercontent.com: 02 data sources.md](https://raw.githubusercontent.com/pixie-io/docs.px.dev/main/content/en/01-about-pixie/02-data-sources.md) — The Pixie data-sources page lists automatically traced protocols and supported encryption libraries.
+- [Prometheus Overview](https://prometheus.io/docs/introduction/overview/) — Backs Prometheus as a pull-based metrics system with labeled time series, HTTP scraping, service discovery, local storage, recording rules, alert generation, and common ecosystem components such as Alertmanager and Grafana.
+- [OpenTelemetry: Traces](https://opentelemetry.io/docs/concepts/signals/traces/) — Backs core tracing concepts: traces, spans, parent-child relationships, span context, attributes, events, links, status, and how a request path is represented across services.
+- [kubernetes.io: nodelocaldns](https://kubernetes.io/docs/tasks/administer-cluster/nodelocaldns/) — The Kubernetes NodeLocal DNSCache documentation directly supports the named mitigation option.
+- [github.com: simple gotracing](https://github.com/pixie-io/pixie-demos/tree/main/simple-gotracing) — The Pixie demos repository contains the `simple-gotracing` demo referenced by the exercise manifest URL.
