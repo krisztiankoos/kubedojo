@@ -1,0 +1,142 @@
+{
+  "module_key": "k8s/lfcs/module-1.5-full-mock-exam",
+  "module_path": "src/content/docs/k8s/lfcs/module-1.5-full-mock-exam.md",
+  "research_run_id": "2026-05-14T05:22:52+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The LFCS exam is a performance-based assessment.",
+      "claim_class": "standard",
+      "span_hint": "section: Why This Module Matters",
+      "disposition": "supported",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://docs.linuxfoundation.org/tc-docs/certification/instructions-lfcs-and-lfce",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Linux Foundation's LFCS instructions explicitly describe the exam as performance-based tasks solved on the Linux command line."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Setting the setgid bit on a shared directory causes newly created files to inherit the directory's group.",
+      "claim_class": "standard",
+      "span_hint": "section: Worked Example: Users and Permissions",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://www.gnu.org/s/coreutils/manual/html_node/Directory-Setuid-and-Setgid.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "GNU Coreutils documents this directory-setgid inheritance behavior directly, but gnu.org is off the current allowlist."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "A `Type=oneshot` systemd service without `RemainAfterExit=yes` may complete successfully and then appear dead or inactive rather than active.",
+      "claim_class": "standard",
+      "span_hint": "section: Worked Example: Running Systems and systemd",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://raw.githubusercontent.com/systemd/systemd/main/man/systemd.service.xml",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The systemd service documentation explicitly states that oneshot services without RemainAfterExit do not enter active state after running."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Cron jobs run with a limited default environment and are executed by `/bin/sh` unless `SHELL` is overridden.",
+      "claim_class": "standard",
+      "span_hint": "section: Worked Example: Scheduled Tasks",
+      "disposition": "supported",
+      "source_ids": [
+        "S004"
+      ],
+      "proposed_url": "https://raw.githubusercontent.com/cronie-crond/cronie/master/man/crontab.5",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Cronie crontab format documentation states which environment variables are set automatically and that commands run via `/bin/sh` or the configured SHELL."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Device names are unstable, so UUIDs are generally safer than device names in `/etc/fstab`.",
+      "claim_class": "standard",
+      "span_hint": "section: Worked Example: Storage and Persistence",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://raw.githubusercontent.com/util-linux/util-linux/master/sys-utils/mount.8.adoc",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The util-linux mount documentation explicitly warns that device names are unstable and recommends identifiers such as UUID."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "`mount -a` mounts all fstab entries except those marked `noauto`.",
+      "claim_class": "standard",
+      "span_hint": "section: Worked Example: Storage and Persistence",
+      "disposition": "supported",
+      "source_ids": [
+        "S005"
+      ],
+      "proposed_url": "https://raw.githubusercontent.com/util-linux/util-linux/master/sys-utils/mount.8.adoc",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The util-linux mount documentation defines `mount -a` in terms of mounting all matching fstab entries except those with `noauto`."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "A bad `/etc/fstab` entry has caused real production outages.",
+      "claim_class": "incident",
+      "span_hint": "section: Did You Know?",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The `/etc/fstab` file has been a source of real production outages because a single bad persistence entry can affect boot behavior long after the original administrator leaves the terminal.",
+      "suggested_rewrite": "A single bad `/etc/fstab` entry can break mounts or affect boot behavior long after the change was made.",
+      "lesson_point_url": null,
+      "rationale": "The sentence makes an unsourced real-world outage claim without naming or sourcing a concrete incident, so the operational lesson should remain while the historical assertion is removed."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://docs.linuxfoundation.org/tc-docs/certification/instructions-lfcs-and-lfce",
+      "title": "Linux Foundation LFCS Important Instructions",
+      "tier": "upstream",
+      "why_relevant": "Authoritative source for LFCS exam format, timing, and performance-based structure."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/systemd/systemd/main/man/systemd.service.xml",
+      "title": "systemd.service unit configuration reference",
+      "tier": "upstream",
+      "why_relevant": "Primary reference for `Type=oneshot`, `RemainAfterExit`, and service-state verification details."
+    },
+    {
+      "url": "https://raw.githubusercontent.com/util-linux/util-linux/master/sys-utils/mount.8.adoc",
+      "title": "util-linux mount(8) reference",
+      "tier": "upstream",
+      "why_relevant": "Primary reference for UUID-vs-device-name guidance and `mount -a` behavior when checking persistence."
+    }
+  ],
+  "notes": "Worked examples, analogies, local lab setup steps, quiz prompts, and general pacing advice were not seeded. I only flagged externalized exam/manual claims and the single unsupported historical outage assertion.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

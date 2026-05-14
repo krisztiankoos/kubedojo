@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "LFCS Full Mock Exam"
 slug: k8s/lfcs/module-1.5-full-mock-exam
 sidebar:
@@ -39,7 +40,7 @@ After this module, you will be able to evaluate your own mock-exam performance w
 
 A junior administrator walks into a maintenance window with a checklist, a clock, and a system that does not care how much theory they studied the night before. The first task looks easy, the second task fails for an unexpected reason, and the third task looks unrelated until a missing group membership explains both permission errors and a service failure. This is the moment when exam preparation stops being about knowing commands and starts being about controlling attention.
 
-The LFCS exam is a performance assessment, which means the system judges the final machine state more than the story in the candidate's head. A learner may understand cron, systemd, storage, networking, and permissions in separate study sessions, yet still lose time switching between them when the tasks arrive in a mixed order. This module exists because real competence appears when those domains are combined under time pressure.
+The LFCS exam is a [performance assessment](https://docs.linuxfoundation.org/tc-docs/certification/instructions-lfcs-and-lfce), which means the system judges the final machine state more than the story in the candidate's head. A learner may understand cron, systemd, storage, networking, and permissions in separate study sessions, yet still lose time switching between them when the tasks arrive in a mixed order. This module exists because real competence appears when those domains are combined under time pressure.
 
 A senior operator does not win by typing the most commands; they win by forming a small hypothesis, running a precise check, making a minimal change, and verifying the result from another angle. That behavior is learnable, but it has to be practiced as a complete loop. The mock exam in this module is therefore less about discovering brand-new Linux features and more about rehearsing the way a reliable operator thinks.
 
@@ -336,7 +337,7 @@ Networking verification should prove the required path, not merely a nearby path
 
 Storage tasks deserve extra care because a wrong command can damage data or make a system boot poorly. In a real exam environment, you may be given a spare disk, partition, logical volume, or existing filesystem. In a practice VM, a loopback file lets you rehearse the mount and persistence workflow without needing extra hardware.
 
-The loopback example creates a file, formats it, mounts it, writes a test file, and adds an `/etc/fstab` entry using a UUID. Using a UUID is usually more stable than using a loop device name because loop device numbers can change. On real disks, UUIDs are also safer than device names that may shift between boots.
+The loopback example creates a file, formats it, mounts it, writes a test file, and adds an `/etc/fstab` entry using a UUID. [Using a UUID is usually more stable than using a loop device name because loop device numbers can change.](https://raw.githubusercontent.com/util-linux/util-linux/master/sys-utils/mount.8.adoc) On real disks, UUIDs are also safer than device names that may shift between boots.
 
 ```bash
 mkdir -p ~/lfcs-mock/storage
@@ -390,7 +391,7 @@ The storage pattern is therefore: identify the device or filesystem, mount it, v
 
 ## Worked Example: Scheduled Tasks
 
-Scheduled task questions test both syntax and execution context. A cron entry installed for root is not the same as a cron entry installed for a normal user. A command that works interactively may fail under cron because the environment is smaller, the path is different, or output is discarded.
+Scheduled task questions test both syntax and execution context. A cron entry installed for root is not the same as a cron entry installed for a normal user. [A command that works interactively may fail under cron because the environment is smaller, the path is different, or output is discarded.](https://raw.githubusercontent.com/cronie-crond/cronie/master/man/crontab.5)
 
 For a safe practice task, create a user crontab entry that writes a timestamp to a file under your mock directory. Use absolute paths where practical. Cron examples should avoid depending on interactive shell startup files, because cron does not behave like an interactive login shell.
 
@@ -471,7 +472,7 @@ Do not begin by editing the first file that looks related. Start with `systemctl
 
 If you edit a unit file, run `systemctl daemon-reload` before restarting. If you edit only a script or config file consumed by the service, a daemon reload may not be required, but a service restart usually is. The important point is to understand which layer changed.
 
-Verification should match service type. A long-running daemon should become active and stay active. A oneshot unit may complete successfully and become inactive. A timer-related task may require checking both the timer and the service it triggers.
+Verification should match service type. A long-running daemon should become active and stay active. [A oneshot unit may complete successfully and become inactive](https://raw.githubusercontent.com/systemd/systemd/main/man/systemd.service.xml). A timer-related task may require checking both the timer and the service it triggers.
 
 ### Task 4: Networking and Name Resolution
 
@@ -489,7 +490,7 @@ A data path needs to be persistent. Identify the requested device or filesystem,
 
 Storage work has a higher blast radius than ordinary file tasks, so slow down enough to identify the device. `lsblk -f` and `blkid` are safer than guessing from device names. If the task gives you a device, verify that you are using that device and not another disk with a similar name.
 
-Use `/etc/fstab` carefully. Create a backup before editing during practice, prefer UUIDs when appropriate, and test the file with `mount -a` before considering the task complete. A line that works only until reboot does not satisfy a persistence requirement.
+Use `/etc/fstab` carefully. Create a backup before editing during practice, prefer UUIDs when appropriate, and [test the file with `mount -a` before considering the task complete](https://raw.githubusercontent.com/util-linux/util-linux/master/sys-utils/mount.8.adoc). A line that works only until reboot does not satisfy a persistence requirement.
 
 A complete answer proves both the mounted state and the data path. `findmnt /path` shows the source and options, `df -h /path` shows usable space, and a write-read test proves the path is writable as intended. If permissions matter, test with the correct user identity.
 
@@ -902,3 +903,9 @@ Success criteria:
 ## Next Module
 
 This is the final module in the LFCS sequence; continue by returning to the [LFCS track overview](./) and scheduling a timed retake based on your debrief.
+
+## Sources
+
+- [Linux Foundation LFCS Important Instructions](https://docs.linuxfoundation.org/tc-docs/certification/instructions-lfcs-and-lfce) — Authoritative source for LFCS exam format, timing, and performance-based structure.
+- [systemd.service unit configuration reference](https://raw.githubusercontent.com/systemd/systemd/main/man/systemd.service.xml) — Primary reference for `Type=oneshot`, `RemainAfterExit`, and service-state verification details.
+- [util-linux mount(8) reference](https://raw.githubusercontent.com/util-linux/util-linux/master/sys-utils/mount.8.adoc) — Primary reference for UUID-vs-device-name guidance and `mount -a` behavior when checking persistence.
