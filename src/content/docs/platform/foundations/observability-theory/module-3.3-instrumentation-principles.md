@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.3: Instrumentation Principles"
 slug: platform/foundations/observability-theory/module-3.3-instrumentation-principles
 sidebar:
@@ -204,7 +205,7 @@ The key discipline is that every level above DEBUG should be queryable in produc
 
 ### 2.2 Metrics Patterns
 
-The two foundational frameworks for metric coverage are RED and USE, and they are not interchangeable. RED, due to Tom Wilkie, applies to user-facing services and answers "how is this service doing from the perspective of someone calling it?" The three signals are Rate (requests per second), Errors (failed requests, ideally as a fraction of total), and Duration (latency, expressed as a histogram so you can compute p50, p95, p99 and not just mean). USE, due to Brendan Gregg, applies to resources and answers "is this thing about to fall over?" The three signals are Utilization (how busy is it as a percentage), Saturation (how much queued or pending work is waiting on it), and Errors (how often does it fail or refuse work).
+The two foundational frameworks for metric coverage are RED and USE, and they are not interchangeable. [RED, due to Tom Wilkie, applies to user-facing services and answers "how is this service doing from the perspective of someone calling it?" The three signals are Rate (requests per second), Errors (failed requests, ideally as a fraction of total), and Duration](https://grafana.com/blog/2018/08/02/the-red-method-how-to-instrument-your-services) (latency, expressed as a histogram so you can compute p50, p95, p99 and not just mean). [USE, due to Brendan Gregg, applies to resources and answers "is this thing about to fall over?" The three signals are Utilization (how busy is it as a percentage), Saturation (how much queued or pending work is waiting on it), and Errors](https://grafana.com/blog/2018/08/02/the-red-method-how-to-instrument-your-services) (how often does it fail or refuse work).
 
 The reason these two methods exist as a pair is that services and resources fail differently, and a metric set that is correct for one is often misleading for the other. A queue might have ten percent utilization (USE looks fine) and yet have a saturation of ten thousand items waiting to be processed (a disaster). Conversely, a service might have a perfectly healthy duration distribution (RED looks fine) while the database it depends on is at ninety-eight percent CPU (USE catches what RED missed). Senior platform engineers reach for whichever lens fits the layer they are looking at, and they instrument both for any non-trivial system.
 
@@ -424,9 +425,9 @@ except TimeoutError:
 
 - **Facebook instruments billions of events per second** and samples aggressively at the collector tier. They published research describing how they use machine-learning-based prioritisation to decide which traces to keep based on predicted "interestingness," because at their scale even tail-based sampling rules need to be ranked rather than evaluated all-or-nothing.
 
-- **Prometheus was designed for pull-based metrics** (the server scrapes endpoints), while StatsD and most older systems use push (clients send to a collector). Pull is simpler operationally because there is no service-discovery problem on the client side, and a missed scrape becomes a visible gap rather than a silent loss; push handles short-lived processes more naturally because there is no time for a scraper to find them. Most modern stacks support both modes for different use cases.
+- [**Prometheus was designed for pull-based metrics** (the server scrapes endpoints), while StatsD and most older systems use push (clients send to a collector). Pull is simpler operationally because there is no service-discovery problem on the client side, and a missed scrape becomes a visible gap rather than a silent loss; push handles short-lived processes more naturally because there is no time for a scraper to find them.](https://prometheus.io/docs/practices/pushing/) Most modern stacks support both modes for different use cases.
 
-- **The OpenTelemetry project** merged OpenTracing and OpenCensus in 2019 and is now the second-largest CNCF project by contributor count, behind only Kubernetes itself. Its semantic conventions are the closest thing the industry has to a standard schema for telemetry, and adopting them at the service level decouples your application from any specific tracing or metrics backend.
+- **The OpenTelemetry project** [merged OpenTracing and OpenCensus in 2019](https://www.cncf.io/blog/2019/05/21/a-brief-history-of-opentelemetry-so-far/) and is now the second-largest CNCF project by contributor count, behind only Kubernetes itself. Its semantic conventions are the closest thing the industry has to a standard schema for telemetry, and adopting them at the service level decouples your application from any specific tracing or metrics backend.
 
 - **LinkedIn discovered that one percent of their traces** consumed half of their tracing storage. These "mega-traces," generated by long-running batch jobs, needed special handling because they violated the assumption that the median trace is representative of the cost. The lesson generalises: the distribution of trace size is heavy-tailed, and your sampling design needs to account for the tail rather than just the mean.
 
@@ -631,3 +632,10 @@ How would you find all "out of stock" errors in the last hour? You would query t
 ## Next Module
 
 [Module 3.4: From Data to Insight](../module-3.4-from-data-to-insight/) — using observability data effectively: alerting, debugging, and turning telemetry into operational understanding.
+
+## Sources
+
+- [grafana.com: the red method how to instrument your services](https://grafana.com/blog/2018/08/02/the-red-method-how-to-instrument-your-services) — Grafana's RED-method article directly defines RED as Rate, Errors, and Duration for services.
+- [prometheus.io: pushing](https://prometheus.io/docs/practices/pushing/) — Prometheus's own documentation explicitly contrasts its usual pull model with limited Pushgateway use cases.
+- [cncf.io: a brief history of opentelemetry so far](https://www.cncf.io/blog/2019/05/21/a-brief-history-of-opentelemetry-so-far/) — CNCF's project-history post directly states that OpenTracing and OpenCensus merged to form OpenTelemetry in 2019.
+- [OpenTelemetry Semantic Conventions](https://opentelemetry.io/docs/specs/otel/semantic-conventions/) — Authoritative reference for standard attribute names and telemetry schema choices across traces, metrics, and logs.
