@@ -1,0 +1,101 @@
+{
+  "module_key": "platform/disciplines/core-platform/platform-engineering/module-2.2-developer-experience",
+  "module_path": "src/content/docs/platform/disciplines/core-platform/platform-engineering/module-2.2-developer-experience.md",
+  "research_run_id": "2026-05-14T08:39:25+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C002",
+      "claim_text": "SPACE stands for Satisfaction and well-being, Performance, Activity, Communication and collaboration, and Efficiency and flow.",
+      "claim_class": "standard",
+      "span_hint": "section: Core Concept 2, first paragraph",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://queue.acm.org/detail.cfm?id=3454124",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The SPACE paper names and defines each dimension directly."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The SPACE framework was created to move organizations away from one-dimensional productivity measurement.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, item 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://queue.acm.org/detail.cfm?id=3454124",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The paper repeatedly argues that productivity cannot be reduced to a single metric and presents SPACE as the alternative."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Google's Project Aristotle research helped popularize psychological safety as a key contributor to effective teams.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know, item 1",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://rework.withgoogle.com/en/guides/understanding-team-effectiveness",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The primary source is Google's own re:Work material on Project Aristotle, but that host is outside the current allowlist."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Developer portals and internal developer platforms often fail when they are launched as catalogs of tools rather than designed as task-oriented workflows that help developers complete real jobs.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Did You Know, item 3",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Developer portals and internal developer platforms often fail when they are launched as catalogs of tools rather than designed as task-oriented workflows that help developers complete real jobs.",
+      "suggested_rewrite": "Developer portals and internal developer platforms are more useful when they are designed around real developer tasks, not just as catalogs of tools.",
+      "lesson_point_url": null,
+      "rationale": "Allowlisted sources support the task-oriented design principle, but not the broader empirical claim that such platforms 'often fail' in exactly this way."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://queue.acm.org/detail.cfm?id=3454124",
+      "title": "The SPACE of Developer Productivity",
+      "tier": "standards",
+      "why_relevant": "Primary source for SPACE and for the warning against single-metric productivity measurement."
+    }
+  ],
+  "notes": "No claims were seeded from quiz items, exercise scaffolds, diagrams, code blocks, or pedagogical examples. Tables were not seeded unless they introduced named external frameworks.",
+  "_schema_issues": [],
+  "rejected_urls": [
+    {
+      "url": "https://queue.acm.org/detail.cfm?id=3595878",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    },
+    {
+      "url": "https://queue.acm.org/detail.cfm?id=3639443",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    },
+    {
+      "url": "https://queue.acm.org/detail.cfm?id=3595878",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    },
+    {
+      "url": "https://queue.acm.org/detail.cfm?id=3639443",
+      "reason": "http_403",
+      "at_step": "research_validation",
+      "agent_proposed_tier": "standards"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 2.2: Developer Experience (DevEx)"
 slug: platform/disciplines/core-platform/platform-engineering/module-2.2-developer-experience
 sidebar:
@@ -106,7 +107,7 @@ A beginner mistake is to treat DevEx as a mood survey. A senior mistake is to tr
 
 ## Core Concept 2: The SPACE Framework Prevents Single-Metric Thinking
 
-The SPACE framework gives you a structured way to measure developer productivity without collapsing it into one easy but misleading number. The letters stand for Satisfaction and well-being, Performance, Activity, Communication and collaboration, and Efficiency and flow. The value of SPACE is not that every organization must use the same metrics; the value is that it forces you to balance different types of evidence.
+The SPACE framework gives you a structured way to measure developer productivity without collapsing it into one easy but misleading number. [The letters stand for Satisfaction and well-being, Performance, Activity, Communication and collaboration, and Efficiency and flow.](https://queue.acm.org/detail.cfm?id=3454124) The value of SPACE is not that every organization must use the same metrics; the value is that it forces you to balance different types of evidence.
 
 A single metric becomes dangerous when it turns into a target. If leadership rewards commits per developer, developers can create more commits without delivering more value. If leadership rewards deployment frequency, teams can deploy smaller changes while increasing operational load. If leadership rewards ticket closure, teams can split work into easy tickets and avoid deep reliability problems. SPACE reduces this risk by asking whether speed, quality, collaboration, and human sustainability are moving together.
 
@@ -451,7 +452,7 @@ A healthy DevEx dashboard has owners and review rituals. The platform team shoul
 
 1. Google's Project Aristotle research helped popularize psychological safety as a key contributor to effective teams, which matters for DevEx because developers need to report friction and failure honestly before a platform team can improve the system.
 
-2. The SPACE framework was created to push organizations away from one-dimensional productivity measurement, especially metrics that confuse visible activity with valuable engineering outcomes.
+2. [The SPACE framework was created to push organizations away from one-dimensional productivity measurement](https://queue.acm.org/detail.cfm?id=3454124), especially metrics that confuse visible activity with valuable engineering outcomes.
 
 3. Developer portals and internal developer platforms often fail when they are launched as catalogs of tools rather than designed as task-oriented workflows that help developers complete real jobs.
 
@@ -711,3 +712,7 @@ Before you call the plan done, check whether the problem, teaching, intervention
 ## Next Module
 
 Continue to [Module 2.3: Internal Developer Platforms (IDPs)](../module-2.3-internal-developer-platforms/) to learn how DevEx goals become concrete platform capabilities, service catalogs, templates, workflows, and golden paths.
+
+## Sources
+
+- [queue.acm.org: detail.cfm](https://queue.acm.org/detail.cfm?id=3454124) — The SPACE paper names and defines each dimension directly.
