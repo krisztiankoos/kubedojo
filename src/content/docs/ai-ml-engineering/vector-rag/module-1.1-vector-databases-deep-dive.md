@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Vector Databases Deep Dive"
 slug: ai-ml-engineering/vector-rag/module-1.1-vector-databases-deep-dive
 sidebar:
@@ -220,7 +221,7 @@ because it sounds familiar from geometry class. The embedding model documentatio
 | Design Field | Good Choice | Why It Matters |
 |--------------|-------------|----------------|
 | Embedding model | One named model per collection, recorded in config and deployment metadata. | Mixed models can produce incompatible geometry even when dimensions happen to match. |
-| Dimension | Enforced at collection creation, such as 384 for `all-MiniLM-L6-v2`. | A query vector with the wrong dimension fails or silently breaks retrieval quality. |
+| Dimension | Enforced at collection creation, such as [384 for `all-MiniLM-L6-v2`](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2). | A query vector with the wrong dimension fails or silently breaks retrieval quality. |
 | Distance metric | Matched to the model's training and normalization assumptions. | Wrong metrics can rank irrelevant neighbors above relevant ones. |
 | Point ID | Deterministic from stable source information and content identity. | Re-ingestion updates existing points instead of creating duplicates. |
 | Payload schema | Fields that represent authorization, lifecycle, domain, and retrieval constraints. | Filters can narrow the candidate set before or during search. |
@@ -289,7 +290,7 @@ what is eligible. Production retrieval needs both because a result can be semant
 ## 3. How HNSW Makes Search Fast
 
 Hierarchical Navigable Small World indexing, usually shortened to HNSW, is the default mental model for many modern vector databases. It stores vectors in a graph where each point
-connects to nearby points, then adds upper layers with longer-range connections. Search starts from a sparse upper layer, moves greedily toward a closer region, drops to lower layers,
+connects to nearby points, then adds upper layers with longer-range connections. [Search starts from a sparse upper layer, moves greedily toward a closer region, drops to lower layers](https://arxiv.org/abs/1603.09320),
 and refines the candidate set near the dense base graph.
 
 ```text
@@ -318,7 +319,7 @@ scan the entire corpus.
 |--------------|-------------------|-----------------------|
 | `M` or max connections | How many neighbors each graph node tries to keep. | Higher values improve recall but increase memory and build cost. |
 | `ef_construct` | How broadly the index searches while adding new vectors. | Higher values build a better graph but slow ingestion. |
-| `ef_search` or search width | How many candidates the query explores at search time. | Higher values improve recall but increase latency. |
+| [`ef_search` or search width](https://arxiv.org/abs/1603.09320) | How many candidates the query explores at search time. | Higher values improve recall but increase latency. |
 | Graph layers | Sparse upper layers guide search before dense lower layers refine it. | More structure improves navigation but consumes memory. |
 | Approximate recall | The index may miss a true nearest neighbor. | Most RAG systems accept this when latency and scale improve dramatically. |
 
@@ -383,12 +384,12 @@ small product feature, Qdrant for self-hosted RAG, and Pinecone for a managed se
 
 | Option | Strong Fit | Watch Carefully |
 |--------|------------|-----------------|
-| Qdrant | Self-hosted production RAG, rich payload filtering, Rust-based service, Docker-friendly operations. | You own backups, upgrades, capacity planning, and cluster operations. |
+| Qdrant | Self-hosted production RAG, [rich payload filtering, Rust-based service, Docker-friendly operations](https://github.com/qdrant/qdrant). | You own backups, upgrades, capacity planning, and cluster operations. |
 | Pinecone | Managed vector search when the team wants minimal infrastructure work. | Pricing, quotas, vendor lock-in, data residency, and cold-start behavior for some capacity models. |
-| Weaviate | Hybrid semantic and keyword search with schema-rich objects and managed or self-hosted options. | More concepts to learn, more resource planning, and GraphQL/API design decisions. |
-| Chroma | Local development, teaching, small prototypes, and quick LangChain-style experiments. | Validate production scale, durability, concurrency, and filtering before relying on it heavily. |
-| pgvector | Keeping smaller vector workloads beside relational data in PostgreSQL. | PostgreSQL remains responsible for operational load, memory, indexes, and query planning. |
-| FAISS | High-performance local or embedded ANN search controlled by application code. | Persistence, metadata filters, multi-user serving, and updates require additional engineering. |
+| Weaviate | [Hybrid semantic and keyword search with schema-rich objects and managed or self-hosted options](https://github.com/weaviate/weaviate). | More concepts to learn, more resource planning, and GraphQL/API design decisions. |
+| Chroma | [Local development, teaching, small prototypes, and quick LangChain-style experiments](https://github.com/chroma-core/chroma). | Validate production scale, durability, concurrency, and filtering before relying on it heavily. |
+| pgvector | [Keeping smaller vector workloads beside relational data in PostgreSQL](https://github.com/pgvector/pgvector). | PostgreSQL remains responsible for operational load, memory, indexes, and query planning. |
+| FAISS | [High-performance local or embedded ANN search controlled by application code](https://github.com/facebookresearch/faiss). | Persistence, metadata filters, multi-user serving, and updates require additional engineering. |
 
 The vendor comparison should start from workload shape. A compliance-heavy enterprise may prefer self-hosting because data control and network boundaries matter. A small team racing
 toward a product demo may prefer a managed service because operational focus is expensive. A platform team standardizing internal RAG across many departments may choose an open
@@ -993,3 +994,6 @@ Next: [Module 1.2: Building a RAG Retrieval Pipeline](./module-1.2-building-a-ra
 - [github.com: chroma](https://github.com/chroma-core/chroma) — The GitHub README directly shows `pip install chromadb`, in-memory prototyping, and optional persistence.
 - [huggingface.co: all MiniLM L6 v2](https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2) — The Hugging Face model card explicitly states that the model maps text to a 384-dimensional dense vector space.
 - [huggingface.co: e5 large v2](https://huggingface.co/intfloat/e5-large-v2) — The Hugging Face model card explicitly states that the embedding size is 1024.
+- [github.com: qdrant](https://github.com/qdrant/qdrant) — General lesson point for an illustrative rewrite.
+- [github.com: pgvector](https://github.com/pgvector/pgvector) — The pgvector README explicitly says it is vector similarity search for Postgres and supports exact and approximate nearest-neighbor search.
+- [github.com: faiss](https://github.com/facebookresearch/faiss) — The FAISS README directly describes it as a library for efficient similarity search and clustering of dense vectors, including sets that may not fit in RAM.
