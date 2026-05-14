@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 4.5: Runtime Security"
 slug: platform/disciplines/reliability-security/devsecops/module-4.5-runtime-security
 sidebar:
@@ -96,7 +97,7 @@ The rest of the module follows that order. First, harden the workload so the pro
 
 ## Harden Workloads Before They Run
 
-Kubernetes runtime hardening starts in the Pod spec because the Pod spec is what admission controllers and kubelets can evaluate. A Dockerfile might contain a non-root `USER`, but Pod Security Standards evaluate the Kubernetes object, not your intent. If the security properties matter, declare them explicitly in the Pod or workload template.
+Kubernetes runtime hardening starts in the Pod spec because the Pod spec is what admission controllers and kubelets can evaluate. A Dockerfile might contain a non-root `USER`, but [Pod Security Standards evaluate the Kubernetes object, not your intent](https://kubernetes.io/docs/concepts/security/pod-security-standards/). If the security properties matter, declare them explicitly in the Pod or workload template.
 
 ```ascii
 +--------------------------------------------------------------------+
@@ -274,7 +275,7 @@ spec:
 
 The container should fail to start because the runtime cannot satisfy the declared security requirement. This is a useful failure, not a nuisance. It exposes a mismatch between the image and the workload spec before the application enters production, and it gives the team a precise remediation path: rebuild the image with a non-root user or set a valid non-root `runAsUser` that works with the image's filesystem permissions.
 
-Pod Security Standards move this from a per-manifest habit to a namespace-level policy. The `privileged` profile is intentionally open, `baseline` blocks common privilege escalation paths, and `restricted` reflects the hardened posture most application namespaces should work toward. In Kubernetes 1.35 and current supported releases, Pod Security Admission uses namespace labels to enforce, warn, or audit these profiles.
+Pod Security Standards move this from a per-manifest habit to a namespace-level policy. The `privileged` profile is intentionally open, `baseline` blocks common privilege escalation paths, and `restricted` reflects the hardened posture most application namespaces should work toward. In Kubernetes 1.35 and current supported releases, [Pod Security Admission uses namespace labels to enforce, warn, or audit these profiles](https://kubernetes.io/docs/tasks/configure-pod-container/enforce-standards-namespace-labels/).
 
 ```ascii
 +--------------------------------------------------------------------+
@@ -324,7 +325,7 @@ kubectl label namespace runtime-demo \
 
 A senior runtime-security review asks whether the policy is enforceable for the team, not merely whether it is strict. If every third workload breaks under `restricted`, the answer is not to abandon hardening; the answer is to find the specific fields that break, separate system workloads from application namespaces, fix base images, and use `warn` or `audit` during migration. Enforcement works best when teams can see violations before the day a hard gate blocks an urgent deployment.
 
-Seccomp is the next layer below the Kubernetes object model. It filters syscalls, which are the requests a process makes to the Linux kernel. Most applications need ordinary file, network, memory, and process syscalls, but they do not need unrestricted access to every kernel operation. `RuntimeDefault` is the minimum production baseline because it applies the container runtime's maintained default filter without requiring each application team to handcraft a profile.
+Seccomp is the next layer below the Kubernetes object model. It filters syscalls, which are the requests a process makes to the Linux kernel. Most applications need ordinary file, network, memory, and process syscalls, but they do not need unrestricted access to every kernel operation. [`RuntimeDefault` is the minimum production baseline because it applies the container runtime's maintained default filter](https://kubernetes.io/docs/reference/node/seccomp/) without requiring each application team to handcraft a profile.
 
 ```ascii
 +--------------------------------------------------------------------+
@@ -374,7 +375,7 @@ If workload hardening limits what a compromised process can do locally, NetworkP
 +--------------------------------------------------------------------+
 ```
 
-A good policy model starts with "deny by default, then allow known paths." That sounds simple, but it has two details that routinely surprise teams. First, default-deny only affects Pods selected by a NetworkPolicy, so a policy with `podSelector: {}` is a deliberate namespace-wide choice. Second, DNS is egress traffic; if you deny all egress and forget DNS, applications fail in ways that look like service outages rather than security changes.
+A good policy model starts with "deny by default, then allow known paths." That sounds simple, but it has two details that routinely surprise teams. First, [default-deny only affects Pods selected by a NetworkPolicy, so a policy with `podSelector: {}` is a deliberate namespace-wide choice](https://v1-35.docs.kubernetes.io/docs/concepts/services-networking/network-policies/). Second, DNS is egress traffic; if you deny all egress and forget DNS, applications fail in ways that look like service outages rather than security changes.
 
 ```ascii
 +--------------------------------------------------------------------+
@@ -589,7 +590,7 @@ Preventive controls reduce the attacker's room to maneuver, but they cannot full
 +--------------------------------------------------------------------+
 ```
 
-Falco is a common starting point because it provides cloud-native runtime detection with a rule language and Kubernetes context. Tetragon is often chosen when teams want deep eBPF-based process and network visibility, especially in Cilium environments. KubeArmor is useful when teams want policy-driven runtime enforcement around process, file, and network behavior. The tool choice matters, but the design question is the same: what behavior is suspicious for this workload, and what context turns a noisy signal into a useful alert?
+[Falco is a common starting point because it provides cloud-native runtime detection with a rule language and Kubernetes context](https://github.com/falcosecurity/falco). [Tetragon is often chosen when teams want deep eBPF-based process and network visibility](https://github.com/cilium/tetragon), especially in Cilium environments. [KubeArmor is useful when teams want policy-driven runtime enforcement around process, file, and network behavior](https://github.com/kubearmor/KubeArmor). The tool choice matters, but the design question is the same: what behavior is suspicious for this workload, and what context turns a noisy signal into a useful alert?
 
 | Tool Or Approach | Strength | Best Fit | Design Caution |
 |---|---|---|---|
@@ -635,7 +636,7 @@ A Falco rule combines a condition, an output message, a priority, and tags. The 
     - mitre_execution
 ```
 
-Notice what this rule can and cannot prove. It can detect that a shell process started inside a production container. It cannot, by itself, prove whether the shell came from `kubectl exec`, an application exploit, a startup script, or a compromised dependency. That distinction comes from correlation with Kubernetes audit logs, deployment events, application logs, identity provider logs, and recent operator activity.
+Notice what this rule can and cannot prove. It can detect that a shell process started inside a production container. It cannot, by itself, prove whether the shell came from `kubectl exec`, an application exploit, a startup script, or a compromised dependency. That distinction comes from correlation with [Kubernetes audit logs](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/), deployment events, application logs, identity provider logs, and recent operator activity.
 
 Here is a second rule for a cryptomining pattern. It detects known miner process names and command lines that contain mining-pool protocol strings. The rule is useful, but it is not complete because attackers can rename binaries and change arguments. That is why you combine it with read-only filesystems, egress restrictions, CPU anomaly alerts, and investigation workflows.
 
@@ -764,7 +765,7 @@ kubectl label pod secure-web -n runtime-demo \
 kubectl get pod secure-web -n runtime-demo --show-labels
 ```
 
-Evidence capture should happen before deletion when conditions allow. The exact commands depend on your environment and legal requirements, but the core idea is consistent: capture the Pod spec, events, logs, previous logs, relevant runtime alerts, and any writable paths that may contain dropped files. If you have ephemeral containers enabled, `kubectl debug` can help inspect a running Pod without changing the original container image.
+Evidence capture should happen before deletion when conditions allow. The exact commands depend on your environment and legal requirements, but the core idea is consistent: capture the Pod spec, events, logs, previous logs, relevant runtime alerts, and any writable paths that may contain dropped files. If you have ephemeral containers enabled, [`kubectl debug` can help inspect a running Pod without changing the original container image](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_debug/).
 
 ```bash
 mkdir -p evidence/runtime-demo-secure-web
@@ -1324,3 +1325,11 @@ Continue to [Module 4.6: Security Culture and Automation](../module-4.6-security
 - [Pod Security Standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/) — Authoritative reference for the privileged, baseline, and restricted profiles discussed in the module.
 - [Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) — Defines how Kubernetes NetworkPolicy works and when policy resources do or do not take effect.
 - [Seccomp and Kubernetes](https://kubernetes.io/docs/reference/node/seccomp/) — Explains seccomp profile types, inheritance rules, and runtime behavior for Kubernetes workloads.
+- [kubernetes.io: enforce standards namespace labels](https://kubernetes.io/docs/tasks/configure-pod-container/enforce-standards-namespace-labels/) — The namespace-label workflow is explicitly documented by Kubernetes and is the direct primary source for this behavior.
+- [v1-35.docs.kubernetes.io: pod security standards](https://v1-35.docs.kubernetes.io/docs/concepts/security/pod-security-standards/) — The v1.35 Pod Security Standards page enumerates exactly which fields are required or restricted for each profile.
+- [v1-35.docs.kubernetes.io: network policies](https://v1-35.docs.kubernetes.io/docs/concepts/services-networking/network-policies/) — The NetworkPolicy concept page covers the default-allow model, namespace-wide default-deny examples, and the prerequisite for enforcement support.
+- [github.com: falco](https://github.com/falcosecurity/falco) — The Falco project README explicitly describes rule-based runtime detection and metadata enrichment from container and Kubernetes sources.
+- [github.com: tetragon](https://github.com/cilium/tetragon) — The Tetragon upstream README describes these capabilities directly and is the best allowlisted primary source here.
+- [github.com: KubeArmor](https://github.com/kubearmor/KubeArmor) — The KubeArmor upstream README explicitly states these enforcement domains and scope.
+- [kubernetes.io: audit](https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/) — The auditing documentation is the primary source for the purpose and semantics of Kubernetes audit records.
+- [kubernetes.io: kubectl debug](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_debug/) — The `kubectl debug` reference explicitly documents adding an ephemeral container to an already running Pod for debugging.
