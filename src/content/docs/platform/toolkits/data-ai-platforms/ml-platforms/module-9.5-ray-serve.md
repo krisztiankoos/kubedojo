@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 9.5: Ray Serve - Distributed Model Serving"
 slug: platform/toolkits/data-ai-platforms/ml-platforms/module-9.5-ray-serve
 sidebar:
@@ -32,7 +33,7 @@ Ray Serve matters because many AI platforms are no longer serving one model behi
 
 ## Ray Serve in the Serving Stack
 
-Ray Serve is an HTTP serving framework built on top of Ray. Ray provides distributed actors, tasks, scheduling, and resource accounting. Serve adds long-running deployments, request routing, autoscaling, health checks, and composition for online inference. KubeRay adds Kubernetes custom resources so that platform teams can manage Ray clusters and Serve applications through normal cluster workflows.
+[Ray Serve is an HTTP serving framework built on top of Ray](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/index.md). Ray provides distributed actors, tasks, scheduling, and resource accounting. Serve adds long-running deployments, request routing, autoscaling, health checks, and composition for online inference. KubeRay adds Kubernetes custom resources so that platform teams can manage Ray clusters and Serve applications through normal cluster workflows.
 
 A beginner mistake is to think of Ray Serve as just another Python web framework. That mental model misses the most important part. A Flask or FastAPI service usually runs inside one process per pod, while Ray Serve can route one request across multiple distributed actors that may live on different pods and nodes. The HTTP endpoint is only the front door; the useful work happens inside a distributed graph of deployments.
 
@@ -88,7 +89,7 @@ The practical lesson is that platform debugging follows the same layers. If the 
 
 ## Ray Architecture and KubeRay Resources
 
-A Ray cluster has one head node and zero or more worker nodes. The head node runs coordination components, including the Global Control Store, the dashboard, and often the Serve controller. Worker nodes run Ray workers that execute tasks and actors. In Kubernetes, these nodes are represented by pods managed by KubeRay custom resources.
+[A Ray cluster has one head node and zero or more worker nodes](https://raw.githubusercontent.com/ray-project/ray/master/doc/source/cluster/key-concepts.rst). The head node runs coordination components, including the Global Control Store, the dashboard, and often the Serve controller. Worker nodes run Ray workers that execute tasks and actors. In Kubernetes, these nodes are represented by pods managed by KubeRay custom resources.
 
 The head node should be treated as control-plane-like infrastructure for the Ray cluster. It is not the place to pack all expensive inference work unless the deployment is tiny. For production serving, the head pod normally exposes dashboard, client, and Serve ports while worker pods provide the CPU and GPU capacity for model replicas. This separation makes failures easier to reason about and keeps model resource pressure away from coordination.
 
@@ -124,7 +125,7 @@ The head node should be treated as control-plane-like infrastructure for the Ray
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
-KubeRay exposes several resources, but two matter most for serving. `RayCluster` creates and manages a Ray runtime. `RayService` manages both a Ray cluster configuration and a Ray Serve application configuration. A platform team that wants a stable online endpoint usually prefers `RayService`, because it gives the operator enough information to handle service health and application updates together.
+KubeRay exposes several resources, but two matter most for serving. [`RayCluster` creates and manages a Ray runtime](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/cluster/kubernetes/getting-started.md). `RayService` manages both a Ray cluster configuration and a Ray Serve application configuration. A platform team that wants a stable online endpoint usually prefers `RayService`, because it gives the operator enough information to handle service health and application updates together.
 
 A `RayCluster` is still useful when learners are experimenting, running jobs, or separating cluster provisioning from application deployment. In mature platforms, the decision is often organizational as much as technical. If one platform team owns shared Ray clusters and application teams deploy Serve apps separately, `RayCluster` may be managed by the platform. If each serving application needs its own isolated cluster lifecycle, `RayService` is simpler to reason about.
 
@@ -220,7 +221,7 @@ k get pods -n ray-serving -l ray.io/cluster=ray-demo-cluster
 
 **Active check:** If the worker pods stay `Pending`, do not change Ray Serve settings first. Inspect Kubernetes scheduling state with `k describe pod` and look for CPU, memory, node selector, taint, or GPU messages. Ray cannot schedule actors onto worker pods that Kubernetes never started.
 
-A GPU worker group adds one more scheduling layer. Kubernetes must allocate the GPU device to a pod, and Ray must allocate a GPU resource to an actor. Both sides must agree. If Kubernetes gives the pod one GPU but the Serve deployment asks Ray for two GPUs per replica, that replica will remain pending until enough Ray GPU resources exist.
+A GPU worker group adds one more scheduling layer. [Kubernetes must allocate the GPU device to a pod](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/), and Ray must allocate a GPU resource to an actor. Both sides must agree. If Kubernetes gives the pod one GPU but the Serve deployment asks Ray for two GPUs per replica, that replica will remain pending until enough Ray GPU resources exist.
 
 ```yaml
 apiVersion: ray.io/v1
@@ -271,7 +272,7 @@ The safest way to learn GPU serving is to validate one layer at a time. First co
 
 ## Building a Ray Serve Application
 
-A Ray Serve application begins with one or more deployments. A deployment is a Python class or function decorated with `@serve.deployment`. Serve creates replicas of that deployment, routes requests to those replicas, and lets deployments call each other through handles. This lets you express a multi-stage inference pipeline without manually creating separate HTTP services for every stage.
+A Ray Serve application begins with one or more deployments. [A deployment is a Python class or function decorated with `@serve.deployment`](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/key-concepts.md). Serve creates replicas of that deployment, routes requests to those replicas, and lets deployments call each other through handles. This lets you express a multi-stage inference pipeline without manually creating separate HTTP services for every stage.
 
 The simplest deployment looks like a normal Python request handler. It receives a Starlette `Request`, reads JSON, and returns a JSON-serializable object. The difference is that Ray Serve owns the lifecycle of the class instances, not a standalone ASGI server that you wrote directly.
 
@@ -372,7 +373,7 @@ generator = Generator.bind()
 app = RagPipeline.bind(normalizer, retriever, generator)
 ```
 
-The `.bind()` calls create the deployment graph. The `.remote()` calls execute methods through Ray handles and return awaitable object references inside the Serve application. This is where Ray Serve differs from a chain of HTTP microservices. You are composing distributed Python actors inside one serving application, not writing service discovery and serialization code for every internal hop.
+[The `.bind()` calls create the deployment graph](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/model_composition.md). The `.remote()` calls execute methods through Ray handles and return awaitable object references inside the Serve application. This is where Ray Serve differs from a chain of HTTP microservices. You are composing distributed Python actors inside one serving application, not writing service discovery and serialization code for every internal hop.
 
 A production version would add request validation, timeouts, model warmup, observability, and error handling. It might also use a real vector database and a real language model. The learning version keeps the model logic small so that the execution model is visible. When the serving graph is clear, replacing the toy generator with vLLM or another model backend becomes a controlled change.
 
@@ -477,7 +478,7 @@ The worked example also shows why application design and platform design must me
 
 ## Deploying Ray Serve with RayService
 
-A `RayService` packages the Ray cluster configuration and the Serve application configuration into one Kubernetes resource. This is usually the right abstraction for a production endpoint that should survive restarts and be reconciled by the operator. The `serveConfigV2` block describes the application name, route prefix, import path, runtime environment, and Serve deployment settings.
+A `RayService` packages the Ray cluster configuration and the Serve application configuration into one Kubernetes resource. This is usually the right abstraction for [a production endpoint that should survive restarts and be reconciled by the operator](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/cluster/kubernetes/user-guides/rayservice.md). [The `serveConfigV2` block describes the application name, route prefix, import path, runtime environment, and Serve deployment settings](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/cluster/kubernetes/user-guides/rayservice.md).
 
 The example below assumes your application code is available to the Ray runtime. In production, that usually means building it into the image, using a versioned package, or pointing `runtime_env` at a controlled artifact. Copying files into a running pod is acceptable for a lab but not for repeatable production delivery.
 
@@ -590,7 +591,7 @@ If the request fails, read the error at the right layer. A connection failure su
 
 ## Autoscaling, Batching, and GPU Allocation
 
-Ray Serve autoscaling is based on ongoing requests per replica. This matters because online inference often queues before CPU or GPU utilization looks obviously saturated. A replica running a large model may be fully committed with only a few active requests. A lightweight preprocessor may handle many concurrent requests before becoming the bottleneck.
+[Ray Serve autoscaling is based on ongoing requests per replica](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/autoscaling-guide.md). This matters because online inference often queues before CPU or GPU utilization looks obviously saturated. A replica running a large model may be fully committed with only a few active requests. A lightweight preprocessor may handle many concurrent requests before becoming the bottleneck.
 
 The main autoscaling setting is `target_num_ongoing_requests_per_replica`. A lower target protects latency by scaling sooner, but it can consume more resources. A higher target improves resource efficiency, but it can increase tail latency. There is no perfect default; the right value depends on model cost, request size, latency objective, and cold-start behavior.
 
@@ -614,7 +615,7 @@ class AutoscaledClassifier:
         return {"label": label}
 ```
 
-Batching is a separate lever. Autoscaling adds replicas; batching makes each replica process multiple compatible requests together. Batching is useful when the model backend gains efficiency from larger batches, especially on GPUs. It is harmful when batching adds wait time without improving throughput, or when requests have highly variable sizes that cause one large request to delay many small ones.
+Batching is a separate lever. Autoscaling adds replicas; [batching makes each replica process multiple compatible requests together](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/advanced-guides/dyn-req-batch.md). Batching is useful when the model backend gains efficiency from larger batches, especially on GPUs. It is harmful when batching adds wait time without improving throughput, or when requests have highly variable sizes that cause one large request to delay many small ones.
 
 ```python
 from ray import serve
@@ -630,7 +631,7 @@ class BatchedEmbedder:
         return await self.embed_batch(text)
 ```
 
-Fractional GPU allocation is a Ray scheduling feature, not a magic memory isolation boundary. Setting `num_gpus: 0.25` tells Ray's scheduler that four such actors may be placed on one GPU. It does not guarantee that the models will fit in GPU memory or that their kernels will not interfere with each other. Always validate fractional packing with the real model, real batch sizes, and real traffic.
+Fractional GPU allocation is a Ray scheduling feature, not a magic memory isolation boundary. [Setting `num_gpus: 0.25` tells Ray's scheduler that four such actors may be placed on one GPU](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/resource-allocation.md). It does not guarantee that the models will fit in GPU memory or that their kernels will not interfere with each other. [Always validate fractional packing with the real model, real batch sizes, and real traffic](https://raw.githubusercontent.com/ray-project/ray/master/doc/source/serve/llm/user-guides/fractional-gpu.md).
 
 | Setting | What it controls | Good use | Risk if misused |
 |---|---|---|---|
@@ -649,7 +650,7 @@ A reliable tuning process changes one lever at a time. Start with a fixed small 
 
 Monitoring Ray Serve requires three views. Kubernetes tells you whether pods and services exist. The Ray dashboard tells you whether Ray resources, actors, and Serve deployments are healthy. Application metrics and logs tell you whether model behavior is correct. Senior platform engineers move across all three instead of treating one dashboard as the whole truth.
 
-Forward the dashboard when debugging a lab cluster. In production, access should go through your organization's secure access path rather than an unauthenticated local tunnel. The dashboard is useful for seeing cluster resources, actor placement, Serve deployment health, and logs.
+Forward the dashboard when debugging a lab cluster. In production, access should go through your organization's secure access path rather than an unauthenticated local tunnel. [The dashboard is useful for seeing cluster resources, actor placement, Serve deployment health, and logs](https://raw.githubusercontent.com/ray-project/ray/master/doc/source/ray-observability/getting-started.rst).
 
 ```bash
 k port-forward svc/ray-demo-cluster-head-svc 8265:8265 -n ray-serving
@@ -694,11 +695,11 @@ The most dangerous debugging shortcut is changing many settings at once. For exa
 
 ## Ray Serve Versus Alternatives
 
-Ray Serve sits in a crowded model-serving landscape. Choosing it well requires comparing workload shape, not just feature lists. If your service is one optimized model with strict latency targets and a supported runtime format, Triton may be a strong fit. If your organization already built platform standards around KServe and Knative, operational consistency may matter more than Python-native composition.
+Ray Serve sits in a crowded model-serving landscape. Choosing it well requires comparing workload shape, not just feature lists. If your service is one optimized model with strict latency targets and a supported runtime format, [Triton may be a strong fit](https://github.com/triton-inference-server/server). If your organization already built platform standards around [KServe and Knative](https://github.com/kserve/kserve), operational consistency may matter more than Python-native composition.
 
 Ray Serve becomes attractive when the serving application is a distributed Python program. RAG pipelines, multi-model document processing, agentic workflows, and training-to-serving workflows often need more than a single model invocation. Ray Serve lets those stages live in one application graph while still scaling independently. That can reduce glue code and make pipeline-level behavior easier to reason about.
 
-| Feature | Ray Serve | Triton | Seldon Core | KServe |
+| Feature | Ray Serve | Triton | [Seldon Core](https://github.com/SeldonIO/seldon-core) | KServe |
 |---|---|---|---|---|
 | Primary strength | Python-native distributed serving | Optimized inference runtime | Enterprise model serving patterns | Kubernetes-native model serving |
 | Model composition | Python handles and deployment graphs | Ensembles and backend configuration | Graph-style inference services | Inference services and pipelines |
@@ -1050,3 +1051,22 @@ Continue to [Module 9.6: LangChain & LlamaIndex](../module-9.6-langchain-llamain
 
 - [github.com: kuberay](https://github.com/ray-project/kuberay) — The KubeRay upstream README explicitly describes the operator and its RayCluster, RayJob, and RayService CRDs.
 - [ray-project/ray](https://github.com/ray-project/ray) — Upstream repository and README for Ray Core and the Ray library ecosystem, including Serve.
+- [raw.githubusercontent.com: index.md](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/index.md) — The Ray Serve index describes Serve as scalable and programmable serving and discusses combining multiple deployments into one application.
+- [raw.githubusercontent.com: key concepts.md](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/key-concepts.md) — The Ray Serve key concepts page directly defines deployments, replicas, `@serve.deployment`, applications, HTTP route prefixes, and DeploymentHandles.
+- [raw.githubusercontent.com: model composition.md](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/model_composition.md) — The model composition guide describes composing deployments with `.bind()` and DeploymentHandle calls inside a Serve application.
+- [raw.githubusercontent.com: autoscaling guide.md](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/autoscaling-guide.md) — The Ray 2.9 autoscaling guide explicitly defines `target_num_ongoing_requests_per_replica` and the autoscaling replica bounds used in the module.
+- [raw.githubusercontent.com: resource allocation.md](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/resource-allocation.md) — The Ray Serve resource-allocation guide directly documents `ray_actor_options`, `num_gpus`, `num_cpus`, and fractional resources.
+- [raw.githubusercontent.com: dyn req batch.md](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/serve/advanced-guides/dyn-req-batch.md) — The Ray Serve dynamic batching guide documents the `ray.serve.batch` decorator and the batch size and wait-time parameters.
+- [raw.githubusercontent.com: fractional gpu.md](https://raw.githubusercontent.com/ray-project/ray/master/doc/source/serve/llm/user-guides/fractional-gpu.md) — The current Ray fractional-GPU guidance explicitly tells operators to validate throughput and latency with the actual workload before production.
+- [raw.githubusercontent.com: getting started.md](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/cluster/kubernetes/getting-started.md) — The KubeRay getting-started page lists the CRDs and defines RayService as RayCluster plus Ray Serve deployment graphs.
+- [raw.githubusercontent.com: rayservice.md](https://raw.githubusercontent.com/ray-project/ray/ray-2.9.0/doc/source/cluster/kubernetes/user-guides/rayservice.md) — The RayService guide directly documents `serveConfigV2`, `import_path`, `route_prefix`, runtime environment, deployments, and KubeRay's submission flow.
+- [Schedule GPUs](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/) — Backs Kubernetes GPU scheduling semantics, including vendor device plugin prerequisites, extended GPU resources, and how pods request GPU resources via limits.
+- [Device Plugins](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/) — Backs the Kubernetes device plugin architecture, including kubelet registration, gRPC interfaces, ListAndWatch/Allocate behavior, and vendor-specific hardware exposure.
+- [raw.githubusercontent.com: key concepts.rst](https://raw.githubusercontent.com/ray-project/ray/master/doc/source/cluster/key-concepts.rst) — The Ray cluster key concepts page directly describes head nodes, worker nodes, GCS, autoscaler, and user task/actor execution.
+- [raw.githubusercontent.com: getting started.rst](https://raw.githubusercontent.com/ray-project/ray/master/doc/source/ray-observability/getting-started.rst) — The Ray observability guide documents the dashboard views for tasks, actors, logs, Serve applications, cluster resources, and GPU assignment.
+- [github.com: server](https://github.com/triton-inference-server/server) — The Triton upstream repository describes its inference-server role, supported frameworks, model repository workflow, and ensemble/model-configuration features.
+- [github.com: kserve](https://github.com/kserve/kserve) — The KServe upstream repository describes KServe as a Kubernetes inference platform and documents InferenceService and Knative installation integration.
+- [github.com: seldon core](https://github.com/SeldonIO/seldon-core) — The Seldon Core upstream repository describes it as an MLOps and LLMOps framework for deploying, managing, and scaling AI systems in Kubernetes.
+- [Ray Serve: Scalable and Programmable Serving](https://github.com/ray-project/ray/blob/ray-2.9.0/doc/source/serve/index.md) — Primary upstream entry point for Ray Serve concepts, composition, and serving model.
+- [KubeRay RayService Guide](https://github.com/ray-project/ray/blob/ray-2.9.0/doc/source/cluster/kubernetes/user-guides/rayservice.md) — Directly explains how RayService combines RayCluster configuration with Serve application configuration on Kubernetes.
+- [Ray: A Distributed Framework for Emerging AI Applications](https://arxiv.org/abs/1712.05889) — Foundational Ray paper explaining the task and actor abstractions behind Ray Serve.
