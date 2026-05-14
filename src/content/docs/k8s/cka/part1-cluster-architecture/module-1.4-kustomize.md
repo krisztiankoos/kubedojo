@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.4: Kustomize - Template-Free Configuration"
 slug: k8s/cka/part1-cluster-architecture/module-1.4-kustomize
 revision_pending: false
@@ -50,7 +51,7 @@ For the CKA, Kustomize matters because it is built into `kubectl` and appears in
 
 ## Part 1: The Mental Model
 
-Kustomize is not a package manager and it is not a template engine. It is a manifest renderer that reads Kubernetes resources, applies transformations, applies patches, runs generators, and prints the final YAML. That distinction matters because Kustomize does not install release history, manage chart dependencies, or remember a previous deployment. It produces manifests; `kubectl apply -k` then applies those manifests.
+Kustomize is not a package manager and it is not a template engine. [It is a manifest renderer that reads Kubernetes resources, applies transformations, applies patches, runs generators, and prints the final YAML.](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) That distinction matters because Kustomize does not install release history, manage chart dependencies, or remember a previous deployment. It produces manifests; `kubectl apply -k` then applies those manifests.
 
 The first habit to build is previewing the rendered output before you apply it. The command `kubectl kustomize <directory>` prints the YAML that Kustomize would generate. The command `kubectl apply -k <directory>` renders and applies that same output. In the exam and in real clusters, previewing first catches broken paths, incorrect names, unwanted selector changes, and surprising generated names before they become API objects.
 
@@ -105,7 +106,7 @@ A useful review question is whether a future teammate could read the base withou
 
 A base directory starts with normal Kubernetes manifests. There is no special syntax inside the Deployment or Service just because Kustomize will render them. This is one reason Kustomize works well for teams that already know Kubernetes YAML: the base remains readable by standard Kubernetes tooling, code review, and documentation.
 
-The base also needs a `kustomization.yaml` file. This file is the local build recipe. It tells Kustomize which resources belong in this unit and which transformations or generators should run. If a directory has YAML files but no `kustomization.yaml`, `kubectl apply -k` does not know how to treat it as a Kustomize package.
+The base also needs a `kustomization.yaml` file. This file is the local build recipe. It tells Kustomize which resources belong in this unit and which transformations or generators should run. [If a directory has YAML files but no `kustomization.yaml`, `kubectl apply -k` does not know how to treat it as a Kustomize package.](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_kustomize/)
 
 A common convention in interactive shells is to shorten `kubectl`, but that habit is risky in training material and copied scripts because aliases often do not expand in non-interactive execution. The CKA environment may also start from a clean shell, so this module uses the full `kubectl` command everywhere. Before you begin a timed task, a safer readiness check is to confirm that the real binary is available and that its client version prints as expected.
 
@@ -229,7 +230,7 @@ labels:
 
 The `labels` transformer is safer here than a blind selector-changing label strategy. Environment labels are useful on object metadata and pod templates, but adding them to selectors can make Services and Deployments select a narrower set of pods than you intended. For a new workload, selector changes may work. For an existing workload, selector mutations can fail because Deployment selectors are immutable.
 
-The important phrase in that paragraph is "for an existing workload." Kubernetes allows many fields to change over time, but it treats a Deployment selector as identity, not decoration. If a label transformer changes selectors after the Deployment already exists, the API server may reject the update because the controller would no longer own the same pod set. Even if an object is new and the apply succeeds, selector changes can still surprise operators because the Service and Deployment may stop agreeing about which pods are part of the application.
+The important phrase in that paragraph is "for an existing workload." Kubernetes allows many fields to change over time, but [it treats a Deployment selector as identity, not decoration](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). If a label transformer changes selectors after the Deployment already exists, the API server may reject the update because the controller would no longer own the same pod set. Even if an object is new and the apply succeeds, selector changes can still surprise operators because the Service and Deployment may stop agreeing about which pods are part of the application.
 
 > **Active learning prompt:** Predict the rendered names before running the command. Will the Service be named `webapp`, `dev-webapp`, or `webapp-dev`? Then run the preview and verify whether your mental model matched the output.
 
@@ -297,7 +298,7 @@ spec:
               cpu: "500m"
 ```
 
-Notice the patch target name: `webapp`, not `prod-webapp`. Kustomize matches patches against the original resource identity before the name prefix is applied. This surprises learners because the final object name includes the prefix, but the patch file still describes the base resource it wants to modify.
+Notice the patch target name: `webapp`, not `prod-webapp`. [Kustomize matches patches against the original resource identity before the name prefix is applied.](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) This surprises learners because the final object name includes the prefix, but the patch file still describes the base resource it wants to modify.
 
 Preview production and inspect the output carefully. The final Deployment name should include the prefix, the namespace should be production, the image tag should be changed, and the replica count should be five. If any of those are missing, fix the render before applying to a cluster.
 
@@ -341,7 +342,7 @@ nameSuffix: -blue
 └──────────────────────────┘
 ```
 
-The namespace transformer sets `metadata.namespace` on namespaced resources. It does not make cluster-scoped resources namespaced. A Namespace object, ClusterRole, ClusterRoleBinding, CustomResourceDefinition, and StorageClass are cluster-scoped, so the namespace transformer cannot turn them into namespaced objects. This is important when an overlay includes both application resources and cluster-level resources.
+The namespace transformer sets `metadata.namespace` on namespaced resources. [It does not make cluster-scoped resources namespaced.](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) A Namespace object, ClusterRole, ClusterRoleBinding, CustomResourceDefinition, and StorageClass are cluster-scoped, so the namespace transformer cannot turn them into namespaced objects. This is important when an overlay includes both application resources and cluster-level resources.
 
 ```yaml
 # Example namespace transformation
@@ -370,7 +371,7 @@ images:
     newTag: "1.25-alpine"
 ```
 
-Labels deserve special care. Older examples often use `commonLabels`, which can add labels to selectors as well as object metadata. That can be acceptable when creating a brand-new workload, but it is dangerous when updating a live Deployment because selector fields are immutable. Prefer the newer `labels` transformer when you need control over whether selector fields are included.
+Labels deserve special care. Older examples often use `commonLabels`, which can add labels to selectors as well as object metadata. That can be acceptable when creating a brand-new workload, but it is dangerous when updating a live Deployment because selector fields are immutable. [Prefer the newer `labels` transformer when you need control over whether selector fields are included.](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/)
 
 ```yaml
 # Safer label transformation for environment metadata
@@ -404,7 +405,7 @@ The review should also ask whether the rendered output will be understandable to
 
 ## Part 5: Patches and Why Names Matter
 
-Patches are how overlays make targeted changes to resources from the base. The two practical patch styles you will see most often are strategic merge patches and JSON 6902 patches. Strategic merge patches look like partial Kubernetes objects. JSON patches look like a list of operations against JSON paths. Both are useful, but they solve different problems.
+Patches are how overlays make targeted changes to resources from the base. The two practical patch styles you will see most often are strategic merge patches and JSON 6902 patches. Strategic merge patches look like partial Kubernetes objects. [JSON patches look like a list of operations against JSON paths.](https://www.rfc-editor.org/rfc/rfc6902) Both are useful, but they solve different problems.
 
 The strongest reason to use a patch is that the change belongs to one object, not to the whole overlay. A replica count, readiness probe, resource limit, or pod security setting may be production-specific, but it does not necessarily need a transformer that touches every resource. Patches let you keep the base readable while expressing the operational difference near the environment that owns it. The trade-off is that patch identity must be exact: the kind, name, API version, and list merge keys have to match what Kustomize is rendering.
 
@@ -429,7 +430,7 @@ spec:
             periodSeconds: 10
 ```
 
-If the base container is named `webapp` and the patch uses `app`, the strategic merge patch can add a second container instead of modifying the existing one. That rendered YAML may even be valid Kubernetes YAML while still being operationally wrong. This is why previewing the full output and reading the container list matters.
+[If the base container is named `webapp` and the patch uses `app`, the strategic merge patch can add a second container instead of modifying the existing one.](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/) That rendered YAML may even be valid Kubernetes YAML while still being operationally wrong. This is why previewing the full output and reading the container list matters.
 
 > **What would happen if:** Your production patch references a container named `app`, but the base Deployment's container is named `webapp`. Before running the command, decide whether you expect a validation error, a new container, or a modified existing container. Then render the overlay and inspect `spec.template.spec.containers`.
 
@@ -511,7 +512,7 @@ configMapGenerator:
       - config/app.properties
 ```
 
-A Deployment can consume that generated ConfigMap by the logical name from the generator. Kustomize rewrites the reference to the hashed rendered name. This is the useful part: you write the stable logical name, and Kustomize keeps the applied name content-addressed.
+A Deployment can consume that generated ConfigMap by the logical name from the generator. [Kustomize rewrites the reference to the hashed rendered name.](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) This is the useful part: you write the stable logical name, and Kustomize keeps the applied name content-addressed.
 
 ```yaml
 # Example base Deployment fragment
@@ -567,7 +568,7 @@ generatorOptions:
   disableNameSuffixHash: true
 ```
 
-The field name is `disableNameSuffixHash`, not `disableNameSuffix`. This detail matters in troubleshooting because examples from memory or outdated notes can lead to a kustomization that does not behave as expected. When in doubt, render output and inspect the generated names instead of assuming the option worked.
+[The field name is `disableNameSuffixHash`, not `disableNameSuffix`.](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) This detail matters in troubleshooting because examples from memory or outdated notes can lead to a kustomization that does not behave as expected. When in doubt, render output and inspect the generated names instead of assuming the option worked.
 
 Hash suffixes are worth keeping unless you can name the system that truly requires stable generated object names. With the suffix enabled, a ConfigMap content change becomes a name change, and a rewritten pod template reference gives the Deployment controller a reason to create new Pods. With the suffix disabled, the object data can change while the pod template stays identical, so existing Pods may continue running with older environment-derived configuration until something else restarts them. That difference is easy to miss if you only inspect the ConfigMap and forget to inspect the Deployment template.
 
@@ -599,7 +600,7 @@ kubectl kustomize webapp/overlays/prod/ | kubectl apply --dry-run=client -f -
 kubectl apply --dry-run=server -k webapp/overlays/prod/
 ```
 
-Diff shows what would change compared with the current cluster. This is useful when a rendered overlay is valid but may update existing objects in surprising ways. In a GitOps workflow, the controller may perform the apply, but the human still benefits from rendering and diffing locally during review.
+[Diff shows what would change compared with the current cluster.](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_diff/) This is useful when a rendered overlay is valid but may update existing objects in surprising ways. In a GitOps workflow, the controller may perform the apply, but the human still benefits from rendering and diffing locally during review.
 
 ```bash
 kubectl diff -k webapp/overlays/prod/
@@ -649,7 +650,7 @@ For CKA practice, build a habit of writing down the intended field before you ru
 
 ## Part 8: Kustomize vs Helm vs Plain Manifests
 
-Kustomize, Helm, and plain manifests can all deploy Kubernetes objects, but they optimize for different situations. Plain manifests are easiest when there is only one environment and little variation. Kustomize is strongest when you own the manifests and need environment overlays without templates. Helm is strongest when you want packaging, values files, dependencies, and release history.
+Kustomize, Helm, and plain manifests can all deploy Kubernetes objects, but they optimize for different situations. Plain manifests are easiest when there is only one environment and little variation. Kustomize is strongest when you own the manifests and need environment overlays without templates. [Helm is strongest when you want packaging, values files, dependencies, and release history.](https://helm.sh/docs/topics/charts/)
 
 The comparison is not about which tool is more professional. It is about where the variation lives and who owns the source material. If you own a Deployment and need three environment variants, Kustomize lets you keep ordinary Kubernetes YAML while expressing differences without copying the whole object. If you consume a third-party application that already ships as a chart, Helm may give you a better supported interface than editing rendered YAML directly. If you need one temporary debug Pod, plain manifests are simpler than building a directory hierarchy around it.
 
@@ -669,7 +670,7 @@ The wrong decision often shows up as friction during change. If every environmen
 
 For the CKA, choose the tool the task asks for. If the task says apply a Kustomize configuration, use `kubectl apply -k`. If it asks you to preview a Kustomize directory, use `kubectl kustomize`. If it asks for a Helm release, use Helm. Do not convert a Kustomize task into a Helm task because you prefer Helm; the grader expects a specific cluster outcome and sometimes a specific workflow.
 
-In real teams, Kustomize often pairs with GitOps controllers such as Argo CD or Flux. The repository contains bases and overlays. The controller watches an overlay path and applies the rendered output. Rollback then comes from Git history or controller sync behavior, not from Kustomize itself. That division is healthy: Kustomize renders configuration, while GitOps manages continuous reconciliation.
+In real teams, Kustomize often pairs with GitOps controllers such as Argo CD or Flux. The repository contains bases and overlays. [The controller watches an overlay path and applies the rendered output.](https://fluxcd.io/flux/components/kustomize/kustomizations/) Rollback then comes from Git history or controller sync behavior, not from Kustomize itself. That division is healthy: Kustomize renders configuration, while GitOps manages continuous reconciliation.
 
 ---
 
@@ -754,10 +755,10 @@ That reasoning path scales beyond the example because it keeps the question narr
 
 ## Did You Know?
 
-- **Kustomize has been built into `kubectl` since Kubernetes v1.14**: That makes it practical in exam environments because you can use `kubectl kustomize` and `kubectl apply -k` without installing a separate binary.
-- **GitOps tools commonly understand Kustomize paths directly**: Argo CD and Flux can watch an overlay directory, render it, and continuously reconcile the resulting resources to a cluster.
+- **[Kustomize has been built into `kubectl` since Kubernetes v1.14](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/)**: That makes it practical in exam environments because you can use `kubectl kustomize` and `kubectl apply -k` without installing a separate binary.
+- **GitOps tools commonly understand Kustomize paths directly**: [Argo CD](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/) and Flux can watch an overlay directory, render it, and continuously reconcile the resulting resources to a cluster.
 - **Generated ConfigMap and Secret names are content-sensitive by default**: The hash suffix changes when generator input changes, which helps trigger Deployment rollouts when Pod template references are rewritten.
-- **Kustomize can be combined with Helm in advanced workflows**: Teams sometimes render or inflate Helm chart output and then apply Kustomize overlays, but this adds complexity and should be justified by a real need.
+- **[Kustomize can be combined with Helm in advanced workflows](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_kustomize/)**: Teams sometimes render or inflate Helm chart output and then apply Kustomize overlays, but this adds complexity and should be justified by a real need.
 
 ---
 
@@ -1314,6 +1315,16 @@ Plain manifests are enough for the quick debug Pod because there is no reusable 
 - https://fluxcd.io/flux/components/kustomize/kustomizations/
 
 ---
+- [kubernetes.io: kustomization](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) — The Kubernetes Kustomize task page directly states that kubectl has supported kustomization files since 1.14 and shows the exact commands.
+- [kubernetes.io: kubectl kustomize](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_kustomize/) — The kubectl kustomize reference explicitly says the directory argument must contain `kustomization.yaml`.
+- [kubernetes.io: deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) — The Deployment docs directly state both the selector/template-label matching requirement and selector immutability.
+- [kubernetes.io: namespaces](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/) — The namespaces documentation explicitly distinguishes namespaced objects from cluster-wide objects.
+- [kubernetes.io: update api object kubectl patch](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/update-api-object-kubectl-patch/) — The kubectl patch task shows that container lists use strategic merge with `name` as the merge key and demonstrates list-merging behavior.
+- [rfc-editor.org: rfc6902](https://www.rfc-editor.org/rfc/rfc6902) — RFC 6902 is the primary standard defining JSON Patch documents as ordered sequences of operations over JSON locations.
+- [kubernetes.io: kubectl diff](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_diff/) — The kubectl diff reference defines diff exactly in those terms and documents `-k/--kustomize`.
+- [argo-cd.readthedocs.io: kustomize](https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/) — The Argo CD Kustomize guide directly says Argo renders with Kustomize when the path contains `kustomization.yaml` and says to point path to the overlay.
+- [fluxcd.io: kustomizations](https://fluxcd.io/flux/components/kustomize/kustomizations/) — The Flux Kustomization documentation directly describes build-from-path, namespace handling, validation, and apply behavior.
+- [helm.sh: charts](https://helm.sh/docs/topics/charts/) — The Helm charts documentation directly covers Go-template rendering, values files, and chart dependencies.
 
 ## Next Module
 
