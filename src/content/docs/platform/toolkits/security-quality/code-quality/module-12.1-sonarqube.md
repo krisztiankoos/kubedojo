@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 12.1: SonarQube - The Code Quality Platform"
 slug: platform/toolkits/security-quality/code-quality/module-12.1-sonarqube
 sidebar:
@@ -538,7 +539,7 @@ Pull request decoration missing
 
 Running SonarQube locally is useful for learning, but production operation deserves the same discipline as any internal developer platform service. The server stores project history, issue states, quality gate definitions, security hotspot review decisions, and authentication configuration. Losing that data damages trust because teams lose the context that explains why a finding was accepted, fixed, or suppressed.
 
-For a local learning environment, Docker Compose is enough. The example below uses PostgreSQL, persists SonarQube data and extensions, and exposes the UI on `127.0.0.1:9000`. Some systems require increasing `vm.max_map_count` for the search engine; on managed developer machines, learners may need administrator rights for that setting.
+For a local learning environment, [Docker Compose is enough](https://hub.docker.com/_/sonarqube/). The example below uses PostgreSQL, persists SonarQube data and extensions, and exposes the UI on `127.0.0.1:9000`. Some systems require increasing `vm.max_map_count` for the search engine; on managed developer machines, learners may need administrator rights for that setting.
 
 ```yaml
 # docker-compose.yml
@@ -593,7 +594,7 @@ done
 echo "SonarQube is ready at http://127.0.0.1:9000"
 ```
 
-On Kubernetes, prefer the official Helm chart for real deployments because it captures many operational defaults that are easy to miss in handwritten manifests. A teaching manifest is still useful because it shows the moving parts: namespace, database credentials, persistent volumes, a single SonarQube application pod for non-clustered editions, readiness checks, service exposure, and ingress. Treat the database as stateful production infrastructure, not as an afterthought inside an application namespace.
+On Kubernetes, prefer the [official Helm chart](https://github.com/SonarSource/helm-chart-sonarqube) for real deployments because it captures many operational defaults that are easy to miss in handwritten manifests. A teaching manifest is still useful because it shows the moving parts: namespace, database credentials, persistent volumes, a single SonarQube application pod for non-clustered editions, readiness checks, service exposure, and ingress. Treat the database as stateful production infrastructure, not as an afterthought inside an application namespace.
 
 ```text
 KUBERNETES DEPLOYMENT SHAPE
@@ -1092,7 +1093,7 @@ sonar.python.xunit.reportPath=pytest-report.xml
 EOF
 ```
 
-This sample intentionally contains several findings: command execution through a shell, string-built SQL, duplicated normalization logic, a complex branch-heavy function, and weak hashing. Do not fix them before the first scan. The point is to learn how SonarQube presents different issue categories, then decide which findings should block a change and which should become review or refactoring work.
+This sample intentionally contains several findings: [command execution through a shell](https://cwe.mitre.org/data/definitions/78.html), string-built SQL, duplicated normalization logic, a complex branch-heavy function, and [weak hashing](https://cwe.mitre.org/data/definitions/328.html). Do not fix them before the first scan. The point is to learn how SonarQube presents different issue categories, then decide which findings should block a change and which should become review or refactoring work.
 
 ### Part 3: Generate Test and Coverage Reports
 
@@ -1238,3 +1239,14 @@ Rerun the scanner and observe whether the issue list changes. If SonarQube still
 ## Next Module
 
 Continue to [Module 12.2: Semgrep](../module-12.2-semgrep/) to learn how custom security rules can catch organization-specific patterns that general-purpose scanners may not know about.
+
+## Sources
+
+- [github.com: v7.1.0](https://github.com/SonarSource/sonarqube-scan-action/releases/tag/v7.1.0) — The GitHub release page directly identifies v7.1.0 as a released action version.
+- [github.com: v1.2.0](https://github.com/SonarSource/sonarqube-quality-gate-action/releases/tag/v1.2.0) — The GitHub release page directly identifies v1.2.0 as a released quality gate action version.
+- [hub.docker.com: sonarqube](https://hub.docker.com/_/sonarqube/) — Docker Hub's official image page directly identifies the SonarQube image and its maintained purpose.
+- [github.com: helm chart sonarqube](https://github.com/SonarSource/helm-chart-sonarqube) — The GitHub repository README identifies it as the SonarSource Helm Chart for SonarQube.
+- [cwe.mitre.org: 78.html](https://cwe.mitre.org/data/definitions/78.html) — MITRE CWE-78 directly documents OS command injection from externally influenced commands.
+- [cwe.mitre.org: 328.html](https://cwe.mitre.org/data/definitions/328.html) — MITRE CWE-328 directly covers use of weak one-way hash functions.
+- [SonarQube](https://github.com/SonarSource/sonarqube) — Upstream repository overview for SonarQube's continuous inspection and quality gate role.
+- [SonarQube Scan Action](https://github.com/SonarSource/sonarqube-scan-action) — Canonical GitHub Action repository for SonarQube scans in CI workflows.
