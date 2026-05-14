@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 7.2: OpenTofu - The Open Source Fork"
 slug: platform/toolkits/infrastructure-networking/iac-tools/module-7.2-opentofu
 sidebar:
@@ -35,7 +36,7 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-A platform team is asked to standardize infrastructure delivery across dozens of application squads after a licensing change creates procurement uncertainty. The team already has hundreds of modules, a remote state pattern, CI jobs that run plans on pull requests, and security reviewers who care deeply about secrets leaking into state. Rewriting everything would be wasteful, but doing nothing may leave the organization tied to a licensing and support model it no longer understands.
+A platform team is asked to standardize infrastructure delivery across dozens of application squads after [a licensing change creates procurement uncertainty](https://www.hashicorp.com/en/blog/hashicorp-adopts-business-source-license). The team already has hundreds of modules, a remote state pattern, CI jobs that run plans on pull requests, and security reviewers who care deeply about secrets leaking into state. Rewriting everything would be wasteful, but doing nothing may leave the organization tied to a licensing and support model it no longer understands.
 
 The lead engineer does not start by asking, "What command replaces Terraform?" That is the easy part. She asks which state files can be touched safely, which CI jobs assume Terraform Cloud behavior, which modules rely on provider installation details, and whether the organization needs a fully open-source toolchain for commercial or policy reasons. OpenTofu becomes valuable when it solves those operational problems without forcing a full rewrite of the infrastructure estate.
 
@@ -45,7 +46,7 @@ This module treats OpenTofu as a real platform-engineering decision, not as a br
 
 ## 1. The Mental Model: Fork, Compatibility, and Control
 
-OpenTofu is a community-governed infrastructure as code tool that continues the Terraform-style workflow under an open-source license. It uses the same broad model you learned in the Terraform module: write HCL, install providers, build a dependency graph, compare desired configuration with observed infrastructure, and apply the resulting plan. The binary changes from `terraform` to `tofu`, but the engineering decision is larger than a command rename.
+OpenTofu is a [community-governed infrastructure as code tool](https://www.linuxfoundation.org/press/announcing-opentofu) that continues the Terraform-style workflow under an open-source license. It uses the same broad model you learned in the Terraform module: write HCL, install providers, build a dependency graph, compare desired configuration with observed infrastructure, and apply the resulting plan. The binary changes from `terraform` to `tofu`, but the engineering decision is larger than a command rename.
 
 The fork matters because infrastructure tooling is unusually sticky. Once a platform team standardizes modules, provider versions, policy checks, state backends, CI templates, and runbooks, the chosen tool becomes part of the organization's operating system. A license or governance change can therefore become a platform risk even when day-to-day syntax still works.
 
@@ -174,7 +175,7 @@ test -f .terraform.lock.hcl && sed -n '1,80p' .terraform.lock.hcl
 find . -maxdepth 3 -name "*.tf" -print
 ```
 
-The second check is backend usage. Local state is easy to test but rarely appropriate for teams. Object storage backends with locking can usually be piloted in a controlled branch. Hosted remote execution or commercial workspace configuration requires a design decision because it may include variables, policy, notifications, state history, and approval workflows that are not represented in HCL alone.
+The second check is backend usage. Local state is easy to test but rarely appropriate for teams. Object storage backends with locking can usually be piloted in a controlled branch. [Hosted remote execution or commercial workspace configuration](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/run/remote-operations) requires a design decision because it may include variables, policy, notifications, state history, and approval workflows that are not represented in HCL alone.
 
 ```bash
 grep -R 'backend "' -n . --include='*.tf' || true
@@ -345,7 +346,7 @@ The senior-level habit is to write down the rollback point before changing state
 
 ## 3. State Protection: Encryption, Backends, and Rollover
 
-State is the most important artifact in Terraform-style infrastructure as code because it stores resource identities, outputs, dependency metadata, and sometimes sensitive values. Platform teams often protect cloud resources carefully while treating state as a boring implementation file. That is a mistake. Anyone who can read state may learn database endpoints, generated passwords, service account identifiers, or enough topology detail to plan an attack.
+State is the most important artifact in Terraform-style infrastructure as code because it stores resource identities, outputs, dependency metadata, and sometimes sensitive values. Platform teams often protect cloud resources carefully while treating state as a boring implementation file. That is a mistake. Anyone who can read state may learn database endpoints, [generated passwords, service account identifiers, or enough topology detail](https://developer.hashicorp.com/terraform/language/manage-sensitive-data) to plan an attack.
 
 OpenTofu's native state and plan encryption is one of its most important differentiators. Backend encryption such as object-store server-side encryption protects the object at rest inside the storage service, but native OpenTofu encryption protects the serialized state payload itself. Those controls can complement each other rather than compete.
 
@@ -1083,3 +1084,11 @@ rm -rf opentofu-module-7-2-lab
 ## Next Module
 
 Continue to [Module 7.3: Pulumi](../module-7.3-pulumi/) to compare OpenTofu's declarative HCL workflow with infrastructure as code written in general-purpose programming languages.
+
+## Sources
+
+- [hashicorp.com: hashicorp adopts business source license](https://www.hashicorp.com/en/blog/hashicorp-adopts-business-source-license) — HashiCorp's own announcement states the license change from MPL 2.0 to BSL/BUSL for future releases.
+- [linuxfoundation.org: announcing opentofu](https://www.linuxfoundation.org/press/announcing-opentofu) — The Linux Foundation announcement directly describes OpenTofu as an open source alternative to Terraform under a neutral governance model.
+- [developer.hashicorp.com: remote operations](https://developer.hashicorp.com/terraform/cloud-docs/workspaces/run/remote-operations) — HashiCorp's remote operations documentation directly lists these hosted-platform behaviors.
+- [developer.hashicorp.com: manage sensitive data](https://developer.hashicorp.com/terraform/language/manage-sensitive-data) — HashiCorp's sensitive data guidance directly states that state and plan files can contain metadata and sensitive values.
+- [OpenTofu Releases](https://github.com/opentofu/opentofu/releases) — Provides versioned release notes for OpenTofu features discussed in the module.
