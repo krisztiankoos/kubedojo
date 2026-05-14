@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 revision_pending: false
 title: "Module 1.1: Kernel & Architecture"
 slug: linux/foundations/system-essentials/module-1.1-kernel-architecture
@@ -114,7 +115,7 @@ Kernel space has direct access to privileged CPU instructions, device registers,
 | Owns hardware-facing decisions and global resource arbitration. | Owns application logic, user workflows, and service-specific behavior. |
 | Exposes controlled entry points through system calls and interrupts. | Uses libraries and runtime code that eventually invoke system calls. |
 
-The CPU helps enforce this separation. On common x86 systems, Linux uses Ring 0 for the kernel and Ring 3 for user processes. The exact naming differs on other CPU architectures, and modern virtualization adds more layers, but the principle is the same: privileged code and ordinary application code do not run with the same authority. This is why a kernel bug has a different severity profile from an application bug, and why driver quality matters so much on production hosts.
+The CPU helps enforce this separation. [On common x86 systems, Linux uses Ring 0 for the kernel and Ring 3 for user processes.](https://en.wikipedia.org/wiki/Protection_ring) The exact naming differs on other CPU architectures, and modern virtualization adds more layers, but the principle is the same: privileged code and ordinary application code do not run with the same authority. This is why a kernel bug has a different severity profile from an application bug, and why driver quality matters so much on production hosts.
 
 ```mermaid
 flowchart TD
@@ -245,7 +246,7 @@ This stage-based approach prevents a common mistake: treating every startup fail
 
 ## 4. Architecture Choices: Monolithic, Modular, and Microkernel Designs
 
-Operating systems make different choices about where services should run. A monolithic kernel places major operating-system services in kernel space. A microkernel keeps the privileged kernel very small and moves many services, such as drivers and filesystems, into user-space servers. Linux is commonly described as monolithic, but in practice it is a modular monolithic kernel. That phrase sounds academic until a production node fails because a module is missing, a driver misbehaves, or a kernel update changes an in-kernel interface.
+Operating systems make different choices about where services should run. A monolithic kernel places major operating-system services in kernel space. A microkernel keeps the privileged kernel very small and moves many services, such as drivers and filesystems, into user-space servers. [Linux is commonly described as monolithic, but in practice it is a modular monolithic kernel.](https://en.wikipedia.org/wiki/Linux_kernel) That phrase sounds academic until a production node fails because a module is missing, a driver misbehaves, or a kernel update changes an in-kernel interface.
 
 In a pure monolithic design, core services can call each other directly inside the same privileged address space. That is fast because it avoids many message-passing and context-switching costs. The downside is blast radius: a severe bug in privileged code can damage the whole system. If a storage driver corrupts kernel memory, the scheduler, network stack, and user processes may all suffer even though the original bug lived in one component.
 
@@ -354,7 +355,7 @@ done
 
 Some kernel features are built directly into the kernel instead of loaded as modules. In that case, `lsmod` will not show a module even though the feature exists. That is why a robust diagnosis combines module checks with runtime behavior, kernel configuration where available, and component logs. When two nodes disagree, compare the actual running kernel, module availability, boot parameters, runtime configuration, and node image provenance before changing Kubernetes manifests.
 
-You can inspect cgroup layout with mount information. On modern distributions, cgroups v2 is common, and many Kubernetes environments now expect it. Mixed cgroup modes across nodes can cause confusing differences in metrics, limits, and runtime behavior. A workload may appear correctly specified in Kubernetes while the node enforces or reports resources differently because the runtime and kernel are using a different hierarchy.
+You can inspect cgroup layout with mount information. On modern distributions, [cgroups v2 is common, and many Kubernetes environments now expect it.](https://kubernetes.io/docs/concepts/architecture/cgroups/) Mixed cgroup modes across nodes can cause confusing differences in metrics, limits, and runtime behavior. A workload may appear correctly specified in Kubernetes while the node enforces or reports resources differently because the runtime and kernel are using a different hierarchy.
 
 ```bash
 mount | grep cgroup
@@ -372,7 +373,7 @@ journalctl -k --no-pager | grep -Ei 'overlay|br_netfilter|conntrack|ip_vs|cgroup
 
 ### Worked Diagnosis: kube-proxy Cannot Use IPVS
 
-Imagine kube-proxy logs say it cannot initialize IPVS mode on one node. A weak response is to restart kube-proxy repeatedly. A stronger response is to test whether the kernel can provide the IPVS capability that kube-proxy requested. This distinction matters because a restart may clear a transient service problem, but it will not create a missing kernel feature or install module files for the running kernel.
+Imagine kube-proxy logs say it cannot initialize IPVS mode on one node. A weak response is to restart kube-proxy repeatedly. A stronger response is to test whether the kernel can provide [the IPVS capability that kube-proxy requested](https://kubernetes.io/docs/reference/networking/virtual-ips/). This distinction matters because a restart may clear a transient service problem, but it will not create a missing kernel feature or install module files for the running kernel.
 
 First, check whether IPVS-related modules are loaded. The exact module names vary with protocol and scheduler support, but `ip_vs` is the core signal. If it appears, continue to kube-proxy configuration and logs. If it does not appear, avoid concluding too early; the feature might be built in, unavailable, or simply not loaded yet.
 
@@ -399,7 +400,7 @@ The node may still run pods and pass basic readiness checks because iptables mod
 
 ## 6. Containers Share the Host Kernel
 
-A container image contains user-space files: application binaries, libraries, package metadata, shells, and configuration. It does not carry its own Linux kernel in the way a virtual machine carries its own guest operating-system kernel. When a process inside a Linux container makes a system call, it enters the host kernel. That simple fact explains both the speed and the risk profile of containers.
+A container image contains user-space files: application binaries, libraries, package metadata, shells, and configuration. It does not carry its own Linux kernel in the way a virtual machine carries its own guest operating-system kernel. [When a process inside a Linux container makes a system call, it enters the host kernel.](https://www.docker.com/resources/what-container) That simple fact explains both the speed and the risk profile of containers.
 
 That shared-kernel model is the central reason containers are lightweight. There is no separate guest kernel booting for each container. The same host kernel schedules container processes, enforces cgroups, applies namespaces, handles sockets, and provides filesystem operations. Container isolation is real, but it is isolation implemented by one shared kernel. If the shared kernel lacks a feature, every container that needs the feature is affected; if the shared kernel has a severe vulnerability, the enforcement boundary for the node is at risk.
 
@@ -442,7 +443,7 @@ If Docker is unavailable, the concept still applies to Linux containers in gener
 | Virtual machine | Guest kernel plus host hypervisor | Hardware virtualization boundary | Stronger kernel separation, with more overhead and operational complexity. |
 | Sandboxed container runtime | Extra mediation or lightweight VM depending on technology | Runtime-specific isolation layer | Useful for untrusted workloads, with compatibility and performance trade-offs. |
 
-This shared-kernel model has security implications. If a container escape exploits a kernel vulnerability, the attacker is not just escaping one application directory. They are attacking the component that enforces isolation for the whole host. That is why kernel patching, workload isolation, node pools, seccomp, AppArmor or SELinux, and runtime hardening all matter. Non-root containers and dropped capabilities are important controls, but they do not turn a shared kernel into a separate guest kernel.
+This shared-kernel model has security implications. If a container escape exploits a kernel vulnerability, the attacker is not just escaping one application directory. They are attacking the component that enforces isolation for the whole host. That is why kernel patching, workload isolation, node pools, [seccomp, AppArmor or SELinux](https://kubernetes.io/docs/concepts/security/linux-kernel-security-constraints/), and runtime hardening all matter. Non-root containers and dropped capabilities are important controls, but they do not turn a shared kernel into a separate guest kernel.
 
 ```mermaid
 flowchart TD
@@ -544,10 +545,10 @@ Finally, decide how the finding should be encoded so the same failure does not r
 
 ## Did You Know?
 
-- **Linux 1.0 was released in 1994, and modern Linux keeps the monolithic design while adding extensive modularity.** Loadable kernel modules let Linux add drivers and features at runtime, but loaded module code still runs with kernel privilege and can affect the whole host.
+- **[Linux 1.0 was released in 1994](https://en.wikipedia.org/wiki/Linux_kernel_version_history), and modern Linux keeps the monolithic design while adding extensive modularity.** Loadable kernel modules let Linux add drivers and features at runtime, but loaded module code still runs with kernel privilege and can affect the whole host.
 - **A container's `uname -r` reports the host kernel.** The user-space distribution inside the image may look like Alpine, Ubuntu, or another distribution, but system calls still reach the node's running kernel.
 - **PID 1 is special because the kernel starts it directly.** If PID 1 exits unexpectedly, the system cannot behave like an ordinary service failure because the first user-space process anchors the rest of startup.
-- **`/proc` is not a normal directory of stored files.** It is a kernel-provided view into live system and process state, which is why values under `/proc` can change while the system runs.
+- **`/proc` is not a normal directory of stored files.** It is [a kernel-provided view into live system and process state](https://en.wikipedia.org/wiki/Procfs), which is why values under `/proc` can change while the system runs.
 
 ## Common Mistakes
 
@@ -776,6 +777,14 @@ A strong judgment might say, "This host is a reasonable candidate for a lab node
 - [Kubernetes container runtimes documentation](https://kubernetes.io/docs/setup/production-environment/container-runtimes/) - Kubernetes documentation for runtime and cgroup expectations.
 - [Kubernetes components documentation](https://kubernetes.io/docs/concepts/overview/components/) - Kubernetes overview showing how kubelet and node components fit into the cluster.
 - [systemd-analyze manual page](https://www.freedesktop.org/software/systemd/man/latest/systemd-analyze.html) - Reference for inspecting boot timing across system phases.
+- [en.wikipedia.org: Protection ring](https://en.wikipedia.org/wiki/Protection_ring) — The cited page directly describes ring-based privilege levels and the ring 0/ring 3 distinction used on x86.
+- [en.wikipedia.org: Linux kernel](https://en.wikipedia.org/wiki/Linux_kernel) — The cited page explicitly notes that the Linux kernel is both monolithic and modular.
+- [kubernetes.io: virtual ips](https://kubernetes.io/docs/reference/networking/virtual-ips/) — The Kubernetes networking reference states that IPVS must be available on the node before starting kube-proxy in IPVS mode.
+- [kubernetes.io: cgroups](https://kubernetes.io/docs/concepts/architecture/cgroups/) — The Kubernetes cgroup v2 page says cgroup v2 is recommended and that some features exclusively use cgroup v2.
+- [docker.com: what container](https://www.docker.com/resources/what-container) — Docker's container overview explicitly states that containers share the machine's OS kernel.
+- [kubernetes.io: linux kernel security constraints](https://kubernetes.io/docs/concepts/security/linux-kernel-security-constraints/) — The Kubernetes security page directly lists how privileged containers override seccomp, AppArmor, and SELinux constraints.
+- [en.wikipedia.org: Linux kernel version history](https://en.wikipedia.org/wiki/Linux_kernel_version_history) — The cited version-history page directly gives Linux 1.0.0's release date as March 1994.
+- [en.wikipedia.org: Procfs](https://en.wikipedia.org/wiki/Procfs) — The procfs page directly describes /proc as a special filesystem that presents dynamic process and kernel information.
 
 ## Next Module
 
