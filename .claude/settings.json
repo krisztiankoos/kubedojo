@@ -12,7 +12,9 @@
           {"type": "command", "command": ".claude/hooks/enforce-venv.sh"},
           {"type": "command", "command": ".claude/hooks/block-branch-create-in-primary.sh"},
           {"type": "command", "command": ".claude/hooks/block-direct-commit-on-main.sh"},
-          {"type": "command", "command": ".claude/hooks/inject-codex-danger-mode.sh"}
+          {"type": "command", "command": ".claude/hooks/inject-codex-danger-mode.sh"},
+          {"type": "command", "command": ".claude/hooks/block-content-merge-without-learner-check.sh"},
+          {"type": "command", "command": ".claude/hooks/block-bugfix-merge-without-regression-test.sh"}
         ]
       },
       {
