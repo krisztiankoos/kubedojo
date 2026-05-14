@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Private AI Training Infrastructure"
 description: "Architecting and operating bare-metal Kubernetes infrastructure for distributed AI training workloads using PyTorch, NCCL, InfiniBand, and advanced batch schedulers."
 slug: on-premises/ai-ml-infrastructure/module-9.2-private-ai-training
@@ -65,7 +66,7 @@ That diagram hides several production risks. The ranks may not start at the same
 
 ### Distributed Data Parallel And Sharded Training
 
-Modern distributed training commonly uses data parallelism, tensor/model parallelism, pipeline parallelism, or combinations of them. This module focuses on the infrastructure pattern behind synchronous data parallel and sharded data parallel training because it is the foundation most Kubernetes-based training stacks build on. **Distributed Data Parallel (DDP)** copies the model to every worker. Each worker processes a different slice of the data. After the backward pass, workers synchronize gradients. That synchronization is usually the expensive cross-node communication path. **Fully Sharded Data Parallel (FSDP)** reduces per-GPU memory pressure by sharding model parameters, gradients, and optimizer state.
+Modern distributed training commonly uses data parallelism, tensor/model parallelism, pipeline parallelism, or combinations of them. This module focuses on the infrastructure pattern behind synchronous data parallel and sharded data parallel training because it is the foundation most Kubernetes-based training stacks build on. **Distributed Data Parallel (DDP)** [copies the model to every worker. Each worker processes a different slice of the data. After the backward pass, workers synchronize gradients.](https://arxiv.org/abs/2006.15704) That synchronization is usually the expensive cross-node communication path. **Fully Sharded Data Parallel (FSDP)** [reduces per-GPU memory pressure by sharding model parameters, gradients, and optimizer state.](https://arxiv.org/abs/2304.11277)
 
 The infrastructure implications are similar but more intense. Workers still need reliable collective communication. They also become more sensitive to communication latency because model state is repeatedly gathered and sharded. **Pipeline and tensor parallelism** split work inside the model. They often require even tighter network expectations because some layers cannot proceed until remote partitions finish. The exact framework API changes over time. The infrastructure lesson is more stable: A training platform must support deterministic rank identity, all-or-nothing startup, high-bandwidth communication, topology alignment, and checkpoint recovery.
 
@@ -95,7 +96,7 @@ Distributed training frameworks require three basic platform guarantees.
 
 
 
-Historically, teams used custom training operators such as MPIJob or PyTorchJob. Those operators are still useful. However, Kubernetes now provides a strong native building block for simple distributed jobs: Indexed Jobs. An Indexed Job assigns each pod a stable completion index. That index maps naturally to a training rank. A headless Service provides stable DNS. Together, they give `torchrun` enough information to form a worker group.
+Historically, teams used custom training operators such as MPIJob or PyTorchJob. Those operators are still useful. However, Kubernetes now provides a strong native building block for simple distributed jobs: Indexed Jobs. [An Indexed Job assigns each pod a stable completion index.](https://kubernetes.io/docs/tasks/job/indexed-parallel-processing-static/) That index maps naturally to a training rank. [A headless Service provides stable DNS.](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/) Together, they give `torchrun` enough information to form a worker group.
 
 ```mermaid
 graph TD
@@ -145,7 +146,7 @@ The platform still "works." It just works badly.
 
 A normal pod receives a normal network interface from the cluster CNI. That interface is not the RDMA interface. You cannot route RDMA traffic through a standard overlay and expect kernel-bypass behavior. The pod needs access to a secondary interface or device resource that maps to the high-performance fabric. This is commonly done with:
 
-* Multus CNI for secondary network attachment,
+* [Multus CNI for secondary network attachment](https://github.com/k8snetworkplumbingwg/multus-cni),
 * SR-IOV device plugins for virtual functions,
 * the NVIDIA Network Operator for NVIDIA networking stacks,
 * switch-level configuration for lossless RoCEv2 or InfiniBand fabric operation.
@@ -156,7 +157,7 @@ The pod spec then carries both application intent and hardware intent. It says "
 
 ### Exposing RDMA To Pods
 
-You cannot route RDMA traffic through a standard Kubernetes CNI overlay. You must attach secondary network interfaces directly to the Pods. This is accomplished using Multus CNI combined with the SR-IOV Network Device Plugin.
+You cannot route RDMA traffic through a standard Kubernetes CNI overlay. You must attach secondary network interfaces directly to the Pods. [This is accomplished using Multus CNI combined with the SR-IOV Network Device Plugin.](https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin)
 
 ```yaml
 # Example Multus NetworkAttachmentDefinition for RoCEv2
@@ -294,7 +295,7 @@ topologyManagerPolicy: single-numa-node
 topologyManagerScope: pod
 ```
 
-Setting `single-numa-node` ensures the kubelet rejects pod admission if it cannot allocate CPUs, memory, GPUs, and SR-IOV NICs from the same NUMA node. The failure appears as a `TopologyAffinityError`. That failure is useful. It tells the platform that the request cannot be satisfied with the required locality. `topologyManagerScope: pod` matters because training pods often contain init containers or sidecars. The platform should reason about the pod as a whole. For the NVIDIA device plugin to report NUMA topology to the kubelet, deploy it with topology reporting enabled in the plugin configuration.
+[Setting `single-numa-node` ensures the kubelet rejects pod admission if it cannot allocate CPUs, memory, GPUs, and SR-IOV NICs from the same NUMA node.](https://kubernetes.io/docs/tasks/administer-cluster/topology-manager/) The failure appears as a `TopologyAffinityError`. That failure is useful. It tells the platform that the request cannot be satisfied with the required locality. `topologyManagerScope: pod` matters because training pods often contain init containers or sidecars. The platform should reason about the pod as a whole. For the NVIDIA device plugin to report NUMA topology to the kubelet, deploy it with topology reporting enabled in the plugin configuration.
 
 The exact key names depend on the operator and plugin version. Validate against the operator documentation used in your cluster. The design principle is stable: Device plugins must expose topology hints. The kubelet must enforce them. Workloads must request resources in a shape that can be admitted.
 
@@ -302,7 +303,7 @@ The exact key names depend on the operator and plugin version. Validate against 
 
 ### Scheduler Placement Versus Kubelet Admission
 
-It is easy to confuse scheduler placement with kubelet admission. The scheduler chooses a node. The kubelet admits the pod on that node. Topology Manager runs at kubelet admission time. That means the scheduler may pick a node that appears to have enough total GPUs, but the kubelet may reject the pod because those GPUs cannot be aligned with CPU, memory, or NIC resources. This can create frustrating loops if the scheduler does not have enough topology awareness. For production AI clusters, combine several layers:
+It is easy to confuse scheduler placement with kubelet admission. The scheduler chooses a node. The kubelet admits the pod on that node. Topology Manager runs at kubelet admission time. [That means the scheduler may pick a node that appears to have enough total GPUs, but the kubelet may reject the pod because those GPUs cannot be aligned with CPU, memory, or NIC resources.](https://kubernetes.io/docs/tasks/administer-cluster/topology-manager/) This can create frustrating loops if the scheduler does not have enough topology awareness. For production AI clusters, combine several layers:
 
 * node labels for hardware class,
 * taints and tolerations for GPU pools,
@@ -347,7 +348,7 @@ The platform needs admission control before pod creation becomes resource alloca
 
 ### Kueue
 
-Kueue is a job queueing controller. It sits above normal Kubernetes scheduling. Instead of replacing the scheduler, it controls when jobs are admitted. For native Jobs, Kueue can keep the job suspended until quota and capacity are available. When the workload is admitted, Kueue allows the job to proceed. This is a strong fit for modern Kubernetes environments that already use standard Job APIs and want queueing without replacing the scheduling stack. Kueue works especially well when your platform contract is:
+[Kueue is a job queueing controller. It sits above normal Kubernetes scheduling. Instead of replacing the scheduler, it controls when jobs are admitted.](https://github.com/kubernetes-sigs/kueue) For native Jobs, Kueue can keep the job suspended until quota and capacity are available. When the workload is admitted, Kueue allows the job to proceed. This is a strong fit for modern Kubernetes environments that already use standard Job APIs and want queueing without replacing the scheduling stack. Kueue works especially well when your platform contract is:
 
 * users submit Jobs,
 * queues represent teams or priorities,
@@ -361,7 +362,7 @@ Kueue is less focused on deep HPC-style placement than Volcano. You may still ne
 
 ### Volcano
 
-Volcano is a Kubernetes-native batch scheduler. It runs as a scheduler and introduces batch concepts such as queues, pod groups, and scheduling plugins. Volcano is often used in HPC and AI workloads that need more explicit gang semantics and advanced scheduling behavior. It can be a strong fit when:
+[Volcano is a Kubernetes-native batch scheduler. It runs as a scheduler and introduces batch concepts such as queues, pod groups, and scheduling plugins.](https://github.com/volcano-sh/volcano) Volcano is often used in HPC and AI workloads that need more explicit gang semantics and advanced scheduling behavior. It can be a strong fit when:
 
 * the platform already standardizes on Volcano CRDs,
 * workloads use Kubeflow operators that integrate with Volcano,
@@ -1115,6 +1116,11 @@ After completing the lab, answer these questions in your notes:
 - [PyTorch torchrun elastic launcher](https://docs.pytorch.org/docs/stable/elastic/run.html)
 - [PyTorch Distributed Checkpoint](https://docs.pytorch.org/docs/stable/distributed.checkpoint.html)
 - [PyTorch FSDP](https://docs.pytorch.org/docs/stable/fsdp.html)
+- [arxiv.org: 2006.15704](https://arxiv.org/abs/2006.15704) — The DDP paper is an authoritative primary source for PyTorch DDP semantics and synchronization behavior.
+- [arxiv.org: 2304.11277](https://arxiv.org/abs/2304.11277) — The FSDP paper directly documents the sharding model and the memory-saving goal.
+- [kubernetes.io: indexed parallel processing static](https://kubernetes.io/docs/tasks/job/indexed-parallel-processing-static/) — The Kubernetes Jobs documentation explicitly defines `completionMode: Indexed` and the per-Pod completion index.
+- [github.com: kueue](https://github.com/kubernetes-sigs/kueue) — The Kueue project README directly describes it as a job-level manager that decides when jobs start.
+- [github.com: volcano](https://github.com/volcano-sh/volcano) — The Volcano README directly describes the project as a Kubernetes-native batch scheduling system extending kube-scheduler.
 
 
 
