@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 9.1: Kubeflow"
 slug: platform/toolkits/data-ai-platforms/ml-platforms/module-9.1-kubeflow
 sidebar:
@@ -39,7 +40,7 @@ Kubeflow is easiest to understand if you begin with the path a model takes from 
 
 In a small team, these steps often begin as informal habits. A notebook reads from a shared bucket, a model is uploaded by hand, and a cron job runs a training script. That can be enough while the team is learning. It starts to break when more people depend on the same workflow, when GPUs are scarce, when auditability matters, or when production incidents require a fast answer to the question, "Which code, data, parameters, and image produced this model?"
 
-Kubeflow is a collection of Kubernetes-native ML projects that tries to make those lifecycle boundaries explicit. Notebooks cover interactive development. Kubeflow Pipelines covers repeatable workflow execution. Katib covers hyperparameter tuning. Training operators cover distributed training. KServe covers model serving. Profiles and namespaces help isolate teams. Artifact and metadata systems connect runs to their inputs and outputs.
+[Kubeflow is a collection of Kubernetes-native ML projects](https://github.com/kubeflow/manifests) that tries to make those lifecycle boundaries explicit. Notebooks cover interactive development. Kubeflow Pipelines covers repeatable workflow execution. Katib covers hyperparameter tuning. Training operators cover distributed training. KServe covers model serving. Profiles and namespaces help isolate teams. Artifact and metadata systems connect runs to their inputs and outputs.
 
 ```ascii
 KUBEFLOW PLATFORM ARCHITECTURE
@@ -115,7 +116,7 @@ The answer is usually Kubeflow Pipelines only or a smaller workflow stack. Full 
 
 Kubeflow installation varies by distribution and version, so treat installation commands as a pattern rather than a universal production recipe. The upstream manifests repository assembles many components, and production environments often wrap those manifests with GitOps, identity integration, certificate management, ingress configuration, and environment-specific overlays. Local development should be smaller whenever possible.
 
-For full Kubeflow, teams commonly use the manifests repository with Kustomize. A production installation needs prerequisites such as a compatible Kubernetes cluster, working storage classes, ingress or service mesh decisions, certificate handling, and enough node capacity for the control plane components plus user workloads. The install loop is often repeated because custom resource definitions and controllers may not be ready on the first apply.
+For full Kubeflow, [teams commonly use the manifests repository with Kustomize](https://github.com/kubeflow/manifests). A production installation needs prerequisites such as a compatible Kubernetes cluster, working storage classes, ingress or service mesh decisions, certificate handling, and enough node capacity for the control plane components plus user workloads. The install loop is often repeated because custom resource definitions and controllers may not be ready on the first apply.
 
 ```bash
 git clone https://github.com/kubeflow/manifests.git
@@ -159,7 +160,7 @@ kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/env/platform
 kubectl get pods -n kubeflow --watch
 ```
 
-When the pipeline UI is ready, port-forwarding is enough for a local lab. In production, you would normally use an ingress path, authentication, authorization, TLS, and network policy instead of an unauthenticated local tunnel. The lab version teaches component behavior without pretending it is a production access model.
+When the pipeline UI is ready, [port-forwarding is enough for a local lab](https://kubeflow-pipelines.readthedocs.io/en/sdk-2.14.2/source/installation.html). In production, you would normally use an ingress path, authentication, authorization, TLS, and network policy instead of an unauthenticated local tunnel. The lab version teaches component behavior without pretending it is a production access model.
 
 ```bash
 kubectl port-forward -n kubeflow svc/ml-pipeline-ui 8080:80
@@ -365,7 +366,7 @@ The worked example also shows a common trap. A pipeline can be syntactically cor
 
 ## Notebooks And Team Workspaces
 
-Kubeflow Notebooks give data scientists interactive Jupyter environments that run inside Kubernetes. That sounds simple, but the platform value is not merely "Jupyter in a pod." The value is that notebooks can use the same namespace, service account, storage patterns, container images, and GPU scheduling rules that the rest of the ML platform uses.
+[Kubeflow Notebooks give data scientists interactive Jupyter environments that run inside Kubernetes](https://github.com/kubeflow/notebooks). That sounds simple, but the platform value is not merely "Jupyter in a pod." The value is that notebooks can use the same namespace, service account, storage patterns, container images, and GPU scheduling rules that the rest of the ML platform uses.
 
 A notebook server should be treated like a development workload with production-adjacent constraints. It needs a persistent workspace so users do not lose work when a pod restarts. It needs resource requests so the scheduler can make sane placement decisions. It needs limits so one exploratory session does not starve the namespace. It may need GPU tolerations and node selectors if it uses accelerator nodes.
 
@@ -397,7 +398,7 @@ spec:
           claimName: notebook-pvc
 ```
 
-A GPU notebook adds another layer. Requesting `nvidia.com/gpu` is not enough if the cluster does not have GPU nodes, the device plugin is missing, or nodes are tainted without matching tolerations. This is where Kubernetes knowledge matters more than Kubeflow knowledge.
+A GPU notebook adds another layer. [Requesting `nvidia.com/gpu` is not enough if the cluster does not have GPU nodes, the device plugin is missing](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/), or nodes are tainted without matching tolerations. This is where Kubernetes knowledge matters more than Kubeflow knowledge.
 
 ```yaml
 apiVersion: kubeflow.org/v1
@@ -438,7 +439,7 @@ A mature notebook strategy also draws a boundary between exploration and product
 
 ## Multi-Tenancy, Profiles, And Resource Control
 
-Kubeflow multi-tenancy is built around the idea that teams should have isolated workspaces. In Kubernetes terms, that usually means namespaces, service accounts, RoleBindings, secrets, PVCs, quotas, and network rules. Kubeflow Profiles help organize that model for users, but they do not remove the need to understand the underlying Kubernetes controls.
+Kubeflow multi-tenancy is built around the idea that teams should have isolated workspaces. In Kubernetes terms, that usually means namespaces, service accounts, RoleBindings, secrets, PVCs, quotas, and network rules. [Kubeflow Profiles help organize that model for users](https://github.com/kubeflow/dashboard/tree/main/components/profile-controller), but they do not remove the need to understand the underlying Kubernetes controls.
 
 The practical design question is: what can each team see, run, and consume? A research team may need notebook access and moderate CPU. A computer vision team may need GPU quotas and large artifact storage. A regulated team may need stricter service accounts and separate buckets. Treating all teams identically is easy to install and hard to govern.
 
@@ -459,7 +460,7 @@ MULTI-TENANT KUBEFLOW SHAPE
        secrets, PVCs, runs                 secrets, PVCs, runs
 ```
 
-ResourceQuota is one of the simplest controls to add, and one of the easiest to forget. Without quotas, one team can consume shared cluster capacity with exploratory work. With quotas, failure becomes more predictable: the team sees that a workload exceeded its namespace budget instead of accidentally degrading every other user.
+[ResourceQuota is one of the simplest controls to add](https://kubernetes.io/docs/concepts/policy/resource-quotas/), and one of the easiest to forget. Without quotas, one team can consume shared cluster capacity with exploratory work. With quotas, failure becomes more predictable: the team sees that a workload exceeded its namespace budget instead of accidentally degrading every other user.
 
 ```yaml
 apiVersion: v1
@@ -476,7 +477,7 @@ spec:
     requests.nvidia.com/gpu: "2"
 ```
 
-LimitRange complements quotas by setting defaults and bounds for individual containers. This prevents small notebook or pipeline steps from launching without requests, which would make scheduling and capacity planning unreliable.
+[LimitRange complements quotas by setting defaults and bounds for individual containers](https://kubernetes.io/docs/concepts/policy/limit-range/). This prevents small notebook or pipeline steps from launching without requests, which would make scheduling and capacity planning unreliable.
 
 ```yaml
 apiVersion: v1
@@ -500,11 +501,11 @@ spec:
 
 **Active check:** a team reports that pipeline runs started failing after you added quotas. The error says a pod exceeded `requests.memory`. What changed from the team's perspective? The workload did not necessarily become worse; the platform started enforcing a budget that was previously implicit. Your next action is to inspect real resource needs, right-size requests, and decide whether the quota or the workload should change.
 
-Multi-tenancy also changes secret design. A pipeline that reads from object storage should not use a cluster-wide credential mounted into every namespace. Each team should have scoped credentials, and each pipeline component should run with the minimum access it needs. Kubeflow makes it easy to run ML on Kubernetes; it does not automatically make that ML least-privilege.
+Multi-tenancy also changes secret design. A pipeline that reads from object storage should not use a cluster-wide credential mounted into every namespace. Each team should have scoped credentials, and [each pipeline component should run with the minimum access it needs](https://kubernetes.io/docs/concepts/security/rbac-good-practices/). Kubeflow makes it easy to run ML on Kubernetes; it does not automatically make that ML least-privilege.
 
 ## Serving Models With KServe
 
-Training is only half of the lifecycle. A model becomes useful to an application when it can answer inference requests reliably. KServe provides a Kubernetes-native abstraction for model serving through `InferenceService` resources. Instead of hand-writing every Deployment, Service, autoscaling rule, and model loading behavior, the team declares the model server shape and storage location.
+Training is only half of the lifecycle. A model becomes useful to an application when it can answer inference requests reliably. [KServe provides a Kubernetes-native abstraction for model serving through `InferenceService` resources](https://github.com/kserve/kserve). Instead of hand-writing every Deployment, Service, autoscaling rule, and model loading behavior, the team declares the model server shape and storage location.
 
 The simplest serving path uses a built-in runtime such as scikit-learn. The model artifact must already exist in a storage location the serving runtime can access. If the storage URI is wrong or credentials are missing, the `InferenceService` may create pods that fail while trying to load the model. That failure is a storage and identity issue, not a model science issue.
 
@@ -642,7 +643,7 @@ spec:
             restartPolicy: Never
 ```
 
-The algorithm choice should match the search space and budget. Random search is a strong baseline when you need quick exploration. Grid search is simple but grows badly as parameter count increases. Bayesian optimization can be effective for continuous spaces when each trial is expensive. Hyperband can help when you can stop poor trials early.
+The algorithm choice should match the search space and budget. [Random search is a strong baseline](https://github.com/kubeflow/katib) when you need quick exploration. Grid search is simple but grows badly as parameter count increases. Bayesian optimization can be effective for continuous spaces when each trial is expensive. Hyperband can help when you can stop poor trials early.
 
 ```ascii
 KATIB OPTIMIZATION ALGORITHMS
@@ -668,7 +669,7 @@ A practical debugging move is to run one trial container outside Katib first. If
 
 ## Distributed Training Operators
 
-Distributed training is where Kubeflow's Kubernetes-native shape becomes especially useful. Frameworks such as PyTorch and TensorFlow need coordinated workers, roles, environment variables, restart behavior, and often GPU scheduling. Training operators encode those patterns as custom resources so teams do not reinvent a controller for every framework.
+Distributed training is where Kubeflow's Kubernetes-native shape becomes especially useful. Frameworks such as PyTorch and TensorFlow need coordinated workers, roles, environment variables, restart behavior, and often GPU scheduling. [Training operators encode those patterns as custom resources](https://github.com/kubeflow/trainer) so teams do not reinvent a controller for every framework.
 
 A PyTorch distributed job commonly has one master and several workers. The exact launch command depends on the framework version and training code, so production teams should treat the manifest and the training script as a pair. If the script expects different environment variables or rendezvous behavior than the operator provides, the pods may run but never form a healthy training group.
 
@@ -811,9 +812,9 @@ The fourth fix is to observe the timeline instead of guessing. Look at step dura
 
 ## Did You Know?
 
-1. Kubeflow began as Kubernetes tooling around TensorFlow workflows and grew into a broader collection of Kubernetes-native ML projects rather than remaining a single-framework platform.
+1. [Kubeflow began as Kubernetes tooling around TensorFlow workflows](https://kubernetes.io/blog/2017/12/introducing-kubeflow-composable/) and grew into a broader collection of Kubernetes-native ML projects rather than remaining a single-framework platform.
 
-2. Kubeflow Pipelines v2 compiles Python pipeline definitions into an intermediate representation YAML, which separates authoring from the runtime that executes the workflow.
+2. [Kubeflow Pipelines v2 compiles Python pipeline definitions into an intermediate representation YAML](https://kubeflow-pipelines.readthedocs.io/en/sdk-2.14.2/source/overview.html), which separates authoring from the runtime that executes the workflow.
 
 3. Pipeline artifacts are designed for large ML outputs such as datasets, models, and metrics, while metadata records lineage so teams can inspect what produced each run result.
 
@@ -1108,3 +1109,5 @@ Continue to [Module 9.2: MLflow](../module-9.2-mlflow/) to learn how experiment 
 - [kubeflow-pipelines.readthedocs.io: overview.html](https://kubeflow-pipelines.readthedocs.io/en/sdk-2.14.2/source/overview.html) — The KFP overview explicitly covers IR YAML compilation, containerized component execution, artifact handling, run/experiment management, and caching.
 - [github.com: katib](https://github.com/kubeflow/katib) — The Katib repository overview explicitly states support for hyperparameter tuning, early stopping, and neural architecture search.
 - [Kubeflow Manifests](https://github.com/kubeflow/manifests) — Shows how the full Kubeflow platform is assembled and installed, including multi-component and multi-tenancy aspects.
+- [KServe](https://github.com/kserve/kserve) — Primary source for KServe model serving capabilities, multi-framework support, autoscaling, and rollout features.
+- [Kubernetes RBAC Good Practices](https://kubernetes.io/docs/concepts/security/rbac-good-practices/) — Grounds the module's least-privilege guidance for multi-tenant ML workloads.
