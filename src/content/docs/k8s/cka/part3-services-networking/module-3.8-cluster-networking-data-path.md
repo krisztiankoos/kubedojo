@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.8: Cluster Networking Data Path"
 slug: k8s/cka/part3-services-networking/module-3.8-cluster-networking-data-path
 sidebar:
@@ -97,7 +98,7 @@ Start with a client pod calling a ClusterIP Service. The client thinks it is con
 +----------------------------------------------------------------------------+
 ```
 
-The packet leaves Pod A through a virtual Ethernet pair, usually called a veth pair, that connects the pod network namespace to the node network namespace. From there, the packet hits kernel hooks where kube-proxy-managed rules can match the destination Service IP. In iptables mode, this commonly involves chains such as `KUBE-SERVICES`, `KUBE-SVC-*`, and `KUBE-SEP-*`, although exact names depend on mode and implementation.
+The packet leaves Pod A through a virtual Ethernet pair, usually called a veth pair, that connects the pod network namespace to the node network namespace. From there, the packet hits kernel hooks where kube-proxy-managed rules can match the destination Service IP. In iptables mode, this commonly involves [chains such as `KUBE-SERVICES`, `KUBE-SVC-*`, and `KUBE-SEP-*`](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/), although exact names depend on mode and implementation.
 
 After the destination is rewritten to a backend pod IP, the node performs a normal route lookup. If the backend pod is local, the packet can be delivered through another veth pair on the same node. If the backend pod is remote, the CNI-provided data path decides whether to encapsulate the packet into a tunnel, forward it with native routing, or hand it to an eBPF program that performs equivalent forwarding work.
 
@@ -109,7 +110,7 @@ The most useful answer is that the symptom depends on exactly which state disapp
 
 ### 1.1 What kube-proxy Actually Does
 
-Despite the name, kube-proxy usually does not sit in the middle of every Service packet as a userspace proxy. Its main job is to watch Services and EndpointSlices, then program the node so the kernel can translate virtual Service traffic to real backend pod traffic. The packet path is fast because the data packet stays in kernel space, but the correctness of that path depends on kube-proxy keeping rules synchronized with the API.
+Despite the name, kube-proxy usually does not sit in the middle of every Service packet as a userspace proxy. Its main job is to [watch Services and EndpointSlices, then program the node so the kernel can translate virtual Service traffic to real backend pod traffic](https://kubernetes.io/docs/reference/networking/virtual-ips/). The packet path is fast because the data packet stays in kernel space, but the correctness of that path depends on kube-proxy keeping rules synchronized with the API.
 
 When a Service has two ready backend pods, kube-proxy creates rules or equivalent state that can choose either backend. In iptables mode, endpoint selection can be represented with probability matches and per-endpoint DNAT chains. In nftables mode, the representation changes, but the conceptual job remains the same: match the virtual Service destination, select an endpoint, rewrite the destination, and rely on conntrack for the return path.
 
@@ -161,7 +162,7 @@ NodePort begins outside the cluster, so the first packet arrives at a node IP an
 
 With `externalTrafficPolicy: Cluster`, Kubernetes can send the request to any ready endpoint in the cluster. The trade-off is that the backend commonly sees the node IP as the source because SNAT keeps the return path symmetric through the receiving node. This is simple and highly available, but it hides the original client IP unless another layer preserves it through headers or proxy protocol.
 
-With `externalTrafficPolicy: Local`, Kubernetes preserves the original client IP by only sending traffic to local endpoints on the node that received the packet. This is valuable for audit logs and client-aware applications, but it creates an operational condition: nodes without a local ready endpoint should not receive traffic for that Service. Cloud load balancer health checks and endpoint distribution therefore become part of the design.
+With `externalTrafficPolicy: Local`, Kubernetes [preserves the original client IP by only sending traffic to local endpoints on the node that received the packet](https://kubernetes.io/docs/tutorials/services/source-ip/). This is valuable for audit logs and client-aware applications, but it creates an operational condition: nodes without a local ready endpoint should not receive traffic for that Service. Cloud load balancer health checks and endpoint distribution therefore become part of the design.
 
 | NodePort choice | What the backend sees | Operational trade-off | When it is usually chosen |
 |---|---|---|---|
@@ -213,13 +214,13 @@ kubectl exec <pod-name> -- ip route
 cat /sys/devices/virtual/net/<veth-name>/brport/hairpin_mode
 ```
 
-You should not start a troubleshooting session by assuming hairpin is the problem. Use it as a targeted branch when the symptom is narrow: a pod cannot reach its own Service, but other pods can reach the same Service, and direct access to the pod's application port works. That pattern gives you enough evidence to inspect bridge, veth, CNI, and kubelet hairpin settings.
+You should not start a troubleshooting session by assuming hairpin is the problem. Use it as a targeted branch when the symptom is narrow: a pod cannot reach its own Service, but other pods can reach the same Service, and direct access to the pod's application port works. That pattern gives you enough evidence to inspect bridge, veth, CNI, and [kubelet hairpin settings](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/).
 
 ---
 
 ## Part 2: Separate CNI, kube-proxy, DNS, and Policy Responsibilities
 
-The fastest way to lose time in Kubernetes networking is to blame the wrong layer. kube-proxy does not create pod interfaces, CoreDNS does not choose Service endpoints, and most CNIs do not implement the basic Service virtual IP rules unless they intentionally replace kube-proxy. Your first diagnostic move should be to identify which responsibility is implicated by the symptom.
+The fastest way to lose time in Kubernetes networking is to blame the wrong layer. kube-proxy does not create pod interfaces, CoreDNS does not choose Service endpoints, and [most CNIs do not implement the basic Service virtual IP rules unless they intentionally replace kube-proxy](https://kubernetes.io/docs/concepts/services-networking/). Your first diagnostic move should be to identify which responsibility is implicated by the symptom.
 
 ```ascii
 +----------------------------------------------------------------------------+
@@ -258,7 +259,7 @@ A good diagnostic question is not "is networking broken?" but "which promise is 
 
 ### 2.1 Pod-to-Pod Traffic Is the CNI's Promise
 
-The Kubernetes networking model requires every pod to be able to reach every other pod without application-visible NAT. Kubernetes itself does not configure that entire network. The container runtime invokes CNI plugins when pods are created, and the CNI plugin attaches interfaces, assigns addresses, installs routes, and prepares whatever node-level forwarding mechanism the implementation uses.
+The Kubernetes networking model [requires every pod to be able to reach every other pod without application-visible NAT](https://kubernetes.io/docs/concepts/services-networking/). Kubernetes itself does not configure that entire network. [The container runtime invokes CNI plugins when pods are created](https://kubernetes.io/docs/concepts/services-networking/), and the CNI plugin attaches interfaces, assigns addresses, installs routes, and prepares whatever node-level forwarding mechanism the implementation uses.
 
 A direct pod-IP test is the cleanest way to ask whether the pod network itself works. If Pod A can reach Pod B by pod IP and port, the CNI has carried the flow far enough for the application to respond. If Pod A cannot reach Pod B by pod IP, debugging Service objects first usually wastes time because the failure is underneath the Service layer.
 
@@ -273,7 +274,7 @@ kubectl exec <client-pod> -- wget -qO- --timeout=5 http://<backend-pod-ip>:<port
 kubectl exec <client-pod> -- wget -qO- --timeout=5 http://<service-name>:<port>
 ```
 
-You should also check whether NetworkPolicy is intentionally changing the answer. A policy-capable CNI may drop the direct pod-IP test because policy denies the flow, not because routing is broken. The symptom still lives in the CNI and policy layer, but the fix is different from changing tunnels or node routes.
+You should also check whether NetworkPolicy is intentionally changing the answer. [A policy-capable CNI may drop the direct pod-IP test because policy denies the flow](https://kubernetes.io/docs/concepts/services-networking/network-policies/), not because routing is broken. The symptom still lives in the CNI and policy layer, but the fix is different from changing tunnels or node routes.
 
 ### 2.2 Service Traffic Is the kube-proxy Promise
 
@@ -284,14 +285,14 @@ A Service object is only useful if it selects ready endpoints and every node has
 kubectl get svc <service-name> -o wide
 kubectl describe svc <service-name>
 
-# Check EndpointSlices because modern clusters use them as the scalable endpoint source.
+# Check [EndpointSlices because modern clusters use them as the scalable endpoint source](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/).
 kubectl get endpointslice -l kubernetes.io/service-name=<service-name> -o wide
 
 # The legacy Endpoints object is still a quick exam-friendly view in many clusters.
 kubectl get endpoints <service-name>
 ```
 
-If endpoints are empty, stay at the Kubernetes API level before inspecting iptables. Confirm the Service selector matches pod labels, the pods are in the same namespace as the Service, and the pods are Ready. A pod can be Running and still excluded from endpoints because readiness failed, which is one of the most common Service troubleshooting traps.
+If endpoints are empty, stay at the Kubernetes API level before inspecting iptables. Confirm the Service selector matches pod labels, the pods are in the same namespace as the Service, and the pods are Ready. [A pod can be Running and still excluded from endpoints because readiness failed](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/), which is one of the most common Service troubleshooting traps.
 
 If endpoints are correct, move to node-level Service translation. On a kind node, you can inspect rules from the host through the node container. On a real node, you need node shell access with privileges appropriate to the cluster. The command changes with kube-proxy mode, but the question stays the same: did this node receive and program Service state?
 
@@ -321,7 +322,7 @@ Native routing avoids the overlay wrapper by making the network route pod CIDRs 
 | Host-gateway routing | Plain pod IP packet through node gateways | Simple in flat L2 environments | Fails when nodes are not on a compatible network |
 | eBPF data path | Program-dependent forwarding and translation | Can replace multiple kernel rule systems | Requires implementation-specific tools and observability |
 
-Do not treat CNI names as complete explanations. Calico can run in different modes, Cilium can use overlay or native routing and may replace kube-proxy, and Flannel behavior depends on backend choice. Always inspect the actual configured mode before deciding which failure mode is plausible.
+Do not treat CNI names as complete explanations. [Calico can run in different modes](https://github.com/projectcalico/calico), [Cilium can use overlay or native routing and may replace kube-proxy](https://github.com/cilium/cilium), and [Flannel behavior depends on backend choice](https://github.com/flannel-io/flannel). Always inspect the actual configured mode before deciding which failure mode is plausible.
 
 ```bash
 # Look at CNI pods and node placement.
@@ -401,7 +402,7 @@ kubectl logs -n kube-system -l k8s-app=kube-dns --tail=60
 
 ### 3.1 Search Domains and ndots Can Create Latency
 
-Kubernetes pods commonly receive a search list and `ndots:5`, which means a name with fewer than five dots is tried through search domains before the absolute name is queried. This is helpful for short in-cluster names such as `web`, but it can hurt workloads that mostly call external domains. A name like `api.example.com` may generate several failed cluster-local queries before the real absolute query succeeds.
+Kubernetes pods commonly [receive a search list and `ndots:5`](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/), which means a name with fewer than five dots is tried through search domains before the absolute name is queried. This is helpful for short in-cluster names such as `web`, but it can hurt workloads that mostly call external domains. A name like `api.example.com` may generate several failed cluster-local queries before the real absolute query succeeds.
 
 ```bash
 # Observe resolver configuration inside a pod.
@@ -412,7 +413,7 @@ kubectl exec <client-pod> -- nslookup api.example.com
 kubectl exec <client-pod> -- nslookup api.example.com.
 ```
 
-A trailing dot tells the resolver that the name is absolute, so it should not be expanded through the search list. For application configuration that repeatedly calls external services, a trailing dot or a lower `ndots` value can remove avoidable DNS work. The right choice depends on whether the workload primarily calls cluster-local Services, external names, or both.
+[A trailing dot tells the resolver that the name is absolute](https://www.rfc-editor.org/rfc/rfc1034), so it should not be expanded through the search list. For application configuration that repeatedly calls external services, a trailing dot or a lower `ndots` value can remove avoidable DNS work. The right choice depends on whether the workload primarily calls cluster-local Services, external names, or both.
 
 ```yaml
 apiVersion: v1
