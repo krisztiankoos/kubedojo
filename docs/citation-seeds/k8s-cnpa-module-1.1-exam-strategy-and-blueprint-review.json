@@ -1,0 +1,96 @@
+{
+  "module_key": "k8s/cnpa/module-1.1-exam-strategy-and-blueprint-review",
+  "module_path": "src/content/docs/k8s/cnpa/module-1.1-exam-strategy-and-blueprint-review.md",
+  "research_run_id": "2026-05-14T03:55:44+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "CNPA is an online, proctored, multiple-choice exam.",
+      "claim_class": "standard",
+      "span_hint": "section: 1. Read The Blueprint As A Decision Map, paragraph 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.cncf.io/training/certification/cnpa/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official CNCF CNPA certification page explicitly states the exam format."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The current CNPA blueprint has six domains with weights of 36%, 20%, 16%, 12%, 8%, and 8%.",
+      "claim_class": "standard",
+      "span_hint": "section: 1. Read The Blueprint As A Decision Map, domain weight table; section: Did You Know, bullet 1",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.cncf.io/training/certification/cnpa/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official CNCF CNPA page lists the six published domains and their exact weights."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "CNPA lasts 120 minutes and has no prerequisites.",
+      "claim_class": "standard",
+      "span_hint": "opening callout under title; section: Did You Know, bullet 2",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://training.linuxfoundation.org/certification/certified-cloud-native-platform-engineering-associate-cnpa/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Linux Foundation CNPA page explicitly lists both the 120-minute duration and the absence of prerequisites, but that host is not on the current allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "The exam-format takeaway is framed against memorizing commands for Kubernetes 1.35 and newer clusters.",
+      "claim_class": "standard",
+      "span_hint": "section: Did You Know, bullet 2",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "that makes reasoning about scenarios more important than memorizing a command sequence for Kubernetes 1.35 and newer clusters.",
+      "suggested_rewrite": "that makes reasoning about scenarios more important than memorizing command syntax.",
+      "lesson_point_url": null,
+      "rationale": "The official exam-format sources support the multiple-choice format, but not the added Kubernetes-version-specific framing."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://www.cncf.io/training/certification/cnpa/",
+      "title": "CNCF CNPA Certification Page",
+      "tier": "standards",
+      "why_relevant": "This is the canonical public summary of the CNPA exam format and published domain weights."
+    },
+    {
+      "url": "https://github.com/cncf/curriculum",
+      "title": "CNCF Curriculum Repository",
+      "tier": "upstream",
+      "why_relevant": "This repo hosts the open-source CNPA curriculum artifacts that underpin exam-prep scope."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/architecture/controller/",
+      "title": "Kubernetes Controllers",
+      "tier": "standards",
+      "why_relevant": "This is the upstream reference for reconciliation and controller behavior discussed in platform-API and declarative-change topics."
+    },
+    {
+      "url": "https://opentelemetry.io/docs/concepts/observability-primer/",
+      "title": "OpenTelemetry Observability Primer",
+      "tier": "upstream",
+      "why_relevant": "This gives a solid upstream baseline for the observability distinctions the module uses in elimination guidance."
+    }
+  ],
+  "notes": "Hypothetical scenarios, quiz items, hands-on exercise prompts, analogies, and internal KubeDojo links were excluded unless they made concrete claims about the live CNPA exam specification.",
+  "_schema_issues": [
+    "claim[2]:needs_allowlist_expansion_but_url_is_already_allowlisted"
+  ],
+  "rejected_urls": []
+}

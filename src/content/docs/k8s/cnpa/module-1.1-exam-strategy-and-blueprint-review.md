@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "CNPA Exam Strategy and Blueprint Review"
 slug: k8s/cnpa/module-1.1-exam-strategy-and-blueprint-review
 revision_pending: false
@@ -32,7 +33,7 @@ This module gives you a map before the deeper CNPA review path. You will examine
 
 The CNPA blueprint is useful only if you treat it as a decision map, not as a list of headings to memorize. Each domain weight tells you how much exam surface area to expect, but the weights also hint at dependency order. Platform Engineering Core Fundamentals is the largest domain because the other domains repeatedly reuse its assumptions: platform as a product, internal developer platforms, golden paths, self-service, cognitive-load reduction, and developer-centered outcomes.
 
-CNPA is an online, proctored, multiple-choice exam. It tests platform-engineering concepts through short scenarios, comparison questions, and best-answer questions. Some questions may mention familiar tools, but the blueprint is organized around capabilities and operating models. That means your preparation should begin with the question, "What behavior should a healthy platform organization produce?" before it asks, "Which tool could help?"
+[CNPA is an online, proctored, multiple-choice exam.](https://www.cncf.io/training/certification/cnpa/) It tests platform-engineering concepts through short scenarios, comparison questions, and best-answer questions. Some questions may mention familiar tools, but the blueprint is organized around capabilities and operating models. That means your preparation should begin with the question, "What behavior should a healthy platform organization produce?" before it asks, "Which tool could help?"
 
 | Domain | Weight | What it is really testing |
 |---|---:|---|
@@ -279,7 +280,7 @@ You can also use domain weighting as a tie-breaker, but it should not be your fi
 
 ## Did You Know?
 
-- **The current CNPA blueprint has six domains**: the largest published domain is Platform Engineering Core Fundamentals at 36%, while IDPs and Developer Experience and Measuring your Platform are both 8% domains.
+- **[The current CNPA blueprint has six domains](https://www.cncf.io/training/certification/cnpa/)**: the largest published domain is Platform Engineering Core Fundamentals at 36%, while IDPs and Developer Experience and Measuring your Platform are both 8% domains.
 - **CNPA is multiple choice, not a terminal-based performance exam**: that makes reasoning about scenarios more important than memorizing a command sequence for Kubernetes 1.35 and newer clusters.
 - **Golden paths are product decisions**: a golden path reflects what the platform team chooses to support well, which means it needs ownership, documentation, lifecycle management, and feedback.
 - **Guardrails can improve speed**: automated policy checks, secure defaults, and pre-approved workflows can reduce waiting because teams no longer need manual review for routine safe changes.
@@ -512,6 +513,7 @@ The next study action should be traceable to evidence. If your error log shows t
 - [Open Policy Agent Documentation](https://www.openpolicyagent.org/docs/latest/)
 - [Kyverno Documentation](https://kyverno.io/docs/introduction/)
 - [DORA: Four Keys](https://dora.dev/guides/dora-metrics-four-keys/)
+- [CNCF Curriculum Repository](https://github.com/cncf/curriculum) — This repo hosts the open-source CNPA curriculum artifacts that underpin exam-prep scope.
 
 ## Next Module
 
