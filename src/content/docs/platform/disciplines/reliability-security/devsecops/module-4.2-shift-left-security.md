@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 4.2: Shift-Left Security"
 slug: platform/disciplines/reliability-security/devsecops/module-4.2-shift-left-security
 sidebar:
@@ -15,7 +16,7 @@ Before starting this module, the learner should be comfortable with the security
 
 The module also assumes working knowledge of Git commits, branches, local hooks, pull requests, and basic CI behavior. The examples use Python, JavaScript, YAML, shell scripts, and Kubernetes manifests, but the security patterns apply across most application stacks.
 
-Learners will get the most value if they have seen static analysis warnings in an IDE before, even if they have not configured the rules themselves. Prior experience with pre-commit, Semgrep, Bandit, detect-secrets, or gitleaks is helpful but not required.
+Learners will get the most value if they have seen static analysis warnings in an IDE before, even if they have not configured the rules themselves. Prior experience with pre-commit, Semgrep, [Bandit](https://bandit.readthedocs.io/en/latest/), detect-secrets, or gitleaks is helpful but not required.
 
 ---
 
@@ -160,7 +161,7 @@ repos:
       - id: hadolint-docker
 ```
 
-This configuration uses four different kinds of checks. `detect-secrets` focuses on credential patterns and baseline management. Semgrep catches configurable code patterns across several languages. Bandit adds Python-specific security analysis. Hadolint catches risky Dockerfile patterns before container builds reach CI.
+This configuration uses four different kinds of checks. `detect-secrets` focuses on credential patterns and baseline management. Semgrep catches configurable code patterns across several languages. Bandit adds Python-specific security analysis. [Hadolint catches risky Dockerfile patterns before container builds reach CI](https://github.com/hadolint/hadolint).
 
 The versions are pinned because reproducibility matters. A floating branch or latest tag can silently change rule behavior, causing one developer to pass and another to fail. Pinning also creates an explicit upgrade workflow: test the new scanner version, examine rule changes, update baselines if needed, and commit the change intentionally.
 
@@ -170,7 +171,7 @@ The versions are pinned because reproducibility matters. A floating branch or la
 .venv/bin/pre-commit run --all-files
 ```
 
-The first command installs the framework-managed Git hook into the local repository. The second command runs every configured hook against all matching files, which is useful when introducing the framework to an existing project. After the initial setup, normal commits run checks only for files selected by the hooks and framework.
+The first command installs the framework-managed Git hook into the local repository. The second command runs every configured hook against all matching files, which is useful when introducing the framework to an existing project. After the initial setup, [normal commits run checks only for files selected by the hooks and framework](https://github.com/semgrep/pre-commit).
 
 If the repository does not already have the tools in its virtual environment, install them explicitly through the repository Python environment rather than relying on whatever happens to be on the machine path. A reproducible local environment reduces "works on my laptop" drift and makes onboarding documentation easier to trust.
 
@@ -261,7 +262,7 @@ GITHUB_TOKEN = "ghp_exampleexampleexampleexampleexample"
 
 Those examples should never be treated as realistic credentials, but they demonstrate the categories scanners look for: provider-specific prefixes, high-entropy strings, suspicious variable names, and known token formats. Scanners combine pattern matching, entropy detection, allowlists, and baselines to reduce false positives.
 
-A baseline is a snapshot of acknowledged findings. It is often necessary when adding secret detection to an existing repository that already contains test fixtures, fake tokens, historical examples, or real findings being remediated in phases. The baseline prevents old findings from blocking every new commit while still blocking newly introduced secrets.
+A baseline is a snapshot of acknowledged findings. It is often necessary when adding secret detection to an existing repository that already contains test fixtures, fake tokens, historical examples, or real findings being remediated in phases. The baseline prevents old findings from blocking every new commit while still [blocking newly introduced secrets](https://github.com/Yelp/detect-secrets).
 
 ```bash
 # Create or refresh a detect-secrets baseline from the repository root.
@@ -295,7 +296,7 @@ regex = '''company_live_[A-Za-z0-9]{32}'''
 tags = ["company", "api-key"]
 ```
 
-Gitleaks is often used in CI because it can scan committed state and history efficiently. It also works locally, but a full history scan is usually too expensive for every commit. A common pattern is detect-secrets or a targeted gitleaks invocation in pre-commit, then broader gitleaks scanning in CI with `fetch-depth: 0` so history is available.
+Gitleaks is often used in CI because it can scan committed state and history efficiently. It also works locally, but a full history scan is usually too expensive for every commit. A common pattern is detect-secrets or [a targeted gitleaks invocation in pre-commit, then broader gitleaks scanning in CI with `fetch-depth: 0`](https://github.com/gitleaks/gitleaks) so history is available.
 
 ```yaml
 name: Secrets Scan
@@ -323,8 +324,8 @@ This CI job is not a replacement for pre-commit. It is the backup layer for skip
 |---|---|---|---|
 | detect-secrets | Strong baseline workflow and pre-commit fit | Less focused on deep verified history scanning | Use when legacy repositories need controlled adoption |
 | gitleaks | Fast rule-based scanning and CI support | Strong repository and history scanning | Use for pull requests, branch scans, and custom rules |
-| TruffleHog | Verified secret detection and deep discovery | Strong for audits and incident investigation | Use when confirming whether a finding is live or exploitable |
-| git-secrets | Simple AWS-oriented local patterns | Narrower than general scanners | Use for teams heavily exposed to AWS credential leakage |
+| TruffleHog | [Verified secret detection and deep discovery](https://github.com/trufflesecurity/trufflehog/blob/main/README.md) | Strong for audits and incident investigation | Use when confirming whether a finding is live or exploitable |
+| git-secrets | [Simple AWS-oriented local patterns](https://github.com/awslabs/git-secrets) | Narrower than general scanners | Use for teams heavily exposed to AWS credential leakage |
 | Hosting-provider scanning | Central alerting for known token types | Depends on provider coverage and licensing | Use as an additional safety net, not the only layer |
 
 A senior response to a secrets finding has two tracks. The first track fixes the code path so the secret is not embedded again. The second track handles the credential lifecycle: revoke, rotate, audit use, and communicate impact. Shift-left tooling helps with the first track, but incident handling discipline is still required for any value that already escaped.
@@ -366,7 +367,7 @@ def find_user(connection: sqlite3.Connection, user_id: str):
     return connection.execute(query).fetchone()
 ```
 
-A SAST rule may flag the string concatenation because untrusted input can alter the SQL statement. The secure fix is not to sanitize with a homegrown regex. The secure fix is to use parameterized queries, which keep data separate from the query structure.
+A SAST rule may flag the string concatenation because untrusted input can alter the SQL statement. The secure fix is not to sanitize with a homegrown regex. [The secure fix is to use parameterized queries, which keep data separate from the query structure](https://owasp.org/www-community/attacks/SQL_Injection).
 
 ```python
 # app/users.py
@@ -460,7 +461,7 @@ Configuration Risk Flow
              open ingress, root containers   policy bundles, image scans      drift, runtime detection
 ```
 
-A Kubernetes manifest that sets `privileged: true` is usually not a subtle vulnerability. It grants broad access from the container to the node and should require a strong exception process. A local IaC scanner can catch the field before the manifest reaches a cluster admission controller.
+A Kubernetes manifest that sets `privileged: true` is usually not a subtle vulnerability. [It grants broad access from the container to the node](https://kubernetes.io/docs/concepts/security/pod-security-standards/) and should require a strong exception process. A local IaC scanner can catch the field before the manifest reaches a cluster admission controller.
 
 ```yaml
 apiVersion: v1
@@ -475,7 +476,7 @@ spec:
         privileged: true
 ```
 
-A safer baseline removes privileged mode, disables privilege escalation, sets a non-root identity, and uses a read-only root filesystem when the application permits it. Not every workload can use every hardening option immediately, but the manifest should make the risk explicit rather than accepting insecure defaults.
+A safer baseline removes privileged mode, [disables privilege escalation, sets a non-root identity, and uses a read-only root filesystem](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) when the application permits it. Not every workload can use every hardening option immediately, but the manifest should make the risk explicit rather than accepting insecure defaults.
 
 ```yaml
 apiVersion: v1
@@ -498,7 +499,7 @@ spec:
             - ALL
 ```
 
-Tools such as Checkov, Trivy, kube-linter, and Kubesec can run locally and in CI. The early-stage version should focus on obvious high-confidence findings. The CI version can run broader checks against rendered Helm output, Terraform plans, or full configuration directories.
+Tools such as [Checkov](https://github.com/bridgecrewio/checkov), Trivy, kube-linter, and Kubesec can run locally and in CI. The early-stage version should focus on obvious high-confidence findings. The CI version can run broader checks against rendered Helm output, Terraform plans, or full configuration directories.
 
 ```yaml
 # .pre-commit-config.yaml
@@ -1079,3 +1080,18 @@ git commit -m "Document shift-left security design"
 ## Next Module
 
 Continue to [Module 4.3: Security in CI/CD Pipelines](../module-4.3-security-cicd/) to design the central verification layer that complements local shift-left security.
+
+## Sources
+
+- [github.com: detect secrets](https://github.com/Yelp/detect-secrets) — The project README explicitly documents baselines, `detect-secrets-hook`, and staged-file scanning.
+- [github.com: pre commit](https://github.com/semgrep/pre-commit) — The Semgrep pre-commit README directly describes scanning files to be committed with configured rules.
+- [bandit.readthedocs.io: latest](https://bandit.readthedocs.io/en/latest/) — Bandit's official documentation states that it finds common security issues by building an AST and running plugins.
+- [github.com: hadolint](https://github.com/hadolint/hadolint) — The Hadolint README identifies it as a Dockerfile linter and explicitly recommends CI, editor, and pre-commit integration.
+- [github.com: gitleaks](https://github.com/gitleaks/gitleaks) — The Gitleaks README includes both a pre-commit example and a GitHub Actions example with `fetch-depth: 0`.
+- [github.com: README.md](https://github.com/trufflesecurity/trufflehog/blob/main/README.md) — The TruffleHog README explicitly documents validation of live secrets and deeper analysis for some credential types.
+- [github.com: git secrets](https://github.com/awslabs/git-secrets) — The README documents `--register-aws` patterns and explicitly says the tool should be treated as extra insurance.
+- [owasp.org: SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection) — OWASP's SQL Injection page directly explains string-built queries from untrusted input and shows parameterized queries as the safe pattern.
+- [kubernetes.io: pod security standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/) — The Kubernetes Pod Security Standards page directly says privileged policy pods can bypass typical container isolation.
+- [kubernetes.io: security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) — The Kubernetes security-context task directly documents these settings and their security effects.
+- [kubernetes.io: seccomp](https://kubernetes.io/docs/reference/node/seccomp/) — The Kubernetes seccomp reference explicitly documents `RuntimeDefault` and states that privileged containers always run `Unconfined`.
+- [github.com: checkov](https://github.com/bridgecrewio/checkov) — The Checkov README explicitly lists these supported scan targets.
