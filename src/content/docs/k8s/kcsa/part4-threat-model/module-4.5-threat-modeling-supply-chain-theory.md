@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 revision_pending: false
 title: "Module 4.5: Threat Modeling & Supply Chain Theory"
 slug: k8s/kcsa/part4-threat-model/module-4.5-threat-modeling-supply-chain-theory
@@ -24,13 +25,13 @@ After completing this module, you will be able to apply threat modeling as an en
 
 ## Why This Module Matters
 
-In December 2020, a major security investigation exposed a terrifying pattern that the curriculum's [supply-chain canonical](../../../../prerequisites/modern-devops/module-1.3-cicd-pipelines/) <!-- incident-xref: solarwinds-2020 --> covers in full: attackers had reached thousands of organizations — including government agencies and major enterprises — through a trusted vendor's signed software update. The update did not arrive as a suspicious binary from an unknown server, and it did not ask defenders to ignore obvious warnings. It arrived through an expected vendor channel, carried the appearance of normal delivery, and moved through environments that had already decided to trust that vendor's software.
+In December 2020, a major security investigation exposed a terrifying pattern that the curriculum's [supply-chain canonical](../../../../prerequisites/modern-devops/module-1.3-cicd-pipelines/) <!-- incident-xref: solarwinds-2020 --> covers in full: [attackers had reached thousands of organizations — including government agencies and major enterprises — through a trusted vendor's signed software update](https://www.cisa.gov/news-events/cybersecurity-advisories/aa20-352a). The update did not arrive as a suspicious binary from an unknown server, and it did not ask defenders to ignore obvious warnings. It arrived through an expected vendor channel, carried the appearance of normal delivery, and moved through environments that had already decided to trust that vendor's software.
 
 That pattern is exactly why supply chain threat modeling matters for Kubernetes. A platform can require a private registry, scan images, and enforce Pod Security Standards, yet still run attacker-controlled code if the build path itself has been compromised. The cluster may see an approved image name, a familiar service account, and a deployment created through the normal release process. If the dangerous decision happened earlier, runtime controls may only see ordinary workload behavior until data is gone or credentials have been abused.
 
 Threat modeling gives a team a disciplined way to reason before the incident. Instead of asking only, "Do we have scanning?" the team asks, "What are we protecting, where does trust change hands, how could an attacker abuse each handoff, and which control would give us evidence?" That shift is the difference between collecting security tools and building a security argument that can be tested, reviewed, and improved over time.
 
-KCSA expects that mindset. You do not need to become a specialist in every supply chain framework, but you do need to recognize how Kubernetes threat modeling connects code, containers, clusters, and cloud infrastructure. The exam tests whether you can reason about security relationships, identify weak assumptions, and choose controls that match the boundary being defended rather than merely remember product names.
+KCSA expects that mindset. You do not need to become a specialist in every supply chain framework, but you do need to recognize how [Kubernetes threat modeling connects code, containers, clusters, and cloud infrastructure](https://training.linuxfoundation.org/certification/kubernetes-and-cloud-native-security-associate-kcsa/). The exam tests whether you can reason about security relationships, identify weak assumptions, and choose controls that match the boundary being defended rather than merely remember product names.
 
 ## The Threat Modeling Mindset
 
@@ -80,7 +81,7 @@ Good models are deliberately humble. They name residual risk instead of pretendi
 
 ## The 4C Model for Kubernetes Threats
 
-Kubernetes security is often described with the 4C model: Cloud, Cluster, Container, and Code. These layers are not separate checklists. They are dependencies, and the security of a running workload depends on how those dependencies interact. A secure container image is less convincing if the cloud role mounted into the pod can modify production data across accounts.
+Kubernetes security is often described with the [4C model: Cloud, Cluster, Container, and Code](https://kubernetes.io/es/docs/concepts/security/overview/). These layers are not separate checklists. They are dependencies, and the security of a running workload depends on how those dependencies interact. A secure container image is less convincing if the cloud role mounted into the pod can modify production data across accounts.
 
 The 4C model helps beginners avoid a common blind spot. A team may harden pods while ignoring the CI runner that builds the pod image, or lock down the cloud network while allowing a compromised dependency to run inside an approved workload. Both teams improved security in one layer, but neither proved that the full path from source to runtime was trustworthy.
 
@@ -142,7 +143,7 @@ When you use the 4C model in a review, move in both directions. Start inward fro
 
 ## STRIDE Applied to Kubernetes
 
-STRIDE is a threat modeling framework that helps teams avoid focusing only on the attacks they already know. The categories are Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, and Elevation of Privilege. The value is not memorizing the words. The value is using each category as a prompt that forces a different kind of security question.
+STRIDE is a threat modeling framework that helps teams avoid focusing only on the attacks they already know. The categories are [Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, and Elevation of Privilege](https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-threats). The value is not memorizing the words. The value is using each category as a prompt that forces a different kind of security question.
 
 For Kubernetes, STRIDE becomes more useful when it is tied to concrete objects. Ask about service accounts, image tags, admission requests, ConfigMaps, Secrets, API audit events, package registries, CI jobs, container capabilities, and cloud identities. That keeps the model grounded in things the team can inspect and change, rather than drifting into abstract threat language that never becomes an engineering task.
 
@@ -236,11 +237,11 @@ The stronger answer is that admission should verify the signed provenance claims
 
 ## Provenance, SBOMs, and Attestations
 
-Provenance answers where an artifact came from and how it was produced. In a supply chain model, provenance is evidence for a claim. It can connect a running image digest back to a source repository, commit, workflow, builder identity, build parameters, and timestamp, which lets admission policy evaluate the artifact as a traceable object rather than as a friendly tag name.
+[Provenance answers where an artifact came from and how it was produced](https://tag-security.cncf.io/community/working-groups/supply-chain-security/supply-chain-security-paper-v2/sscbpv2/). In a supply chain model, provenance is evidence for a claim. It can connect a running image digest back to a source repository, commit, workflow, builder identity, build parameters, and timestamp, which lets admission policy evaluate the artifact as a traceable object rather than as a friendly tag name.
 
-An SBOM, or Software Bill of Materials, answers a different question: what is inside the artifact? It lists packages, versions, and often transitive dependencies. Provenance and SBOMs complement each other. Provenance says how the artifact was made; an SBOM says what ingredients it contains. Neither one proves the workload is harmless by itself, but both improve the quality of security decisions.
+An SBOM, or Software Bill of Materials, answers a different question: what is inside the artifact? [It lists packages, versions, and often transitive dependencies](https://tag-security.cncf.io/community/working-groups/supply-chain-security/supply-chain-security-paper-v2/sscbpv2/). Provenance and SBOMs complement each other. Provenance says how the artifact was made; an SBOM says what ingredients it contains. Neither one proves the workload is harmless by itself, but both improve the quality of security decisions.
 
-An attestation is a signed statement about an artifact. For example, an attestation might state that image digest `sha256:...` was built from a specific commit by a specific CI workflow, or that a vulnerability scan completed with no critical findings. Admission policy can then evaluate that signed statement instead of trusting a mutable label, a human comment in a release ticket, or a tag that may have moved.
+[An attestation is a signed statement about an artifact](https://tag-security.cncf.io/community/working-groups/supply-chain-security/supply-chain-security-paper-v2/sscbpv2/). For example, an attestation might state that image digest `sha256:...` was built from a specific commit by a specific CI workflow, or that a vulnerability scan completed with no critical findings. [Admission policy can then evaluate that signed statement](https://tag-security.cncf.io/community/working-groups/supply-chain-security/supply-chain-security-paper-v2/sscbpv2/) instead of trusting a mutable label, a human comment in a release ticket, or a tag that may have moved.
 
 ```text
 +-------------------------------------------------------------------+
@@ -287,7 +288,7 @@ For KCSA-level reasoning, focus on the claim and the boundary. If the boundary i
 
 ## Policy Gates at the Cluster Boundary
 
-Admission control is where Kubernetes can enforce many supply chain decisions before a pod starts. This boundary is powerful because the API server has the full pod request and can reject workloads that violate policy. It is also risky because policy gaps become production gaps if the team assumes admission checks more than it actually checks.
+Admission control is where Kubernetes can enforce many supply chain decisions before a pod starts. This boundary is powerful because [the API server has the full pod request and can reject workloads that violate policy](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/). It is also risky because policy gaps become production gaps if the team assumes admission checks more than it actually checks.
 
 A policy gate should match the threat model. If the threat is tag overwrite, the gate should require immutable digests or verify that tags resolve to approved digests. If the threat is untrusted builds, the gate should verify provenance from a trusted builder. If the threat is unknown dependencies, the gate should require an SBOM and recent scan result. If the threat is post-admission abuse, the gate should also enforce runtime constraints such as non-root users, dropped capabilities, and seccomp profiles.
 
@@ -377,7 +378,7 @@ A policy-focused threat model would not merely say "reject this pod because it i
 | SBOM requirement | Unknown dependencies in production | No SBOM attestation exists for this image digest. | Security |
 | Runtime hardening | Increased blast radius after compromise | Pod must run as non-root and disallow privilege escalation. | Platform |
 
-Admission policy should also be treated as software with its own threat model. A webhook with broad permissions can mutate workloads, deny deployments, or become a single point of failure. A policy engine running in audit mode may create useful evidence but not enforcement. A fail-open configuration may preserve availability during outages while allowing risky workloads through. These are tradeoffs, not footnotes, and they should be visible in the model.
+Admission policy should also be treated as software with its own threat model. A webhook with broad permissions can mutate workloads, deny deployments, or become a single point of failure. A policy engine running in audit mode may create useful evidence but not enforcement. [A fail-open configuration may preserve availability during outages while allowing risky workloads through](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/). These are tradeoffs, not footnotes, and they should be visible in the model.
 
 ## Worked Example: Modeling a Payment Service
 
@@ -695,6 +696,12 @@ A strong review might identify Source-to-Build as the weakest boundary if workfl
 - [Sigstore documentation](https://docs.sigstore.dev/)
 - [OpenSSF Scorecard documentation](https://github.com/ossf/scorecard)
 - [CNCF Software Supply Chain Security Paper](https://tag-security.cncf.io/community/working-groups/supply-chain-security/supply-chain-security-paper/)
+- [cisa.gov: aa20 352a](https://www.cisa.gov/news-events/cybersecurity-advisories/aa20-352a) — This is a real historical incident with named product, date, affected sectors, and delivery mechanism.
+- [training.linuxfoundation.org: kubernetes and cloud native security associate kcsa](https://training.linuxfoundation.org/certification/kubernetes-and-cloud-native-security-associate-kcsa/) — This is a named curriculum/exam-scope claim and the Linux Foundation exam page lists these domains directly.
+- [kubernetes.io: overview](https://kubernetes.io/es/docs/concepts/security/overview/) — This is a named security framework claim and the official Kubernetes docs state the 4Cs explicitly.
+- [learn.microsoft.com: threat modeling tool threats](https://learn.microsoft.com/en-us/azure/security/develop/threat-modeling-tool-threats) — This is a named threat-modeling framework with a canonical category expansion.
+- [tag-security.cncf.io: sscbpv2](https://tag-security.cncf.io/community/working-groups/supply-chain-security/supply-chain-security-paper-v2/sscbpv2/) — The CNCF paper defines provenance and explains verification of provenance metadata against policy.
+- [Cloud Native Security and Kubernetes](https://kubernetes.io/docs/concepts/security/cloud-native-security/) — Official Kubernetes guidance on trust boundaries, supply-chain controls, and runtime security layers.
 
 ## Next Module
 
