@@ -1,0 +1,190 @@
+{
+  "module_key": "platform/disciplines/delivery-automation/gitops/module-3.6-multi-cluster",
+  "module_path": "src/content/docs/platform/disciplines/delivery-automation/gitops/module-3.6-multi-cluster.md",
+  "research_run_id": "2026-05-14T10:31:17+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/platform-toolkits-cicd-delivery-gitops-deployments.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening paragraph presents a concrete multi-cluster incident at a payments company with a Friday launch, a two-hour timeline, and a specific regional misdeployment.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters | opening anecdote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A platform team at a payments company adds a new European production cluster on a Friday afternoon. The cluster joins the fleet, receives the usual ingress controller and monitoring stack, and looks healthy on the dashboard. Two hours later, a data-residency alert fires because a shared ApplicationSet matched only `env=production` and deployed the United States payment-routing ConfigMap into the European cluster. Nobody touched the cluster manually. The failure came from automation doing exactly what it was told, at fleet scale, faster than a human could notice.",
+      "suggested_rewrite": "A new production cluster can look healthy while automation quietly applies the wrong regional configuration if fleet targeting relies on incomplete identity labels.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed war story with specific timeline and organizational details, so the false specifics should be removed rather than softened."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "In Argo CD, managed clusters are stored as Secrets in the Argo CD namespace, and the ApplicationSet cluster generator uses those Secrets and their labels as template parameters.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 2. Fleet Management Patterns | opening tool-contract paragraph; section: 3. Topologies | registration Secret discussion",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared Argo CD ApplicationSet source directly documents that managed clusters are stored in Secrets and that cluster labels, name, and server are exposed to templates."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Rancher Fleet GitRepo targets can match downstream clusters with label selectors, and a GitRepo is not deployed to clusters that match no targets.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 2. Fleet Management Patterns | opening tool-contract paragraph and active-learning answer",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://fleet.rancher.io/how-tos-for-users/gitrepo-targets",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Fleet's canonical targeting docs directly support this behavior, but they live on `fleet.rancher.io`, which is outside the current allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Flux Kustomizations build the manifests at a specified `.spec.path`, validate and apply them to the cluster, and support post-build variable substitution from ConfigMaps and Secrets.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 2. Fleet Management Patterns | Flux example; section: 4. Configuration Inheritance and Cluster Identity | post-build substitution paragraph",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://fluxcd.io/flux/components/kustomize/kustomizations/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Flux Kustomization reference explicitly documents `.spec.path` processing and `postBuild.substituteFrom` behavior."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "An ApplicationSet cluster selector matching only `environment=production` will target every registered cluster with that label.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 2. Fleet Management Patterns | paragraph after the ApplicationSet example",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared ApplicationSet cluster-generator source directly shows label-selector matching over registered cluster Secrets."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "The `flux bootstrap` workflow deploys the Flux controllers to a cluster, pushes Flux manifests to Git, and configures Flux to manage itself from that repository.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 3. Topologies | Flux bootstrap paragraph; section: 5. Bootstrapping and Progressive Rollout | bootstrap wrapper discussion",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://fluxcd.io/flux/installation/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Flux installation docs explicitly describe bootstrap as deploying controllers, pushing manifests to Git, and configuring Flux to update itself from Git."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Kustomize bases and overlays are hierarchical: a base contains shared resources and customizations, while overlays refer to other kustomization directories.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 4. Configuration Inheritance and Cluster Identity | opening inheritance explanation",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes Kustomize documentation directly defines bases and overlays in these terms."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The Prometheus override example uses precise version numbers and a named bug-fix rationale for a hypothetical staging exception.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 4. Configuration Inheritance and Cluster Identity | Prometheus exception example",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Suppose all production clusters run Prometheus `v2.55.1`, but one staging cluster needs to test `v2.56.0` for a retention bug fix.",
+      "suggested_rewrite": "Suppose most clusters run one stable Prometheus version, but one staging cluster needs to test a newer build for a specific fix.",
+      "lesson_point_url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/",
+      "rationale": "The lesson about scoping an exception is valid, but the exact version numbers and bug context are illustrative rather than source-backed."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Argo CD sync windows can allow or deny syncs on a schedule and can select affected applications by application name, namespace, or cluster.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 6. Guardrails and Troubleshooting | sync windows paragraph",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/user-guide/sync_windows/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Argo CD's sync windows documentation directly describes allow/deny windows, schedules, and application/namespace/cluster targeting."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The later troubleshooting section presents another concrete incident at a fintech company with four regions, a mislabeled new cluster, and a specific wrong-routing outcome.",
+      "claim_class": "war_story",
+      "span_hint": "section: 6. Guardrails and Troubleshooting | realistic incident paragraph",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A realistic incident ties these ideas together. A fintech company runs a hub-spoke Argo CD model for four regions. An engineer adds a new `prod-eu-west-2` cluster and copies labels from a United States cluster, forgetting to change `region=us-east` to `region=eu-west`. The ApplicationSet selector matches production clusters and renders a region-specific path using the label, so the new European cluster receives the wrong payment routing ConfigMap.",
+      "suggested_rewrite": "A common fleet failure mode ties these ideas together: a new cluster is registered with the wrong region label, a label-driven generator renders a valid but regionally incorrect path, and the cluster receives configuration meant for another geography.",
+      "lesson_point_url": null,
+      "rationale": "This is another unattributed war story with named industry, topology, region, and outcome details that should be generalized."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Argo CD distinguishes sync status from health: sync status compares live state with target state, while health reports whether the application is running correctly.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: 6 incident aftermath; section: Did You Know? item 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/release-2.5/core_concepts/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Argo CD's core concepts page explicitly defines sync status and health as separate concepts."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://argo-cd.readthedocs.io/en/latest/operator-manual/applicationset/Generators-Cluster/",
+      "title": "Argo CD Cluster Generator",
+      "tier": "upstream",
+      "why_relevant": "Best primary reference for label-driven multi-cluster targeting from Argo CD cluster Secrets."
+    },
+    {
+      "url": "https://fluxcd.io/flux/installation/",
+      "title": "Flux Installation and Bootstrap",
+      "tier": "upstream",
+      "why_relevant": "Covers the declarative bootstrap model the module uses for cluster self-management from Git."
+    },
+    {
+      "url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/",
+      "title": "Declarative Management of Kubernetes Objects Using Kustomize",
+      "tier": "standards",
+      "why_relevant": "Useful primary source for the base-and-overlay inheritance model behind the module's repository hierarchy."
+    }
+  ],
+  "notes": "Excluded quiz items, exercise steps, and code/diagram blocks per pipeline rules. Reused the shared GitOps deployments pool only for Argo ApplicationSet coverage; Rancher Fleet targeting claims need allowlist expansion because the canonical docs live on fleet.rancher.io.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}

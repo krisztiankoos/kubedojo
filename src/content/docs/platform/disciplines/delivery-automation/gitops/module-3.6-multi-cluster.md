@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.6: Multi-Cluster GitOps"
 slug: platform/disciplines/delivery-automation/gitops/module-3.6-multi-cluster
 sidebar:
@@ -178,7 +179,7 @@ spec:
           selfHeal: true
 ```
 
-This ApplicationSet is concise, but concision is not the same as safety. The selector matches every registered cluster with `environment=production`. If production has multiple regulatory regions, this generator may be too broad unless the cluster-specific path protects regional differences. A senior review asks what happens when a new cluster joins with the correct environment label but missing region labels, because the generator will not wait for your mental model to catch up.
+This ApplicationSet is concise, but concision is not the same as safety. The selector [matches every registered cluster with `environment=production`](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/). If production has multiple regulatory regions, this generator may be too broad unless the cluster-specific path protects regional differences. A senior review asks what happens when a new cluster joins with the correct environment label but missing region labels, because the generator will not wait for your mental model to catch up.
 
 ```yaml
 # Rancher Fleet example: target production clusters in one region with explicit labels.
@@ -328,7 +329,7 @@ stringData:
     }
 ```
 
-The registration Secret is a cluster identity source and a credential source, which means it deserves strong change control. If someone changes the labels, targeting changes. If someone changes the server endpoint, reconciliation points somewhere else. If someone changes credentials incorrectly, the hub may lose the ability to detect drift. Treat these Secrets as fleet control-plane data, not as incidental Argo CD plumbing.
+[The registration Secret is a cluster identity source and a credential source](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/), which means it deserves strong change control. If someone changes the labels, targeting changes. If someone changes the server endpoint, reconciliation points somewhere else. If someone changes credentials incorrectly, the hub may lose the ability to detect drift. Treat these Secrets as fleet control-plane data, not as incidental Argo CD plumbing.
 
 Mesh places a GitOps controller inside every cluster. Each controller reads the repository or a local mirror and reconciles its own cluster. A mesh is attractive for remote sites, regulated environments, and organizations where clusters must keep operating even when central management is unavailable. The trade-off is that no single controller naturally knows the whole fleet's state.
 
@@ -370,7 +371,7 @@ flux bootstrap github \
   --personal
 ```
 
-The command installs Flux controllers, creates a GitRepository source, creates a Kustomization for the selected path, and commits bootstrap manifests back to the repository when configured to do so. It is powerful because it makes the cluster self-reconciling. It is risky if run with the wrong path, because the new cluster will faithfully become whatever that path describes.
+The command [installs Flux controllers, creates a GitRepository source, creates a Kustomization for the selected path, and commits bootstrap manifests back to the repository](https://fluxcd.io/flux/installation/) when configured to do so. It is powerful because it makes the cluster self-reconciling. It is risky if run with the wrong path, because the new cluster will faithfully become whatever that path describes.
 
 > **Active learning prompt:** In a mesh topology, the central Git service is unavailable for one hour. Do existing workloads stop running, do GitOps controllers delete resources, or do clusters continue with the last reconciled state? Explain the mechanism before checking the answer in your own words.
 
@@ -434,7 +435,7 @@ The senior answer is often boring: choose the simplest topology that matches the
 
 ## 4. Configuration Inheritance and Cluster Identity
 
-Configuration inheritance is the technique that lets a fleet share most of its desired state while keeping intentional differences small and visible. Kustomize bases and overlays are the most common teaching example, but the same principle applies to Helm values, Jsonnet libraries, Cue packages, Crossplane compositions, and custom platform APIs. The key is to model the business and reliability boundaries before writing templates.
+Configuration inheritance is the technique that lets a fleet share most of its desired state while keeping intentional differences small and visible. [Kustomize bases and overlays are the most common teaching example](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/), but the same principle applies to Helm values, Jsonnet libraries, Cue packages, Crossplane compositions, and custom platform APIs. The key is to model the business and reliability boundaries before writing templates.
 
 ```mermaid
 flowchart TD
@@ -553,7 +554,7 @@ generatorOptions:
 
 The `cluster-identity` ConfigMap deserves special attention. It is not only a convenient set of variables; it is a declaration of what the cluster believes it is. Workloads, policies, admission checks, and observability pipelines can use that identity to verify that the rendered configuration matches the intended target. Without this identity layer, a bad selector can make the cluster accept a configuration meant for another region.
 
-Flux post-build substitution is one way to use identity values safely, as long as the source of substitution is controlled. The controller renders manifests, replaces variables from trusted ConfigMaps or Secrets, and applies the final output. This can remove repetition, but it should not become an unreviewed runtime templating system where any cluster-local operator can change identity values and redirect workloads.
+[Flux post-build substitution](https://fluxcd.io/flux/components/kustomize/kustomizations/) is one way to use identity values safely, as long as the source of substitution is controlled. The controller renders manifests, replaces variables from trusted ConfigMaps or Secrets, and applies the final output. This can remove repetition, but it should not become an unreviewed runtime templating system where any cluster-local operator can change identity values and redirect workloads.
 
 ```yaml
 # Flux Kustomization using cluster identity values for substitution.
@@ -850,7 +851,7 @@ A senior troubleshooting question is "which controller owns this field?" Kuberne
 k -n monitoring get namespace monitoring -o yaml | yq '.metadata.managedFields[].manager' | sort -u
 ```
 
-Guardrails reduce the chance that bad targeting reaches the cluster. Some guardrails run before merge, such as policy checks that validate inventory labels or reject wildcard production selectors. Some guardrails run during sync, such as Argo CD sync windows, sync waves, or admission policies. Some guardrails run after sync, such as drift detection and compliance alerts.
+Guardrails reduce the chance that bad targeting reaches the cluster. Some guardrails run before merge, such as policy checks that validate inventory labels or reject wildcard production selectors. Some guardrails run during sync, such as [Argo CD sync windows](https://argo-cd.readthedocs.io/en/stable/user-guide/sync_windows/), sync waves, or admission policies. Some guardrails run after sync, such as drift detection and compliance alerts.
 
 ```yaml
 # Kyverno ClusterPolicy example: require cluster identity on production namespaces.
@@ -972,7 +973,7 @@ Troubleshooting multi-cluster GitOps is easier when each layer has an observable
 
 1. **ApplicationSet and Fleet-style generators are not just convenience features; they are policy surfaces.** A selector that matches clusters is effectively deciding where production code and platform policy can go, so generator changes deserve the same review seriousness as application code changes.
 
-2. **A healthy GitOps sync can still represent a bad production state.** GitOps health usually means the live cluster matches the declared desired state, not that the desired state was appropriate for that cluster, region, customer, or compliance boundary.
+2. [**A healthy GitOps sync can still represent a bad production state.**](https://argo-cd.readthedocs.io/en/release-2.5/core_concepts/) GitOps health usually means the live cluster matches the declared desired state, not that the desired state was appropriate for that cluster, region, customer, or compliance boundary.
 
 3. **Decentralized GitOps does not remove the need for central inventory.** Mesh topologies reduce write-path dependency on a hub, but teams still need a trustworthy way to answer which clusters exist, what commit they run, and which policy baseline they should inherit.
 
@@ -1419,3 +1420,13 @@ echo "cluster inventory identity check passed"
 ## Next Module
 
 [Module 4.1: DevSecOps Fundamentals](../../reliability-security/devsecops/module-4.1-devsecops-fundamentals/)
+
+## Sources
+
+- [Argo CD ApplicationSet Introduction](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/) — Backs multi-cluster and multi-application GitOps claims, cluster and Git generators, monorepo usage, ApplicationSet controller behavior, and the fact that ApplicationSet is bundled with Argo CD from v2.3 onward.
+- [fluxcd.io: kustomizations](https://fluxcd.io/flux/components/kustomize/kustomizations/) — The Flux Kustomization reference explicitly documents `.spec.path` processing and `postBuild.substituteFrom` behavior.
+- [fluxcd.io: installation](https://fluxcd.io/flux/installation/) — Flux installation docs explicitly describe bootstrap as deploying controllers, pushing manifests to Git, and configuring Flux to update itself from Git.
+- [kubernetes.io: kustomization](https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/) — The Kubernetes Kustomize documentation directly defines bases and overlays in these terms.
+- [argo-cd.readthedocs.io: sync windows](https://argo-cd.readthedocs.io/en/stable/user-guide/sync_windows/) — Argo CD's sync windows documentation directly describes allow/deny windows, schedules, and application/namespace/cluster targeting.
+- [argo-cd.readthedocs.io: core concepts](https://argo-cd.readthedocs.io/en/release-2.5/core_concepts/) — Argo CD's core concepts page explicitly defines sync status and health as separate concepts.
+- [Argo CD Cluster Generator](https://argo-cd.readthedocs.io/en/latest/operator-manual/applicationset/Generators-Cluster/) — Best primary reference for label-driven multi-cluster targeting from Argo CD cluster Secrets.
