@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 5.1: Cilium - The Kernel-Powered Network Revolution"
 slug: platform/toolkits/infrastructure-networking/networking/module-5.1-cilium
 sidebar:
@@ -32,7 +33,7 @@ Cilium changes everything. By the end of this module, when something drops packe
 **What You'll Learn**:
 - Why traditional networking can't keep up with Kubernetes
 - How eBPF lets you program the Linux kernel (without being a kernel developer)
-- Identity-based security that actually makes sense
+- [Identity-based security](https://github.com/cilium/cilium) that actually makes sense
 - Hubble: seeing every packet, every decision, every drop
 - Replacing kube-proxy and why you'll never miss it
 
@@ -146,7 +147,7 @@ This happens every time:
 At scale: dozens of times per minute
 ```
 
-This isn't a hypothetical. [Datadog wrote about hitting this limit](https://www.datadoghq.com/blog/engineering/introducing-glommio/). So did [Shopify](https://shopify.engineering/resiliency-planning-how-we-prepared-for-black-friday). At larger cluster sizes, iptables-based service routing can become a real operational bottleneck.
+This isn't a hypothetical. [Datadog wrote about hitting this limit](https://www.datadoghq.com/blog/engineering/introducing-glommio/). So did [Shopify](https://shopify.engineering/resiliency-planning-how-we-prepared-for-black-friday). At larger cluster sizes, [iptables-based service routing can become a real operational bottleneck](https://kubernetes.io/blog/2025/02/28/nftables-kube-proxy/).
 
 ### The NetworkPolicy Problem
 
@@ -216,7 +217,7 @@ Before eBPF:
 
 With eBPF:
 - Write small programs that run INSIDE the kernel
-- Load them dynamically, no reboot needed
+- [Load them dynamically, no reboot needed](https://github.com/cilium/cilium/blob/main/Documentation/overview/component-overview.rst)
 - Kernel verifies they're safe before running
 - Run at kernel speed (no userspace context switches)
 ```
@@ -295,7 +296,7 @@ _Pause and predict: in your own cluster, before reading on, what would `iptables
 
 "Wait," I hear you thinking, "running arbitrary code in the kernel sounds terrifying."
 
-You're right. That's why eBPF has a verifier:
+You're right. That's why [eBPF has a verifier](https://github.com/torvalds/linux/blob/master/Documentation/bpf/verifier.rst):
 
 ```
 THE eBPF VERIFIER: YOUR KERNEL'S BOUNCER
@@ -307,7 +308,7 @@ Before ANY eBPF program runs, the verifier checks:
 ✓ Does it access only allowed memory? (No kernel crashes)
 ✓ Does it use only allowed kernel functions?
 ✓ Does it handle all code paths? (No undefined behavior)
-✓ Is the complexity bounded? (Max 1 million instructions)
+✓ Is the complexity bounded? ([Max 1 million instructions](https://github.com/torvalds/linux/blob/master/include/linux/bpf.h))
 
 If ANY check fails: program is rejected, never runs.
 
@@ -376,7 +377,7 @@ CILIUM: THE COMPLETE PICTURE
 
 ### The Components Explained (Like You're New Here)
 
-**Cilium Agent (DaemonSet)** - The worker bee on each node:
+**[Cilium Agent (DaemonSet)](https://github.com/cilium/cilium/blob/main/Documentation/overview/component-overview.rst)** - The worker bee on each node:
 - Watches Kubernetes for pod/service/policy changes
 - Compiles eBPF programs and loads them into the kernel
 - Assigns identities to pods (more on this soon)
@@ -418,7 +419,7 @@ cilium connectivity test
 
 **What `cilium connectivity test` actually does:**
 
-This isn't a simple ping test. It [deploys test workloads and verifies](https://github.com/cilium/cilium-cli):
+[This isn't a simple ping test](https://github.com/cilium/cilium-cli). It [deploys test workloads and verifies](https://github.com/cilium/cilium-cli):
 - Pod-to-pod connectivity (same node and cross-node)
 - Pod-to-Service connectivity
 - Pod-to-external connectivity
@@ -476,7 +477,7 @@ Step 1: Pod is created with labels
 │   team: checkout                                                │
 └─────────────────────────────────────────────────────────────────┘
 
-Step 2: Cilium creates a NUMERIC IDENTITY from the labels
+Step 2: [Cilium creates a NUMERIC IDENTITY from the labels](https://github.com/cilium/cilium/blob/main/Documentation/gettingstarted/terminology.rst)
 ┌─────────────────────────────────────────────────────────────────┐
 │ Identity 48291 = {app=frontend, env=production, team=checkout}  │
 │                                                                 │
@@ -540,7 +541,7 @@ cilium identity get 48291
 kubectl exec -n kube-system cilium-xxxxx -- cilium endpoint list | grep 48291
 ```
 
-> 💡 **Did You Know?** Cilium reserves identity numbers 1-255 for special purposes. Identity 1 is always the host (the node itself), identity 2 is "world" (anything external to the cluster), and identity 4 is for health checks. This means you can write policies like "allow health checks" without knowing which IP ranges your health checkers use. It's beautiful.
+> 💡 **Did You Know?** [Cilium reserves identity numbers 1-255 for special purposes](https://github.com/cilium/cilium/blob/main/pkg/identity/numericidentity.go). Identity 1 is always the host (the node itself), identity 2 is "world" (anything external to the cluster), and identity 4 is for health checks. This means you can write policies like "allow health checks" without knowing which IP ranges your health checkers use. It's beautiful.
 
 ---
 
@@ -548,7 +549,7 @@ kubectl exec -n kube-system cilium-xxxxx -- cilium endpoint list | grep 48291
 
 ### Standard Kubernetes NetworkPolicy (Cilium Implements These)
 
-Cilium fully supports standard Kubernetes NetworkPolicies. If you have existing policies, they keep working:
+[Cilium fully supports standard Kubernetes NetworkPolicies](https://github.com/cilium/cilium/blob/main/Documentation/network/kubernetes/policy.rst). If you have existing policies, they keep working:
 
 ```yaml
 # Standard NetworkPolicy - Cilium handles this perfectly
@@ -575,7 +576,7 @@ spec:
 
 ### CiliumNetworkPolicy - The Enhanced Version
 
-This is where it gets interesting. Cilium extends NetworkPolicies with features Kubernetes doesn't support:
+This is where it gets interesting. [Cilium extends NetworkPolicies with features Kubernetes doesn't support](https://github.com/cilium/cilium/blob/main/Documentation/security/policy/layer7.rst):
 
 ```yaml
 # Layer 7 (HTTP) Policy - Kubernetes can't do this
@@ -660,7 +661,7 @@ spec:
         protocol: UDP
 ```
 
-**How FQDN policies work under the hood:**
+**How [FQDN policies](https://github.com/cilium/cilium/blob/main/Documentation/security/policy/layer3.rst) work under the hood:**
 
 ```
 FQDN POLICY MAGIC
@@ -745,7 +746,7 @@ Instead of figuring out which IPs your kube-apiserver uses, which ports health c
 
 ## Part 6: Hubble - Seeing the Invisible
 
-If Cilium is the brain, Hubble is the eyes.
+If Cilium is the brain, [Hubble is the eyes](https://github.com/cilium/hubble).
 
 ### The Old Way vs. The Hubble Way
 
@@ -919,7 +920,7 @@ hubble observe --protocol dns --namespace production
 # If you see DROPPED DNS queries, check your egress policies
 ```
 
-### Hubble Metrics for Prometheus
+### [Hubble Metrics for Prometheus](https://github.com/cilium/cilium/blob/main/Documentation/observability/hubble/setup.rst)
 
 ```bash
 # Enable metrics during Cilium install
@@ -973,7 +974,7 @@ groups:
 
 ### Why This Matters
 
-Remember those 147,000 iptables rules? Let's get rid of them.
+Remember those 147,000 iptables rules? [Let's get rid of them](https://github.com/cilium/cilium/blob/main/Documentation/network/kubernetes/kubeproxy-free.rst).
 
 ```bash
 # Install Cilium as kube-proxy replacement
@@ -1008,7 +1009,7 @@ Real benchmarks from production clusters:
 | Connection drops on update | More likely during disruptive rule churn | Typically reduced with eBPF-based updates | Depends on configuration and rollout path |
 | CPU usage at scale | Can rise with service and rule volume | Can be lower with eBPF-based handling | Depends on traffic and cluster shape |
 
-### The DSR Bonus: Direct Server Return
+### The DSR Bonus: [Direct Server Return](https://github.com/cilium/cilium/blob/main/Documentation/network/kubernetes/kubeproxy-free.rst)
 
 ```
 DIRECT SERVER RETURN (DSR)
@@ -1071,7 +1072,7 @@ Attackers can:
 ### The Solution
 
 ```bash
-# Enable WireGuard encryption
+# [Enable WireGuard encryption](https://github.com/cilium/cilium/blob/main/Documentation/security/network/encryption-wireguard.rst)
 cilium install \
   --set encryption.enabled=true \
   --set encryption.type=wireguard
@@ -1178,8 +1179,8 @@ Without clear policy visibility, this kind of problem can take much longer to is
 
 ## Did You Know?
 
-- **Cilium graduated from the CNCF in October 2023**, becoming the first graduated project in the cloud native networking category. Graduation is the CNCF's highest maturity level and signals that the project meets enterprise governance, security, and contributor-diversity bars — meaning Cilium is officially "boring infrastructure" in the best possible sense.
-- **WireGuard, the protocol Cilium uses for transparent encryption, was merged into the Linux kernel in version 5.6 (released March 2020).** That mainline merge is why Cilium can flip on encryption with a single Helm flag — there is no out-of-tree module to install, no DKMS pain, just kernel-native crypto running in roughly a few thousand lines of audited code.
+- **[Cilium graduated from the CNCF in October 2023](https://www.cncf.io/announcements/2023/10/11/cloud-native-computing-foundation-announces-cilium-graduation/)**, becoming the first graduated project in the cloud native networking category. Graduation is the CNCF's highest maturity level and signals that the project meets enterprise governance, security, and contributor-diversity bars — meaning Cilium is officially "boring infrastructure" in the best possible sense.
+- **WireGuard, the protocol Cilium uses for transparent encryption, was [merged into the Linux kernel in version 5.6](https://github.com/torvalds/linux/tree/v5.6/drivers/net/wireguard) ([released March 2020](https://github.com/torvalds/linux/releases/tag/v5.6)).** That mainline merge is why Cilium can flip on encryption with a single Helm flag — there is no out-of-tree module to install, no DKMS pain, just kernel-native crypto running in roughly a few thousand lines of audited code.
 - **The eBPF verifier enforces a hard upper bound on program complexity**, traditionally measured by the number of instructions it analyzes during static verification. This is why an eBPF program cannot contain unbounded loops or unverifiable memory accesses — the kernel literally refuses to load it. Cilium's compiler is structured to keep generated bytecode well under this ceiling so the dataplane stays loadable across kernel versions.
 - **Hubble was announced and open-sourced by Isovalent in November 2019** as the observability layer purpose-built on Cilium's eBPF dataplane. Because flow capture happens in-kernel, Hubble does not sample — every flow Cilium handles is observable, which is what makes "show me every dropped packet from this pod in the last minute" a one-line command instead of a tcpdump expedition.
 
@@ -1694,3 +1695,17 @@ Continue to [Module 5.2: Service Mesh](../module-5.2-service-mesh/) to learn abo
 - [Cilium CLI Repository README](https://github.com/cilium/cilium-cli) — Upstream reference for installing Cilium and running `cilium connectivity test` checks.
 - [Hubble Repository README](https://github.com/cilium/hubble) — Upstream overview of Hubble's flow visibility, troubleshooting workflow, and service-map style observability.
 - [Linux Kernel eBPF Verifier Documentation](https://github.com/torvalds/linux/blob/master/Documentation/bpf/verifier.rst) — Primary kernel documentation for how the eBPF verifier checks program safety and memory access.
+- [kubernetes.io: nftables kube proxy](https://kubernetes.io/blog/2025/02/28/nftables-kube-proxy/) — The Kubernetes nftables blog explains iptables-mode kube-proxy rule scaling, O(n) lookup, and large-cluster programming latency.
+- [github.com: component overview.rst](https://github.com/cilium/cilium/blob/main/Documentation/overview/component-overview.rst) — Cilium's component overview describes eBPF's packet-filter origin, extensions, verifier, JIT compiler, and kernel hook points.
+- [github.com: bpf.h](https://github.com/torvalds/linux/blob/master/include/linux/bpf.h) — The Linux kernel header defines BPF_COMPLEXITY_LIMIT_INSNS as 1000000.
+- [github.com: terminology.rst](https://github.com/cilium/cilium/blob/main/Documentation/gettingstarted/terminology.rst) — Cilium terminology docs directly define identity derivation, cluster-wide numeric identifiers, shared identities, and policy use.
+- [github.com: numericidentity.go](https://github.com/cilium/cilium/blob/main/pkg/identity/numericidentity.go) — Cilium's numeric identity code defines MinimalNumericIdentity as 256 and enumerates the reserved host, world, and health identities.
+- [github.com: policy.rst](https://github.com/cilium/cilium/blob/main/Documentation/network/kubernetes/policy.rst) — The Cilium Kubernetes policy docs list all three policy formats and their scope.
+- [github.com: layer7.rst](https://github.com/cilium/cilium/blob/main/Documentation/security/policy/layer7.rst) — The L7 policy docs define HTTP method/path/header matching and state that requests not matching rules are denied.
+- [github.com: layer3.rst](https://github.com/cilium/cilium/blob/main/Documentation/security/policy/layer3.rst) — The Layer 3 policy docs describe DNS-based rules, DNS proxy data collection, cached DNS responses, and TTL handling.
+- [github.com: setup.rst](https://github.com/cilium/cilium/blob/main/Documentation/observability/hubble/setup.rst) — The Hubble setup docs cover enabling Hubble and troubleshooting metrics configuration.
+- [github.com: kubeproxy free.rst](https://github.com/cilium/cilium/blob/main/Documentation/network/kubernetes/kubeproxy-free.rst) — The kube-proxy-free docs state that Cilium's eBPF kube-proxy replacement handles those Kubernetes Service types.
+- [github.com: encryption wireguard.rst](https://github.com/cilium/cilium/blob/main/Documentation/security/network/encryption-wireguard.rst) — The WireGuard transparent encryption docs show the same Cilium install options and explain node-to-node tunnel setup.
+- [cncf.io: cloud native computing foundation announces cilium graduation](https://www.cncf.io/announcements/2023/10/11/cloud-native-computing-foundation-announces-cilium-graduation/) — The CNCF announcement directly states the graduation date and describes the due diligence, audit, and maturity validation.
+- [github.com: v5.6](https://github.com/torvalds/linux/releases/tag/v5.6) — The Linux v5.6 GitHub release tag shows the Linux 5.6 release date.
+- [github.com: wireguard](https://github.com/torvalds/linux/tree/v5.6/drivers/net/wireguard) — The Linux v5.6 source tree contains the drivers/net/wireguard implementation.
