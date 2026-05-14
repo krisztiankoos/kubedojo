@@ -245,7 +245,10 @@ matter for the K8s integration patterns the arc teaches.
 | module-1.5-building-ai-agents | ai-ml-engineering/frameworks-agents | Orchestrator | Deep—code | Service-to-service auth, context budget, failure modes |
 | module-1.6-agent-memory-planning | ai-ml-engineering/frameworks-agents | Memory taxonomy | Deep—concepts | Redis/Postgres as StatefulSets, connection pooling |
 | module-1.3-vllm-sglang-inference | ai-ml-engineering/ai-infrastructure | Inference backend | Deep—isolated | Client-side failure handling: 503/OOM, retry strategy |
-| module-1.11-notebooks-to-production | ai-ml-engineering/mlops | Production path | Partial | Multi-service dependency graph, distributed tracing |
+| module-1.11-notebooks-to-production-for-ml-llms | ai-ml-engineering/mlops | Production path | Partial | Multi-service dependency graph, distributed tracing |
+| module-1.12-small-team-private-ai-platform | ai-ml-engineering/mlops | Platform view | Deep—platform | Developer-side service shape, inference-failure handling, eval gating |
+| ai-builder-to-platform-engineer | ai-ml-engineering/bridges | Discipline bridge | Conceptual | Hands-on wiring of components (currently navigational only) |
+| home-lab-to-private-ai-infra | ai-ml-engineering/bridges | Scale bridge | Infrastructure | Application-architecture focus (currently infrastructure-only) |
 | module-9.4-vllm | platform/toolkits/ml-platforms | Inference tool | Deep—operator | Application developer consumption patterns |
 | module-9.5-ray-serve | platform/toolkits/ml-platforms | Pipeline tool | Deep—operator | Application developer consumption patterns |
 | module-9.7-gpu-scheduling | platform/toolkits/ml-platforms | GPU substrate | Deep—operator | Right-sizing from inference workload metrics |
