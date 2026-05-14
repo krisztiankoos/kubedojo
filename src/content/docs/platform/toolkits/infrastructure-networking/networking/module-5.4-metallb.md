@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 5.4: MetalLB - Load Balancing for Bare-Metal Kubernetes"
 slug: platform/toolkits/infrastructure-networking/networking/module-5.4-metallb
 sidebar:
@@ -39,9 +40,9 @@ It did not appear. The Service stayed in `<pending>` through the standup, throug
 
 By the second week, the team had worked around the problem with NodePorts. The application was reachable, but every new service needed firewall tickets, documentation drifted, and the network team had to ask why production traffic was being sent to random high ports on worker nodes. The cluster was technically functional, yet the operating model felt improvised.
 
-The missing piece was not a Deployment setting or a kube-proxy flag. It was a load balancer implementation. Kubernetes defines `type: LoadBalancer` as an interface: "someone should assign an external IP and make traffic reach this Service." Cloud clusters include a controller that fulfills that interface by calling the provider API. Bare-metal clusters do not have that provider API unless you add something that can speak to your network.
+The missing piece was not a Deployment setting or a kube-proxy flag. It was a load balancer implementation. [Kubernetes defines `type: LoadBalancer` as an interface](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer): "someone should assign an external IP and make traffic reach this Service." Cloud clusters include a controller that fulfills that interface by calling the provider API. Bare-metal clusters do not have that provider API unless you add something that can speak to your network.
 
-MetalLB fills that gap. It watches for LoadBalancer Services, allocates an IP from a pool you own, and advertises that IP so clients outside the cluster can reach it. In small environments, it can do this with ordinary Layer 2 neighbor discovery. In larger environments, it can use BGP so routers learn service routes from the cluster itself.
+[MetalLB fills that gap](https://raw.githubusercontent.com/metallb/metallb/main/website/content/concepts/_index.md). It watches for LoadBalancer Services, allocates an IP from a pool you own, and advertises that IP so clients outside the cluster can reach it. In small environments, it can do this with ordinary Layer 2 neighbor discovery. In larger environments, it can use BGP so routers learn service routes from the cluster itself.
 
 A senior platform engineer needs more than the installation command. They need to understand where traffic enters the cluster, what node owns the advertised address, how failover happens, why IP pools must be coordinated with the network team, and when BGP changes the reliability model. This module builds that mental model before asking you to operate MetalLB.
 
@@ -160,7 +161,7 @@ The distinction matters during incident response. If a Service is pending, inspe
 
 MetalLB has two responsibilities that map directly to the missing parts of the LoadBalancer contract. The controller allocates service IP addresses from configured pools. The speakers advertise those allocated IPs to the surrounding network so packets can reach a node in the cluster.
 
-The controller is usually a Deployment because allocation is a control-plane decision. It watches Services and MetalLB custom resources, chooses an address, and writes that address into the Service status. The speakers run as a DaemonSet because advertisement is node-local work. Each node may need to answer ARP, send neighbor discovery messages, or establish BGP sessions.
+The controller is usually a Deployment because allocation is a control-plane decision. It watches Services and MetalLB custom resources, chooses an address, and writes that address into the Service status. [The speakers run as a DaemonSet](https://raw.githubusercontent.com/metallb/metallb/main/website/content/installation/_index.md) because advertisement is node-local work. Each node may need to answer ARP, send neighbor discovery messages, or establish BGP sessions.
 
 ```ascii
 +---------------------------------------------------------------+
@@ -198,7 +199,7 @@ The controller is usually a Deployment because allocation is a control-plane dec
   advertisement          advertisement          advertisement
 ```
 
-The smallest useful MetalLB configuration has an `IPAddressPool` and an advertisement resource. The pool answers "which addresses may MetalLB assign?" The advertisement answers "how should those addresses be made reachable?" Leaving out either part creates a half-configured system.
+[The smallest useful MetalLB configuration has an `IPAddressPool` and an advertisement resource](https://raw.githubusercontent.com/metallb/metallb/main/website/content/configuration/_index.md). The pool answers "which addresses may MetalLB assign?" The advertisement answers "how should those addresses be made reachable?" Leaving out either part creates a half-configured system.
 
 For a lab or small flat network, the pool usually contains a range of addresses that are inside the local subnet but outside DHCP assignment. If your router hands out `192.168.1.100` through `192.168.1.199`, you might reserve `192.168.1.240` through `192.168.1.250` for service IPs. The exact range is an infrastructure decision, not a Kubernetes preference.
 
@@ -246,7 +247,7 @@ The MetalLB resources give you a clean boundary for ownership. Kubernetes users 
 
 ## Part 3: Layer 2 Mode, Simple Reachability with One Active Owner
 
-Layer 2 mode is the easiest way to make MetalLB useful. It relies on the same neighbor discovery behavior that ordinary machines use on a local network. For IPv4, clients ask "who has this IP?" using ARP. For IPv6, they use Neighbor Discovery Protocol. One MetalLB speaker answers for the service IP.
+Layer 2 mode is the easiest way to make MetalLB useful. It relies on the same neighbor discovery behavior that ordinary machines use on a local network. [For IPv4, clients ask "who has this IP?" using ARP. For IPv6, they use Neighbor Discovery Protocol. One MetalLB speaker answers for the service IP.](https://raw.githubusercontent.com/metallb/metallb/main/website/content/concepts/layer2.md)
 
 The key phrase is "one speaker." In Layer 2 mode, a single node owns a given service IP at any moment. That node receives traffic for the IP and then Kubernetes service routing sends packets to the selected backend pods. The pods may live on the same node or on different nodes.
 
@@ -281,13 +282,13 @@ LAYER 2 MODE FOR ONE SERVICE IP
                   +-------------+            +-------------+            +-------------+
 ```
 
-The elected speaker is chosen deterministically by the MetalLB speakers. They do not need a central leader-election object for every IP. Each speaker can calculate which node should announce a service based on shared cluster information, and only the selected node responds for that address.
+[The elected speaker is chosen deterministically by the MetalLB speakers](https://raw.githubusercontent.com/metallb/metallb/main/website/content/concepts/layer2.md). They do not need a central leader-election object for every IP. Each speaker can calculate which node should announce a service based on shared cluster information, and only the selected node responds for that address.
 
 Failover is straightforward but not instantaneous. If the owning node disappears, another speaker begins announcing the IP. Clients and switches may still have cached the old MAC address for a short time, so traffic can pause until neighbor caches update. MetalLB sends updates to speed this along, but Layer 2 failover remains bounded by local network behavior.
 
 Layer 2 mode is often the right starting point because it has a low coordination cost. You need an address range and a local subnet where nodes can answer for those addresses. You do not need router BGP configuration, autonomous system numbers, or ECMP policy. That makes it excellent for labs, edge clusters, homelabs, small offices, and controlled internal platforms.
 
-The trade-off is throughput and node concentration. Since one node owns the IP for a Service, all traffic for that Service enters through that node. Kubernetes may still spread requests to pods across the cluster after traffic enters, but the first hop is not horizontally distributed. For high-throughput Services, that node can become the bottleneck.
+The trade-off is throughput and node concentration. [Since one node owns the IP for a Service, all traffic for that Service enters through that node](https://raw.githubusercontent.com/metallb/metallb/main/website/content/concepts/layer2.md). Kubernetes may still spread requests to pods across the cluster after traffic enters, but the first hop is not horizontally distributed. For high-throughput Services, that node can become the bottleneck.
 
 A second trade-off is topology. Layer 2 mode assumes the relevant clients and nodes share a network segment where ARP or NDP behavior makes sense. If your cluster nodes sit behind routed boundaries, multiple VLANs, or strict network segmentation, BGP may fit the topology better.
 
@@ -301,7 +302,7 @@ A second trade-off is topology. Layer 2 mode assumes the relevant clients and no
 
 You should also understand the effect of `externalTrafficPolicy`. With the default `Cluster` policy, traffic can enter through the MetalLB-owning node and then be forwarded to pods anywhere in the cluster. This maximizes backend availability but may hide the original client IP depending on the dataplane and path.
 
-With `externalTrafficPolicy: Local`, nodes only forward external traffic to local endpoints. This can preserve client source IPs for applications that need them, but it changes readiness and traffic distribution. If the MetalLB-owning node has no local pod for that Service, traffic may fail until ownership or endpoints change.
+With `externalTrafficPolicy: Local`, [nodes only forward external traffic to local endpoints. This can preserve client source IPs](https://kubernetes.io/docs/tutorials/services/source-ip/) for applications that need them, but it changes readiness and traffic distribution. If the MetalLB-owning node has no local pod for that Service, traffic may fail until ownership or endpoints change.
 
 ```yaml
 apiVersion: v1
@@ -329,9 +330,9 @@ Layer 2 mode is not "toy mode." Many real clusters use it successfully because t
 
 ## Part 4: BGP Mode, Routing-Based Distribution for Production Networks
 
-BGP mode changes the relationship between the cluster and the network. Instead of one node answering neighbor discovery for a service IP, MetalLB speakers establish BGP sessions with routers. The speakers advertise routes for service IPs, and the router decides how to forward traffic based on its routing table.
+BGP mode changes the relationship between the cluster and the network. Instead of one node answering neighbor discovery for a service IP, [MetalLB speakers establish BGP sessions with routers. The speakers advertise routes for service IPs](https://raw.githubusercontent.com/metallb/metallb/main/website/content/concepts/bgp.md), and the router decides how to forward traffic based on its routing table.
 
-BGP is the Border Gateway Protocol, the same family of routing protocol used across large networks and the Internet. In a datacenter, it is commonly used between servers, top-of-rack switches, and routing infrastructure. MetalLB uses BGP in a focused way: it tells routers that service IPs are reachable through cluster nodes.
+[BGP is the Border Gateway Protocol](https://www.rfc-editor.org/rfc/rfc4271), the same family of routing protocol used across large networks and the Internet. In a datacenter, it is commonly used between servers, top-of-rack switches, and routing infrastructure. MetalLB uses BGP in a focused way: it tells routers that service IPs are reachable through cluster nodes.
 
 ```ascii
 BGP MODE WITH ECMP
@@ -365,7 +366,7 @@ This is the main production advantage of BGP mode. A high-traffic Service can us
 
 The cost is operational complexity. BGP requires router configuration, autonomous system numbers, peer addresses, route policy, and an agreement with the network team about what the cluster may advertise. A misconfigured BGP session can fail silently from the application team's perspective because the Kubernetes Service may still show an external IP while the router refuses or filters the route.
 
-A minimal MetalLB BGP configuration defines the peer and the advertisement. The `myASN` is the autonomous system number MetalLB uses for the cluster side of the session. The `peerASN` and `peerAddress` identify the router. Real values must come from your network design.
+[A minimal MetalLB BGP configuration defines the peer and the advertisement](https://raw.githubusercontent.com/metallb/metallb/main/website/content/configuration/_index.md). The `myASN` is the autonomous system number MetalLB uses for the cluster side of the session. The `peerASN` and `peerAddress` identify the router. Real values must come from your network design.
 
 ```yaml
 apiVersion: metallb.io/v1beta2
@@ -414,7 +415,7 @@ BGP also changes how you think about failure domains. A Layer 2 problem may affe
 
 > **Active check:** Your team expects BGP mode to balance every HTTP request evenly across all nodes, but one node receives more traffic than the others. Why might that still be normal, and what does ECMP usually balance?
 
-ECMP usually balances flows, not individual requests. If a few clients create long-lived connections, the hash may place those flows on the same node for a while. That is not necessarily a MetalLB bug. To evaluate distribution correctly, test with many clients and connections, then compare router next-hop counters and node-level traffic.
+[ECMP usually balances flows, not individual requests](https://raw.githubusercontent.com/metallb/metallb/main/website/content/concepts/bgp.md). If a few clients create long-lived connections, the hash may place those flows on the same node for a while. That is not necessarily a MetalLB bug. To evaluate distribution correctly, test with many clients and connections, then compare router next-hop counters and node-level traffic.
 
 BGP mode is a strong fit when the cluster is part of a routed datacenter fabric. It is less attractive when the network team cannot support it, when route policy is opaque, or when the cluster serves a small amount of traffic on a simple subnet. A production-grade decision accounts for both technical capability and organizational ownership.
 
@@ -443,7 +444,7 @@ EXAMPLE ADDRESS PLAN FOR ONE SITE
 +----------------------+----------------------+-----------------------------+
 ```
 
-MetalLB supports multiple pools, which lets you encode operational intent. You might create one pool for shared ingress controllers, another for team-owned services, and another for temporary lab workloads. That separation makes review easier because a Service requesting a production-facing address should not accidentally consume a lab IP.
+[MetalLB supports multiple pools](https://raw.githubusercontent.com/metallb/metallb/main/website/content/configuration/_advanced_ipaddresspool_configuration.md), which lets you encode operational intent. You might create one pool for shared ingress controllers, another for team-owned services, and another for temporary lab workloads. That separation makes review easier because a Service requesting a production-facing address should not accidentally consume a lab IP.
 
 ```yaml
 apiVersion: metallb.io/v1beta1
@@ -499,7 +500,7 @@ Monitoring should include pool utilization and pending Services. A pending Servi
 
 ## Part 6: Integrating MetalLB with Ingress, Gateway API, and Troubleshooting Flow
 
-MetalLB is usually most valuable when paired with a higher-level traffic router. Ingress controllers and Gateway API implementations understand HTTP hosts, paths, TLS, and sometimes TCP or UDP routes. MetalLB gives those routers a stable external IP. The router then decides which backend Service receives each request.
+MetalLB is usually most valuable when paired with a higher-level traffic router. [Ingress controllers and Gateway API implementations understand HTTP hosts, paths, TLS, and sometimes TCP or UDP routes](https://kubernetes.io/docs/concepts/services-networking/ingress/). MetalLB gives those routers a stable external IP. The router then decides which backend Service receives each request.
 
 ```ascii
 COMMON PRODUCTION PATTERN
@@ -529,7 +530,7 @@ COMMON PRODUCTION PATTERN
 
 This pattern keeps MetalLB focused. It does not need to know about `api.example.com`, `/checkout`, TLS certificates, canary routing, or application ownership. It only needs to make the external IP reachable. The Ingress or Gateway layer handles application-level routing.
 
-For Gateway API, the same idea applies with more explicit role separation. The platform team installs a Gateway controller and exposes it through a LoadBalancer Service. Application teams attach routes to allowed Gateways. MetalLB remains the network address provider beneath that higher-level API.
+For Gateway API, the same idea applies with more explicit role separation. The platform team installs a Gateway controller and exposes it through a LoadBalancer Service. [Application teams attach routes to allowed Gateways](https://kubernetes.io/docs/concepts/services-networking/gateway/). MetalLB remains the network address provider beneath that higher-level API.
 
 ```yaml
 apiVersion: v1
@@ -609,7 +610,7 @@ If the client reaches the IP but receives a reset, timeout, or wrong response, m
 
 A team operates a three-node bare-metal Kubernetes cluster in a small datacenter lab. They installed an Envoy-based Gateway controller and created a Service named `gateway-envoy` with `type: LoadBalancer`. The Gateway pods are healthy, the Service has a cluster IP, and internal tests from another pod work. External clients cannot connect because the Service shows `<pending>`.
 
-The team first confirms that the problem is not the Gateway controller. The Deployment is available, the pods are ready, and the Service selector matches the pods. The Service has a NodePort because Kubernetes creates one as part of LoadBalancer handling, but no external IP appears. That points to a missing or broken load balancer implementation rather than an application-layer routing issue.
+The team first confirms that the problem is not the Gateway controller. The Deployment is available, the pods are ready, and the Service selector matches the pods. The Service has a NodePort because [Kubernetes creates one as part of LoadBalancer handling](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer), but no external IP appears. That points to a missing or broken load balancer implementation rather than an application-layer routing issue.
 
 ```bash
 k get deploy -n gateway-system
@@ -678,7 +679,7 @@ This worked example shows the complete reasoning chain: identify the missing imp
 
 ## Did You Know?
 
-1. MetalLB moved from older ConfigMap-based configuration to custom resources such as `IPAddressPool`, `L2Advertisement`, `BGPPeer`, and `BGPAdvertisement`, so older tutorials may describe a configuration style you should avoid for modern installs.
+1. [MetalLB moved from older ConfigMap-based configuration to custom resources](https://raw.githubusercontent.com/metallb/metallb/main/website/content/configuration/migration_to_crds.md) such as `IPAddressPool`, `L2Advertisement`, `BGPPeer`, and `BGPAdvertisement`, so older tutorials may describe a configuration style you should avoid for modern installs.
 
 2. In Layer 2 mode, MetalLB does not create a separate load balancer appliance. It makes one cluster node answer for the service IP, then normal Kubernetes Service routing handles backend pod selection.
 
@@ -967,3 +968,19 @@ kind delete cluster --name metallb-lab
 ## Next Module
 
 [Module 5.5: Ingress Controllers](../module-5.5-ingress-controllers/) teaches the HTTP routing layer that commonly sits behind a MetalLB-provided external IP.
+
+## Sources
+
+- [kubernetes.io: service](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer) — The Kubernetes Service documentation directly describes type LoadBalancer provisioning, asynchronous status updates, and cloud-controller-manager behavior.
+- [raw.githubusercontent.com: index.md](https://raw.githubusercontent.com/metallb/metallb/main/website/content/concepts/_index.md) — MetalLB's upstream concepts page explicitly describes address allocation and external announcement for LoadBalancer Services outside cloud-provider clusters.
+- [raw.githubusercontent.com: index.md](https://raw.githubusercontent.com/metallb/metallb/main/website/content/installation/_index.md) — MetalLB's upstream installation documentation directly identifies the controller Deployment and speaker DaemonSet roles.
+- [raw.githubusercontent.com: index.md](https://raw.githubusercontent.com/metallb/metallb/main/website/content/configuration/_index.md) — MetalLB's configuration documentation states that IPAddressPool defines assignable IPs and that assigned IPs must be announced via L2 or BGP advertisement resources.
+- [raw.githubusercontent.com: layer2.md](https://raw.githubusercontent.com/metallb/metallb/main/website/content/concepts/layer2.md) — MetalLB's Layer 2 concept page directly states that one node advertises the service and that MetalLB responds to ARP and NDP.
+- [kubernetes.io: source ip](https://kubernetes.io/docs/tutorials/services/source-ip/) — The Kubernetes source IP tutorial directly explains externalTrafficPolicy Local, local endpoints, and source IP preservation.
+- [rfc-editor.org: rfc4271](https://www.rfc-editor.org/rfc/rfc4271) — RFC 4271 is the standards-track BGP-4 specification and directly defines BGP as an inter-AS routing protocol.
+- [raw.githubusercontent.com: bgp.md](https://raw.githubusercontent.com/metallb/metallb/main/website/content/concepts/bgp.md) — MetalLB's BGP concept page directly explains BGP peering, service IP advertisement, multipath next hops, and load balancing.
+- [raw.githubusercontent.com: advanced ipaddresspool configuration.md](https://raw.githubusercontent.com/metallb/metallb/main/website/content/configuration/_advanced_ipaddresspool_configuration.md) — The advanced IPAddressPool documentation covers multiple pools, autoAssign, explicit allocation, priorities, and namespace/service selectors.
+- [kubernetes.io: ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) — The Kubernetes Ingress documentation directly describes HTTP/HTTPS routing, host/path rules, TLS, and the need for an Ingress controller.
+- [kubernetes.io: gateway](https://kubernetes.io/docs/concepts/services-networking/gateway/) — The Kubernetes Gateway API page directly describes role-oriented design, GatewayClass/Gateway/HTTPRoute relationships, and route attachment.
+- [raw.githubusercontent.com: migration to crds.md](https://raw.githubusercontent.com/metallb/metallb/main/website/content/configuration/migration_to_crds.md) — MetalLB's migration documentation states that up to v0.12 it used ConfigMap configuration and provides conversion to CRD-based resources.
+- [Kubernetes Service](https://kubernetes.io/docs/concepts/services-networking/service/) — Defines Service types, LoadBalancer behavior, NodePort allocation, status fields, and loadBalancerClass.
