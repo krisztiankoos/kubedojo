@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 5.6: ML Pipelines & Automation"
 slug: platform/disciplines/data-ai/mlops/module-5.6-ml-pipelines
 sidebar:
@@ -269,9 +270,9 @@ Its cost is operational complexity.
 
 You must understand the Kubeflow control plane, artifact storage, permissions, images, and cluster resources.
 
-Apache Airflow fits data engineering organizations that already schedule many workflows.
+[Apache Airflow fits data engineering organizations that already schedule many workflows.](https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html)
 
-It has a large operator ecosystem and strong scheduling vocabulary.
+[It has a large operator ecosystem and strong scheduling vocabulary.](https://airflow.apache.org/docs/apache-airflow/2.10.3/core-concepts/operators.html)
 
 It is often easier to introduce when the company already uses Airflow for ETL.
 
@@ -279,7 +280,7 @@ Its challenge is that ML artifact semantics are not the core abstraction.
 
 You may need to add model registry integration, metric gates, and artifact lineage patterns yourself.
 
-Argo Workflows fits Kubernetes-native teams that want lightweight DAG execution using Kubernetes resources.
+[Argo Workflows fits Kubernetes-native teams that want lightweight DAG execution using Kubernetes resources.](https://argoproj.github.io/workflows/)
 
 It is powerful for containerized jobs and works naturally with GitOps patterns.
 
@@ -342,7 +343,7 @@ Once the workflow has production risk, those missing concepts become operational
 
 ## 3. Building Kubeflow Pipelines Correctly
 
-Kubeflow Pipelines components are Python functions wrapped with the `@component` decorator.
+[Kubeflow Pipelines components are Python functions wrapped with the `@component` decorator.](https://kubeflow-pipelines.readthedocs.io/en/latest/source/dsl.html)
 
 The decorator must be valid Python.
 
@@ -594,7 +595,7 @@ A failure should point to the earliest violated contract.
 
 ### Compiling and Running
 
-The compile step converts Python pipeline structure into a pipeline package.
+[The compile step converts Python pipeline structure into a pipeline package.](https://kfp.readthedocs.io/en/latest/source/kfp.compiler.html)
 
 The resulting YAML is the artifact you submit to a Kubeflow Pipelines backend.
 
@@ -625,7 +626,7 @@ run = client.create_run_from_pipeline_func(
 print(f"Run submitted: {run.run_id}")
 ```
 
-The `Client` example requires access to a real Kubeflow Pipelines endpoint.
+[The `Client` example requires access to a real Kubeflow Pipelines endpoint.](https://kubeflow-pipelines.readthedocs.io/en/1.8.13/source/kfp.client.html)
 
 The compile step does not.
 
@@ -1207,7 +1208,7 @@ Pipeline tasks run somewhere.
 
 On Kubernetes, they run as Pods.
 
-Those Pods need resource requests and limits.
+[Those Pods need resource requests and limits.](https://kubernetes.io/docs/concepts/workloads/pods/)
 
 Without requests, the scheduler cannot place work intelligently.
 
@@ -2136,3 +2137,14 @@ You have completed this exercise when you can verify all of the following:
 The MLOps discipline sequence is complete.
 
 Next, move from discipline theory into implementation choices with the [ML Platforms Toolkit](/platform/toolkits/data-ai-platforms/ml-platforms/).
+
+## Sources
+
+- [kubeflow-pipelines.readthedocs.io: dsl.html](https://kubeflow-pipelines.readthedocs.io/en/latest/source/dsl.html) — The KFP DSL reference directly documents `kfp.dsl.component` as the decorator for Python-function-based components.
+- [kfp.readthedocs.io: kfp.compiler.html](https://kfp.readthedocs.io/en/latest/source/kfp.compiler.html) — The KFP compiler reference explicitly states that `Compiler().compile(...)` compiles a pipeline function into workflow YAML.
+- [kubeflow-pipelines.readthedocs.io: kfp.client.html](https://kubeflow-pipelines.readthedocs.io/en/1.8.13/source/kfp.client.html) — The KFP client reference directly documents both methods as running pipelines on a KFP-enabled Kubernetes cluster.
+- [airflow.apache.org: dags.html](https://airflow.apache.org/docs/apache-airflow/stable/core-concepts/dags.html) — The Airflow DAGs reference explicitly describes schedules, tasks, and task dependencies as core DAG attributes.
+- [airflow.apache.org: operators.html](https://airflow.apache.org/docs/apache-airflow/2.10.3/core-concepts/operators.html) — The Airflow operators reference directly states that Airflow has a very extensive set of operators, including community provider packages.
+- [argoproj.github.io: workflows](https://argoproj.github.io/workflows/) — The Argo Workflows project page states this capability directly.
+- [kubernetes.io: pods](https://kubernetes.io/docs/concepts/workloads/pods/) — The Kubernetes Pods documentation explicitly says the scheduler uses requests for placement and the kubelet enforces limits.
+- [Kubernetes Resource Management for Pods and Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — Direct reference for CPU, memory, and other resource request/limit behavior that affects ML pipeline reliability.
