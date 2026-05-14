@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 5.2: Feature Engineering & Stores"
 slug: platform/disciplines/data-ai/mlops/module-5.2-feature-stores
 sidebar:
@@ -272,7 +273,7 @@ training_df = store.get_historical_features(
 - Open source, free
 - Cloud agnostic
 - Kubernetes native
-- Point-in-time joins
+- [Point-in-time joins](https://github.com/feast-dev/feast)
 - Growing ecosystem
 
 **Cons:**
@@ -291,8 +292,8 @@ training_df = store.get_historical_features(
 | **Tecton** | Commercial | Streaming, enterprise | Real-time ML at scale |
 | **Hopsworks** | Open core | ML platform integration | End-to-end ML |
 | **Databricks** | Commercial | Spark integration | Databricks users |
-| **SageMaker** | AWS | AWS integration | AWS-native teams |
-| **Vertex AI** | GCP | GCP integration | GCP-native teams |
+| **SageMaker** | AWS | [AWS integration](https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html) | AWS-native teams |
+| **Vertex AI** | GCP | [GCP integration](https://cloud.google.com/vertex-ai/docs/featurestore/latest/overview) | GCP-native teams |
 
 ## Feast Deep Dive
 
@@ -691,3 +692,11 @@ Feature stores are the backbone of production ML. They ensure consistency betwee
 ## Next Module
 
 Continue to [Module 5.3: Model Training & Experimentation](../module-5.3-model-training/) to learn how to build reproducible training pipelines with experiment tracking.
+
+## Sources
+
+- [github.com: feast](https://github.com/feast-dev/feast) — The Feast GitHub README explicitly describes Feast as an open-source feature store with offline and low-latency online serving plus point-in-time correct feature sets.
+- [docs.aws.amazon.com: feature store.html](https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store.html) — AWS documentation explicitly describes SageMaker Feature Store's online and offline stores, real-time low-latency reads, historical training use, and feature discovery within SageMaker workflows.
+- [cloud.google.com: overview](https://cloud.google.com/vertex-ai/docs/featurestore/latest/overview) — Google Cloud's Vertex AI Feature Store overview describes it as a managed cloud-native Vertex AI service with online serving, offline history in BigQuery, and integrated metadata search/discovery.
+- [Amazon SageMaker Feature Store Concepts](https://docs.aws.amazon.com/sagemaker/latest/dg/feature-store-concepts.html) — It clearly explains online versus offline stores, latest-versus-historical records, and the single-source-of-truth model for feature data.
+- [Monitor Models for Training-Serving Skew with Vertex AI](https://cloud.google.com/blog/topics/developers-practitioners/monitor-models-training-serving-skew-vertex-ai) — It is a strong primary explainer for why training-serving skew matters operationally and how it shows up in production ML systems.
