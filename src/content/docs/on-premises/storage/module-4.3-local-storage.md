@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 4.3: Local Storage & Alternatives"
 slug: on-premises/storage/module-4.3-local-storage
 sidebar:
@@ -105,7 +106,7 @@ Rancher's local-path-provisioner is the simplest dynamic provisioner that still 
 └──────────────────────────────────────────┘
 ```
 
-The mechanism is intentionally boring. When a PVC referencing the `local-path` StorageClass is bound, a helper pod created by the provisioner runs `mkdir` inside a hostPath mount on the chosen node, and the PV's `nodeAffinity` then pins any consumer pod to that same node forever. Reclaim is the same shape in reverse: a helper pod runs `rm -rf` on the directory and the PV is released. Because the implementation is essentially a controller plus two helper-pod templates, it has almost no failure surface and almost no operational cost; the price you pay for that simplicity is that everything interesting (capacity enforcement, snapshots, replication) has to come from somewhere else in your stack.
+The mechanism is intentionally boring. When a PVC referencing the `local-path` StorageClass is bound, [a helper pod created by the provisioner runs `mkdir` inside a hostPath mount on the chosen node, and the PV's `nodeAffinity` then pins any consumer pod to that same node forever](https://github.com/rancher/local-path-provisioner). Reclaim is the same shape in reverse: a helper pod runs `rm -rf` on the directory and the PV is released. Because the implementation is essentially a controller plus two helper-pod templates, it has almost no failure surface and almost no operational cost; the price you pay for that simplicity is that everything interesting (capacity enforcement, snapshots, replication) has to come from somewhere else in your stack.
 
 ### Deployment
 
@@ -129,13 +130,13 @@ spec:
 EOF
 ```
 
-The most important thing to internalize about this StorageClass is what `1Gi` does *not* mean here. The PVC has no actual size enforcement: the provisioner created a directory, and a directory can be written until the underlying filesystem fills. A pod that requested 1 GiB can consume the entire node disk and there is nothing in this pipeline that will stop it short of `ENOSPC`. For genuine quota enforcement and snapshots you need an LVM-backed or ZFS-backed CSI driver, which is precisely the gap the next two sections close.
+The most important thing to internalize about this StorageClass is what `1Gi` does *not* mean here. [The PVC has no actual size enforcement](https://github.com/rancher/local-path-provisioner): the provisioner created a directory, and a directory can be written until the underlying filesystem fills. A pod that requested 1 GiB can consume the entire node disk and there is nothing in this pipeline that will stop it short of `ENOSPC`. For genuine quota enforcement and snapshots you need an LVM-backed or ZFS-backed CSI driver, which is precisely the gap the next two sections close.
 
 ---
 
 ## TopoLVM: Production-Grade Local Volumes
 
-TopoLVM uses LVM (Logical Volume Manager) to carve local disks into thin-provisioned logical volumes with actual capacity enforcement. It integrates with the Kubernetes scheduler via a mutating webhook so that pods land on nodes that have enough free space in the relevant volume group, and it exposes per-node free-space metrics so the scheduler can score candidates rather than guess. This is the moment where local storage stops being "best effort" and starts being a production-grade primitive: the LV size is enforced by the kernel, snapshots are real, and the scheduler is no longer flying blind.
+[TopoLVM uses LVM (Logical Volume Manager) to carve local disks into thin-provisioned logical volumes with actual capacity enforcement](https://github.com/topolvm/topolvm). It integrates with the Kubernetes scheduler via a mutating webhook so that pods land on nodes that have enough free space in the relevant volume group, and it exposes per-node free-space metrics so the scheduler can score candidates rather than guess. This is the moment where local storage stops being "best effort" and starts being a production-grade primitive: the LV size is enforced by the kernel, snapshots are real, and the scheduler is no longer flying blind.
 
 ### TopoLVM Architecture
 
@@ -255,7 +256,7 @@ allowVolumeExpansion: true
 EOF
 ```
 
-The Helm install lays down the OpenEBS CSI controller, the LocalPV-LVM node DaemonSet, and the CRDs (`LVMVolume`, `LVMSnapshot`, `LVMNode`) that you will use later to inspect state. The shape mirrors what you saw with TopoLVM: a controller pod issues CSI calls, a node-local agent shells out to LVM, and the CRDs make the volume group visible inside the API. The notable difference is that OpenEBS exposes those CRDs to you directly, which is useful for debugging because you can query `LVMVolume` objects exactly like Pods or PVCs, and the CRD status carries the node placement, the LV name, and the underlying volume group.
+The Helm install lays down [the OpenEBS CSI controller, the LocalPV-LVM node DaemonSet, and the CRDs (`LVMVolume`, `LVMSnapshot`, `LVMNode`)](https://github.com/openebs/lvm-localpv) that you will use later to inspect state. The shape mirrors what you saw with TopoLVM: a controller pod issues CSI calls, a node-local agent shells out to LVM, and the CRDs make the volume group visible inside the API. The notable difference is that OpenEBS exposes those CRDs to you directly, which is useful for debugging because you can query `LVMVolume` objects exactly like Pods or PVCs, and the CRD status carries the node placement, the LV name, and the underlying volume group.
 
 ### Worked Example: Provision, Verify, Snapshot, Restore
 
@@ -448,7 +449,7 @@ Longhorn occupies a unique position on the spectrum: it provides cross-node repl
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-For each volume, Longhorn places one *engine* pod on the node where the consumer pod is currently running, and one *replica* per node up to the volume's `replicaCount`. The engine exposes an iSCSI target that the kernel mounts as a block device; reads can come from any healthy replica, and writes are mirrored synchronously to every replica before the engine acknowledges. When the consumer pod is rescheduled to a different node, Longhorn moves the engine to follow it, but the replicas stay where they are; the block device on the new node simply talks to the same set of replicas across the network. This per-volume engine model is the source of both Longhorn's simplicity and its scaling ceiling: each volume is independent so debugging is local, but each volume also pays the engine-pod overhead, and at very high volume counts that adds up.
+[For each volume, Longhorn places one *engine* pod on the node where the consumer pod is currently running, and one *replica* per node up to the volume's `replicaCount`.](https://github.com/longhorn/longhorn) The engine exposes an iSCSI target that the kernel mounts as a block device; reads can come from any healthy replica, and writes are mirrored synchronously to every replica before the engine acknowledges. When the consumer pod is rescheduled to a different node, Longhorn moves the engine to follow it, but the replicas stay where they are; the block device on the new node simply talks to the same set of replicas across the network. This per-volume engine model is the source of both Longhorn's simplicity and its scaling ceiling: each volume is independent so debugging is local, but each volume also pays the engine-pod overhead, and at very high volume counts that adds up.
 
 ### Longhorn Deployment
 
@@ -600,7 +601,7 @@ allowedTopologies:
           - storage-optimized
 ```
 
-`WaitForFirstConsumer` flips the order: the PVC stays Pending until a pod that references it is scheduled, the scheduler picks a node based on every other constraint (resources, affinity, taints, topology), and only then is the PV provisioned on that chosen node. This is the only correct mode for any local storage backend except Longhorn, where the volume is replicated cross-node and the storage is no longer pinned to a single host. Pair `WaitForFirstConsumer` with `allowedTopologies` to constrain *which* nodes are eligible (for example, only the storage-optimized node pool), and you have a clean way to keep stateful workloads on the right hardware without resorting to manual node selectors on every Pod.
+[`WaitForFirstConsumer` flips the order: the PVC stays Pending until a pod that references it is scheduled, the scheduler picks a node based on every other constraint (resources, affinity, taints, topology), and only then is the PV provisioned on that chosen node.](https://kubernetes.io/docs/concepts/storage/storage-classes/) This is the only correct mode for any local storage backend except Longhorn, where the volume is replicated cross-node and the storage is no longer pinned to a single host. Pair `WaitForFirstConsumer` with `allowedTopologies` to constrain *which* nodes are eligible (for example, only the storage-optimized node pool), and you have a clean way to keep stateful workloads on the right hardware without resorting to manual node selectors on every Pod.
 
 ---
 
@@ -642,7 +643,7 @@ Read this tree from the top, and answer each branch honestly. The first branch i
 
 - **local-path-provisioner powers all default k3s installations.** When you run k3s on an edge device, the `local-path` StorageClass is created automatically, and over 100,000 edge clusters in production today rely on it for lightweight persistent storage without any distributed-storage overhead. K3s ships it as the out-of-box answer because the typical k3s cluster is a single node and there is nothing useful to replicate to.
 - **TopoLVM was created by Cybozu**, the Japanese enterprise software company that also produced the `coil` CNI plugin and the `accurate` namespace controller. Cybozu runs hundreds of Kubernetes clusters on bare metal and needed a storage solution that enforced LVM quotas without the complexity of a distributed system; the design choice to integrate with the scheduler via webhook rather than via a CSI extension is a direct consequence of that operational pragmatism.
-- **Longhorn was originally a Rancher Labs project** before SUSE acquired Rancher in 2020, became a CNCF sandbox project in 2019, and graduated to incubating status. Unlike Ceph, each Longhorn volume is an independent replicated unit, so a failure in one volume's engine does not affect any other volume; that per-volume blast radius is the architectural property that lets two-engineer platform teams operate Longhorn at production scale.
+- **Longhorn was originally a Rancher Labs project** before [SUSE acquired Rancher in 2020](https://www.suse.com/de-de/news-articles/2020/07/suse-acquires-rancher/), [became a CNCF sandbox project in 2019, and graduated to incubating status](https://www.cncf.io/projects/longhorn/). Unlike Ceph, each Longhorn volume is an independent replicated unit, so a failure in one volume's engine does not affect any other volume; that per-volume blast radius is the architectural property that lets two-engineer platform teams operate Longhorn at production scale.
 - **OpenEBS was the first CNCF sandbox storage project** (joined in 2019) and pioneered the concept of "Container Attached Storage": the idea that storage controllers should run as containers alongside application containers rather than as a separate infrastructure layer. That choice is why OpenEBS's local engines compose so cleanly with Helm, GitOps, and per-namespace RBAC, where traditional storage appliances assume a separate operations team and a separate lifecycle.
 
 ---
@@ -942,3 +943,13 @@ kind delete cluster
 ## Next Module
 
 Continue to [Module 5.1: Private Cloud Platforms](../../multi-cluster/module-5.1-private-cloud/) to learn how VMware vSphere, OpenStack, and Harvester provide infrastructure abstraction layers for on-premises Kubernetes, including how those platforms handle storage, networking, and scheduling above the bare-metal layer you have been working at in this part of the curriculum.
+
+## Sources
+
+- [github.com: local path provisioner](https://github.com/rancher/local-path-provisioner) — The upstream repository documents helper pod setup/teardown behavior and node-affinity-based local PV placement.
+- [github.com: topolvm](https://github.com/topolvm/topolvm) — The TopoLVM upstream README lists topology, extended scheduler, expansion, and snapshot support.
+- [github.com: lvm localpv](https://github.com/openebs/lvm-localpv) — The upstream repository describes the LVM-backed architecture, LVMVolume CRs, and node-local behavior.
+- [github.com: longhorn](https://github.com/longhorn/longhorn) — The upstream Longhorn README describes dedicated storage controllers per volume and synchronous replication across nodes.
+- [kubernetes.io: storage classes](https://kubernetes.io/docs/concepts/storage/storage-classes/) — The Kubernetes storage-class documentation explicitly explains WaitForFirstConsumer for topology-constrained backends such as local storage.
+- [cncf.io: longhorn](https://www.cncf.io/projects/longhorn/) — The CNCF project page gives the acceptance and incubation dates directly.
+- [suse.com: suse acquires rancher](https://www.suse.com/de-de/news-articles/2020/07/suse-acquires-rancher/) — SUSE's acquisition announcement is the primary vendor source for this fact.
