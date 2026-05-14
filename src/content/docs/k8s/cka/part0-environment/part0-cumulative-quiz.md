@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Part 0 Cumulative Quiz: Environment & Exam Technique"
 sidebar:
   order: 6
@@ -92,7 +93,7 @@ The loop is simple enough to memorize, but the discipline is in using it when th
 
 ## Core Content: Target Safety Before Speed
 
-Every scored action must happen in the correct Kubernetes context. A context combines a cluster, a user, and optionally a namespace, and the exam can ask you to switch contexts between questions. Running a perfect command against the wrong context is worse than running no command at all because it consumes time, creates noise, and may make later verification misleading.
+Every scored action must happen in the correct Kubernetes context. [A context combines a cluster, a user, and optionally a namespace](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/), and the exam can ask you to switch contexts between questions. Running a perfect command against the wrong context is worse than running no command at all because it consumes time, creates noise, and may make later verification misleading.
 
 The minimum safe start for each question is to read the requested context from the task and switch deliberately. Do not rely on the previous question, the shell prompt, or muscle memory. The command is short, and the cost of skipping it is high.
 
@@ -116,7 +117,7 @@ k describe deploy <name> -n <namespace>
 k get pods -n <namespace> -o wide
 ```
 
-Target safety also applies to file paths on control plane nodes. Static Pod manifests are read by the kubelet from `/etc/kubernetes/manifests/` on the node, and kubelet turns those files into mirror Pods visible through the API server. Editing the wrong file or moving a manifest out of that directory changes the control plane behavior, so treat static Pod work as a high-risk operation that requires careful verification.
+Target safety also applies to file paths on control plane nodes. [Static Pod manifests are read by the kubelet from `/etc/kubernetes/manifests/` on the node](https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/), and kubelet turns those files into mirror Pods visible through the API server. Editing the wrong file or moving a manifest out of that directory changes the control plane behavior, so treat static Pod work as a high-risk operation that requires careful verification.
 
 A static Pod problem is not solved when the YAML file looks plausible. It is solved when the kubelet has accepted the manifest and the corresponding mirror Pod returns to a healthy state. That means you should check the file, then check the Pod, then check events if the Pod does not recover.
 
@@ -150,7 +151,7 @@ A reliable target statement might sound like this: "In context `cluster-a`, name
 
 ## Core Content: Command Generation, YAML Editing, and Documentation
 
-Fast Kubernetes work depends on using the command line to produce correct starting points. Generating YAML with `--dry-run=client -o yaml` lets you avoid many indentation and API-shape mistakes, especially for common objects such as Pods, Deployments, Services, Jobs, ConfigMaps, and Secrets. The generated manifest is not always the final answer, but it is a safer skeleton than hand-writing every field.
+Fast Kubernetes work depends on using the command line to produce correct starting points. [Generating YAML with `--dry-run=client -o yaml`](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_deployment/) lets you avoid many indentation and API-shape mistakes, especially for common objects such as Pods, Deployments, Services, Jobs, ConfigMaps, and Secrets. The generated manifest is not always the final answer, but it is a safer skeleton than hand-writing every field.
 
 Many learners define a shell helper named `do` for dry-run output during practice. If your shell supports it, a variable such as `do="--dry-run=client -o yaml"` can make generation faster, but you should understand the expanded command before relying on it. In the exam, a helper that you cannot explain becomes another source of risk.
 
@@ -182,7 +183,7 @@ If pasted YAML becomes misindented, use paste mode before the next paste and tur
 :set nopaste
 ```
 
-The exam allows official documentation because nobody should memorize every API field. Use `kubectl explain` when you need the shape of a resource from the cluster itself, and use Kubernetes documentation when you need examples, task flows, or conceptual reminders. The skill is choosing the smaller lookup that answers the question.
+[The exam allows official documentation](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) because nobody should memorize every API field. Use `kubectl explain` when you need the shape of a resource from the cluster itself, and use Kubernetes documentation when you need examples, task flows, or conceptual reminders. The skill is choosing the smaller lookup that answers the question.
 
 ```bash
 k explain deployment.spec.strategy
@@ -210,7 +211,7 @@ k get deploy,svc,endpoints -n web
 
 The verification is not decorative. `rollout status` proves the Deployment controller reached the desired state, while `get deploy,svc,endpoints` shows whether the Service has endpoints. If endpoints are empty, the Service may have the wrong selector, the Pods may not be Ready, or the Pods may not exist in the namespace you expected.
 
-Now consider a similar task that requires a label `tier=frontend` on the Pod template and a Service selecting that label. In that case, exposing the Deployment immediately may not be enough, because the generated selector may follow the Deployment's default labels rather than the task's requested selector. You would generate or edit YAML, confirm labels under both `spec.selector.matchLabels` and `spec.template.metadata.labels`, then apply and verify endpoints.
+Now consider a similar task that requires a label `tier=frontend` on the Pod template and a Service selecting that label. In that case, exposing the Deployment immediately may not be enough, because the generated selector may follow the Deployment's default labels rather than the task's requested selector. You would generate or edit YAML, [confirm labels under both `spec.selector.matchLabels` and `spec.template.metadata.labels`](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/), then apply and verify endpoints.
 
 The senior-level habit is to connect every generated command to the resource model. A Deployment owns ReplicaSets, ReplicaSets create Pods, Services select Pods through labels, and readiness affects whether endpoints are populated. When verification fails, that model tells you where to look next.
 
@@ -392,11 +393,11 @@ Before taking the cumulative quiz, pause and rehearse this compact workflow: con
 
 ## Did You Know?
 
-- **Fact 1**: `kubectl explain` reads schema information exposed by the Kubernetes API server, which means it can reflect the resource fields available in the cluster you are actually using rather than a random example from memory.
+- **Fact 1**: [`kubectl explain` reads schema information exposed by the Kubernetes API server](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_explain/), which means it can reflect the resource fields available in the cluster you are actually using rather than a random example from memory.
 
-- **Fact 2**: Static Pods are managed by kubelet from files on the node, so a broken manifest can affect a control plane component even when the Kubernetes API is otherwise healthy enough to show mirror Pods.
+- **Fact 2**: [Static Pods are managed by kubelet from files on the node](https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/), so a broken manifest can affect a control plane component even when the Kubernetes API is otherwise healthy enough to show mirror Pods.
 
-- **Fact 3**: A Service with a valid ClusterIP can still send traffic nowhere if its selector does not match any Ready Pods, which is why endpoints are often better verification evidence than the Service object alone.
+- **Fact 3**: [A Service with a valid ClusterIP can still send traffic nowhere if its selector does not match any Ready Pods](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/), which is why endpoints are often better verification evidence than the Service object alone.
 
 - **Fact 4**: The exam's time pressure makes verification more important, not less important, because a fast unverified task can silently earn no credit while also giving you false confidence.
 
@@ -623,3 +624,14 @@ k delete ns part0-review
 ## Next Module
 
 Continue to [Part 1: Cluster Architecture](/k8s/cka/part1-cluster-architecture/)
+
+## Sources
+
+- [docs.linuxfoundation.org: certification resources allowed](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) — The Linux Foundation resources-allowed page explicitly permits Kubernetes documentation access and explicitly allows the on-site search while forbidding external search results.
+- [kubernetes.io: organize cluster access kubeconfig](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/) — The kubeconfig documentation directly states that each context has cluster, namespace, and user parameters and that kubectl uses the current context by default.
+- [kubernetes.io: implementation details](https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/) — The kubeadm implementation details page explicitly documents the manifest path, kubelet watch behavior, and `kube-system` namespace placement for kubeadm-managed control plane static Pods.
+- [kubernetes.io: static pod](https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/) — The static Pods task page explicitly says static Pods are managed by kubelet and that kubelet automatically tries to create a mirror Pod for each one.
+- [kubernetes.io: kubectl create deployment](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_deployment/) — The `kubectl create deployment` reference explicitly documents `--dry-run=client` as printing the object that would be sent without sending it.
+- [kubernetes.io: kubectl explain](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_explain/) — The official `kubectl explain` reference says information about each field is retrieved from the server in OpenAPI format.
+- [kubernetes.io: deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) — The Deployment documentation explicitly states that `.spec.selector` must match `.spec.template.metadata.labels`.
+- [kubernetes.io: endpoint slices](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/) — The EndpointSlice documentation says Services with selectors get EndpointSlices containing matching Pods and that Pod-backed endpoint readiness maps to the Pod `Ready` condition.
