@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Part 5: Troubleshooting - Cumulative Quiz"
 sidebar:
   order: 9
@@ -10,7 +11,7 @@ sidebar:
 >
 > **Prerequisites**: Part 5 modules on troubleshooting methodology, application failures, control plane failures, worker node failures, networking, services, logging, and monitoring.
 >
-> **Exam Weight**: Troubleshooting is 30% of the CKA exam domain coverage.
+> **Exam Weight**: [Troubleshooting is 30% of the CKA exam domain coverage.](https://www.cncf.io/training/certification/cka/)
 >
 > **Cluster Target**: Kubernetes 1.35+
 >
@@ -125,7 +126,7 @@ Pod state is not a root cause. `Pending`, `ContainerCreating`, `ImagePullBackOff
 
 `ImagePullBackOff` means kubelet cannot obtain the image, and the backoff is merely Kubernetes slowing repeated attempts. The cause might be a wrong repository, wrong tag, missing registry credentials, unauthorized access to a private registry, DNS failure to the registry, registry rate limiting, or a network egress block. The image string and Event messages are the key evidence, not application logs.
 
-`CrashLoopBackOff` means the container process starts, exits, and is restarted according to Pod restart policy. The application did run, so `k logs --previous` is often the most useful command. Causes include invalid command arguments, missing runtime configuration, app-level dependency failures, failed startup probes, failed liveness probes, permission errors, and memory limits causing `OOMKilled`.
+[`CrashLoopBackOff` means the container process starts, exits, and is restarted according to Pod restart policy.](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) The application did run, so `k logs --previous` is often the most useful command. Causes include invalid command arguments, missing runtime configuration, app-level dependency failures, failed startup probes, failed liveness probes, permission errors, and memory limits causing `OOMKilled`.
 
 #### Worked Example: Debugging A CrashLoopBackOff Without Guessing
 
@@ -251,7 +252,7 @@ In CKA scenarios, prefer direct, narrow changes that can be verified. If a Pod r
 
 Cluster troubleshooting gets harder when `kubectl` itself becomes unreliable. If the API server is unreachable, normal Kubernetes commands cannot tell you whether the API server, etcd, certificates, networking, or kubelet is responsible. At that point, you move from the Kubernetes API to the host and container runtime on the control plane node.
 
-In kubeadm-style clusters, key control plane components commonly run as static Pods. Static Pod manifests live on disk, and the kubelet watches those files. When a manifest changes, kubelet recreates the corresponding static Pod. That means a bad flag, wrong certificate path, invalid YAML field, or moved manifest can break a control plane component even when the rest of the node is healthy.
+In kubeadm-style clusters, [key control plane components commonly run as static Pods](https://kubernetes.io/docs/concepts/workloads/pods/). [Static Pod manifests live on disk, and the kubelet watches those files.](https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/) When a manifest changes, kubelet recreates the corresponding static Pod. That means a bad flag, wrong certificate path, invalid YAML field, or moved manifest can break a control plane component even when the rest of the node is healthy.
 
 ```ascii
 +--------------------------- Control Plane Node ---------------------------+
@@ -288,7 +289,7 @@ sudo crictl logs <api-server-container-id>
 sudo ls -l /etc/kubernetes/manifests/
 ```
 
-Those commands are not interchangeable with `kubectl`. `crictl` talks to the container runtime through the Container Runtime Interface, so it remains useful when the API server is down. `journalctl` reads systemd logs, so it can show kubelet errors before static Pods exist. The manifest directory shows the desired static pod definitions kubelet is trying to run.
+Those commands are not interchangeable with `kubectl`. [`crictl` talks to the container runtime through the Container Runtime Interface, so it remains useful when the API server is down.](https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/) `journalctl` reads systemd logs, so it can show kubelet errors before static Pods exist. The manifest directory shows the desired static pod definitions kubelet is trying to run.
 
 For etcd health in a kubeadm cluster, use `etcdctl` with the correct certificates. The exact certificate file names can vary by setup, but kubeadm clusters commonly use the etcd PKI directory shown below.
 
@@ -317,7 +318,7 @@ sudo systemctl restart kubelet
 
 In production, certificate renewal has operational risk and should follow the organization's rotation procedure. In a CKA scenario, the expected answer may be more direct because the cluster is disposable and the exam goal is to restore function.
 
-Worker node failures have a similar layered model. A node becomes `NotReady` when the control plane stops receiving healthy kubelet status. The cause may be kubelet down, container runtime down, network path to the API server broken, disk pressure, memory pressure, PID pressure, certificate problems, or CNI problems. `NotReady` tells you the control plane sees a node problem; it does not tell you which host component failed.
+Worker node failures have a similar layered model. [A node becomes `NotReady` when the control plane stops receiving healthy kubelet status.](https://kubernetes.io/docs/reference/node/node-status/) The cause may be kubelet down, container runtime down, network path to the API server broken, disk pressure, memory pressure, PID pressure, certificate problems, or CNI problems. `NotReady` tells you the control plane sees a node problem; it does not tell you which host component failed.
 
 ```ascii
 +------------------------------- Worker Node ------------------------------+
@@ -420,7 +421,7 @@ k get pods -l app=checkout --show-labels
 k get pods -l app=checkout-api --show-labels
 ```
 
-Readiness also matters. A Pod can match the selector but be excluded from endpoints when it is not ready. That behavior protects clients from traffic to unhealthy Pods, but it can surprise learners who only look at labels. If endpoints are missing and labels look correct, inspect Pod readiness, probe Events, and container logs.
+Readiness also matters. [A Pod can match the selector but be excluded from endpoints when it is not ready.](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/) That behavior protects clients from traffic to unhealthy Pods, but it can surprise learners who only look at labels. If endpoints are missing and labels look correct, inspect Pod readiness, probe Events, and container logs.
 
 ```bash
 k get pods -l app=checkout -o wide
@@ -428,7 +429,7 @@ k describe pod <pod-name>
 k logs <pod-name>
 ```
 
-Port mismatches are another common service failure. In a Service, `port` is the port clients use on the Service, while `targetPort` is the port on the Pod. If the Service has `port: 80` and `targetPort: 8080`, but the container listens on 80, traffic will be forwarded to a port where nothing is listening. The Service object can look normal, endpoints can exist, and DNS can resolve, yet the application remains unreachable.
+Port mismatches are another common service failure. [In a Service, `port` is the port clients use on the Service, while `targetPort` is the port on the Pod.](https://kubernetes.io/docs/concepts/services-networking/service/index.html) If the Service has `port: 80` and `targetPort: 8080`, but the container listens on 80, traffic will be forwarded to a port where nothing is listening. The Service object can look normal, endpoints can exist, and DNS can resolve, yet the application remains unreachable.
 
 ```yaml
 apiVersion: v1
@@ -462,9 +463,9 @@ k -n kube-system get svc kube-dns
 k -n kube-system get endpointslice -l kubernetes.io/service-name=kube-dns
 ```
 
-If only one Service name fails, DNS is less likely to be the root cause. The Service might not exist, the namespace might be wrong, or the client might be using the wrong short name. A Pod in namespace `frontend` resolving `checkout` will search `checkout.frontend.svc.cluster.local` before other names. If the Service lives in namespace `payments`, the client should use `checkout.payments` or the fully qualified name.
+If only one Service name fails, DNS is less likely to be the root cause. The Service might not exist, the namespace might be wrong, or the client might be using the wrong short name. [A Pod in namespace `frontend` resolving `checkout` will search `checkout.frontend.svc.cluster.local` before other names. If the Service lives in namespace `payments`, the client should use `checkout.payments` or the fully qualified name.](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
 
-NetworkPolicy failures require a different habit: check whether a policy selects the affected Pods and whether it allows the direction you are testing. A policy that selects Pods and has ingress rules makes ingress restricted for those Pods. Egress remains unrestricted unless egress isolation is also created by policy type and rules. If both ingress and egress are restricted, you must allow DNS as well as application traffic when Pods need name resolution.
+NetworkPolicy failures require a different habit: check whether a policy selects the affected Pods and whether it allows the direction you are testing. [A policy that selects Pods and has ingress rules makes ingress restricted for those Pods. Egress remains unrestricted unless egress isolation is also created by policy type and rules. If both ingress and egress are restricted, you must allow DNS as well as application traffic when Pods need name resolution.](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
 
 ```bash
 k get networkpolicy
@@ -487,14 +488,14 @@ The key is to follow the packet rather than chase components randomly. If the na
 
 Kubernetes gives you several observability signals, but each signal has a different time horizon and failure layer. Events are excellent for recent orchestration decisions. Container logs are excellent for process-level failures. Previous logs are essential for restarted containers. Metrics are useful for resource trends, but `kubectl top` depends on Metrics Server and does not replace status and Events during first response.
 
-Events are not a durable incident archive. They can expire, be compacted, or be absent by the time you investigate. That is why recent CKA-style problems often expect you to look at Events immediately, while real production systems need centralized logging, metrics, and alerting. In the exam, if Events are still present, they are often the fastest clue.
+[Events are not a durable incident archive. They can expire, be compacted, or be absent by the time you investigate.](https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/event-v1/) That is why recent CKA-style problems often expect you to look at Events immediately, while real production systems need centralized logging, metrics, and alerting. In the exam, if Events are still present, they are often the fastest clue.
 
 ```bash
 k get events --sort-by=.lastTimestamp
 k describe pod <pod-name>
 ```
 
-For a crashing container, current logs may show only the newest instance, which might not yet have reached the failure point. Previous logs show the prior terminated container instance:
+For a crashing container, current logs may show only the newest instance, which might not yet have reached the failure point. [Previous logs show the prior terminated container instance:](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/)
 
 ```bash
 k logs <pod-name> --previous
@@ -506,7 +507,7 @@ For multi-container Pods, always specify the container when needed:
 k logs <pod-name> -c <container-name> --previous
 ```
 
-Metrics Server powers `kubectl top`, but metrics absence does not automatically mean workloads are healthy or unhealthy. It means the metrics pipeline is not available to that command. Check whether Metrics Server exists and is ready before assuming a resource view is meaningful:
+[Metrics Server powers `kubectl top`, but metrics absence does not automatically mean workloads are healthy or unhealthy.](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/) It means the metrics pipeline is not available to that command. Check whether Metrics Server exists and is ready before assuming a resource view is meaningful:
 
 ```bash
 k top pods
@@ -558,13 +559,13 @@ The exam does not require perfect production incident management, but it does re
 
 ## Did You Know?
 
-1. **Events are recent orchestration evidence, not a long-term log store.** They are excellent for fresh scheduling, image pull, mount, and probe failures, but production clusters need durable logging and alerting for historical incident analysis.
+1. [**Events are recent orchestration evidence, not a long-term log store.**](https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/event-v1/) They are excellent for fresh scheduling, image pull, mount, and probe failures, but production clusters need durable logging and alerting for historical incident analysis.
 
-2. **`CrashLoopBackOff` names the restart behavior, not the root cause.** The actual cause usually appears in previous logs, termination state, probe Events, configuration references, or resource limit evidence.
+2. [**`CrashLoopBackOff` names the restart behavior, not the root cause.**](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) The actual cause usually appears in previous logs, termination state, probe Events, configuration references, or resource limit evidence.
 
-3. **A Service can be perfectly valid and still route to nothing.** Kubernetes accepts a selector that matches no ready Pods, so endpoint inspection is mandatory during service debugging.
+3. [**A Service can be perfectly valid and still route to nothing.**](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/) Kubernetes accepts a selector that matches no ready Pods, so endpoint inspection is mandatory during service debugging.
 
-4. **`crictl` is valuable because it bypasses the Kubernetes API.** When the API server is down, container runtime evidence on the node may be the only practical way to inspect static pod containers.
+4. [**`crictl` is valuable because it bypasses the Kubernetes API.**](https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/) When the API server is down, container runtime evidence on the node may be the only practical way to inspect static pod containers.
 
 ---
 
@@ -830,3 +831,20 @@ Write a short incident note for yourself with the symptom, evidence, root cause,
 ## Next Module
 
 Continue to [Part 6: Mock Exams](/k8s/cka/part6-mock-exams/) for timed practice under exam conditions.
+
+## Sources
+
+- [cncf.io: cka](https://www.cncf.io/training/certification/cka/) — CNCF publishes the current CKA domain weights and lists Troubleshooting at 30%.
+- [kubernetes.io: pods](https://kubernetes.io/docs/concepts/workloads/pods/) — The Kubernetes Pods documentation states that a main use for static Pods is running a self-hosted control plane.
+- [kubernetes.io: static pod](https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/) — The static Pod task documents that kubelet periodically scans the configured manifest directory and adds or removes Pods as files appear or disappear.
+- [kubernetes.io: pod lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) — The Pod lifecycle documentation defines CrashLoopBackOff as the backoff state for a repeatedly crashing container.
+- [kubernetes.io: crictl](https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/) — The crictl task explicitly describes crictl as a CLI for CRI-compatible runtimes used for node-level inspection and debugging.
+- [kubernetes.io: node status](https://kubernetes.io/docs/reference/node/node-status/) — The node status reference defines Ready semantics and explains that missed heartbeats drive `Unknown` or `False` readiness states.
+- [kubernetes.io: endpoint slices](https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/) — EndpointSlice readiness is documented as mapping to Pod readiness for Service traffic selection.
+- [kubernetes.io: index.html](https://kubernetes.io/docs/concepts/services-networking/service/index.html) — The Service documentation explicitly describes mapping a Service `port` to a backend `targetPort` on Pods.
+- [kubernetes.io: dns pod service](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/) — The DNS for Services and Pods documentation explains namespace-scoped short-name lookup and the need to specify namespace for cross-namespace resolution.
+- [kubernetes.io: network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) — The NetworkPolicy documentation covers independent ingress and egress isolation and explicitly notes that workloads needing DNS resolution require a separate egress policy.
+- [kubernetes.io: event v1](https://kubernetes.io/docs/reference/kubernetes-api/cluster-resources/event-v1/) — The Event API reference says Events have limited retention time and are informative, best-effort supplemental data.
+- [kubernetes.io: kubectl logs](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/) — The kubectl logs reference documents `--previous` as printing the previous container instance logs when available.
+- [kubernetes.io: kubectl top](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/) — The kubectl top reference states that it fetches data from Metrics Server and requires that component to be installed and running.
+- [Troubleshooting Applications](https://kubernetes.io/docs/tasks/debug/debug-application/) — Covers practical debugging paths for Pods, Services, StatefulSets, and common container failure modes.
