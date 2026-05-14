@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 15.2: CloudNativePG - PostgreSQL Done Right on Kubernetes"
 slug: platform/toolkits/data-ai-platforms/cloud-native-databases/module-15.2-cloudnativepg
 sidebar:
@@ -42,9 +43,9 @@ The database incident did not begin with a database crash. It began with a norma
 
 By the time the incident channel filled with messages, the team had three choices and none of them were comfortable. They could manually repair inconsistent rows while the payment API remained unhealthy, restore from last night's backup and reconcile hours of transactions, or recover to a precise timestamp just before the damaging statement began. The third option existed only because the platform team had already configured continuous WAL archiving, practiced recovery, and understood how CloudNativePG represented a restored cluster as a normal Kubernetes object.
 
-CloudNativePG matters because PostgreSQL is stateful infrastructure in a scheduler built around replacement. Kubernetes can reschedule a pod, attach a volume, and update a Service, but it does not automatically know which PostgreSQL instance is safe to promote, whether a standby has replayed enough WAL, or whether a backup is usable for point-in-time recovery. The operator fills that gap by watching declared intent, observing PostgreSQL state, and applying database-specific decisions through Kubernetes primitives.
+CloudNativePG matters because PostgreSQL is stateful infrastructure in a scheduler built around replacement. Kubernetes can reschedule a pod, attach a volume, and update a Service, but it does not automatically know which PostgreSQL instance is safe to promote, whether a standby has replayed enough WAL, or whether a backup is usable for point-in-time recovery. The operator fills that gap by [watching declared intent, observing PostgreSQL state, and applying database-specific decisions through Kubernetes primitives](https://github.com/cloudnative-pg/cloudnative-pg).
 
-This is not magic, and treating it as magic is dangerous. CloudNativePG can automate failover, backups, recovery, service routing, and rolling changes, but it cannot choose your recovery objective, validate your application retry behavior, or decide whether a cross-zone synchronous replica is worth the latency cost. The goal of this module is to move from "I can apply a YAML file" to "I can reason about how this database behaves when something breaks."
+This is not magic, and treating it as magic is dangerous. CloudNativePG can [automate failover, backups, recovery, service routing, and rolling changes](https://github.com/cloudnative-pg/cloudnative-pg), but it cannot choose your recovery objective, validate your application retry behavior, or decide whether a cross-zone synchronous replica is worth the latency cost. The goal of this module is to move from "I can apply a YAML file" to "I can reason about how this database behaves when something breaks."
 
 ---
 
@@ -52,7 +53,7 @@ This is not magic, and treating it as magic is dangerous. CloudNativePG can auto
 
 A plain StatefulSet can keep PostgreSQL pods alive, but it cannot operate PostgreSQL safely by itself. PostgreSQL high availability requires database-aware actions: choosing a primary, promoting a standby, fencing a failed instance, keeping replicas aligned, archiving WAL, restoring from base backups, and routing clients to the right role. CloudNativePG packages those decisions into a Kubernetes operator so the cluster can converge toward a declared state instead of depending on humans to run commands during an outage.
 
-The important mental model is that CloudNativePG manages a PostgreSQL cluster, not just a set of pods. A `Cluster` custom resource describes how many instances you want, how storage should be allocated, how PostgreSQL should be configured, how backups should be written, and how the operator should expose traffic. The operator then creates and reconciles lower-level Kubernetes resources, but those resources are implementation details rather than the primary interface you operate.
+The important mental model is that CloudNativePG manages a PostgreSQL cluster, not just a set of pods. [A `Cluster` custom resource describes how many instances you want, how storage should be allocated, how PostgreSQL should be configured, how backups should be written, and how the operator should expose traffic](https://github.com/cloudnative-pg/cloudnative-pg). The operator then creates and reconciles lower-level Kubernetes resources, but those resources are implementation details rather than the primary interface you operate.
 
 ```text
 CLOUDNATIVEPG ARCHITECTURE
@@ -108,9 +109,9 @@ CLOUDNATIVEPG ARCHITECTURE
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-The diagram shows the first practical distinction a senior operator makes: the application should not know pod names. Applications connect to Services whose endpoints follow database roles, because pod identities can change during failover, rebuild, or maintenance. If an application writes directly to `my-postgres-1`, it has coupled itself to a temporary implementation detail and will eventually break during the exact incident the operator was meant to handle.
+The diagram shows the first practical distinction a senior operator makes: the application should not know pod names. [Applications connect to Services whose endpoints follow database roles](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/service_management.md), because pod identities can change during failover, rebuild, or maintenance. If an application writes directly to `my-postgres-1`, it has coupled itself to a temporary implementation detail and will eventually break during the exact incident the operator was meant to handle.
 
-CloudNativePG's design also reduces the number of separate high-availability components you need to reason about. Some PostgreSQL stacks rely on a combination of Patroni, distributed consensus, custom proxying, and external routing layers. Those designs can work well, but each extra component adds another failure mode and another operational interface. CloudNativePG leans heavily on Kubernetes primitives plus PostgreSQL-native mechanisms, which makes the system easier to inspect when the pressure is high.
+CloudNativePG's design also reduces the number of separate high-availability components you need to reason about. Some PostgreSQL stacks rely on a combination of Patroni, distributed consensus, custom proxying, and external routing layers. Those designs can work well, but each extra component adds another failure mode and another operational interface. [CloudNativePG leans heavily on Kubernetes primitives plus PostgreSQL-native mechanisms](https://github.com/cloudnative-pg/cloudnative-pg), which makes the system easier to inspect when the pressure is high.
 
 > **Pause and predict:** If the primary pod disappears and your application connects through `my-postgres-rw`, what should change first: the application configuration, the Service endpoints, or the Deployment manifest? Write down your prediction before reading the failover section, because this distinction is the core reason role-based Services matter.
 
@@ -136,7 +137,7 @@ The reasoning sequence matters more than the individual commands. First, ask whe
 
 The safest way to learn CloudNativePG is to begin with a small cluster that exposes the essential pattern without hiding behind production-specific details. You install the operator once per Kubernetes cluster, then create one or more PostgreSQL `Cluster` resources. The operator's namespace and your database namespace can be different, which is common in production because platform teams own the operator while application teams own database instances.
 
-As of this module's rewrite, CloudNativePG 1.29 is the current minor release family. In production, always read the release notes before applying an operator upgrade, because operator upgrades can trigger instance-manager rolling updates and sometimes planned switchovers. For learning, using the current release manifest is enough to see the reconciliation model.
+As of this module's rewrite, CloudNativePG 1.29 is the current minor release family. In production, always read the release notes before applying an operator upgrade, because [operator upgrades can trigger instance-manager rolling updates and sometimes planned switchovers](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/installation_upgrade.md). For learning, using the current release manifest is enough to see the reconciliation model.
 
 ```bash
 kubectl apply --server-side -f \
@@ -215,7 +216,7 @@ The `instances: 3` field deserves careful attention. Three instances usually mea
 | Explicit resource requests | Predictable scheduling and fewer surprise evictions | Requires capacity planning and right-sizing | Any cluster that carries real application traffic |
 | Backup object store | Enables recovery beyond live replicas | Requires credentials, retention, and restore testing | Any environment where data matters |
 
-The connection string is also part of the design. CloudNativePG creates Secrets for application credentials, and the generated URI points at the read-write Service. You can inspect the Secret to confirm what the application should use, but you should not paste the decoded value into tickets, chat messages, or documentation because it contains credentials.
+The connection string is also part of the design. [CloudNativePG creates Secrets for application credentials, and the generated URI points at the read-write Service](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/applications.md). You can inspect the Secret to confirm what the application should use, but you should not paste the decoded value into tickets, chat messages, or documentation because it contains credentials.
 
 ```bash
 kubectl get secret my-postgres-app -o jsonpath='{.data.uri}' | base64 -d
@@ -225,13 +226,13 @@ kubectl get service my-postgres-rw -o wide
 kubectl get service my-postgres-ro -o wide
 ```
 
-A common beginner mistake is to treat the primary pod as the connection target because it feels concrete. That approach works only until the primary changes. The correct abstraction is the role Service, because CloudNativePG updates the Service endpoints when roles change and the application can keep the same hostname.
+A common beginner mistake is to treat the primary pod as the connection target because it feels concrete. That approach works only until the primary changes. The correct abstraction is the role Service, because [CloudNativePG updates the Service endpoints when roles change](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/architecture.md) and the application can keep the same hostname.
 
 ---
 
 ## Core Concept 3: Failover, Promotion, and Client Behavior
 
-Failover is not a single event. It is a sequence of detection, decision, promotion, routing, and repair. CloudNativePG must decide that the current primary cannot safely continue, choose a suitable replica, promote it, update Services so clients find the new primary, and then reconcile the failed instance back into the cluster as a replica or replacement. Each step has a different observable signal, which is why incident responders should read conditions, events, Services, and PostgreSQL state together.
+Failover is not a single event. It is a sequence of detection, decision, promotion, routing, and repair. CloudNativePG must decide that the current primary cannot safely continue, [choose a suitable replica, promote it, update Services so clients find the new primary, and then reconcile the failed instance back into the cluster as a replica or replacement](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/failover.md). Each step has a different observable signal, which is why incident responders should read conditions, events, Services, and PostgreSQL state together.
 
 ```text
 AUTOMATED FAILOVER SEQUENCE
@@ -318,7 +319,7 @@ If the CloudNativePG events show a quick promotion but application logs show rep
 
 Replicas are not backups. A replica faithfully copies many kinds of damage, including accidental deletes, bad migrations, corrupted logical state, and application bugs. Backups give you an independent recovery path, and WAL archiving gives you a way to replay changes to a specific point in time rather than accepting the age of the last full backup as your data-loss boundary.
 
-CloudNativePG commonly uses Barman-compatible object storage for base backups and WAL archives. A base backup gives recovery a consistent starting point, while archived WAL files let PostgreSQL replay changes forward until a chosen target. This is why point-in-time recovery is powerful: you can recover to just before a damaging statement, validate the restored cluster, and then decide how to move application traffic.
+CloudNativePG commonly uses [Barman-compatible object storage for base backups and WAL archives](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/backup.md). A base backup gives recovery a consistent starting point, while archived WAL files let PostgreSQL [replay changes forward until a chosen target](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/recovery.md). This is why point-in-time recovery is powerful: you can recover to just before a damaging statement, validate the restored cluster, and then decide how to move application traffic.
 
 ```text
 BACKUP AND PITR MODEL
@@ -418,7 +419,7 @@ kubectl describe backup my-postgres-before-billing-migration
 
 > **Pause and predict:** A developer drops the wrong table at 10:15. Your last base backup finished at 02:00, and WAL archiving is healthy through 10:14. Which object does recovery start from, and why is the answer not "the latest replica"? Explain the sequence before you look at the recovery manifest.
 
-Point-in-time recovery creates a new cluster from backup material. That new cluster should be treated as a separate environment until you validate data, permissions, extensions, and application compatibility. In many incidents, the safest pattern is to recover into a new cluster, verify it, and then change application routing intentionally rather than trying to mutate the damaged cluster in place.
+[Point-in-time recovery creates a new cluster from backup material](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/recovery.md). That new cluster should be treated as a separate environment until you validate data, permissions, extensions, and application compatibility. In many incidents, the safest pattern is to recover into a new cluster, verify it, and then change application routing intentionally rather than trying to mutate the damaged cluster in place.
 
 ```yaml
 apiVersion: postgresql.cnpg.io/v1
@@ -461,7 +462,7 @@ Recovery time depends on database size, object-store performance, network throug
 
 Day-2 operations are the difference between a successful demo and a database platform. After the first cluster is running, you still need to scale replicas, resize storage, rotate credentials, patch the operator, upgrade PostgreSQL, test restores, watch replication lag, and keep application connection patterns healthy. CloudNativePG automates many of these actions, but automation is still a system you must observe and govern.
 
-Scaling read replicas is a declarative patch to the `Cluster` resource. The operator creates or removes instances, coordinates PostgreSQL replication, and updates Services as roles remain valid. Scale-down deserves more caution than scale-up because removing replicas can reduce failover choices and temporarily concentrate read traffic.
+Scaling read replicas is a declarative patch to the `Cluster` resource. [The operator creates or removes instances, coordinates PostgreSQL replication, and updates Services as roles remain valid](https://github.com/cloudnative-pg/cloudnative-pg). Scale-down deserves more caution than scale-up because removing replicas can reduce failover choices and temporarily concentrate read traffic.
 
 ```bash
 kubectl patch cluster my-postgres --type merge -p '{"spec":{"instances":5}}'
@@ -502,7 +503,7 @@ kubectl rollout status deployment/cnpg-controller-manager \
 kubectl get cluster my-postgres
 ```
 
-Connection pooling becomes important when applications create too many PostgreSQL sessions or when failover leaves stale client connections behind. CloudNativePG supports PgBouncer through a `Pooler` custom resource, which lets teams declare a pooler near the database while still preserving the distinction between read-write and read-only traffic. A pooler is not a substitute for fixing abusive application behavior, but it is often an important control for protecting PostgreSQL.
+Connection pooling becomes important when applications create too many PostgreSQL sessions or when failover leaves stale client connections behind. [CloudNativePG supports PgBouncer through a `Pooler` custom resource](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/connection_pooling.md), which lets teams declare a pooler near the database while still preserving the distinction between read-write and read-only traffic. A pooler is not a substitute for fixing abusive application behavior, but it is often an important control for protecting PostgreSQL.
 
 ```yaml
 apiVersion: postgresql.cnpg.io/v1
@@ -559,7 +560,7 @@ spec:
     enablePodMonitor: true
 ```
 
-The `enablePodMonitor` field is convenient in clusters that run the Prometheus Operator, but production monitoring should still be owned intentionally. Decide which namespace owns monitoring resources, how alerts route, who responds to backup failures, and which service-level indicators represent database user pain. A quiet dashboard is not the same as a reliable database if no alert fires when WAL archiving breaks.
+[The `enablePodMonitor` field is convenient in clusters that run the Prometheus Operator](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/monitoring.md), but production monitoring should still be owned intentionally. Decide which namespace owns monitoring resources, how alerts route, who responds to backup failures, and which service-level indicators represent database user pain. A quiet dashboard is not the same as a reliable database if no alert fires when WAL archiving breaks.
 
 > **Active check:** Before the hands-on exercise, choose one Day-2 operation from this section and write the exact failure you would expect if it went wrong. For example, "If WAL archiving fails, PITR can only replay to the last archived segment," or "If the app bypasses the `-rw` Service, failover may complete while writes still fail." This check forces you to connect a Kubernetes object to an operational consequence.
 
@@ -581,7 +582,7 @@ The runbook pattern keeps operational thinking concrete. Instead of saying "chec
 
 ## Core Concept 6: Choosing CloudNativePG Deliberately
 
-CloudNativePG is a strong option when you want PostgreSQL to be part of a Kubernetes-native platform contract. It gives platform teams a declarative API, integrates naturally with GitOps, supports backup and recovery workflows, and uses Kubernetes Services for role-based routing. It is especially compelling when teams already run Kubernetes well and want database operations to fit the same review, reconciliation, and observability model as other platform services.
+CloudNativePG is a strong option when you want PostgreSQL to be part of a Kubernetes-native platform contract. It gives platform teams a [declarative API, integrates naturally with GitOps, supports backup and recovery workflows, and uses Kubernetes Services for role-based routing](https://github.com/cloudnative-pg/cloudnative-pg). It is especially compelling when teams already run Kubernetes well and want database operations to fit the same review, reconciliation, and observability model as other platform services.
 
 It is not automatically the right answer for every PostgreSQL workload. A managed database service may provide better cloud-provider integration, lower operational burden, mature compliance features, or specialized support for storage and backups. Another operator may fit better if your organization already has deep experience with its architecture. A self-managed PostgreSQL stack may be justified for unusual requirements, but it should be chosen with full awareness of the operational cost.
 
@@ -744,7 +745,7 @@ The post-incident changes were concrete. Large data migrations moved to reviewed
 
 ## Did You Know?
 
-- **CloudNativePG entered the CNCF Sandbox as a Kubernetes-native PostgreSQL operator.** That matters because project maturity and governance are part of platform risk, especially when a tool becomes a shared service used by many teams.
+- **[CloudNativePG entered the CNCF Sandbox as a Kubernetes-native PostgreSQL operator](https://www.cncf.io/projects/cloudnativepg/).** That matters because project maturity and governance are part of platform risk, especially when a tool becomes a shared service used by many teams.
 
 - **Point-in-time recovery depends on both base backups and archived WAL.** A base backup without a healthy WAL stream gives you a coarse recovery point, while WAL replay lets you target a precise timestamp within the retention window.
 
@@ -1322,3 +1323,12 @@ Final success criteria:
 - [github.com: backup.md](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/backup.md) — The backup documentation directly covers Barman/object-store backups, WAL archiving, and PITR.
 - [github.com: monitoring.md](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/monitoring.md) — The monitoring documentation directly covers PodMonitor-based monitoring and the deprecation status of `.spec.monitoring.enablePodMonitor`.
 - [CloudNativePG Service management](https://github.com/cloudnative-pg/cloudnative-pg/blob/main/docs/src/service_management.md) — Explains the `rw`, `ro`, and `r` service model that applications should use to survive failovers cleanly.
+- [raw.githubusercontent.com: service management.md](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/service_management.md) — The service management documentation directly defines the rw, ro, and r service types for each Cluster resource.
+- [raw.githubusercontent.com: architecture.md](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/architecture.md) — The architecture documentation states that CloudNativePG updates the -rw service to point to the promoted primary during failover.
+- [raw.githubusercontent.com: installation upgrade.md](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/installation_upgrade.md) — The current installation and upgrade documentation points to the release-1.29 manifest, says release notes must be read before upgrades, and describes instance-manager rolling updates and switchovers.
+- [raw.githubusercontent.com: applications.md](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/applications.md) — The application connection documentation says the operator generates application secrets containing hostnames to the RW service and URI/JDBC URI fields.
+- [raw.githubusercontent.com: failover.md](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/failover.md) — The failover documentation directly lists primary pod deletion as a failover case and describes leader election, promotion, and former-primary replica behavior.
+- [raw.githubusercontent.com: backup.md](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/backup.md) — The backup documentation covers object-store backups, WAL archive requirements, and PITR support.
+- [raw.githubusercontent.com: recovery.md](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/recovery.md) — The recovery documentation states that recovery is not in-place and initializes a new cluster from a physical base backup with WAL replay.
+- [raw.githubusercontent.com: connection pooling.md](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/connection_pooling.md) — The connection pooling documentation directly states native PgBouncer support through the Pooler CRD.
+- [raw.githubusercontent.com: monitoring.md](https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/main/docs/src/monitoring.md) — The monitoring documentation describes enablePodMonitor and lists predefined metrics including replication lag, WAL archive status, and backup timestamps.
