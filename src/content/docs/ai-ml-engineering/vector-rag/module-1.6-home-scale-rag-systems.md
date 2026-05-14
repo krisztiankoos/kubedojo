@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Home-Scale RAG Systems"
 slug: ai-ml-engineering/vector-rag/module-1.6-home-scale-rag-systems
 sidebar:
@@ -496,7 +497,7 @@ Chunk count, manifest size, index size, and model cache size all matter.
 A design that works on a small folder can become annoying after a few expansions if overlap and duplicate files multiply vectors unnecessarily.
 
 Quality measurement should include abstention.
-A good RAG system should say when the corpus does not contain enough evidence.
+[A good RAG system should say when the corpus does not contain enough evidence.](https://arxiv.org/abs/2605.03534)
 If every question receives a confident answer, including questions outside the corpus, the system is not grounded enough.
 Test at least one "not enough evidence" question whenever you compare designs.
 
@@ -573,7 +574,7 @@ They are the reason a small RAG system can be trusted.
 
 - **Fact 1:** Many useful private RAG systems are limited more by corpus quality than by embedding throughput, because duplicated or stale sources create bad evidence before retrieval even begins.
 - **Fact 2:** A local index can be easier to trust than a managed service when the learner needs to inspect files, rebuild artifacts, and verify exactly what stayed on the machine.
-- **Fact 3:** Larger chunks are not automatically less precise; for design notes and incident reports, a larger chunk may preserve the reasoning that a small snippet would cut away.
+- **Fact 3:** [Larger chunks are not automatically less precise; for design notes and incident reports, a larger chunk may preserve the reasoning that a small snippet would cut away.](https://arxiv.org/abs/2505.21700)
 - **Fact 4:** Retrieval-only testing often finds problems faster than full chat testing, because it exposes whether the right evidence reached the generator in the first place.
 
 ## Common Mistakes
@@ -1050,3 +1051,7 @@ Success criteria for this optional step:
 - [Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks](https://arxiv.org/abs/2005.11401) — Foundational RAG paper covering the retrieve-then-generate pattern that this module adapts to smaller local systems.
 - [Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks](https://arxiv.org/abs/1908.10084) — Useful background for the embedding-based semantic search choices discussed in the module.
 - [Faiss](https://github.com/facebookresearch/faiss) — Practical upstream reference for lightweight local dense-vector indexing, which fits the module's home-scale design focus.
+- [arxiv.org: 2506.03901](https://arxiv.org/abs/2506.03901) — General lesson point for an illustrative rewrite.
+- [arxiv.org: 2505.21700](https://arxiv.org/abs/2505.21700) — The cited paper directly reports that smaller chunks work better for concise fact-based answers, while larger chunks improve retrieval for broader contextual understanding.
+- [arxiv.org: 2408.08067](https://arxiv.org/abs/2408.08067) — General lesson point for an illustrative rewrite.
+- [arxiv.org: 2605.03534](https://arxiv.org/abs/2605.03534) — The cited paper explicitly frames selective RAG answering around support, refutation, insufficiency, and abstention when support is missing.

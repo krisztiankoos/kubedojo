@@ -1,31 +1,116 @@
 {
   "module_key": "ai-ml-engineering/vector-rag/module-1.6-home-scale-rag-systems",
   "module_path": "src/content/docs/ai-ml-engineering/vector-rag/module-1.6-home-scale-rag-systems.md",
-  "research_run_id": "2026-04-22T09:44:06+00:00-codex-gpt-5.3-codex-spark",
+  "research_run_id": "2026-05-14T00:43:37+00:00-codex-gpt-5.3-codex-spark",
   "schema_version": 3,
   "section_pool_ref": null,
-  "claims": [],
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "You do not need a full benchmark harness to notice that one design retrieves the right source four times out of five while another design does not.",
+      "claim_class": "statistic",
+      "span_hint": "line 202 | section: Shape the Corpus Before You Shape the Index",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "You do not need a full benchmark harness to notice that one design retrieves the right source four times out of five while another design does not.",
+      "suggested_rewrite": "You do not need a full benchmark harness to notice that one design retrieves the right source consistently while another design does not.",
+      "lesson_point_url": null,
+      "rationale": "The precise success ratio is illustrative and uncited, so the number should be removed rather than forced into a false citation."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "A stronger decision says larger chunks are justified because four of six evaluation questions require surrounding rationale, storage remains acceptable, indexing finishes inside the weekly maintenance window, and citations still point to useful sections.",
+      "claim_class": "statistic",
+      "span_hint": "line 386 | section: Worked Example",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A stronger decision says \"use larger chunks because four of six evaluation questions require surrounding rationale, storage remains acceptable, indexing finishes inside the weekly maintenance window, and citations still point to useful sections.\"",
+      "suggested_rewrite": "A stronger decision says \"use larger chunks because several evaluation questions require surrounding rationale, storage remains acceptable, indexing finishes inside the maintenance window, and citations still point to useful sections.\"",
+      "lesson_point_url": null,
+      "rationale": "The exact count is a made-up example statistic in prose and should be rewritten without false precision."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Many useful private RAG systems are limited more by corpus quality than by embedding throughput, because duplicated or stale sources create bad evidence before retrieval even begins.",
+      "claim_class": "benchmark",
+      "span_hint": "line 574 | section: Did You Know",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Fact 1:** Many useful private RAG systems are limited more by corpus quality than by embedding throughput, because duplicated or stale sources create bad evidence before retrieval even begins.",
+      "suggested_rewrite": "- **Fact 1:** In practice, corpus quality can dominate early RAG results, because duplicated, stale, or misleading sources create bad evidence before retrieval and generation ever start.",
+      "lesson_point_url": "https://arxiv.org/abs/2506.03901",
+      "rationale": "The underlying lesson about noisy evidence is supportable, but the strong comparative claim against embedding throughput is not directly backed by a primary source."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Larger chunks are not automatically less precise; for design notes and incident reports, a larger chunk may preserve the reasoning that a small snippet would cut away.",
+      "claim_class": "benchmark",
+      "span_hint": "line 576 | section: Did You Know",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://arxiv.org/abs/2505.21700",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The cited paper directly reports that smaller chunks work better for concise fact-based answers, while larger chunks improve retrieval for broader contextual understanding."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Retrieval-only testing often finds problems faster than full chat testing, because it exposes whether the right evidence reached the generator in the first place.",
+      "claim_class": "benchmark",
+      "span_hint": "line 577 | section: Did You Know",
+      "disposition": "soften_to_illustration",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "- **Fact 4:** Retrieval-only testing often finds problems faster than full chat testing, because it exposes whether the right evidence reached the generator in the first place.",
+      "suggested_rewrite": "- **Fact 4:** Retrieval-only testing can expose whether the right evidence reached the generator before you debug full chat behavior.",
+      "lesson_point_url": "https://arxiv.org/abs/2408.08067",
+      "rationale": "The comparative claim about being faster is too specific, but the lesson that retrieval and generation should be diagnosed separately is well supported."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "A good RAG system should say when the corpus does not contain enough evidence.",
+      "claim_class": "benchmark",
+      "span_hint": "line 498-501 | section: Debug Retrieval Quality With a Layered Mental Model",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://arxiv.org/abs/2605.03534",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The cited paper explicitly frames selective RAG answering around support, refutation, insufficiency, and abstention when support is missing."
+    }
+  ],
   "further_reading": [
     {
       "url": "https://arxiv.org/abs/2005.11401",
       "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
       "tier": "standards",
-      "why_relevant": "Foundational RAG paper covering the retrieve-then-generate pattern that this module adapts to smaller local systems."
+      "why_relevant": "Foundational retrieve-then-generate paper for the core architecture this module adapts to home-scale systems."
     },
     {
-      "url": "https://arxiv.org/abs/1908.10084",
-      "title": "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks",
+      "url": "https://arxiv.org/abs/2505.21700",
+      "title": "Rethinking Chunk Size For Long-Document Retrieval: A Multi-Dataset Analysis",
       "tier": "standards",
-      "why_relevant": "Useful background for the embedding-based semantic search choices discussed in the module."
+      "why_relevant": "Directly relevant to the module's chunk-size tradeoffs between factual lookup and broader contextual questions."
     },
     {
-      "url": "https://github.com/facebookresearch/faiss",
-      "title": "Faiss",
-      "tier": "upstream",
-      "why_relevant": "Practical upstream reference for lightweight local dense-vector indexing, which fits the module's home-scale design focus."
+      "url": "https://arxiv.org/abs/2408.08067",
+      "title": "RAGChecker: A Fine-grained Framework for Diagnosing Retrieval-Augmented Generation",
+      "tier": "standards",
+      "why_relevant": "Useful background for the module's retrieval-first debugging and evaluation-loop guidance."
     }
   ],
-  "notes": "No inline citation seeds were emitted. The module is almost entirely pedagogical design guidance, heuristics, and scenario framing rather than discrete verifiable claims about incidents, standards, statistics, vendor/version behavior, or dated pricing.",
+  "notes": "Module is mostly pedagogical. I excluded analogies, diagrams, quiz prompts, code blocks, and tables unless a prose sentence carried a specific citation-worthy claim or an uncited precise number.",
   "_schema_issues": [],
   "rejected_urls": []
 }
