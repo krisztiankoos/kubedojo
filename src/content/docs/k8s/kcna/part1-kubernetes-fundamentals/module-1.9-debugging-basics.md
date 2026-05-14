@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.9: Debugging Basics (Theory)"
 slug: k8s/kcna/part1-kubernetes-fundamentals/module-1.9-debugging-basics
 revision_pending: false
@@ -84,13 +85,13 @@ This loop is deliberately simple because incident pressure punishes clever but i
 
 > **Pause and predict**: A teammate says, "The pod is broken, so I will delete it and let Kubernetes recreate it." Before reading on, decide when that action might be harmless and when it might destroy the best clue you have.
 
-Deleting a pod managed by a Deployment can be a reasonable recovery step after evidence has been collected, because the controller will create a replacement from the same template. It is a poor first move when the previous instance had the only useful stack trace, when event ordering matters, or when you still need to know whether the scheduler, kubelet, or application failed first. The safer habit is to capture the status, previous logs, and events, state a hypothesis, and then decide whether a restart, rollback, Secret fix, resource change, or probe adjustment matches the evidence.
+Deleting a pod managed by a Deployment can be a reasonable recovery step after evidence has been collected, because [the controller will create a replacement from the same template](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). It is a poor first move when the previous instance had the only useful stack trace, when event ordering matters, or when you still need to know whether the scheduler, kubelet, or application failed first. The safer habit is to capture the status, previous logs, and events, state a hypothesis, and then decide whether a restart, rollback, Secret fix, resource change, or probe adjustment matches the evidence.
 
 A useful way to practice restraint is to narrate the failure in terms of ownership before touching anything. "The scheduler has not assigned a node" points you toward resources, taints, affinity, topology, or storage binding. "The kubelet cannot pull the image" points you toward tags, registry credentials, and network reachability. "The application started and exited with a missing setting" points you toward configuration and release ownership. This ownership language prevents the classic beginner error of treating every red pod as an application bug or every application bug as a Kubernetes bug.
 
 ## Part 2: Read Pod State Like a Timeline
 
-A pod status line is a compressed timeline, not a final diagnosis. `STATUS` in `k get pods` often displays a container reason chosen for human readability, while the pod phase is a broader lifecycle category such as `Pending`, `Running`, `Succeeded`, `Failed`, or `Unknown`. That distinction matters because a pod can be in the `Running` phase while one container is not ready, and a pod can appear `Pending` because it has not been scheduled or because it is already assigned to a node while the kubelet prepares images and volumes.
+A pod status line is a compressed timeline, not a final diagnosis. `STATUS` in `k get pods` often displays a container reason chosen for human readability, while the pod phase is a broader lifecycle category such as `Pending`, `Running`, `Succeeded`, `Failed`, or `Unknown`. That distinction matters because a pod can be in the `Running` phase while one container is not ready, and [a pod can appear `Pending` because it has not been scheduled or because it is already assigned to a node while the kubelet prepares images and volumes](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/).
 
 ```bash
 k get pods -n default -o wide
@@ -152,7 +153,7 @@ Translate every visible status into a focused question. `Pending` asks whether t
 | `OOMKilled` | Did the container exceed its memory limit? | Last State reason, exit code, resource limits |
 | `Unknown` | Is the node unreachable or unhealthy? | Node conditions and node events |
 
-Pod conditions provide a more structured view than the one-line status because they expose which lifecycle milestones are true or false. `PodScheduled` means the scheduler assigned a node, `Initialized` means init containers completed, `ContainersReady` means all app containers report ready, and `Ready` means the pod should receive traffic through Services that select it. A pod can be alive but not useful if `Ready` is false, which is exactly why Kubernetes separates process existence from traffic eligibility.
+Pod conditions provide a more structured view than the one-line status because they expose which lifecycle milestones are true or false. [`PodScheduled` means the scheduler assigned a node, `Initialized` means init containers completed, `ContainersReady` means all app containers report ready, and `Ready` means the pod should receive traffic through Services that select it](https://kubernetes.io/docs/concepts/workloads/pods/pod-condition/). A pod can be alive but not useful if `Ready` is false, which is exactly why Kubernetes separates process existence from traffic eligibility.
 
 | Condition | What It Means | Debugging Interpretation |
 |---|---|---|
@@ -207,7 +208,7 @@ k logs api-6d8b7c9f5c-f2mzp -n default -p
 k logs api-6d8b7c9f5c-f2mzp -n default -c api
 ```
 
-Events answer what Kubernetes components attempted and why those attempts succeeded or failed. Scheduler events explain placement failures, kubelet events explain image pulls, container lifecycle, probe results, and mount failures, and controller events can explain rollout progress. Events are time-limited in most clusters, so they are not a replacement for centralized logs and metrics, but they are often the freshest and clearest evidence while a beginner is learning how cluster components report work.
+Events answer what Kubernetes components attempted and why those attempts succeeded or failed. Scheduler events explain placement failures, kubelet events explain image pulls, container lifecycle, probe results, and mount failures, and controller events can explain rollout progress. [Events are time-limited in most clusters, so they are not a replacement for centralized logs and metrics](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/), but they are often the freshest and clearest evidence while a beginner is learning how cluster components report work.
 
 ```bash
 k get events -n default --sort-by=.lastTimestamp
@@ -294,7 +295,7 @@ k logs <pod-name> -n <namespace> -p
 k describe pod <pod-name> -n <namespace>
 ```
 
-The pattern matters because beginners often inspect only current logs and miss the useful failure from the terminated instance. In a tight restart loop, the current container may be waiting, starting, or not yet at the failure point, while `-p` asks for the last terminated container's output. If every replica of the same Deployment crashes the same way, suspect a shared image, command, configuration, Secret, ConfigMap, probe, or dependency before blaming one node.
+The pattern matters because beginners often inspect only current logs and miss the useful failure from the terminated instance. In a tight restart loop, the current container may be waiting, starting, or not yet at the failure point, while [`-p` asks for the last terminated container's output](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/). If every replica of the same Deployment crashes the same way, suspect a shared image, command, configuration, Secret, ConfigMap, probe, or dependency before blaming one node.
 
 ### 5.2 ImagePullBackOff and ErrImagePull
 
@@ -319,7 +320,7 @@ Common messages include insufficient CPU, insufficient memory, untolerated taint
 
 ### 5.4 OOMKilled
 
-`OOMKilled` means the process exceeded its memory limit and the kernel killed it. Kubernetes records this in container last state, and the exit code is often `137` because the process received a forced kill signal. The pod may then enter `CrashLoopBackOff` if the restart policy or owning controller keeps starting the same memory-hungry process under the same limit.
+`OOMKilled` means the process exceeded its memory limit and the kernel killed it. Kubernetes records this in container last state, and [the exit code is often `137`](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/) because the process received a forced kill signal. The pod may then enter `CrashLoopBackOff` if the restart policy or owning controller keeps starting the same memory-hungry process under the same limit.
 
 ```bash
 k describe pod <pod-name> -n <namespace>
@@ -677,6 +678,10 @@ k delete namespace kcna-debug
 - [kubectl logs reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/)
 - [kubectl describe reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_describe/)
 - [kubectl get reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_get/)
+- [kubernetes.io: pod condition](https://kubernetes.io/docs/concepts/workloads/pods/pod-condition/) — The Pod Conditions documentation defines these built-in conditions and states that non-Ready Pods are removed from matching Service load-balancing pools.
+- [kubernetes.io: kube apiserver](https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/) — The kube-apiserver reference documents the `--event-ttl` retention setting and its default, which supports the operational point that events are not kept indefinitely.
+- [kubernetes.io: assign memory resource](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/) — The official memory-resource task includes a concrete OOMKilled example showing `reason: OOMKilled` alongside `exitCode: 137`.
+- [Kubernetes Docs: Images](https://kubernetes.io/docs/concepts/containers/images/) — Covers image-pull behavior, `ImagePullBackOff`, registry authentication context, and why image failures happen before application logs exist.
 
 ## Next Module
 

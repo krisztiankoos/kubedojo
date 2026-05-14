@@ -1,0 +1,164 @@
+{
+  "module_key": "k8s/kcna/part1-kubernetes-fundamentals/module-1.9-debugging-basics",
+  "module_path": "src/content/docs/k8s/kcna/part1-kubernetes-fundamentals/module-1.9-debugging-basics.md",
+  "research_run_id": "2026-05-14T04:40:37+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "The opening payments-company outage with a Thursday release, ReplicaSet crashes, and $85,000 in abandoned transactions is a specific real-world war story.",
+      "claim_class": "war_story",
+      "span_hint": "line 29 | section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Late on a Thursday, a payments company pushed a small checkout release that changed how its API loaded database credentials. The old pods kept serving traffic, but the new ReplicaSet produced pods that restarted every few seconds, and the Deployment stalled while customer carts intermittently failed. The incident report later estimated more than $85,000 in abandoned transactions during the first hour, yet the most expensive mistake was not the bad configuration itself; it was the first responder deleting pods and restarting the rollout before anyone captured the previous container logs that named the missing environment variable.",
+      "suggested_rewrite": "A small checkout release can leave old pods serving traffic while a new ReplicaSet crashes and a Deployment stalls. The costly mistake is often not the bad configuration itself but losing the best clue by deleting pods or restarting the rollout before anyone captures the previous container logs.",
+      "lesson_point_url": null,
+      "rationale": "This is an unattributed incident narrative with fake-precise business impact and timing, so the operational lesson should remain but the fabricated specifics should be removed."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "The module makes a specific KCNA exam-expectation claim about what candidates are and are not expected to do.",
+      "claim_class": "standard",
+      "span_hint": "line 33 | section: Why This Module Matters",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "KCNA does not require you to solve every production incident from memory, but it does expect you to recognize where Kubernetes records evidence and how control-plane decisions differ from node-level and application-level facts.",
+      "suggested_rewrite": "This module focuses on recognizing where Kubernetes records evidence and how control-plane decisions differ from node-level and application-level facts.",
+      "lesson_point_url": null,
+      "rationale": "The named-exam wording is more specific than the reviewed allowlisted curriculum evidence, so the unsupported exam promise should be removed while keeping the instructional point."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "Pod phase is a high-level lifecycle summary, while `kubectl` Status is a user-facing display field; `Pending` can include both unscheduled Pods and Pods still being prepared.",
+      "claim_class": "standard",
+      "span_hint": "line 93 | section: Part 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Pod Lifecycle documentation explicitly warns not to confuse kubectl Status with phase and says `Pending` includes both scheduling wait time and container-setup time such as image downloads."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "Pod conditions such as `PodScheduled`, `Initialized`, `ContainersReady`, and `Ready` track lifecycle milestones, and Pods that are not `Ready` are removed from Service endpoints.",
+      "claim_class": "standard",
+      "span_hint": "line 155 | section: Part 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-condition/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Pod Conditions documentation defines these built-in conditions and states that non-Ready Pods are removed from matching Service load-balancing pools."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Deleting a Pod managed by a Deployment causes its controller to create a replacement from the same template.",
+      "claim_class": "standard",
+      "span_hint": "line 87 | section: Part 1",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Deployment documentation explicitly says that if you manually delete a Pod, the ReplicaSet-controlled replacement is created immediately."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "`kubectl logs -p` / `--previous` retrieves logs for the previous instance of a container.",
+      "claim_class": "standard",
+      "span_hint": "line 202 | section: Part 3",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The kubectl logs reference directly documents `-p, --previous` as printing logs from the previous instance of the container in a Pod."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Kubernetes events are temporary evidence with bounded retention rather than permanent debugging history.",
+      "claim_class": "standard",
+      "span_hint": "line 210 | section: Part 3",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The kube-apiserver reference documents the `--event-ttl` retention setting and its default, which supports the operational point that events are not kept indefinitely."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "The module lists exact image-pull error strings as if they were stable cross-environment messages.",
+      "claim_class": "standard",
+      "span_hint": "line 307 | section: 5.2 ImagePullBackOff and ErrImagePull",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Look for event phrases such as `manifest unknown`, `not found`, `pull access denied`, `unauthorized`, or timeout errors, then match the fix to that exact wording.",
+      "suggested_rewrite": "Look for image-pull error messages that indicate an invalid image reference, missing permissions, authentication problems, or network timeouts, then match the fix to that wording.",
+      "lesson_point_url": null,
+      "rationale": "Official docs support the failure categories behind image-pull problems, but this exact wording list is registry- and environment-specific and should be generalized."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "OOMKilled commonly appears with exit code `137` in Pod state.",
+      "claim_class": "statistic",
+      "span_hint": "line 322 | section: 5.4 OOMKilled",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official memory-resource task includes a concrete OOMKilled example showing `reason: OOMKilled` alongside `exitCode: 137`."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://kubernetes.io/docs/tasks/debug/debug-application/",
+      "title": "Kubernetes Docs: Debug Applications",
+      "tier": "standards",
+      "why_relevant": "Primary upstream guide for using describe, logs, events, exec, and related debugging workflows against application workloads."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/",
+      "title": "Kubernetes Docs: Pod Lifecycle",
+      "tier": "standards",
+      "why_relevant": "Explains pod phases, container states, restart behavior, and the distinction between lifecycle signals and user-facing status text."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/workloads/pods/pod-condition/",
+      "title": "Kubernetes Docs: Pod Conditions",
+      "tier": "standards",
+      "why_relevant": "Defines `PodScheduled`, `Initialized`, `ContainersReady`, and `Ready`, including how readiness affects Service traffic."
+    },
+    {
+      "url": "https://kubernetes.io/docs/concepts/containers/images/",
+      "title": "Kubernetes Docs: Images",
+      "tier": "standards",
+      "why_relevant": "Covers image-pull behavior, `ImagePullBackOff`, registry authentication context, and why image failures happen before application logs exist."
+    }
+  ],
+  "notes": "No shared citation pool currently exists for `k8s/kcna/part1-kubernetes-fundamentals`, so supported claims point directly to upstream docs. Per schema rules, no claim entries were created for code blocks, sample outputs, tables, quiz prompts, or hands-on exercise steps.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
