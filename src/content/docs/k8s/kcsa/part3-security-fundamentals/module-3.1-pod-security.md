@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.1: Pod Security"
 slug: k8s/kcsa/part3-security-fundamentals/module-3.1-pod-security
 sidebar:
@@ -84,7 +85,7 @@ Think of these settings like the keys issued to a contractor entering a secure b
 
 The minimum-privilege answer is usually `NET_BIND_SERVICE`, not `privileged: true`. Binding to ports below `1024` is controlled by a specific Linux capability, so granting every capability and device on the host would be a poor trade. This pattern appears often in security reviews: the workload has a real need, but the proposed permission is much broader than the need.
 
-That distinction matters on the KCSA exam and in production reviews because Kubernetes gives you several ways to meet the same application requirement. A Service can expose port `80` while the container listens on `8080`. A non-root image can own the directories it actually needs. An `emptyDir` can provide scratch space without making the image filesystem mutable. The skill is not memorizing every possible field; the skill is matching a need to the smallest Kubernetes or Linux mechanism that satisfies it.
+That distinction matters on the KCSA exam and in production reviews because Kubernetes gives you several ways to meet the same application requirement. [A Service can expose port `80` while the container listens on `8080`.](https://kubernetes.io/docs/concepts/services-networking/service/) A non-root image can own the directories it actually needs. An `emptyDir` can provide scratch space without making the image filesystem mutable. The skill is not memorizing every possible field; the skill is matching a need to the smallest Kubernetes or Linux mechanism that satisfies it.
 
 ## SecurityContext: The Main Control Surface
 
@@ -149,7 +150,7 @@ The writable mounts are also part of the security design, not a convenience adde
 | `runAsNonRoot` | Set to `true` | Prevents accidental root execution when an image default changes | Requires the image to work with a non-root UID |
 | `runAsUser` | Use a non-zero UID | Makes the runtime identity explicit and reviewable | File ownership may need adjustment |
 | `runAsGroup` | Use a non-zero GID | Avoids default root group behavior | Shared volumes may need group permissions |
-| `fsGroup` | Use only when volumes need it | Lets mounted volumes be writable by the workload group | Can slow volume startup on some storage types |
+| `fsGroup` | Use only when volumes need it | Lets mounted volumes be writable by the workload group | [Can slow volume startup on some storage types](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) |
 | `readOnlyRootFilesystem` | Set to `true` | Reduces persistence and tampering inside the container image filesystem | Apps need explicit writable mounts |
 | `allowPrivilegeEscalation` | Set to `false` | Blocks setuid and similar privilege-gaining paths | Some legacy tools stop working |
 | `privileged` | Keep `false` or omit | Avoids broad host device and capability access | System agents may need a dedicated exception |
@@ -168,13 +169,13 @@ If the logs mention a path such as `/var/cache/nginx` or `/var/run`, add an `emp
 
 > **Pause and predict**: If a pod-level `runAsUser: 1000` is set, but one container sets `runAsUser: 0`, which value applies to that container? Explain why this override behavior matters during manifest review.
 
-Container-level `securityContext` is more specific, so it overrides the pod-level default for that container. During review, this means you cannot stop at the pod-level block and assume every container is safe. Init containers, sidecars, and application containers all need inspection because a single overriding container can weaken the pod.
+[Container-level `securityContext` is more specific, so it overrides the pod-level default for that container.](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) During review, this means you cannot stop at the pod-level block and assume every container is safe. Init containers, sidecars, and application containers all need inspection because a single overriding container can weaken the pod.
 
 A practical review habit is to read the manifest twice. On the first pass, look for broad danger signs: host namespaces, `privileged`, `hostPath`, added capabilities, and root execution. On the second pass, look for consistency: do all containers inherit the intended user, do any init containers override the defaults, and do writable mounts match the application’s real write paths? That second pass catches many mistakes because platform teams often harden the main container but forget the helper container that runs before it.
 
 ## Linux Capabilities: Smaller Than Root, Still Powerful
 
-Linux capabilities split the old "root can do everything" model into narrower privileges. This is useful because an application may need one special action, such as binding to a low-numbered port, without needing permission to administer the network stack or mount filesystems. Kubernetes lets you drop capabilities and add back only the ones that are justified.
+Linux capabilities split the old "root can do everything" model into narrower privileges. This is useful because an application may need one special action, such as binding to a low-numbered port, without needing permission to administer the network stack or mount filesystems. [Kubernetes lets you drop capabilities and add back only the ones that are justified.](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)
 
 ```text
 ┌───────────────────────────────────────────────────────────────┐
@@ -222,7 +223,7 @@ Capabilities are easy to underestimate because their names look precise, but the
 
 | Capability | Typical Request | Risk Level | Better Question During Review |
 |---|---|---:|---|
-| `NET_BIND_SERVICE` | Bind to ports below `1024` | Low when isolated | Could the app listen on a high port behind a Service instead? |
+| [`NET_BIND_SERVICE`](https://kubernetes.io/docs/concepts/security/pod-security-standards/) | Bind to ports below `1024` | Low when isolated | Could the app listen on a high port behind a Service instead? |
 | `CHOWN` | Change file ownership | Medium | Can ownership be fixed in the image or volume setup? |
 | `SETUID` / `SETGID` | Change process identity | Medium | Is this a legacy image pattern that can be removed? |
 | `NET_ADMIN` | Change routes, iptables, interfaces | High | Is this really a system agent rather than an app workload? |
@@ -305,7 +306,7 @@ This is the main reason namespace layout is a security decision. A namespace is 
 
 ## Pod Security Standards: Three Profiles, Different Purposes
 
-Pod Security Standards, usually abbreviated PSS, define three policy profiles for pod specifications. They are not a complete security program, and they do not replace image scanning, RBAC, NetworkPolicy, or runtime detection. They are a built-in vocabulary for deciding what pod features should be allowed at admission time.
+[Pod Security Standards, usually abbreviated PSS, define three policy profiles for pod specifications.](https://kubernetes.io/docs/concepts/security/pod-security-standards/) They are not a complete security program, and they do not replace image scanning, RBAC, NetworkPolicy, or runtime detection. They are a built-in vocabulary for deciding what pod features should be allowed at admission time.
 
 ```text
 ┌───────────────────────────────────────────────────────────────┐
@@ -342,21 +343,21 @@ Pod Security Standards, usually abbreviated PSS, define three policy profiles fo
 
 The profile names describe the policy posture, not the workload value. A namespace labeled `privileged` is not more important than one labeled `restricted`; it is less constrained. This matters because teams sometimes ask for "privileged" as if it were a badge of seniority. In a mature cluster, privileged namespaces should be rare, named clearly, and limited to trusted system components.
 
-`baseline` is useful when a cluster needs immediate protection against obvious escalation paths without breaking many existing images. It blocks fields such as `privileged`, host namespaces, and dangerous capabilities, but it does not require every workload to run as non-root. `restricted` is stronger because it expects non-root execution, disabled privilege escalation, dropped capabilities, and seccomp. Moving from `baseline` to `restricted` often requires image and filesystem cleanup, not just a label change.
+[`baseline` is useful when a cluster needs immediate protection against obvious escalation paths without breaking many existing images.](https://kubernetes.io/docs/concepts/security/pod-security-standards/) It blocks fields such as `privileged`, host namespaces, and dangerous capabilities, but it does not require every workload to run as non-root. `restricted` is stronger because it expects non-root execution, disabled privilege escalation, dropped capabilities, and seccomp. Moving from `baseline` to `restricted` often requires image and filesystem cleanup, not just a label change.
 
-The profiles are best understood as a migration ladder. `privileged` says the namespace is outside the normal application boundary and must be governed by compensating controls. `baseline` says the platform will block the most common escalation routes while giving legacy images room to keep working. `restricted` says the workload has been engineered to run with a narrow identity, a narrow filesystem, narrow capabilities, and runtime guardrails. Teams that treat the profiles as labels to debate usually struggle; teams that treat them as engineering targets can plan the work.
+The profiles are best understood as a migration ladder. `privileged` says the namespace is outside the normal application boundary and must be governed by compensating controls. `baseline` says the platform will block the most common escalation routes while giving legacy images room to keep working. [`restricted` says the workload has been engineered to run with a narrow identity, a narrow filesystem, narrow capabilities, and runtime guardrails.](https://kubernetes.io/docs/concepts/security/pod-security-standards/) Teams that treat the profiles as labels to debate usually struggle; teams that treat them as engineering targets can plan the work.
 
 | Control | Privileged | Baseline | Restricted |
 |---|---|---|---|
-| `hostNetwork` | Allowed | Blocked | Blocked |
+| [`hostNetwork`](https://kubernetes.io/docs/concepts/security/pod-security-standards/) | Allowed | Blocked | Blocked |
 | `hostPID` | Allowed | Blocked | Blocked |
 | `hostIPC` | Allowed | Blocked | Blocked |
 | `privileged: true` | Allowed | Blocked | Blocked |
-| Dangerous capabilities | Allowed | Blocked | Blocked |
-| Sensitive `hostPath` usage | Allowed | Blocked | Blocked |
-| Running as UID `0` | Allowed | Allowed | Blocked |
-| `allowPrivilegeEscalation: true` | Allowed | Sometimes allowed | Blocked |
-| Missing seccomp profile | Allowed | Allowed | Blocked |
+| [Dangerous capabilities](https://kubernetes.io/docs/concepts/security/pod-security-standards/) | Allowed | Blocked | Blocked |
+| [Sensitive `hostPath` usage](https://kubernetes.io/docs/concepts/security/pod-security-standards/) | Allowed | Blocked | Blocked |
+| [Running as UID `0`](https://kubernetes.io/docs/concepts/security/pod-security-standards/) | Allowed | Allowed | Blocked |
+| [`allowPrivilegeEscalation: true`](https://kubernetes.io/docs/concepts/security/pod-security-standards/) | Allowed | Sometimes allowed | Blocked |
+| [Missing seccomp profile](https://kubernetes.io/docs/concepts/security/pod-security-standards/) | Allowed | Allowed | Blocked |
 | Unrestricted volume types | Allowed | Limited | More limited |
 
 When choosing a profile, start from the workload class. Application namespaces should aim for `restricted`, especially for internet-facing or tenant-facing services. Legacy applications that still need root may temporarily fit `baseline` while the team fixes image ownership and write paths. Cluster infrastructure should not share a namespace with applications simply because it needs privileged access.
@@ -398,7 +399,7 @@ The following decision path is a practical review tool. It is intentionally cons
 
 ## Pod Security Admission: Enforcing Standards With Namespace Labels
 
-Pod Security Admission, usually abbreviated PSA, is the built-in Kubernetes admission controller that applies Pod Security Standards. In Kubernetes 1.35 and current supported versions, it is the standard built-in replacement for the removed PodSecurityPolicy feature. PSA is intentionally simpler than a full policy engine: it evaluates pods against profile labels on the namespace.
+[Pod Security Admission, usually abbreviated PSA, is the built-in Kubernetes admission controller that applies Pod Security Standards.](https://kubernetes.io/docs/concepts/security/pod-security-admission/) In Kubernetes 1.35 and current supported versions, it is the standard built-in replacement for the removed PodSecurityPolicy feature. PSA is intentionally simpler than a full policy engine: it evaluates pods against profile labels on the namespace.
 
 ```text
 ┌───────────────────────────────────────────────────────────────┐
@@ -447,7 +448,7 @@ metadata:
     pod-security.kubernetes.io/audit-version: latest
 ```
 
-The `latest` version label means the policy follows the current Kubernetes server's definition of the profile. Some organizations pin profile versions during upgrades to avoid surprise changes in admission behavior. For KCSA-level understanding, know that the profile label selects the standard, the mode label selects the behavior, and the version label controls which Kubernetes version of the standard is used.
+The `latest` version label means the policy follows the current Kubernetes server's definition of the profile. Some organizations pin profile versions during upgrades to avoid surprise changes in admission behavior. For KCSA-level understanding, know that [the profile label selects the standard, the mode label selects the behavior, and the version label controls which Kubernetes version of the standard is used](https://kubernetes.io/docs/concepts/security/pod-security-admission/).
 
 Pinned versions are a change-management tool, not a way to avoid upgrades forever. If a cluster pins the policy version during a Kubernetes upgrade, the platform team should schedule a follow-up review to compare the pinned profile with the new default profile. Otherwise, the organization can accidentally freeze old assumptions and miss improvements in the standard. For exam purposes, the important pattern is that each mode can have a matching `*-version` label, and the profile name alone is not the whole policy.
 
@@ -460,7 +461,7 @@ kubectl label namespace pod-security-demo \
   --overwrite
 ```
 
-Now imagine a developer submits a pod that runs as root but does not use `privileged: true`, host namespaces, or dangerous capabilities. With `enforce: baseline`, the pod may be admitted because baseline focuses on known privilege escalation paths and does not fully require non-root execution. With `warn: restricted`, the developer still receives feedback because restricted expects non-root settings and other hardening controls.
+Now imagine a developer submits a pod that runs as root but does not use `privileged: true`, host namespaces, or dangerous capabilities. [With `enforce: baseline`, the pod may be admitted because baseline focuses on known privilege escalation paths and does not fully require non-root execution. With `warn: restricted`, the developer still receives feedback because restricted expects non-root settings and other hardening controls.](https://kubernetes.io/docs/concepts/security/pod-security-admission/)
 
 > **Pause and predict**: Your cluster enforces `baseline` and warns on `restricted`. A team submits a pod that runs as UID `0`, sets `allowPrivilegeEscalation: false`, drops all capabilities, and uses `RuntimeDefault` seccomp. Will the pod be blocked, warned, both, or neither? Explain which profile drives each result.
 
@@ -560,7 +561,7 @@ The corrected pod is intentionally boring. It sleeps, runs as a non-root user, d
 
 ## Privileged Containers: Treat Them as Node-Trust Decisions
 
-`privileged: true` is one of the clearest danger signs in a pod manifest. It grants the container broad access to host devices and capabilities, which can make the container behave much more like a process on the node than an isolated application process. Some cluster infrastructure needs this power, but most application workloads do not.
+`privileged: true` is one of the clearest danger signs in a pod manifest. [It grants the container broad access to host devices and capabilities, which can make the container behave much more like a process on the node than an isolated application process.](https://kubernetes.io/docs/concepts/security/linux-kernel-security-constraints/) Some cluster infrastructure needs this power, but most application workloads do not.
 
 ```text
 ┌───────────────────────────────────────────────────────────────┐
@@ -618,7 +619,7 @@ The same standard applies to vendor agents. A chart from a respected vendor can 
 
 ## Seccomp and Privilege Escalation: Runtime Guardrails
 
-Seccomp filters system calls, which are the interface processes use to ask the kernel to do work. A container may not need every possible syscall to serve HTTP, process messages, or run a batch job. The runtime default seccomp profile blocks selected dangerous or unusual syscalls while preserving compatibility for normal workloads.
+Seccomp filters system calls, which are the interface processes use to ask the kernel to do work. A container may not need every possible syscall to serve HTTP, process messages, or run a batch job. [The runtime default seccomp profile blocks selected dangerous or unusual syscalls while preserving compatibility for normal workloads.](https://kubernetes.io/docs/concepts/security/linux-kernel-security-constraints/)
 
 ```text
 ┌───────────────────────────────────────────────────────────────┐
@@ -652,7 +653,7 @@ Seccomp filters system calls, which are the interface processes use to ask the k
 └───────────────────────────────────────────────────────────────┘
 ```
 
-`allowPrivilegeEscalation: false` is another runtime guardrail. It prevents a process from gaining more privileges than its parent process through mechanisms such as setuid binaries. This is especially useful when the image contains legacy tools the application does not need. If a setuid helper unexpectedly stops working after this setting is applied, that is a design signal: either the helper is unnecessary and should be removed, or the workload requires an explicit exception that must be reviewed.
+`allowPrivilegeEscalation: false` is another runtime guardrail. [It prevents a process from gaining more privileges than its parent process through mechanisms such as setuid binaries.](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) This is especially useful when the image contains legacy tools the application does not need. If a setuid helper unexpectedly stops working after this setting is applied, that is a design signal: either the helper is unnecessary and should be removed, or the workload requires an explicit exception that must be reviewed.
 
 Seccomp, dropped capabilities, and disabled privilege escalation are strongest when used together. Dropping capabilities removes broad kernel powers. Disabling privilege escalation prevents the process from gaining new powers later. Seccomp reduces the set of kernel operations available even if the process is compromised. None of these controls is perfect alone, but together they make post-compromise movement harder.
 
@@ -742,7 +743,7 @@ The final decision should read like an engineering note, not a slogan. "Approved
 
 ## Did You Know?
 
-- **Pod Security Admission replaced PodSecurityPolicy** after PodSecurityPolicy was deprecated and removed from Kubernetes. PSA is simpler because it uses standard profiles and namespace labels instead of custom policy objects.
+- [**Pod Security Admission replaced PodSecurityPolicy** after PodSecurityPolicy was deprecated and removed from Kubernetes.](https://kubernetes.io/docs/concepts/security/pod-security-policy/) PSA is simpler because it uses standard profiles and namespace labels instead of custom policy objects.
 
 - **Restricted does not mean unusable** for normal applications. Most HTTP services, workers, and batch jobs can run under restricted settings once images avoid root ownership assumptions and write only to explicit mounted paths.
 
@@ -1010,6 +1011,13 @@ The senior-level move is not memorizing a perfect YAML block. It is asking why a
 - Kubernetes documentation: Kubernetes API reference for Pod security context fields, https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/
 - Linux manual pages: capabilities, https://man7.org/linux/man-pages/man7/capabilities.7.html
 - Linux manual pages: seccomp, https://man7.org/linux/man-pages/man2/seccomp.2.html
+- [kubernetes.io: security context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) — The Kubernetes security context task explicitly states that container security settings override Pod-level settings when there is overlap.
+- [kubernetes.io: service](https://kubernetes.io/docs/concepts/services-networking/service/) — The Service documentation explicitly shows `port` and `targetPort` mapping and notes that a Service can map any incoming port to a targetPort.
+- [kubernetes.io: linux kernel security constraints](https://kubernetes.io/docs/concepts/security/linux-kernel-security-constraints/) — The Linux kernel security constraints page explicitly says privileged containers run unconfined for seccomp, ignore AppArmor and SELinux constraints, and are given all Linux capabilities.
+- [kubernetes.io: pod security standards](https://kubernetes.io/docs/concepts/security/pod-security-standards/) — The Pod Security Standards page says the standards define three policies and that the policies are cumulative.
+- [kubernetes.io: pod security admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/) — The PSA documentation says Kubernetes offers a built-in Pod Security admission controller and that pod security restrictions are applied at the namespace level.
+- [kubernetes.io: pod security policy](https://kubernetes.io/docs/concepts/security/pod-security-policy/) — The PodSecurityPolicy documentation explicitly marks PSP as deprecated in v1.21, removed in v1.25, and points readers to PSA and third-party admission plugins.
+- [kubernetes.io: images](https://kubernetes.io/docs/concepts/containers/images/) — The images documentation says tags can be moved to point to different images, while digests are fixed and uniquely identify a specific version.
 
 ## Next Module
 
