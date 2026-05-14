@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Reproducible Python, CUDA, and ROCm Environments"
 slug: ai-ml-engineering/prerequisites/module-1.3-reproducible-python-cuda-rocm-environments
 sidebar:
@@ -237,7 +238,7 @@ PY
 
 This smoke test distinguishes several cases. If `torch` is not installed, you are still at the package layer. If `torch.version.cuda` is `None`, you likely installed a CPU build. If CUDA is built in but unavailable, the driver/runtime boundary deserves attention. If the tensor operation succeeds, you have stronger evidence than an import alone.
 
-> **Pause and predict:** Suppose `nvidia-smi` works, `torch.__version__` prints normally, `torch.version.cuda` is `None`, and `torch.cuda.is_available()` is `False`. Which layer is probably wrong, and why would reinstalling the NVIDIA driver be a low-value first move?
+> **Pause and predict:** Suppose `nvidia-smi` works, `torch.__version__` prints normally, `torch.version.cuda` is `None`, and [`torch.cuda.is_available()`](https://github.com/pytorch/pytorch/blob/main/docs/source/notes/cuda.rst) is `False`. Which layer is probably wrong, and why would reinstalling the NVIDIA driver be a low-value first move?
 
 The likely problem is the framework package selection. A CPU-only PyTorch build can import perfectly while reporting no CUDA build support. The NVIDIA driver may still be healthy, so reinstalling it would change a lower layer that already passed its first proof.
 
@@ -253,7 +254,7 @@ command -v rocminfo
 rocminfo
 ```
 
-ROCm also changes how you interpret framework output. Many frameworks expose AMD GPU support through HIP-related fields, while still using some APIs named after CUDA for historical compatibility. That naming can confuse beginners: a method name containing `cuda` does not always mean the backend is NVIDIA CUDA. You must inspect the framework's reported build information and official documentation for the package you installed.
+ROCm also changes how you interpret framework output. [Many frameworks expose AMD GPU support through HIP-related fields, while still using some APIs named after CUDA for historical compatibility](https://github.com/pytorch/pytorch/blob/main/docs/source/notes/hip.rst). That naming can confuse beginners: a method name containing `cuda` does not always mean the backend is NVIDIA CUDA. You must inspect the framework's reported build information and official documentation for the package you installed.
 
 ```bash
 .venv/bin/python - <<'PY'
@@ -368,7 +369,7 @@ When GPU frameworks are involved, write the hardware assumption in prose as well
 
 A common beginner strategy is to install the newest driver, newest toolkit, newest framework, and newest Python version, then expect them to cooperate. That strategy fails because compatibility is about tested combinations, not individual freshness. A brand-new Python version may not have wheels for all packages yet, and a framework build may target a runtime that assumes a sufficiently new but not arbitrary driver.
 
-The better strategy is to choose an anchor. In many AI projects, the framework version is the anchor because it determines supported Python versions and available CPU, CUDA, or ROCm builds. In other projects, hardware or organization policy is the anchor because the workstation driver or base image is fixed. Once you know the anchor, choose the rest of the environment around it.
+The better strategy is to choose an anchor. In many AI projects, [the framework version is the anchor because it determines supported Python versions and available CPU, CUDA, or ROCm builds](https://github.com/pytorch/pytorch/blob/main/RELEASE.md). In other projects, hardware or organization policy is the anchor because the workstation driver or base image is fixed. Once you know the anchor, choose the rest of the environment around it.
 
 ```text
 Compatibility decision order
@@ -398,7 +399,7 @@ This order reduces cognitive load because each step narrows the problem. If you 
 
 Containers are valuable when the host environment has become part of the problem. A container image can capture a userland, system packages, Python packages, and application code in a repeatable build. For teams, that means onboarding can shift from "recreate my laptop" to "build or pull this image and run this command."
 
-Containers do not package the physical GPU driver in the same way they package Python dependencies. GPU container support still depends on host drivers and runtime integration. That is why a CUDA container can fail on a host with a broken NVIDIA driver, and a ROCm container can fail on unsupported hardware or missing device access. The container boundary is strong, but it is not magic.
+Containers do not package the physical GPU driver in the same way they package Python dependencies. [GPU container support still depends on host drivers and runtime integration](https://github.com/NVIDIA/nvidia-container-toolkit). That is why a CUDA container can fail on a host with a broken NVIDIA driver, and a ROCm container can fail on unsupported hardware or missing device access. The container boundary is strong, but it is not magic.
 
 A beginner-friendly container decision is to start with `venv` until the project has a real reason to need a stronger boundary. A professional decision is to containerize when repeatability, deployment alignment, or incompatible stacks justify the extra layer. The wrong decision is to use containers as a way to avoid understanding the environment; that simply moves confusion into a Dockerfile.
 
@@ -743,3 +744,7 @@ Success criteria:
 - [AMD ROCm documentation: Compatibility matrix](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html) — Lists supported ROCm operating system, hardware, and software combinations.
 - [Docker documentation: Build with Dockerfile](https://docs.docker.com/build/concepts/dockerfile/) — Provides official background for container image build files.
 - [NVIDIA Container Toolkit documentation](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/) — Explains GPU runtime integration for containers on NVIDIA systems.
+- [github.com: RELEASE.md](https://github.com/pytorch/pytorch/blob/main/RELEASE.md) — PyTorch's upstream RELEASE.md contains the release compatibility matrix with explicit Python, CUDA, and ROCm columns.
+- [github.com: cuda.rst](https://github.com/pytorch/pytorch/blob/main/docs/source/notes/cuda.rst) — PyTorch's CUDA semantics docs explicitly show `torch.cuda.is_available()` in device-selection examples and discuss what that check does.
+- [github.com: hip.rst](https://github.com/pytorch/pytorch/blob/main/docs/source/notes/hip.rst) — PyTorch's HIP semantics docs explicitly state that HIP reuses `torch.cuda` interfaces and show `torch.version.hip` versus `torch.version.cuda` checks.
+- [github.com: nvidia container toolkit](https://github.com/NVIDIA/nvidia-container-toolkit) — The NVIDIA Container Toolkit README says the toolkit configures containers to use NVIDIA GPUs and explicitly requires the NVIDIA driver on the host.

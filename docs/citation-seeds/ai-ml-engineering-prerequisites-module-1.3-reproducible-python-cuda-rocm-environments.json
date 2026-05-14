@@ -1,112 +1,166 @@
 {
   "module_key": "ai-ml-engineering/prerequisites/module-1.3-reproducible-python-cuda-rocm-environments",
   "module_path": "src/content/docs/ai-ml-engineering/prerequisites/module-1.3-reproducible-python-cuda-rocm-environments.md",
-  "research_run_id": "2026-04-22T07:37:47+00:00-codex-gpt-5.3-codex-spark",
+  "research_run_id": "2026-05-14T00:27:26+00:00-codex-gpt-5.3-codex-spark",
   "schema_version": 3,
   "section_pool_ref": null,
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "CUDA is NVIDIA's GPU compute platform.",
+      "claim_text": "The module's setup path uses interpreter-qualified `python -m pip` commands so installation and verification run through the same Python interpreter.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: CUDA and ROCm > CUDA",
+      "span_hint": "section: Building the First Environment Deliberately, lines 97-110",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://packaging.python.org/en/latest/tutorials/installing-packages/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Python Packaging User Guide is the primary source for interpreter-qualified `python -m pip` installation workflows, but its host is off the current allowlist."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Jupyter notebooks run through a selected kernel, so a notebook and a CLI can point at different Python interpreters until the kernel is changed.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Worked Example: Debugging a Notebook and CLI Mismatch, lines 156-187; Did You Know, lines 497-497",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://docs.jupyter.org/en/latest/projects/kernels.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Jupyter kernels docs explain that notebooks execute through a chosen kernel, which is the core evidence for this interpreter-boundary claim, but the docs host is off allowlist."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "`python -m ipykernel install --user --name ...` registers a project interpreter as a notebook kernel.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Worked Example: Debugging a Notebook and CLI Mismatch, lines 180-185",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://ipython.readthedocs.io/en/stable/install/kernel_install.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The IPython kernel installation guide directly documents kernel registration from a Python environment, but the docs host is off allowlist."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "PyTorch publishes a release compatibility matrix that ties each release to supported Python, CUDA, and ROCm versions.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Version Strategy: Newest Is Not the Same as Compatible, lines 369-371 and 382-383",
       "disposition": "supported",
-      "source_ids": [
-        "S001"
-      ],
-      "proposed_url": "https://github.com/NVIDIA/cuda-python",
+      "source_ids": [],
+      "proposed_url": "https://github.com/pytorch/pytorch/blob/main/RELEASE.md",
       "proposed_tier": "upstream",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The official NVIDIA cuda-python repository directly describes CUDA as NVIDIA's platform and runtime surface for Python access."
+      "rationale": "PyTorch's upstream RELEASE.md contains the release compatibility matrix with explicit Python, CUDA, and ROCm columns."
     },
     {
-      "claim_id": "C002",
-      "claim_text": "CUDA compatibility depends on using a driver/toolkit combination that NVIDIA documents as compatible.",
+      "claim_id": "C005",
+      "claim_text": "PyTorch documents `torch.cuda.is_available()` as the API used to check CUDA availability in device-selection logic.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: CUDA and ROCm > CUDA",
+      "span_hint": "section: CUDA: Compatibility Is a Contract, Not a Guess, lines 228-238; Did You Know, lines 495-495",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/pytorch/pytorch/blob/main/docs/source/notes/cuda.rst",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "PyTorch's CUDA semantics docs explicitly show `torch.cuda.is_available()` in device-selection examples and discuss what that check does."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "CUDA compatibility depends on the framework/runtime build and an NVIDIA driver new enough for that runtime family.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: CUDA: Compatibility Is a Contract, Not a Guess, lines 208-219; section: Version Strategy, lines 369-370",
       "disposition": "needs_allowlist_expansion",
-      "source_ids": [
-        "S002"
-      ],
+      "source_ids": [],
       "proposed_url": "https://docs.nvidia.com/deploy/cuda-compatibility/",
       "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "NVIDIA's CUDA Compatibility guide is the primary source for this claim, but docs.nvidia.com is outside the current allowlist."
+      "rationale": "NVIDIA's CUDA Compatibility guide is the primary source for the driver-versus-runtime compatibility contract, but the docs host is off the current allowlist."
     },
     {
-      "claim_id": "C003",
-      "claim_text": "ROCm is AMD's GPU compute software stack.",
+      "claim_id": "C007",
+      "claim_text": "ROCm support depends on supported combinations of GPU model, Linux distribution, kernel, ROCm release, and framework build.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: CUDA and ROCm > ROCm",
+      "span_hint": "section: ROCm: Be Stricter About Supported Combinations, lines 246-256 and 276",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [],
+      "proposed_url": "https://rocm.docs.amd.com/projects/install-on-linux/en/latest/reference/system-requirements.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "AMD's ROCm system-requirements documentation is the authoritative source for supported hardware and OS combinations, but the host is off allowlist."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "PyTorch on ROCm intentionally reuses `torch.cuda` interfaces, and `torch.version.hip` is the documented way to distinguish a HIP build from a CUDA build.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: ROCm: Be Stricter About Supported Combinations, lines 256-268; CI and Documentation Hooks, line 477",
       "disposition": "supported",
-      "source_ids": [
-        "S003"
-      ],
-      "proposed_url": "https://github.com/ROCm/ROCm",
+      "source_ids": [],
+      "proposed_url": "https://github.com/pytorch/pytorch/blob/main/docs/source/notes/hip.rst",
       "proposed_tier": "upstream",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The official ROCm repository README directly defines ROCm as AMD's open-source stack for GPU computation."
+      "rationale": "PyTorch's HIP semantics docs explicitly state that HIP reuses `torch.cuda` interfaces and show `torch.version.hip` versus `torch.version.cuda` checks."
     },
     {
-      "claim_id": "C004",
-      "claim_text": "ROCm official support varies by GPU architecture and operating system combination.",
+      "claim_id": "C009",
+      "claim_text": "NVIDIA GPU containers still depend on host driver and runtime integration rather than packaging the host driver away inside the image.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: CUDA and ROCm > ROCm",
+      "span_hint": "section: Containers: Stronger Boundary, Different Debugging, lines 399-401; Did You Know, lines 499-499",
       "disposition": "supported",
-      "source_ids": [
-        "S003"
-      ],
-      "proposed_url": "https://github.com/ROCm/ROCm",
+      "source_ids": [],
+      "proposed_url": "https://github.com/NVIDIA/nvidia-container-toolkit",
       "proposed_tier": "upstream",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The official ROCm repository points to a compatibility matrix covering ROCm versions, OS kernels, and GPU architectures, which directly supports the compatibility warning."
-    },
-    {
-      "claim_id": "C005",
-      "claim_text": "Framework builds differ by compute target, with distinct CPU-only, CUDA, and ROCm paths.",
-      "claim_class": "vendor_capability",
-      "span_hint": "section: Compatibility Checklist That Ages Well | Failure 2: Driver and Framework Mismatch",
-      "disposition": "supported",
-      "source_ids": [
-        "S004"
-      ],
-      "proposed_url": "https://github.com/pytorch/pytorch",
-      "proposed_tier": "upstream",
-      "anchor_text": null,
-      "suggested_rewrite": null,
-      "lesson_point_url": null,
-      "rationale": "The official PyTorch repository documents separate CPU-only, CUDA, and ROCm build paths, which supports the module's framework-build compatibility guidance."
+      "rationale": "The NVIDIA Container Toolkit README says the toolkit configures containers to use NVIDIA GPUs and explicitly requires the NVIDIA driver on the host."
     }
   ],
   "further_reading": [
     {
-      "url": "https://github.com/NVIDIA/cuda-python",
-      "title": "NVIDIA cuda-python",
+      "url": "https://github.com/pytorch/pytorch/blob/main/RELEASE.md",
+      "title": "PyTorch Release Compatibility Matrix",
       "tier": "upstream",
-      "why_relevant": "Useful for understanding CUDA's platform/runtime surface from the Python side of local AI environments."
+      "why_relevant": "Useful for checking which Python, CUDA, and ROCm combinations a given PyTorch release actually supports before you build an environment around it."
     },
     {
-      "url": "https://github.com/ROCm/ROCm",
-      "title": "ROCm Official Repository",
+      "url": "https://github.com/pytorch/pytorch/blob/main/docs/source/notes/cuda.rst",
+      "title": "PyTorch CUDA Semantics",
       "tier": "upstream",
-      "why_relevant": "Useful for ROCm overview, supported hardware and OS guidance, and links to the official compatibility matrix."
+      "why_relevant": "Explains PyTorch CUDA device checks, runtime behavior, and the meaning of `torch.cuda.is_available()` in real code."
     },
     {
-      "url": "https://github.com/pytorch/pytorch",
-      "title": "PyTorch Official Repository",
+      "url": "https://github.com/pytorch/pytorch/blob/main/docs/source/notes/hip.rst",
+      "title": "PyTorch HIP (ROCm) Semantics",
       "tier": "upstream",
-      "why_relevant": "Useful for seeing how a major framework distinguishes CPU, CUDA, and ROCm installation and build paths."
+      "why_relevant": "Clarifies how ROCm builds reuse CUDA-named APIs and how to tell HIP-backed PyTorch from CUDA-backed PyTorch."
+    },
+    {
+      "url": "https://github.com/NVIDIA/nvidia-container-toolkit",
+      "title": "NVIDIA Container Toolkit README",
+      "tier": "upstream",
+      "why_relevant": "Grounds the module's container section in the actual host-driver and runtime-integration model used for NVIDIA GPU containers."
     }
   ],
-  "notes": "No claim entries were created for analogies, checklist questions, quiz/exercise content, code blocks, or the pedagogical comparison table.",
-  "_schema_issues": [],
+  "notes": "Excluded analogies, quiz items, hands-on exercise steps, tables as tables, and generic pedagogy. The Jupyter, Python packaging, pip, NVIDIA CUDA, and AMD ROCm primary docs are real but off the current allowlist, so those claims are marked `needs_allowlist_expansion` instead of `supported`.",
+  "_schema_issues": [
+    "claim[2]:needs_allowlist_expansion_but_url_is_already_allowlisted"
+  ],
   "rejected_urls": []
 }
