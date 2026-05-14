@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Voice & Audio AI"
 slug: ai-ml-engineering/multimodal-ai/module-1.1-voice-audio-ai
 sidebar:
@@ -79,7 +80,7 @@ The likely first failure is latency, followed by cost under sustained traffic. A
 
 ## Section 2: Speech-to-Text and Whisper
 
-Speech-to-text systems map an acoustic signal to tokens. That sounds like a pure machine learning task, but engineering choices around audio normalization, model size, decoding settings, and timestamps strongly affect production behavior. Whisper-family models are useful because they combine transcription, language detection, punctuation, and translation behavior in a single architecture, which makes them a strong baseline for learning and deployment.
+Speech-to-text systems map an acoustic signal to tokens. That sounds like a pure machine learning task, but engineering choices around audio normalization, model size, decoding settings, and timestamps strongly affect production behavior. Whisper-family models are useful because they [combine transcription, language detection, punctuation, and translation behavior in a single architecture](https://github.com/openai/whisper), which makes them a strong baseline for learning and deployment.
 
 Think of Whisper as a robust generalist rather than a magical listener. It performs well across many accents, recording conditions, and languages because it was trained on a large and diverse weakly supervised dataset. That does not mean it solves every domain. Medical abbreviations, legal names, overlapping speakers, heavy music, and low-quality phone audio can still break transcripts. The engineer's job is to decide when the generalist is enough and when preprocessing, domain models, or human review are required.
 
@@ -144,7 +145,7 @@ for word in transcript.words:
     print(word)
 ```
 
-For production self-hosting, faster-whisper is often a better runtime than the reference implementation. It uses CTranslate2 and supports efficient compute types such as `float16` and `int8`. The important lesson is not that one package is always better; the important lesson is to measure the same audio, model size, batch size, hardware, and decoding settings before making a claim.
+For production self-hosting, faster-whisper is often a better runtime than the reference implementation. [It uses CTranslate2 and supports efficient compute types such as `float16` and `int8`.](https://github.com/SYSTRAN/faster-whisper) The important lesson is not that one package is always better; the important lesson is to measure the same audio, model size, batch size, hardware, and decoding settings before making a claim.
 
 ```python
 from faster_whisper import WhisperModel
@@ -344,7 +345,7 @@ Text-to-speech is not just the inverse of transcription. STT tries to preserve w
 | Coqui TTS | Open-source and self-hostable | Depends on model and hardware | Local or server-hosted | Community options |
 | Bark | Expressive experimental generation | Often higher latency | Local or server-hosted | Setup-dependent |
 
-For a first implementation, managed TTS is easier because you can focus on conversational behavior instead of model hosting. Save the output to a file when you are testing, but stream bytes in production. A file-first flow hides latency because nothing plays until the full object exists.
+For a first implementation, managed TTS is easier because you can focus on conversational behavior instead of model hosting. Save the output to a file when you are testing, but [stream bytes in production](https://developers.openai.com/api/docs/guides/text-to-speech). A file-first flow hides latency because nothing plays until the full object exists.
 
 ```python
 from pathlib import Path
@@ -605,7 +606,7 @@ You would need a speaker verification or enrollment system that maps voice patte
 
 ## Section 8: Production Deployment on Kubernetes v1.35+
 
-Deploying Whisper on Kubernetes is an infrastructure decision as much as an ML decision. A GPU-backed service needs compatible nodes, the NVIDIA device plugin or equivalent GPU operator setup, container images with CUDA-compatible libraries, model storage, resource requests, probes, autoscaling signals, and fallback behavior. Kubernetes does not make GPU inference cheap or fast by itself; it gives you scheduling, isolation, rollout, and operational control.
+Deploying Whisper on Kubernetes is an infrastructure decision as much as an ML decision. A GPU-backed service needs compatible nodes, [the NVIDIA device plugin or equivalent GPU operator setup](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/), container images with CUDA-compatible libraries, model storage, resource requests, probes, autoscaling signals, and fallback behavior. Kubernetes does not make GPU inference cheap or fast by itself; it gives you scheduling, isolation, rollout, and operational control.
 
 The following manifest is a concrete starting point for a GPU-backed faster-whisper API. It assumes your cluster has GPU nodes exposing `nvidia.com/gpu`, an image that starts an HTTP server on port 8000, and a persistent volume for cached model files. It is deliberately explicit about resources because silent CPU fallback is one of the most common ways speech services become slow and expensive.
 
@@ -902,9 +903,9 @@ Audio In -> Normalize -> VAD -> STT -> Reasoning -> TTS -> Audio Out
 ## Did You Know?
 
 1. **Did You Know?** Voice-cloning scams and other audio-based social-engineering attacks are a growing security concern, but precise incident counts and loss estimates depend heavily on the reporting source and methodology.
-2. **Did You Know?** [IBM's 1962 SHOEBOX system](https://www.ibm.com/history/voice-recognition) was the world's first true speech recognition tool, capable of recognizing a vocabulary of exactly 16 words.
+2. **Did You Know?** [IBM's 1962 SHOEBOX system](https://www.ibm.com/history/voice-recognition) was the world's first true speech recognition tool, capable of recognizing [a vocabulary of exactly 16 words](https://www.ibm.com/history/voice-recognition).
 3. **Did You Know?** OpenAI initially trained the Whisper model on exactly [680,000 hours of diverse, multilingual, and extremely noisy audio scraped from the internet](https://openai.com/index/whisper/), bypassing traditional clean datasets.
-4. **Did You Know?** Benchmarks published by the faster-whisper project show meaningful speed and memory improvements over `openai/whisper` under comparable settings, but results depend on hardware and decoding settings.
+4. **Did You Know?** [Benchmarks published by the faster-whisper project](https://github.com/SYSTRAN/faster-whisper) show meaningful speed and memory improvements over `openai/whisper` under comparable settings, but results depend on hardware and decoding settings.
 
 ## Common Mistakes
 
@@ -1094,3 +1095,15 @@ Now that your AI can hear and speak, the next module adds visual perception. You
 
 - [Robust Speech Recognition via Large-Scale Weak Supervision](https://arxiv.org/abs/2212.04356) — Primary paper for Whisper's training data, multilingual scope, and robustness claims.
 - [pyannote speaker-diarization-3.1](https://github.com/pyannote/hf-speaker-diarization-3.1) — Relevant upstream reference for diarization capabilities used later in the module.
+- [github.com: whisper](https://github.com/openai/whisper) — The official Whisper README describes Whisper as a multitasking model that performs multilingual speech recognition, speech translation, and language identification.
+- [huggingface.co: whisper large v2](https://huggingface.co/openai/whisper-large-v2) — The official Hugging Face model card snippet for openai/whisper-large-v2 lists large-v2 at 1550M parameters.
+- [huggingface.co: whisper large v3](https://huggingface.co/openai/whisper-large-v3) — The official Hugging Face model card snippet for openai/whisper-large-v3 lists large-v3 at 1550M parameters.
+- [github.com: faster whisper](https://github.com/SYSTRAN/faster-whisper) — The faster-whisper README explicitly says it is a CTranslate2 reimplementation and states up to 4x faster inference with less memory, with benchmark tables on the same page.
+- [developers.openai.com: text to speech](https://developers.openai.com/api/docs/guides/text-to-speech) — OpenAI's text-to-speech docs say the endpoint has built-in voices and can provide realtime audio output using streaming.
+- [aws.amazon.com: polly](https://aws.amazon.com/documentation-overview/polly/) — AWS's Polly documentation overview says the API returns audio streams and describes Brand Voice as a custom neural TTS offering.
+- [docs.cloud.google.com: docs](https://docs.cloud.google.com/text-to-speech/docs) — Google's Cloud Text-to-Speech docs say the service converts text or SSML into natural human speech and link supported voices plus streaming guides.
+- [github.com: TTS](https://github.com/coqui-ai/TTS) — The project's GitHub repository describes Coqui TTS as an open-source deep learning toolkit for text-to-speech.
+- [github.com: bark](https://github.com/suno-ai/bark) — The Bark repository describes the project as a text-prompted generative audio model.
+- [kubernetes.io: scheduling gpus](https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/) — The Kubernetes GPU scheduling docs explicitly describe stable GPU support via device plugins and schedulable resources such as `nvidia.com/gpu`.
+- [ibm.com: voice recognition](https://www.ibm.com/history/voice-recognition) — IBM's history page explicitly calls Shoebox the world's first speech-recognition system and lists ten digits plus six command words.
+- [pyannote Speaker Diarization 3.1](https://huggingface.co/pyannote/speaker-diarization-3.1) — Helpful background for the module's multi-speaker section and the practical diarization pipeline used in examples.
