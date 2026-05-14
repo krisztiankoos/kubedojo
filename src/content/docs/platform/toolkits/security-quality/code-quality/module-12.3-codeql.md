@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 12.3: CodeQL - Query Your Code Like a Database"
 slug: platform/toolkits/security-quality/code-quality/module-12.3-codeql
 sidebar:
@@ -40,7 +41,7 @@ A platform security engineer was asked to explain why a payment team's "clean" r
 
 The problem was not that the old scanner saw nothing. It saw too much of the wrong thing. It flagged every suspicious shell helper, including internal calls that only used constant arguments, but it missed the one path where an HTTP query parameter flowed through a formatting function and into the shell wrapper. The scanner matched syntax; the vulnerability lived in the relationship between values across files.
 
-CodeQL changes that conversation because it treats code as queryable data. It builds a database that records syntax, types, call relationships, control flow, and data flow, then lets you ask security questions against that database. Instead of asking "where does this string appear," you can ask "where can untrusted request data reach a dangerous function without passing through a sanitizer?"
+CodeQL changes that conversation because it treats code as queryable data. [It builds a database that records syntax, types, call relationships, control flow, and data flow](https://codeql.github.com/docs/codeql-overview/about-codeql/), then lets you ask security questions against that database. Instead of asking "where does this string appear," you can ask "where can untrusted request data reach a dangerous function without passing through a sanitizer?"
 
 That distinction matters for platform teams because they do not only scan one repository once. They operate shared CI templates, reusable security policies, organization-wide alert workflows, and exception processes. A weak scanner creates noise at scale. A well-designed CodeQL rollout can turn one security lesson into a reusable query that protects every service using the same framework pattern.
 
@@ -52,7 +53,7 @@ The goal of this module is not to make you memorize CodeQL syntax. The goal is t
 
 Most static scanners start with a useful but limited idea: dangerous syntax is often near dangerous behavior. A rule might flag calls to `eval`, string concatenation in SQL statements, or hardcoded tokens assigned to variables with suspicious names. Those rules are fast, understandable, and often valuable. They also struggle when the same danger is hidden behind helper functions, framework abstractions, or values that move through several layers before reaching the risky operation.
 
-CodeQL starts by extracting a codebase into a relational database. For interpreted languages such as Python and JavaScript, extraction usually happens from source files. For compiled languages such as Java, C#, C/C++, and Go, CodeQL may need to observe a build so it can understand generated artifacts, dependencies, and type information accurately. Once the database exists, queries run against that extracted model rather than scanning text line by line.
+CodeQL starts by extracting a codebase into a relational database. For interpreted languages such as Python and JavaScript, extraction usually happens from source files. For compiled languages such as Java, C#, C/C++, and Go, [CodeQL may need to observe a build so it can understand generated artifacts, dependencies, and type information accurately](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/about-codeql-code-scanning-for-compiled-languages). Once the database exists, queries run against that extracted model rather than scanning text line by line.
 
 That database model is what lets CodeQL express security questions in the language of program behavior. A query can select function calls, method receivers, route handlers, imported packages, or tainted data paths. A path query can show the learner or reviewer not only the final dangerous call, but also the source value and each step in the flow that made the call reachable.
 
@@ -113,7 +114,7 @@ A strong answer is that CodeQL is the better starting point when the risky value
 
 ## 2. Building and Running a CodeQL Database
 
-A CodeQL scan has two major phases: database creation and query execution. Database creation extracts facts from the codebase. Query execution applies one or more query packs against that database and emits results, often in SARIF format so GitHub code scanning or another security system can display them.
+[A CodeQL scan has two major phases: database creation and query execution](https://codeql.github.com/docs/codeql-overview/about-codeql/). Database creation extracts facts from the codebase. Query execution applies one or more query packs against that database and emits results, often in SARIF format so GitHub code scanning or another security system can display them.
 
 The important platform-engineering decision is that database creation must match the repository's build reality. JavaScript and Python projects are often extraction-friendly without a build command. Java, Kotlin, C#, C/C++, and some Go projects may need an explicit build command so CodeQL can see generated sources, dependency graphs, and compiler-resolved information. If extraction is wrong, query results can be incomplete even when the query is well written.
 
@@ -148,7 +149,7 @@ codeql database analyze js-db \
 
 A common beginner mistake is to treat a successful database creation command as proof that extraction was complete. The command can finish while silently extracting less useful information than expected, especially when build scripts are skipped or generated code is absent. Senior practitioners check the extraction logs, compare expected languages against detected languages, and investigate surprisingly empty result sets before declaring a scan healthy.
 
-In GitHub Actions, the CodeQL action wraps this process in three steps: initialize, autobuild or custom build, and analyze. The default setup is often enough for simple repositories. Platform teams usually move to an explicit configuration file once they need custom query packs, path exclusions, query filters, or monorepo-specific behavior.
+In GitHub Actions, the CodeQL action wraps this process in three steps: initialize, autobuild or custom build, and analyze. The default setup is often enough for simple repositories. Platform teams usually move to an explicit configuration file once they need [custom query packs, path exclusions, query filters, or monorepo-specific behavior](https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options).
 
 ```yaml
 # .github/workflows/codeql.yml
@@ -268,7 +269,7 @@ select call, "This call can execute a string as code; verify the argument cannot
 
 This query is intentionally simple. It does not prove exploitability because it does not ask where the argument came from. It is still useful as an inventory query during migration away from dangerous APIs. If you used it as a blocking security gate, it would likely create noise because constant or build-time-only uses may not be exploitable in the deployed application.
 
-Query metadata matters because it controls how results are interpreted by tools and humans. The `@kind` field tells CodeQL whether the result is a simple problem or a path problem. Severity and precision help triage. Tags connect findings to security taxonomies and make it easier to filter results across many repositories.
+[Query metadata matters because it controls how results are interpreted by tools and humans](https://codeql.github.com/docs/writing-codeql-queries/metadata-for-codeql-queries/). The `@kind` field tells CodeQL whether the result is a simple problem or a path problem. Severity and precision help triage. Tags connect findings to security taxonomies and make it easier to filter results across many repositories.
 
 ```ql
 /**
@@ -304,7 +305,7 @@ A reasonable answer is to start as an inventory lens and graduate to a blocking 
 
 ## 4. Worked Example: From One Vulnerability to a Path Query
 
-The fastest way to understand CodeQL is to start with a concrete bug. The following Express service has one command injection vulnerability. The dangerous behavior is not simply "there is a call to `exec`." The bug is that request input reaches `exec` without validation or allow-listing.
+The fastest way to understand CodeQL is to start with a concrete bug. The following Express service has one command injection vulnerability. The dangerous behavior is not simply "there is a call to `exec`." The bug is that [request input reaches `exec` without validation or allow-listing](https://owasp.org/www-community/attacks/Command_Injection).
 
 ```bash
 mkdir codeql-worked-example
@@ -375,7 +376,7 @@ DATA FLOW PATH FOR THE BUG
 
 The transformation is important. Many real-world false positives happen because a query treats every helper as dangerous or every helper as safe. `normalizeHost` changes formatting but does not prove the value is a valid hostname. A safer implementation would use an allow-list, a strict parser, or avoid shell invocation entirely by using a library API.
 
-A CodeQL taint-tracking query models that reasoning. The exact libraries evolve between CodeQL releases, so production teams should check the current language documentation when writing query packs. The core shape remains stable: define sources, define sinks, optionally define sanitizers, and report paths where tainted data reaches a sink.
+A CodeQL taint-tracking query models that reasoning. The exact libraries evolve between CodeQL releases, so production teams should check the current language documentation when writing query packs. The core shape remains stable: [define sources, define sinks, optionally define sanitizers, and report paths where tainted data reaches a sink](https://codeql.github.com/docs/writing-codeql-queries/creating-path-queries/).
 
 ```ql
 /**
@@ -477,7 +478,7 @@ The intended classification is that `req.query.host` is a source, `exec` is the 
 
 ## 5. Variant Analysis and Custom Query Packs
 
-Variant analysis is the practice of turning one discovered bug into a reusable detector for the entire codebase or organization. It is one of the main reasons CodeQL belongs in platform engineering rather than only in one-off security research. When a team fixes a bug manually, only that bug is gone. When the team encodes the pattern as a query, the platform can find existing variants and stop new ones from entering.
+[Variant analysis is the practice of turning one discovered bug into a reusable detector for the entire codebase or organization](https://codeql.github.com/docs/codeql-overview/about-codeql/). It is one of the main reasons CodeQL belongs in platform engineering rather than only in one-off security research. When a team fixes a bug manually, only that bug is gone. When the team encodes the pattern as a query, the platform can find existing variants and stop new ones from entering.
 
 The workflow starts with a real vulnerability, not with a generic rule idea. You inspect the bug, identify what made it exploitable, write the narrowest query that captures that pattern, and run it against nearby code. After the query finds true variants, you broaden it carefully. The discipline is to generalize the vulnerability mechanism without generalizing so far that every suspicious-looking construct becomes an alert.
 
@@ -566,7 +567,7 @@ AUTHENTICATION VARIANT ANALYSIS
 └──────────────────────────────────────────────┘
 ```
 
-When a query becomes useful, package it. A query pack gives the organization a versioned unit that can be shared across repositories. It also gives reviewers a place to test query behavior with known vulnerable and known safe fixtures. Treat query packs like production code: review them, test them, version them, and document their intended enforcement level.
+When a query becomes useful, package it. [A query pack gives the organization a versioned unit that can be shared across repositories](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-query-packs). It also gives reviewers a place to test query behavior with known vulnerable and known safe fixtures. Treat query packs like production code: review them, test them, version them, and document their intended enforcement level.
 
 ```yaml
 # .github/codeql/custom-queries/qlpack.yml
@@ -686,8 +687,8 @@ The best answer is to update the query with a sanitizer model for `escapeHtml` a
 ## Did You Know?
 
 - CodeQL originated from research into semantic code analysis and became part of GitHub after GitHub acquired Semmle. That history explains why CodeQL feels more like a query language over program facts than a traditional rule file format.
-- CodeQL results are commonly emitted as SARIF, the Static Analysis Results Interchange Format. SARIF allows code scanning systems to display locations, messages, severities, and path traces consistently across tools.
-- Public repositories on GitHub can use CodeQL code scanning without needing the same commercial licensing model as private enterprise repositories. That makes open-source projects a useful place to study real query behavior and alert examples.
+- [CodeQL results are commonly emitted as SARIF](https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-cli/sarif-output), the [Static Analysis Results Interchange Format](https://www.oasis-open.org/standard/sarif-v2-1-0/). SARIF allows code scanning systems to display locations, messages, severities, and path traces consistently across tools.
+- [Public repositories on GitHub can use CodeQL code scanning without needing the same commercial licensing model as private enterprise repositories](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/about-code-scanning-with-codeql). That makes open-source projects a useful place to study real query behavior and alert examples.
 - CodeQL query packs let security knowledge move from one incident responder's workstation into repeatable CI. This is the key platform-engineering benefit: the organization can preserve a hard-won lesson as executable policy.
 
 ---
@@ -994,3 +995,17 @@ Use this configuration only after moving the query pack into the repository and 
 ## Next Module
 
 [Module 12.4: Snyk](../module-12.4-snyk/) - Dependency and container scanning.
+
+## Sources
+
+- [codeql.github.com: about codeql](https://codeql.github.com/docs/codeql-overview/about-codeql/) — The CodeQL overview directly describes CodeQL databases, code-as-data querying, language schemas, AST representation, data-flow graphs, and control-flow graphs.
+- [docs.github.com: about codeql code scanning for compiled languages](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/about-codeql-code-scanning-for-compiled-languages) — GitHub's compiled-language CodeQL documentation describes build modes and explicitly notes generated-code and dependency-information limitations.
+- [codeql.github.com: creating path queries](https://codeql.github.com/docs/writing-codeql-queries/creating-path-queries/) — The CodeQL path-query documentation directly describes source-to-sink path queries, data-flow configuration, and taint-tracking use.
+- [docs.github.com: sarif output](https://docs.github.com/en/code-security/reference/code-scanning/codeql/codeql-cli/sarif-output) — GitHub's CodeQL CLI SARIF output page directly documents SARIF output from CodeQL CLI analysis.
+- [docs.github.com: workflow configuration options](https://docs.github.com/en/code-security/reference/code-scanning/workflow-configuration-options) — GitHub's workflow configuration reference documents advanced CodeQL setup options including languages, queries, packs, config files, paths, paths-ignore, and query filters.
+- [codeql.github.com: metadata for codeql queries](https://codeql.github.com/docs/writing-codeql-queries/metadata-for-codeql-queries/) — The CodeQL query metadata page directly defines these metadata properties and their display/triage roles.
+- [owasp.org: Command Injection](https://owasp.org/www-community/attacks/Command_Injection) — OWASP's command injection page directly ties command injection to insufficient input validation and shell-command execution risks.
+- [docs.github.com: codeql query packs](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-query-packs) — GitHub's CodeQL query-pack documentation directly defines packs, sharing, dependencies, and qlpack.yml requirements.
+- [oasis-open.org: sarif v2 1 0](https://www.oasis-open.org/standard/sarif-v2-1-0/) — The OASIS SARIF standard page directly defines SARIF as Static Analysis Results Interchange Format and as a standard format for static-analysis output.
+- [docs.github.com: about code scanning with codeql](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/about-code-scanning-with-codeql) — GitHub's CodeQL code-scanning documentation directly lists public repositories and organization-owned repositories with GitHub Code Security enabled under feature availability.
+- [cheatsheetseries.owasp.org: Cross Site Request Forgery Prevention Cheat Sheet.html](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html) — OWASP's CSRF prevention cheat sheet directly recommends CSRF tokens for state-changing requests and describes CSRF risk for authenticated user actions.
