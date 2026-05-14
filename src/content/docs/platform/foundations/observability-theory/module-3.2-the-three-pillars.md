@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.2: The Three Pillars of Observability"
 slug: platform/foundations/observability-theory/module-3.2-the-three-pillars
 sidebar:
@@ -227,7 +228,7 @@ Metrics are the right tool when the answer to your question is a number that sum
 
 > **Gotcha: The Cardinality Trap**
 >
-> Every unique combination of label values produces a separate time series in the backend. A metric `http_requests_total{method, path, status}` with three methods, twenty paths, and five status codes produces 300 series — easy. Add `user_id` to that label set, and with one million users you now have 300 million series. Prometheus instances OOM-kill themselves over this almost weekly across the industry. The rule of thumb: **labels are for dimensions you would put in a `GROUP BY` clause; identifiers belong in logs and traces.**
+> [Every unique combination of label values produces a separate time series in the backend](https://prometheus.io/docs/concepts/data_model/). A metric `http_requests_total{method, path, status}` with three methods, twenty paths, and five status codes produces 300 series — easy. Add `user_id` to that label set, and with one million users you now have 300 million series. Prometheus instances OOM-kill themselves over this almost weekly across the industry. The rule of thumb: **labels are for dimensions you would put in a `GROUP BY` clause; identifiers belong in logs and traces.**
 
 > **Pause and predict**: A teammate proposes adding a `customer_email` label to your `http_requests_total` metric so the support team can quickly see per-customer request volumes. You have 400,000 active customers. What happens to the Prometheus server's memory in the next hour? Where should that data live instead?
 
@@ -326,7 +327,7 @@ Head-based sampling is cheap, simple, and stateless. The trade-off is that you c
 
 #### Tail-Based Sampling: Decide at the End
 
-**Tail-based sampling** flips the timing. Every span from every service is sent to a collector tier (typically the OpenTelemetry Collector running with the `tail_sampling` processor) that buffers all of the spans for a given trace until the trace is judged "complete" — usually after a few seconds of inactivity. Only at that point does the collector evaluate the trace as a whole and decide whether to keep it. Because the decision happens after the work has finished, the collector knows the total duration, the error count, the HTTP status codes on every span, the customer tier carried in attributes, and any other tag the application set during execution.
+**Tail-based sampling** flips the timing. Every span from every service is sent to a collector tier (typically the OpenTelemetry Collector running with the `tail_sampling` processor) that buffers all of the spans for a given trace until the trace is judged "complete" — usually after a few seconds of inactivity. [Only at that point does the collector evaluate the trace as a whole and decide whether to keep it. Because the decision happens after the work has finished, the collector knows the total duration, the error count, the HTTP status codes on every span, the customer tier carried in attributes, and any other tag the application set during execution.](https://opentelemetry.io/docs/concepts/sampling/)
 
 Typical tail-based rules are stated declaratively and combined with OR:
 
@@ -347,7 +348,7 @@ The benefit is precision: you keep exactly the diagnostic data you need and drop
 | Do you need to retain slow traces but drop fast ones? | Tail-based — "slow" is unknowable upfront |
 | Are you just getting started and want something working tonight? | Head-based probabilistic at 1-10% as a baseline |
 
-Most production deployments at scale end up with a hybrid: head-based at the SDK to drop obviously irrelevant traffic (health checks, internal pings) cheaply at the source, and tail-based at the collector to make the final keep-or-drop call on whatever survived the first stage. The hybrid is more code and more configuration, but it gives you the cost profile of head-based with the diagnostic precision of tail-based.
+[Most production deployments at scale end up with a hybrid: head-based at the SDK to drop obviously irrelevant traffic (health checks, internal pings) cheaply at the source, and tail-based at the collector to make the final keep-or-drop call on whatever survived the first stage.](https://opentelemetry.io/docs/concepts/sampling/) The hybrid is more code and more configuration, but it gives you the cost profile of head-based with the diagnostic precision of tail-based.
 
 > **Did You Know?**
 >
@@ -485,7 +486,7 @@ From this single event representation, every projection falls out for free. Read
 
 ### 5.3 OpenTelemetry: The Unified Approach
 
-**OpenTelemetry** (OTel) is the CNCF-graduated project that operationalises this thinking at the protocol level. It defines a vendor-neutral SDK in every major language, a vendor-neutral wire format (OTLP) for shipping signals over the network, and a vendor-neutral collector that processes, batches, and routes those signals to whatever backends you have chosen. Critically, the SDK auto-correlates the three signal types: a span you create has a `trace_id`, the logs your application emits inside that span are stamped with the same `trace_id` automatically, and the metrics you record inside the span can be tagged with an exemplar pointing back at it.
+**OpenTelemetry** (OTel) is the [CNCF-graduated project](https://www.cncf.io/projects/opentelemetry/) that operationalises this thinking at the protocol level. It defines a [vendor-neutral SDK in every major language, a vendor-neutral wire format (OTLP) for shipping signals over the network, and a vendor-neutral collector](https://opentelemetry.io/) that processes, batches, and routes those signals to whatever backends you have chosen. Critically, the SDK auto-correlates the three signal types: a span you create has a `trace_id`, [the logs your application emits inside that span are stamped with the same `trace_id` automatically](https://opentelemetry.io/docs/concepts/signals/logs/), and the metrics you record inside the span can be tagged with an exemplar pointing back at it.
 
 ```mermaid
 graph TD
@@ -496,7 +497,7 @@ graph TD
     Col --> L["Loki / Elastic<br/>Logs"]
 ```
 
-The benefits compound: instrumentation is vendor-neutral so you can change backends without changing application code, correlation happens at the source rather than being bolted on later, and one library replaces three. The cost is that OTel is still rapidly evolving — the logs SDK reached general availability later than the traces SDK in most languages — and operating an OTel Collector tier is non-trivial work. But every team building greenfield observability today should default to OTel and migrate the rest as the cost-benefit allows.
+The benefits compound: instrumentation is vendor-neutral so you can change backends without changing application code, correlation happens at the source rather than being bolted on later, and one library replaces three. The cost is that OTel is still rapidly evolving — [the logs SDK reached general availability later than the traces SDK in most languages](https://opentelemetry.io/docs/concepts/signals/logs/) — and operating an OTel Collector tier is non-trivial work. But every team building greenfield observability today should default to OTel and migrate the rest as the cost-benefit allows.
 
 ---
 
@@ -785,3 +786,13 @@ This plan satisfies the original success criteria, but more importantly it satis
 ## Next Module
 
 [Module 3.3: Instrumentation Principles](../module-3.3-instrumentation-principles/) — having decided what to collect, how do you actually add observability to your code without drowning in boilerplate or destroying performance? We cover what to instrument, where to put the spans, how to keep cardinality safe, and how to make instrumentation a first-class part of feature work rather than an afterthought.
+
+## Sources
+
+- [prometheus.io: data model](https://prometheus.io/docs/concepts/data_model/) — Prometheus's data model explicitly states that changing any label value creates a new time series.
+- [opentelemetry.io: sampling](https://opentelemetry.io/docs/concepts/sampling/) — OpenTelemetry's sampling guidance directly describes tail sampling as a post-completion decision and gives error, latency, and attribute-based criteria.
+- [cncf.io: opentelemetry](https://www.cncf.io/projects/opentelemetry/) — As of May 11, 2026, the CNCF project page lists OpenTelemetry as graduated.
+- [opentelemetry.io](https://opentelemetry.io/) — The OpenTelemetry homepage directly describes the project as vendor-neutral and built on open APIs, SDKs, and OTLP.
+- [opentelemetry.io: logs](https://opentelemetry.io/docs/concepts/signals/logs/) — The OpenTelemetry logs docs explicitly state that activating the SDK or autoinstrumentation can automatically correlate logs with active traces and spans.
+- [OpenTelemetry Context Propagation](https://opentelemetry.io/docs/concepts/context-propagation/) — Explains how `traceparent`, trace IDs, and span IDs move across service boundaries and enable correlation.
+- [OpenMetrics Exemplars Specification](https://prometheus.io/docs/specs/om/open_metrics_spec/) — Shows how exemplars attach `trace_id` metadata to histogram observations, which is central to the module's correlation workflow.
