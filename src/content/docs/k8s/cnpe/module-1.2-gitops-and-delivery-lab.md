@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "CNPE GitOps and Delivery Lab"
 slug: k8s/cnpe/module-1.2-gitops-and-delivery-lab
 revision_pending: false
@@ -97,7 +98,7 @@ kubectl get pods -n "$WORKLOAD_NAMESPACE" -o wide
 kubectl get events -n "$WORKLOAD_NAMESPACE" --sort-by=.lastTimestamp
 ```
 
-If your environment uses Flux rather than Argo CD, the nouns change but the reasoning does not. Flux commonly exposes `GitRepository`, `Kustomization`, `HelmRepository`, and `HelmRelease` objects. Argo CD commonly exposes `Application` objects and may use `ApplicationSet` for generation. Both are reconciliation systems that compare declared intent with live resources.
+If your environment uses Flux rather than Argo CD, the nouns change but the reasoning does not. Flux commonly exposes [`GitRepository`, `Kustomization`](https://fluxcd.io/flux/components/kustomize/kustomizations/), [`HelmRepository`, and `HelmRelease` objects](https://fluxcd.io/flux/guides/helmreleases/). Argo CD commonly exposes [`Application` objects and may use `ApplicationSet` for generation](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/). Both are reconciliation systems that compare declared intent with live resources.
 
 ```bash
 kubectl get applications.argoproj.io -A 2>/dev/null || true
@@ -258,7 +259,7 @@ Before connecting a GitOps controller, render the overlay locally whenever the t
 kustomize build apps/payment-api/overlays/staging
 ```
 
-If `kustomize` is not installed as a standalone binary, recent Kubernetes clients can render Kustomize directories through `kubectl`. The output should be treated as generated evidence, not as a file to hand-edit. If the rendered output is wrong, fix the overlay or base input that produced it.
+If `kustomize` is not installed as a standalone binary, recent Kubernetes clients can [render Kustomize directories through `kubectl`](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_kustomize/). The output should be treated as generated evidence, not as a file to hand-edit. If the rendered output is wrong, fix the overlay or base input that produced it.
 
 ```bash
 kubectl kustomize apps/payment-api/overlays/staging
@@ -411,13 +412,13 @@ Render the overlay before creating any GitOps object. This is the first explicit
 kubectl kustomize apps/payment-api/overlays/staging | grep -E 'name: payment-api|namespace: payments-staging|replicas:|image:|app.kubernetes.io/name'
 ```
 
-A successful render should show the Deployment and Service named `payment-api`, the namespace `payments-staging`, the image `nginx:1.27.5`, and the staging replica count. If the Service selector and Pod template label differ, sync can still succeed while traffic fails. That is why rendering checks should include relationship fields, not only object existence.
+A successful render should show the Deployment and Service named `payment-api`, the namespace `payments-staging`, the image `nginx:1.27.5`, and the staging replica count. If the [Service selector and Pod template label differ](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/), sync can still succeed while traffic fails. That is why rendering checks should include relationship fields, not only object existence.
 
 > **Pause and predict:** If the overlay changes the Deployment label but not the Service selector, what will the GitOps controller likely report, and what will users likely experience?
 
 The controller will likely report successful sync because the manifests are valid and applied. Users may still experience failure because the Service no longer selects the Pods. This is a classic example of sync state being clean while application health or traffic behavior is wrong, and it is why senior verification includes selectors, endpoints, and readiness rather than only controller status.
 
-Now create an Argo CD `Application` that points at the staging overlay. Replace `https://example.com/org/platform-repo.git` with the actual repository URL in a real lab. The YAML itself is valid and shows the required fields: source repository, path, target revision, destination cluster, destination namespace, and sync policy.
+Now create an Argo CD `Application` that points at the staging overlay. Replace `https://example.com/org/platform-repo.git` with the actual repository URL in a real lab. The YAML itself is valid and shows the required fields: [source repository, path, target revision, destination cluster, destination namespace, and sync policy](https://argo-cd.readthedocs.io/en/stable/user-guide/application-specification/).
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -459,9 +460,9 @@ kubectl get application payment-api-staging -n argocd -o wide
 kubectl describe application payment-api-staging -n argocd
 ```
 
-Read the status fields as a sequence of claims. A sync status of `Synced` means desired and live resources match according to Argo CD. A health status of `Healthy` means Argo CD considers the managed resources usable. A revision field tells you which Git revision was reconciled. If the revision is old, the controller may be healthy but not yet operating on your commit.
+Read the status fields as a sequence of claims. [A sync status of `Synced` means desired and live resources match according to Argo CD. A health status of `Healthy` means Argo CD considers the managed resources usable](https://argo-cd.readthedocs.io/en/release-3.4/getting_started/). A revision field tells you which Git revision was reconciled. If the revision is old, the controller may be healthy but not yet operating on your commit.
 
-For Flux, the equivalent object might be a `Kustomization` that points at a `GitRepository`. The object names differ, but the same evidence sequence applies: source fetched, artifact created, kustomization reconciled, resources applied, workload healthy. The following YAML is a valid shape for Flux-style reconciliation.
+For Flux, the equivalent object might be a [`Kustomization` that points at a `GitRepository`](https://fluxcd.io/flux/components/kustomize/kustomizations/). The object names differ, but the same evidence sequence applies: source fetched, artifact created, kustomization reconciled, resources applied, workload healthy. The following YAML is a valid shape for Flux-style reconciliation.
 
 ```yaml
 apiVersion: source.toolkit.fluxcd.io/v1
@@ -608,7 +609,7 @@ grep -R "replicas:" apps/payment-api/base apps/payment-api/overlays/staging
 kubectl kustomize apps/payment-api/overlays/staging | grep -A 4 -B 2 "replicas:"
 ```
 
-Now inspect the controller's view. If Argo CD reports `OutOfSync`, the controller sees the difference. If self-heal is enabled, it may automatically restore three replicas. If self-heal is disabled, it may report drift until a sync occurs. If the controller reports `Synced` while live replicas differ, check whether the field is ignored or managed by another controller.
+Now inspect the controller's view. [If Argo CD reports `OutOfSync`, the controller sees the difference. If self-heal is enabled, it may automatically restore three replicas. If self-heal is disabled, it may report drift until a sync occurs](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/). If the controller reports `Synced` while live replicas differ, check whether the field is ignored or managed by another controller.
 
 ```bash
 kubectl get application payment-api-staging -n argocd -o wide
@@ -688,7 +689,7 @@ A CNPE prompt might not name the strategy. Instead, it might say that only a sma
 
 The payment authorization change deserves stronger progressive delivery because the blast radius and business risk are higher. The CSS change may be safe with a direct rollout and normal verification. The decision is not based on whether canary sounds modern; it is based on failure impact, detectability, rollback speed, and the quality of signals available during the release.
 
-Argo Rollouts is one common Kubernetes-native way to express progressive delivery. The following canary example is intentionally small. It sets an initial traffic weight, pauses for observation, increases exposure, pauses again, and then completes if the rollout remains healthy. Real production setups often integrate service mesh or ingress traffic routing and metric analysis.
+Argo Rollouts is one common Kubernetes-native way to express progressive delivery. The following canary example is intentionally small. [It sets an initial traffic weight, pauses for observation, increases exposure, pauses again, and then completes if the rollout remains healthy](https://argoproj.github.io/argo-rollouts/features/canary/). Real production setups often integrate service mesh or ingress traffic routing and metric analysis.
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -743,7 +744,7 @@ The progressive delivery object should still be managed through GitOps. Do not t
                                                     +----------------------+
 ```
 
-Verification for progressive delivery must include more than Deployment availability. Check the GitOps application, the Rollout phase, the ReplicaSets, and the service or traffic router involved. If analysis is configured, inspect the analysis run and the metric result. A canary that reached the new ReplicaSet but failed analysis should not be described as successful.
+Verification for progressive delivery must include more than Deployment availability. Check the GitOps application, the Rollout phase, the ReplicaSets, and the service or traffic router involved. If analysis is configured, inspect the analysis run and the metric result. A canary that reached the new ReplicaSet but [failed analysis should not be described as successful](https://argoproj.github.io/argo-rollouts/features/analysis/).
 
 ```bash
 kubectl get application payment-api-staging -n argocd -o wide
@@ -975,6 +976,13 @@ kubectl get events -n "$WORKLOAD_NAMESPACE" --sort-by=.lastTimestamp | tail -n 2
 - [Flux documentation: GitRepository](https://fluxcd.io/flux/components/source/gitrepositories/)
 - [Flux documentation: Kustomization](https://fluxcd.io/flux/components/kustomize/kustomizations/)
 - [Argo Rollouts documentation: Canary strategy](https://argo-rollouts.readthedocs.io/en/stable/features/canary/)
+- [fluxcd.io: helmreleases](https://fluxcd.io/flux/guides/helmreleases/) — The Flux Helm guide explicitly documents HelmRelease resources and the source kinds they reference.
+- [argo-cd.readthedocs.io: applicationset](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/) — The ApplicationSet documentation explains that the controller manages Argo CD Applications and extends a normal Argo CD installation.
+- [kubernetes.io: kubectl kustomize](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_kustomize/) — The generated kubectl reference documents `kubectl kustomize` as building resources from a kustomization directory.
+- [kubernetes.io: debug service](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/) — The Kubernetes service-debugging guide uses selector and endpoint checks as the primary explanation for Services that do not route traffic.
+- [argoproj.github.io: canary](https://argoproj.github.io/argo-rollouts/features/canary/) — The Argo Rollouts canary documentation defines `setWeight` and `pause` as core canary step types.
+- [argoproj.github.io: analysis](https://argoproj.github.io/argo-rollouts/features/analysis/) — The Argo Rollouts analysis documentation describes analysis-driven gating and abort behavior for failed analysis outcomes.
+- [argo-cd.readthedocs.io: getting started](https://argo-cd.readthedocs.io/en/release-3.4/getting_started/) — The Argo CD getting-started flow shows sync and health as distinct application status fields.
 
 ## Next Module
 
