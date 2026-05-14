@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 5.1: Troubleshooting Methodology"
 revision_pending: false
 slug: k8s/cka/part5-troubleshooting/module-5.1-methodology
@@ -100,7 +101,7 @@ The output of these commands gives you a rough map. If every namespace shows pod
 | Many pods are `Pending` across namespaces | Capacity, taints, scheduler, or node availability issue | `kubectl describe pod <pod> -n <ns>` and `kubectl describe node <node>` |
 | Pods on one node are `Unknown` | Kubelet, node network, runtime, or node health issue | `kubectl describe node <node>` before restarting workloads |
 | Service returns connection refused | Endpoint, target port, readiness, or app listener issue | `kubectl get endpointslices -n <ns> -l kubernetes.io/service-name=<svc>` |
-| `kubectl` is slow or times out | API server, etcd, control plane, or network path issue | `kubectl get --raw='/readyz?verbose'` if the API responds |
+| `kubectl` is slow or times out | API server, etcd, control plane, or network path issue | [`kubectl get --raw='/readyz?verbose'`](https://kubernetes.io/docs/reference/using-api/health-checks/) if the API responds |
 
 A precise symptom is more valuable than a dramatic symptom. "The app is down" is too broad to test. "Requests to `checkout.default.svc.cluster.local:8080` time out from the frontend pod, while direct requests to the checkout pod IP succeed" is specific enough to separate service routing from application health.
 
@@ -152,7 +153,7 @@ The layer model prevents wasted commands. If a pod is still `Pending`, inspect `
 
 ### 1.4 Inspect Evidence in an Order That Matches the Lifecycle
 
-A pod moves through a lifecycle, and the diagnostic order should follow that lifecycle. First ask whether Kubernetes accepted the desired state. Then ask whether the scheduler placed the pod. Then ask whether the kubelet could prepare volumes and images. Then ask whether the container process started, stayed alive, and became ready. Only after those checks should you decide that the application itself is misbehaving.
+A pod moves through a lifecycle, and the diagnostic order should follow that lifecycle. First ask whether Kubernetes accepted the desired state. Then ask whether the scheduler placed the pod. Then ask whether [the kubelet could prepare volumes and images. Then ask whether the container process started, stayed alive, and became ready.](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) Only after those checks should you decide that the application itself is misbehaving.
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -228,7 +229,7 @@ This map is not a replacement for evidence. It is a shortcut for choosing the ne
 
 ### 2.1 Control Plane Components and Their Failure Shapes
 
-Control plane failures usually affect many workloads or make the cluster stop reconciling. [If the API server is down, nearly every kubectl command fails. If the scheduler is down, existing pods may keep running but new pods stay unscheduled. If the controller manager is down, deployments, replica sets, jobs, and endpoint updates may stop moving toward desired state.](https://kubernetes.io/docs/concepts/overview/components/)
+[Control plane failures usually affect many workloads or make the cluster stop reconciling.](https://kubernetes.io/docs/concepts/overview/components/) [If the API server is down, nearly every kubectl command fails. If the scheduler is down, existing pods may keep running but new pods stay unscheduled. If the controller manager is down, deployments, replica sets, jobs, and endpoint updates may stop moving toward desired state.](https://kubernetes.io/docs/concepts/overview/components/)
 
 | Component | What It Owns | Failure Shape | Useful First Evidence |
 |---|---|---|---|
@@ -313,7 +314,7 @@ The `-o wide` flag is valuable because it adds placement information, pod IPs, a
 
 ### 3.2 Describe Before Logs
 
-`describe` is usually the best second command because it includes Kubernetes' own explanation of recent failures. [It shows events, selected node, volumes, container state, last termination state, readiness, restart count, and probe messages.](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/) Logs can explain a running process, but they cannot explain why the process never started.
+[`describe` is usually the best second command because it includes Kubernetes' own explanation of recent failures.](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/) [It shows events, selected node, volumes, container state, last termination state, readiness, restart count, and probe messages.](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/) Logs can explain a running process, but they cannot explain why the process never started.
 
 ```bash
 kubectl describe pod <pod-name> -n <namespace>
@@ -381,7 +382,7 @@ YAML is also where you catch subtle mismatch problems. A service selector of `ap
 
 ### 3.5 Events as Time-Ordered Evidence
 
-[Kubernetes Events are short-lived signals emitted by controllers and node agents. They are not a full logging system](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/), but they are often the best immediate evidence for scheduling, image pull, mount, and probe failures. Sort them by timestamp when the namespace has many objects.
+[Kubernetes Events are short-lived signals emitted by controllers and node agents. They are not a full logging system](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/), but [they are often the best immediate evidence for scheduling, image pull, mount, and probe failures](https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/). Sort them by timestamp when the namespace has many objects.
 
 ```bash
 kubectl get events -n <namespace> --sort-by='.lastTimestamp'
@@ -406,7 +407,7 @@ If your cluster image lacks `wget` or `nslookup`, choose a debug image available
 
 ### 3.7 Node and Control Plane Checks
 
-Node checks become appropriate when evidence points below the pod spec. A pod stuck in `ContainerCreating` with repeated runtime errors, many pods failing on one node, or a node marked `NotReady` all justify moving to node-level evidence. On kubeadm-style exam clusters, [control plane components often run as static pods in `kube-system`](https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/), while kubelet runs as a system service on the node.
+Node checks become appropriate when evidence points below the pod spec. A pod stuck in `ContainerCreating` with repeated runtime errors, many pods failing on one node, or a node marked `NotReady` all justify moving to node-level evidence. [On kubeadm-style exam clusters](https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/), [control plane components often run as static pods in `kube-system`](https://kubernetes.io/docs/reference/setup-tools/kubeadm/implementation-details/), while kubelet runs as a system service on the node.
 
 ```bash
 kubectl describe node <node-name>
@@ -469,7 +470,7 @@ The table below connects visible status to the first check that usually gives th
 | `ContainerCreating` | Assigned to node, kubelet preparing container | `kubectl describe pod` | Image pull, volume mount, CNI, or Secret/ConfigMap reference |
 | `ImagePullBackOff` | Image pull failed and kubelet is backing off | `kubectl describe pod` | Bad image, bad tag, registry auth, or unreachable registry |
 | `CreateContainerConfigError` | Container config cannot be constructed | `kubectl describe pod` | Missing ConfigMap, Secret, key, or invalid env reference |
-| `CrashLoopBackOff` | Container repeatedly exits after starting | `kubectl describe pod`, then `kubectl logs --previous` | Probe failure, app error, bad command, OOM, or dependency failure |
+| [`CrashLoopBackOff`](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/) | Container repeatedly exits after starting | `kubectl describe pod`, then `kubectl logs --previous` | Probe failure, app error, bad command, OOM, or dependency failure |
 | `Running` but `Ready=False` | Process started but not eligible for service | `kubectl describe pod` and readiness details | Failing readiness probe, wrong port, dependency, or slow startup |
 | `Evicted` | Kubelet removed pod because node pressure or policy | `kubectl describe pod` and `kubectl describe node` | Memory, disk, PID pressure, priority, or resource requests |
 | `Unknown` | Control plane cannot get current status from node | `kubectl describe node` | Kubelet, node network, runtime, or node availability |
@@ -511,7 +512,7 @@ Now inspect Kubernetes evidence. The Events section will show the container star
 kubectl describe pod crash-demo -n method-demo
 ```
 
-Move to previous logs because the current container may already have restarted. The `--previous` flag asks for logs from the last terminated instance, which is exactly where the crash message lives.
+Move to previous logs because the current container may already have restarted. [The `--previous` flag asks for logs from the last terminated instance](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/), which is exactly where the crash message lives.
 
 ```bash
 kubectl logs crash-demo -n method-demo --previous
@@ -624,7 +625,7 @@ kubectl get endpoints <service-name> -n <namespace>
 kubectl get endpointslices -n <namespace> -l kubernetes.io/service-name=<service-name> -o wide
 ```
 
-If endpoints exist, test the port mapping. The service `port` is what clients use. The service `targetPort` is what backend pods must actually listen on. A named `targetPort` must match a named container port, which makes YAML readability better but can fail if the name is wrong.
+If endpoints exist, test the port mapping. The service `port` is what clients use. [The service `targetPort` is what backend pods must actually listen on.](https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/) A named `targetPort` must match a named container port, which makes YAML readability better but can fail if the name is wrong.
 
 ```bash
 kubectl get svc <service-name> -n <namespace> -o jsonpath='{.spec.ports[*].port}{" -> "}{.spec.ports[*].targetPort}{"\n"}'
@@ -646,7 +647,7 @@ Do not confuse DNS failure with HTTP failure. `nslookup` only proves name resolu
 
 ### 5.3 NetworkPolicy Triage
 
-NetworkPolicy failures are policy and label problems first, packet problems second. [A policy selects pods, then defines allowed ingress or egress.](https://kubernetes.io/docs/concepts/services-networking/network-policies/) If a pod is selected by a restrictive policy and no rule allows the traffic, traffic is denied even when services, endpoints, and DNS are otherwise correct.
+NetworkPolicy failures are policy and label problems first, packet problems second. [A policy selects pods, then defines allowed ingress or egress.](https://kubernetes.io/docs/concepts/services-networking/network-policies/) [If a pod is selected by a restrictive policy and no rule allows the traffic, traffic is denied](https://kubernetes.io/docs/concepts/services-networking/network-policies/) even when services, endpoints, and DNS are otherwise correct.
 
 ```bash
 kubectl get networkpolicy -n <namespace>
@@ -659,7 +660,7 @@ When troubleshooting policy, compare four label sets: the policy's pod selector,
 
 ### 5.4 Storage Triage
 
-Storage failures often appear as pods stuck in `Pending` or `ContainerCreating`, but the underlying evidence may live on PVCs, PVs, StorageClasses, or CSI driver pods. A pod cannot start if its required volume cannot bind, attach, or mount. The pod event usually points to the storage object that needs deeper inspection.
+Storage failures often appear as pods stuck in `Pending` or `ContainerCreating`, but the underlying evidence may live on PVCs, PVs, StorageClasses, or CSI driver pods. [A pod cannot start if its required volume cannot bind, attach, or mount.](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) The pod event usually points to the storage object that needs deeper inspection.
 
 ```bash
 kubectl get pvc -n <namespace>
