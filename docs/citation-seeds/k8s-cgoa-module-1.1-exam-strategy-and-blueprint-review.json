@@ -1,0 +1,204 @@
+{
+  "module_key": "k8s/cgoa/module-1.1-exam-strategy-and-blueprint-review",
+  "module_path": "src/content/docs/k8s/cgoa/module-1.1-exam-strategy-and-blueprint-review.md",
+  "research_run_id": "2026-05-14T01:35:19+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": "docs/citation-pools/platform-toolkits-cicd-delivery-gitops-deployments.json",
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "A practitioner named Priya with a year of ArgoCD experience still misses CGOA questions because the exam distinguishes CI, Git, controller, and runtime-cluster responsibilities.",
+      "claim_class": "war_story",
+      "span_hint": "section: Why This Module Matters | paragraph 1",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "A platform engineer named Priya has used ArgoCD for a year, reviewed Helm charts, and watched production drift alerts. She opens a CGOA practice exam expecting tool trivia, then misses questions that ask whether a change belongs in CI, Git, the GitOps controller, or the runtime cluster.",
+      "suggested_rewrite": "A practitioner with real hands-on GitOps tooling experience can still miss CGOA questions if they focus on tool familiarity instead of the operating model behind CI, Git, the controller, and the runtime cluster.",
+      "lesson_point_url": null,
+      "rationale": "This is a named teaching vignette with unsupported biographical specifics, so the safe fix is to keep the lesson and remove the invented persona details."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "CGOA is an online, proctored, multiple-choice certification focused on GitOps principles, terminology, best practices, and related practices.",
+      "claim_class": "standard",
+      "span_hint": "section: Why This Module Matters | paragraph 2",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.cncf.io/training/certification/cgoa/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The CNCF certification page explicitly describes CGOA as an online, proctored, multiple-choice exam and states its scope."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "The CGOA blueprint domains are GitOps Terminology 20%, GitOps Principles 30%, Related Practices 16%, GitOps Patterns 20%, and Tooling 14%.",
+      "claim_class": "standard",
+      "span_hint": "section: Read The Blueprint As A Map Of Judgment | domain-weight table",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.cncf.io/training/certification/cgoa/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The official CGOA exam page publishes these exact domain weights."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "OpenGitOps defines four principles: declarative desired state, versioned and immutable storage, automatically pulled state, and continuous reconciliation.",
+      "claim_class": "standard",
+      "span_hint": "section: Treat The Four Principles As One Control Loop | paragraph 1",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/open-gitops/documents/blob/main/PRINCIPLES.md",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The OpenGitOps principles document is the canonical upstream definition of these four principles."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "Argo CD continuously monitors running applications, compares live state against desired target state in the repository, and detects OutOfSync state.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Study Tooling Through Roles, Not Product Memorization | table row ArgoCD",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared Argo CD architecture source directly describes the application controller comparing live state to repo state and detecting OutOfSync applications."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Flux defines source objects and reconciles workloads through controllers such as GitRepository, Kustomization, and HelmRelease.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Study Tooling Through Roles, Not Product Memorization | table row Flux",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://fluxcd.io/flux/concepts/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Flux Core Concepts explicitly defines Sources and Reconciliation and gives GitRepository, Kustomization, and HelmRelease as concrete controller-backed examples."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Helm charts use templates and values to generate Kubernetes manifest files.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Study Tooling Through Roles, Not Product Memorization | table row Helm",
+      "disposition": "supported",
+      "source_ids": [
+        "S006"
+      ],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The shared Helm charts source directly states that template files combined with values generate valid Kubernetes manifests."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Kustomize customizes Kubernetes configuration through kustomization files using resources, patches, bases, and overlays.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Study Tooling Through Roles, Not Product Memorization | table row Kustomize",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes Kustomize task page explicitly documents customization via kustomization files and explains bases and overlays."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Checking a Secret manifest with base64-encoded data into a source repository exposes the secret because base64 is not encryption.",
+      "claim_class": "security_claim",
+      "span_hint": "section: Study Tooling Through Roles, Not Product Memorization | table row SOPS or sealed secrets; section: Secrets questions",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://kubernetes.io/docs/concepts/security/secrets-good-practices/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes secret good-practices documentation explicitly warns that sharing or checking in base64-encoded Secret manifests exposes the secret and that base64 is not encryption."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "Argo CD recommends destination-cluster secret management and lists Sealed Secrets and External Secrets Operator as examples.",
+      "claim_class": "vendor_capability",
+      "span_hint": "section: Study Tooling Through Roles, Not Product Memorization | table row SOPS or sealed secrets; paragraph on safer secret patterns",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://argo-cd.readthedocs.io/en/stable/operator-manual/secret-management/",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Argo CD's secret-management guidance explicitly recommends destination-cluster secret management and names Sealed Secrets and External Secrets Operator as examples."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "Questions that emphasize Kubernetes 1.35 or newer should be read through current controller-based platform behavior.",
+      "claim_class": "standard",
+      "span_hint": "section: Decision Framework | paragraph beginning 'Finally, compare the remaining choices'",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "If the scenario emphasizes Kubernetes 1.35 or newer platform behavior, assume current Kubernetes primitives and controller-based reconciliation rather than older manual cluster operation habits.",
+      "suggested_rewrite": "If the scenario emphasizes current Kubernetes platform behavior, assume modern declarative primitives and controller-based reconciliation rather than older manual cluster-operation habits.",
+      "lesson_point_url": null,
+      "rationale": "The numbered Kubernetes-version framing is unnecessary and not tied to a specific cited exam requirement, so the safe fix is to remove the version pin."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "For Kubernetes 1.35 and newer, declarative API objects, controllers, server-side validation, and status reporting should be assumed as normal platform behavior.",
+      "claim_class": "standard",
+      "span_hint": "section: Decision Framework | paragraph beginning 'The same sequence works when the question mentions Kubernetes directly'",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "For Kubernetes 1.35 and newer, assume that declarative API objects, controllers, server-side validation, and status reporting are normal parts of the platform, so a GitOps answer should use those strengths instead of bypassing them.",
+      "suggested_rewrite": "When the question mentions current Kubernetes behavior, assume that declarative API objects, controllers, server-side validation, and status reporting are normal parts of the platform, so a GitOps answer should use those strengths instead of bypassing them.",
+      "lesson_point_url": null,
+      "rationale": "The operational lesson is sound, but the exact version pin is unnecessary and unsupported as written."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://www.cncf.io/training/certification/cgoa/",
+      "title": "GitOps Certified Associate (CGOA)",
+      "tier": "standards",
+      "why_relevant": "Best single source for the current exam scope, format, and domain weights."
+    },
+    {
+      "url": "https://github.com/open-gitops/documents/blob/main/PRINCIPLES.md",
+      "title": "OpenGitOps Principles",
+      "tier": "upstream",
+      "why_relevant": "Canonical upstream definition of the four principles that the module treats as the core control loop."
+    },
+    {
+      "url": "https://fluxcd.io/flux/concepts/",
+      "title": "Flux Core Concepts",
+      "tier": "upstream",
+      "why_relevant": "Useful concrete reference for desired state, sources, and reconciliation when practicing scenario-based GitOps reasoning."
+    }
+  ],
+  "notes": "Quiz blocks, hands-on exercise steps, internal KubeDojo module links, and ASCII diagrams were intentionally excluded. The tooling table was decomposed only where it makes concrete external capability or security claims.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
