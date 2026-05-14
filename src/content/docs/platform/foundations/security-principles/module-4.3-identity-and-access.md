@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 4.3: Identity and Access Management"
 slug: platform/foundations/security-principles/module-4.3-identity-and-access
 sidebar:
@@ -106,7 +107,7 @@ Examples include fingerprints, face geometry, retina patterns, and voice charact
 
 #### Multi-Factor Authentication (MFA)
 
-MFA combines two or more factors from different categories. A password (know) plus a TOTP code (have) is genuinely stronger than either alone because compromising both factors requires two different attack techniques: a password-stealing technique (phishing, database dump, keylogger) and a possession-stealing technique (physical theft, SIM swap, malware on the user's phone). The mathematical effect is closer to multiplication than addition — even modest factor strengths combine into strong protection.
+[MFA combines two or more factors from different categories](https://pages.nist.gov/800-63-3/sp800-63b.html). A password (know) plus a TOTP code (have) is genuinely stronger than either alone because compromising both factors requires two different attack techniques: a password-stealing technique (phishing, database dump, keylogger) and a possession-stealing technique (physical theft, SIM swap, malware on the user's phone). The mathematical effect is closer to multiplication than addition — even modest factor strengths combine into strong protection.
 
 ### 1.3 Authentication Methods
 
@@ -119,7 +120,7 @@ MFA combines two or more factors from different categories. A password (know) pl
 | **SSO/OIDC** | Delegated | Depends on IdP | High |
 | **Passwordless (WebAuthn)** | Have | High | Medium-High |
 
-Choosing a method is a trade-off between security, usability, and deployability. Hardware keys and mTLS are excellent on security but introduce friction: hardware keys cost money and can be lost, and mTLS demands a working PKI with rotation, revocation, and trust-store management — three non-trivial sub-systems. SSO/OIDC offloads identity to a dedicated provider, which is usually a strict improvement because identity providers do nothing but authenticate users and have invested heavily in the problem, but it concentrates risk: a breach of your IdP is a breach of every downstream system that trusts it. Passwordless WebAuthn is rapidly becoming the default recommendation for new consumer-facing systems because it combines a phishing-resistant factor with strong usability, but its adoption depends on the user's browser and platform supporting it.
+Choosing a method is a trade-off between security, usability, and deployability. Hardware keys and mTLS are excellent on security but introduce friction: hardware keys cost money and can be lost, and mTLS demands a working PKI with rotation, revocation, and trust-store management — three non-trivial sub-systems. SSO/OIDC offloads identity to a dedicated provider, which is usually a strict improvement because identity providers do nothing but authenticate users and have invested heavily in the problem, but it concentrates risk: a breach of your IdP is a breach of every downstream system that trusts it. [Passwordless WebAuthn](https://www.w3.org/TR/webauthn-3/) is rapidly becoming the default recommendation for new consumer-facing systems because it combines a phishing-resistant factor with strong usability, but its adoption depends on the user's browser and platform supporting it.
 
 > **Try This (2 minutes)**
 >
@@ -183,7 +184,7 @@ Assignments:
     carol → admin
 ```
 
-RBAC scales because changes happen in two layers that grow at different rates: roles change rarely and are designed by humans, while user-to-role assignments change frequently as people join, leave, and switch teams. Promote alice to admin and her permissions update instantly, everywhere. The trade-off is role explosion: in a large organization you may end up with hundreds of fine-grained roles ("orders-editor-eu," "orders-viewer-eu," "orders-editor-us") and the role catalog itself becomes a thing that needs governance.
+[RBAC scales because changes happen in two layers](https://csrc.nist.gov/Projects/Role-Based-Access-Control) that grow at different rates: roles change rarely and are designed by humans, while user-to-role assignments change frequently as people join, leave, and switch teams. Promote alice to admin and her permissions update instantly, everywhere. The trade-off is role explosion: in a large organization you may end up with hundreds of fine-grained roles ("orders-editor-eu," "orders-viewer-eu," "orders-editor-us") and the role catalog itself becomes a thing that needs governance.
 
 #### Attribute-Based Access Control (ABAC)
 
@@ -256,7 +257,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ```
 
-Notice three deliberate choices in this YAML. First, we used `Role` and `RoleBinding`, not their cluster-scoped counterparts — this restricts Alice to the `production` namespace and nothing else. Second, the `resources` list explicitly includes both `pods` and `pods/log`, because in Kubernetes RBAC a sub-resource like `pods/log` is checked separately and forgetting to grant it is a common bug. Third, the RoleBinding name encodes the date and reason ("incident-2025-11-04") so that a future audit immediately surfaces "what was this for, and is it still needed?"
+Notice three deliberate choices in this YAML. First, we used `Role` and `RoleBinding`, not their cluster-scoped counterparts — this restricts Alice to the `production` namespace and nothing else. Second, the `resources` list explicitly includes both `pods` and `pods/log`, because in [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) a sub-resource like `pods/log` is checked separately and forgetting to grant it is a common bug. Third, the RoleBinding name encodes the date and reason ("incident-2025-11-04") so that a future audit immediately surfaces "what was this for, and is it still needed?"
 
 #### Step 5 — Verify
 
@@ -281,7 +282,7 @@ If any of those answers were wrong, you would catch it in seconds rather than du
 
 ### 3.1 What is Least Privilege?
 
-The principle of least privilege states that every identity — human or machine — should hold the minimum set of permissions required to perform its function, and no more. The principle is older than computing; it appears in Saltzer and Schroeder's 1975 paper on protection, where they listed it as one of eight design principles for secure systems. Half a century later it remains the most violated principle in operational practice, because granting permissions is fast and revoking them is uncomfortable, so permissions accumulate by default.
+The principle of least privilege states that every identity — human or machine — should hold the minimum set of permissions required to perform its function, and no more. The principle is older than computing; [it appears in Saltzer and Schroeder's 1975 paper on protection](https://ieeexplore.ieee.org/document/1451869), where they listed it as one of eight design principles for secure systems. Half a century later it remains the most violated principle in operational practice, because granting permissions is fast and revoking them is uncomfortable, so permissions accumulate by default.
 
 Least privilege matters across three failure scenarios that play out in production every week. When an identity is compromised by an attacker, the blast radius is bounded by what that identity could do — a developer account that can only read its own team's resources cannot exfiltrate the whole company's data even if the attacker holds it for a year. When an authenticated user makes an honest mistake, least privilege limits the mistake's reach: a typo cannot delete what the user could not have deleted on purpose. When an insider acts maliciously, least privilege forces them to either work within their granted scope (limited damage) or visibly request more access (creating an audit trail and an opportunity to intervene).
 
@@ -297,7 +298,7 @@ Least privilege is not a setting you toggle; it is a discipline that must be app
 
 #### Start With Zero (Default Deny)
 
-A new identity should arrive with no permissions and acquire each one through a deliberate request. The opposite — granting an admin role on creation and trimming back later — never works in practice because nobody trims back. Every system that supports it should be configured to default-deny, including Kubernetes RBAC (the default), AWS IAM (the default), and any custom application authorization layer you build. If your system's default is "permit," that is the first bug to fix.
+A new identity should arrive with no permissions and acquire each one through a deliberate request. The opposite — granting an admin role on creation and trimming back later — never works in practice because nobody trims back. Every system that supports it should be configured to default-deny, including [Kubernetes RBAC (the default)](https://kubernetes.io/docs/reference/access-authn-authz/authorization/), AWS IAM (the default), and any custom application authorization layer you build. If your system's default is "permit," that is the first bug to fix.
 
 #### Scope Permissions Narrowly
 
@@ -370,7 +371,7 @@ Sessions are simple to reason about and easy to revoke — delete the session ro
 
 ### 4.2 JSON Web Tokens (JWT)
 
-A JWT is three base64url-encoded JSON segments separated by dots: `HEADER.PAYLOAD.SIGNATURE`. Each segment serves a specific purpose, and understanding them lets you read a JWT off the wire and tell at a glance whether the system using it is configured safely.
+[A JWT is three base64url-encoded JSON segments separated by dots](https://www.rfc-editor.org/rfc/rfc7519): `HEADER.PAYLOAD.SIGNATURE`. Each segment serves a specific purpose, and understanding them lets you read a JWT off the wire and tell at a glance whether the system using it is configured safely.
 
 #### Header
 
@@ -381,7 +382,7 @@ A JWT is three base64url-encoded JSON segments separated by dots: `HEADER.PAYLOA
 }
 ```
 
-The header declares the signing algorithm and token type. The single most important field is `alg`, and the single most dangerous historical bug in JWT implementations was libraries that accepted `alg: none` and treated unsigned tokens as valid. A safe verifier pins the expected algorithm and rejects anything else.
+The header declares the signing algorithm and token type. The single most important field is `alg`, and the single most dangerous historical bug in JWT implementations was libraries that accepted `alg: none` and treated unsigned tokens as valid. [A safe verifier pins the expected algorithm and rejects anything else](https://www.rfc-editor.org/rfc/rfc8725).
 
 #### Payload (Claims)
 
@@ -405,7 +406,7 @@ The signature is HMAC-SHA256 (symmetric) or RSA/ECDSA (asymmetric) over the head
 
 ### 4.3 OAuth 2.0 and OpenID Connect
 
-OAuth 2.0 is a delegation protocol: it lets a user grant a third-party application limited access to a resource (their email, their photos, their cloud storage) without sharing the password. OpenID Connect (OIDC) is a thin layer on top of OAuth 2.0 that adds an identity claim — the ID token, a JWT — so that applications can use OAuth not just to access resources but to log users in. The two are nearly always discussed together because almost every modern login-with-Google flow uses OIDC, even when developers casually call it "OAuth."
+[OAuth 2.0 is a delegation protocol](https://www.rfc-editor.org/rfc/rfc6749): it lets a user grant a third-party application limited access to a resource (their email, their photos, their cloud storage) without sharing the password. OpenID Connect (OIDC) is a thin layer on top of OAuth 2.0 that adds an identity claim — the ID token, a JWT — so that applications can use OAuth not just to access resources but to log users in. The two are nearly always discussed together because almost every modern login-with-Google flow uses OIDC, even when developers casually call it "OAuth."
 
 ```mermaid
 sequenceDiagram
@@ -484,7 +485,7 @@ kubectl get pod payments-api -n production -o jsonpath='{.spec.serviceAccountNam
 # default
 ```
 
-The Pod is using the namespace's `default` ServiceAccount, which has no RBAC bindings of its own. That is why the API call is denied — the identity exists, but no role grants it any permission.
+The Pod is using the [namespace's `default` ServiceAccount](https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/), which has no RBAC bindings of its own. That is why the API call is denied — the identity exists, but no role grants it any permission.
 
 #### Step 3 — What Are the Two Suggestions Doing Wrong?
 
@@ -562,7 +563,7 @@ The Pod can read exactly the one ConfigMap it needs, and nothing else. If a futu
 
 ### 5.3 Workload Identity
 
-The hardest version of service authentication is "the service runs in Kubernetes but needs to call a cloud API like S3 or Cloud Storage." The naive solution is to bake an AWS access key (or GCP service account JSON) into a Kubernetes Secret and mount it into the Pod. That solution leaks credentials in a dozen ways: anyone with read access to Secrets in that namespace can exfiltrate them, the credentials are long-lived so leaks are catastrophic, and rotation requires coordinating across every Pod that holds them. Workload identity replaces this entire pattern with a federated trust model.
+The hardest version of service authentication is "the service runs in Kubernetes but needs to call a cloud API like S3 or Cloud Storage." The naive solution is to bake an AWS access key (or GCP service account JSON) into a Kubernetes Secret and mount it into the Pod. That solution leaks credentials in a dozen ways: anyone with read access to Secrets in that namespace can exfiltrate them, the credentials are long-lived so leaks are catastrophic, and rotation requires coordinating across every Pod that holds them. [Workload identity replaces this entire pattern with a federated trust model](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html).
 
 ```mermaid
 sequenceDiagram
@@ -621,9 +622,9 @@ metadata:
     eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/payments-api-s3-reader
 ```
 
-When a Pod uses this ServiceAccount, the EKS Pod Identity webhook injects environment variables (`AWS_ROLE_ARN`, `AWS_WEB_IDENTITY_TOKEN_FILE`) into the container, and the AWS SDK automatically calls `sts:AssumeRoleWithWebIdentity` to swap the projected ServiceAccount token for short-lived AWS credentials — typically valid for one hour. The Pod never sees a static AWS access key, and an attacker who somehow extracts the token from the Pod gets one hour of access scoped to one IAM role's permissions, then nothing.
+When a Pod uses this ServiceAccount, the EKS Pod Identity webhook [injects environment variables (`AWS_ROLE_ARN`, `AWS_WEB_IDENTITY_TOKEN_FILE`)](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html) into the container, and the AWS SDK automatically calls `sts:AssumeRoleWithWebIdentity` to swap the projected ServiceAccount token for short-lived AWS credentials — typically valid for one hour. The Pod never sees a static AWS access key, and an attacker who somehow extracts the token from the Pod gets one hour of access scoped to one IAM role's permissions, then nothing.
 
-The equivalent on Google Cloud (Workload Identity Federation) and Azure (Workload Identity) follows the same shape: annotate a Kubernetes ServiceAccount with the cloud identity it should map to, configure the cloud IAM side to trust the cluster's OIDC issuer for that specific ServiceAccount, and let the SDK's credential chain handle the token exchange. The trust-policy condition is the central security artifact in all three; if you understand the AWS example above, the GCP and Azure equivalents will read as variations on the same theme.
+The equivalent on [Google Cloud (Workload Identity Federation)](https://cloud.google.com/iam/docs/workload-identity-federation) and Azure (Workload Identity) follows the same shape: annotate a Kubernetes ServiceAccount with the cloud identity it should map to, configure the cloud IAM side to trust the cluster's OIDC issuer for that specific ServiceAccount, and let the SDK's credential chain handle the token exchange. The trust-policy condition is the central security artifact in all three; if you understand the AWS example above, the GCP and Azure equivalents will read as variations on the same theme.
 
 ---
 
@@ -631,11 +632,11 @@ The equivalent on Google Cloud (Workload Identity Federation) and Azure (Workloa
 
 - **OAuth was invented in 2006** by Blaine Cook while building Twitter's API. He needed a way to let third-party apps post tweets without giving them user passwords. The first specification was assembled at a meeting in a San Francisco coffee shop, and what became OAuth 1.0 was published a year later — a reminder that load-bearing internet protocols sometimes start as one team's pragmatic hack.
 
-- **TOTP codes change every 30 seconds** by design. The server and your phone share a secret, and both compute HMAC(secret, time/30) on the fly with no network round-trip required. This is why TOTP works on a phone in airplane mode and why the codes drift if your phone's clock disagrees with the server by more than a minute or two — the underlying math depends on synchronized time, not synchronized state.
+- **[TOTP codes change every 30 seconds](https://www.rfc-editor.org/rfc/rfc6238)** by design. The server and your phone share a secret, and both compute HMAC(secret, time/30) on the fly with no network round-trip required. This is why TOTP works on a phone in airplane mode and why the codes drift if your phone's clock disagrees with the server by more than a minute or two — the underlying math depends on synchronized time, not synchronized state.
 
-- **Kubernetes historically auto-generated long-lived secret tokens** for every ServiceAccount until v1.24. Modern versions (including v1.35) use the TokenRequest API to project short-lived, automatically rotating tokens directly into Pods, so the credential a Pod actually uses is never written to a Secret object and rotates roughly every hour by default. The change quietly removed an entire class of "I found a Kubernetes ServiceAccount token in a logfile from 2019" incidents.
+- **[Kubernetes historically auto-generated long-lived secret tokens](https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/)** for every ServiceAccount until v1.24. Modern versions (including v1.35) use the TokenRequest API to project short-lived, automatically rotating tokens directly into Pods, so the credential a Pod actually uses is never written to a Secret object and rotates roughly every hour by default. The change quietly removed an entire class of "I found a Kubernetes ServiceAccount token in a logfile from 2019" incidents.
 
-- **Password complexity rules often backfire.** NIST's 2017 guidelines reversed decades of advice by recommending long passphrases over complex passwords and explicitly discouraging mandatory rotation. The security mathematics says "Tr0ub4dor&3" is weaker than "correct horse battery staple" because the complex password is hard for humans to remember (driving reuse and sticky-note storage) but easy for cracking rigs to enumerate, while the four-word phrase has more entropy and is genuinely memorable.
+- **Password complexity rules often backfire.** [NIST's 2017 guidelines](https://pages.nist.gov/800-63-3/sp800-63b.html) reversed decades of advice by recommending long passphrases over complex passwords and explicitly discouraging mandatory rotation. The security mathematics says "Tr0ub4dor&3" is weaker than "correct horse battery staple" because the complex password is hard for humans to remember (driving reuse and sticky-note storage) but easy for cracking rigs to enumerate, while the four-word phrase has more entropy and is genuinely memorable.
 
 ---
 
@@ -805,3 +806,11 @@ Before moving on, verify you can answer these from memory rather than by scrolli
 ## Next Module
 
 [Module 4.4: Secure by Default](../module-4.4-secure-by-default/) — Building security into systems from the start, not bolting it on later.
+
+## Sources
+
+- [NIST SP 800-63B: Authentication and Lifecycle Management](https://pages.nist.gov/800-63-3/sp800-63b.html) — Authoritative guidance for MFA, authenticators, and password policy.
+- [Kubernetes RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) — Primary upstream reference for Roles, RoleBindings, subresources, and least-privilege Kubernetes access.
+- [Managing Kubernetes ServiceAccounts](https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/) — Covers ServiceAccount identity, token projection, TokenRequest, and legacy token behavior.
+- [RFC 6749: OAuth 2.0 Authorization Framework](https://www.rfc-editor.org/rfc/rfc6749) — Defines OAuth 2.0 roles and authorization-code flow used in the module.
+- [Amazon EKS Identity and Access Management Best Practices](https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html) — Explains IRSA, projected service account tokens, trust-policy scoping, and injected AWS identity environment variables.

@@ -1,0 +1,502 @@
+{
+  "module_key": "platform/foundations/security-principles/module-4.3-identity-and-access",
+  "module_path": "src/content/docs/platform/foundations/security-principles/module-4.3-identity-and-access.md",
+  "research_run_id": "2026-05-14T22:42:31+00:00-codex-gpt-5.3-codex-spark",
+  "schema_version": 3,
+  "section_pool_ref": null,
+  "claims": [
+    {
+      "claim_id": "C001",
+      "claim_text": "In July 2020, a 17-year-old and accomplices used phone-based social engineering against Twitter employees, accessed internal account tools, hijacked high-profile accounts, compromised 130 accounts, and stole about $118,000-$120,000 in bitcoin.",
+      "claim_class": "incident",
+      "span_hint": "lines 27-33 | opening Twitter case study",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S001"
+      ],
+      "proposed_url": "https://www.dfs.ny.gov/Twitter_Report",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The New York DFS investigation directly supports the core incident details, but dfs.ny.gov is not on the allowlist."
+    },
+    {
+      "claim_id": "C002",
+      "claim_text": "Twitter's stock dropped four percent the next day and regulators in three countries opened investigations.",
+      "claim_class": "incident",
+      "span_hint": "line 31 | opening Twitter case study",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "Twitter's stock dropped four percent the next day. The reputational damage dwarfed the financial loss — the world saw that Twitter's identity and access controls allowed a teenager with a phone to hijack any account on the platform, and regulators in three countries opened investigations.",
+      "suggested_rewrite": "The reputational damage was larger than the direct financial loss: the incident showed that weak internal authorization controls could let a social-engineering compromise reach far beyond ordinary account recovery workflows.",
+      "lesson_point_url": null,
+      "rationale": "The stock-drop and three-country regulator specifics are not supported by the primary incident report and are not necessary for the IAM lesson."
+    },
+    {
+      "claim_id": "C003",
+      "claim_text": "MFA combines distinct authentication factor categories, and NIST SP 800-63B provides the authoritative digital-authentication guidance used for factor and password-policy claims in the module.",
+      "claim_class": "standard",
+      "span_hint": "lines 91-122, 638 | Authentication Factors; Authentication Methods; Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://pages.nist.gov/800-63-3/sp800-63b.html",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "NIST SP 800-63B directly covers authenticator factors, MFA requirements, and memorized-secret guidance."
+    },
+    {
+      "claim_id": "C004",
+      "claim_text": "WebAuthn enables web applications to use public-key credentials for strong web authentication.",
+      "claim_class": "standard",
+      "span_hint": "line 122 | Authentication Methods",
+      "disposition": "supported",
+      "source_ids": [
+        "S003"
+      ],
+      "proposed_url": "https://www.w3.org/TR/webauthn-3/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The W3C WebAuthn recommendation defines the public-key credential API used for WebAuthn authentication."
+    },
+    {
+      "claim_id": "C005",
+      "claim_text": "RBAC assigns permissions through roles, ABAC evaluates attributes of subjects, objects/resources, operations, and environment/context, and AWS IAM supports ABAC using tags and conditions.",
+      "claim_class": "standard",
+      "span_hint": "lines 170-204 | Authorization Models",
+      "disposition": "supported",
+      "source_ids": [
+        "S004",
+        "S005",
+        "S006"
+      ],
+      "proposed_url": "https://csrc.nist.gov/Projects/Role-Based-Access-Control",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "NIST documents RBAC and ABAC definitions, while AWS documents ABAC implementation using IAM tags and policies."
+    },
+    {
+      "claim_id": "C006",
+      "claim_text": "Open Policy Agent supports ABAC-style policies.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 190 | Attribute-Based Access Control",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S007"
+      ],
+      "proposed_url": "https://www.openpolicyagent.org/docs/comparison-to-other-systems",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OPA's own documentation directly discusses ABAC policies, but openpolicyagent.org is not on the allowlist."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "Kubernetes RBAC represents pod logs as the `pods/log` subresource, supports namespace-scoped Roles and RoleBindings, `resourceNames`, and `kubectl auth can-i` authorization checks.",
+      "claim_class": "standard",
+      "span_hint": "lines 219-276, 546-561, 712 | Kubernetes RBAC worked examples and quiz answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S008",
+        "S009"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes RBAC and kubectl references directly document subresources, Role/RoleBinding scope, resourceNames, and can-i checks."
+    },
+    {
+      "claim_id": "C008",
+      "claim_text": "Saltzer and Schroeder's 1975 paper lists least privilege as one of the secure-system design principles.",
+      "claim_class": "standard",
+      "span_hint": "line 284 | What is Least Privilege?",
+      "disposition": "supported",
+      "source_ids": [
+        "S010"
+      ],
+      "proposed_url": "https://ieeexplore.ieee.org/document/1451869",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The IEEE record is the primary bibliographic source for the 1975 Saltzer and Schroeder paper."
+    },
+    {
+      "claim_id": "C009",
+      "claim_text": "Kubernetes authorization denies access by default when no authorizer allows a request, and AWS IAM denies requests by default unless explicitly allowed.",
+      "claim_class": "security_claim",
+      "span_hint": "line 300 | Start With Zero (Default Deny)",
+      "disposition": "supported",
+      "source_ids": [
+        "S011",
+        "S012"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/authorization/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Both Kubernetes and AWS IAM documentation explicitly state their default-deny authorization behavior."
+    },
+    {
+      "claim_id": "C010",
+      "claim_text": "The CI/CD catastrophe title presents a precise $4.2 million incident without an attributable source.",
+      "claim_class": "war_story",
+      "span_hint": "line 325 | War Story: The $4.2 Million CI/CD Catastrophe",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> **War Story: The $4.2 Million CI/CD Catastrophe**",
+      "suggested_rewrite": "> **War Story: An Overprivileged CI/CD Pipeline**",
+      "lesson_point_url": null,
+      "rationale": "The anecdote is not tied to a real citable incident, so the precise dollar figure must be removed."
+    },
+    {
+      "claim_id": "C011",
+      "claim_text": "The CI/CD story claims a March 2021 e-commerce company accumulated broad pipeline permissions over two years.",
+      "claim_class": "war_story",
+      "span_hint": "line 327 | War Story blockquote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> **March 2021.** A fast-growing e-commerce company gave their CI/CD pipeline broad Kubernetes admin access. \"It needs to deploy, and sometimes fix things,\" the DevOps lead explained to anyone who asked, and the permissions accumulated over two years of \"just add this one thing.\" Nobody had ever subtracted from the pipeline's role.",
+      "suggested_rewrite": "> A team gives its CI/CD pipeline broad Kubernetes admin access because deployments occasionally need extra permissions. Over time, one-off additions accumulate, and nobody removes permissions after the immediate need passes.",
+      "lesson_point_url": null,
+      "rationale": "The named date, company profile, quote, and two-year duration are fake-precise details in an unattributed story."
+    },
+    {
+      "claim_id": "C012",
+      "claim_text": "The CI/CD story describes a specific pull request typo changing `kubectl apply` to `kubectl delete` and being merged to production.",
+      "claim_class": "war_story",
+      "span_hint": "line 329 | War Story blockquote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> A junior engineer submitted a pull request to update deployment scripts. A typo changed `kubectl apply -f deployment.yaml` to `kubectl delete -f deployment.yaml`. Code review missed it because the diff looked tiny and the PR was marked low-risk. CI/CD merged the change and ran the script against production.",
+      "suggested_rewrite": "> A small deployment-script mistake slips through review, and the pipeline runs it against production with the full authority granted to its ServiceAccount.",
+      "lesson_point_url": null,
+      "rationale": "The specific PR narrative is not attributable and should be collapsed to the operational lesson."
+    },
+    {
+      "claim_id": "C013",
+      "claim_text": "The CI/CD story claims the pipeline deleted twenty-three production services, three databases, and two years of customer order history in under a minute.",
+      "claim_class": "war_story",
+      "span_hint": "line 331 | War Story blockquote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> **In under a minute, the pipeline deleted twenty-three production services, three databases, and two years of customer order history.**",
+      "suggested_rewrite": "> **Because the pipeline could delete far more than it needed to deploy, a simple mistake became a broad production outage.**",
+      "lesson_point_url": null,
+      "rationale": "The quantitative damage details are fabricated or unattributed and must be removed."
+    },
+    {
+      "claim_id": "C014",
+      "claim_text": "The CI/CD story claims backups took fourteen hours to restore and caused $4.2 million in lost sales plus $800,000 recovery costs.",
+      "claim_class": "war_story",
+      "span_hint": "line 333 | War Story blockquote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> The team had backups, but restoration took fourteen hours because the backup process itself depended on services the pipeline had deleted. The outage occurred on the second-busiest sales day of the quarter. **Total impact: $4.2 million in lost sales plus $800,000 in emergency recovery costs.**",
+      "suggested_rewrite": "> The team has backups, but recovery is slower than expected because the same overbroad access also disrupted supporting systems. The direct outage costs matter, but the deeper lesson is that excessive permissions turn routine mistakes into multi-system recovery events.",
+      "lesson_point_url": null,
+      "rationale": "The timeline, sales-day ranking, and dollar impact are fake-precise incident details without a source."
+    },
+    {
+      "claim_id": "C015",
+      "claim_text": "The CI/CD story claims post-incident analysis found global delete permissions and that redesign took six hours.",
+      "claim_class": "war_story",
+      "span_hint": "line 335 | War Story blockquote",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "> Post-incident analysis revealed the pipeline had permissions to delete any resource in any namespace — permissions it had never legitimately needed because production deletes were always done manually by the SRE team. After the incident, they implemented least privilege: CI/CD can create and update deployments in specific namespaces, it cannot delete, it cannot access databases, and it cannot modify networking or RBAC. The recovery took fourteen hours, but the redesign that prevented every future incident of this class took six. They wished, painfully and publicly, that they had done it first.",
+      "suggested_rewrite": "> Post-incident analysis often finds that the pipeline had permissions it never legitimately needed. A least-privilege redesign would let CI/CD create and update the resources it owns in specific namespaces, while denying deletes, database access, networking changes, and RBAC changes unless a separate controlled workflow approves them.",
+      "lesson_point_url": null,
+      "rationale": "The exact recovery/redesign timing and public regret are fabricated incident details; the least-privilege lesson can remain."
+    },
+    {
+      "claim_id": "C016",
+      "claim_text": "A JWT is composed of base64url-encoded header, payload, and signature parts, and registered claims include `iss`, `sub`, `aud`, `iat`, and `exp`.",
+      "claim_class": "standard",
+      "span_hint": "lines 371-402 | JSON Web Tokens",
+      "disposition": "supported",
+      "source_ids": [
+        "S013"
+      ],
+      "proposed_url": "https://www.rfc-editor.org/rfc/rfc7519",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "RFC 7519 defines JWT structure and registered claim names."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "JWT verifiers should reject unsecured `alg: none` tokens unless explicitly designed for that case, pin expected algorithms, and validate issuer, audience, and expiration claims.",
+      "claim_class": "security_claim",
+      "span_hint": "lines 384-404 | JWT header, payload, signature, critical warning",
+      "disposition": "supported",
+      "source_ids": [
+        "S014",
+        "S015"
+      ],
+      "proposed_url": "https://www.rfc-editor.org/rfc/rfc8725",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "RFC 8725 and OWASP JWT testing guidance cover algorithm verification, `none`, and claim validation risks."
+    },
+    {
+      "claim_id": "C018",
+      "claim_text": "OAuth 2.0 is an authorization framework for delegated access, and the authorization-code grant exchanges an authorization code for tokens.",
+      "claim_class": "standard",
+      "span_hint": "lines 406-425 | OAuth 2.0 and OpenID Connect",
+      "disposition": "supported",
+      "source_ids": [
+        "S016"
+      ],
+      "proposed_url": "https://www.rfc-editor.org/rfc/rfc6749",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "RFC 6749 defines OAuth 2.0 and the authorization-code grant flow."
+    },
+    {
+      "claim_id": "C019",
+      "claim_text": "OpenID Connect is an identity layer on top of OAuth 2.0 and defines the ID Token as a JWT containing claims about authentication.",
+      "claim_class": "standard",
+      "span_hint": "line 408 | OAuth 2.0 and OpenID Connect",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S017"
+      ],
+      "proposed_url": "https://openid.net/specs/openid-connect-core-1_0.html",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The OIDC Core specification directly supports the claim, but openid.net is not on the allowlist."
+    },
+    {
+      "claim_id": "C020",
+      "claim_text": "Kubernetes ensures a default ServiceAccount exists in each active namespace, can automount ServiceAccount tokens into Pods, and lets Pods authenticate to the API as their ServiceAccount.",
+      "claim_class": "standard",
+      "span_hint": "lines 487, 540-546, 712 | Kubernetes ServiceAccounts worked example and quiz answer",
+      "disposition": "supported",
+      "source_ids": [
+        "S018",
+        "S019"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes ServiceAccount documentation covers default ServiceAccounts, automounting, projected token paths, and API authentication."
+    },
+    {
+      "claim_id": "C021",
+      "claim_text": "Before Kubernetes v1.24, ServiceAccount token Secrets were auto-generated; newer versions use TokenRequest and projected, time-bound ServiceAccount tokens.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 636 | Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S018",
+        "S020"
+      ],
+      "proposed_url": "https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Kubernetes ServiceAccount admin and projected-volume docs directly document the v1.24 change and TokenRequest/projected-token model."
+    },
+    {
+      "claim_id": "C022",
+      "claim_text": "Workload identity federation avoids storing long-lived cloud service account keys or access keys in Pods by exchanging federated identity tokens for short-lived cloud credentials.",
+      "claim_class": "security_claim",
+      "span_hint": "lines 565-581 | Workload Identity",
+      "disposition": "supported",
+      "source_ids": [
+        "S018",
+        "S021",
+        "S024"
+      ],
+      "proposed_url": "https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Kubernetes, AWS, and Google Cloud documentation describe projected OIDC tokens, federation, and avoiding long-lived service account keys."
+    },
+    {
+      "claim_id": "C023",
+      "claim_text": "AWS IRSA maps Kubernetes ServiceAccounts to IAM roles with an OIDC trust policy, injects `AWS_ROLE_ARN` and `AWS_WEB_IDENTITY_TOKEN_FILE`, and uses STS `AssumeRoleWithWebIdentity` temporary credentials that default to one hour.",
+      "claim_class": "vendor_capability",
+      "span_hint": "lines 583-624 | AWS IRSA Trust Policy",
+      "disposition": "supported",
+      "source_ids": [
+        "S021",
+        "S022",
+        "S023"
+      ],
+      "proposed_url": "https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "AWS EKS and STS documentation directly describe IRSA trust scoping, injected environment variables, and default credential duration."
+    },
+    {
+      "claim_id": "C024",
+      "claim_text": "Google Cloud Workload Identity Federation and Azure Workload Identity let Kubernetes workloads use annotated or mapped ServiceAccounts and OIDC federation to access cloud resources without static keys.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 626 | Workload Identity equivalents",
+      "disposition": "supported",
+      "source_ids": [
+        "S024",
+        "S025"
+      ],
+      "proposed_url": "https://cloud.google.com/iam/docs/workload-identity-federation",
+      "proposed_tier": "vendor",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "Google Cloud and Microsoft documentation directly describe their Kubernetes workload identity federation flows."
+    },
+    {
+      "claim_id": "C025",
+      "claim_text": "OAuth started around November 2006 while Blaine Cook was working on Twitter's OpenID implementation, and OAuth Core 1.0 was released in 2007.",
+      "claim_class": "standard",
+      "span_hint": "line 632 | Did You Know",
+      "disposition": "needs_allowlist_expansion",
+      "source_ids": [
+        "S026"
+      ],
+      "proposed_url": "https://oauth.net/about/introduction/",
+      "proposed_tier": null,
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "OAuth.net directly supports the historical timeline, but oauth.net is not on the allowlist."
+    },
+    {
+      "claim_id": "C026",
+      "claim_text": "The module claims OAuth's first specification was assembled in a San Francisco coffee shop.",
+      "claim_class": "standard",
+      "span_hint": "line 632 | Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The first specification was assembled at a meeting in a San Francisco coffee shop, and what became OAuth 1.0 was published a year later",
+      "suggested_rewrite": "The first specification was developed by a small working group over the following months, and OAuth Core 1.0 was finalized in 2007",
+      "lesson_point_url": null,
+      "rationale": "The coffee-shop detail is not supported by the available OAuth history source and should be removed."
+    },
+    {
+      "claim_id": "C027",
+      "claim_text": "TOTP uses a time step, commonly 30 seconds, and computes one-time passwords from a shared secret and moving time counter using HMAC.",
+      "claim_class": "statistic",
+      "span_hint": "line 634 | Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S027"
+      ],
+      "proposed_url": "https://www.rfc-editor.org/rfc/rfc6238",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "RFC 6238 defines TOTP as HOTP with a time-step counter and gives 30 seconds as the default time-step value."
+    },
+    {
+      "claim_id": "C028",
+      "claim_text": "NIST's 2017 digital identity guidance discouraged mandatory password rotation and composition-style password complexity rules.",
+      "claim_class": "standard",
+      "span_hint": "line 638 | Did You Know",
+      "disposition": "supported",
+      "source_ids": [
+        "S002"
+      ],
+      "proposed_url": "https://pages.nist.gov/800-63-3/sp800-63b.html",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "NIST SP 800-63B directly supports the password-policy guidance."
+    },
+    {
+      "claim_id": "C029",
+      "claim_text": "The exact comparison that `Tr0ub4dor&3` is weaker than `correct horse battery staple` is presented as security mathematics without a source.",
+      "claim_class": "security_claim",
+      "span_hint": "line 638 | Did You Know",
+      "disposition": "cannot_be_salvaged",
+      "source_ids": [],
+      "proposed_url": null,
+      "proposed_tier": null,
+      "anchor_text": "The security mathematics says \"Tr0ub4dor&3\" is weaker than \"correct horse battery staple\" because the complex password is hard for humans to remember (driving reuse and sticky-note storage) but easy for cracking rigs to enumerate, while the four-word phrase has more entropy and is genuinely memorable.",
+      "suggested_rewrite": "The practical lesson is that memorable, longer passphrases can be more usable than forced-complexity passwords, while verifiers should screen new passwords against common and compromised values.",
+      "lesson_point_url": null,
+      "rationale": "The exact password comparison is an unsourced teaching example; the rewrite preserves the NIST-aligned lesson without relying on a precise entropy claim."
+    }
+  ],
+  "further_reading": [
+    {
+      "url": "https://pages.nist.gov/800-63-3/sp800-63b.html",
+      "title": "NIST SP 800-63B: Authentication and Lifecycle Management",
+      "tier": "standards",
+      "why_relevant": "Authoritative guidance for MFA, authenticators, and password policy."
+    },
+    {
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/",
+      "title": "Kubernetes RBAC Authorization",
+      "tier": "standards",
+      "why_relevant": "Primary upstream reference for Roles, RoleBindings, subresources, and least-privilege Kubernetes access."
+    },
+    {
+      "url": "https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/",
+      "title": "Managing Kubernetes ServiceAccounts",
+      "tier": "standards",
+      "why_relevant": "Covers ServiceAccount identity, token projection, TokenRequest, and legacy token behavior."
+    },
+    {
+      "url": "https://www.rfc-editor.org/rfc/rfc6749",
+      "title": "RFC 6749: OAuth 2.0 Authorization Framework",
+      "tier": "standards",
+      "why_relevant": "Defines OAuth 2.0 roles and authorization-code flow used in the module."
+    },
+    {
+      "url": "https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html",
+      "title": "Amazon EKS Identity and Access Management Best Practices",
+      "tier": "vendor",
+      "why_relevant": "Explains IRSA, projected service account tokens, trust-policy scoping, and injected AWS identity environment variables."
+    }
+  ],
+  "notes": "Local source map: S001=https://www.dfs.ny.gov/Twitter_Report ; S002=https://pages.nist.gov/800-63-3/sp800-63b.html ; S003=https://www.w3.org/TR/webauthn-3/ ; S004=https://csrc.nist.gov/Projects/Role-Based-Access-Control ; S005=https://csrc.nist.gov/pubs/sp/800/162/upd2/final ; S006=https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction_attribute-based-access-control.html ; S007=https://www.openpolicyagent.org/docs/comparison-to-other-systems ; S008=https://kubernetes.io/docs/reference/access-authn-authz/rbac/ ; S009=https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#auth ; S010=https://ieeexplore.ieee.org/document/1451869 ; S011=https://kubernetes.io/docs/reference/access-authn-authz/authorization/ ; S012=https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic_policy-eval-denyallow.html ; S013=https://www.rfc-editor.org/rfc/rfc7519 ; S014=https://www.rfc-editor.org/rfc/rfc8725 ; S015=https://owasp.org/www-project-web-security-testing-guide/latest/4-Web_Application_Security_Testing/06-Session_Management_Testing/10-Testing_JSON_Web_Tokens ; S016=https://www.rfc-editor.org/rfc/rfc6749 ; S017=https://openid.net/specs/openid-connect-core-1_0.html ; S018=https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/ ; S019=https://kubernetes.io/docs/concepts/security/service-accounts/ ; S020=https://kubernetes.io/docs/concepts/storage/projected-volumes/#serviceaccounttoken-projected-volumes ; S021=https://docs.aws.amazon.com/eks/latest/best-practices/identity-and-access-management.html ; S022=https://docs.aws.amazon.com/eks/latest/eksctl/iamserviceaccounts.html ; S023=https://docs.aws.amazon.com/goto/aws-cli/sts-2011-06-15/AssumeRoleWithWebIdentity ; S024=https://cloud.google.com/iam/docs/workload-identity-federation ; S025=https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview ; S026=https://oauth.net/about/introduction/ ; S027=https://www.rfc-editor.org/rfc/rfc6238. Quiz questions, exercise prompts, Mermaid diagrams, and YAML/code blocks were excluded except where surrounding prose made reusable factual claims.",
+  "_schema_issues": [],
+  "rejected_urls": []
+}
