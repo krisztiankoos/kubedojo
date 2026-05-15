@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 1.7: Hubble - Network Observability with Cilium"
 slug: platform/toolkits/observability-intelligence/observability/module-1.7-hubble
 sidebar:
@@ -27,7 +28,7 @@ A platform engineer joins an incident bridge because checkout requests are timin
 
 That gap is where Kubernetes network incidents become slow. Traditional troubleshooting often starts with shelling into pods, running `tcpdump`, comparing logs, and hoping the failing request repeats while the right capture is running. Those tools still matter, but they are awkward when the failure depends on labels, namespaces, Services, DNS names, network policies, and short-lived pods that may disappear before the capture begins.
 
-Hubble changes the starting point. Because it is built on Cilium's eBPF datapath, it observes network flows where packet decisions happen, then [attaches Kubernetes context such as pod names, namespaces, identities, Services, DNS records, protocols, and policy verdicts](https://github.com/cilium/cilium). Instead of asking only "did the application log an error," you can ask "did traffic leave the frontend pod, did it resolve the expected service name, did it reach the backend identity, and did any policy deny it?"
+Hubble changes the starting point. Because it is [built on Cilium's eBPF datapath](https://github.com/cilium/hubble), it observes network flows where packet decisions happen, then [attaches Kubernetes context such as pod names, namespaces, identities, Services, DNS records, protocols, and policy verdicts](https://github.com/cilium/cilium). Instead of asking only "did the application log an error," you can ask "did traffic leave the frontend pod, did it resolve the expected service name, did it reach the backend identity, and did any policy deny it?"
 
 This module teaches Hubble as an operational debugging tool, not as a screenshot generator. You will start with the architecture, then install and verify the components, then use flow filters to diagnose increasingly realistic failures. By the end, Hubble should feel less like another dashboard and more like a structured way to test hypotheses about Kubernetes network behavior.
 
@@ -35,7 +36,7 @@ This module teaches Hubble as an operational debugging tool, not as a screenshot
 
 ### 1. Build the Mental Model Before Running Commands
 
-Hubble is not a separate CNI, packet sniffer sidecar, or service mesh. It is [the observability layer for Cilium](https://github.com/cilium/hubble), and Cilium is the component that owns the network datapath. Cilium programs eBPF logic into the Linux kernel so packets can be observed and acted on without bouncing every decision through user-space proxies.
+Hubble is not a separate CNI, packet sniffer sidecar, or service mesh. It is [the observability layer for Cilium](https://github.com/cilium/hubble), and Cilium is the component that owns the network datapath. Cilium programs [eBPF logic into the Linux kernel](https://github.com/cilium/cilium) so packets can be observed and acted on without bouncing every decision through user-space proxies.
 
 That detail matters because it explains both Hubble's strength and its boundary. Hubble can show you flow events, identities, DNS visibility, drop reasons, and policy verdicts because Cilium sees those decisions in the datapath. Hubble cannot be dropped into a cluster that uses another CNI and magically observe the same information, because the underlying instrumentation comes from Cilium.
 
@@ -84,7 +85,7 @@ A useful mental model is to think in three layers. The node layer collects flows
 +------------------------------------------------------------------------------+
 ```
 
-The CLI and UI do not collect packets themselves. They query Relay, and Relay queries the Hubble servers embedded with Cilium agents on each node. If Relay is missing, you may still have node-local visibility, but your cluster-wide view will be incomplete or inconvenient.
+The CLI and UI do not collect packets themselves. They query Relay, and Relay queries the [Hubble servers embedded with Cilium agents on each node](https://github.com/cilium/cilium/blob/main/Documentation/overview/component-overview.rst). If Relay is missing, you may still have node-local visibility, but your cluster-wide view will be incomplete or inconvenient.
 
 | Component | Operational role | What you should verify first |
 |---|---|---|
@@ -107,7 +108,7 @@ The examples below use full commands first. In later commands, `k` is used as th
 alias k=kubectl
 ```
 
-For a new lab cluster, install Cilium with Hubble, Relay, UI, and a focused metrics set enabled. In production, you would pin versions through your platform's normal release process and test values in a non-production cluster before changing the datapath.
+For a new lab cluster, install Cilium with [Hubble, Relay, UI, and a focused metrics set enabled](https://github.com/cilium/cilium/blob/main/install/kubernetes/cilium/values.yaml). In production, you would pin versions through your platform's normal release process and test values in a non-production cluster before changing the datapath.
 
 ```bash
 cilium install \
@@ -135,7 +136,7 @@ helm upgrade cilium cilium/cilium \
   --set hubble.metrics.enabled="{dns,drop,tcp,flow,icmp,http}"
 ```
 
-Install the Hubble CLI on the workstation or runner that will query the cluster. The CLI is not the data collector; it is the client that asks Relay for flow records.
+Install the Hubble CLI on the workstation or runner that will query the cluster. The CLI is not the data collector; it is the [client that asks Relay for flow records](https://github.com/cilium/cilium/blob/main/Documentation/overview/component-overview.rst).
 
 ```bash
 HUBBLE_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/hubble/master/stable.txt)
@@ -146,7 +147,7 @@ curl -L --fail --remote-name-all \
 sudo tar xzvfC hubble-linux-amd64.tar.gz /usr/local/bin
 ```
 
-Now test the pieces in a sequence that narrows failure quickly. A healthy result from `cilium status` should show Cilium ready and Hubble components available. A healthy result from `hubble status` should show that the CLI can reach the Hubble API and that flows are being observed.
+Now test the pieces in a sequence that narrows failure quickly. A healthy result from `cilium status` should show Cilium ready and Hubble components available. A healthy result from `hubble status` should show that [the CLI can reach the Hubble API and that flows are being observed](https://github.com/cilium/cilium/blob/main/Documentation/observability/hubble/setup.rst).
 
 ```bash
 cilium status
@@ -171,7 +172,7 @@ cilium hubble ui
 k -n kube-system port-forward svc/hubble-ui 12000:80
 ```
 
-Open `http://127.0.0.1:12000` and generate a few requests between pods if the service map looks empty. Hubble is event-driven; a quiet lab cluster may show little until traffic actually happens.
+Open `http://127.0.0.1:12000` and generate a few requests between pods if the [service map](https://github.com/cilium/hubble-ui) looks empty. Hubble is event-driven; a quiet lab cluster may show little until traffic actually happens.
 
 ```text
 +--------------------------------------------------------------------------+
@@ -241,7 +242,7 @@ hubble observe --to-pod data/postgres-0
 hubble observe --to-service kube-system/kube-dns
 ```
 
-Use verdict filters when the symptom suggests denied or dropped traffic. A timeout often deserves a dropped-flow query before a deep application trace, because denied traffic may never produce a useful application-level error.
+[Use verdict filters](https://github.com/cilium/cilium/blob/main/Documentation/observability/hubble/hubble-cli.rst) when the symptom suggests denied or dropped traffic. A timeout often deserves a dropped-flow query before a deep application trace, because denied traffic may never produce a useful application-level error.
 
 ```bash
 hubble observe --verdict DROPPED
@@ -290,7 +291,7 @@ k -n shop exec deploy/api -- sh -c 'nc -vz postgres.data.svc.cluster.local 5432'
 
 ### 4. Debug Network Policy With a Worked Example
 
-NetworkPolicy debugging is where Hubble often pays for itself first. Kubernetes policies are selector-based, and selector mistakes are easy to miss in review. A policy can be syntactically valid, applied successfully, and still deny the traffic the team intended to allow.
+NetworkPolicy debugging is where Hubble often pays for itself first. [Kubernetes policies are selector-based](https://kubernetes.io/docs/concepts/services-networking/network-policies/), and selector mistakes are easy to miss in review. A policy can be syntactically valid, applied successfully, and still deny the traffic the team intended to allow.
 
 The worked example below follows a pattern you can reuse during real incidents. First establish the expected path. Then observe the failing request. Then inspect the policy selectors and pod labels. Finally choose whether to fix the policy, the labels, or the application boundary.
 
@@ -436,7 +437,7 @@ This worked example is deliberately simple, but the reasoning pattern scales. Hu
 
 ### 5. Use L7 Visibility, Metrics, and the UI Deliberately
 
-Hubble can show Layer 7 information such as HTTP methods, paths, status codes, DNS queries, and gRPC visibility when Cilium is configured to observe that traffic. This is powerful, but it should be used with intent. Layer 4 tells you whether a connection was allowed or dropped; Layer 7 helps you understand request behavior after the network path exists.
+Hubble can show Layer 7 information such as HTTP methods, paths, status codes, DNS queries, and gRPC visibility [when Cilium is configured to observe that traffic](https://github.com/cilium/cilium/blob/main/Documentation/observability/visibility.rst). This is powerful, but it should be used with intent. Layer 4 tells you whether a connection was allowed or dropped; Layer 7 helps you understand request behavior after the network path exists.
 
 For HTTP troubleshooting, first check whether L7 visibility is enabled for the traffic you care about. If it is enabled, Hubble can show request methods, paths, and response statuses. If it is not enabled, you may still see TCP flows, but you should not expect HTTP fields to appear.
 
@@ -457,7 +458,7 @@ DNS visibility is often the bridge between application symptoms and network fact
 hubble observe --protocol DNS --from-pod shop/api-5f6d9
 ```
 
-For alerting, use Hubble metrics as trend signals rather than as a replacement for flow investigation. Prometheus metrics are aggregated over time; flow output gives specific examples. Good operations use both: metrics tell you that drops increased, and Hubble flow queries show which identities and destinations explain the increase.
+For alerting, use Hubble metrics as trend signals rather than as a replacement for flow investigation. [Prometheus metrics are aggregated over time](https://prometheus.io/docs/introduction/overview/); flow output gives specific examples. Good operations use both: metrics tell you that drops increased, and Hubble flow queries show which identities and destinations explain the increase.
 
 ```promql
 rate(hubble_drop_total[5m])
@@ -473,7 +474,7 @@ sum(rate(hubble_http_requests_total[5m]))
 sum by (protocol) (rate(hubble_flows_processed_total[5m]))
 ```
 
-Be selective when enabling metrics categories. DNS, drop, TCP, flow, ICMP, and HTTP can all be useful, but more metrics are not automatically better. Every metric family adds cardinality, storage, and dashboard maintenance, so choose metrics that connect to operational questions your team actually acts on.
+Be selective when enabling metrics categories. [DNS, drop, TCP, flow, ICMP, and HTTP](https://github.com/cilium/cilium/blob/main/Documentation/observability/metrics.rst) can all be useful, but more metrics are not automatically better. Every metric family adds cardinality, storage, and dashboard maintenance, so choose metrics that connect to operational questions your team actually acts on.
 
 | Signal | Good alerting use | Bad alerting use |
 |---|---|---|
@@ -503,9 +504,9 @@ The CLI is better when you need precision, repeatability, and copyable evidence.
 
 ### 6. Compare Hubble With Nearby Tools and Design the Workflow
 
-Hubble does not replace every network observability tool. It gives Cilium-aware, Kubernetes-aware flow visibility with low overhead and strong policy context. Packet capture, service mesh telemetry, application tracing, logs, and node metrics still have their places. The skill is knowing where Hubble should sit in the diagnostic order.
+Hubble does not replace every network observability tool. It gives Cilium-aware, Kubernetes-aware flow visibility with low overhead and strong policy context. Packet capture, [service mesh telemetry](https://istio.io/latest/docs/concepts/observability/), application tracing, logs, and node metrics still have their places. The skill is knowing where Hubble should sit in the diagnostic order.
 
-Use Hubble early when the symptom might involve service reachability, DNS, network policy, unexpected dependencies, or traffic direction. Use packet capture when you need payload-level packet evidence beyond what Hubble exposes. Use service mesh telemetry when you need mesh-level retries, mTLS identities, route rules, or proxy behavior. Use application traces when the request is forwarded but business logic or downstream latency is the suspected failure.
+Use Hubble early when the symptom might involve service reachability, DNS, network policy, unexpected dependencies, or traffic direction. Use packet capture when you need payload-level packet evidence beyond what Hubble exposes. Use service mesh telemetry when you need [mesh-level retries](https://istio.io/latest/docs/concepts/traffic-management/), [mTLS identities](https://istio.io/latest/docs/concepts/security/), route rules, or proxy behavior. Use application traces when the request is forwarded but business logic or downstream latency is the suspected failure.
 
 | Tool | Best question it answers | Main limitation |
 |---|---|---|
@@ -516,14 +517,14 @@ Use Hubble early when the symptom might involve service reachability, DNS, netwo
 | Distributed tracing | Which service spans contributed to request latency or failure? | Requires instrumentation and usually starts after the request reaches the application |
 | Prometheus metrics | Is a network-related signal increasing over time? | Aggregates behavior and rarely explains a single failed request by itself |
 
-A mature workflow connects these tools instead of forcing them to compete. Start with the symptom and scope. Use metrics to see whether the issue is widespread or isolated. Use Hubble to verify the network path and policy decisions. Use logs and traces once Hubble shows that traffic is forwarded into the application path. Escalate to packet capture only when the flow evidence points to a deeper protocol or node-level question.
+A mature workflow connects these tools instead of forcing them to compete. Start with the symptom and scope. Use metrics to see whether the issue is widespread or isolated. Use Hubble to verify the network path and policy decisions. Use [logs and traces](https://opentelemetry.io/docs/concepts/signals/traces/) once Hubble shows that traffic is forwarded into the application path. Escalate to packet capture only when the flow evidence points to a deeper protocol or node-level question.
 
 The best platform teams also turn incident lessons into reusable filters and dashboards. If a checkout dependency failed once because of a policy selector, create a runbook command that observes checkout-to-database drops. If DNS failures caused a release incident, add a dashboard panel for DNS response behavior by namespace. Hubble is most valuable when it becomes part of the team's repeatable troubleshooting language.
 
 ## Did You Know?
 
-- Hubble gets its Kubernetes-aware flow context from Cilium's eBPF datapath, which is why it can connect network events to pods, namespaces, identities, Services, DNS, and policy verdicts.
-- Hubble Relay is what makes a cluster-wide query practical; without it, each node's local Hubble server only knows about flows observed on that node.
+- Hubble gets its Kubernetes-aware flow context from Cilium's eBPF datapath, which is why it can connect network events to [pods, namespaces, identities, Services, DNS, and policy verdicts](https://github.com/cilium/cilium).
+- [Hubble Relay is what makes a cluster-wide query practical](https://github.com/cilium/cilium/blob/main/Documentation/overview/component-overview.rst); without it, each node's local Hubble server only knows about flows observed on that node.
 - Hubble's Layer 7 visibility depends on Cilium configuration and policy context, so HTTP fields may be absent even when Layer 4 TCP flows are visible.
 - Hubble metrics are most useful when they are paired with targeted flow queries, because metrics show trends while flow records show concrete examples.
 
@@ -884,3 +885,13 @@ Continue to [Module 1.8: Coroot](../module-1.8-coroot/) to learn how correlation
 - [github.com: hubble ui](https://github.com/cilium/hubble-ui) — The upstream Hubble UI README explicitly describes automatic service-dependency discovery and service-map visualization at L3/L4 and L7.
 - [kubernetes.io: network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) — The Kubernetes NetworkPolicy documentation directly explains the semantics of combined `namespaceSelector` and `podSelector` entries.
 - [Prometheus Overview](https://prometheus.io/docs/introduction/overview/) — Useful background for understanding how exported Hubble metrics fit into pull-based time-series monitoring.
+- [github.com: component overview.rst](https://github.com/cilium/cilium/blob/main/Documentation/overview/component-overview.rst) — The Cilium component overview directly describes the Hubble server's per-node placement, embedding in the Cilium agent, and gRPC/Prometheus exposure.
+- [github.com: values.yaml](https://github.com/cilium/cilium/blob/main/install/kubernetes/cilium/values.yaml) — The Cilium Helm values file documents hubble.enabled, hubble.relay.enabled, hubble.ui.enabled, and hubble.metrics.enabled with the same metric categories.
+- [github.com: setup.rst](https://github.com/cilium/cilium/blob/main/Documentation/observability/hubble/setup.rst) — The upstream setup document directly includes cilium status validation, Hubble CLI installation, and hubble status output fields.
+- [github.com: hubble cli.rst](https://github.com/cilium/cilium/blob/main/Documentation/observability/hubble/hubble-cli.rst) — The Hubble CLI guide directly shows protocol filtering, dropped-flow filtering, and policy-denied flow output.
+- [github.com: visibility.rst](https://github.com/cilium/cilium/blob/main/Documentation/observability/visibility.rst) — The Cilium L7 visibility documentation states the proxy and policy requirements and shows DNS/HTTP L7 flow details in hubble observe output.
+- [github.com: metrics.rst](https://github.com/cilium/cilium/blob/main/Documentation/observability/metrics.rst) — The Cilium metrics reference directly lists the hubble_ namespace and the relevant exported metric families.
+- [OpenTelemetry: Traces](https://opentelemetry.io/docs/concepts/signals/traces/) — Backs core tracing concepts: traces, spans, parent-child relationships, span context, attributes, events, links, status, and how a request path is represented across services.
+- [istio.io: observability](https://istio.io/latest/docs/concepts/observability/) — The Istio observability documentation directly lists metrics, traces, access logs, and proxy-level metrics generated by Envoy proxies.
+- [istio.io: traffic management](https://istio.io/latest/docs/concepts/traffic-management/) — The Istio traffic management documentation directly describes Envoy-based proxying and traffic-management features including routing, circuit breakers, timeouts, and retries.
+- [istio.io: security](https://istio.io/latest/docs/concepts/security/) — The Istio security documentation directly describes strong identity, transparent TLS encryption, and mutual TLS as service security features.
