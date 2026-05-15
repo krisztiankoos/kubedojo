@@ -1,0 +1,50 @@
+---
+title: "AI Engineering Foundations"
+slug: ai/ai-engineering-foundations
+sidebar:
+  order: 1
+  label: "AI Engineering Foundations"
+---
+
+> **AI Engineering Foundations** | 12 planned modules | prompt, context, harness, and Symphony
+
+## Purpose
+
+This section teaches the engineering layer between casual AI tool use and production agent operations.
+
+The organizing model is the prompt | context | harness triplet.
+
+Prompt work defines the instruction interface.
+
+Context work manages what the model sees on each turn.
+
+Harness work turns repeated agent work into enforceable, observable systems.
+
+The final module applies those layers to Symphony-style orchestration, where issue contracts and lifecycle hooks become a control plane for AI-assisted engineering.
+
+## Planned Modules
+
+| Module | Topic | Status |
+|---|---|---|
+| 1.1 | Prompt Fundamentals | planned |
+| 1.2 | Reasoning and Logic Prompts | planned |
+| 1.3 | Prompt Safety and Evaluation | planned |
+| 1.4 | Prompt Libraries and Contracts | planned |
+| 2.1 | [Context Engineering Fundamentals](module-2.1-context-fundamentals/) | drafting |
+| 2.2 | Repository Engineering for Agents | planned |
+| 2.3 | Retrieval, Tools, and Memory Boundaries | planned |
+| 2.4 | Dynamic Context Orchestration | planned |
+| 3.1 | Harness Fundamentals — Layers and System of Record | planned |
+| 3.2 | Guardrails, Gates, and Agent-Legible Apps | planned |
+| 3.3 | Operating the Harness | planned |
+| 4.1 | Symphony — Work Orchestration as Applied Harness | planned |
+
+## Reading Path
+
+Start with prompt fundamentals if you need the instruction-design baseline.
+
+Move to context fundamentals when the same prompt behaves differently across fresh sessions, agents, repositories, or model windows.
+
+Use the harness modules when good individual sessions need to become repeatable team workflows.
+
+Use the Symphony capstone only after the lower layers feel boring enough to operate.
