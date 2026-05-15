@@ -23,7 +23,11 @@ ls docs/decisions/pending/
 ```
 Respect `.claude/rules/decision-card.md` and only process what is declared blocking.
 
-4. Read the latest handoff at `docs/session-state/<date>-*.{md,html>` only when the briefing leaves a real narrative-why gap. Use the path from the `STATUS.md` row labeled `Latest handoff`.
+4. Pull the latest handoff via API (preferred) or fall back to the file:
+```bash
+curl -s --max-time 2 http://127.0.0.1:8768/api/session/current
+```
+Returns the most recent handoff path plus predecessor chain. Only read the underlying `docs/session-state/<date>-*.{md,html}` file when the briefing leaves a real narrative-why gap; use the path from the API response or from STATUS.md's `Latest handoff` row.
 
 5. Optional situational check for recent orchestration context:
 ```bash
@@ -38,7 +42,9 @@ curl -s --max-time 2 "http://127.0.0.1:8768/api/activity?limit=30"
 - `GET /api/module/{key}/state`
 - `GET /api/reviews?module={key}`
 
-*Endpoints planned for protocol parity with learn-ukrainian Monitor API (not yet shipped):* `/api/state/manifest`, `/api/rules?format=markdown`, `/api/session/current`, `/api/orient`, `/api/comms/inbox?agent=X`. Tracked as T2.2 in the gap inventory.
+**Self-discovery**: `curl -s http://127.0.0.1:8768/api/state/manifest` returns the categorized route inventory (cold_start / dashboards / pipeline / etc.) — use this when uncertain which endpoint serves a given concern.
+
+*Endpoints planned for protocol parity with learn-ukrainian Monitor API (not yet shipped):* `/api/rules?format=markdown`, `/api/orient`, `/api/comms/inbox?agent=X`. Tracked as T2.2 in the gap inventory.
 
 Standalone session = main orchestrator. Drive the queue; ask only on irreversible or ambiguous actions.
 
