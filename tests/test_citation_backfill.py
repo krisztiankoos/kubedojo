@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -371,3 +372,106 @@ def test_apply_inject_plan_sources_merge_dedupes_by_url() -> None:
     assert "- [A](https://x.com/a)" in new_body
     assert "Different A" not in new_body
     assert "- [B](https://y.com/b)" in new_body
+
+
+def test_run_inject_soft_skips_codex_dropped_cited_claims(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Use an isolated fake repo, so this test can run in parallel with
+    # other citation fixtures without touching actual source files.
+    monkeypatch.setattr(citation_backfill, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(citation_backfill, "DOCS_ROOT", tmp_path / "src" / "content" / "docs")
+    monkeypatch.setattr(citation_backfill, "SEED_DIR", tmp_path / "docs" / "citation-seeds")
+
+    module_key = "platform/cluster-api-demo"
+    module_path = tmp_path / "src" / "content" / "docs" / "platform" / "cluster-api-demo.md"
+    module_path.parent.mkdir(parents=True, exist_ok=True)
+    module_body = (
+        "Cluster API bootstraps nodes for production use.\n"
+        "The operator reviews cluster events and scales workloads.\n"
+        "Kubernetes handles control-plane scheduling automatically.\n"
+    )
+    module_path.write_text(module_body, encoding="utf-8")
+
+    seed = {
+        "claims": [
+            {
+                "claim_id": "C001",
+                "disposition": "supported",
+                "claim_text": "Cluster API bootstraps nodes for production use.",
+                "span_hint": "line 1",
+                "proposed_url": "https://kubernetes.io/docs/concepts/overview/",
+            },
+            {
+                "claim_id": "C002",
+                "disposition": "supported",
+                "claim_text": "The operator reviews cluster events and scales workloads.",
+                "span_hint": "line 2",
+                "proposed_url": "https://kubernetes.io/docs/concepts/architecture/control-plane-node-communication/",
+            },
+            {
+                "claim_id": "C003",
+                "disposition": "supported",
+                "claim_text": "Kubernetes handles control-plane scheduling automatically.",
+                "span_hint": "line 3",
+                "proposed_url": "https://kubernetes.io/docs/concepts/scheduling-eviction/",
+            },
+        ]
+    }
+    citation_backfill.seed_path_for(module_key).write_text(
+        json.dumps(seed, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    plan = {
+        "inline_insertions": [
+            {
+                "claim_id": "C001",
+                "target_line": "Cluster API bootstraps nodes for production use.",
+                "original_phrase": "Cluster API",
+                "replace_with": "[Cluster API](https://kubernetes.io/docs/concepts/overview/)",
+            },
+            {
+                "claim_id": "C002",
+                "target_line": "The operator reviews cluster events and scales workloads.",
+                "original_phrase": "scales workloads",
+                "replace_with": "[scales workloads](https://kubernetes.io/docs/concepts/architecture/control-plane-node-communication/)",
+            },
+        ],
+        "skipped_claims": [],
+    }
+
+    def _fake_dispatch(
+        _prompt: str,
+        *,
+        task_id: str | None = None,
+        timeout: int = 900,
+    ) -> tuple[bool, str]:
+        del _prompt, task_id, timeout
+        return True, json.dumps(plan, ensure_ascii=False)
+
+    monkeypatch.setattr(citation_backfill, "dispatch_codex", _fake_dispatch)
+
+    result = citation_backfill.run_inject(module_key, agent="codex")
+
+    assert result["ok"] is True
+    assert not any(
+        "cited_dispositions_not_addressed" in str(item)
+        for item in result["diff_issues"]
+    )
+    assert result["codex_dropped_count"] == 1
+
+    revision_rel = result["deferred_record"]
+    assert isinstance(revision_rel, str)
+    revision_path = tmp_path / revision_rel
+    assert revision_path.exists()
+    revision = json.loads(revision_path.read_text(encoding="utf-8"))
+    dropped = revision.get("codex_dropped") or []
+    assert len(dropped) == 1
+    assert dropped[0]["claim_id"] == "C003"
+
+    c003 = [entry for entry in result["applied"] if entry.get("claim_id") == "C003"]
+    assert len(c003) == 1
+    assert c003[0]["kind"] == "inline"
+    assert c003[0]["status"] == "skipped"
+    assert c003[0]["reason"] == "not_addressed_by_agent"
