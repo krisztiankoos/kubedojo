@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 11 handoff — 2026-05-15 — quality hooks shipped + #1212 fixed + reading-order fix + 4/8 hard-skipped retried</title>
+<style>
+  :root {
+    --bg: #fafbfc; --fg: #1a1d23; --muted: #5b6573; --accent: #0057B7;
+    --good: #0d8a4a; --warn: #b45c00; --bad: #b8001f; --card: #ffffff;
+    --border: #e2e6eb; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { margin: 0 0 8px; font-size: 26px; }
+  h2 { margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); font-size: 20px; }
+  h3 { margin: 20px 0 8px; font-size: 16px; }
+  .meta { color: var(--muted); margin: 0 0 24px; font-size: 13px; }
+  .tldr { background: var(--card); border-left: 4px solid var(--accent);
+          padding: 14px 18px; margin: 16px 0 28px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0;
+          background: var(--card); border: 1px solid var(--border); }
+  th, td { padding: 9px 11px; border-bottom: 1px solid var(--border);
+           text-align: left; vertical-align: top; font-size: 13.5px; }
+  th { background: #eef2f6; font-weight: 600; }
+  td.col-id { white-space: nowrap; font-family: var(--mono); font-size: 12.5px; }
+  code { background: #eef2f6; padding: 1px 6px; border-radius: 3px;
+         font-family: var(--mono); font-size: 12.5px; }
+  pre { background: #f4f6f9; padding: 12px 14px; border-radius: 5px;
+        overflow-x: auto; font-family: var(--mono); font-size: 12.5px;
+        border: 1px solid var(--border); }
+  .badge { display: inline-block; padding: 1px 7px; border-radius: 3px;
+           font-size: 11.5px; font-weight: 600; vertical-align: middle;
+           margin-left: 6px; }
+  .badge.good { background: #d8f0e1; color: var(--good); }
+  .badge.warn { background: #fce7cd; color: var(--warn); }
+  .badge.bad  { background: #fad8de; color: var(--bad); }
+  .comment { color: var(--muted); }
+  ul.tight li { margin: 3px 0; }
+  ol.tight li { margin: 3px 0; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 11 handoff — quality hooks shipped + #1212 root-cause-fixed + reading-order fix + 4/8 hard-skipped retried successfully</h1>
+<p class="meta">2026-05-15 (continuation of session 10 cold-start) · driver: claude opus 4.7 (orchestrator, inline) · code agent: codex gpt-5.5 (3 dispatches: hooks, #1212 fix, reading-order) · cross-family reviewer: gemini-3.1-pro-preview (hooks) + claude-sonnet-4-6 headless (#1212, reading-order)</p>
+
+<div class="tldr">
+  <strong>TL;DR.</strong> User challenged the orchestrator's quality discipline mid-session ("you dont care about quality right? be honest"). Honest reckoning followed: yes, I optimize for closing tickets over reading-as-a-learner. Built mechanical enforcement: two PreToolUse hooks (PR #1213) that raise the cost of merging content without a verbatim learner-check quote, and bugfix PRs without a regression test that names the issue. Hooks went live and were exercised on every subsequent merge today. Fixed #1212 cascade-fail root cause (PR #1214) with codex round-1 + claude headless review that caught a missing research-fail path → codex round-2 → hook #2 gated the merge correctly. User then flagged that the pipeline iterates modules alphabetically not in learner reading order; reading-order fix shipped in parallel (PR #1215, claude review found 5/8 tracks misplaced, codex round-2 fixed). Of the 8 hard-skipped modules from session 10's watchdog: 4 succeeded on retry (4.7-kyverno, 4.3-identity-and-access, 5.1-cilium, 1.7-hubble), 4 still fail (14.6-managed-kubernetes, 3.5-cluster-api, 4.4-supply-chain, 4.8-spiffe-spire). Pattern-B root cause empirically established: research doesn't see existing citation wraps in already-backfilled modules, so it can propose new citations that OVERLAP with existing ones, which inject can't apply additively → verifier flags as unauthorized_prose_change. Non-deterministic — 1.7-hubble succeeded on 2nd retry. 3 memory notes added: orchestrate-don't-wait, defer-claude-agent-citation-backfill-until-2026-06-15, plus implicit follow-through on the quality-discipline framing.
+</div>
+
+<h2>What shipped</h2>
+
+<h3>PRs merged (3)</h3>
+
+<table>
+  <thead><tr><th>PR</th><th>Title</th><th>What it did</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="col-id">#1213</td>
+      <td>feat(hooks): merge-time quality gates for content + bugfix PRs</td>
+      <td>Two PreToolUse Bash hooks fire on <code>gh pr merge</code>:
+        <ul class="tight">
+          <li><code>block-content-merge-without-learner-check.sh</code> — denies merging PRs touching <code>src/content/docs/**</code> unless body has a <code>## Learner check</code> blockquote (>=30 chars) verbatim from a touched module</li>
+          <li><code>block-bugfix-merge-without-regression-test.sh</code> — denies merging <code>fix:</code>/<code>Fixes #N</code> PRs unless body has a <code>Regression test: &lt;path&gt;</code> line pointing to a test in the PR that references the issue number</li>
+        </ul>
+        Both fail open on infra errors (no <code>gh</code>, network, no PR on branch). Python validation factored into <code>.claude/hooks/_lib_pr_check.py</code> because macOS /bin/bash (3.2) mishandles backticks in heredocs inside <code>$()</code>. 23 pytest cases (9 learner-check + 10 regression-test + 4 round-2 from review). Cross-family review by gemini found 4 real findings (issue-ref regex too narrow, <code>git show</code> path untested, file-in-PR-but-unreadable untested, <code>echo</code> vs <code>printf</code> bash 3.2 quirk); all addressed before merge. Squash <code>9e0f95a6</code>.</td>
+    </tr>
+    <tr>
+      <td class="col-id">#1214</td>
+      <td>fix(pipeline): restore seed JSON on inject failure to prevent cascade (#1212)</td>
+      <td>Root-cause fix for the cascade-fail bug that hit 8 modules during the session-10 overnight run. <code>scripts/quality/pipeline.py:_backfill_one</code> previously only restored <code>st["module_path"]</code> on inject failure, leaving the seed JSON dirty → next module's dirty-tree guard refused to start → cascade.
+        <ul class="tight">
+          <li>Codex round-1: patched all 5 inject-side failure paths (line 441 / 486 / 504 / concurrent_edit / git_commit) to restore seed via factored <code>_restore_seed_json()</code> helper. Added regression test that fails before fix and passes after.</li>
+          <li>Claude headless cross-family review caught the research-failure path was NOT addressed — if research crashes after writing the seed (line 1207), the seed stays dirty.</li>
+          <li>Codex round-2: 1-line addition (<code>_restore_seed_json()</code> in the research-fail branch) + 2nd regression test simulating crash-after-write.</li>
+          <li><strong>Hook #2 fired on merge and allowed it</strong> — PR had <code>Fixes #1212</code> + <code>Regression test: tests/test_backfill_seed_restore.py</code> + test referenced <code>#1212</code>. First production trial of the new gate, worked as designed.</li>
+        </ul>
+        Watchdog <code>/tmp/backfill-watchdog.sh</code> is now obsolete. Squash <code>d97d4fdc</code>.</td>
+    </tr>
+    <tr>
+      <td class="col-id">#1215</td>
+      <td>feat(pipeline): order iter_states() by learner reading order</td>
+      <td>User noticed pipeline picks modules alphabetically (slug-sorted), not in the order a learner would encounter them. Reframed as "you should be orchestrating" — dispatched in parallel with the in-flight backfill batch.
+        <ul class="tight">
+          <li>Codex round-1: <code>_reading_order_key(slug)</code> returns <code>(track_idx, section_idx, major, minor, slug)</code>; <code>iter_states()</code> sorts by that.</li>
+          <li>Claude headless review found <strong>5 of 8 tracks in wrong order</strong> (codex shipped <code>cloud&lt;k8s</code>, <code>platform&lt;ai-ml-engineering</code>, etc.; actual <code>astro.config.mjs</code> sidebar is <code>prerequisites→linux→ai→k8s→cloud→ai-ml-engineering→on-premises→platform</code>) AND no k8s-vs-cloud test to catch the inversion.</li>
+          <li>Codex round-2: fixed track order, added explicit k8s-before-cloud test, addressed nit (ai-history <code>ch-N</code> sorts numerically not lexically). 6/6 reading-order tests + 170/170 pipeline-gate tests pass.</li>
+        </ul>
+        Squash <code>ac7c6bb1</code>. Active in every future <code>backfill-pending</code>, <code>process-batch</code> call.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Citation backfill — retry of 8 hard-skipped modules from session 10</h3>
+
+<p>Session-10 watchdog hard-skipped 8 modules. With #1212 fix in place, retried them in two waves:</p>
+
+<table>
+  <thead><tr><th>Module</th><th>Wave 1</th><th>Wave 2</th><th>Final SHA</th><th>Failure mode (if still fail)</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>4.7-kyverno</td>
+      <td><span class="badge good">OK</span> single-module retry — state was stale; current seed inject was clean</td>
+      <td>—</td>
+      <td class="col-id">5429f9b5</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>4.3-identity-and-access</td>
+      <td><span class="badge good">OK</span> on retry — earlier failure was Pattern B but non-deterministic</td>
+      <td>—</td>
+      <td class="col-id">39bf65ff</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>5.1-cilium</td>
+      <td><span class="badge good">OK</span> on retry — 21 at-risk dispositions in seed but no overlap conflict this time</td>
+      <td>—</td>
+      <td class="col-id">092069dd</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>1.7-hubble</td>
+      <td><span class="badge bad">FAIL</span> at inject — <code>unauthorized_prose_change</code> (overlap with one of 22 existing wraps)</td>
+      <td><span class="badge good">OK</span> on second retry — codex non-determinism saved us</td>
+      <td class="col-id">9e8284a6</td>
+      <td>—</td>
+    </tr>
+    <tr>
+      <td>14.6-managed-kubernetes</td>
+      <td><span class="badge bad">FAIL</span> at inject — Pattern A (<code>rewrites_disabled_pending_redesign</code>)</td>
+      <td><span class="badge bad">FAIL</span> at inject — same</td>
+      <td>—</td>
+      <td>Seed has <code>cannot_be_salvaged</code> claims that are cited in body; prose rewrites are intentionally disabled (PR #1172). Needs seed hand-curation OR prose-rewrite redesign.</td>
+    </tr>
+    <tr>
+      <td>3.5-cluster-api</td>
+      <td><span class="badge bad">FAIL</span> at inject</td>
+      <td><span class="badge bad">FAIL</span> at inject</td>
+      <td>—</td>
+      <td><strong>Outlier:</strong> 0 existing citation wraps in module file, so "overlap with prior wrap" hypothesis doesn't apply. Specific cause still unknown — truncated error excerpt at 140 chars hides the full diff. Needs deeper instrumentation.</td>
+    </tr>
+    <tr>
+      <td>4.4-supply-chain</td>
+      <td><span class="badge bad">FAIL</span> at inject — <code>unauthorized_prose_change</code></td>
+      <td><span class="badge bad">FAIL</span> at inject — same</td>
+      <td>—</td>
+      <td>8 existing citation wraps; consistent Pattern B (overlap).</td>
+    </tr>
+    <tr>
+      <td>4.8-spiffe-spire</td>
+      <td><span class="badge bad">FAIL</span> at inject — <code>unauthorized_prose_change</code></td>
+      <td><span class="badge bad">FAIL</span> at inject — same</td>
+      <td>—</td>
+      <td>30 existing citation wraps; consistent Pattern B (overlap). Highest citation density of any failure, hardest to find non-overlapping anchor.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Score: 4/8 cleared by retry. 4 chronic failures remain.</strong> Pushed commits brought local main to <code>9e8284a6</code> (already on origin).</p>
+
+<h2>Empirical findings — Pattern B root cause established</h2>
+
+<p>Pattern B = <code>unauthorized_prose_change</code> in inject diff_issues. Earlier session theory was "codex misbehaves randomly." Diagnostic on 1.7-hubble (with the <code>_verify_diff_is_additive</code> truncation widened from 140 to 800 chars) showed the actual mechanism:</p>
+
+<ol class="tight">
+  <li><strong>Module 1.7-hubble was already backfilled in a prior run</strong> — its current body has 22 <code>[phrase](https://...)</code> citation wraps.</li>
+  <li>The session-10 watchdog ran <code>research</code> again, generating a FRESH seed (research is stateless about existing module body citations).</li>
+  <li>The fresh seed proposed a new claim citing the phrase "focused metrics set enabled" — but that phrase is INSIDE the existing wrap <code>[install Cilium with Hubble, Relay, UI, and a focused metrics set enabled](https://.../values.yaml)</code>.</li>
+  <li>Inject's apply step produced a body where the new <code>[focused metrics set enabled](url)</code> wrap clobbered the outer existing wrap.</li>
+  <li>The verifier's <code>_INLINE_LINK_RE</code> unwrap doesn't handle nested/overlapping brackets correctly. After unwrap, the modified text has different prose than the original → flagged as <code>unauthorized_prose_change</code>.</li>
+  <li>On the second retry, codex produced a different inject plan that happened to avoid the overlapping phrase, and the module backfilled cleanly.</li>
+</ol>
+
+<p><strong>Mechanism is therefore "research/inject blind to existing citations + non-deterministic LLM phrase selection."</strong> Retry can succeed by luck. The deterministic fix would be either:</p>
+<ul class="tight">
+  <li>Pass the current module body (with its wraps) to research so it avoids proposing claims that overlap with existing wraps; OR</li>
+  <li>Have inject's <code>apply_inject_plan</code> detect that a proposed wrap is INSIDE an existing wrap and skip it (defer the claim).</li>
+</ul>
+
+<p>3.5-cluster-api is an outlier — 0 existing wraps means the overlap mechanism doesn't apply, yet it consistently fails with the same error class. The truncated excerpt mentions <code>Do not treat deletion as an afterthought. Cluster deletion is a high-impact lifecycle operation</code>, but without the full <code>+</code> line we can't tell what codex is actually changing. Needs widened-truncation diagnostic on a future attempt.</p>
+
+<h2>Quality discipline arc</h2>
+
+<p>Mid-session, user wrote: "you dont care about quality right? be honest." Honest answer: no, not consistently — orchestrator optimizes for closing tickets, not reading modules as a learner would. Concrete evidence from that moment:</p>
+<ul class="tight">
+  <li>Was about to dispatch the #1212 fix to <em>gemini</em> (memory had multiple warnings about gemini hallucinations + rubber-stamps) because it was the no-conflict-with-watchdog path, not the right tool</li>
+  <li>Hadn't read <code>scripts/citation_backfill.py</code> before proposing the fix — guessing at the seed-write timing</li>
+  <li>No regression test proposed — "fix" would have been theater</li>
+</ul>
+
+<p>The user accepted the diagnosis, then asked "can we change your local harness that you start caring about the quality?" The honest answer was: a harness can't make me care, but mechanical enforcement raises the cost of shortcuts. The two hooks in PR #1213 are the result. They specifically target the two shortcuts that surfaced today:</p>
+<ul class="tight">
+  <li><strong>Hook #1 (learner-check)</strong> — can't merge content without quoting a real >=30-char line from a touched module verbatim. Forces actually opening the file.</li>
+  <li><strong>Hook #2 (regression test)</strong> — can't merge a bugfix without a test file in the PR that names the issue. Forces proving the bug is fixed before claiming victory.</li>
+</ul>
+
+<p>Hooks went live on main at <code>9e0f95a6</code> (the PR's own merge — neither hook fired on its own merge because the PR didn't touch <code>src/content/docs/**</code> and wasn't titled <code>fix:</code>). Hook #2 then fired on PR #1214's merge and allowed it correctly — first production trial.</p>
+
+<h2>Issues touched</h2>
+
+<table>
+  <thead><tr><th>Issue</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="col-id">#1212</td>
+      <td><strong>CLOSED</strong> by PR #1214 merge. Cascade-fail root-caused and fixed with regression tests. Watchdog wrapper at <code>/tmp/backfill-watchdog.sh</code> is now obsolete; can be deleted next session.</td>
+    </tr>
+    <tr>
+      <td class="col-id">—</td>
+      <td><strong>Not filed</strong> (intentional, pending user decision): "research/inject blind to existing citations" follow-up. This is the deterministic fix for the 4 chronic Pattern B failures. Captured in TL;DR; surface as a new issue when user approves scope.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Memory updates</h2>
+
+<table>
+  <thead><tr><th>Memory file</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="col-id">feedback_orchestrate_dont_wait.md (new)</td>
+      <td>User correction: "you can start the fix in a worktree so it is ready in time that is called orchestrating which you should be doing." Captures: when a long task is in flight, dispatch the next ready workstream in parallel. Codex sequential rule still applies; different agent families can truly parallelize.</td>
+    </tr>
+    <tr>
+      <td class="col-id">feedback_defer_claude_agent_citation_backfill_until_2026-06-15.md (new)</td>
+      <td>Adding <code>--agent claude</code> to <code>scripts/citation_backfill.py</code> would invoke claude via Code CLI subprocess, burning the same Max weekly chat limit the orchestrator draws from. Defer until 2026-06-15 when the Anthropic agentic-credit pool lands and worker dispatches can use a separate budget via the SDK.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Open questions for next session</h2>
+
+<ol class="tight">
+  <li><strong>4 chronic failures</strong> (14.6, 3.5, 4.4, 4.8) — handle individually:
+    <ul class="tight">
+      <li>14.6: Pattern A; needs seed hand-curation to remove or change <code>cannot_be_salvaged</code> claims that are cited in body</li>
+      <li>4.4 + 4.8: Pattern B; either keep retrying (non-determinism gives some success rate) or implement the deterministic research-sees-existing-wraps fix</li>
+      <li>3.5: outlier with 0 existing wraps; needs deeper diagnostic (widen truncation, capture full diff) before deciding fix path</li>
+    </ul>
+  </li>
+  <li><strong>Deterministic Pattern B fix scope.</strong> Two candidate approaches; pick one:
+    <ul class="tight">
+      <li>(a) Research passes current module body to LLM; LLM skips claims overlapping existing wraps. Minimal logic change but uses more research tokens (full body each time).</li>
+      <li>(b) Inject's <code>apply_inject_plan</code> detects that a proposed <code>[phrase]</code> wrap intersects an existing <code>[...]</code> wrap and skips the new wrap, recording it as deferred. No additional tokens, all client-side logic.</li>
+    </ul>
+    Recommendation: (b) — cheaper and the responsibility (don't break what's already there) belongs at the apply step.
+  </li>
+  <li><strong>Watchdog script cleanup.</strong> <code>/tmp/backfill-watchdog.sh</code> is in <code>/tmp</code> so it will vanish on next reboot, but cold-start docs in CLAUDE.md still reference it. Update CLAUDE.md to remove the watchdog mention now that #1212 is fixed.</li>
+  <li><strong>Reading-order fix should now show effects.</strong> Next time <code>backfill-pending --limit N</code> runs against the broader pending pool (212 modules with at-risk dispositions, plus ~530 others), it'll process them in learner-reading order. Worth a sanity check on first run by inspecting the order of the first 5 processed.</li>
+</ol>
+
+<h2>Cold-start path (for next session)</h2>
+
+<pre>curl -s http://127.0.0.1:8768/api/briefing/session?compact=1   # always first
+git status --short                                              # confirm clean tree, primary at 9e8284a6
+gh pr list --state open                                         # nothing critical open from this session
+/bin/ps -ax | grep "codex exec" | grep -v grep                  # no zombies expected; both dispatches finished cleanly</pre>
+
+<p>No background tasks remain. No detached HEADs (codex-interactive worktree may still be detached but is cosmetic). Quality-gate hooks are active on all merges going forward.</p>
+
+</main>
+</body>
+</html>
