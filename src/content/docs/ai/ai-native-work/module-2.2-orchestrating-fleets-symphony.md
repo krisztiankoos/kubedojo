@@ -1,5 +1,5 @@
 ---
-title: Orchestrating Fleets: Symphony and Project-Management-as-Control-Plane
+title: "Orchestrating Fleets: Symphony and Project-Management-as-Control-Plane"
 slug: ai/ai-native-work/module-2.2-orchestrating-fleets-symphony
 description: Use issue-level contracts, lifecycle hooks, and explicit state machines to orchestrate autonomous coding fleets through PM states without losing ownership.
 sidebar:
