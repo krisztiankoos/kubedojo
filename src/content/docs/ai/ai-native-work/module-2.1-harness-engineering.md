@@ -678,8 +678,8 @@ Once you can design and run this harness model for one small operator task, your
 
 - [Harness engineering: leveraging Codex in an agent-first world](https://web.archive.org/web/20260211120000/https:%2F%2Fopenai.com/index/harness-engineering/)
 - [Custom instructions with AGENTS.md — Codex | OpenAI Developers](https://developers.openai.com/codex/guides/agents-md)
-- [Git hooks - Git - Documentation](https://git-scm.com/docs/githooks)
-- [pre-commit](https://pre-commit.com/)
+- [Conftest policy tests and conventions](https://www.conftest.dev/)
+- [Open Policy Agent documentation](https://www.openpolicyagent.org/docs/latest/)
 - [About protected branches - GitHub Docs](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
 
 ## Next Module
