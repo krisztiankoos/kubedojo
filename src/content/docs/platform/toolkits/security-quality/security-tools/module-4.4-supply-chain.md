@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 4.4: Supply Chain Security"
 slug: platform/toolkits/security-quality/security-tools/module-4.4-supply-chain
 sidebar:
@@ -27,9 +28,9 @@ After completing this module, you will be able to:
 
 ## Why This Module Matters
 
-A platform team can harden every Kubernetes cluster and still deploy compromised software if the build pipeline is trusted blindly. The [SolarWinds supply-chain compromise](https://www.cisa.gov/news-events/alerts/2021/01/07/supply-chain-compromise) <!-- incident-xref: solarwinds-2020 --> showed that a signed artifact is only trustworthy when the path that created it is also controlled, observable, and independently verifiable. For the canonical case study, see [CI/CD Pipelines](../../../../prerequisites/modern-devops/module-1.3-cicd-pipelines/).
+A platform team can harden every Kubernetes cluster and still deploy compromised software if the build pipeline is trusted blindly. The [SolarWinds supply-chain compromise](https://www.cisa.gov/news-events/alerts/2021/01/07/supply-chain-compromise) <!-- incident-xref: solarwinds-2020 --> showed that [a signed artifact is only trustworthy when the path that created it is also controlled, observable, and independently verifiable](https://www.cisa.gov/news-events/alerts/2021/01/07/supply-chain-compromise). For the canonical case study, see [CI/CD Pipelines](../../../../prerequisites/modern-devops/module-1.3-cicd-pipelines/).
 
-A second class of failures comes from dependencies rather than build systems. Log4Shell <!-- incident-xref: log4shell --> showed how one vulnerable library can create emergency work across many downstream teams that never directly authored the affected dependency. For the canonical Log4Shell case study, see [DevSecOps Supply Chain Security](../../../disciplines/reliability-security/devsecops/module-4.4-supply-chain-security/).
+A second class of failures comes from dependencies rather than build systems. [Log4Shell](https://www.cisa.gov/uscert/ncas/alerts/aa21-356a) <!-- incident-xref: log4shell --> showed how one vulnerable library can create emergency work across many downstream teams that never directly authored the affected dependency. For the canonical Log4Shell case study, see [DevSecOps Supply Chain Security](../../../disciplines/reliability-security/devsecops/module-4.4-supply-chain-security/).
 
 Supply chain security is the discipline of replacing vague trust with evidence. You are not trying to make developers memorize a separate security ceremony for every release. You are designing a path where normal delivery produces verifiable artifacts: images identified by digest, signatures tied to real identities, SBOMs attached to the artifact, vulnerability results stored with the build, provenance that explains how the artifact was produced, and admission policies that reject deployments when that evidence is missing or inconsistent.
 
@@ -85,7 +86,7 @@ The important design move is to connect these stages without pretending that one
 
 ## 2. Establish Artifact Identity with Digests and Signatures
 
-Before you sign anything, make sure you know exactly what the artifact is. In OCI registries, [an image digest identifies the content-addressed manifest](https://github.com/opencontainers/image-spec/blob/main/manifest.md), while a tag is a movable label. This is why senior teams usually build with a commit tag for traceability, push the image, read back the digest from the registry, and use that digest for signing, attestation, promotion, and deployment.
+Before you sign anything, make sure you know exactly what the artifact is. In OCI registries, [an image digest identifies the content-addressed manifest](https://github.com/opencontainers/image-spec/blob/main/manifest.md), while [a tag is a movable label](https://github.com/opencontainers/image-spec/blob/main/manifest.md). This is why senior teams usually build with a commit tag for traceability, push the image, read back the digest from the registry, and use that digest for signing, attestation, promotion, and deployment.
 
 ```text
 TAG VERSUS DIGEST
@@ -103,7 +104,7 @@ Policy consequence:
   release notes and dashboards may display the tag for human readability
 ```
 
-Cosign is a widely used command-line tool for signing and verifying OCI artifacts in the Sigstore ecosystem. Sigstore is not one tool; it is a set of services and formats that make software signing easier to adopt. [Cosign signs and verifies artifacts](https://github.com/sigstore/cosign), [Fulcio issues short-lived certificates for keyless signing](https://github.com/sigstore/fulcio), and [Rekor records signature metadata in a transparency log](https://github.com/sigstore/rekor) so that signatures can be audited later.
+Cosign is a widely used command-line tool for [signing and verifying OCI artifacts](https://github.com/sigstore/cosign) in the Sigstore ecosystem. Sigstore is not one tool; it is a set of services and formats that make software signing easier to adopt. [Cosign signs and verifies artifacts](https://github.com/sigstore/cosign), [Fulcio issues short-lived certificates for keyless signing](https://github.com/sigstore/fulcio), and [Rekor records signature metadata in a transparency log](https://github.com/sigstore/rekor) so that signatures can be audited later.
 
 ```text
 SIGSTORE ECOSYSTEM
@@ -168,7 +169,7 @@ A practical signing rollout should begin in report-only mode before it blocks pr
 
 ## 3. Add SBOMs and Vulnerability Scans as Evidence, Not Decoration
 
-An SBOM, or software bill of materials, is an inventory of components inside an artifact. It is most valuable when it is generated from the actual artifact that will be deployed, attached to that artifact, and used during incident response. An SBOM generated from a source directory may be useful during development, but it can miss packages introduced by the base image or build process. For runtime questions, the deployed image is the stronger source of truth.
+An SBOM, or software bill of materials, is [an inventory of components inside an artifact](https://www.nist.gov/itl/executive-order-14028-improving-nations-cybersecurity/software-security-supply-chains-software-1). It is most valuable when it is generated from the actual artifact that will be deployed, attached to that artifact, and used during incident response. An SBOM generated from a source directory may be useful during development, but it can miss packages introduced by the base image or build process. For runtime questions, the deployed image is the stronger source of truth.
 
 ```text
 SBOM FORMATS
@@ -180,7 +181,7 @@ SBOM FORMATS
 |   Strong for license and package metadata exchange               |
 |   Common encodings include JSON, RDF, and tag-value              |
 |                                                                  |
-| CycloneDX                                                        |
+| [CycloneDX](https://github.com/CycloneDX/specification)                                                        |
 |   Stewarded by OWASP                                             |
 |   Strong for application security and vulnerability workflows    |
 |   Common encodings include JSON and XML                          |
@@ -256,7 +257,7 @@ The answer is that responders must now prove which SBOM belongs to which deploye
 
 ## 4. Use Registries and Admission Control as Enforcement Points
 
-A registry is not just a place to store images; it is a policy boundary between build systems and runtime environments. Harbor is a CNCF graduated registry that adds project-level access control, vulnerability scanning, replication, audit logging, retention policies, and integration points for signing workflows. Even if your organization uses another registry, the same design questions apply: who can push, can tags be overwritten, where are scan results stored, and can promotion require evidence?
+A registry is not just a place to store images; it is a policy boundary between build systems and runtime environments. [Harbor is a CNCF graduated registry](https://www.cncf.io/projects/harbor/) that adds [project-level access control, vulnerability scanning, replication, audit logging, retention policies, and integration points for signing workflows](https://github.com/goharbor/harbor). Even if your organization uses another registry, the same design questions apply: who can push, can tags be overwritten, where are scan results stored, and can promotion require evidence?
 
 ```text
 HARBOR ARCHITECTURE
@@ -439,7 +440,7 @@ trivy image --severity HIGH,CRITICAL supply-chain-demo:v1
 syft supply-chain-demo:v1 -o cyclonedx-json > sbom.cdx.json
 ```
 
-Local images are useful for learning, but most signing and attestation workflows become more meaningful after pushing to a registry because Cosign stores signature objects alongside the image in OCI-compatible storage. The important step is to push first and then sign the digest that the registry reports. A digest taken only from a local image may not represent the same registry manifest that deployers will pull, especially for multi-platform images.
+Local images are useful for learning, but most signing and attestation workflows become more meaningful after pushing to a registry because [Cosign stores signature objects alongside the image in OCI-compatible storage](https://github.com/sigstore/cosign). The important step is to push first and then sign the digest that the registry reports. A digest taken only from a local image may not represent the same registry manifest that deployers will pull, especially for multi-platform images.
 
 ```bash
 # Replace these values with a registry namespace you can push to.
@@ -932,3 +933,7 @@ Continue to [Networking Toolkit](/platform/toolkits/infrastructure-networking/ne
 - [github.com: gatekeeper](https://github.com/open-policy-agent/gatekeeper) — The Gatekeeper README directly lists constraints, audit functionality, and external data support.
 - [github.com: slsa](https://github.com/slsa-framework/slsa) — The SLSA framework repository directly defines SLSA as a software supply-chain security framework.
 - [github.com: in toto](https://github.com/in-toto/in-toto) — The in-toto project README directly explains the framework's step verification and functionary authorization model.
+- [cisa.gov: aa21 356a](https://www.cisa.gov/uscert/ncas/alerts/aa21-356a) — CISA's joint advisory identifies Log4Shell as CVE-2021-44228 in Apache Log4j and gives mitigation guidance for vendors and affected organizations.
+- [nist.gov: software security supply chains software 1](https://www.nist.gov/itl/executive-order-14028-improving-nations-cybersecurity/software-security-supply-chains-software-1) — NIST cites EO 14028's SBOM definition and explains SBOM value for transparency and vulnerability remediation.
+- [cncf.io: harbor](https://www.cncf.io/projects/harbor/) — CNCF's Harbor project page identifies Harbor as a registry project and states that it moved to Graduated maturity.
+- [github.com: harbor](https://github.com/goharbor/harbor) — Harbor's README lists role-based access control, replication, vulnerability scanning, image deletion and garbage collection, Notary signing support, and auditing.

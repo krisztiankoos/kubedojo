@@ -1,15 +1,15 @@
 {
   "module_key": "platform/toolkits/security-quality/security-tools/module-4.4-supply-chain",
   "module_path": "src/content/docs/platform/toolkits/security-quality/security-tools/module-4.4-supply-chain.md",
-  "research_run_id": "2026-05-07T13:51:20+00:00-codex-gpt-5.3-codex-spark",
+  "research_run_id": "2026-05-15T10:23:13+00:00-codex-gpt-5.3-codex-spark",
   "schema_version": 3,
   "section_pool_ref": "docs/citation-pools/platform-toolkits-security-quality-security-tools.json",
   "claims": [
     {
       "claim_id": "C001",
-      "claim_text": "The SolarWinds Orion compromise was a real software supply-chain incident relevant to trust in signed artifacts and build pipelines.",
+      "claim_text": "The SolarWinds supply-chain compromise showed that a signed artifact is only trustworthy when the producing path is controlled, observable, and independently verifiable.",
       "claim_class": "incident",
-      "span_hint": "section: Why This Module Matters, paragraph 1",
+      "span_hint": "line 30 | section: Why This Module Matters",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://www.cisa.gov/news-events/alerts/2021/01/07/supply-chain-compromise",
@@ -17,27 +17,27 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "This is a named real-world incident and CISA directly documents the SolarWinds Orion supply-chain compromise."
+      "rationale": "CISA documents the SolarWinds Orion software supply-chain compromise and related signed malicious software lifecycle artifacts."
     },
     {
       "claim_id": "C002",
-      "claim_text": "Log4Shell created emergency work across thousands of downstream teams.",
+      "claim_text": "Log4Shell was a Log4j vulnerability that required broad mitigation work across affected organizations and downstream products.",
       "claim_class": "security_claim",
-      "span_hint": "section: Why This Module Matters, paragraph 2",
-      "disposition": "cannot_be_salvaged",
+      "span_hint": "line 32 | section: Why This Module Matters",
+      "disposition": "supported",
       "source_ids": [],
-      "proposed_url": null,
-      "proposed_tier": null,
-      "anchor_text": "Log4Shell <!-- incident-xref: log4shell --> showed how one vulnerable library can create emergency work across thousands of teams that never wrote a line of logging framework code.",
-      "suggested_rewrite": "Log4Shell <!-- incident-xref: log4shell --> showed how one vulnerable library can create emergency work across many downstream teams that never directly authored the affected dependency.",
+      "proposed_url": "https://www.cisa.gov/uscert/ncas/alerts/aa21-356a",
+      "proposed_tier": "incidents",
+      "anchor_text": null,
+      "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The named incident is real, but the precise scope claim about 'thousands of teams' is not directly backed by the primary advisory and should be de-specified."
+      "rationale": "CISA's joint advisory identifies Log4Shell as CVE-2021-44228 in Apache Log4j and gives mitigation guidance for vendors and affected organizations."
     },
     {
       "claim_id": "C003",
-      "claim_text": "In the OCI model, an image manifest is content-addressed by digest and represents a specific image for a specific platform.",
+      "claim_text": "In OCI registries, image manifests are identified by content-addressed digests and tags are human-readable references.",
       "claim_class": "standard",
-      "span_hint": "section: 2. Establish Artifact Identity with Digests and Signatures, paragraph 1",
+      "span_hint": "line 88 | section: 2. Establish Artifact Identity with Digests and Signatures",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/opencontainers/image-spec/blob/main/manifest.md",
@@ -45,27 +45,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The OCI image manifest specification directly describes content-addressable image manifests and their role in artifact identity."
+      "rationale": "The OCI image manifest specification is the upstream reference for image manifests and content-addressed artifact identity."
     },
     {
       "claim_id": "C004",
-      "claim_text": "Cosign is the most common command-line tool for signing and verifying OCI artifacts in the Sigstore ecosystem.",
-      "claim_class": "benchmark",
-      "span_hint": "section: 2. Establish Artifact Identity with Digests and Signatures, paragraph 2",
-      "disposition": "cannot_be_salvaged",
-      "source_ids": [],
-      "proposed_url": null,
-      "proposed_tier": null,
-      "anchor_text": "Cosign is the most common command-line tool for signing and verifying OCI artifacts in the Sigstore ecosystem.",
-      "suggested_rewrite": "Cosign is a widely used command-line tool for signing and verifying OCI artifacts in the Sigstore ecosystem.",
-      "lesson_point_url": null,
-      "rationale": "The superlative 'most common' is an uncited comparative benchmark and should be rewritten without the unsupported ranking."
-    },
-    {
-      "claim_id": "C005",
-      "claim_text": "Cosign signs and verifies OCI artifacts and supports Sigstore keyless signing using Fulcio and Rekor.",
+      "claim_text": "Cosign signs and verifies OCI artifacts in the Sigstore ecosystem.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: 2. Establish Artifact Identity with Digests and Signatures, paragraph 2",
+      "span_hint": "line 106 | section: 2. Establish Artifact Identity with Digests and Signatures",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/sigstore/cosign",
@@ -73,13 +59,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Cosign primary project page directly describes OCI artifact signing/verification and keyless operation with Fulcio and Rekor."
+      "rationale": "The Cosign project README documents container signing, verification, keyless signing, and OCI registry storage."
     },
     {
-      "claim_id": "C006",
-      "claim_text": "Fulcio issues short-lived code-signing certificates for OIDC identities.",
+      "claim_id": "C005",
+      "claim_text": "Fulcio issues short-lived certificates for keyless signing tied to OIDC identities.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: 2. Establish Artifact Identity with Digests and Signatures, paragraph 2",
+      "span_hint": "line 106 | section: 2. Establish Artifact Identity with Digests and Signatures",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/sigstore/fulcio",
@@ -87,13 +73,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Fulcio project README explicitly states that it issues short-lived certificates for code signing tied to OIDC identities."
+      "rationale": "The Fulcio README states that Fulcio issues code-signing certificates for OIDC identities and that certificates are short-lived."
     },
     {
-      "claim_id": "C007",
-      "claim_text": "Rekor records software supply-chain signing metadata in a transparency log for later verification and auditability.",
+      "claim_id": "C006",
+      "claim_text": "Rekor records signature metadata in a transparency log that can be queried or audited later.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: 2. Establish Artifact Identity with Digests and Signatures, paragraph 2",
+      "span_hint": "line 106 | section: 2. Establish Artifact Identity with Digests and Signatures",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/sigstore/rekor",
@@ -101,27 +87,41 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Rekor project README directly describes Rekor as a transparency log for software supply-chain metadata."
+      "rationale": "The Rekor README describes Rekor as a transparency log server for storage, verification, inclusion proof, and retrieval of entries."
+    },
+    {
+      "claim_id": "C007",
+      "claim_text": "An SBOM is a formal inventory of software components and supply-chain relationships, useful for vulnerability identification and remediation.",
+      "claim_class": "standard",
+      "span_hint": "line 171 | section: 3. Add SBOMs and Vulnerability Scans as Evidence, Not Decoration",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://www.nist.gov/itl/executive-order-14028-improving-nations-cybersecurity/software-security-supply-chains-software-1",
+      "proposed_tier": "standards",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "NIST cites EO 14028's SBOM definition and explains SBOM value for transparency and vulnerability remediation."
     },
     {
       "claim_id": "C008",
-      "claim_text": "SPDX is an SBOM standard associated with the Linux Foundation ecosystem, and its common serializations include formats such as tag-value, RDF, and JSON.",
+      "claim_text": "SPDX is an SBOM standard with common serializations including JSON, RDF, and tag-value.",
       "claim_class": "standard",
-      "span_hint": "section: 3. Add SBOMs and Vulnerability Scans as Evidence, SBOM FORMATS diagram",
+      "span_hint": "lines 177-182 | section: 3. Add SBOMs and Vulnerability Scans as Evidence, SBOM FORMATS diagram",
       "disposition": "needs_allowlist_expansion",
       "source_ids": [],
-      "proposed_url": "https://spdx.github.io/spdx-spec/v2.2.2/conformance/",
+      "proposed_url": "https://spdx.github.io/spdx-spec/v2.3/conformance/",
       "proposed_tier": null,
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The exact serialization details are best backed by the SPDX specification site, which is off the current allowlist."
+      "rationale": "The exact SPDX serialization details are documented by the official SPDX specification site, whose host is outside the current allowlist."
     },
     {
       "claim_id": "C009",
-      "claim_text": "CycloneDX is an OWASP BOM standard and commonly uses JSON and XML encodings.",
+      "claim_text": "CycloneDX is an OWASP Bill of Materials standard with JSON and XML media types.",
       "claim_class": "standard",
-      "span_hint": "section: 3. Add SBOMs and Vulnerability Scans as Evidence, SBOM FORMATS diagram",
+      "span_hint": "lines 183-187 | section: 3. Add SBOMs and Vulnerability Scans as Evidence, SBOM FORMATS diagram",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/CycloneDX/specification",
@@ -129,13 +129,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The CycloneDX specification repository directly states OWASP stewardship and lists the standard media types and encodings."
+      "rationale": "The CycloneDX specification repository identifies CycloneDX as an OWASP BOM standard and lists official JSON and XML media types."
     },
     {
       "claim_id": "C010",
       "claim_text": "Syft generates SBOMs from container images, filesystems, and directories.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: 3. Add SBOMs and Vulnerability Scans as Evidence, paragraph after SBOM FORMATS diagram",
+      "span_hint": "line 193 | section: 3. Add SBOMs and Vulnerability Scans as Evidence, Not Decoration",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/anchore/syft",
@@ -143,13 +143,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Syft project README directly documents SBOM generation from container images and filesystem-style sources."
+      "rationale": "The Syft README describes Syft as a CLI and library for generating SBOMs from container images and filesystems."
     },
     {
       "claim_id": "C011",
-      "claim_text": "Trivy can scan images, filesystems, repositories, Kubernetes targets, and work with SBOMs.",
+      "claim_text": "Trivy can generate SBOMs and scan images, filesystems, configuration files, and existing SBOMs.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: 3. Add SBOMs and Vulnerability Scans as Evidence, paragraph after Syft introduction",
+      "span_hint": "line 193 | section: 3. Add SBOMs and Vulnerability Scans as Evidence, Not Decoration",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/aquasecurity/trivy",
@@ -157,41 +157,41 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Trivy project README directly lists its supported scan targets and scanners, including SBOM-related capabilities."
+      "rationale": "The Trivy README lists vulnerability, misconfiguration, secret, and SBOM scanning across containers, Kubernetes, repositories, clouds, and related targets."
     },
     {
       "claim_id": "C012",
-      "claim_text": "Harbor is a CNCF graduated registry.",
+      "claim_text": "Harbor is a CNCF graduated cloud native registry project.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: 4. Use Registries and Admission Control as Enforcement Points, paragraph 1",
-      "disposition": "needs_allowlist_expansion",
+      "span_hint": "line 259 | section: 4. Use Registries and Admission Control as Enforcement Points",
+      "disposition": "supported",
       "source_ids": [],
-      "proposed_url": "https://goharbor.io/",
-      "proposed_tier": null,
+      "proposed_url": "https://www.cncf.io/projects/harbor/",
+      "proposed_tier": "standards",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The exact graduated-project status is documented on Harbor's official site, which is outside the current allowlist."
+      "rationale": "CNCF's Harbor project page identifies Harbor as a registry project and states that it moved to Graduated maturity."
     },
     {
       "claim_id": "C013",
-      "claim_text": "Harbor supports policy features such as automatic scan-on-push and preventing vulnerable images from running.",
+      "claim_text": "Harbor provides registry features such as project access control, vulnerability scanning, replication, auditing, garbage collection, and signing integration.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: 4. Use Registries and Admission Control as Enforcement Points, paragraph 3",
-      "disposition": "needs_allowlist_expansion",
+      "span_hint": "line 259 | section: 4. Use Registries and Admission Control as Enforcement Points",
+      "disposition": "supported",
       "source_ids": [],
-      "proposed_url": "https://goharbor.io/docs/main/working-with-projects/project-configuration/",
-      "proposed_tier": null,
+      "proposed_url": "https://github.com/goharbor/harbor",
+      "proposed_tier": "upstream",
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "These are real Harbor product capabilities, but the primary Harbor docs host is not presently allowlisted."
+      "rationale": "Harbor's README lists role-based access control, replication, vulnerability scanning, image deletion and garbage collection, Notary signing support, and auditing."
     },
     {
       "claim_id": "C014",
-      "claim_text": "Ratify is a Kubernetes verification engine for artifact security metadata that can gate admission on policy compliance.",
+      "claim_text": "Ratify is a Kubernetes artifact verification engine that admits deployments only when artifact security metadata complies with policy.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: 4. Use Registries and Admission Control as Enforcement Points, paragraph 6",
+      "span_hint": "line 332 | section: 4. Use Registries and Admission Control as Enforcement Points",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/notaryproject/ratify",
@@ -199,13 +199,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Ratify project README directly describes Ratify as a verification engine that admits only artifacts complying with policy."
+      "rationale": "The Ratify README describes Ratify as a verification engine for artifact security metadata that admits deployments only when policies are satisfied."
     },
     {
       "claim_id": "C015",
-      "claim_text": "Gatekeeper provides constraint-based policy enforcement with audit and external data support.",
+      "claim_text": "Gatekeeper provides Kubernetes policy constraints, audit functionality, and external data support.",
       "claim_class": "vendor_capability",
-      "span_hint": "section: 4. Use Registries and Admission Control as Enforcement Points, paragraph 6",
+      "span_hint": "line 332 | section: 4. Use Registries and Admission Control as Enforcement Points",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/open-policy-agent/gatekeeper",
@@ -213,13 +213,27 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The Gatekeeper README directly lists constraints, audit functionality, and external data support."
+      "rationale": "Gatekeeper's README lists native Kubernetes constraints, constraint templates, mutation support, audit functionality, and external data support."
     },
     {
       "claim_id": "C016",
-      "claim_text": "SLSA is a software supply-chain security framework for increasing levels of integrity and trust.",
+      "claim_text": "Cosign stores signature objects alongside container artifacts in OCI-compatible registry storage.",
+      "claim_class": "vendor_capability",
+      "span_hint": "line 442 | section: 5. Scaffold from Single Controls to a Complete Pipeline",
+      "disposition": "supported",
+      "source_ids": [],
+      "proposed_url": "https://github.com/sigstore/cosign",
+      "proposed_tier": "upstream",
+      "anchor_text": null,
+      "suggested_rewrite": null,
+      "lesson_point_url": null,
+      "rationale": "The Cosign README explicitly lists container signing, verification, and storage in an OCI registry."
+    },
+    {
+      "claim_id": "C017",
+      "claim_text": "SLSA is a software supply-chain security framework for reasoning about build provenance and increasing supply-chain integrity.",
       "claim_class": "standard",
-      "span_hint": "section: 6. Operate the System: Exceptions, Provenance, and Incident Response, paragraph 2",
+      "span_hint": "line 579 | section: 6. Operate the System: Exceptions, Provenance, and Incident Response",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/slsa-framework/slsa",
@@ -227,13 +241,13 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The SLSA framework repository directly defines SLSA as a software supply-chain security framework."
+      "rationale": "The SLSA repository defines SLSA as Supply-chain Levels for Software Artifacts and as a framework for increasing software security and supply-chain integrity."
     },
     {
-      "claim_id": "C017",
+      "claim_id": "C018",
       "claim_text": "in-toto provides a framework for protecting software supply-chain integrity by verifying planned steps and authorized functionaries.",
       "claim_class": "standard",
-      "span_hint": "section: 6. Operate the System: Exceptions, Provenance, and Incident Response, paragraph 2",
+      "span_hint": "line 579 | section: 6. Operate the System: Exceptions, Provenance, and Incident Response",
       "disposition": "supported",
       "source_ids": [],
       "proposed_url": "https://github.com/in-toto/in-toto",
@@ -241,7 +255,7 @@
       "anchor_text": null,
       "suggested_rewrite": null,
       "lesson_point_url": null,
-      "rationale": "The in-toto project README directly explains the framework's step verification and functionary authorization model."
+      "rationale": "The in-toto README describes verification of planned supply-chain tasks by authorized personnel and protection against tampering in transit."
     }
   ],
   "further_reading": [
@@ -249,22 +263,28 @@
       "url": "https://github.com/sigstore/cosign",
       "title": "sigstore/cosign",
       "tier": "upstream",
-      "why_relevant": "Primary documentation for OCI signing, verification, attestations, and keyless workflows used throughout the module."
+      "why_relevant": "Primary reference for signing, verification, attestations, keyless signing, and OCI registry storage used throughout the module."
     },
     {
-      "url": "https://github.com/opencontainers/image-spec/blob/main/manifest.md",
-      "title": "OCI Image Manifest Specification",
-      "tier": "upstream",
-      "why_relevant": "Authoritative source on image manifests, content addressing, and artifact identity by digest."
+      "url": "https://www.nist.gov/itl/executive-order-14028-improving-nations-cybersecurity/software-security-supply-chains-software-1",
+      "title": "NIST SBOM Guidance",
+      "tier": "standards",
+      "why_relevant": "Authoritative background on SBOM definition, minimum elements, standard formats, and vulnerability-response value."
     },
     {
       "url": "https://github.com/slsa-framework/slsa",
       "title": "SLSA Framework",
       "tier": "upstream",
-      "why_relevant": "Primary framework reference for provenance-oriented supply-chain maturity and build integrity concepts."
+      "why_relevant": "Primary reference for provenance-oriented supply-chain maturity and build integrity concepts."
+    },
+    {
+      "url": "https://github.com/goharbor/harbor",
+      "title": "Harbor Registry",
+      "tier": "upstream",
+      "why_relevant": "Primary project reference for Harbor registry features including scanning, signing integration, RBAC, replication, and auditing."
     }
   ],
-  "notes": "No claims were emitted for quiz prompts, exercise steps, diagrams, or code blocks unless surrounding prose made a factual product/framework claim. The shared section pool did not contain exact-match sources for the Sigstore, SPDX, Harbor, Ratify, Gatekeeper, SLSA, or in-toto claims.",
+  "notes": "No rewrite dispositions were needed for the supplied module text. Repeated Did You Know and Common Mistakes statements are covered by earlier claims; quiz prompts, exercises, code blocks, and purely pedagogical flow were not emitted as separate claims.",
   "_schema_issues": [],
   "rejected_urls": []
 }
