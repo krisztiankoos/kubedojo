@@ -5076,6 +5076,12 @@ def build_state_manifest() -> dict[str, Any]:
                         "purpose": "Machine-readable index of local API routes and query conventions.",
                         "type": "api",
                     },
+                    {
+                        "name": "Orientation punch-line",
+                        "path": "/api/orient",
+                        "purpose": "Single primary action + up to 3 alternatives + blockers/alerts. Maximum signal-to-token.",
+                        "type": "api",
+                    },
                 ],
             },
             {
@@ -7744,6 +7750,56 @@ def _compact_briefing(briefing: dict[str, Any]) -> dict[str, Any]:
     return compact
 
 
+def build_orient(repo_root: Path) -> dict[str, Any]:
+    """Maximum-signal, minimum-token orientation: what to do RIGHT NOW.
+
+    Projects the session briefing into a single ``primary`` action +
+    up to 3 ``alternatives`` + raw ``blockers`` / ``alerts``. Reach for
+    ``/api/briefing/session?compact=1`` when the full snapshot is needed.
+    """
+    briefing, freshness = get_or_build_session_briefing(repo_root)
+    rows = briefing.get("action_rows") or []
+    blockers = briefing.get("blockers") or []
+    alerts = briefing.get("alerts") or []
+    workspace = briefing.get("workspace") or {}
+    snapshot = briefing.get("snapshot") or {}
+
+    def _row_to_action(row: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "action": row.get("bucket") or "next",
+            "headline": row.get("label"),
+            "module_key": row.get("module_key"),
+            "endpoint": row.get("endpoint"),
+            "reason": row.get("reason"),
+            "phase": row.get("phase"),
+        }
+
+    if rows:
+        primary = _row_to_action(rows[0])
+        alternatives = [_row_to_action(r) for r in rows[1:4]]
+    else:
+        primary = {
+            "action": "idle",
+            "headline": "queue empty — propose work or check blockers for unblock candidates",
+            "module_key": None,
+            "endpoint": None,
+            "reason": None,
+            "phase": None,
+        }
+        alternatives = []
+
+    return {
+        "version": 1,
+        "primary": primary,
+        "alternatives": alternatives,
+        "blockers": blockers,
+        "alerts": alerts,
+        "workspace_dirty": bool(workspace.get("dirty")),
+        "freshness_state": (freshness or {}).get("freshness_state"),
+        "generated_at": snapshot.get("generated_at"),
+    }
+
+
 # Registry keyed by resolved ``repo_root`` so multiple repos sharing one
 # Python process (test suite, multi-repo servers) never cross-contaminate.
 _SESSION_BRIEFING_SNAPSHOTS: dict[str, BackgroundSnapshot] = {}
@@ -7805,6 +7861,11 @@ def build_api_schema() -> dict[str, Any]:
             {
                 "path": "/api/state/manifest",
                 "desc": "Pointer-only cold-start state index grouped by purpose",
+                "content_type": "application/json",
+            },
+            {
+                "path": "/api/orient",
+                "desc": "Single primary action + up to 3 alternatives + blockers/alerts. Punch-line orientation derived from the session briefing.",
                 "content_type": "application/json",
             },
             {"path": "/api/artifacts", "desc": "JSON index of HTML and Markdown artifacts served by /artifacts"},
@@ -8246,6 +8307,8 @@ def route_request(repo_root: Path, raw_path: str) -> tuple[int, Any, str]:
         if compact:
             briefing = _compact_briefing(briefing)
         return 200, briefing, "application/json; charset=utf-8"
+    if path == "/api/orient":
+        return 200, build_orient(repo_root), "application/json; charset=utf-8"
     if path == "/api/session/current":
         return 200, build_current_session(repo_root), "application/json; charset=utf-8"
     if path == "/api/briefing/book":
@@ -8495,6 +8558,7 @@ CACHE_POLICY: dict[str, tuple[float, Callable[[Path], tuple] | None]] = {
     "/api/git/worktrees": (5.0, None),
     "/api/git/cleanup": (10.0, None),
     "/api/briefing/session": (5.0, None),  # background-refreshed; TTL just caps rebuild rate
+    "/api/orient": (5.0, None),  # cheap projection over the same background-refreshed briefing
 }
 
 
