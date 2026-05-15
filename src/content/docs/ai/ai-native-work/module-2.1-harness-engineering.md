@@ -30,33 +30,17 @@ revision_pending: false
 
 Hypothetical scenario: you hand an agent a patch task on a busy release day, and the first run fixes one bug but repeats the same namespace and review mistakes in every subsequent attempt. Your team wants to remove the repetition by changing one prompt, not by adding endless tribal knowledge in chat.
 
-Imagine a team shipping with agent assistance.
-The prompts start out clear.
-The agent applies fixes, edits YAML, and opens PRs quickly.
-Then a pattern appears.
-The same mistakes happen at regular intervals.
-The team keeps adding reminders instead of adding constraints.
+Imagine a team shipping with agent assistance. The prompts start out clear. The agent applies fixes, edits YAML, and opens PRs quickly. Then a pattern appears. The same mistakes happen at regular intervals. The team keeps adding reminders instead of adding constraints.
 
-This module exists for that moment.
-Reliability is not reached by writing better prompts alone.
-Reliability is reached by making the workspace and harness do the repetitive teaching.
-
-The most important lesson is not the list of principles.
-It is the architecture that makes those principles enforceable.
-That architecture is the layered harness model.
+This module exists for that moment. Reliability is not reached by writing better prompts alone. Reliability is reached by making the workspace and harness do the repetitive teaching. The most important lesson is not the list of principles; it is the architecture that makes those principles enforceable. That architecture is the layered harness model.
 
 The module will repeatedly return to this model and ask two kinds of questions.
-First:
-"What is this rule trying to solve?"
-Second:
-"Where should this rule live for best leverage?"
+First: "What is this rule trying to solve?"
+Second: "Where should this rule live for best leverage?"
 
-This framing prevents accidental overengineering.
-It also avoids false certainty from writing advice no one can follow under pressure.
+This framing prevents accidental overengineering. It also avoids false certainty from writing advice no one can follow under pressure. Use these definitions while building your layer map: a rule belongs to one layer; mixed ownership creates confusion and makes reviews harder. The layered model has three tiers:
 
 ## The layered-harness mental model
-
-The layered model has three tiers.
 
 ```text
 +------------------------------+------------------------------+------------------------------+
@@ -67,70 +51,23 @@ The layered model has three tiers.
 
 ### Why this shape is the first thing to learn
 
-A rule only belongs at one layer.
-A mixed rule set creates confusion.
-You get lower compliance and higher review cost.
-
-Use these definitions while building your layer map.
-
-- Platform defaults are often external and hard to change quickly.
-- Project advisory is where shared context is communicated.
-- Project enforcement is where repeated risk is blocked automatically.
-
-A healthy harness keeps each layer explicit.
-That means every rule answer includes three values:
-
-- Is it default behavior?
-- Is it guidance?
-- Is it a hard gate?
+Platform defaults are often external and hard to change quickly, while project advisory is where shared context is communicated and project enforcement is where repeated risk is blocked automatically. A healthy harness keeps each layer explicit, and every rule answer includes three values: whether it is default behavior, guidance, or a hard gate.
 
 ### Layer 1 details
 
-Layer 1 includes assumptions you inherit from the tool stack.
-Examples:
-
-- command permissions,
-- default tool wrappers,
-- available environment values,
-- native branch and working tree behavior,
-- sandbox modes in execution model.
-
-You can document layer 1 constraints for orientation.
-You cannot usually rewrite them in repo-level files.
-That is why this layer is usually advisory-facing.
+Layer 1 includes assumptions you inherit from the tool stack, such as command permissions, default tool wrappers, available environment values, native branch and working tree behavior, and sandbox modes. You can document these constraints for orientation, but you usually cannot rewrite them in repo-level files. That is why this layer is usually advisory-facing.
 
 ### Layer 2 details
 
-Layer 2 is where `AGENTS.md`, `CLAUDE.md`, `docs/` conventions, and project playbooks live.
-This layer is where agents orient themselves.
-If it is dense and noisy, the map fails.
-If it is clear and short, the map scales.
-
-A good layer 2 has:
-
-- short map structure,
-- explicit role tags (who owns what),
-- clear links to deeper docs,
-- and no hidden assumptions.
+Layer 2 is where `AGENTS.md`, `CLAUDE.md`, `docs/` conventions, and project playbooks live. This layer is where agents orient themselves. If it is dense and noisy, the map fails; if it is clear and short, the map scales. A good layer 2 has a short map structure, explicit role tags, clear links to deeper docs, and no hidden assumptions.
 
 ### Layer 3 details
 
-Layer 3 is enforcement.
-This is where the harness becomes dependable.
-If an instruction only lives in prose, it competes with human memory.
-If it is enforced mechanically, it becomes part of the workflow shape.
-
-Examples of layer 3:
-
-- branch protection checks,
-- pre-commit hooks,
-- static lints,
-- deterministic YAML/JSON validation,
-- CI or API-level policy checks.
+Layer 3 is enforcement. This is where the harness becomes dependable. If an instruction only lives in prose, it competes with human memory. If enforced mechanically, it becomes part of the workflow shape. Layer 3 examples include branch protection checks, pre-commit hooks, static lints, deterministic YAML/JSON validation, and CI or API-level policy checks.
 
 ### Worked example: "No direct commit to main"
 
-Use the same rule in all three layers, then observe behavior.
+Use the same rule in all three layers, then observe behavior. The leverage shape appears only when the table below is complete across all three rows.
 
 | Layer | Rule implementation |
 |---|---|
@@ -138,28 +75,15 @@ Use the same rule in all three layers, then observe behavior.
 | Project advisory | `AGENTS.md` and workflow docs say avoid direct commits |
 | Project enforcement | pre-commit checks branch and blocks `main` commit |
 
-This is exactly the leverage shape in the brief example.
-When the rule is only advisory, violations keep repeating.
-When it is enforced, people still can ignore instructions but cannot bypass the system.
+This is exactly the leverage shape in the brief example. When the rule is only advisory, violations keep repeating. When it is enforced, people still can ignore instructions but cannot bypass the system.
 
-Pause and predict:
-If direct-commit guidance remains advisory only, how many review touches per week are needed after the first violation?
-A likely answer is "more than planned" because enforcement does not yet absorb repetition.
-
-This module uses this example again and again because it is concrete, repeatable, and easy to evaluate.
+Pause and predict: If direct-commit guidance remains advisory only, how many review touches per week are needed after the first violation? A likely answer is "more than planned" because enforcement does not yet absorb repetition. This module uses this example again and again because it is concrete, repeatable, and easy to evaluate.
 
 ## Seven principles and layer placement
 
-Lopopolo’s seven principles map cleanly to this model.
-The mapping is what matters.
-Principles become tactics only after mapping.
+Lopopolo’s seven principles map cleanly to this model. The mapping is what matters; principles become tactics only after mapping. The map is advisory, but it must be backed by layer 3 when rules become repetitive. A map gives fast orientation and should answer these in one read:
 
 ### 1) The map, not the manual
-
-The map is advisory, but it must be backed by layer 3 when rules become repetitive.
-A map gives fast orientation.
-
-A good map must answer these in one read:
 
 - where the source of truth is,
 - where the active task instructions live,
@@ -167,96 +91,37 @@ A good map must answer these in one read:
 - where to find troubleshooting guidance,
 - and what to do next when validation fails.
 
-The anti-pattern is a giant prose file that explains everything.
-If the map has no clear path, no prompt can reliably navigate.
+The anti-pattern is a giant prose file that explains everything. If the map has no clear path, no prompt can reliably navigate.
 
 ### 2) Repository as the only system of record
 
-This is advisory plus enforcement.
-Repository-only truth is the contract for continuity.
-
-The practical consequence:
-
-- if a policy is not in versioned files,
-- then an agent cannot reconstruct it reliably,
-- and the policy is not an enforceable guarantee.
-
-Practical design:
-
-- keep standards in docs,
-- keep decisions in reviewable files,
-- keep command outputs and outputs-to-fix suggestions in machine-readable forms.
+This is advisory plus enforcement, and repository-only truth is the continuity baseline for durable behavior. If a policy is not in versioned files, an agent cannot reliably reconstruct it, and that policy is not an enforceable guarantee. Keep standards in docs, keep decisions in reviewable files, and keep command outputs plus remediation suggestions in machine-readable forms.
 
 ### 3) Enforce invariants, not implementations
 
-This one belongs to enforcement.
+This one belongs to enforcement. A brittle implementation-based rule is "always use parser X." A robust invariant-based rule is "all manifest files under manifests/ must include metadata.namespace." Invariants survive tool changes and keep harness flexibility.
 
-A brittle implementation-based rule:
-"always use parser X".
-
-A robust invariant-based rule:
-"all manifest files under manifests/ must include metadata.namespace."
-
-The second survives tool changes and keeps harness flexibility.
-
-Pause and predict:
-Which rule survives a replacement of the lint tool from shell script to specialized parser?
-The invariant does.
+Pause and predict: which rule survives a replacement of the lint tool from shell script to a specialized parser? The invariant does.
 
 ### 4) Make the application legible to the agent
 
-Legible applications expose state and signals in predictable commands.
-No hidden side effects.
-No custom-only debug flow.
-
-You need:
-
-- stable startup endpoint,
-- one command for status,
-- one command for log slice,
-- one command for signal metrics,
-- one command for recent diff or diff-equivalent check.
-
-When these exist,
-an agent can diagnose "did I fix the root cause?" without manual lore.
+Legible applications expose state and signals in predictable commands, avoid hidden side effects, and remove custom-only debug flow. You need a stable startup endpoint, one command for status, one command for log slice, one for signal metrics, and one for recent diff or diff-equivalent check. When these exist, an agent can diagnose "did I fix the root cause?" without manual lore.
 
 ### 5) Flip merge philosophy
 
-In high throughput contexts, merge philosophy should optimize around:
-
-- what to block,
-- what to auto-retry,
-- and what to escalate.
-
-This principle asks you to remove manual friction where it is pure mechanics.
-It does not ask you to remove human judgment where there is policy risk.
+In high throughput contexts, merge philosophy should optimize around what to block, what to auto-retry, and what to escalate. This principle removes manual friction where it is pure mechanics without removing human judgment where there is policy risk.
 
 ### 6) Continuous garbage collection
 
-Docs, scripts, and rules decay.
-Without periodic cleanup, they lose trust.
-
-Borrow a rule from maintenance hygiene:
-
-- remove stale paths from maps,
-- remove obsolete scripts,
-- remove stale exceptions,
-- remove stale runbook branches,
-- and update references.
+Docs, scripts, and rules decay. Without periodic cleanup they lose trust, so maintenance hygiene should remove stale paths from maps, remove obsolete scripts, remove stale exceptions, clean stale runbook branches, and refresh references.
 
 ### 7) Boring tech wins
 
-No novelty premium in harness design.
-Prefer predictable tools, small scripts, stable command interfaces, and explicit error outputs.
-A boring script is an operational asset.
-A trendy script with hidden behavior is a maintenance liability.
-
-If your harness depends on one engineer understanding the parser deeply,
-it is not boring enough.
+No novelty premium in harness design: prefer predictable tools, small scripts, stable command interfaces, and explicit error outputs. A boring script is an operational asset, while a trendy script with hidden behavior becomes a maintenance liability. If your harness depends on one engineer understanding the parser deeply, it is not boring enough.
 
 ## Autonomy ladder: from prompt to merge
 
-The autonomy ladder is a practical sequence where output quality increases with each enforced stage.
+The autonomy ladder is a practical sequence where output quality increases with each enforced stage, and a one-prompt cycle can succeed when each stage has deterministic handoff.
 
 ```mermaid
 flowchart TD
@@ -275,13 +140,7 @@ flowchart TD
   V -->|Fail| E
 ```
 
-A one-prompt cycle can succeed when each stage has deterministic handoff.
-That means:
-
-- state checks are scripted,
-- validation can rerun unchanged,
-- evidence capture is automatic,
-- feedback is structured and not ad hoc.
+That means state checks are scripted, validation can rerun unchanged, evidence capture is automatic, and feedback is structured and not ad hoc.
 
 Pause and predict:
 At which point in the ladder is merge review most likely to fail if the evidence has no remediation path?
@@ -289,20 +148,7 @@ You likely identify the evidence stage.
 
 ## Repository map design for AGENTS
 
-A concise map reduces guidance fragmentation.
-The example target is around one hundred lines, not because of arbitrary limits,
-but because short files are easier to audit.
-
-A good map includes:
-
-- one-line purpose,
-- link to architecture,
-- link to execution plans,
-- link to enforcement rules,
-- link to references,
-- link to generated or evidence outputs.
-
-Example map structure:
+A concise map reduces guidance fragmentation. The example target is around one hundred lines, not because of arbitrary limits, but because short files are easier to audit. A good map includes one-line purpose, links to architecture, execution plans, enforcement rules, references, and generated or evidence outputs. A simple example map structure:
 
 ```text
 /AGENTS.md
@@ -318,24 +164,16 @@ Example map structure:
   workflows/
 ```
 
-This structure makes search deterministic.
-The point is not pretty docs.
-The point is that an agent reaches the right section in first pass.
+This structure makes search deterministic. The point is not pretty docs; the point is that an agent reaches the right section in first pass.
 
 ## Mechanical-invariant lints as multipliers
 
-A mechanical invariant has leverage when it applies broadly and cheaply.
-One check can improve hundreds of prompts.
-
-Use this concrete example:
+A mechanical invariant has leverage when it applies broadly and cheaply. One check can improve hundreds of prompts. The key is low cognitive overhead. A good lint message includes exactly what to change.
 
 - rule: manifests under manifests/ must include metadata.namespace,
 - scope: all non-test manifests,
 - command: one script,
 - gate: pre-commit and CI.
-
-The key is low cognitive overhead.
-A good lint message includes exactly what to change.
 
 A weak lint says:
 "manifest file invalid."
@@ -385,22 +223,14 @@ fi
 echo "manifest invariant checks passed"
 ```
 
-This script is boring.
-It is also scalable.
-
 ## App legibility and observability for agents
 
-Agents can follow rules only if they can observe outcomes.
-This is why observability is part of the harness, not an optional dashboard.
-
-Minimum local observability bundle:
+Agents can follow rules only if they can observe outcomes. This is why observability is part of the harness, not an optional dashboard. A minimum local observability bundle includes:
 
 - health endpoint,
 - startup time metric,
 - logs command,
 - resource command.
-
-A practical pattern:
 
 ```bash
 # health and startup checks
@@ -414,26 +244,17 @@ kubectl logs -n default deploy/app-controller --tail=40 || true
 kubectl get ns --no-headers | wc -l || true
 ```
 
-If observability is not local and deterministic,
-then prompts become fragile with every environment change.
-The harness then teaches a different workflow each run.
+If observability is not local and deterministic, prompts become fragile with every environment change, and the harness teaches a different workflow each run. In the module scope, prompts can include:
 
 ### Why local observability matters for prompts
 
-In the module scope, prompts can include:
-
 - "Before running, what do you expect this check to return?"
 - "If metric is above threshold, which command should run first?"
-- "Where is the correction path documented?"
-
-This is active learning encoded into harness design.
+- "Where is the correction path documented?" Each line here is active learning encoded into harness design.
 
 ## Merge philosophy, risk, and escalation
 
-A proper merge philosophy is not “fast with no review.”
-It is “strict where impact is high and fast where impact is low." 
-
-A simple decision matrix:
+A proper merge philosophy is not “fast with no review.” It is “strict where impact is high and fast where impact is low.” A simple decision matrix can become code by mapping action risk to review burden:
 
 | Action risk | Human checkpoint required |
 |---|---|
@@ -442,30 +263,20 @@ A simple decision matrix:
 | Config or API change | Mandatory check + explicit owner |
 | Production-impacting change | Mandatory human review + rollback plan |
 
-This matrix can become code by mapping labels to hook requirements.
+This matrix can become code by mapping labels to hook requirements. When merge philosophy is designed this way, agents know the boundary and are not guessing whether a failure needs final judgment or retry.
 
-When merge philosophy is designed this way, agents know the boundary.
-They are not guessing whether a failure needs final judgment or retry.
-
-Quoted principle from the source:
-
-> "Humans steer. Agents execute." — Ryan Lopopolo, OpenAI
-
-The phrase is not ornamental.
-It describes authority boundaries in every automated system.
+A guiding principle from the source is "Humans steer. Agents execute." — Ryan Lopopolo, OpenAI. The phrase is not ornamental; it describes authority boundaries in every automated system.
 
 ### Escalation trigger examples
 
-Escalate when:
+Escalate when policy violation touches data or production scope, run context is missing, or evidence is not present in the artifact set. Use this framework before adding each rule. You can apply this in practice by running this sequence when onboarding a new rule.
 
 - policy violation touches data or production scope,
 - output confidence is low,
-- source context is missing,
+- run context is missing,
 - or evidence is not present in the artifact set.
 
 ## Decision framework
-
-Use this framework before adding each rule.
 
 ```mermaid
 flowchart TB
@@ -479,8 +290,6 @@ and return structured output?}
   T --> U
   U -->|still repeating| E
 ```
-
-You can apply this in practice by running this sequence when onboarding a new rule.
 
 1. Ask if machine check is possible.
 2. Ask who owns the rule.
@@ -517,10 +326,7 @@ A short anti-example is valid here: some friction patterns remain and still gene
 That does not invalidate the pattern; it reinforces principle three.
 Use this distinction carefully.
 
-If a team cannot reliably enforce a rule through hooks,
-then every advisory sentence turns into another exception list.
-
-A short recovery sequence:
+If a team cannot reliably enforce a rule through hooks, every advisory sentence turns into another exception list. This is where anti-pattern becomes a design loop, and the recovery sequence is usually:
 
 1. split long docs,
 2. keep the map,
@@ -528,21 +334,16 @@ A short recovery sequence:
 4. reduce exception clauses,
 5. rerun repeat violations after one week.
 
-This is where anti-pattern becomes a design loop.
-
 ## Did You Know?
 
-- The experiment reported about ~1,000,000 LOC in a five-month window.
+- Ryan Lopopolo’s five-month experiment summary reported about ~1,000,000 LOC in a five-month window.
 - It reported roughly 1,500 PRs merged in that window.
 - Team size was described as moving from 3 to 7 engineers.
 - Throughput was observed around 3.5 PRs per engineer per day.
 
-Exactly four facts here, all from this source context.
-
 ## Hands-On Exercise
 
-The exercise below is the required hands-on design.
-It is realistic and shell-based.
+This is the required hands-on design for this module and is realistic, shell-based, and command-first for a temporary workspace.
 
 ### Step 0: project setup
 
@@ -553,9 +354,7 @@ git init
 mkdir -p .github/hooks docs manifests scripts
 ```
 
-### Step 1: make a short map-first AGENTS
-
-Create `AGENTS.md` with a short map plus pointers.
+### Step 1: make a short map-first AGENTS with a short map plus pointers
 
 ```bash
 cat > AGENTS.md <<'EOF'
@@ -711,12 +510,7 @@ chmod +x .github/hooks/pre-commit
 ./scripts/manifest-check.sh
 ```
 
-Expected result:
-
-- `manifests/deployment.yaml` fails with namespace missing.
-- output includes a remediation message.
-
-Now fix the manifest:
+Expected result: `manifests/deployment.yaml` should fail with namespace missing and include a remediation message. After you fix it, rerun the script and expect only the success message.
 
 ```bash
 cat > manifests/deployment.yaml <<'EOF'
@@ -743,10 +537,6 @@ EOF
 ./scripts/manifest-check.sh
 ```
 
-Expected result:
-
-- only success message returns.
-
 ### Step 7: test branch gate behavior
 
 ```bash
@@ -762,22 +552,17 @@ git -c user.name=Demo -c user.email=demo@example.com add .
 .git/hooks/pre-commit .
 ```
 
-For a true pre-commit install, use `core.hooksPath` or copy hooks manually.
-This exercise only demonstrates command behavior.
-If you are on `main`, the hook block should block commit.
+For a true pre-commit install, use `core.hooksPath` or copy hooks manually. This exercise only demonstrates command behavior. If you are on `main`, the hook block should block commit.
 
 ### Step 8: kubectl-based final validation check
 
-If kubectl exists locally, run this dry-run line:
+If kubectl exists locally, run this dry-run line as a final check; this is deterministic parsing plus shape checks before runtime.
 
 ```bash
 if command -v kubectl >/dev/null 2>&1; then
   kubectl apply -f manifests/deployment.yaml --dry-run=client
 fi
 ```
-
-The point is not external cluster mutation.
-The point is deterministic parsing plus shape checks before runtime.
 
 ### Success checklist
 
@@ -850,22 +635,14 @@ When this appears, refresh map density and prune stale paths before adding more 
 
 ### Variation A: enforcement-only start for a noisy team
 
-If the team already has instruction fatigue,
-start by adding only two checks:
+If the team already has instruction fatigue, start by adding only two checks, then collect two iterations of data before adding one advisory file per failing case. This avoids introducing too many constraints at once.
 
 - direct commit gate,
 - namespace invariant.
 
-Collect two iterations of data.
-Then add one advisory file per failing case.
-This avoids introducing too many constraints at once.
-
 ### Variation B: no-kubectl environment
 
-If kubectl is unavailable,
-skip runtime command checks and rely on static checks.
-The invariant design is still valid because it prevents known avoidable failures.
-When kubectl returns, add command-based validation as a second stage.
+If kubectl is unavailable, skip runtime command checks and rely on static checks. The invariant design is still valid because it prevents known avoidable failures. When kubectl returns, add command-based validation as a second stage.
 
 ### Variation C: branch naming controls
 
@@ -895,18 +672,16 @@ You can script this with simple shell capture commands and markdown summaries.
 
 ## Next step orientation
 
-Once you can design and run this harness model for one small operator task,
-your next learning step is orchestration and control-plane patterns.
-Continue to module 2.2 to learn how to coordinate multiple tasks across tracks in the same reliability spirit.
+Once you can design and run this harness model for one small operator task, your next learning step is to continue in [Module 2.2 — Orchestrating fleets: Symphony and project-management-as-control-plane](./module-2.2-orchestrating-fleets-symphony.md) to learn how to coordinate multiple tasks across tracks in the same reliability spirit.
 
 ## Sources
 
-- [Harness engineering: leveraging Codex in an agent-first world](https://openai.com/index/harness-engineering/)
+- [Harness engineering: leveraging Codex in an agent-first world](https://web.archive.org/web/20260211120000/https:%2F%2Fopenai.com/index/harness-engineering/)
 - [Custom instructions with AGENTS.md — Codex | OpenAI Developers](https://developers.openai.com/codex/guides/agents-md)
 - [Git hooks - Git - Documentation](https://git-scm.com/docs/githooks)
 - [pre-commit](https://pre-commit.com/)
-- [no-duplicate-imports - ESLint](https://eslint.org/docs/latest/rules/no-duplicate-imports)
+- [About protected branches - GitHub Docs](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)
 
 ## Next Module
 
-Continue in [Module 2.2 — Orchestrating fleets: Symphony and project-management-as-control-plane](./module-2.2-orchestrating-fleets-symphony.md).
+Continue in [Module 2.2 — Orchestrating fleets: Symphony and project-management-as-control-plane](./module-2.2-orchestrating-fleets-symphony.md) when you are ready to coordinate multiple operator tasks across tracks with the same reliability patterns.
