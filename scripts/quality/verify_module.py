@@ -690,6 +690,7 @@ def extract_urls(section_text: str) -> list[str]:
 
 
 def _check_url(url: str) -> str:
+    head_and_get_attempted = False
     try:
         import requests
 
@@ -697,12 +698,28 @@ def _check_url(url: str) -> str:
         session.max_redirects = 5
         response = session.head(url, timeout=10, allow_redirects=True)
         if response.status_code in (403, 405, 501):
+            head_and_get_attempted = True
             response = session.get(url, timeout=10, allow_redirects=True, stream=True)
             response.close()
     except Exception:
         return "fetch_failed"
     if 200 <= response.status_code <= 299:
         return "redirect" if response.history else "200"
+    if head_and_get_attempted:
+        # Cloudflare blocks many HEAD requests; lightpanda renders in a browser and can confirm real reachability.
+        try:
+            import subprocess
+
+            result = subprocess.run(
+                ["lightpanda", "fetch", "--dump", "markdown", url],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            if result.returncode == 0 and len(result.stdout.strip()) > 0:
+                return "200"
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return "404"
     return "404"
 
 
