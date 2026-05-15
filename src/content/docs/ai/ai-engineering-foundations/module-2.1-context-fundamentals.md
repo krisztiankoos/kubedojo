@@ -171,7 +171,7 @@ If the answer includes external knowledge, retrieval may help, but only after yo
 
 The LLM-as-OS framing is a community-of-practice shorthand, not a formal architecture standard.
 
-Alex Lopopolo's OpenAI post on harness engineering pushes practitioners to think beyond individual prompts and toward the system around the model.
+Lopopolo's OpenAI post on harness engineering pushes practitioners to think beyond individual prompts and toward the system around the model.
 
 Andrej Karpathy's public commentary has also popularized the broader idea that LLMs increasingly behave like a new operating layer with tools, memory-like context, and applications around them.
 
@@ -1092,9 +1092,9 @@ If a reviewer cannot tell what context the agent used, they cannot tell whether 
 
 2. Anthropic's prompt-caching docs describe automatic caching, explicit cache breakpoints, a default five-minute cache lifetime, and longer cache options for supported use cases. Source: [Anthropic Prompt Caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching).
 
-3. The ArXiv paper at the requested DeepMind URL is titled "Leave No Context Behind: Efficient Infinite Context Transformers with Infini-attention" and focuses on scaling long inputs with bounded memory and compute. Source: [arXiv:2404.07143](https://arxiv.org/abs/2404.07143).
+3. DeepMind's "Leave No Context Behind: Efficient Infinite Context Transformers with Infini-attention" describes a bounded-memory architecture for scaling attention over long inputs without quadratic compute. Source: [arXiv:2404.07143](https://arxiv.org/abs/2404.07143).
 
-4. OpenAI's Harness Engineering post is useful here because it frames reliable AI work as a system around the model, not just a better instruction string. Source: [Harness Engineering](https://openai.com/index/harness-engineering/).
+4. OpenAI's "Harness Engineering" post argues that reliable AI work is a system around the model — code structure, mechanical lints, application legibility — not just a better instruction string. Source: [Harness Engineering](https://openai.com/index/harness-engineering/).
 
 ## Common Mistakes
 
@@ -1305,13 +1305,13 @@ If not, create a small mock workflow with an agent instruction file, a task prom
 
 ## Next Module
 
-Continue to [Repository Engineering for Agents](../module-2.2-repository-engineering/) when it ships.
+Next module (planned): Repository Engineering for Agents.
 
 That module will focus on making repository structure, indexes, docs, scripts, and tests act as durable context surfaces for AI coding agents.
 
 ## Sources
 
-- Alex Lopopolo, "Harness Engineering": [https://openai.com/index/harness-engineering/](https://openai.com/index/harness-engineering/)
+- Lopopolo, "Harness Engineering": [https://openai.com/index/harness-engineering/](https://openai.com/index/harness-engineering/)
 - OpenAI, "Prompt caching": [https://platform.openai.com/docs/guides/prompt-caching](https://platform.openai.com/docs/guides/prompt-caching)
 - Anthropic, "Prompt caching": [https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching)
 - Google DeepMind, "Leave No Context Behind: Efficient Infinite Context Transformers with Infini-attention": [https://arxiv.org/abs/2404.07143](https://arxiv.org/abs/2404.07143)

@@ -20,26 +20,24 @@ Context work manages what the model sees on each turn.
 
 Harness work turns repeated agent work into enforceable, observable systems.
 
-The final arc applies those layers to Symphony-style orchestration, where issue contracts, lifecycle hooks, and multi-agent review loops become a control plane for AI-assisted engineering.
-
-Stage-0 planning lives in the internal brief: [docs/research/ai-engineering-foundations-stage0-2026-05-15.html](../../../../docs/research/ai-engineering-foundations-stage0-2026-05-15.html).
+The final module applies those layers to Symphony-style orchestration, where issue contracts and lifecycle hooks become a control plane for AI-assisted engineering.
 
 ## Planned Modules
 
 | Module | Topic | Status |
 |---|---|---|
 | 1.1 | Prompt Fundamentals | planned |
-| 1.2 | Prompt Debugging and Evaluation | planned |
-| 1.3 | Prompt Libraries and Contracts | planned |
+| 1.2 | Reasoning and Logic Prompts | planned |
+| 1.3 | Prompt Safety and Evaluation | planned |
+| 1.4 | Prompt Libraries and Contracts | planned |
 | 2.1 | [Context Engineering Fundamentals](module-2.1-context-fundamentals/) | drafting |
 | 2.2 | Repository Engineering for Agents | planned |
 | 2.3 | Retrieval, Tools, and Memory Boundaries | planned |
-| 3.1 | Harness Fundamentals | planned |
-| 3.2 | Guardrails, Gates, and Traces | planned |
-| 3.3 | Agent Runtime Operations | planned |
-| 4.1 | Symphony Control Plane | planned |
-| 4.2 | Multi-Agent Review Loops | planned |
-| 4.3 | Symphony Capstone | planned |
+| 2.4 | Dynamic Context Orchestration | planned |
+| 3.1 | Harness Fundamentals — Layers and System of Record | planned |
+| 3.2 | Guardrails, Gates, and Agent-Legible Apps | planned |
+| 3.3 | Operating the Harness | planned |
+| 4.1 | Symphony — Work Orchestration as Applied Harness | planned |
 
 ## Reading Path
 
