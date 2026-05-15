@@ -1260,6 +1260,21 @@ Two kinds of edits land in the module:
   `skipped_claims` with reason `awaiting_allowlist_review`. Do not
   edit the module; do not add a citation.
 
+## Completeness contract (CRITICAL)
+
+Every cited-disposition claim (supported, weak_anchor) from the seed
+MUST appear in EXACTLY ONE of:
+
+- `inline_insertions[]` with a valid wrap, OR
+- `skipped_claims[]` with a reason like `span_in_code_block`,
+  `span_not_wrappable`, `inside_quoted_block`, or `claim_text_not_found_in_body`.
+
+Omitting a cited claim from BOTH arrays is a CONTRACT VIOLATION. The
+orchestrator will detect this and soft-skip the missing claim — your
+hard work on the other claims still lands, but the dropped claim
+becomes a manual-review item in the sidecar log. Aim for zero
+contract violations.
+
 ## Edit discipline
 
 1. `target_line` MUST be a verbatim single line copied from the module
@@ -1959,9 +1974,14 @@ def run_inject(module_key: str, *, agent: str = "codex", dry_run: bool = False) 
     }
     missing_cited = expected_cited_ids - applied_inline_ids - skipped_ids
     if missing_cited:
-        diff_issues.append(
-            f"cited_dispositions_not_addressed: {sorted(missing_cited)[:5]}"
-        )
+        for cid in sorted(missing_cited):
+            applied.append({
+                "claim_id": cid,
+                "kind": "inline",
+                "status": "skipped",
+                "reason": "not_addressed_by_agent",
+            })
+    codex_dropped_count = len(missing_cited)
 
     # Only write to disk on a clean diff. A failed diff lint means
     # Codex made an unauthorized prose change or skipped required
@@ -1974,9 +1994,10 @@ def run_inject(module_key: str, *, agent: str = "codex", dry_run: bool = False) 
     # the full list. Rewrites are applied in-place; no revision record
     # needed for them any more.
     deferred_record_path = None
-    if deferred:
+    if deferred or missing_cited:
         rp = REPO_ROOT / ".pipeline" / "citation-revisions" / f"{normalized_key.replace('/', '-')}.json"
         rp.parent.mkdir(parents=True, exist_ok=True)
+        missing_lookup = set(str(cid) for cid in missing_cited)
         rp.write_text(
             json.dumps({
                 "module_key": normalized_key,
@@ -1992,6 +2013,17 @@ def run_inject(module_key: str, *, agent: str = "codex", dry_run: bool = False) 
                     }
                     for c in deferred
                 ],
+                "codex_dropped": [
+                    {
+                        "claim_id": c.get("claim_id"),
+                        "claim_text": c.get("claim_text"),
+                        "span_hint": c.get("span_hint"),
+                        "proposed_url": c.get("proposed_url"),
+                        "disposition": c.get("disposition"),
+                    }
+                    for c in seed.get("claims") or []
+                    if str(c.get("claim_id")) in missing_lookup
+                ],
             }, indent=2, ensure_ascii=False) + "\n",
             encoding="utf-8",
         )
@@ -2000,6 +2032,7 @@ def run_inject(module_key: str, *, agent: str = "codex", dry_run: bool = False) 
     return {
         "module_key": normalized_key, "ok": len(diff_issues) == 0,
         "module_path": str(module_path.relative_to(REPO_ROOT)),
+        "codex_dropped_count": codex_dropped_count,
         "inline_applied": sum(1 for a in applied if a.get("kind") == "inline" and a.get("status") == "applied"),
         "rewrite_applied": sum(1 for a in applied if a.get("kind") == "prose_rewrite" and a.get("status") == "applied"),
         "rejected_count": sum(1 for a in applied if a.get("status") == "rejected"),
