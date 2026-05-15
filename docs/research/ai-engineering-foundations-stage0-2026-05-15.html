@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Engineering Foundations — Stage-0 research brief (2026-05-15)</title>
+<style>
+  :root {
+    --bg: #fafbfc; --fg: #1a1d23; --muted: #5b6573; --accent: #0057B7;
+    --good: #0d8a4a; --partial: #b45c00; --gap: #b8001f; --card: #ffffff;
+    --border: #e2e6eb; --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { margin: 0 0 8px; font-size: 28px; }
+  h2 { margin: 40px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); font-size: 22px; }
+  h3 { margin: 24px 0 8px; font-size: 17px; }
+  .meta { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  .tldr { background: var(--card); border-left: 4px solid var(--accent);
+          padding: 14px 18px; margin: 16px 0 28px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0;
+          background: var(--card); border: 1px solid var(--border); }
+  th, td { padding: 10px 12px; border-bottom: 1px solid var(--border);
+           text-align: left; vertical-align: top; font-size: 13px; }
+  th { background: #eef2f6; font-weight: 600; }
+  code { background: #eef2f6; padding: 1px 6px; border-radius: 3px;
+         font-family: var(--mono); font-size: 12px; }
+  pre { background: var(--card); border: 1px solid var(--border); padding: 14px;
+        border-radius: 6px; overflow-x: auto; font-size: 12px; }
+  .phase { background: var(--card); border: 1px solid var(--border);
+           border-left: 4px solid var(--accent); padding: 12px 16px; margin: 10px 0;
+           border-radius: 0 6px 6px 0; }
+  .phase h3 { margin: 0 0 6px; color: var(--accent); }
+  .src { color: var(--muted); font-size: 12px; }
+  .status-good { color: var(--good); font-weight: 600; }
+  .status-gap { color: var(--gap); font-weight: 600; }
+  .status-partial { color: var(--partial); font-weight: 600; }
+  blockquote { border-left: 3px solid var(--accent); margin: 12px 0;
+               padding: 4px 14px; color: var(--muted); font-style: italic; }
+  ul.compact { margin: 6px 0; padding-left: 22px; }
+  ul.compact li { margin: 3px 0; }
+</style>
+</head>
+<body>
+<main>
+<h1>AI Engineering Foundations — Stage-0 research brief</h1>
+<p class="meta">Date: 2026-05-15 · Author: claude (orchestrator) · Inputs: codex (gpt-5.5, danger, web-search) + gemini-3-flash-preview · Predecessor: <code>docs/research/harness-symphony-gap.md</code> (2026-05-12)</p>
+
+<div class="tldr">
+<strong>Recommendation:</strong> Create new section <code>ai/ai-engineering-foundations/</code> housing a 12-module sub-track on the <em>prompt | context | harness</em> layered triplet plus a Symphony capstone. Ship in 4 phases. Phase 1 (this session): produce this brief + agree on IA. Phase 2 fills the context-engineering gap (the missing middle). Phase 3 and 4 split the over-loaded existing prompt-eng-1.6 and harness-eng-2.1 modules into focused 600-800-line modules each at Bloom L3+. Total: ~15–18 hours of curriculum.
+</div>
+
+<h2>1. Trigger and question</h2>
+<p>Session 12 (2026-05-15, PR #1184 + #1221) shipped the harness-engineering and Symphony modules. User then flagged a coherence problem: Ryan Lopopolo's <em>prompt | context | harness</em> triplet was split across two tabs and the middle layer (context engineering) had no module anywhere. User asked: <em>"Should prompt + context + harness be in the same section? We need more than 3 modules. What's your take?"</em></p>
+<p>This brief is the answer from a parallel research dispatch (codex + gemini) plus synthesis.</p>
+
+<h2>2. Primary sources — verified</h2>
+<table>
+<thead><tr><th>Source</th><th>URL</th><th>Verification</th></tr></thead>
+<tbody>
+<tr><td>Lopopolo, "Harness Engineering" (Feb 2026)</td><td><code>https://openai.com/index/harness-engineering/</code></td><td><span class="status-good">200 via fetch</span>; <code>curl -sI</code> returns 403 (Cloudflare bot-block on HEAD — this is the exact <code>verify_module.py:_check_url</code> bug from session-12 priority #1)</td></tr>
+<tr><td>Kotliarskyi / Zhu / Brock, "Symphony" (Apr 2026)</td><td><code>https://openai.com/index/open-source-codex-orchestration-symphony/</code></td><td><span class="status-good">200 via fetch</span></td></tr>
+<tr><td>Symphony OSS repo + SPEC.md</td><td><code>github.com/openai/symphony</code> · <code>raw.githubusercontent.com/openai/symphony/main/SPEC.md</code></td><td><span class="status-good">200</span></td></tr>
+<tr><td>Anthropic, "Prompt engineering"</td><td><code>docs.anthropic.com/en/docs/build-with-claude/prompt-engineering</code></td><td><span class="status-partial">Cited by gemini; URL pattern matches Anthropic docs structure but not independently re-fetched by codex</span></td></tr>
+<tr><td>OpenAI, "Prompt engineering best practices"</td><td><code>platform.openai.com/docs/guides/prompt-engineering</code></td><td><span class="status-partial">Cited by gemini; not independently re-fetched</span></td></tr>
+<tr><td>Lilian Weng, "Prompt Engineering"</td><td><code>lilianweng.github.io/posts/2023-06-23-agent/</code></td><td><span class="status-partial">URL points to her "LLM Powered Autonomous Agents" post; correct domain, gemini may have given the wrong slug</span></td></tr>
+<tr><td>DAIR.AI Prompt Engineering Guide</td><td><code>promptingguide.ai</code></td><td><span class="status-partial">Domain valid; specific page not verified</span></td></tr>
+<tr><td>Karpathy on context engineering</td><td><code>x.com/karpathy/status/1805646187971715456</code></td><td><span class="status-gap">UNVERIFIED — gemini flagged itself; codex did not cross-check. Treat as "Karpathy uses this framing" but do not cite the specific tweet URL until verified.</span></td></tr>
+<tr><td>DeepMind, "Leave No Token Behind"</td><td><code>arxiv.org/abs/2404.07143</code></td><td><span class="status-partial">arxiv ID format is plausible; not re-fetched</span></td></tr>
+</tbody>
+</table>
+<p><strong>Gap-doc accuracy:</strong> Codex confirmed the existing <code>docs/research/harness-symphony-gap.md</code> Section A summary <em>matches</em> the live posts. One nuance: the "500% PR throughput" claim is "<em>some teams</em>", not a general result.</p>
+
+<h2>3. Where the two research agents converged</h2>
+<ol>
+<li><strong>Multi-module sub-track is correct, not a single fundamentals module per topic.</strong> The current 1.6 (786 lines covering 7 techniques) and 2.1 (705 lines covering 7 principles) are at the rubric floor but cannot reach Bloom L3+ depth across all sub-topics. Splitting each lets focused 600–800-line modules teach individual sub-topics deeply.</li>
+<li><strong>Linear sequencing: prompt → context → harness → Symphony.</strong> Gemini cited Bloom L1-L4 progression. Codex framed it as <em>"expansion of developer control from single chat to autonomous agentic system."</em> Same answer arrived from different reasoning.</li>
+<li><strong>Context engineering is genuinely distinct from prompt eng and from RAG.</strong> Gemini: <em>"It is the RAM management of the LLM OS… distinct from RAG because it focuses on session-level state and repo-level knowledge structure, not just retrieving external documents."</em> Codex implicitly agreed by treating it as a peer layer in the triplet.</li>
+</ol>
+
+<h2>4. Where they diverged (covered different halves, no disagreement)</h2>
+<table>
+<thead><tr><th>Question</th><th>Codex</th><th>Gemini</th></tr></thead>
+<tbody>
+<tr><td>IA placement</td><td><strong>New section <code>ai/ai-engineering-foundations/</code></strong> (option iii)</td><td>Did not address</td></tr>
+<tr><td>Symphony placement</td><td><strong>Stay adjacent + add orchestration-survey separately</strong> (option C). Symphony is the capstone of harness, not a fourth peer of prompt/context/harness.</td><td>Did not address</td></tr>
+<tr><td>Harness module count</td><td><strong>3</strong> (Layers/Maps · Guardrails+Legibility · Operating the Harness)</td><td>Did not address</td></tr>
+<tr><td>Prompt module count</td><td>Did not address</td><td><strong>4</strong> (Fundamentals · Reasoning · Safety+Eval · Prompt Systems)</td></tr>
+<tr><td>Context module count</td><td>Did not address</td><td><strong>4</strong> (Fundamentals · Repo Engineering · Semantic vs Lexical · Dynamic Orchestration)</td></tr>
+</tbody>
+</table>
+
+<h2>5. Recommended module map — <code>ai/ai-engineering-foundations/</code></h2>
+<p>12 modules, ~15-18 hours, Bloom L3+ throughout. Numbering deliberately uses major-version slots so each layer is its own visible band.</p>
+<table>
+<thead><tr><th>#</th><th>Title</th><th>Scope (1 line)</th><th>Provenance</th></tr></thead>
+<tbody>
+<tr><td colspan="4"><strong>Prompt Engineering</strong></td></tr>
+<tr><td>1.1</td><td>Prompt Fundamentals</td><td>Interface contract, role, output, "Colleague Test", XML structuring</td><td>gemini</td></tr>
+<tr><td>1.2</td><td>Reasoning &amp; Logic</td><td>CoT, <code>&lt;thinking&gt;</code> tags, Tree-of-Thoughts, Reflexion patterns</td><td>gemini</td></tr>
+<tr><td>1.3</td><td>Safety &amp; Evaluation</td><td>Injection defense, evals-as-code, regression testing, drift detection</td><td>gemini</td></tr>
+<tr><td>1.4</td><td>Prompt Systems</td><td>Library architecture, versioning, model migration, prefix caching</td><td>gemini</td></tr>
+<tr><td colspan="4"><strong>Context Engineering</strong> <span class="status-gap">— 4 NEW modules; "the missing middle"</span></td></tr>
+<tr><td>2.1</td><td>Context Fundamentals</td><td>LLM-as-OS, attention budget, prefix-cache economics, context scarcity</td><td>gemini</td></tr>
+<tr><td>2.2</td><td>Repository Engineering</td><td>AGENTS.md/CLAUDE.md, progressive disclosure, structured <code>docs/</code> as system of record</td><td>gemini</td></tr>
+<tr><td>2.3</td><td>Semantic vs Lexical Context</td><td>RAG patterns, embedding selection, context pruning, retrieval evaluation</td><td>gemini</td></tr>
+<tr><td>2.4</td><td>Dynamic Context Orchestration</td><td>Tool outputs, session pruning, context-rot observability, refresh policies</td><td>gemini</td></tr>
+<tr><td colspan="4"><strong>Harness Engineering</strong></td></tr>
+<tr><td>3.1</td><td>Layers, Maps, and System of Record</td><td>Platform/advisory/enforcement layers, AGENTS.md as ToC, boring-tech bias</td><td>codex</td></tr>
+<tr><td>3.2</td><td>Mechanical Guardrails and Agent-Legible Apps</td><td>Hooks/lints/tests, errors-as-remediation, observability surfaces, devtools wiring</td><td>codex</td></tr>
+<tr><td>3.3</td><td>Operating the Harness</td><td>Merge philosophy, exception drift, doc-gardening, governance, continuous GC</td><td>codex</td></tr>
+<tr><td colspan="4"><strong>Capstone</strong></td></tr>
+<tr><td>4.1</td><td>Symphony: Work Orchestration as Applied Harness</td><td>Issue-as-control-plane, WORKFLOW.md contract, lifecycle hooks, state machine</td><td>codex (current 2.2 reframed)</td></tr>
+</tbody>
+</table>
+
+<h3>Out of scope (parking lot)</h3>
+<p>An orchestration-survey module comparing swe-agent, Aider, AutoGPT, OpenHands, LangGraph-style controllers belongs in a future <code>ai-ml-engineering/frameworks-agents/</code> section, NOT in foundations. Symphony in 4.1 is taught as the capstone example of harness applied; the comparative survey is a different teaching goal (architecture comparison vs. principle application).</p>
+
+<h2>6. Migration map — existing modules</h2>
+<table>
+<thead><tr><th>Current</th><th>Target</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><code>ai-ml-engineering/ai-native-development/module-1.6-prompt-engineering-fundamentals.md</code> (786 lines)</td><td>Becomes the base of new <code>1.1</code> + spins off content for new <code>1.2</code></td><td>Split + relocate + redirect</td></tr>
+<tr><td><code>ai/ai-native-work/module-2.1-harness-engineering.md</code> (705 lines)</td><td>Splits into new <code>3.1</code> + <code>3.2</code> + <code>3.3</code> (substantial rewrite + new content)</td><td>3-way split + relocate + redirect</td></tr>
+<tr><td><code>ai/ai-native-work/module-2.2-orchestrating-fleets-symphony.md</code> (850 lines)</td><td>Relocates as new <code>4.1</code></td><td>Move + redirect (no content change)</td></tr>
+</tbody>
+</table>
+<p>Redirects from old slugs are required so deep-linked tutorials, the <code>What's New</code> tab references, and any external links don't 404. Implementation: Starlight allows slug aliases via frontmatter <code>redirect:</code> or a Vite/Astro redirect map.</p>
+
+<h2>7. Phasing plan</h2>
+
+<div class="phase">
+<h3>Phase 1 — this session (2026-05-15)</h3>
+<ul class="compact">
+<li>Produce this Stage-0 brief (this document).</li>
+<li>User decides on the IA + 12-module shape.</li>
+<li>Update STATUS.md TODO with the phasing.</li>
+<li><strong>NO live curriculum changes yet</strong> — the section + redirects land in Phase 2 once the brief is signed off.</li>
+</ul>
+</div>
+
+<div class="phase">
+<h3>Phase 2 — next 2-3 sessions: fill the gap, scaffold the section</h3>
+<ul class="compact">
+<li>Create <code>src/content/docs/ai/ai-engineering-foundations/</code> with <code>index.md</code> + sidebar wiring in <code>astro.config.mjs</code>.</li>
+<li>Move existing 1.6 → new 1.1; move existing 2.1 → new 3.1 (placeholder; deepening happens in Phase 4); move existing 2.2 → new 4.1. Add slug redirects from old paths.</li>
+<li><strong>Write context-eng module 2.1 (Context Fundamentals)</strong> — highest-value new module, anchors the whole context layer.</li>
+<li>Open GH issue tracking the multi-module epic.</li>
+<li>Dispatch model: gemini for first drafts (~350-400 lines), claude opus expands to 700-900+ lines (per <code>feedback_writer_reviewer_split.md</code> + <code>feedback_codex_default_prose_expander.md</code>; codex can also expand for higher density).</li>
+</ul>
+</div>
+
+<div class="phase">
+<h3>Phase 3 — context engineering depth (3-4 sessions)</h3>
+<ul class="compact">
+<li>Write 2.2 Repository Engineering, 2.3 Semantic vs Lexical Context, 2.4 Dynamic Context Orchestration.</li>
+<li>Cross-family review per <code>docs/review-protocol.md</code>.</li>
+<li>Each module: density verifier gates (<code>median_wpp ≥ 28, mean_wpp ≥ 30, short-para-rate ≤ 20%</code>) per <code>feedback_388_verifier_first_pilot_then_volume.md</code>.</li>
+</ul>
+</div>
+
+<div class="phase">
+<h3>Phase 4 — prompt + harness deepening (4-5 sessions)</h3>
+<ul class="compact">
+<li>Split the existing prompt-eng-1.6 source into focused 1.1 + 1.2 (existing content) + write new 1.3 Safety+Eval and 1.4 Prompt Systems.</li>
+<li>Split the existing harness-eng-2.1 source into focused 3.1 (existing layered model + map content) + write new 3.2 Guardrails+Legibility (currently underdeveloped: hooks, lints, errors-as-remediation, devtools wiring) + write new 3.3 Operating the Harness (currently underdeveloped: merge philosophy, governance, doc-gardening).</li>
+</ul>
+</div>
+
+<h2>8. Open questions (not blocking Phase 1)</h2>
+<ul class="compact">
+<li><strong>Section ordering in the AI tab.</strong> Where does <code>ai-engineering-foundations</code> sit relative to <code>ai-native-work</code> (operator habits) and <code>ai-ml-engineering/ai-native-development</code> (tooling)? Recommendation: it becomes the first sub-section of the AI tab — the foundation everyone in the AI track should ground in before diverging into operator vs. tooling tracks.</li>
+<li><strong>Karpathy "context is the new RAM" URL.</strong> Unverified. Before any module 2.1 draft cites it, claude (or codex with chrome/curl) must independently verify. If unverifiable, attribute the framing to Lopopolo's harness post and a community-of-practice rather than a single Karpathy tweet.</li>
+<li><strong>Continued shipping of new modules under old slugs?</strong> If anyone is mid-draft on a new <code>ai-native-work</code> module, the move complicates the merge. Audit before Phase 2.</li>
+<li><strong>Redirect mechanism.</strong> Starlight supports <code>redirect:</code> in frontmatter on a per-page basis; for a cleaner pattern, a global <code>redirects</code> map in <code>astro.config.mjs</code> is more maintainable for ~3 entries. Decide in Phase 2.</li>
+</ul>
+
+<h2>9. Inputs (full text of dispatch outputs)</h2>
+<p class="src">Codex output saved at <code>/tmp/codex-research-out.txt</code> (3,784 chars, 315s on gpt-5.5 danger mode). Gemini output saved at <code>/tmp/gemini-research-out.txt</code> (3,816 chars, 72.8s on gemini-3-flash-preview). Dispatch briefs at <code>/tmp/codex-research-brief.md</code> + <code>/tmp/gemini-research-brief.md</code>. To preserve as repo artifacts, copy into <code>docs/research/dispatches/2026-05-15-triplet-{codex,gemini}.md</code> in Phase 2.</p>
+
+<p class="meta" style="margin-top:48px;text-align:center;">Status: <strong>awaiting user sign-off on IA + phasing</strong>. Live at <code>http://127.0.0.1:8768/artifacts</code>.</p>
+</main>
+</body>
+</html>
