@@ -690,19 +690,42 @@ def extract_urls(section_text: str) -> list[str]:
 
 
 def _check_url(url: str) -> str:
+    head_was_botblock_pattern = False
     try:
         import requests
 
         session = requests.Session()
         session.max_redirects = 5
         response = session.head(url, timeout=10, allow_redirects=True)
-        if response.status_code in (403, 405, 501):
-            response = session.get(url, timeout=10, allow_redirects=True, stream=True)
-            response.close()
+        if response.status_code in (403, 404, 405, 501):
+            # 403/404/405/501 on HEAD often means a real-browser-only page (Cloudflare bot-block, server lying about method support, etc.).
+            head_was_botblock_pattern = True
+            try:
+                response = session.get(url, timeout=10, allow_redirects=True, stream=True)
+                response.close()
+            except Exception:
+                # GET also failed (tarpit, drop, timeout) — fall through to lightpanda.
+                response = None
     except Exception:
+        # HEAD itself raised — treat as network failure, no lightpanda attempt.
         return "fetch_failed"
-    if 200 <= response.status_code <= 299:
+    if response is not None and 200 <= response.status_code <= 299:
         return "redirect" if response.history else "200"
+    if head_was_botblock_pattern:
+        # Cloudflare and similar bot-blockers reject HEAD (and sometimes GET) for traffic that a real browser handles fine.
+        try:
+            import subprocess
+
+            result = subprocess.run(
+                ["lightpanda", "fetch", "--dump", "markdown", url],
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            if result.returncode == 0 and len(result.stdout.strip()) > 0:
+                return "200"
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return "404"
     return "404"
 
 
