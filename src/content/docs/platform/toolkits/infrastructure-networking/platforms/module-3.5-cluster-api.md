@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 3.5: Cluster API (CAPI)"
 slug: platform/toolkits/infrastructure-networking/platforms/module-3.5-cluster-api
 sidebar:
@@ -30,9 +31,9 @@ Throughout this module, you will start with the mental model of one management c
 
 ## 1. The Control-Loop Model for Clusters
 
-Cluster API starts with a simple but powerful idea: a Kubernetes cluster can manage other Kubernetes clusters by watching desired-state objects and reconciling infrastructure until reality matches the API. The cluster running the CAPI controllers is called the **management cluster**. The clusters it creates and maintains are called **workload clusters**. The management cluster stores the desired state, runs the controllers, and talks to infrastructure providers, while workload clusters run application workloads for teams.
+Cluster API starts with a simple but powerful idea: a Kubernetes cluster can manage other Kubernetes clusters by watching desired-state objects and reconciling infrastructure until reality matches the API. [The cluster running the CAPI controllers is called the **management cluster**](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/user/concepts.md). The clusters it creates and maintains are called **workload clusters**. The management cluster stores the desired state, runs the controllers, and talks to infrastructure providers, while workload clusters run application workloads for teams.
 
-This separation is the first design decision to understand, because it shapes every later operation. If the management cluster also runs business workloads, then a noisy application, bad deployment, or resource shortage can damage the very control plane responsible for repairing other clusters. Production CAPI installations therefore treat the management cluster as platform infrastructure. It should be small, protected, backed up, monitored, and changed through the same review process used for other high-impact platform systems.
+This separation is the first design decision to understand, because it shapes every later operation. If the management cluster also runs business workloads, then a noisy application, bad deployment, or resource shortage can damage the very control plane responsible for repairing other clusters. Production CAPI installations therefore [treat the management cluster as platform infrastructure](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/user/quick-start.md). It should be small, protected, backed up, monitored, and changed through the same review process used for other high-impact platform systems.
 
 ```text
 CLUSTER API OPERATING MODEL
@@ -72,9 +73,9 @@ CAPI also changes how you debug cluster lifecycle problems. In a manual workflow
 
 > **Pause and predict:** If the management cluster is healthy, the cloud instances exist, and the workload cluster nodes still show `NotReady`, which part of the lifecycle is least likely to be the root cause: infrastructure provisioning, bootstrap, control-plane creation, or post-create cluster add-ons? Write your prediction before reading the next paragraph.
 
-In that scenario, infrastructure provisioning is less likely to be the immediate blocker because machines already exist. Bootstrap and control-plane creation may still be involved, but a common post-create issue is missing networking. CAPI can create machines and form a Kubernetes control plane, but most providers do not install a CNI by default unless you explicitly add that step with a tool such as ClusterResourceSet, a GitOps application, or a bootstrap extension. Nodes can exist and still be unusable for application Pods until networking is installed.
+In that scenario, infrastructure provisioning is less likely to be the immediate blocker because machines already exist. Bootstrap and control-plane creation may still be involved, but a common post-create issue is missing networking. CAPI can create machines and form a Kubernetes control plane, but [most providers do not install a CNI by default](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/user/quick-start.md) unless you explicitly add that step with a tool such as ClusterResourceSet, a GitOps application, or a bootstrap extension. Nodes can exist and still be unusable for application Pods until networking is installed.
 
-The most useful mental model is to treat CAPI as a graph of owners and references. Generic CAPI resources describe lifecycle intent, while provider-specific resources know how to act on a particular infrastructure platform. When reconciliation gets stuck, you move along that graph in the same direction the controllers use: from `Cluster` to infrastructure cluster, from control plane to control-plane machines, from worker `MachineDeployment` to `MachineSet`, then to individual `Machine` and infrastructure machine objects.
+The most useful mental model is to treat CAPI as a graph of owners and references. Generic CAPI resources describe lifecycle intent, while provider-specific resources know how to act on a particular infrastructure platform. When reconciliation gets stuck, you move along that graph in the same direction the controllers use: [from `Cluster` to infrastructure cluster, from control plane to control-plane machines, from worker `MachineDeployment` to `MachineSet`, then to individual `Machine` and infrastructure machine objects](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/user/concepts.md).
 
 | Concept | What It Owns | What It Usually Waits For | Debugging Signal |
 |---|---|---|---|
@@ -87,7 +88,7 @@ The table above is more than vocabulary. It is the structure you will use during
 
 ## 2. Providers and Resource Anatomy
 
-CAPI stays portable by splitting cluster lifecycle work across provider types. The **core provider** defines generic resources such as `Cluster`, `Machine`, `MachineDeployment`, and `MachineSet`. An **infrastructure provider** creates platform resources such as virtual machines, networks, load balancers, security groups, or Docker containers. A **bootstrap provider** creates the instructions that turn a machine into a Kubernetes node. A **control-plane provider** manages control-plane machines, API server endpoints, and often etcd membership.
+CAPI stays portable by [splitting cluster lifecycle work across provider types](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/user/concepts.md). The **core provider** defines generic resources such as `Cluster`, `Machine`, `MachineDeployment`, and `MachineSet`. An **infrastructure provider** creates platform resources such as virtual machines, networks, load balancers, security groups, or Docker containers. A **bootstrap provider** creates the instructions that turn a machine into a Kubernetes node. A **control-plane provider** manages control-plane machines, API server endpoints, and often etcd membership.
 
 This split prevents CAPI from becoming one giant controller full of cloud-specific logic. The core controllers can reason about machines, ownership, and rollout behavior without knowing the details of EC2, Azure VM Scale Sets, vSphere templates, or bare-metal provisioning. Provider controllers handle those details behind API objects such as `AWSCluster`, `AzureMachineTemplate`, `VSphereMachineTemplate`, or `DockerCluster`. The result is a shared lifecycle model with provider-specific implementations.
 
@@ -126,9 +127,9 @@ A `Machine` is the bridge between Kubernetes lifecycle intent and a real node. I
 | Bootstrap provider | Generates node join configuration and initialization data | Kubeadm Bootstrap Provider, often called CABPK | Bootstrap secret never becomes available |
 | Control-plane provider | Manages control-plane nodes and etcd-aware changes | Kubeadm Control Plane, often called KCP | Control-plane rollout pauses because etcd is unhealthy |
 
-The default kubeadm-based stack is common because many learners already understand kubeadm from Kubernetes administration. `KubeadmControlPlane` manages the control plane, while the kubeadm bootstrap provider generates configuration for control-plane and worker nodes. That does not mean kubeadm is the only path. Some environments use Talos, k0s, MicroK8s, or other providers that express different operating-system and bootstrap choices while still participating in the same high-level CAPI lifecycle.
+The default kubeadm-based stack is common because many learners already understand kubeadm from Kubernetes administration. [`KubeadmControlPlane` manages the control plane, while the kubeadm bootstrap provider generates configuration for control-plane and worker nodes](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/reference/providers.md). That does not mean kubeadm is the only path. Some environments use Talos, k0s, MicroK8s, or other providers that express different operating-system and bootstrap choices while still participating in the same high-level CAPI lifecycle.
 
-Provider choice is a production architecture decision, not just an installation option. The Docker provider, CAPD, is excellent for local learning and controller development because it uses Docker containers as machines. It is not a production provider. CAPA for AWS, CAPZ for Azure, CAPG for Google Cloud, CAPV for vSphere, CAPM3 for bare metal, and CAPO for OpenStack each expose different operational assumptions around images, networking, identity, quotas, and load balancers.
+Provider choice is a production architecture decision, not just an installation option. The Docker provider, CAPD, is excellent for local learning and controller development because it uses Docker containers as machines. It is not a production provider. [CAPA for AWS, CAPZ for Azure, CAPG for Google Cloud, CAPV for vSphere, CAPM3 for bare metal, and CAPO for OpenStack](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/reference/providers.md) each expose different operational assumptions around images, networking, identity, quotas, and load balancers.
 
 | Provider | Short Name | Infrastructure Target | Typical Use | Production Fit |
 |---|---|---|---|---|
@@ -182,7 +183,7 @@ k --kubeconfig my-workload.kubeconfig describe node \
   "$(k --kubeconfig my-workload.kubeconfig get nodes -o jsonpath='{.items[0].metadata.name}')"
 ```
 
-A node that reports networking plugin errors is not a CAPI machine-creation failure. It is a post-create add-on gap. In a production setup, you would not ask operators to remember this step manually. You would install a CNI through a GitOps application, ClusterResourceSet where appropriate, or another controlled add-on mechanism that runs after the workload cluster API becomes available. The important lesson is that CAPI manages cluster infrastructure lifecycle, while cluster add-ons still need an explicit lifecycle owner.
+A node that reports networking plugin errors is not a CAPI machine-creation failure. It is a post-create add-on gap. In a production setup, you would not ask operators to remember this step manually. You would install a CNI through a GitOps application, [ClusterResourceSet](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/tasks/cluster-resource-set.md) where appropriate, or another controlled add-on mechanism that runs after the workload cluster API becomes available. The important lesson is that CAPI manages cluster infrastructure lifecycle, while cluster add-ons still need an explicit lifecycle owner.
 
 Now imagine a different symptom: no `Machine` objects appear for the worker pool. That points back to the `MachineDeployment` and `MachineSet` path. You would inspect selector matching, template references, rollout status, and controller events in the management cluster. If machines appear but infrastructure machines do not become ready, you inspect the provider-specific machine object and the provider controller logs. Each symptom moves you to a different part of the graph.
 
@@ -264,7 +265,7 @@ k wait --for=condition=Available deployment \
   -n capi-kubeadm-control-plane-system --all --timeout=180s
 ```
 
-Generate a workload cluster manifest instead of writing every object by hand. The generated manifest is not magic. It is a teaching artifact you should inspect. You will see a `Cluster`, a Docker infrastructure cluster, a kubeadm control-plane object, infrastructure templates, bootstrap templates, and a worker `MachineDeployment`. That generated file is often the easiest way to learn which objects a provider expects.
+[Generate a workload cluster manifest](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/user/quick-start.md) instead of writing every object by hand. The generated manifest is not magic. It is a teaching artifact you should inspect. You will see a `Cluster`, a Docker infrastructure cluster, a kubeadm control-plane object, infrastructure templates, bootstrap templates, and a worker `MachineDeployment`. That generated file is often the easiest way to learn which objects a provider expects.
 
 ```bash
 clusterctl generate cluster my-workload \
@@ -321,7 +322,7 @@ k --kubeconfig my-workload.kubeconfig get nodes
 
 The management cluster `Machine` list should change before the workload cluster `Node` list. CAPI must create desired machine objects, the infrastructure provider must create backing compute, bootstrap data must be used, and only then can kubelet join the workload cluster as a node. That order matters during troubleshooting. If you expect nodes first, you may inspect the workload cluster too early and miss the controller progress visible in the management cluster.
 
-Plan an upgrade carefully instead of applying it casually. In CAPI, a Kubernetes version change commonly triggers rolling replacement rather than an in-place upgrade of existing machines. The control plane must respect Kubernetes version-skew policy, etcd health, and disruption constraints. Worker pools then roll forward through new machines. For a local lab, you can inspect the manifest fields and discuss the rollout; for production, you would validate provider support, image availability, add-on compatibility, and rollback strategy before changing the version.
+Plan an upgrade carefully instead of applying it casually. In CAPI, [a Kubernetes version change commonly triggers rolling replacement rather than an in-place upgrade of existing machines](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/tasks/upgrading-clusters.md). The control plane must respect Kubernetes version-skew policy, etcd health, and disruption constraints. Worker pools then roll forward through new machines. For a local lab, you can inspect the manifest fields and discuss the rollout; for production, you would validate provider support, image availability, add-on compatibility, and rollback strategy before changing the version.
 
 ```bash
 # Inspect current versions across the CAPI objects.
@@ -338,7 +339,7 @@ k patch machinedeployment my-workload-md-0 \
   -p '{"spec":{"template":{"spec":{"version":"v1.35.1"}}}}'
 ```
 
-Do not treat deletion as an afterthought. Cluster deletion is a high-impact lifecycle operation because CAPI finalizers coordinate teardown across machines and provider resources. In a lab, deletion demonstrates cleanup. In production, deletion should be gated through Git review, protected branches, admission policy, or manual approvals. A single deleted `Cluster` object can cascade into real infrastructure deletion if the provider and finalizers are healthy.
+Do not treat deletion as an afterthought. Cluster deletion is a high-impact lifecycle operation because [CAPI finalizers coordinate teardown across machines and provider resources](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/tasks/automated-machine-management/machine_deletions.md). In a lab, deletion demonstrates cleanup. In production, deletion should be gated through Git review, protected branches, admission policy, or manual approvals. A single deleted `Cluster` object can cascade into real infrastructure deletion if the provider and finalizers are healthy.
 
 ```bash
 k delete cluster my-workload
@@ -353,7 +354,7 @@ After cleanup, reflect on which steps were lifecycle operations and which steps 
 
 ## 5. ClusterClass, GitOps, and Fleet Design
 
-Individual CAPI manifests become repetitive as soon as you manage more than a few clusters. Without a template mechanism, every team copies a pile of YAML, edits names and sizes, and gradually introduces drift. `ClusterClass` addresses that problem by defining reusable cluster topology. A cluster can then reference a class and provide variables such as version, control-plane replicas, worker pools, and provider-specific values.
+Individual CAPI manifests become repetitive as soon as you manage more than a few clusters. Without a template mechanism, every team copies a pile of YAML, edits names and sizes, and gradually introduces drift. [`ClusterClass` addresses that problem by defining reusable cluster topology](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/tasks/experimental-features/cluster-class/write-clusterclass.md). A cluster can then reference a class and provide variables such as version, control-plane replicas, worker pools, and provider-specific values.
 
 ClusterClass is not just a convenience feature. It is a fleet-governance tool. By controlling the classes available to teams, a platform group can standardize supported shapes such as `dev-small`, `prod-regional`, or `regulated-prod`. Those classes can encode infrastructure templates, control-plane strategy, machine deployment classes, and patches. Application teams can request clusters through a smaller interface, while platform engineers retain control over the deeper lifecycle contract.
 
@@ -378,7 +379,7 @@ spec:
 
 This small `Cluster` object can produce many underlying resources when the referenced `ClusterClass` exists. The learner should not mistake small YAML for simple behavior. The class hides complexity, which is useful only when the class is well designed, versioned, documented, and tested. If the class changes carelessly, every cluster using it may be affected. That makes ClusterClass changes similar to API changes in a platform product.
 
-A good fleet design separates foundations from cluster lifecycle. Many teams still use Terraform for base cloud resources such as accounts, projects, IAM boundaries, DNS zones, network foundations, and shared observability destinations. CAPI then owns Kubernetes cluster lifecycle inside those foundations. Crossplane may expose databases, queues, buckets, and other cloud services to developers through Kubernetes APIs. These tools overlap at the edge, but they are strongest when each owns the lifecycle it understands best.
+A good fleet design separates foundations from cluster lifecycle. Many teams still use [Terraform for base cloud resources](https://github.com/hashicorp/terraform) such as accounts, projects, IAM boundaries, DNS zones, network foundations, and shared observability destinations. CAPI then owns Kubernetes cluster lifecycle inside those foundations. Crossplane may expose databases, queues, buckets, and other cloud services to developers through Kubernetes APIs. These tools overlap at the edge, but they are strongest when each owns the lifecycle it understands best.
 
 | Dimension | Cluster API | Terraform | Crossplane |
 |---|---|---|---|
@@ -390,7 +391,7 @@ A good fleet design separates foundations from cluster lifecycle. Many teams sti
 | Cluster upgrade support | Built into CAPI lifecycle model | Usually scripted or module-specific | Depends on composition and provider |
 | Best fit | Fleet cluster lifecycle | Accounts, networks, IAM, shared foundations | Self-service cloud resources |
 
-The practical boundary is usually organizational. Terraform is often controlled by infrastructure engineers who own accounts, networks, and identity. CAPI is often controlled by platform engineers who own cluster lifecycle and Kubernetes reliability. Crossplane is often used to expose selected cloud resources through a platform API. A mature platform can use all three without forcing one tool to own everything.
+The practical boundary is usually organizational. Terraform is often controlled by infrastructure engineers who own accounts, networks, and identity. CAPI is often controlled by platform engineers who own cluster lifecycle and Kubernetes reliability. [Crossplane is often used to expose selected cloud resources through a platform API](https://github.com/crossplane/crossplane). A mature platform can use all three without forcing one tool to own everything.
 
 GitOps fits naturally because CAPI resources are Kubernetes objects. An Argo CD or Flux installation can point at a repository of cluster definitions and apply them to the management cluster. This creates a reviewable path for cluster creation, scaling, and upgrades. However, deletion must be handled cautiously. Automated pruning that is reasonable for ordinary application manifests can become dangerous when the resource being pruned represents an entire cluster and its infrastructure.
 
@@ -415,9 +416,9 @@ spec:
       selfHeal: true
 ```
 
-The `prune: false` setting in this example is intentional. It prevents a Git removal or path mistake from automatically deleting cluster resources. Some teams eventually implement controlled deletion workflows, but they do so with explicit approvals and safeguards. Cluster lifecycle is different from application rollout because the blast radius includes nodes, load balancers, persistent infrastructure, and sometimes customer-facing environments.
+The `prune: false` setting in this example is intentional. It [prevents a Git removal or path mistake from automatically deleting cluster resources](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/). Some teams eventually implement controlled deletion workflows, but they do so with explicit approvals and safeguards. Cluster lifecycle is different from application rollout because the blast radius includes nodes, load balancers, persistent infrastructure, and sometimes customer-facing environments.
 
-Production fleet design also needs backup and move planning. CAPI includes `clusterctl move`, which can move CAPI objects from one management cluster to another during management-cluster migration. That capability is valuable, but it is not a replacement for disciplined backups, tested restore procedures, and clear runbooks. If the management cluster fails, the workload clusters may keep running, but your ability to manage them declaratively depends on recovering or reconstructing the management state.
+Production fleet design also needs backup and move planning. [CAPI includes `clusterctl move`, which can move CAPI objects from one management cluster to another](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/clusterctl/commands/move.md) during management-cluster migration. That capability is valuable, but it is not a replacement for disciplined backups, tested restore procedures, and clear runbooks. If the management cluster fails, the workload clusters may keep running, but your ability to manage them declaratively depends on recovering or reconstructing the management state.
 
 ```text
 FLEET MANAGEMENT WITH GITOPS AND CAPI
@@ -447,9 +448,9 @@ GitOps also gives you a teaching and audit advantage. Every cluster version bump
 
 The senior-level question is not "Can CAPI create a cluster?" The senior-level question is "Should CAPI be the lifecycle owner for this cluster, and what operational contract makes that safe?" CAPI works best when the platform team can standardize provider credentials, images, networks, Kubernetes versions, add-on installation, observability, backup, and deletion policy. If those pieces are chaotic, CAPI may create clusters quickly while exposing deeper organizational inconsistency.
 
-Start production design with failure domains. A management cluster should be more reliable than a throwaway lab cluster, but it should not become a giant shared application cluster. Run only the controllers and tools needed for lifecycle management. Restrict who can modify CAPI resources. Monitor controller health, reconciliation latency, provider API errors, and management-cluster etcd health. Back up the management cluster and test restore or move operations before you depend on them during an incident.
+Start production design with failure domains. A management cluster should be more reliable than a throwaway lab cluster, but it should not become a giant shared application cluster. Run only the controllers and tools needed for lifecycle management. Restrict who can modify CAPI resources. Monitor controller health, reconciliation latency, provider API errors, and [management-cluster etcd health. Back up the management cluster](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/) and test restore or move operations before you depend on them during an incident.
 
-Machine health checks turn node failure into declarative remediation. A `MachineHealthCheck` can identify unhealthy machines and trigger replacement. That is powerful, but it needs careful thresholds. Aggressive remediation during a network partition or provider outage can make a bad situation worse by deleting machines that are temporarily unreachable. The right design considers failure domains, maximum unhealthy percentages, node startup time, and whether the provider can actually create replacements during the incident.
+Machine health checks turn node failure into declarative remediation. A [`MachineHealthCheck` can identify unhealthy machines and trigger replacement](https://github.com/kubernetes-sigs/cluster-api/blob/release-1.0/docs/book/src/tasks/healthcheck.md). That is powerful, but it needs careful thresholds. Aggressive remediation during a network partition or provider outage can make a bad situation worse by deleting machines that are temporarily unreachable. The right design considers failure domains, maximum unhealthy percentages, node startup time, and whether the provider can actually create replacements during the incident.
 
 ```yaml
 apiVersion: cluster.x-k8s.io/v1beta1
@@ -475,7 +476,7 @@ spec:
 
 This example is intentionally moderate rather than heroic. It allows remediation but avoids replacing everything at once. The correct values depend on workload tolerance, provider speed, cluster size, and failure-domain layout. For a small development cluster, faster replacement may be acceptable. For a large production cluster under a regional infrastructure incident, conservative thresholds may prevent additional disruption.
 
-Upgrades require the same discipline. CAPI makes rolling replacement easier, but it does not eliminate Kubernetes version-skew policy, add-on compatibility, storage driver compatibility, workload disruption, or provider image readiness. A safe upgrade plan starts with a test cluster using the same ClusterClass or templates, validates add-ons, checks workload PodDisruptionBudgets, upgrades control planes before workers, and watches conditions during rollout. Automation makes upgrades repeatable; it does not make compatibility optional.
+Upgrades require the same discipline. CAPI makes rolling replacement easier, but it does not eliminate [Kubernetes version-skew policy](https://kubernetes.io/releases/version-skew-policy/), add-on compatibility, storage driver compatibility, workload disruption, or provider image readiness. A safe upgrade plan starts with a test cluster using the same ClusterClass or templates, validates add-ons, checks workload PodDisruptionBudgets, upgrades control planes before workers, and watches conditions during rollout. Automation makes upgrades repeatable; it does not make compatibility optional.
 
 | Operation | Desired-State Change | Main Risk | Senior-Level Guardrail |
 |---|---|---|---|
@@ -488,16 +489,16 @@ Upgrades require the same discipline. CAPI makes rolling replacement easier, but
 
 The most common senior trade-off is where to draw the line between self-service and platform control. Full self-service can let teams create clusters quickly, but it can also create cost, security, and reliability problems if every team chooses its own versions and topology. Full central control can preserve standards but create a ticket queue. ClusterClass, policy engines, GitOps review, and admission controls let the platform team expose safe choices instead of unlimited choices.
 
-CAPI also competes and cooperates with managed Kubernetes services. A team using EKS, AKS, or GKE may not need CAPI to create every cluster if the managed service lifecycle already satisfies their needs. However, CAPI can still be attractive for hybrid fleets, on-premises environments, consistent APIs across providers, or cases where the platform team wants Kubernetes-native lifecycle control. The decision should be based on operational requirements, not tool enthusiasm.
+CAPI also competes and cooperates with managed Kubernetes services. A team using [EKS, AKS, or GKE](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/user/concepts.md) may not need CAPI to create every cluster if the managed service lifecycle already satisfies their needs. However, CAPI can still be attractive for hybrid fleets, on-premises environments, consistent APIs across providers, or cases where the platform team wants Kubernetes-native lifecycle control. The decision should be based on operational requirements, not tool enthusiasm.
 
-Rancher, Gardener, and vendor platforms solve overlapping fleet-management problems with different abstractions. Some use CAPI underneath. Others provide their own lifecycle model, UI, policy, or multi-cluster management layer. A platform engineer should evaluate whether the team needs a low-level Kubernetes-native lifecycle API, a higher-level product experience, or both. CAPI is a strong foundation, but it is not automatically the entire platform.
+[Rancher](https://ranchermanager.docs.rancher.com/integrations-in-rancher/cluster-api), [Gardener](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/reference/providers.md), and vendor platforms solve overlapping fleet-management problems with different abstractions. Some use CAPI underneath. Others provide their own lifecycle model, UI, policy, or multi-cluster management layer. A platform engineer should evaluate whether the team needs a low-level Kubernetes-native lifecycle API, a higher-level product experience, or both. CAPI is a strong foundation, but it is not automatically the entire platform.
 
 Finally, production CAPI requires clear incident ownership. If a cluster fails to provision because a subnet is exhausted, does the platform team own it, or does the networking team? If a provider controller cannot authenticate to the cloud API, who rotates credentials? If a workload cluster has no CNI, is that a CAPI failure or an add-on pipeline failure? These questions should be answered before the first production outage, not during it.
 
 ## Did You Know?
 
-- Cluster API is developed under Kubernetes SIG Cluster Lifecycle, the same general community area responsible for lifecycle tooling such as kubeadm, which is why the project emphasizes Kubernetes-style reconciliation rather than one-time provisioning scripts.
-- CAPD, the Docker infrastructure provider, creates local Docker-container-backed machines for development and learning, but it is deliberately not a production infrastructure provider.
+- [Cluster API is developed under Kubernetes SIG Cluster Lifecycle](https://github.com/kubernetes-sigs/cluster-api/blob/main/README.md), the same general community area responsible for lifecycle tooling such as kubeadm, which is why the project emphasizes Kubernetes-style reconciliation rather than one-time provisioning scripts.
+- CAPD, the Docker infrastructure provider, creates local Docker-container-backed machines for development and learning, but it is deliberately [not a production infrastructure provider](https://github.com/kubernetes-sigs/cluster-api/blob/main/test/infrastructure/docker/README.md).
 - ClusterClass lets a platform team expose a smaller cluster request interface while hiding provider templates, bootstrap templates, and rollout mechanics behind a reviewed topology.
 - `clusterctl move` can help migrate CAPI management objects between management clusters, but it should be practiced and documented before it is needed in a real recovery scenario.
 
@@ -609,3 +610,24 @@ The team should standardize and version the machine image contract before scalin
 Write a one-page recommendation for how your organization should adopt CAPI beyond the lab. Include the intended management-cluster ownership model, provider choice, base-image strategy, GitOps review process, deletion guardrails, backup plan, MachineHealthCheck stance, and the boundary between Terraform foundations and CAPI cluster lifecycle. Your recommendation should be specific enough that another platform engineer could challenge the trade-offs, not just agree with general statements.
 
 **Next Module**: [Module 7.1: Backstage](../module-7.1-backstage/) - Build an Internal Developer Portal to give developers self-service access to platform capabilities.
+
+## Sources
+
+- [github.com: README.md](https://github.com/kubernetes-sigs/cluster-api/blob/main/README.md) — The upstream README directly states Cluster API's SIG origin, Kubernetes-style API model, and lifecycle-management scope.
+- [github.com: concepts.md](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/user/concepts.md) — The Cluster API concepts page defines management clusters and workload clusters using these responsibilities.
+- [github.com: quick start.md](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/user/quick-start.md) — The quick-start documentation recommends keeping the management cluster separated from application workloads and using backup/DR for production use.
+- [github.com: cluster resource set.md](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/tasks/cluster-resource-set.md) — The ClusterResourceSet documentation says it can automatically apply resources such as CNI/CSI to matching clusters.
+- [github.com: providers.md](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/reference/providers.md) — The provider list includes kubeadm plus alternative bootstrap and control-plane providers including k0s, MicroK8s, and Talos.
+- [github.com: README.md](https://github.com/kubernetes-sigs/cluster-api/blob/main/test/infrastructure/docker/README.md) — The CAPD README directly states that the Docker provider is a reference implementation and not designed for production.
+- [github.com: upgrading clusters.md](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/tasks/upgrading-clusters.md) — The CAPI upgrade guide describes control-plane then worker upgrades, rolling updates, immutable MachineTemplates, and matching machine images.
+- [kubernetes.io: version skew policy](https://kubernetes.io/releases/version-skew-policy/) — The Kubernetes version-skew policy is the authoritative source for supported component skew during upgrades.
+- [github.com: machine deletions.md](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/tasks/automated-machine-management/machine_deletions.md) — The machine deletion documentation describes drain, infrastructure object deletion, bootstrap object deletion, and Node deletion.
+- [github.com: write clusterclass.md](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/tasks/experimental-features/cluster-class/write-clusterclass.md) — The ClusterClass authoring guide describes templates, topology variables, worker classes, patches, and generated underlying resources.
+- [github.com: terraform](https://github.com/hashicorp/terraform) — The Terraform README describes declarative configuration, execution plans, resource graphs, and state-related workflow.
+- [github.com: crossplane](https://github.com/crossplane/crossplane) — The Crossplane README describes it as a framework for building cloud-native control planes with a configurable declarative API.
+- [argo-cd.readthedocs.io: auto sync](https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync/) — Argo CD's automated sync documentation directly describes automatic pruning behavior and the prune field.
+- [github.com: move.md](https://github.com/kubernetes-sigs/cluster-api/blob/main/docs/book/src/clusterctl/commands/move.md) — The clusterctl move documentation says it moves CAPI workload-cluster objects and warns that it is not designed as a backup/restore solution.
+- [github.com: healthcheck.md](https://github.com/kubernetes-sigs/cluster-api/blob/release-1.0/docs/book/src/tasks/healthcheck.md) — The MachineHealthCheck documentation describes unhealthy-condition timeouts, remediation, and maxUnhealthy short-circuiting.
+- [kubernetes.io: configure upgrade etcd](https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/) — The Kubernetes etcd operations guide states that etcd is the backing store for cluster data and calls for backup planning.
+- [ranchermanager.docs.rancher.com: cluster api](https://ranchermanager.docs.rancher.com/integrations-in-rancher/cluster-api) — Rancher's documentation directly describes Rancher Turtles as an integration between Cluster API and Rancher.
+- [Cluster API upstream project](https://github.com/kubernetes-sigs/cluster-api) — Primary source for the project scope, SIG ownership, and declarative cluster lifecycle model.
