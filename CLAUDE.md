@@ -8,9 +8,9 @@ The orientation sequence is API-first to reduce token use and get a complete col
 
 1. Pull compact briefing:
 ```bash
-curl -s --max-time 2 http://127.0.0.1:8768/api/briefing/session?compact=1
+curl -s --max-time 2 "http://127.0.0.1:8768/api/briefing/session?compact=1"
 ```
-If 200, parse and act from that payload. If timeout or non-200, record `API down` and skip to step 6.
+If 200, parse the payload and proceed. If timeout or non-200, record `API down` — still run steps 2 and 3 (local filesystem state is independent of the API), then fall back to step 6 instead of step 4.
 
 2. Run local working-tree awareness:
 ```bash
@@ -25,7 +25,7 @@ Respect `.claude/rules/decision-card.md` and only process what is declared block
 
 4. Pull the latest handoff via API (preferred) or fall back to the file:
 ```bash
-curl -s --max-time 2 http://127.0.0.1:8768/api/session/current
+curl -s --max-time 2 "http://127.0.0.1:8768/api/session/current"
 ```
 Returns the most recent handoff path plus predecessor chain. Only read the underlying `docs/session-state/<date>-*.{md,html}` file when the briefing leaves a real narrative-why gap; use the path from the API response or from STATUS.md's `Latest handoff` row.
 
@@ -44,7 +44,9 @@ curl -s --max-time 2 "http://127.0.0.1:8768/api/activity?limit=30"
 
 **Self-discovery**: `curl -s http://127.0.0.1:8768/api/state/manifest` returns the categorized route inventory (cold_start / dashboards / pipeline / etc.) — use this when uncertain which endpoint serves a given concern.
 
-*Endpoints planned for protocol parity with learn-ukrainian Monitor API (not yet shipped):* `/api/rules?format=markdown`, `/api/orient`, `/api/comms/inbox?agent=X`. Tracked as T2.2 in the gap inventory.
+**Orientation punch-line**: `curl -s --max-time 2 http://127.0.0.1:8768/api/orient` returns the single primary action + up to 3 alternatives + blockers/alerts in ~1.3 KB. Use this when the briefing is overkill.
+
+*Endpoints planned for protocol parity with learn-ukrainian Monitor API (not yet shipped):* `/api/rules?format=markdown`, `/api/comms/inbox?agent=X`. Tracked as T2.2 in the gap inventory.
 
 Standalone session = main orchestrator. Drive the queue; ask only on irreversible or ambiguous actions.
 
