@@ -338,9 +338,34 @@ This is not rejecting autonomy. It is choosing autonomy only where the cost mode
 
 Consider this practical question: "Would I accept repeated blind retries of this action if a failure lands in public, educational, or regulated space?" If the answer is no, your loop must change before enabling broad ticket-farm patterns.
 
+A quick way to enforce that change is to run a pre-flight cost review before turning on wider parallelism. Start with a one-line entry in your project log for each candidate loop: `risk_class`, `expected bad-output frequency`, `recoverability window`, and `irreversibility flag`. If any field is missing, treat the loop as high-risk by default and keep it under stricter human checkpoints.
+
+Then map those fields to control knobs:
+
+- risk_class = low: keep existing check-ins, with fast retries and low-friction checkpoints.
+- risk_class = medium: add checkpoint requirements in `after_run`, plus explicit workpad continuity for retries.
+- risk_class = high: require manual review before completion labels, reduce parallelism, and force an escalation route for unresolved anomalies.
+
+This pre-flight review is not ceremonial. It is the difference between "we hoped this automation held" and "we encoded the risk posture." If the same loop is later moved across repositories, copy the line verbatim and update the fields based on repository constraints; if the same three risk dimensions look good on paper but still produce bad outcomes, do not widen the loop until the control plane catches up.
+
+For high-volume teams, add one cheap operational invariant to stop false confidence: every 20th failure must include an explicit postmortem summary in one workpad comment, with the root cause and remediation action marked. Over time, this gives you a cheap trend signal for whether control quality is improving or merely becoming noisier.
+
+If your team runs a two-week trial, keep this table pattern in your shared notes and update it weekly:
+
+- **What changed:** one sentence about contract or workflow edit
+- **Failure class:** template parse, workspace policy, hook behavior, or recovery path
+- **Cost class:** low / medium / high using the same three-factor rubric
+- **Owner:** who resolves the drift and when it is declared remediated
+- **Evidence trail:** which ticket and workpad comment prove closure
+
+When this pattern is respected, teams can scale automation without shrinking governance: expensive failures become visible, and inexpensive failures become cheap to fix. The discipline of filling this table once per cycle is also a good test for whether your layer split is real—advisory notes stay brief, enforcement failures are explicit, and your post-incident loop keeps the control-plane contract in sync with actual runtime behavior.
+If the table is skipped, treat scale-up as a warning and run only constrained pilots until the governance rhythm is consistently completed.
+
 ### 10) Layered harness design: where instructions live and where they should fail
 
-One source-level lesson from the broader harness conversation is that agents succeed when their instruction stack has stable layers. If every rule lives only in narrative text, it can be read and then ignored. If every rule lives only in scripts, it becomes difficult to tune and too rigid. The durable design is a layered approach: platform defaults, project advisory text, and project enforcement mechanisms.
+Module 2.1 covers Lopopolo's seven harness principles in depth — the map-not-manual ToC, repository-as-system-of-record, mechanical-invariant enforcement, app legibility, flipped merge philosophy, continuous garbage collection, and boring-tech bias. What follows is how those principles change shape when the unit of work is a Linear ticket instead of a coding session.
+
+In this module, orchestration succeeds when instructions are layered: platform defaults, project advisory text, and project enforcement mechanisms. If every rule lives only in narrative text, it is easy to forget; if every rule lives only in scripts, it becomes too rigid to evolve. The durable model needs both flexibility and enforceability.
 
 Platform defaults are what the agent runtime gives you. In a repo like this, examples include sandbox posture, built-in tool behavior, and model-specific execution assumptions. These constraints are useful but limited: agents will always optimize for what they can observe and what the runtime permits. You cannot ask an agent to follow a missing rule if the platform never exposes it as a signal. This is why the most important first step is not adding more instructions; it is knowing which instructions are enforceable where.
 
@@ -360,13 +385,15 @@ In practical terms, consider this trio as a design exercise before each orchestr
 
 For orchestration, common failure classes become dramatically easier to triage when this trio is explicit. If `WORKFLOW.md` no longer renders because of a bad template variable, a project advisory fix is not enough—you want enforcement to fail the contract parsing path before a worker spends cycles on bad attempts. If workspace cleanup is optional for safety, then it can remain advisory with warnings. If workspace cleanup is required for storage and concurrency guarantees, then it belongs in enforceable hooks and gate definitions.
 
-The seven principles from the harness framing can be translated into orchestration criteria without importing the whole story. "The map, not the manual" appears as this rule in code review: every production behavior must have a minimal in-repo source of truth, and that source must be small enough to diff. This is exactly why your contract file should stay small and legible even if prompt body content grows. The principle "repository as system of record" is visible when the loop reads contract and labels from tracked files, not interactive notes. The principle "enforce invariants, not implementations" appears when retry policy, branch state transitions, and evidence requirements are consistent across all workers. "Make application legible" means your poller logs should answer where, why, and with which labels each issue moved this cycle.
+In practice, the seven principles become these orchestration rules:
 
-Harness workstreams also showed a measurable operational difference in merge philosophy: with enough guardrails, teams can fix bad automation with reruns and bounded retries instead of stopping all work for perfection first. Translating to this module, this means your orchestration loop should prefer deterministic fail-fast checks plus rerun mechanics over speculative continuation. If your loop prints why an attempt was blocked, then you can iterate control behavior safely without opening blind reruns.
-
-"Continuous garbage collection" in this context is not only docs cleanup; it is also periodic contract cleanup. Teams often forget to simplify `WORKFLOW.md` over time, then accumulate legacy keys, stale labels, and ambiguous hook semantics. Every stale entry is a hidden control debt item. A small weekly sweep that validates only currently-active contract keys, current active labels, and hook semantics avoids drift from creeping complexity. This is especially useful for students who tend to add temporary conditions during one workshop and forget to remove them afterward.
-
-The "boring technology wins" lesson also matters for this module's technical choices. A less flashy polling loop with stable parsing, predictable hook order, and obvious YAML schema is easier to model than an opaque orchestration framework with hidden global state. If an automation pattern is too abstract to reason about quickly, it is harder to operate and harder to debug under pressure. In this module, the goal is not to build the smartest orchestrator; it is to build the safest, inspectable one.
+- Minimal in-repo contract is the first place to look: every production behavior should have a small, reviewable source-of-truth definition.
+- The loop should read contract and labels from tracked files, not from ephemeral chat notes.
+- Invariant checks should govern retries, state transitions, and evidence requirements consistently across all workers.
+- Poller logs should make sequence legible with issue, reason, and labels visible.
+- With enough guardrails, teams recover safely through bounded reruns instead of halting everything for perfection.
+- Contract files need periodic debt cleanup: prune stale keys, labels, and ambiguous hook semantics so the active control model stays small.
+- Boring automation stack choices (predictable parsing, clear hook order, readable YAML) beat clever systems with hidden state.
 
 A practical way to prevent this module from becoming just another "policy-heavy but brittle" page is to keep every high-risk behavior observable in one place. A clean example is the "single workpad comment" rule paired with labeled attempt updates. The workpad becomes a human-readable checkpoint channel, while the internal claim states remain machine-readable and restart-safe. That split gives both teams and learners a stable mental model: humans trust the narrative anchor, machines handle sequence.
 
@@ -421,7 +448,7 @@ If you can answer "yes" to all six with evidence, the loop has crossed from an e
 
 That extra hardening discipline is what turns a promising mechanism into institutional memory: teams learn which assumptions remain safe as the model changes. It also means your module stays teachable after scaling because every rule now has both a written meaning and a tested enforcement path. In short, this is the final bridge between harness ideas and orchestration engineering—you are no longer optimizing for "looks like it worked" in one run, you are engineering repeatable outcomes under repeated disturbance.
 
-### 10) Applied case walkthrough: diagnose the first real failure and make the control plane robust
+### 12) Applied case walkthrough: diagnose the first real failure and make the control plane robust
 
 This section is the practical extension that converts the model into a repeatable operating approach, complete with stage gates that prove your control decisions are still visible after retries.
 
