@@ -28,7 +28,7 @@ Hypothetical scenario: a small platform team starts three agents against one rep
 
 The root issue is not speed. The root issue is the wrong abstraction of ownership. If the system is built around sessions, state dies with shells, terminals, or process identities. If the system is built around tickets, state survives handoffs, and the control surface remains the artifact humans already own and understand.
 
-The central pivot is explicit in the core source:
+The central pivot is explicit in the core source, and it is the design lens you can keep checking as you scale:
 
 > "We were optimizing the wrong thing. We were orienting our system around coding sessions instead of the work itself."
 
@@ -56,7 +56,7 @@ The first implementation correction is to reduce questions operators must ask ma
 2. Which issues are blocked or in rework?
 3. Which issue should be retried or closed first?
 
-When the queue is session-driven, operators ask:
+When the queue is session-driven, operators ask: which terminal has context, who approved the last transition, and how to recover without a durable ticket summary?
 
 1. Which terminal has context?
 2. Which terminal last touched the change?
@@ -74,7 +74,7 @@ In this model, humans can reason at ticket granularity. Human stakeholders can a
 
 You also get sharper recovery semantics. If an attempt fails, you keep the ticket in an active class with a visible recovery posture. If the result is good, you release and let PM workflows advance it. If deeper human decision is needed, you route to rework with context preserved as tracked evidence.
 
-This pattern aligns strongly with established project-management systems:
+This pattern aligns strongly with established project-management systems where ownership is represented as a shared ledger rather than a process artifact.
 
 ```mermaid
 flowchart TD
@@ -175,13 +175,7 @@ flowchart LR
     E --> F[Risk reduction from deploy-heavy deployments]
 ```
 
-The contract must include all five operational layers:
-
-- control-plane inputs (`tracker`, `polling`)
-- workspace mapping (`workspace`)
-- lifecycle control (`hooks`)
-- agent loop constraints (`agent`)
-- execution backend (`codex`)
+The contract must include all five operational layers in one coherent policy: control-plane inputs (`tracker`, `polling`), workspace mapping (`workspace`), lifecycle control (`hooks`), agent loop constraints (`agent`), and execution backend (`codex`).
 
 The "hot reload" property is powerful because it lets teams run controlled experiments. They can lower `max_concurrent_agents`, test behavior, then restore it without restarts. It is also dangerous unless you monitor behavior because a bad commit in contract fields can immediately widen the blast radius.
 
@@ -189,14 +183,26 @@ The "hot reload" property is powerful because it lets teams run controlled exper
 
 Symphony's lifecycle hooks are exactly four. They are small but high leverage because each one defines where automation can fail and how control should respond.
 
-1. `after_create` runs once when the per-ticket workspace is born.  
-   If bootstrap fails, the attempt should be treated as failed for that ticket, because execution cannot continue without workspace.
-2. `before_run` runs before each attempt.  
-   If required files, credentials, or context are absent, abort only that attempt so the loop can retry with clearer diagnostics.
-3. `after_run` runs after each attempt.  
-   This hook records progress and is generally non-fatal if reporting fails. A transient comment API outage should not silently drop progress.
-4. `before_remove` runs when cleanup would happen.  
-   Cleanup failures should usually not abort global orchestration; they should be logged and reconciled separately.
+1. `after_create` runs once when the per-ticket workspace is born.
+   It is the bootstrap gate: if workspace creation fails, the loop should not call any later hooks for that attempt.
+   A concrete use is cloning `worktrees/issue-{{ number }}/` and verifying that no stale lock files remain from prior partial attempts.
+   If cloning or initialization fails, keep the issue active, write structured diagnostics, and let the loop retry on schedule with the same ticket label policy.
+   This prevents one failed bootstrap from becoming a silent no-op and gives humans an unambiguous recovery point.
+2. `before_run` runs before each attempt.
+   This hook validates environment preconditions, including issue label freshness, workspace permission state, and required credentials/tooling presence.
+   For example, it can fail fast when the issue is no longer tagged `agent:active`, when the repository template is missing, or when network access required by the next action is unavailable.
+   A dependency miss or stale cache should abort only that attempt so the orchestration can retry, but never claim the ticket has completed.
+   This distinction reduces confusing state transitions because missing context is different from bad code output.
+3. `after_run` runs after each attempt.
+   Its job is evidence persistence: it writes attempt history so the next worker can continue without re-learning context.
+   A practical pattern is a single marker workpad comment updated in place with attempt number, changed files, and known risks.
+   If comment APIs or network calls fail transiently, this hook should degrade to warning-level telemetry and continue, because the work itself may still be valid.
+   That said, any non-idempotent progress signal should be retried later so visibility never becomes permanently blind on good attempts.
+4. `before_remove` runs when cleanup would happen.
+   Cleanup should make the next attempt deterministic by removing worktree directories, stale temporary files, and process artifacts for that issue.
+   A common setup is deleting `worktrees/issue-{{ number }}/` and pruning partial logs only after `after_run` has already emitted evidence.
+   Cleanup failures should be captured and surfaced, but should not collapse the entire orchestration queue.
+   Instead, keep cleanup faults in diagnostics and treat them as follow-up actions while new issues can continue.
 
 ```mermaid
 sequenceDiagram
@@ -225,7 +231,7 @@ sequenceDiagram
     end
 ```
 
-Concrete examples help translate this from design to operation:
+Concrete examples help translate this from design to operation, so each hook line can be observed, measured, and debugged during incident retrospectives:
 
 - `after_create`: clone repository and create `worktrees/issue-{{ number }}/` so each attempt has isolated state.
 - `before_run`: check issue is still labeled `agent:active`, run quick dependency checks, and verify a writable workspace.
@@ -238,7 +244,7 @@ A common anti-pattern is inverting these semantics, such as treating temporary l
 
 Symphony distinguishes claim-level states from tracker ticket states. They are orthogonal for a reason: automation needs internal lifecycle details without forcing human-visible churn at every internal event.
 
-The internal claim machine is:
+The internal claim machine is the private automation axis for handling attempt readiness, failures, and retries without polluting ticket-facing user signals.
 
 ```mermaid
 stateDiagram-v2
@@ -252,7 +258,7 @@ stateDiagram-v2
     Released --> [*]
 ```
 
-The ticket machine remains user-facing and often uses platform-native states:
+The ticket machine remains user-facing and often uses platform-native states, while the claim machine stays internal to reduce churn and preserve decision clarity for human reviewers.
 
 ```mermaid
 stateDiagram-v2
@@ -266,7 +272,7 @@ stateDiagram-v2
     InProgress --> Done : completed
 ```
 
-Each actual attempt also has phases so failures can be reported precisely:
+Each actual attempt also has phases so failures can be reported precisely and so human operators can map a failed attempt to a concrete corrective step instead of guessing where a crash occurred.
 
 ```mermaid
 stateDiagram-v2
@@ -287,13 +293,13 @@ An operational diagnosis trick: when an issue loops for long periods, print both
 
 ### 7) Late lesson: rigid transitions are not enough
 
-Symphony's later writing includes a decisive correction to earlier assumptions:
+Symphony's later writing includes a decisive correction to earlier assumptions, because strict state choreography eventually became too rigid for model improvements and learning tasks.
 
 > "Treating agents as rigid nodes in a state machine doesn't work well. Models get smarter… So we eventually moved toward giving agents objectives instead of strict transitions, much like a good manager would assign a goal to a direct report."
 
 This is an architecture-level lesson, not just a prompt optimization detail. A state machine should describe visibility and guardrails. It should not become the only method of control once model capability changes.
 
-The objective lens can be represented as explicit progress predicates:
+The objective lens can be represented as explicit progress predicates with clear completion tests that define when a run may safely end and when a human checkpoint is required.
 
 - maintain a safe workspace
 - provide progress in one workpad comment
@@ -320,25 +326,110 @@ Now apply the caveat: if bad output is expensive, or non-reversible, or high-sta
 - Safety-critical changes can cross trust and compliance boundaries before correction.
 - Regulated domains often require explicit evidence and non-reversible approval paths.
 
-Here is the cost lens to evaluate before enabling an autonomous fleet:
-
-`Bad output cost = probability of bad output * expected recovery cost + external impact risk + irreversibility penalty`
+Here is the cost lens to evaluate before enabling an autonomous fleet: `Bad output cost = probability of bad output * expected recovery cost + external impact risk + irreversibility penalty`.
 
 If the score is high, you should reduce automation authority. For such domains, use stricter human checkpoints, lower concurrency, and `/goal`-style objective loops with stronger escalation conditions.
 
-This is not rejecting autonomy. It is choosing autonomy only where the cost model supports it.
+In KubeDojo-specific education loops, this cost lens usually moves faster than in purely engineering loops because learner-facing mistakes do not stay short-lived.
+A single poor pattern reused by learners can remain in study notes, code snippets, and examples long after the original mistake is corrected in git.
+For this reason, these modules should default to higher-friction checkpoints and evidence-based reversibility even when the technical patch itself is easy to roll back.
+
+This is not rejecting autonomy. It is choosing autonomy only where the cost model supports it, which means teams can explicitly encode safer defaults for high-impact work.
 
 Consider this practical question: "Would I accept repeated blind retries of this action if a failure lands in public, educational, or regulated space?" If the answer is no, your loop must change before enabling broad ticket-farm patterns.
 
+### 10) Layered harness design: where instructions live and where they should fail
+
+One source-level lesson from the broader harness conversation is that agents succeed when their instruction stack has stable layers. If every rule lives only in narrative text, it can be read and then ignored. If every rule lives only in scripts, it becomes difficult to tune and too rigid. The durable design is a layered approach: platform defaults, project advisory text, and project enforcement mechanisms.
+
+Platform defaults are what the agent runtime gives you. In a repo like this, examples include sandbox posture, built-in tool behavior, and model-specific execution assumptions. These constraints are useful but limited: agents will always optimize for what they can observe and what the runtime permits. You cannot ask an agent to follow a missing rule if the platform never exposes it as a signal. This is why the most important first step is not adding more instructions; it is knowing which instructions are enforceable where.
+
+Project advisory rules are the documentation layer you already have: AGENTS.md, CLAUDE.md, team notes, workflow conventions, and runbook instructions. Advisory rules shape behavior and are high value for onboarding, but they do not automatically execute. If advisory guidance conflicts with platform defaults or is omitted from prompt context, agents can and will diverge. In practice this matters most in transition events such as team handoffs, incident spikes, and repo rewrites.
+
+Project enforcement is where rules become non-negotiable. In this module's context, that means checks that fail fast when critical orchestration invariants are violated, and configuration patterns that cannot silently drift. For example, a policy that claims `WORKFLOW.md` must include `workspace` and `hooks` can be enforced by CI or pipeline-level checks instead of reviewer memory. This is exactly the difference between instruction and mechanism: one describes what should happen, one guarantees what will not be skipped.
+
+The goal is not control for control's sake. The goal is to encode the same rule with progressively stronger guarantees: first explain in advisory text, then codify in one machine-checked path. When this is done, the team can remove "tribal knowledge" from failure diagnosis because the failure boundary is explicit.
+
+For curriculum quality gates, this depth is not about verbosity. It is about risk control for reusable training artifacts, because each repeated cycle inherits the same control assumptions and needs stable explanatory coverage rather than accidental shortcuts.
+
+In practical terms, consider this trio as a design exercise before each orchestration change:
+
+- What is changing in runtime behavior (script, workflow, or policy)?
+- Which layer is the highest enforceable layer for this behavior?
+- Which layer gets an explicit test and a review comment if someone edits it?
+
+For orchestration, common failure classes become dramatically easier to triage when this trio is explicit. If `WORKFLOW.md` no longer renders because of a bad template variable, a project advisory fix is not enough—you want enforcement to fail the contract parsing path before a worker spends cycles on bad attempts. If workspace cleanup is optional for safety, then it can remain advisory with warnings. If workspace cleanup is required for storage and concurrency guarantees, then it belongs in enforceable hooks and gate definitions.
+
+The seven principles from the harness framing can be translated into orchestration criteria without importing the whole story. "The map, not the manual" appears as this rule in code review: every production behavior must have a minimal in-repo source of truth, and that source must be small enough to diff. This is exactly why your contract file should stay small and legible even if prompt body content grows. The principle "repository as system of record" is visible when the loop reads contract and labels from tracked files, not interactive notes. The principle "enforce invariants, not implementations" appears when retry policy, branch state transitions, and evidence requirements are consistent across all workers. "Make application legible" means your poller logs should answer where, why, and with which labels each issue moved this cycle.
+
+Harness workstreams also showed a measurable operational difference in merge philosophy: with enough guardrails, teams can fix bad automation with reruns and bounded retries instead of stopping all work for perfection first. Translating to this module, this means your orchestration loop should prefer deterministic fail-fast checks plus rerun mechanics over speculative continuation. If your loop prints why an attempt was blocked, then you can iterate control behavior safely without opening blind reruns.
+
+"Continuous garbage collection" in this context is not only docs cleanup; it is also periodic contract cleanup. Teams often forget to simplify `WORKFLOW.md` over time, then accumulate legacy keys, stale labels, and ambiguous hook semantics. Every stale entry is a hidden control debt item. A small weekly sweep that validates only currently-active contract keys, current active labels, and hook semantics avoids drift from creeping complexity. This is especially useful for students who tend to add temporary conditions during one workshop and forget to remove them afterward.
+
+The "boring technology wins" lesson also matters for this module's technical choices. A less flashy polling loop with stable parsing, predictable hook order, and obvious YAML schema is easier to model than an opaque orchestration framework with hidden global state. If an automation pattern is too abstract to reason about quickly, it is harder to operate and harder to debug under pressure. In this module, the goal is not to build the smartest orchestrator; it is to build the safest, inspectable one.
+
+A practical way to prevent this module from becoming just another "policy-heavy but brittle" page is to keep every high-risk behavior observable in one place. A clean example is the "single workpad comment" rule paired with labeled attempt updates. The workpad becomes a human-readable checkpoint channel, while the internal claim states remain machine-readable and restart-safe. That split gives both teams and learners a stable mental model: humans trust the narrative anchor, machines handle sequence.
+
+Treat the harness as a cost model. If a rule can be violated, ask where to spend your enforcement budget. For low-cost repetitive work, advisory guidance plus light enforcement is often enough. For higher cost domains, the same rule should move one layer lower.
+
+You can test this split in two minutes: pick one rule from your draft loop and deliberately violate it once.
+
+- If the violation only appears in an onboarding discussion and no gate triggers, it is advisory and fragile.
+- If the violation blocks with clear telemetry and an actionable message, the enforcement layer is working.
+- If the violation causes ambiguous behavior but no failure signal, move more logic into contract parsing and contract validation.
+
+This exercise is not just for compliance. It changes team cognition, because the team starts noticing whether a rule is "remembered" or "enforced."
+
+### 11) Decision maturity: when ticket orchestration and objective loops should intentionally coexist
+
+The late lesson from the broader source is that strict finite transitions alone eventually flatten nuance. Models improve, tasks change, and some work requires goal interpretation rather than state interpolation. The module's strongest point is not to abandon transitions, but to recognize where transitions must yield to objective controls. In practice, this means you should never freeze orchestration into a single path before you model reversibility, audit burden, and cost of misclassification.
+
+Objective control is useful when a task has high variance and cannot be fully captured by binary state labels. Examples include complex documentation restructuring, design-heavy refactors, and educational content updates where quality dimensions differ per reader context. In these domains, a rigid state machine can still be part of the mechanism, but progression must remain tied to explicit completion predicates. Those predicates are often easier to evaluate as "Has this run produced evidence, validation, and human-accepted scope boundaries?" than as "Did we pass through N labeled states in order?"
+
+This does not conflict with ticket-first orchestration. You can keep ticket flow as the coordination spine while giving each ticket a local objective contract. For low-cost repetitive tasks, ticket transitions alone may be enough. For ambiguous tasks, add objective gates inside `after_run` and require a stronger handoff signal before moving from `In Progress` to `Merging`. This hybrid model reduces accidental optimism because every escalation must satisfy observable evidence.
+
+An explicit cost matrix helps teams decide when to apply this hybrid. Use three scores from 0 to 5 each, then compare:
+
+1. Expected bad-output frequency.
+2. Recoverability speed (hours vs days vs irreversible).
+3. Compliance of evidence required for safe rollback.
+
+When all three are low, a pure state-machine loop with lightweight evidence often wins. When one or more scores are high, add `/goal`-style objective checkpoints. When scores are high and human risk communication is immediate, keep session-level review as the final gate even if ticket automation runs underneath.
+
+The result is a portfolio approach: sessions for high-context, high-trust work; tickets for reversible mechanical production work; and objectives for ambiguous work where quality criteria evolve. This portfolio gives teams a stable default, but not a one-size-fits-all failure model.
+
+One anti-pattern in this decision space is to map everything to one orchestration family because the team wants speed today. Speed without a correct control model often produces delayed cost. Another anti-pattern is to overfit objective loops to every issue because it sounds modern. Overfitting creates governance complexity and can hide simple operational progress behind constant policy exceptions.
+
+In a teaching repository, this lesson is especially important because learner-visible artifacts persist longer than any single PR. If an automated loop emits a weak explanation, then students can copy a weak pattern and repeat it. If objective checkpoints are missing, students may infer speed is proof of correctness. Therefore, high-cost educational outputs should bias toward explicit checkpoints even when the underlying patch is technically reversible.
+
+This module's practical takeaway is to make a design choice at both entry and exit points: entrance policy in the contract, and exit policy in objective completion. Inbound choices decide which tickets even enter automation. Outbound choices decide whether automation can claim "done." If both sides are explicit, orchestration becomes teachable, auditable, and scalable.
+
+A final implementation pattern is to separate "hard stop" criteria from "suspension" criteria. Hard stop means the loop must pause globally because the control plane is broken (contract parsing failure, identity/auth breakage, broken required labels). Suspension means a single ticket should pause while the rest continue (single-hook timeout, transient API call failure, temporary cleanup drift). This is a meaningful difference and is often missed.
+
+Use hard-stop rules sparingly and only where systemic safety depends on them. Use suspension rules liberally to avoid unnecessary blast radius. This distinction is exactly what makes high-throughput automation survivable over a semester, a sprint, or a quarter.
+
+Before you promote a ticket-orchestrated loop to production use, run a six-point hardening check that maps directly to incident cost:
+
+1. Can every contract change be traced from a PR diff to one observed runtime behavior in under one poll cycle?
+2. Does every attempt write one stable workpad anchor that includes why the attempt started and what changed?
+3. Is cleanup failure visible without blocking unrelated issues, and does it trigger a follow-up repair path?
+4. Are retry rules explicit enough that every `RetryQueued` transition can be explained to a reviewer in one line?
+5. Can a single stale lock or stale workspace directory be remediated safely without deleting unresolved context?
+6. Are high-cost domains explicitly tagged to force stricter checkpoints before transitioning to completion labels?
+
+If you can answer "yes" to all six with evidence, the loop has crossed from an educational prototype into reliable operations. If any answer is "no," keep the loop in rehearsal mode and add one evidence requirement per cycle before adding concurrency. This process matters because one good contract design choice can still fail if the surrounding operational habits are improvised.
+
+That extra hardening discipline is what turns a promising mechanism into institutional memory: teams learn which assumptions remain safe as the model changes. It also means your module stays teachable after scaling because every rule now has both a written meaning and a tested enforcement path. In short, this is the final bridge between harness ideas and orchestration engineering—you are no longer optimizing for "looks like it worked" in one run, you are engineering repeatable outcomes under repeated disturbance.
+
 ### 10) Applied case walkthrough: diagnose the first real failure and make the control plane robust
 
-This section is the practical extension that converts the model into a repeatable operating approach.
+This section is the practical extension that converts the model into a repeatable operating approach, complete with stage gates that prove your control decisions are still visible after retries.
 
 Your team starts with one concrete symptom: issue-driven automation is enabled, yet operators still say they cannot diagnose handoff quality after a preemption. Start by writing a one-line incident log from yesterday and ask only three questions: which ticket was active, whose attempt touched it last, and where did the evidence live. If the log includes terminal IDs only, you already know why the team still feels blind. The goal is to move that incident record from terminal-only traces into ticket state and artifact comments.
 
 In the first design pass, keep everything else constant and only add a minimal `WORKFLOW.md` contract with the six required sections. This isolates the experiment. You should be able to say exactly where concurrency, hook behavior, workspace location, and codex launch policy are sourced at runtime. This is the equivalent of changing a moving part from undocumented assumptions to versioned input.
 
-Next, map each observed failure mode to one contract point:
+Next, map each observed failure mode to one contract point and a measurable evidence update so each handoff has continuity.
 
 1. If workspace creation fails, `after_create` is the control edge to block that attempt.
 2. If prompt rendering fails, template strictness tells you which issue fields are required.
@@ -436,11 +527,11 @@ The strongest decision is to treat objective-driven `/goal` or explicit human ch
 
 ## Hands-On Exercise
 
-This exercise simulates a minimal end-to-end Symphony-style workflow in one repository using GitHub Issues as the tracker.
+This exercise simulates a minimal end-to-end Symphony-style workflow in one repository using GitHub Issues as the tracker, and it is designed so a team can validate every stage before production scale.
 
 ### Stage 1 — Create a `WORKFLOW.md` contract at repo root
 
-Create the contract at the root of your training repository with active label-driven states.
+Create the contract at the root of your training repository with active label-driven states and lock the state vocabulary before you run the loop.
 
 ```md
 ---
@@ -508,7 +599,7 @@ Check with your loop's dry run by echoing the rendered body for one test issue. 
 
 ### Stage 3 — Add `after_create` hook and workspace layout
 
-Create `.work/symphony-hooks/after_create.sh` and make it create per-issue worktrees under `worktrees/issue-{{ number }}/`.
+Create `.work/symphony-hooks/after_create.sh` and make it create per-issue worktrees under `worktrees/issue-{{ number }}/` with explicit guardrails for stale directories and duplicate invocations.
 
 ```bash
 #!/usr/bin/env bash
@@ -534,7 +625,7 @@ Run once with a sample issue number and verify the directory path matches the te
 
 ### Stage 4 — Build a small polling loop (~30+ lines) with lifecycle hooks
 
-Create `scripts/polling-loop.sh` and call it with `./scripts/polling-loop.sh your-org/your-repo`.
+Create `scripts/polling-loop.sh` and call it with `./scripts/polling-loop.sh your-org/your-repo` so hook execution order is controlled by contract changes instead of shell-local assumptions.
 
 ```bash
 #!/usr/bin/env bash
@@ -587,7 +678,7 @@ done
 
 ### Stage 5 — Simulate agent execution and persistent workpad updates
 
-Create `.work/symphony-hooks/after_run.sh` using one persistent workpad comment pattern with Codex Workpad sections.
+Create `.work/symphony-hooks/after_run.sh` using one persistent workpad comment pattern with Codex Workpad sections that records retries, validations, and pending decisions in one place.
 
 ```bash
 #!/usr/bin/env bash
@@ -618,7 +709,7 @@ The point is not to perfect the content quality in this stage, but to confirm th
 
 ### Stage 6 — Show contract versioning with git history and hot reload
 
-Stage 6 proves two ideas: `WORKFLOW.md` is reviewable artifact, and hook behavior reloads when edited.
+Stage 6 proves two ideas: `WORKFLOW.md` is reviewable artifact, and hook behavior reloads when edited, so queue behavior changes become auditable contract updates.
 
 ```bash
 git add WORKFLOW.md scripts/polling-loop.sh .work/symphony-hooks/after_create.sh \
@@ -677,23 +768,27 @@ Use one marker-based comment per issue with sections like Plan, Acceptance Crite
 ### Anti-patterns
 
 1. **Session-centric fallback**  
-Continuing to treat terminal/session IDs as the control object after introducing issue polling.
+Continuing to treat terminal/session IDs as the control object after introducing issue polling and expecting scale across operators.
 
 2. **Unbounded cleanup failures**  
-Stopping all orchestration because one cleanup command fails, even when progress was validly recorded.
+Stopping all orchestration because one cleanup command fails, even when progress was validly recorded, creates a single point of fragility in failure recovery.
 
 3. **Naive transport of this pattern to education and safety-critical output**  
-Running ticket-driven autonomous loops on high-cost, low-reversibility tasks without explicit escalation and human checkpoints.
+Running ticket-driven autonomous loops on high-cost, low-reversibility tasks without explicit escalation and human checkpoints risks durable production damage from a small, recoverable attempt mistake.
 
 4. **Single global variable in shared scripts**  
-Using one mutable global state cache for attempts and retries across multiple issues.
+Using one mutable global state cache for attempts and retries across multiple issues erodes traceability because each attempt can overwrite another attempt's recovery signal.
 
 5. **State mutation without evidence**  
-Changing issue labels or comments without deterministic updates to the workpad evidence.
+Changing issue labels or comments without deterministic updates to the workpad evidence makes re-opened incidents difficult to audit and slows corrective action.
 
 ## Decision Framework
 
-Use this guide to choose the right control model before you onboard a team.
+Before selecting a model, compare the three axes that usually dominate failure economics: cost of bad output, reversibility, and audit trail.
+Choose session-first control when ongoing human synthesis is the dominant risk filter, choose issue-first when outcomes are reversible and repetitive, and choose `/goal` when success itself is value-oriented and must be judged against evolving criteria.
+Use the matrix below to make that choice explicit before scale-out.
+
+Use this guide to choose the right control model before you onboard a team, and make the default explicit so onboarding does not rely on undocumented tribal knowledge.
 
 | Decision axis | Human-in-the-loop session model | Symphony-style issue model | `/goal` objective model |
 |---|---|---|---|
@@ -710,7 +805,7 @@ Use the matrix as a preflight check: if cost-of-bad-output is high and reversibi
 
 - [Symphony SPEC.md](https://github.com/openai/symphony/blob/main/SPEC.md)
 - [Symphony repository](https://github.com/openai/symphony)
-- [Harness Engineering (archived)](https://web.archive.org/web/20260317122110/https://openai.com/index/harness-engineering/)
+- [Harness Engineering (archived)](https://web.archive.org/web/20260317122110*/openai.com/index/harness-engineering/)
 - [Linear API overview](https://linear.app/developers)
 - [Linear API authentication and GraphQL reference](https://developers.linear.app/docs/graphql/working-with-the-linear-api)
 - [GitHub Issues REST API](https://docs.github.com/en/rest/issues/issues)
