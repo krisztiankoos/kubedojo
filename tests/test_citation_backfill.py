@@ -286,6 +286,32 @@ def test_apply_inject_plan_skips_rewrite_disposition_claims() -> None:
     } in applied
 
 
+def test_apply_inject_plan_skips_overlapping_wrap_when_phrase_already_cited() -> None:
+    """Regression test for #1216 (Pattern B): inject must not double-wrap a phrase
+    that already lives inside an existing [label](url) region. The claim should
+    be recorded as applied with note='already_cited_in_body' so the coverage
+    gate in run_inject treats it as addressed."""
+    body = "Lead.\\n\\n[Kubernetes](https://kubernetes.io/) is a container orchestrator.\\n"
+    plan = {
+        "inline_insertions": [
+            {
+                "claim_id": "k8s-orchestrator",
+                "target_line": "[Kubernetes](https://kubernetes.io/) is a container orchestrator.",
+                "original_phrase": "Kubernetes",
+                "replace_with": "[Kubernetes](https://kubernetes.io/)",
+            }
+        ],
+        "skipped_claims": [],
+    }
+    seed = {"claims": [{"claim_id": "k8s-orchestrator", "disposition": "supported"}]}
+    new_body, applied = citation_backfill.apply_inject_plan(body, plan, seed)
+    assert new_body == body, "body must not be mutated when phrase already cited"
+    matching = [a for a in applied if a.get("claim_id") == "k8s-orchestrator"]
+    assert len(matching) == 1
+    assert matching[0]["status"] == "applied"
+    assert matching[0]["note"] == "already_cited_in_body"
+
+
 def test_apply_inject_plan_preserves_next_module_after_sources() -> None:
     body = (
         "Body text.\n\n"

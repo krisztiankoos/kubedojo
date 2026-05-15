@@ -1512,6 +1512,11 @@ def apply_inject_plan(body: str, plan: dict[str, Any], seed: dict[str, Any]) -> 
         else:
             phrase_idx_in_target = target.find(phrase)
             abs_phrase_idx = idx + phrase_idx_in_target
+        if _is_inside_existing_markdown_link(new_body, abs_phrase_idx):
+            applied.append({"claim_id": ins.get("claim_id"), "kind": "inline",
+                            "status": "applied",
+                            "note": "already_cited_in_body"})
+            continue
         new_body = new_body[:abs_phrase_idx] + replace + new_body[abs_phrase_idx + len(phrase):]
         applied.append({"claim_id": ins.get("claim_id"), "kind": "inline",
                         "status": "applied",
@@ -1530,6 +1535,45 @@ def apply_inject_plan(body: str, plan: dict[str, Any], seed: dict[str, Any]) -> 
         sources = _sanitize_sources_section_urls(sources)
         new_body = _merge_sources_section(new_body, sources)
     return new_body, applied
+
+
+def _is_inside_existing_markdown_link(body: str, idx: int) -> bool:
+    """Return True when ``idx`` falls inside a markdown link in ``body``."""
+    if idx < 0:
+        return False
+
+    i = 0
+    n = len(body)
+    while i < n:
+        lb = body.find("](", i)
+        if lb < 0:
+            return False
+        lbr = body.rfind("[", i, lb)
+        if lbr < 0:
+            i = lb + 2
+            continue
+        # Parse URL: balance-aware until the matching ")" at depth 0.
+        url_start = lb + 2
+        depth = 0
+        j = url_start
+        while j < n:
+            ch = body[j]
+            if ch == "(":
+                depth += 1
+            elif ch == ")":
+                if depth == 0:
+                    break
+                depth -= 1
+            elif ch.isspace():
+                break
+            j += 1
+        if j >= n or body[j] != ")":
+            i = lb + 2
+            continue
+        if lbr <= idx <= j:
+            return True
+        i = j + 1
+    return False
 
 
 def _sanitize_sources_section_urls(text: str) -> str:
@@ -1816,8 +1860,8 @@ def _verify_diff_is_additive(original: str, modified: str,
     if unauthorized:
         sample_lines: list[str] = []
         for old_line, new_line in unauthorized[:5]:
-            sample_lines.append(f"-{old_line[:140]}")
-            sample_lines.append(f"+{new_line[:140]}")
+            sample_lines.append(f"-{old_line[:800]}")
+            sample_lines.append(f"+{new_line[:800]}")
         issues.append("unauthorized_prose_change:\n" + "\n".join(sample_lines))
     return issues
 
