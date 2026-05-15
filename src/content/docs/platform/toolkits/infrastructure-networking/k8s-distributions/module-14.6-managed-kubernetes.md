@@ -1,4 +1,5 @@
 ---
+citations_verified: true
 title: "Module 14.6: Managed Kubernetes - EKS vs GKE vs AKS"
 slug: platform/toolkits/infrastructure-networking/k8s-distributions/module-14.6-managed-kubernetes
 sidebar:
@@ -107,7 +108,7 @@ If pods cannot pull images because your private registry permissions are wrong, 
 > Which parts of an upgrade are genuinely provider-owned, and which parts still require your team's testing, compatibility checks, and rollout planning?
 
 The answer matters because upgrade ownership is split.
-The provider can make a Kubernetes minor version available, patch the control plane, and sometimes upgrade nodes automatically.
+The provider can make a [Kubernetes minor version](https://kubernetes.io/docs/reference/using-api/deprecation-guide/) available, patch the control plane, and sometimes upgrade nodes automatically.
 Your team still needs to test deprecated APIs, validate admission controllers, confirm CNI compatibility, coordinate disruption budgets, and update add-ons that are not provider-managed.
 
 | Responsibility Area | Provider Usually Owns | Customer Usually Owns | Platform Team Question |
@@ -271,9 +272,9 @@ Both matter because a cheap cluster that slows delivery can be expensive, while 
 | Migration effort | Terraform changes, IAM redesign, CI/CD changes, and retraining | A cheaper target provider may not pay back if migration is complex |
 
 The model should also separate cluster choice from operating mode.
-EKS with managed node groups is a different experience from EKS with Fargate.
+[EKS with managed node groups](https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html) is a different experience from [EKS with Fargate](https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html).
 GKE Standard is different from GKE Autopilot.
-AKS with user node pools is different from AKS virtual nodes or other burst patterns.
+AKS with user node pools is different from [AKS virtual nodes](https://learn.microsoft.com/en-us/azure/aks/virtual-nodes) or other burst patterns.
 Choosing the provider is only half the decision; choosing how much node responsibility you keep is the other half.
 
 ---
@@ -317,7 +318,7 @@ EKS ARCHITECTURE
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-The EKS control plane is managed, but the surrounding AWS resources are still design choices.
+[The EKS control plane is managed](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html), but the surrounding AWS resources are still design choices.
 Subnets determine where nodes and load balancers land.
 Security groups determine which components can talk.
 IAM roles determine what controllers and workloads can do.
@@ -354,7 +355,7 @@ k get pods -A
 ```
 
 EKS add-ons are important because the base control plane alone is not the full production story.
-CoreDNS, kube-proxy, the VPC CNI, the EBS CSI driver, and the AWS Load Balancer Controller each sit on the boundary between Kubernetes and AWS infrastructure.
+[CoreDNS, kube-proxy, the VPC CNI, the EBS CSI driver](https://docs.aws.amazon.com/eks/latest/userguide/eks-add-ons.html), and the AWS Load Balancer Controller each sit on the boundary between Kubernetes and AWS infrastructure.
 When these components are unmanaged, stale, or misconfigured, the cluster can fail in ways that look like Kubernetes problems but are actually integration problems.
 
 ```bash
@@ -380,7 +381,7 @@ eksctl create addon \
 ```
 
 The most important EKS identity feature is IAM Roles for Service Accounts, commonly called IRSA.
-IRSA lets a Kubernetes service account exchange its projected token for AWS credentials through an IAM trust relationship.
+[IRSA lets a Kubernetes service account exchange its projected token for AWS credentials through an IAM trust relationship](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html).
 The result is a pod-level permission boundary that avoids static cloud keys inside containers.
 
 ```yaml
@@ -438,7 +439,7 @@ The platform team must budget time for add-on management, IAM design, subnet pla
 ### Google GKE: Kubernetes Maturity With Strong Defaults And Autopilot
 
 GKE is shaped by Google's long history with Kubernetes and container orchestration.
-It offers a conventional Standard mode where you manage node pools, plus Autopilot mode where Google manages most node-level decisions and charges around requested pod resources.
+It offers a conventional [Standard mode where you manage node pools, plus Autopilot mode](https://cloud.google.com/kubernetes-engine/docs/concepts/choose-cluster-mode) where Google manages most node-level decisions and charges around requested pod resources.
 The important decision is whether your team values node-level control more than reduced operational surface.
 
 ```ascii
@@ -469,7 +470,7 @@ GKE Standard is the better fit when you need precise control over machine types,
 Autopilot is the better fit when teams want a stronger managed experience and can live within its constraints.
 The practical question is whether your platform value comes from tuning nodes or from removing node tuning as a developer concern.
 
-A Standard cluster creation command exposes the decisions directly.
+A [Standard cluster creation command](https://cloud.google.com/kubernetes-engine/docs/concepts/release-channels) exposes the decisions directly.
 The example uses a regional cluster because high availability is a platform concern, not an optional decoration.
 It also enables autoscaling and workload identity because those two choices shape day-two operations.
 
@@ -488,9 +489,9 @@ gcloud container clusters create dojo-gke-standard \
   --workload-pool "${PROJECT_ID}.svc.id.goog"
 ```
 
-Autopilot removes more node management from the platform team.
+[Autopilot removes more node management from the platform team](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-overview).
 That is attractive for teams that have small platform staffs, variable workloads, or internal customers who should not care about VM shapes.
-The tradeoff is that Autopilot enforces guardrails and may reject workloads that assume node-level privileges.
+The tradeoff is that [Autopilot enforces guardrails and may reject workloads that assume node-level privileges](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security).
 
 ```bash
 gcloud container clusters create-auto dojo-gke-autopilot \
@@ -498,7 +499,7 @@ gcloud container clusters create-auto dojo-gke-autopilot \
   --release-channel regular
 ```
 
-Autopilot makes resource requests more important, because the platform uses them as a scheduling and billing signal.
+Autopilot makes resource requests more important, because [the platform uses them as a scheduling and billing signal](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests).
 A workload with no requests is not merely sloppy; it loses the information Autopilot needs to place and price the pod correctly.
 That is why the manifest below treats requests as part of the application contract.
 
@@ -533,7 +534,7 @@ spec:
 ```
 
 GKE Workload Identity is the parallel to EKS IRSA.
-A Kubernetes service account is bound to a Google service account, and the pod receives cloud access through that binding rather than a static key.
+[A Kubernetes service account is bound to a Google service account](https://cloud.google.com/kubernetes-engine/docs/concepts/workload-identity), and the pod receives cloud access through that binding rather than a static key.
 The design goal is the same across providers: make the workload identity specific, auditable, and revocable.
 
 ```bash
@@ -567,7 +568,7 @@ If most data and identity are already in AWS or Azure, moving compute to GKE can
 ### Azure AKS: Enterprise Integration And Azure-Native Operations
 
 AKS is commonly attractive when the organization already uses Azure networking, Microsoft Entra ID, Azure Policy, Azure Monitor, Key Vault, or Windows container workloads.
-Its value is not only the Kubernetes control plane.
+Its value is not only the [Kubernetes control plane](https://learn.microsoft.com/en-us/azure/aks/what-is-aks).
 Its value is that Kubernetes can become part of an existing enterprise Azure operating model.
 
 ```ascii
@@ -595,11 +596,11 @@ AKS ARCHITECTURE
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
-AKS separates system and user node pools, which is a useful operational habit.
+[AKS separates system and user node pools](https://learn.microsoft.com/en-us/azure/aks/use-system-pools), which is a useful operational habit.
 System components should not compete with unpredictable application workloads when avoidable.
 A platform baseline should keep the system pool stable and use user pools for workload-specific scaling, taints, Windows nodes, GPU nodes, or spot capacity.
 
-The following command creates a learning AKS cluster with managed identity and Azure CNI.
+The following command creates a learning AKS cluster with managed identity and [Azure CNI](https://learn.microsoft.com/en-us/azure/aks/concepts-network-cni-overview).
 A production baseline would normally add private cluster settings, authorized IP ranges if public access remains, policy configuration, and explicit node pool strategy.
 The point here is to read the command as a set of operating choices, not a magic incantation.
 
@@ -629,7 +630,7 @@ k get nodes -o wide
 k get pods -A
 ```
 
-AKS Workload Identity uses an OIDC issuer and federated credentials so pods can access Azure resources through managed identity.
+[AKS Workload Identity uses an OIDC issuer and federated credentials](https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview) so pods can access Azure resources through managed identity.
 Again, the provider syntax differs but the platform principle is the same.
 A pod should receive the narrow cloud permissions needed for its job, not inherit broad node or cluster permissions.
 
@@ -710,7 +711,7 @@ spec:
 ```
 
 AKS deserves special attention when Windows containers are not a side case.
-Kubernetes can run Windows workloads on other providers too, but Azure's enterprise estate, identity integration, and Windows operational familiarity often make AKS easier for organizations already invested in Microsoft platforms.
+[Kubernetes can run Windows workloads](https://learn.microsoft.com/en-us/azure/aks/windows-containerd) on other providers too, but Azure's enterprise estate, identity integration, and Windows operational familiarity often make AKS easier for organizations already invested in Microsoft platforms.
 The right question is not "can the provider run Windows" but "which provider makes Windows operations supportable for this team."
 
 > **Pause and predict:** Your security team requires Microsoft Entra-based access review for cluster administrators, but your application data lives in AWS RDS.
@@ -789,7 +790,7 @@ A platform team should be able to explain which networks can reach the API, how 
 
 Network policy is another area where managed services do not remove design work.
 Kubernetes Services make communication easy; they do not decide whether communication is allowed.
-If every namespace can reach every other namespace by default, a compromised workload may move laterally even though the control plane itself is provider-managed.
+If [every namespace can reach every other namespace by default](https://kubernetes.io/docs/concepts/services-networking/network-policies/), a compromised workload may move laterally even though the control plane itself is provider-managed.
 
 A minimal network policy example helps make the idea concrete.
 The policy below allows the `web` namespace to call the `catalog-api` pods on port 80 while denying unrelated callers if the namespace has default-deny policy in place.
@@ -844,7 +845,7 @@ The names differ, but the platform principle does not.
 | AKS | ServiceAccount | Managed identity | Federated credential through OIDC issuer | Can this pod use only the Azure permissions it needs? |
 
 The wrong pattern is to put cloud credentials in a Kubernetes Secret and call the problem solved.
-That moves the risk into etcd, CI/CD logs, secret syncing tools, and developer laptops.
+That moves the risk into [etcd](https://kubernetes.io/docs/concepts/configuration/secret/), CI/CD logs, secret syncing tools, and developer laptops.
 Managed workload identity exists so that credentials can be short-lived, scoped, auditable, and revoked through the cloud provider's IAM system.
 
 A good platform baseline makes static cloud keys an exception.
@@ -855,7 +856,7 @@ Without that pressure, teams keep the weakest identity pattern because it works 
 
 Managed Kubernetes still needs capacity planning.
 Nodes may be provider-managed, but workload scheduling remains your problem.
-Requests, limits, affinity, topology spread, taints, tolerations, and disruption budgets determine whether the cluster behaves well during deploys, upgrades, and traffic spikes.
+[Requests, limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/), affinity, topology spread, taints, tolerations, and disruption budgets determine whether the cluster behaves well during deploys, upgrades, and traffic spikes.
 
 ```ascii
 NODE OPERATING MODES
@@ -972,7 +973,7 @@ k get deployments -A -o wide
 ```
 
 The most common upgrade mistake is ignoring admission webhooks.
-A failing webhook can block pod creation, deployment rollouts, or controller reconciliation after an upgrade.
+[A failing webhook can block pod creation, deployment rollouts, or controller reconciliation](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) after an upgrade.
 Managed Kubernetes keeps the API server alive, but your webhooks can still turn a healthy API into a cluster that rejects the work your teams need to do.
 
 ### Observability: Provider Dashboards Are A Starting Point
@@ -1003,8 +1004,8 @@ This reduces the time spent arguing whether the problem is "Kubernetes" or "clou
 
 ## Core Section 5: Cost, Multi-Cloud, And The Senior-Level Tradeoff
 
-Cost in managed Kubernetes is rarely just the control plane line item.
-The control plane may be visible because it is easy to count, but worker compute, network transfer, NAT, load balancers, logging, storage, support, and engineering time usually dominate.
+Cost in managed Kubernetes is rarely just the [control plane line item](https://aws.amazon.com/eks/pricing/).
+The [control plane](https://azure.microsoft.com/en-us/pricing/details/kubernetes-service/) may be visible because it is easy to count, but worker compute, network transfer, NAT, load balancers, logging, storage, support, and engineering time usually dominate.
 A senior platform engineer models the whole system before declaring a provider cheaper.
 
 ```ascii
@@ -1028,7 +1029,7 @@ A common mistake is to compare three tiny clusters and extrapolate to production
 That hides the real drivers.
 A chatty service mesh can turn cross-zone traffic into a major bill.
 A logging agent can send high-cardinality debug logs into expensive retention.
-A serverless pod mode can save operations time while costing more for steady workloads with predictable utilization.
+A [serverless pod mode](https://cloud.google.com/kubernetes-engine/pricing) can save operations time while costing more for steady workloads with predictable utilization.
 
 The example below is deliberately approximate and should be replaced with current provider pricing before a real purchasing decision.
 Its purpose is to show the model, not to freeze a price sheet in curriculum.
@@ -1594,3 +1595,33 @@ If you cannot write those sentences clearly, your decision record still needs wo
 ## Next Module
 
 Next Toolkit: [CI/CD Pipelines Toolkit](/platform/toolkits/cicd-delivery/ci-cd-pipelines/)
+
+## Sources
+
+- [docs.aws.amazon.com: what is eks.html](https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html) — The Amazon EKS overview directly describes EKS as managed Kubernetes and states that AWS manages the control plane.
+- [docs.aws.amazon.com: managed node groups.html](https://docs.aws.amazon.com/eks/latest/userguide/managed-node-groups.html) — The EKS managed node groups page directly states that managed node groups automate node provisioning and lifecycle management.
+- [docs.aws.amazon.com: fargate profile.html](https://docs.aws.amazon.com/eks/latest/userguide/fargate-profile.html) — The EKS Fargate profile documentation explains that selectors determine which pods run on Fargate.
+- [docs.aws.amazon.com: eks add ons.html](https://docs.aws.amazon.com/eks/latest/userguide/eks-add-ons.html) — The Amazon EKS add-ons page lists the named add-ons and their management model.
+- [docs.aws.amazon.com: managing vpc cni.html](https://docs.aws.amazon.com/eks/latest/userguide/managing-vpc-cni.html) — The EKS VPC CNI documentation directly states that the add-on assigns private IPv4 or IPv6 addresses from the VPC to pods.
+- [docs.aws.amazon.com: iam roles for service accounts.html](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) — The EKS IRSA page describes associating IAM roles with Kubernetes service accounts through OIDC instead of distributing AWS credentials.
+- [cloud.google.com: choose cluster mode](https://cloud.google.com/kubernetes-engine/docs/concepts/choose-cluster-mode) — The GKE mode-selection page explains Standard and Autopilot operation modes and their tradeoffs.
+- [cloud.google.com: autopilot overview](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-overview) — The Autopilot overview states that Google manages worker nodes and node lifecycle tasks.
+- [cloud.google.com: autopilot resource requests](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-resource-requests) — The Autopilot resource requests page explains how Autopilot uses and adjusts pod resource requests, including billing-model implications.
+- [cloud.google.com: workload identity](https://cloud.google.com/kubernetes-engine/docs/concepts/workload-identity) — The GKE Workload Identity Federation page directly describes keyless access and fine-grained identity for workloads.
+- [cloud.google.com: autopilot security](https://cloud.google.com/kubernetes-engine/docs/concepts/autopilot-security) — The Autopilot security page documents restrictions on privileged containers, host namespaces, host networking, and node-level access.
+- [cloud.google.com: release channels](https://cloud.google.com/kubernetes-engine/docs/concepts/release-channels) — The GKE release channels documentation explains channel-based version and upgrade management.
+- [learn.microsoft.com: what is aks](https://learn.microsoft.com/en-us/azure/aks/what-is-aks) — The AKS overview states that Azure automatically creates and manages the AKS control plane.
+- [learn.microsoft.com: use system pools](https://learn.microsoft.com/en-us/azure/aks/use-system-pools) — The AKS system node pools page directly defines system and user node pool purposes.
+- [learn.microsoft.com: workload identity overview](https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview) — The AKS Workload Identity overview directly describes service account token projection, OIDC federation, and managed identity integration.
+- [learn.microsoft.com: virtual nodes](https://learn.microsoft.com/en-us/azure/aks/virtual-nodes) — The AKS virtual nodes page directly explains the Azure Container Instances integration.
+- [learn.microsoft.com: windows containerd](https://learn.microsoft.com/en-us/azure/aks/windows-containerd) — The AKS Windows Server node pool documentation directly covers creating Windows Server node pools for containers.
+- [learn.microsoft.com: concepts network cni overview](https://learn.microsoft.com/en-us/azure/aks/concepts-network-cni-overview) — The AKS CNI overview describes CNI plugins, pod IP assignment, routing, and virtual network connectivity.
+- [kubernetes.io: network policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/) — The Kubernetes NetworkPolicy documentation directly states plugin enforcement requirements and allow-rule behavior.
+- [kubernetes.io: manage resources containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) — The Kubernetes resource management page directly describes scheduler use of requests and limit enforcement.
+- [kubernetes.io: disruptions](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/) — The Kubernetes disruptions page documents PDB behavior, voluntary disruptions, drains, and upgrade-related disruption handling.
+- [kubernetes.io: extensible admission controllers](https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/) — The dynamic admission control documentation explains validating webhooks, request rejection, and failurePolicy behavior.
+- [kubernetes.io: deprecation guide](https://kubernetes.io/docs/reference/using-api/deprecation-guide/) — The Kubernetes deprecated API migration guide is the primary source for API removals and migration requirements across releases.
+- [kubernetes.io: secret](https://kubernetes.io/docs/concepts/configuration/secret/) — The Kubernetes Secrets page directly states where Secrets are stored and discusses default at-rest exposure.
+- [aws.amazon.com: pricing](https://aws.amazon.com/eks/pricing/) — The Amazon EKS pricing page directly describes per-cluster pricing and separate charges for worker-node resources and related AWS infrastructure.
+- [cloud.google.com: pricing](https://cloud.google.com/kubernetes-engine/pricing) — The GKE pricing page directly covers cluster management fees, compute resources, operation modes, and ingress fees.
+- [azure.microsoft.com: kubernetes service](https://azure.microsoft.com/en-us/pricing/details/kubernetes-service/) — The AKS pricing page directly describes control-plane tiers and compute pricing.
