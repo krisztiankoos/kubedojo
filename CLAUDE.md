@@ -4,27 +4,43 @@ KubeDojo — free, open-source cloud native curriculum.
 
 ## Agent Orientation (first call on a cold start)
 
-Before `cat`-ing `STATUS.md`, reading the latest `docs/session-state/*.{md,html}` handoff, or running `git log`, hit the local API — it returns the same orientation in ~65 % fewer tokens.
+The orientation sequence is API-first to reduce token use and get a complete cold-start picture (`actions`, blockers, leases, and top modules) before reading local handoff files.
 
+1. Pull compact briefing:
+```bash
+curl -s --max-time 2 http://127.0.0.1:8768/api/briefing/session?compact=1
 ```
-curl -s http://127.0.0.1:8768/api/briefing/session             # ~1.5K tokens, full
-curl -s http://127.0.0.1:8768/api/briefing/session?compact=1   # ~0.7K tokens, compact
-curl -s http://127.0.0.1:8768/api/schema                       # endpoint index
+If 200, parse and act from that payload. If timeout or non-200, record `API down` and skip to step 6.
+
+2. Run local working-tree awareness:
+```bash
+git status --short
 ```
 
-The briefing covers: current branch + dirty summary, all worktrees, runtime services, pipeline v2 queue head, **recent commits**, top TODO bullets, blockers, and alerts. It also returns the actionable triage triple — `actions.{active, blocked, next}` plus `top_modules[{module_key, phase, reason, endpoint}]` — so a fresh agent decides *what to touch* in the same call. Responses carry a weak ETag — send `If-None-Match` for 304 on repeat polls. If the API is down, fall back to reading `STATUS.md` + `CLAUDE.md`.
+3. Scan for blocking decisions:
+```bash
+ls docs/decisions/pending/
+```
+Respect `.claude/rules/decision-card.md` and only process what is declared blocking.
 
-**Cold-start ordering rule (do not regress):**
+4. Read the latest handoff at `docs/session-state/<date>-*.{md,html>` only when the briefing leaves a real narrative-why gap. Use the path from the `STATUS.md` row labeled `Latest handoff`.
 
-1. Briefing API first. It already covers `recent_commits`, `workspace.dirty`, `blockers`, `actions.{active,blocked,next}`, `focus`, `alerts`. **Do not redundantly run `git log -N` or read the latest handoff in full.**
-2. The handoff file at `docs/session-state/YYYY-MM-DD-*.{md,html}` is the *narrative-why* canonical record. The extension is whatever `STATUS.md` points at — could be `.md` or `.html` depending on the session. Read it only when the briefing leaves a real gap (e.g., needing the rationale behind a contract decision, or full PR-by-PR provenance for the prior session). Use `Read` with `limit:` to pull only the relevant section.
-3. `git status --short` is the only marginal-value supplement to the briefing — useful for spotting untracked-files state the briefing summarizes but doesn't enumerate.
-4. Only fall back to STATUS.md when the API is down.
+5. Optional situational check for recent orchestration context:
+```bash
+curl -s --max-time 2 "http://127.0.0.1:8768/api/activity?limit=30"
+```
 
-**Before you claim work**: `GET /api/pipeline/leases` (or `/api/module/{key}/lease`) to see if another worker already holds it — avoids concurrent re-writes.
-**Before you fix a module**: `GET /api/module/{key}/state` for the structured `diagnostics[]` (frontmatter, UK sync, rubric, lease, dead-letter).
-**Before you re-review**: `GET /api/reviews?module={key}` for the existing audit log.
-**For situational awareness**: `GET /api/tracks/readiness` (per-section cleared/in-flight/dead-letter/not-yet-enqueued) and `GET /api/activity?limit=30` (merged feed of commits + pipeline events + bridge messages, 24 h window by default). Both are also rendered in the Operator panel at the top of the dashboard (`http://127.0.0.1:8768/`).
+6. Fallback path if API is down:
+`STATUS.md` → latest handoff → `MEMORY.md` → `CLAUDE.md`.
+
+**Before you claim/fix/re-review work**:
+- `GET /api/pipeline/leases`
+- `GET /api/module/{key}/state`
+- `GET /api/reviews?module={key}`
+
+*Endpoints planned for protocol parity with learn-ukrainian Monitor API (not yet shipped):* `/api/state/manifest`, `/api/rules?format=markdown`, `/api/session/current`, `/api/orient`, `/api/comms/inbox?agent=X`. Tracked as T2.2 in the gap inventory.
+
+Standalone session = main orchestrator. Drive the queue; ask only on irreversible or ambiguous actions.
 
 Full agent recipe: [`scripts/agent_onboarding.md`](scripts/agent_onboarding.md).
 
