@@ -629,16 +629,19 @@ def _handle_ask_gemini(args):
     content = sys.stdin.read() if args.content == "-" else args.content
     content = build_review_message(content) if args.review else content
     model = args.model or (GEMINI_REVIEW_MODEL if args.review else GEMINI_DEFAULT_MODEL)
-    ask_gemini(content, args.task_id, args.type, data, model,
-               getattr(args, 'from_model', None),
-               getattr(args, 'async_mode', False),
-               getattr(args, 'stdout_only', False),
-               getattr(args, 'output_path', None),
-               getattr(args, 'extract', None),
-               getattr(args, 'skip_model_check', False),
-               getattr(args, 'allow_write', False),
-               getattr(args, 'delimiters', None),
-               getattr(args, 'no_github', False))
+    result = ask_gemini(content, args.task_id, args.type, data, model,
+                        getattr(args, 'from_model', None),
+                        getattr(args, 'async_mode', False),
+                        getattr(args, 'stdout_only', False),
+                        getattr(args, 'output_path', None),
+                        getattr(args, 'extract', None),
+                        getattr(args, 'skip_model_check', False),
+                        getattr(args, 'allow_write', False),
+                        getattr(args, 'delimiters', None),
+                        getattr(args, 'no_github', False),
+                        not args.review)
+    if result is None:
+        sys.exit(1)
 
 
 def main():

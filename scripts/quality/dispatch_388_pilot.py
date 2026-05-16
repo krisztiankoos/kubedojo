@@ -291,13 +291,20 @@ Inspect with `gh pr view {pr_num}` and `gh pr diff {pr_num}`. Then evaluate:
 3. DENSITY DOES NOT EQUAL TEACHING — The deterministic verifier already gates on density. You must judge whether the prose is genuinely teaching or just padded to clear gates. Flag any padded paragraphs you find.
 4. PROTECTED ASSETS — Code blocks, ASCII/mermaid diagrams, tables, source URLs preserved across the rewrite (counts in PR body should match).
 5. SOURCES — Each source actually reaches a primary/vendor doc, not marketing fluff. Flag dead/redirect URLs if you can spot any.
+6. LAB RUNNABILITY — Walk every lab step and drill in order. For each `kubectl exec`, `kubectl run`, `kubectl edit`, `kubectl delete`, or container-shell command the lab tells the learner to run, check:
+   (a) Container binaries: does the image actually contain the binary the step uses? `image: nginx` lacks `kubectl`; `image: busybox` lacks `bash`; `image: alpine` lacks `curl` by default. Flag any binary-vs-image mismatch.
+   (b) Role / ClusterRole verbs vs operations: does the Role grant ALL the verbs the lab actually exercises? `kubectl edit` needs `get,list,update`; `kubectl delete` needs `get,list,delete`; `kubectl exec` needs `get` on pods + `create` on pods/exec. Cross-reference every `--verb=...` line in the YAML against every operation the lab/drill performs.
+   (c) Resource scope mismatch: namespaced operations attempted with cluster-scoped permissions (or vice versa).
+   (d) Order of operations: lab steps that reference prior state (a pod, secret, configmap) that wasn't actually created in an earlier step.
+
+   This dimension catches the bug class that lets lab-breaking PRs through content review (#1229 shipped with nginx-image-vs-kubectl and missing-verb bugs because no review dimension explicitly probed it).
 
 End your review with EXACTLY ONE of:
   VERDICT: APPROVE
   VERDICT: APPROVE WITH NITS
   VERDICT: NEEDS CHANGES
 
-Keep the review under 600 words.
+Keep the review under 700 words. If any LAB RUNNABILITY check fails, the floor is NEEDS CHANGES — lab bugs are blocking, not nits.
 """
 
 

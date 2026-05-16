@@ -34,22 +34,34 @@ def _ask_args(*, model: str | None = None, review: bool = False) -> SimpleNamesp
 
 def test_ask_gemini_review_defaults_to_review_model(monkeypatch):
     calls: list[tuple] = []
-    monkeypatch.setattr(_cli, "ask_gemini", lambda *args: calls.append(args))
+
+    def fake_ask_gemini(*args):
+        calls.append(args)
+        return 123
+
+    monkeypatch.setattr(_cli, "ask_gemini", fake_ask_gemini)
 
     _cli._handle_ask_gemini(_ask_args(review=True))
 
     assert calls
     assert calls[0][4] == _cli.GEMINI_REVIEW_MODEL
+    assert calls[0][-1] is False
 
 
 def test_ask_gemini_non_review_defaults_to_default_model(monkeypatch):
     calls: list[tuple] = []
-    monkeypatch.setattr(_cli, "ask_gemini", lambda *args: calls.append(args))
+
+    def fake_ask_gemini(*args):
+        calls.append(args)
+        return 123
+
+    monkeypatch.setattr(_cli, "ask_gemini", fake_ask_gemini)
 
     _cli._handle_ask_gemini(_ask_args())
 
     assert calls
     assert calls[0][4] == _cli.GEMINI_DEFAULT_MODEL
+    assert calls[0][-1] is True
 
 
 def test_resolve_gemini_model_uses_requested_model_when_available(monkeypatch):
@@ -64,7 +76,7 @@ def test_resolve_gemini_model_uses_requested_model_when_available(monkeypatch):
     assert resolved == _gemini.GEMINI_DEFAULT_MODEL
 
 
-def test_resolve_gemini_model_falls_back_when_requested_model_unavailable(
+def test_resolve_gemini_model_does_not_fallback_when_disallowed(
     monkeypatch,
 ):
     monkeypatch.setattr(_gemini, "check_model", lambda model: False)
@@ -73,6 +85,23 @@ def test_resolve_gemini_model_falls_back_when_requested_model_unavailable(
         _cli.GEMINI_REVIEW_MODEL,
         async_mode=False,
         skip_model_check=False,
+        allow_fallback=False,
+    )
+
+    assert resolved is None
+    assert resolved != _gemini.GEMINI_FALLBACK_MODEL
+
+
+def test_resolve_gemini_model_falls_back_when_requested_model_unavailable(
+    monkeypatch,
+):
+    monkeypatch.setattr(_gemini, "check_model", lambda model: False)
+
+    resolved = _gemini._resolve_gemini_model(
+        _gemini.GEMINI_DEFAULT_MODEL,
+        async_mode=False,
+        skip_model_check=False,
+        allow_fallback=True,
     )
 
     assert resolved == _gemini.GEMINI_FALLBACK_MODEL
@@ -159,6 +188,37 @@ def test_ask_gemini_cached_unavailable_model_uses_fallback(monkeypatch):
         _gemini._MODEL_CACHE.clear()
 
     assert seen_models == [_gemini.GEMINI_FALLBACK_MODEL]
+
+
+def test_ask_gemini_cached_unavailable_model_returns_none_without_fallback(
+    monkeypatch,
+):
+    _gemini._MODEL_CACHE.clear()
+    _gemini._MODEL_CACHE[_cli.GEMINI_REVIEW_MODEL] = (False, _gemini.time.time())
+
+    def fail_send(*_args):
+        raise AssertionError("unavailable review model should fail before sending")
+
+    monkeypatch.setattr(_gemini, "_send_gemini_message", fail_send)
+    monkeypatch.setattr(
+        _gemini,
+        "check_model",
+        lambda _model: (_ for _ in ()).throw(
+            AssertionError("cached unavailable model should not be rechecked")
+        ),
+    )
+
+    try:
+        result = _gemini.ask_gemini(
+            "please review",
+            task_id="task-1",
+            model=_cli.GEMINI_REVIEW_MODEL,
+            allow_fallback=False,
+        )
+    finally:
+        _gemini._MODEL_CACHE.clear()
+
+    assert result is None
 
 
 def test_launch_gemini_background_uses_configured_python(monkeypatch, tmp_path):

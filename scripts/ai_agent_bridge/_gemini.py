@@ -132,7 +132,7 @@ def ask_gemini(content: str, task_id: str | None = None, msg_type: str = "query"
                stdout_only: bool = False, output_path: str | None = None,
                extract_tags: list | None = None, skip_model_check: bool = False,
                allow_write: bool = False, delimiters: str | None = None,
-               skip_github: bool = False):
+               skip_github: bool = False, allow_fallback: bool = True):
     """Send message to Gemini AND optionally invoke Gemini to process it."""
     # Model cache management
     if skip_model_check and model in _MODEL_CACHE:
@@ -146,6 +146,14 @@ def ask_gemini(content: str, task_id: str | None = None, msg_type: str = "query"
                     print(f"❌ Model '{model}' was unavailable {int(age)}s ago (cached). Skipping.")
                     print("💡 To switch accounts: run 'gemini auth login' or ask the user to switch.")
                     print("   To retry: --skip-model-check (clears cache)")
+                    return None
+                if not allow_fallback:
+                    print(
+                        f"Gemini model '{model}' was unavailable {int(age)}s ago "
+                        "(cached) — no gemini fallback configured for review path; "
+                        "returning failure so caller can fall through to cross-family review.",
+                        file=sys.stderr,
+                    )
                     return None
                 print(
                     f"⚠️  Model '{model}' was unavailable {int(age)}s ago "
@@ -161,7 +169,11 @@ def ask_gemini(content: str, task_id: str | None = None, msg_type: str = "query"
     # Warn if handoff message is too long
     _warn_long_handoff(content, msg_type, task_id)
 
-    model = _resolve_gemini_model(model, async_mode, skip_model_check)
+    model = _resolve_gemini_model(
+        model, async_mode, skip_model_check, allow_fallback=allow_fallback,
+    )
+    if model is None:
+        return None
 
     # Send the message
     msg_id = _send_gemini_message(content, task_id, msg_type, data, from_model, model,
@@ -186,12 +198,25 @@ def ask_gemini(content: str, task_id: str | None = None, msg_type: str = "query"
     return msg_id
 
 
-def _resolve_gemini_model(model: str, async_mode: bool, skip_model_check: bool) -> str:
+def _resolve_gemini_model(
+    model: str,
+    async_mode: bool,
+    skip_model_check: bool,
+    allow_fallback: bool = True,
+) -> str | None:
     """Return an available Gemini model, falling back before sync invocation."""
     if async_mode or skip_model_check or model == GEMINI_FALLBACK_MODEL:
         return model
     if check_model(model):
         return model
+    if not allow_fallback:
+        print(
+            f"Gemini model '{model}' is unavailable — no gemini fallback configured "
+            "for review path; returning failure so caller can fall through to "
+            "cross-family review.",
+            file=sys.stderr,
+        )
+        return None
     print(
         f"⚠️  Gemini model '{model}' is unavailable; "
         f"falling back to '{GEMINI_FALLBACK_MODEL}'."
