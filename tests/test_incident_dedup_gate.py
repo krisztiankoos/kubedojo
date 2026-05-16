@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
+import runpy
 import shutil
 import subprocess
 from pathlib import Path
@@ -8,6 +10,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 GATE_SCRIPT = REPO_ROOT / "scripts/quality/incident_dedup_gate.py"
 PYTHON_BIN = shutil.which("python3") or shutil.which("python") or "python"
+INCIDENTS = runpy.run_path(str(REPO_ROOT / "scripts" / "audit_incident_reuse.py"))["INCIDENTS"]
 
 
 def _git(repo: Path, args: list[str]) -> None:
@@ -76,6 +79,22 @@ def _parse_gate_payload(result: subprocess.CompletedProcess[str]) -> dict:
     payload = json.loads(result.stdout)
     assert isinstance(payload, dict)
     return payload
+
+
+def _matches_incident(incident: str, text: str) -> bool:
+    return any(re.search(pattern, text, flags=re.IGNORECASE | re.DOTALL) for pattern in INCIDENTS[incident])
+
+
+def test_github_october_2018_split_brain_requires_specific_incident_anchor() -> None:
+    incident = "GitHub October 2018 split-brain"
+    generic_acquisition_anchor = "In October 2018, Microsoft completed its acquisition of GitHub for $7.5 billion."
+    split_brain_outage_anchor = (
+        "On October 21, 2018, GitHub suffered a 43-second optical hardware split-brain "
+        "that triggered the US-East database failover."
+    )
+
+    assert not _matches_incident(incident, generic_acquisition_anchor)
+    assert _matches_incident(incident, split_brain_outage_anchor)
 
 
 def test_delta_mode_pass_when_set_is_identical(tmp_path: Path) -> None:
