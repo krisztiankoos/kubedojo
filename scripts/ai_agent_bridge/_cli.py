@@ -347,7 +347,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # send
     send_parser = subparsers.add_parser("send", help="Send message to another agent")
     send_parser.add_argument("content", help="Message content")
-    send_parser.add_argument("--to", dest="to_llm", default="claude", choices=['claude', 'gemini', 'codex'],
+    send_parser.add_argument("--to", dest="to_llm", default="claude", choices=['claude', 'gemini', 'codex', 'grok'],
                             help="Target agent (default: claude)")
     send_parser.add_argument("--from", dest="from_llm", default="gemini",
                             help="Sender agent name (default: gemini)")
@@ -363,7 +363,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     # ack-all
     ack_all_parser = subparsers.add_parser("ack-all", help="Acknowledge ALL unread messages for an agent")
-    ack_all_parser.add_argument("agent", choices=['claude', 'gemini', 'codex'], help="Agent whose inbox to clear")
+    ack_all_parser.add_argument("agent", choices=['claude', 'gemini', 'codex', 'grok'], help="Agent whose inbox to clear")
 
     # conversation
     conv_parser = subparsers.add_parser("conversation", help="Get conversation history")

@@ -59,12 +59,14 @@ _DISCUSSION_CLARIFICATION_MODES = {
     "claude": "bypass",
     "gemini": "yolo",
     "codex": "danger",
+    "grok": "yolo",
 }
 
 _DISCUSSION_RUNTIME_MODES = {
     "claude": "read-only",
     "gemini": "workspace-write",
     "codex": "danger",
+    "grok": "workspace-write",
 }
 
 _DISCUSSION_MCP_EXCLUDE_TOKENS: tuple[str, ...] = (
@@ -161,6 +163,12 @@ def _agent_runtime_mode(agent_name: str, sandbox_mode: str | None) -> str:
     if agent_name == "claude":
         # Claude uses a permission-mode override, not a dedicated mode value.
         return "read-only"
+    if agent_name == "grok":
+        # Grok via hermes accepts workspace-write; sandbox is enforced by
+        # toolset selection (see _agent_tool_config), not a mode flag.
+        if sandbox_mode == "read-only":
+            return "read-only"
+        return "workspace-write"
     if sandbox_mode == "read-only":
         return "read-only"
     return "workspace-write"
@@ -195,6 +203,15 @@ def _agent_tool_config(
         return tc or None
     if agent_name == "codex":
         return {"enable_search": True}
+    if agent_name == "grok":
+        # Default discuss toolsets — give grok web + terminal + file so it
+        # can inspect repo state and curl primary sources during deliberation.
+        # Skills/memory are off to keep deliberation reproducible across runs.
+        grok_tc: dict[str, object] = {
+            "toolsets": "web,file,terminal,code_execution,todo",
+            "yolo": True,
+        }
+        return grok_tc
     return None
 
 

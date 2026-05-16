@@ -72,7 +72,7 @@ def _primary_checkout_root(repo_root: Path) -> Path:
 PRIMARY_REPO = _primary_checkout_root(REPO)
 
 
-SUPPORTED_AGENTS = ("claude", "codex")
+SUPPORTED_AGENTS = ("claude", "codex", "grok")
 
 
 @dataclass(frozen=True)
@@ -89,6 +89,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         models={
             "claude": "claude-haiku-4-5-20251001",
             "codex": "gpt-5.4-mini",
+            "grok": "grok-4",
         },
         default_mode="read-only",
         default_timeout_s=600,
@@ -99,6 +100,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         models={
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.3-codex-spark",
+            "grok": "grok-4",
         },
         default_mode="workspace-write",
         default_timeout_s=1800,
@@ -109,6 +111,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         models={
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.3-codex-spark",
+            "grok": "grok-4",
         },
         default_mode="workspace-write",
         default_timeout_s=3600,
@@ -119,6 +122,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         models={
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.5",
+            "grok": "grok-4",
         },
         default_mode="read-only",
         default_timeout_s=1800,
@@ -129,6 +133,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         models={
             "claude": "claude-opus-4-7",
             "codex": "gpt-5.5",
+            "grok": "grok-4",
         },
         default_mode="workspace-write",
         default_timeout_s=3600,
