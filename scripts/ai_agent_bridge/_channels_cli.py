@@ -204,13 +204,27 @@ def _agent_tool_config(
     if agent_name == "codex":
         return {"enable_search": True}
     if agent_name == "grok":
-        # Default discuss toolsets — give grok web + terminal + file so it
-        # can inspect repo state and curl primary sources during deliberation.
-        # Skills/memory are off to keep deliberation reproducible across runs.
-        grok_tc: dict[str, object] = {
-            "toolsets": "web,file,terminal,code_execution,todo",
-            "yolo": True,
-        }
+        # Sandbox enforcement for grok is via toolset selection (hermes has
+        # no CLI sandbox flag). GrokAdapter.build_invocation honors caller
+        # overrides for toolsets/yolo over its mode defaults, so we MUST
+        # gate write-capable tools (file/terminal/code_execution) and --yolo
+        # on sandbox_mode here. Gemini-pro adversarial review on PR #1245
+        # caught this — earlier revision hardcoded write tools regardless
+        # of mode, which would have let read-only bridge sessions execute
+        # arbitrary shell.
+        if sandbox_mode == "read-only":
+            grok_tc: dict[str, object] = {
+                "toolsets": "web",
+                "yolo": False,
+            }
+        else:
+            # workspace-write / yolo / bypass / None → grant the full
+            # deliberation toolset so grok can inspect repo state and curl
+            # primary sources. Skills/memory stay off for reproducibility.
+            grok_tc = {
+                "toolsets": "web,file,terminal,code_execution,todo",
+                "yolo": True,
+            }
         return grok_tc
     return None
 
