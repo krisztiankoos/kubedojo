@@ -109,7 +109,7 @@ The rest of this module uses a progressive design. First, you will build the ver
 
 Git is still the first pillar because training scripts, serving code, tests, configuration templates, infrastructure manifests, and documentation belong in ordinary source control. Git gives teams review, branching, history, and collaboration. The mistake is expecting Git to store every artifact directly, especially large datasets, model checkpoints, embeddings, and generated arrays.
 
-The correct pattern is a split-brain storage model with one logical history. Git stores small text files and pointers. Artifact storage stores large binary payloads. The pointer files connect the Git commit to the data or model object by hash, so a checkout can reconstruct the matching workspace. [DVC is a common tool for this pattern](https://github.com/treeverse/dvc), although the same principle also appears in lakehouse tables, feature stores, model registries, and object-storage-backed artifact systems.
+The correct pattern is a two-tier storage model with one logical history. Git stores small text files and pointers. Artifact storage stores large binary payloads. The pointer files connect the Git commit to the data or model object by hash, so a checkout can reconstruct the matching workspace. [DVC is a common tool for this pattern](https://github.com/treeverse/dvc), although the same principle also appears in lakehouse tables, feature stores, model registries, and object-storage-backed artifact systems.
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────┐
