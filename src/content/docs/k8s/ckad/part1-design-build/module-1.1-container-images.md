@@ -1,6 +1,7 @@
 ---
 title: "Module 1.1: Container Images"
 slug: k8s/ckad/part1-design-build/module-1.1-container-images
+revision_pending: false
 sidebar:
   order: 1
 lab:
@@ -11,82 +12,45 @@ lab:
   environment: kubernetes
 ---
 
-> **Complexity**: `[MEDIUM]` - Requires understanding of Dockerfile and image registries
+> **Complexity**: `[MEDIUM]` - Requires understanding of Dockerfile behavior, image references, registry access, and Kubernetes Pod startup diagnostics
 >
 > **Time to Complete**: 60-75 minutes
 >
-> **Prerequisites**: Module 0.2 (Developer Workflow), basic container knowledge
+> **Prerequisites**: Module 0.2 (Developer Workflow), basic container knowledge, and comfort reading Pod events
+
+---
 
 ## Learning Outcomes
 
-After completing this deeply technical module, you will be well-equipped to:
-- **Diagnose and evaluate** complex image pull errors, including `ImagePullBackOff` and hidden authentication failures across distributed Kubernetes nodes.
-- **Design** highly robust and predictable container deployment strategies by utilizing explicit image pull policies and correctly binding registry credentials.
-- **Analyze and optimize** a Dockerfile that rigidly follows enterprise best practices for payload size, security surface area, and aggressive layer caching.
-- **Compare** the nuanced structural differences between Docker's `ENTRYPOINT` and `CMD` instructions, and **implement** their overrides within Kubernetes Pod specifications.
-- **Explain** the intricacies of the Open Container Initiative (OCI) image specification standard and the fundamental architecture of layered union filesystems.
+After completing this module, you will be able to:
+
+- **Diagnose** `ImagePullBackOff`, `ErrImagePull`, registry authentication failures, and malformed image references by reading Kubernetes Pod events and image fields.
+- **Design** reproducible Kubernetes 1.35+ image references using explicit registries, tags, digests, and `imagePullPolicy` values.
+- **Compare and implement** Dockerfile `CMD` and `ENTRYPOINT` behavior with Kubernetes `command` and `args` overrides.
+- **Optimize** Dockerfiles for layer caching, minimal base images, non-root execution, and smaller runtime attack surface.
+- **Evaluate** OCI image indexes, layer media types, registry referrers, and signatures when planning multi-architecture or supply-chain workflows.
 
 ## Why This Module Matters
 
-In 2020, a widespread incident brought countless CI/CD pipelines and production Kubernetes clusters to a grinding halt. Docker Hub began enforcing strict rate limits on their public registries. Companies that had improperly configured their Kubernetes nodes to constantly pull common base images without a local caching strategy found themselves facing cascading `ImagePullBackOff` errors. Production scaling failed, disaster recovery processes stalled indefinitely, and millions of dollars were lost in engineering time and delayed deployments.
+Hypothetical scenario: a staging rollout looks ordinary until every new replica pauses in `ImagePullBackOff`. The Deployment is healthy enough to exist, the scheduler has placed Pods, and the cluster has capacity, but the kubelet cannot obtain the container image that the Pod specification requests. A developer can pull the same image from a laptop, which makes the failure feel mysterious, but the node runtime is the system that actually needs registry access.
 
-Understanding the mechanics of container images is not merely an academic exercise; it is the absolute foundation of platform stability. Kubernetes does not execute source code directly; it orchestrates container images. Every application—whether a massive monolithic system or a lightweight microservice daemon—must be completely encapsulated into a standardized artifact format before it can be deployed to a cluster. The Certified Kubernetes Application Developer (CKAD) exam rigorously expects you to demonstrate a masterful understanding of how these images are structured, referenced, cryptographically authenticated, and safely executed within a tightly controlled pod environment.
+Container images are the handoff point between application development and Kubernetes operations. Kubernetes does not build your application, inspect your source tree, or guess which binary you meant to ship. It asks the node runtime to pull a named artifact, unpack that artifact into a filesystem, and start the configured process with the isolation rules in the Pod spec. If any part of that chain is vague, mutable, or unauthenticated, a clean manifest can still fail at runtime.
 
-> Before the widespread adoption of containerization, deploying software felt like loading individual, irregularly shaped boxes onto a massive cargo ship. Every host operating system handled system dependencies differently, and applications frequently broke when migrating from a local developer's laptop to a staging or production server. The container image functions exactly like the standardized physical shipping container. It possesses universal dimensions and interfaces, ensuring that the enclosed software payload runs identically whether it is deployed on a legacy on-premise hypervisor or a modern managed Kubernetes service in the public cloud.
+This module treats image handling as an operational skill rather than a packaging footnote. You will connect the image reference string to the registry lookup, connect Dockerfile instructions to Kubernetes `command` and `args`, and connect pull policy choices to node cache behavior. The goal is not to memorize every container tool. The goal is to make image-related failures boring because you know where each decision is made.
 
-## The Architecture of Container Images & OCI Standards
+The CKAD exam rewards that kind of practical diagnosis. A Pod stuck before the container starts has a different investigation path than an application that crashes after startup, and image problems often reveal themselves only in the Events section. By the end, you should be able to look at an image name, a pull policy, a Secret, and a Dockerfile entrypoint and predict how a Kubernetes 1.35+ node will behave.
 
-To truly master Kubernetes, an engineer must look beyond the generic concept of a "Docker image" and understand the strict, vendor-neutral specifications that govern the container ecosystem. Container images are heavily standardized by the Open Container Initiative (OCI). Understanding this ecosystem ensures you are fully prepared for modern platform engineering, deep interoperability, and stringent security compliance requirements.
+## Image References Are Runtime Addresses
 
-### The OCI Image Specification
+An image reference is more than a short name in YAML. It is the address that tells the node runtime which registry to contact, which repository path to read, which tag or digest to resolve, and which image manifest to download. When the reference is incomplete, Kubernetes and the container runtime fill in defaults, and those defaults are convenient for practice but risky for controlled deployments.
 
-The latest stable version of the OCI Image Specification is version 1.1.1. This provides the critical foundation for all modern container runtimes. The preceding release was highly significant, as OCI image-spec version 1.1.0 was the first minor release of the OCI Image Specification since version 1.0.0 in July 2017. 
-
-When building, pushing, or inspecting an image, you will invariably encounter the underlying image manifest. The OCI image manifest `schemaVersion` must be set to 2 for backward compatibility with Docker. If you are dealing with a traditional standalone build, the OCI image manifest media type for a single-architecture image is `application/vnd.oci.image.manifest.v1+json`.
-
-However, we operate in a globally distributed, multi-architecture world where ARM64 and AMD64 hardware nodes frequently coexist within the same Kubernetes cluster. To handle this natively, the OCI Image Index (media type `application/vnd.oci.image.index.v1+json`) is the OCI standard for multi-platform 'fat manifests'. When a node's kubelet instructs the runtime daemon to pull an image, the runtime fetches this central index, automatically evaluates the host hardware, and selects the precise nested manifest that matches the host node's architecture.
-
-### Storage Layers and Media Types
-
-Under the hood, container images consist of read-only layers stacked via a union filesystem; a running container adds a thin writable layer using copy-on-write functionality. This design is highly efficient. For example, if fifty distinct containers on the same Kubernetes node utilize the exact same foundational application image, the physical node does not duplicate the underlying filesystem fifty distinct times. Instead, the runtime maps the read-only foundational layers into memory once. When an individual container process writes a temporary file or mutates a system parameter, the storage driver dynamically copies the specific file from the lower read-only layer into the upper writable layer assigned exclusively to that running container. Once the container terminates, this ephemeral upper layer is permanently discarded.
-
-When transferring these discrete layers over the network, they are represented by specific compression media types. OCI image layer media types include `application/vnd.oci.image.layer.v1.tar`, `application/vnd.oci.image.layer.v1.tar+gzip`, and `application/vnd.oci.image.layer.v1.tar+zstd`. The addition of the zstd variant enables significantly better compression efficiency compared to legacy formats, severely cutting down on deployment bandwidth.
-
-Historically, some organizations attempted to use non-distributable layers to restrict the movement of proprietary or licensed software. However, non-distributable layer media types (`application/vnd.oci.image.layer.nondistributable.v1.tar` variants) are deprecated in the OCI Image Specification. They were deprecated because they introduced critical friction across restricted network boundaries and heavily fragmented the ecosystem. Registry operators and CI pipelines struggled to manage layers that could not be reliably synced or externally replicated.
-
-### Distribution and Runtime Specifications
-
-To comprehensively govern how centralized registries manage and distribute these artifacts, the latest stable version of the OCI Distribution Specification is version 1.1.1. A groundbreaking addition to this standard is the mechanism for supply-chain artifact discovery. The OCI Distribution Specification version 1.1 defines a Referrers API at `GET /v2/<name>/referrers/<digest>` for supply-chain artifact discovery. This allows external systems to natively associate Software Bills of Materials (SBOMs), vulnerability scans, and digital signatures with an image without ever mutating the target image's original cryptographic digest.
-
-At the lowest conceptual level of the compute stack, once an image is downloaded and successfully unpacked onto the disk, the container payload must be isolated and executed. The latest stable version of the OCI Runtime Specification is version 1.3.0. This critical specification dictates exactly how the container runtime interfaces directly with the host Linux kernel to construct the execution sandbox, instantiating the necessary Linux namespaces and control groups (cgroups) to enforce strict resource quotas.
-
-## The Modern Container Build Ecosystem
-
-Modern container tooling is far broader than a single daemon running on a developer machine. Over the years, the ecosystem has heavily diversified to support massively concurrent builds, advanced distributed caching, and tighter security integrations.
-
-### Docker Engine and containerd Architecture
-
-The latest stable version of Docker Engine is version 29.4.0. While Docker remains a dominant tool for local developer workflows, its internal architectural topology has evolved considerably. Docker Engine 29.0+ defaults to the containerd image store on fresh installations; systems upgraded from earlier versions continue using overlay2. 
-
-When Kubernetes directly interacts with the Container Runtime Interface (CRI) on a worker node, `containerd` is predominantly the underlying technology serving the pods. The latest stable version of containerd is version 2.2.2. For environments operating on legacy infrastructure, `overlay2` (OverlayFS) is the default storage driver for Docker Engine on Linux on pre-29.0 or upgraded installations.
-
-### Modern Builders: BuildKit, Buildx, and Alternatives
-
-To assemble images quickly and securely, BuildKit became the default builder for Docker Engine on Linux in version 23.0 (released February 1, 2023). It brought massive performance improvements through highly concurrent, parallel execution of independent build stages and sophisticated intermediate artifact handling. The latest stable version of BuildKit is version 0.29.0, and the latest stable version of `docker/buildx` (the CLI plugin interfacing with the daemon) is version 0.33.0. BuildKit has also forcefully hardened its supply chain security posture; the default provenance format in BuildKit switched from SLSA v0.2 to SLSA v1.0, generating robust attestations for every build to mitigate sophisticated tampering attacks.
-
-Other highly capable tools exist for building and running containers, especially in rootless or restrictive CI/CD environments. For instance, the latest stable version of Podman is version 5.8.1, offering a fully daemonless container execution environment. Similarly, the latest stable version of Buildah is version 1.43.0, specializing exclusively in constructing OCI-compliant image payloads directly from bash scripts or standard Dockerfiles.
-
-Engineering teams must also remain aware of deprecated tooling to prevent technical debt. The `GoogleContainerTools/kaniko` repository was archived on June 3, 2025 and is no longer maintained. Many organizations have migrated to BuildKit or alternative managed build services to ensure ongoing support.
-
-## Image Naming Convention
-
-Understanding exact image nomenclature is critical. Every Kubernetes Pod specification utilizes a string reference to instruct the node's container runtime exactly where and how to pull the correct container payload. 
+The compact reference shape is worth learning because it explains many confusing pull failures. A bare `nginx` reference is not a magic Kubernetes object; it becomes a request for the default Docker Hub namespace and the default `latest` tag. A fully qualified reference carries more intent, while a digest adds cryptographic immutability by naming the exact manifest content instead of a movable tag.
 
 ```text
 [registry/][namespace/]image[:tag][@digest]
 ```
 
-This structure is deliberate and acts as a fully qualified address for your software.
+The bracketed pieces are optional, but optional does not mean irrelevant. Omitting the registry usually means `docker.io`, omitting the namespace often means `library`, and omitting the tag means `latest`. Those defaults make quick demos pleasant, yet they hide decisions that production systems normally want to record explicitly in version control.
 
 | Component | Required | Example | Default |
 |-----------|----------|---------|---------|
@@ -96,7 +60,7 @@ This structure is deliberate and acts as a fully qualified address for your soft
 | Tag | No | `latest`, `1.19.0`, `alpine` | `latest` |
 | Digest | No | `sha256:abc123...` | - |
 
-Let's examine how these references translate into real-world configurations within a cluster environment.
+The examples below all look like ordinary YAML values, but they represent different operational guarantees. A short public image reference is easy to type during a lab, a private registry reference requires credentials, and a digest reference gives you the strongest repeatability because the content address must match. Kubernetes stores the string you provide; the node runtime performs the registry work when a Pod lands on a node.
 
 ```yaml
 # Full specification
@@ -119,9 +83,7 @@ image: nginx:latest
 image: nginx  # same as above
 ```
 
-### Why Tags Matter
-
-Relying on default behaviors in high-stakes production environments is extremely dangerous.
+Tags are human-friendly pointers, not permanent release records. A team can retag a different image as `v1.21.0` if the registry allows it, and many teams accidentally overwrite `latest` during development. Digests are different because the hash is computed from the manifest content, so the same digest cannot silently point at a different image without changing the address.
 
 ```yaml
 # BAD: latest can change unexpectedly
@@ -134,13 +96,37 @@ image: nginx:1.21.0
 image: nginx:1.21.0-alpine
 ```
 
-You must explicitly define tags to prevent unexpected application variations during node rescheduling events.
+For CKAD work, the practical habit is simple: read the full image string before changing anything else. If the tag is omitted, you are already dealing with `latest`. If the registry is omitted, make sure the cluster is expected to pull from the public default. If the reference includes a digest, understand that changing only a tag elsewhere will not affect this Pod unless the digest value changes too.
 
-## Dockerfile Basics
+Pause and predict: if two Pods use `nginx:1.21.0`, but one Pod also pins a digest that does not belong to that tag, which reference do you expect the runtime to trust? The digest is the stronger content selector, so a mismatch should make you suspicious of the manifest reference before you blame scheduling or application code.
 
-A Dockerfile defines precisely how an artifact is constructed from the ground up. To leverage the latest caching optimizations, the recommended Dockerfile frontend pin for the latest stable 1.x syntax is 'docker/dockerfile:1'. 
+## What an Image Contains
 
-A well-optimized Dockerfile is structurally essential. Multi-stage builds in Dockerfiles were introduced in Docker Engine 17.05, allowing developers to dramatically reduce the final image size by systematically discarding heavy intermediate build tools. 
+Container images are standardized artifacts, not Docker-specific folklore. The Open Container Initiative defines the image format, distribution behavior, and runtime bundle expectations that let tools such as Docker, containerd, BuildKit, Podman, Buildah, registries, and Kubernetes interoperate. Docker remains a common developer interface, but Kubernetes worker nodes usually talk to a CRI-compatible runtime such as containerd.
+
+An OCI image manifest describes the image configuration and the ordered layers that form the container filesystem. The `schemaVersion` remains set to `2` for compatibility with Docker-style registries, and the OCI media type for a single-platform image manifest is `application/vnd.oci.image.manifest.v1+json`. That manifest is the thing a digest usually identifies when you pin an image by `sha256`.
+
+Layers are read-only filesystem changes stacked in order. A running container gets an additional thin writable layer, and copy-on-write behavior means the runtime copies a file into that writable layer only when the container modifies it. This is why many Pods on the same node can share the same base image layers without duplicating the entire filesystem for every container.
+
+The layer model explains both performance and surprise. It is efficient because identical layers can be reused across images and containers, but it also means a badly ordered Dockerfile can invalidate expensive cached layers every time a source file changes. When you optimize a Dockerfile, you are really arranging filesystem changes so stable work stays in stable layers and volatile work happens later.
+
+OCI layer media types describe how those layer tar archives are represented during transfer. Common media types include `application/vnd.oci.image.layer.v1.tar`, `application/vnd.oci.image.layer.v1.tar+gzip`, and `application/vnd.oci.image.layer.v1.tar+zstd`. The zstd variant matters in modern registries because better compression can reduce bandwidth and speed up pulls, especially for large fleets or frequent rollouts.
+
+Multi-architecture images add one more level. Instead of one manifest, an OCI image index uses media type `application/vnd.oci.image.index.v1+json` and points to platform-specific manifests. When an AMD64 node and an ARM64 node pull the same logical image reference, the runtime can select the nested manifest that matches the node architecture, which keeps the Pod spec portable across mixed clusters.
+
+This matters because Kubernetes schedules Pods before the image pull happens. The scheduler can place a Pod on a node that satisfies the Pod constraints, and then the kubelet asks the runtime to fetch the image for that node. If the registry only has an AMD64 manifest and the Pod lands on ARM64, the failure appears during image resolution even though the YAML looked syntactically valid.
+
+The OCI Distribution Specification governs the registry API used to move those artifacts. Version 1.1 added the Referrers API shape at `GET /v2/<name>/referrers/<digest>`, which lets registries discover artifacts that refer to a target image digest. That is important for supply-chain metadata because signatures, SBOMs, and attestations can point to an image without mutating the image manifest itself.
+
+At execution time, the OCI Runtime Specification describes how an unpacked bundle is run with namespaces, cgroups, mounts, process settings, and platform-specific configuration. Kubernetes users do not usually write runtime bundles by hand, but the concept is useful: image pulling and container execution are separate phases. A Pod can fail because the image cannot be fetched, or it can fetch successfully and then fail because the configured process cannot run.
+
+Modern tool versions move quickly, so avoid turning release numbers into permanent design assumptions. As of the current module update, OCI Image Spec 1.1.1, OCI Distribution Spec 1.1.1, OCI Runtime Spec 1.3.0, BuildKit 0.29.0, Docker Buildx 0.33.0, Buildah 1.43.0, Podman 5.8.2, and Cosign 3.0.6 are representative current releases. In real platform work, pin the tool version in CI and verify release notes before changing builders or signing policy.
+
+## Dockerfiles Shape Kubernetes Runtime Behavior
+
+A Dockerfile is a build recipe, but several of its choices survive into Kubernetes runtime behavior. The base image defines the starting filesystem, `COPY` and `RUN` create layers, `USER` influences default process identity, and `ENTRYPOINT` plus `CMD` define the process model. Kubernetes can override parts of that model, yet the cleanest Pod specs usually rely on an image that already has sensible defaults.
+
+To leverage modern Dockerfile behavior, the recommended frontend pin for the stable Dockerfile 1.x syntax is `docker/dockerfile:1`. You will often see that directive in production Dockerfiles because it lets builders select a parser and feature set explicitly. The simple Dockerfile below is intentionally plain, but it already shows a cache-aware pattern: copy dependency metadata before copying the rest of the application.
 
 ```dockerfile
 # Base image
@@ -163,7 +149,7 @@ EXPOSE 8080
 CMD ["python", "app.py"]
 ```
 
-Every command maps directly to structural changes in the resulting payload:
+Every instruction either changes the filesystem, sets image metadata, or records a default for container startup. `EXPOSE`, for example, documents intended ports but does not publish them in Kubernetes; a Service or Pod port field is still needed for cluster networking. `CMD` records a default argument vector, while `ENTRYPOINT` records the executable that should usually remain stable.
 
 | Instruction | Purpose | Example |
 |-------------|---------|---------|
@@ -176,11 +162,9 @@ Every command maps directly to structural changes in the resulting payload:
 | `CMD` | Default command to run | `CMD ["nginx", "-g", "daemon off;"]` |
 | `ENTRYPOINT` | Main executable | `ENTRYPOINT ["python"]` |
 
-> **Pause and predict**: In a Kubernetes Pod spec, `command` overrides one Dockerfile instruction and `args` overrides another. Which is which? Many developers get this backwards. Think about it before reading the mapping below.
+The most common runtime confusion is the mapping between Docker terminology and Kubernetes terminology. Dockerfile `ENTRYPOINT` maps to Kubernetes `command`, and Dockerfile `CMD` maps to Kubernetes `args`. The names are unfortunate because `command` sounds like it should map to `CMD`, but it does not. Remember it as executable first, default arguments second.
 
-### CMD vs ENTRYPOINT
-
-The distinction between `CMD` and `ENTRYPOINT` heavily dictates how the container behaves when arbitrary arguments are passed via the runtime API.
+Pause and predict: in a Kubernetes Pod spec, `command` overrides one Dockerfile instruction and `args` overrides another. If an image uses `ENTRYPOINT ["python"]` and `CMD ["app.py"]`, what field would you change to run `python test.py` without changing the executable?
 
 ```dockerfile
 # CMD: Easily overridden
@@ -196,9 +180,7 @@ CMD ["app.py"]
 # Can run: docker run myimage script.py (only replaces CMD)
 ```
 
-In Kubernetes Pod specifications, the terminology shifts slightly:
-- `ENTRYPOINT` strictly maps to `command:`
-- `CMD` strictly maps to `args:`
+For the prediction above, the clean override is `args: ["test.py"]`. You keep the image's `ENTRYPOINT` as the executable and replace only the default argument. If you set `command: ["test.py"]`, the kubelet asks the runtime to execute `test.py` directly, which fails unless that file is executable and available on the process path.
 
 ```yaml
 spec:
@@ -209,9 +191,9 @@ spec:
     args: ["myapp.py"]     # Overrides CMD
 ```
 
-## Building Images
+The same distinction helps when debugging Pods that exit immediately. If `kubectl describe pod` shows the image pulled successfully but the container terminates with an executable error, inspect `command` and `args` before rebuilding the image. A Pod-level override can accidentally bypass the image's intended entrypoint even when the Dockerfile itself is correct.
 
-While you won't actively compile heavy container payloads from scratch during the CKAD exam, diagnosing runtime configuration errors demands an intimate understanding of the developer build cycle.
+Building and pushing images are not central CKAD exam tasks, but the build cycle explains why registry state and Pod state sometimes disagree. A developer may build `myapp:v1.0.0` locally and forget to push it, or push to a different registry path than the Deployment references. Kubernetes never sees the local build unless the node runtime can pull the same reference.
 
 ```bash
 # Build in current directory
@@ -224,7 +206,7 @@ docker build -t myapp:v1.0.0 -f Dockerfile.prod .
 docker build --build-arg VERSION=1.0.0 -t myapp:v1.0.0 .
 ```
 
-Once cleanly built and verified locally, images must be relocated to a centralized registry for scalable cluster consumption.
+Tagging and pushing are separate operations, and that separation creates a useful diagnostic habit. If a Pod references `myregistry.com/team/myapp:v1.0.0`, confirm that this exact tag exists in that exact repository path. A successful local `docker images` listing does not prove that a cluster node can authenticate to the registry or fetch that repository.
 
 ```bash
 # Tag an existing image
@@ -237,9 +219,11 @@ docker push myregistry.com/team/myapp:v1.0.0
 docker push myregistry.com/team/myapp --all-tags
 ```
 
-## Image Pull Policy
+Multi-stage builds, introduced in Docker Engine 17.05, are the usual way to separate build-time tools from runtime contents. Compile in one stage, copy the final artifact into a smaller image, and leave compilers, package caches, and test fixtures behind. Even when you do not write the full Dockerfile during CKAD practice, recognizing the pattern helps you evaluate image size and attack surface.
 
-Kubernetes is designed to be highly resilient but relies completely on explicit node instructions. It decides when to communicate over the network with a remote registry and when to utilize local storage based on the `imagePullPolicy`.
+## Pull Policy, Registry Credentials, and Node Cache Behavior
+
+After the scheduler assigns a Pod to a node, the kubelet asks the container runtime to make sure the image is available. The runtime may reuse a local image, contact the registry, or fail before the container process starts. `imagePullPolicy` controls that cache decision, and the default depends on the tag shape in the image reference.
 
 ```yaml
 spec:
@@ -249,17 +233,15 @@ spec:
     imagePullPolicy: Always  # IfNotPresent | Never | Always
 ```
 
+The three policies are small, but their operational consequences are large. `Always` asks the runtime to check the registry each time the container starts, which is useful for intentionally mutable tags but expensive for stable versioned images. `IfNotPresent` uses the local cache when available, which is normally right for immutable version tags. `Never` refuses to pull and should be reserved for deliberate local or air-gapped workflows.
+
 | Policy | Behavior | Use When |
 |--------|----------|----------|
 | `Always` | Pull every time | Using `latest` tag, need freshest image |
 | `IfNotPresent` | Pull only if not cached | Specific tags, save bandwidth |
 | `Never` | Never pull, use cached | Local development, air-gapped |
 
-> **Stop and think**: If you specify `image: nginx` (no tag) in a pod spec, what `imagePullPolicy` does Kubernetes use by default? What about `image: nginx:1.21.0`? The defaults are different -- why does that make sense?
-
-### Default Behavior
-
-Kubernetes dynamically alters its default pulling behavior based on the string provided in the image tag field. This fail-safe mechanism prevents massive bandwidth consumption while ensuring volatile tags remain forcibly updated.
+Kubernetes chooses defaults to reduce surprise for common cases. If the image uses no tag or explicitly uses `:latest`, the default policy is `Always`. If the image uses a specific tag or a digest, the default policy is `IfNotPresent`. Those defaults are reasonable, but explicit policies are easier to review in manifests that will be maintained by several engineers.
 
 | Image Tag | Default Policy |
 |-----------|---------------|
@@ -268,22 +250,28 @@ Kubernetes dynamically alters its default pulling behavior based on the string p
 | Specific tag (`:v1.0.0`) | `IfNotPresent` |
 | Digest (`@sha256:...`) | `IfNotPresent` |
 
-## Private Registries
+Node cache behavior is local to the node, not global to the cluster. If one worker has already pulled `myapp:v2.1.0`, that does not help a Pod scheduled on a different worker unless that second node also has the same image content. This is why `IfNotPresent` is safe for stable tags but not a substitute for a registry, a pull-through cache, or a pre-pull strategy in environments where new nodes appear during scaling.
 
-Rigorous enterprise environments lock down their container images. To securely pull from private, internally hosted repositories, your pods absolutely require valid authentication tokens logically mapped as Kubernetes Secrets.
+The cache is also not a correctness guarantee. Kubelet image garbage collection can remove unused images when disk pressure crosses configured thresholds, and a newly replaced node starts with an empty local image store. Design deployments so a missing cache causes a normal registry pull, not a startup failure. If the workload requires offline startup, that is a special operating mode that should be documented and tested separately.
 
-### Step 1: Create a Secret
+`ImagePullBackOff` includes a timing clue as well as a status clue. Kubernetes does not retry a failing pull in a tight loop forever; it backs off between attempts after repeated failures. That protects the registry and the node, but it also means a corrected Secret or tag might not appear instantaneously in Pod status. Reading Events tells you whether the latest retry used the corrected information or whether the Pod is still waiting for the next pull attempt.
+
+One practical habit is to compare the controller image field with the newest Pod image field after every fix. If you patch only a Pod owned by a Deployment, the controller may recreate the old template on the next replacement. Fix the controller, then verify the new ReplicaSet or Pod template carries the corrected image reference.
+
+Before running this, what output do you expect if a Pod uses `image: nginx` and no explicit `imagePullPolicy`? You should expect Kubernetes to treat the image as `nginx:latest` and set the pull policy to `Always`, because a mutable default tag should be checked rather than trusted from a stale node cache.
+
+Private registries add an authentication boundary. Your laptop may be logged in to a registry through Docker, Podman, or a cloud CLI, but Kubernetes worker nodes do not inherit that login. A Pod needs registry credentials through `imagePullSecrets`, or it needs a ServiceAccount that references those credentials so Pods using that account can pull private images.
 
 ```bash
 # Create docker-registry secret
-k create secret docker-registry regcred \
+kubectl create secret docker-registry regcred \
   --docker-server=myregistry.com \
   --docker-username=user \
-  --docker-password=password \
+  --docker-password=your-password-here \
   --docker-email=user@example.com
 ```
 
-### Step 2: Reference in Pod
+The `docker-registry` Secret type stores credentials in the format Kubernetes expects for image pulls. In production, avoid placing real credentials in shell history or shared documents; use your team's approved secret management flow. In a CKAD-style lab, the command teaches the object shape, and the important part is that the Pod references the Secret by name.
 
 ```yaml
 apiVersion: v1
@@ -298,9 +286,7 @@ spec:
   - name: regcred
 ```
 
-### Alternative: ServiceAccount Default
-
-To avoid manually appending secrets to every single pod definition, you can gracefully bind the secret directly to a ServiceAccount. Pods utilizing this ServiceAccount automatically inherit the associated credentials.
+Attaching `imagePullSecrets` directly to every Pod works, but it becomes repetitive as soon as a namespace contains several workloads. A cleaner pattern is to attach the pull Secret to a ServiceAccount, then set `serviceAccountName` on Pods that should inherit the registry access. This keeps the image credential policy near the workload identity policy.
 
 ```yaml
 apiVersion: v1
@@ -310,6 +296,7 @@ metadata:
 imagePullSecrets:
 - name: regcred
 ```
+
 ```yaml
 apiVersion: v1
 kind: Pod
@@ -322,9 +309,13 @@ spec:
     image: myregistry.com/team/myapp:v1.0.0
 ```
 
-## Image Security Best Practices
+For diagnosis, treat registry credentials as node-side requirements. If Events say `unauthorized`, `authentication required`, or `pull access denied`, do not spend the first minutes rewriting the Deployment. Check whether the Pod or ServiceAccount references the Secret, whether the Secret is in the same namespace, and whether the registry server value matches the image reference host.
 
-### 1. Use Specific Tags
+Docker Hub rate limits are another reason to prefer explicit registry strategy. Public base images are convenient, but unauthenticated pulls can be throttled, and large autoscaling events can make many nodes request the same base layers at once. Pull-through caches, private mirrors, and authenticated registry access reduce that dependency while keeping Pod specs predictable.
+
+## Security and Troubleshooting Start in the Pod Spec
+
+Image security starts before admission control or runtime scanning. If you choose a large base image, run as root, and leave the root filesystem writable, Kubernetes can still run the Pod, but you have shipped unnecessary tools and privileges into every replica. Good image hygiene removes unneeded files, narrows the default process identity, and makes the Pod spec enforce the same assumptions.
 
 ```yaml
 # BAD
@@ -334,9 +325,7 @@ image: nginx:latest
 image: nginx:1.21.0-alpine
 ```
 
-### 2. Use Minimal Base Images
-
-A large footprint mathematically equals a massive vulnerability attack surface. You must ruthlessly minimize the tools packaged inside the container.
+Minimal base images reduce size and vulnerability exposure, but they also change debugging ergonomics. Alpine-based images are small, Debian slim images are often easier for language runtimes, and `scratch` images contain no shell or package manager at all. That tradeoff is normal: production runtime images should not be treated as general-purpose repair environments.
 
 ```dockerfile
 # 133MB
@@ -349,13 +338,13 @@ FROM python:3.9-slim
 FROM python:3.9-alpine
 ```
 
-The official Alpine Linux Docker image is approximately 5 MB in size, delivering extreme density. The latest stable Alpine Linux release is 3.23.3. 
+The official Alpine Linux image has historically been only a few megabytes, and the 3.23 release branch is current in this module's timeframe. Small does not automatically mean safer, because package choice, update cadence, and vulnerability handling still matter. Treat base image selection as an engineering decision with compatibility, support, and scanning consequences.
 
-Alternatively, `FROM scratch` in a Dockerfile creates a container from an empty base image with no OS files, no shell, and no package manager. This approach is highly favored for compiled binaries.
+`FROM scratch` is the extreme minimal base. It gives you an empty filesystem, which is excellent for statically linked binaries that do not need shell tools, certificates beyond what you copy in, or package manager files. It is a poor fit for applications that expect dynamic libraries, timezone data, certificate bundles, or shell scripts unless you intentionally add those assets.
 
-Regarding intermediate ultra-minimalist ecosystems, there are conflicting reports regarding the maintenance of distroless images. While Chainguard independently built a second-generation distroless image ecosystem using the Wolfi package base, the original `GoogleContainerTools/distroless` repository remains a separate, still-active Google project. You should evaluate both ecosystems carefully to determine which meets your strict supply-chain constraints.
+Distroless and Wolfi-based images sit between full distributions and `scratch`. They aim to remove package managers and shells while keeping enough runtime files for common languages. Evaluate the specific project, update channel, SBOM support, and signing story rather than assuming all minimal images behave the same. The best base image is the smallest one that still supports your runtime contract.
 
-### 3. Run as Non-Root
+Running as non-root should be part of that contract. A Dockerfile can declare a non-root user, and the Pod spec can enforce that the container must not run as UID zero. When both layers agree, you reduce privilege inside the container and make accidental root execution easier to catch during deployment.
 
 ```dockerfile
 FROM python:3.9-slim
@@ -364,7 +353,7 @@ USER appuser
 COPY --chown=appuser:appuser . /app
 ```
 
-Enforce execution parameters systematically via Kubernetes SecurityContexts:
+Kubernetes `securityContext` turns image intent into cluster policy at the Pod or container level. `runAsNonRoot: true` causes startup to fail if the image or override would run as root, while `runAsUser` supplies a numeric UID. Numeric users are easier for runtimes to enforce than names, because the image filesystem may or may not contain user database files.
 
 ```yaml
 spec:
@@ -376,7 +365,7 @@ spec:
     image: myapp:v1.0.0
 ```
 
-### 4. Use Read-Only Filesystem
+A read-only root filesystem is another powerful guardrail. It forces the application to write only to explicitly mounted locations, such as `/tmp` backed by an `emptyDir`. This quickly exposes applications that quietly write caches, lock files, or generated configuration into the image filesystem instead of using declared storage.
 
 ```yaml
 spec:
@@ -393,13 +382,11 @@ spec:
     emptyDir: {}
 ```
 
-Modern deployments also guarantee provenance via digital signatures. The latest stable version of Cosign is version 3.0.6. Cosign v3 stores container image signatures as OCI image-spec version 1.1 referring artifacts (using the subject field), integrating perfectly into the modern supply chain.
+Supply-chain security adds evidence around the image. Cosign can sign images, and modern registries can store signatures and related artifacts as OCI referrers connected to the target digest. This matters most when admission policy or release automation verifies that the exact digest has an expected signature, SBOM, or provenance record before allowing the workload to run.
 
-## Troubleshooting Image Issues
+Troubleshooting begins by separating image acquisition from process execution. If the Pod status is `Pending`, `ErrImagePull`, or `ImagePullBackOff`, inspect Events and image fields. If the image pulls and the container enters `CrashLoopBackOff`, move to logs, command arguments, probes, and application behavior. Mixing those paths wastes time because the failure phases are different.
 
-> **Pause and predict**: A pod references a private registry image but has no `imagePullSecrets`. The image exists and is correctly tagged. What error would you see, and how would you distinguish it from a simple typo in the image name?
-
-Diagnosing fetch failures is a mandatory skill for any operations engineer. An `ImagePullBackOff` state is merely a symptom; you must trace the underlying network or authentication cause.
+Pause and predict: a Pod references a private registry image but has no `imagePullSecrets`. The image exists and the tag is correct. What error would you expect in Events, and how would that differ from a tag typo? Authentication failures usually mention authorization, while missing tags usually mention manifest lookup or not found errors.
 
 | Error | Cause | Solution |
 |-------|-------|----------|
@@ -408,147 +395,190 @@ Diagnosing fetch failures is a mandatory skill for any operations engineer. An `
 | `InvalidImageName` | Malformed image reference | Fix image name format |
 | `ImageInspectError` | Image inspection failed | Check image manifest |
 
-### Debugging Steps
+The fastest command is usually `kubectl describe pod`, because Events include messages from the kubelet and runtime. Then inspect the image string exactly as Kubernetes sees it, check whether the pull Secret exists in the namespace, and reproduce the pull from a suitably authenticated environment only after reading the cluster-side error. A laptop pull proves little if the cluster uses different credentials.
 
 ```bash
 # Check pod events
-k describe pod myapp | grep -A10 Events
+kubectl describe pod myapp | grep -A10 Events
 
 # Check image name
-k get pod myapp -o jsonpath='{.spec.containers[0].image}'
+kubectl get pod myapp -o jsonpath='{.spec.containers[0].image}'
 
 # Verify secret exists
-k get secret regcred
+kubectl get secret regcred
 
 # Test pull manually (if docker available)
 docker pull myregistry.com/team/myapp:v1.0.0
 ```
 
-### Example: Fixing ImagePullBackOff
+The worked example below follows the exact diagnosis path. The Pod is not failing because NGINX cannot start; it is failing because the runtime cannot find the referenced tag. Once the image reference is corrected, Kubernetes can create a new Pod that pulls a valid image and proceeds to container startup.
 
 ```bash
 # Pod stuck in ImagePullBackOff
-k get pods
+kubectl get pods
 # NAME    READY   STATUS             RESTARTS   AGE
 # myapp   0/1     ImagePullBackOff   0          5m
 
 # Check events
-k describe pod myapp
+kubectl describe pod myapp
 # Events:
 #   Failed to pull image "nginx:latst": rpc error: ...not found
 
 # Found it: typo in tag (latst instead of latest)
 
 # Fix: Edit the pod or delete and recreate
-k delete pod myapp
-k run myapp --image=nginx:latest
+kubectl delete pod myapp
+kubectl run myapp --image=nginx:latest
 ```
+
+## Patterns & Anti-Patterns
+
+Pattern one is to pin intent at the level that matters. Use a full registry path when the workload should not depend on public defaults, use a specific tag when the release process treats tags as immutable, and use a digest when exact binary repeatability is mandatory. This works because reviewers can see the intended source and mutability model in the Pod spec.
+
+The matching anti-pattern is treating `latest` as a release channel. Teams fall into it because it shortens early demos and avoids thinking about versioning, but it makes rollbacks, audits, and incident reconstruction harder. A better alternative is a release tag created by CI, optionally paired with the digest that was promoted through the environment.
+
+Pattern two is to make the registry credential path namespace-local and repeatable. Put the image pull Secret in the same namespace as the workload, attach it to a ServiceAccount used by related Pods, and keep the registry host aligned with the image reference. This scales better than copying Secret references into every manifest by hand.
+
+The matching anti-pattern is debugging private image pulls from a developer laptop first. That laptop has a different credential store, network path, and registry configuration than the node runtime. Start with Pod Events and namespace objects, then use external pulls to confirm registry content only after the cluster-side authentication path is understood.
+
+Pattern three is to order Dockerfile layers by volatility. Copy dependency manifests before application source, install dependencies while those manifests are stable, and copy frequently changing code later. This works because BuildKit and other builders can reuse expensive dependency layers when only application files change.
+
+The matching anti-pattern is placing `COPY . .` near the top of the Dockerfile. It feels simple because the build context is available immediately, but every small source edit invalidates the downstream cache. A better structure copies only package metadata first, installs dependencies, and then copies the rest of the project.
+
+Pattern four is to keep the runtime image smaller than the build environment. Multi-stage builds let a compiler, SDK, or package manager live in a temporary stage while the final image contains only the application and runtime files. That reduces pull time, scanning noise, and the number of tools available to an attacker inside the container.
+
+The matching anti-pattern is shipping a full development image to production because it is easier to inspect. Debuggability matters, but production replicas should not contain compilers and package caches just to make emergency shells convenient. Use ephemeral debug containers, purpose-built diagnostic images, and observability instead of bloating every application image.
+
+Pattern five is to align Dockerfile process defaults with Kubernetes overrides. Put the stable executable in `ENTRYPOINT`, put default arguments in `CMD`, and override only `args` when a Pod needs a different mode. This lets Kubernetes customize behavior without replacing the image's intended process launcher.
+
+The matching anti-pattern is using `command` in every Pod spec out of habit. Overriding `command` replaces the image entrypoint and can bypass setup logic that the image author expected to run. Before changing `command`, inspect the Dockerfile or image metadata and decide whether you really mean to replace the executable.
+
+Pattern six is to fail closed on runtime permissions. Build the image for a non-root user, set `runAsNonRoot`, and mount writable paths explicitly when the root filesystem is read-only. This gives the application a clear contract and turns accidental writes or root assumptions into early deployment failures instead of quiet production drift.
+
+The matching anti-pattern is relying on a vulnerability scanner alone. Scanning is useful evidence, but it does not make a mutable tag reproducible, does not stop a root process, and does not prove that a signature belongs to the digest you deployed. Combine scanning with pinning, signing, admission checks, and Pod security settings.
+
+## Decision Framework
+
+Start with the failure phase. If the Pod cannot pull the image, investigate the reference, tag, registry host, pull policy, credentials, and node access. If the image pulls and the process exits, investigate `command`, `args`, user identity, writable paths, logs, and application configuration. This single split prevents most image debugging sessions from wandering.
+
+Next decide how reproducible the workload must be. For a disposable lab Pod, a short public image tag is acceptable. For a shared development namespace, use an explicit tag and a clear pull policy. For staging and production, prefer an immutable release tag process and record the digest that was promoted, especially when signature verification or SBOM lookup depends on that digest.
+
+Then decide how fresh the node cache should be. `Always` is reasonable for intentionally mutable tags and some development loops, but it creates registry dependency on every start. `IfNotPresent` is normally the right policy for versioned images because it avoids repeated downloads while still bootstrapping new nodes. `Never` belongs only in controlled environments where the image is preloaded.
+
+Now check the registry trust path. Public registries are convenient, but they expose you to external availability, throttling, and naming assumptions. Private registries require `imagePullSecrets`, node identity integration, or cloud-provider mechanisms, but they give teams more control over promotion, mirroring, retention, and access policy. The Pod spec should make that registry path obvious.
+
+After that, examine the image contents. If the image is large, ask whether the runtime really needs the build toolchain, package cache, shell, and distribution utilities. If the application requires dynamic libraries or certificates, do not jump straight to `scratch`; choose the smallest base that still provides the needed runtime files and support model.
+
+Then inspect the process contract. If the image uses `ENTRYPOINT ["python"]` and `CMD ["app.py"]`, Kubernetes `args` can select another script without replacing Python. If the image embeds setup behavior in entrypoint scripts, replacing `command` may skip that behavior. The decision is not whether Kubernetes can override it; the decision is whether overriding it preserves the intended startup contract.
+
+Next apply runtime constraints. Use non-root execution when the application does not require privileged filesystem ownership, and use read-only root filesystems when writable directories are explicit. If the application fails under those settings, the failure is useful information: the image has hidden assumptions that should be documented, mounted, or fixed before production.
+
+Finally, decide what evidence must accompany the image. A low-risk lab image may need only a readable tag. A production image may need a digest, SBOM, vulnerability scan, provenance attestation, and Cosign signature. OCI referrers make those attachments discoverable without changing the image digest, which keeps the verification target stable.
+
+When you are unsure, choose the option that leaves a future investigator with fewer guesses. Fully qualified image names, explicit pull policies, namespace-local Secrets, and digest-aware release records are not ceremonial. They reduce the number of hidden defaults between a YAML manifest and the process that eventually runs on a node.
 
 ## Did You Know?
 
-- **Container images are strictly layered.** Each Dockerfile instruction generates a discrete, read-only layer. Since the foundational release of Docker Engine 1.0 in June 2014, these layers have been aggressively cached to dramatically reduce network consumption. This is why you should put frequently changing content (like `COPY . .`) at the end of your Dockerfile.
-- **Unauthenticated Docker Hub rate limits cap pulls at 100 per 6 hours.** This invisible quota frequently cripples organizations that blindly autoscale their Kubernetes environments. Docker Personal (free) authenticated pulls are similarly restricted to 200 per 6-hour window, while paid enterprise plans remain strictly unlimited.
-- **Image digests (`@sha256:...`) provide absolute cryptographic immutability.** A cryptographic digest perpetually guarantees exact binary content, neutralizing severe supply-chain tampering.
-- **The `latest` tag possesses no intrinsic chronological meaning.** It is merely a default string pointer applied if omitted. The vast majority of container-related production outages are directly attributed to teams mistakenly overwriting `latest` with unverified code.
+- **OCI image-spec 1.1.0 was the first minor release after the 1.0.0 line from July 2017.** That long interval is one reason image format details tend to be stable across tools even while builders and registries evolve quickly.
+- **Docker Engine 23.0 made BuildKit the default builder on Linux in February 2023.** BuildKit's parallel execution and cache model are why modern Dockerfile ordering has a direct effect on build time.
+- **Unauthenticated Docker Hub pulls have historically been capped at 100 pulls per 6-hour window.** That number is large for one laptop and small for an autoscaling cluster that repeatedly pulls common base images.
+- **The `latest` tag has no chronological meaning.** It is only the default tag string used when you omit a tag, so `image: nginx` means `image: nginx:latest` rather than "newest verified release."
 
 ## Common Mistakes
 
-| Mistake | Why It Hurts | Solution |
-|---------|--------------|----------|
-| Using `latest` in production | Unpredictable and volatile updates | Always pin specific image tags |
-| Typos in image names | Results in immediate `ImagePullBackOff` | Double-check nomenclature and namespaces |
-| Forgetting `imagePullSecrets` | Cluster lacks authorization to pull private images | Attach secret references explicitly in pod specs |
-| Wrong `imagePullPolicy` | Degrades node performance via unnecessary cache misses | Explicitly dictate caching behavior per environment |
-| Swollen base images | Exposes massive attack surface and slows CI/CD pipelines | Deploy minimalist `-slim` or `-alpine` alternatives |
-| Layer ordering failures | Destroys build caching when source code overrides dependencies | Execute `COPY requirements` prior to full project `COPY . .` |
+| Mistake | Why It Happens | How to Fix It |
+|---------|----------------|---------------|
+| Using `latest` in production | It feels convenient during development, but it hides which image content actually ran | Pin a release tag and record the digest promoted by CI |
+| Typos in image names | Registry, namespace, repository, and tag are packed into one string | Read the exact image field and compare it with registry contents |
+| Forgetting `imagePullSecrets` | A laptop registry login is mistaken for cluster node access | Add the Secret in the same namespace or attach it to the ServiceAccount |
+| Choosing `Never` to avoid slow pulls | Cache misses are mistaken for unnecessary network use | Use `IfNotPresent` for stable tags and pre-pull only in controlled environments |
+| Overriding `command` when only arguments should change | Kubernetes names differ from Dockerfile names | Remember `command` maps to `ENTRYPOINT` and `args` maps to `CMD` |
+| Copying the whole source tree before dependency installation | A simple Dockerfile is written before cache behavior is considered | Copy dependency manifests first, install dependencies, then copy application code |
+| Running as root by default | Base images often start with UID zero unless changed | Set a non-root user in the image and enforce `runAsNonRoot` in the Pod spec |
+| Treating scan results as the whole supply-chain story | Vulnerability reports do not prove identity, provenance, or immutability | Combine scans with digest pinning, signatures, SBOMs, and admission policy |
 
 ## Quiz
 
 <details>
-   <summary>1. A developer pushes a fix to their app and deploys it using `image: myapp` (no tag). The pod restarts, but the old version is still running. They swear they pushed the new image. What's going on?</summary>
-   Without a tag, Kubernetes defaults to `:latest` and sets `imagePullPolicy: Always`. However, the developer likely pushed without tagging as `latest`, or the node has a cached version. The real problem is using `latest` in the first place -- it's ambiguous and unreproducible. The fix is to use specific version tags (e.g., `myapp:v1.2.3`) so each deployment references an exact image. This also makes rollbacks predictable since you know exactly which version each revision used.
+  <summary>1. Your Deployment uses `image: myapp` and a developer says a new image was pushed, but a restarted Pod still behaves like the old application. What do you check first?</summary>
+  Start by expanding the implicit reference: `myapp` means `myapp:latest`, normally from the default registry namespace. Check the exact Pod image field, the registry repository that was pushed, and whether the pushed tag is actually `latest`. The deeper fix is to stop relying on the mutable default and deploy an explicit release tag or digest so the rollout names the intended content.
 </details>
 
 <details>
-   <summary>2. Your colleague deployed a pod that's stuck in `ImagePullBackOff`. They say the image name is correct because they can `docker pull` it on their laptop. What are the three most likely causes, and how do you systematically diagnose which one?</summary>
-   Run `kubectl describe pod <name>` and check the Events section. The three most likely causes are: (1) the image name has a typo (e.g., `ngix` instead of `nginx`) -- the Events will say "not found"; (2) it's a private registry and the pod is missing `imagePullSecrets` -- the Events will show "unauthorized" or "authentication required"; (3) the tag doesn't exist in the registry -- Events will say "manifest unknown". Their laptop works because Docker is logged into the registry locally. The cluster nodes need separate authentication via `imagePullSecrets` or a ServiceAccount with registry credentials.
+  <summary>2. A Pod is stuck in `ImagePullBackOff`, and the image pulls from your laptop. How do you diagnose the cluster-side cause?</summary>
+  Use `kubectl describe pod` and read Events before changing the manifest. If Events mention `unauthorized` or `authentication required`, inspect `imagePullSecrets`, ServiceAccount configuration, namespace placement, and the registry host in the Secret. If Events mention `manifest unknown` or `not found`, inspect the repository path and tag. A laptop pull only proves your laptop has access, not that the node runtime has the same credentials.
 </details>
 
 <details>
-   <summary>3. You have a Dockerfile with `ENTRYPOINT ["python"]` and `CMD ["app.py"]`. In your Kubernetes pod spec, you want to run `python test.py` instead. Should you override `command`, `args`, or both?</summary>
-   Override only `args: ["test.py"]`. In Kubernetes, `command` maps to Docker's `ENTRYPOINT` and `args` maps to `CMD`. Since you still want `python` as the entrypoint, leave `command` alone and just change `args`. If you set `command: ["python"]` AND `args: ["test.py"]`, it works but is redundant. If you only set `command: ["test.py"]`, it would try to execute `test.py` directly without the Python interpreter, which would fail.
+  <summary>3. An image has `ENTRYPOINT ["python"]` and `CMD ["app.py"]`. In Kubernetes you need to run `python test.py` for one Pod. Which field should you override?</summary>
+  Override `args` with `["test.py"]` and leave `command` unset. Kubernetes `command` replaces Dockerfile `ENTRYPOINT`, while Kubernetes `args` replaces Dockerfile `CMD`. Keeping the entrypoint preserves the intended executable, and changing the arguments selects a different script. Replacing `command` with `["test.py"]` would try to execute the script directly.
 </details>
 
 <details>
-   <summary>4. Your production cluster pulls images slowly because every pod restart re-downloads from the registry. All your images use specific version tags like `v2.1.0`. A teammate suggests setting `imagePullPolicy: Never` to fix it. Why is that dangerous, and what's the correct solution?</summary>
-   `Never` means pods will fail to start on any node that doesn't already have the image cached -- this breaks scaling to new nodes and disaster recovery. The correct solution is `imagePullPolicy: IfNotPresent`, which is actually the default for specific version tags. If pods are still re-pulling, check whether someone has overridden the policy to `Always` in the pod spec. With `IfNotPresent`, the image is pulled once per node and cached, giving you fast restarts without the risk of `Never`.
+  <summary>4. Your team wants faster restarts for versioned images such as `myapp:v2.1.0`, and someone proposes `imagePullPolicy: Never`. Why is that dangerous?</summary>
+  `Never` makes the Pod depend on a preloaded image on every node. It may work on one node and fail immediately when the Deployment scales to a new node, during node replacement, or after disaster recovery. For stable tags, `IfNotPresent` gives the cache benefit while still allowing a node to pull the image when it is missing. If pulls are still slow, investigate registry caching or mirrors rather than disabling pulls completely.
 </details>
 
 <details>
-   <summary>5. A developer shows you a Dockerfile that builds successfully, but the resulting image is 800MB and takes 5 minutes to build every time they change a single line of application code. The Dockerfile starts with `FROM ubuntu:latest`, runs a `COPY . .`, and then uses `RUN` to install heavily dependent packages. Why is this Dockerfile inefficient, and what are the two most impactful changes you can make to fix it?</summary>
-   This Dockerfile suffers from poor layer caching and an overly large base image. Because `COPY . .` copies all application code before installing dependencies, any change to the source code invalidates the cache for the subsequent `RUN` commands, forcing a full dependency reinstallation on every build. Furthermore, `ubuntu:latest` is massive and contains tools unnecessary for most runtimes. The two most impactful changes are: 1) Switch to a minimal base image like an `-alpine` or `-slim` variant to drastically reduce the initial footprint. 2) Move the copying of dependency files (like `requirements.txt` or `package.json`) and the associated `RUN` install command above the `COPY . .` instruction so that dependencies remain cached unless the dependency manifest itself changes.
+  <summary>5. A Dockerfile starts with `FROM ubuntu:latest`, runs `COPY . .`, and then installs dependencies. Builds are slow and the image is large. What two changes give the biggest improvement?</summary>
+  First, move dependency metadata such as `requirements.txt` or `package.json` before the full source copy, then install dependencies from that stable layer. This preserves cache reuse when application code changes. Second, choose a smaller supported runtime base such as a slim, Alpine, distroless, Wolfi-based, or multi-stage final image when compatible. Those changes reduce rebuild work and remove unnecessary runtime files.
 </details>
 
 <details>
-   <summary>6. Your security team mandates that all container images deployed to production must have an attached SBOM and a Cosign signature. They want to verify these attachments dynamically before pulling the main image, but without altering the image's original cryptographic digest. How does the OCI Distribution Spec v1.1.1 enable your registry to satisfy this requirement?</summary>
-   It uses the Referrers API (`GET /v2/<name>/referrers/<digest>`), which allows the registry to link supplementary metadata (like signatures or attestations) directly to an image manifest as referring artifacts. This mechanism natively associates the Software Bill of Materials (SBOM) and Cosign signature with the target image. Because these referrers point *to* the image rather than modifying the image itself, the original cryptographic digest remains perfectly intact. This ensures strict compliance with the security team's mandate without invalidating previously verified image hashes.
+  <summary>6. A mixed ARM64 and AMD64 cluster pulls the same image name on both node types without architecture-specific tags. What OCI mechanism makes that possible?</summary>
+  The registry serves an OCI image index, also called a multi-platform manifest list in Docker terminology. The index points to platform-specific manifests, and the node runtime selects the manifest matching the node architecture and operating system. This lets one logical image reference work across node types, as long as the registry contains a compatible manifest for each scheduled platform.
 </details>
 
 <details>
-   <summary>7. You are migrating a legacy deployment to a new multi-architecture Kubernetes cluster that contains both ARM64 and AMD64 nodes. When you deploy the application, you notice pods are scheduled on both node types and successfully pull the correct binaries without you needing to specify architecture-specific image tags. What underlying mechanism makes this seamless execution possible?</summary>
-   The container runtime initially fetches an OCI Image Index (media type `application/vnd.oci.image.index.v1+json`), often referred to as a "fat manifest." This index acts as a centralized directory containing pointers to multiple architecture-specific manifests. When the pod is scheduled, the kubelet instructs the container runtime to evaluate the physical host node's architecture (such as ARM64 or AMD64). The runtime then automatically selects and downloads only the precise nested manifest that matches the hardware, eliminating the need for explicit architectural tagging in the deployment specification.
+  <summary>7. Security policy requires an SBOM and Cosign signature for the exact image digest, but the release team does not want to mutate the image manifest. What registry feature helps?</summary>
+  OCI referrers let signatures, SBOMs, and attestations point to a target digest as related artifacts. The target image digest stays stable because the metadata refers to the image instead of being inserted into the image manifest. This is useful for admission controllers and release automation that verify evidence for the exact deployed digest.
 </details>
 
 <details>
-   <summary>8. A vendor provides you with a proprietary software image that uses non-distributable OCI layer media types to enforce licensing restrictions. When attempting to sync this image to your private air-gapped registry, the CI pipeline throws synchronization errors and fails to transfer the layers. Based on the OCI Image Specification v1.1.0, why is this failure expected, and what should you tell the vendor?</summary>
-   The failure is completely expected because non-distributable layer media types were officially deprecated in the OCI Image Specification version 1.1.0. These media types historically caused severe friction and fragmentation across restricted network boundaries, as registry operations and CI pipelines fundamentally struggled to synchronize layers that were restricted from external replication. You must inform the vendor that their distribution model currently relies on deprecated, non-compliant standards that break standard mirror processes. They must update their build pipeline to provide fully distributable payloads to ensure compatibility with modern air-gapped registry synchronizations.
+  <summary>8. A Pod pulls successfully but exits with an executable error after someone added `command: ["worker"]`. Where do you look?</summary>
+  Inspect the image's original `ENTRYPOINT` and `CMD`, then compare them with the Pod `command` and `args`. The new `command` replaced the image entrypoint, so it may have skipped a launcher script or tried to execute a binary that is not on the path. If only the worker mode should change, restore the entrypoint and override `args` instead. If the executable really must change, make sure it exists in the image and has the expected permissions.
 </details>
 
 ## Hands-On Exercise
 
-**Scenario**: You have been tasked with investigating and remediating a broken application deployment in a staging environment.
+Exercise scenario: you have been asked to investigate a broken staging deployment and then harden the image-related settings. Work through the tasks in order, because each one isolates a different part of the image lifecycle: reference parsing, pull failure diagnosis, private registry wiring, command overrides, pull policy checks, and Dockerfile optimization.
+
+Use a disposable namespace if your cluster policy requires it, and clean up every object when finished. The commands assume you have `kubectl` configured for a Kubernetes 1.35+ cluster or compatible local environment. If your environment blocks public pulls, read the commands and expected Events as a diagnostic exercise rather than forcing a policy exception.
 
 **Task 1: Setup the broken environment**
 
 ```bash
 # Create a deployment with intentional image problems
-k create deploy broken-app --image=nginx:nonexistent
+kubectl create deploy broken-app --image=nginx:nonexistent
 ```
 
 **Task 2: Diagnose the failure**
-Observe the state of the deployment to identify the exact cause of the crash.
+
+Observe the state of the deployment to identify the exact cause of the crash. The key skill is not merely seeing `ImagePullBackOff`; it is reading Events until you can explain which part of the image reference failed and what change would let the node pull successfully.
 
 ```bash
 # Check pod status
-k get pods
+kubectl get pods
 # Shows ImagePullBackOff
 
 # Get details
-k describe pod -l app=broken-app | grep -A5 Events
+kubectl describe pod -l app=broken-app | grep -A5 Events
 # Shows: nginx:nonexistent not found
 
 # Fix by patching the deployment
-k set image deploy/broken-app nginx=nginx:1.21.0
+kubectl set image deploy/broken-app nginx=nginx:1.21.0
 
 # Verify
-k get pods
+kubectl get pods
 # Should show Running
 
 # Cleanup
-k delete deploy broken-app
+kubectl delete deploy broken-app
 ```
 
-**Success Criteria:**
-- [ ] Identified the `ImagePullBackOff` status.
-- [ ] Successfully queried the cluster events log.
-- [ ] Mutated the deployment's image reference dynamically.
-- [ ] Validated the transition to the `Running` phase.
+**Task 3: Parse image names**
 
-## Practice Drills
-
-### Drill 1: Image Name Parsing (Target: 2 minutes)
-
-Identify the components of these image references:
+Before changing manifests, practice translating references into their registry, namespace, image, and tag components. This is the mental model you use when Events mention `not found`, because the missing part may be the repository path rather than the final tag.
 
 ```text
 1. nginx
@@ -570,37 +600,41 @@ Identify the components of these image references:
    Tag: v2.0.0-alpine
 ```
 
-### Drill 2: Fix ImagePullBackOff (Target: 3 minutes)
+**Task 4: Fix another image pull failure**
+
+This drill repeats the same diagnosis with a Pod instead of a Deployment. Notice that deleting and recreating a standalone Pod is reasonable in a lab, while a managed workload should usually be fixed by patching the controller so replacement Pods inherit the corrected image.
 
 ```bash
 # Create broken pod
-k run broken --image=nginx:1.999.0
+kubectl run broken --image=nginx:1.999.0
 
 # Diagnose
-k describe pod broken | grep -A5 Events
+kubectl describe pod broken | grep -A5 Events
 
 # Fix
-k delete pod broken
-k run broken --image=nginx:1.21.0
+kubectl delete pod broken
+kubectl run broken --image=nginx:1.21.0
 
 # Verify
-k get pod broken
+kubectl get pod broken
 
 # Cleanup
-k delete pod broken
+kubectl delete pod broken
 ```
 
-### Drill 3: Private Registry Secret (Target: 4 minutes)
+**Task 5: Wire a private registry Secret**
+
+This task focuses on object shape rather than a real private registry. In a real environment, replace the example server and credentials with approved values from your secret management workflow, and remember that the Secret must be in the same namespace as the Pod that references it.
 
 ```bash
 # Create registry secret
-k create secret docker-registry myregistry \
+kubectl create secret docker-registry myregistry \
   --docker-server=private.registry.io \
   --docker-username=testuser \
-  --docker-password=testpass
+  --docker-password=your-password-here
 
 # Create pod with secret reference
-cat << EOF | k apply -f -
+cat << EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -614,18 +648,20 @@ spec:
 EOF
 
 # Check if secret is referenced
-k get pod private-pod -o jsonpath='{.spec.imagePullSecrets}'
+kubectl get pod private-pod -o jsonpath='{.spec.imagePullSecrets}'
 
 # Cleanup
-k delete pod private-pod
-k delete secret myregistry
+kubectl delete pod private-pod
+kubectl delete secret myregistry
 ```
 
-### Drill 4: Override Command and Args (Target: 3 minutes)
+**Task 6: Override command and args**
+
+Use this task to confirm the `ENTRYPOINT` and `CMD` mapping in a live Pod spec. The BusyBox image is convenient because it can run a shell command and exit quickly, which makes it easy to inspect logs and the stored fields without a larger application.
 
 ```bash
 # Create pod that overrides CMD
-cat << EOF | k apply -f -
+cat << EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -639,21 +675,23 @@ spec:
 EOF
 
 # Check logs
-k logs custom-cmd
+kubectl logs custom-cmd
 
 # Verify the command
-k get pod custom-cmd -o jsonpath='{.spec.containers[0].command}'
-k get pod custom-cmd -o jsonpath='{.spec.containers[0].args}'
+kubectl get pod custom-cmd -o jsonpath='{.spec.containers[0].command}'
+kubectl get pod custom-cmd -o jsonpath='{.spec.containers[0].args}'
 
 # Cleanup
-k delete pod custom-cmd
+kubectl delete pod custom-cmd
 ```
 
-### Drill 5: imagePullPolicy Testing (Target: 3 minutes)
+**Task 7: Compare pull policies**
+
+Create two Pods with the same image and different pull policies, then inspect the stored policy values. The point is not to benchmark a registry; it is to build the habit of making cache behavior explicit when a workload has clear reproducibility or freshness requirements.
 
 ```bash
 # Create pods with different policies
-cat << EOF | k apply -f -
+cat << EOF | kubectl apply -f -
 apiVersion: v1
 kind: Pod
 metadata:
@@ -676,48 +714,48 @@ spec:
 EOF
 
 # Check policies
-k get pod pull-always -o jsonpath='{.spec.containers[0].imagePullPolicy}'
-k get pod pull-ifnotpresent -o jsonpath='{.spec.containers[0].imagePullPolicy}'
+kubectl get pod pull-always -o jsonpath='{.spec.containers[0].imagePullPolicy}'
+kubectl get pod pull-ifnotpresent -o jsonpath='{.spec.containers[0].imagePullPolicy}'
 
 # Cleanup
-k delete pod pull-always pull-ifnotpresent
+kubectl delete pod pull-always pull-ifnotpresent
 ```
 
-### Drill 6: Complete Image Troubleshooting (Target: 5 minutes)
+**Task 8: Complete image troubleshooting**
 
-**Scenario:** A colleague pushed a deployment but pods won't start.
+This scenario combines controller status, Pod selection, Event inspection, image correction, and rollout verification. Use it as a timed CKAD-style drill: identify the failing image reference, change the controller, and prove the replacement Pod reaches the expected state.
 
 ```bash
 # Setup (simulating the problem)
-k create deploy webapp --image=nginx:alpine-wrong-tag
+kubectl create deploy webapp --image=nginx:alpine-wrong-tag
 
 # YOUR TASK: Find and fix the issue
 
 # Step 1: Check deployment status
-k get deploy webapp
-k get pods -l app=webapp
+kubectl get deploy webapp
+kubectl get pods -l app=webapp
 
 # Step 2: Investigate the error
-k describe pods -l app=webapp | grep -A10 Events
+kubectl describe pods -l app=webapp | grep -A10 Events
 
 # Step 3: Find correct image tag
 # (In real scenario, check registry or documentation)
 # The correct tag is nginx:alpine
 
 # Step 4: Fix
-k set image deploy/webapp nginx=nginx:alpine
+kubectl set image deploy/webapp nginx=nginx:alpine
 
 # Step 5: Verify
-k rollout status deploy/webapp
-k get pods -l app=webapp
+kubectl rollout status deploy/webapp
+kubectl get pods -l app=webapp
 
 # Cleanup
-k delete deploy webapp
+kubectl delete deploy webapp
 ```
 
-### Drill 7: Optimize a Dockerfile (Target: 5 minutes)
+**Task 9: Optimize a Dockerfile**
 
-**Scenario:** A colleague hands you this Dockerfile. It works, but it takes forever to build and results in an unnecessarily large image.
+This final task moves from cluster diagnosis back to image construction. The original Dockerfile works, but it combines a large base with poor cache ordering. Your rewrite should make the dependency layer stable and use a smaller runtime base when the application is compatible.
 
 ```dockerfile
 FROM node:18
@@ -727,12 +765,8 @@ RUN npm install
 CMD ["node", "index.js"]
 ```
 
-**Your Tasks:**
-1. Identify the layer caching issue causing slow rebuilds.
-2. Identify the base image size issue.
-3. Rewrite the Dockerfile to optimize it.
+Your tasks are to identify the layer caching issue causing slow rebuilds, identify the base image size issue, and rewrite the Dockerfile to optimize it.
 
-**Solution:**
 ```dockerfile
 # 1. Switch to a smaller base image (alpine)
 FROM node:18-alpine
@@ -747,6 +781,37 @@ COPY . .
 CMD ["node", "index.js"]
 ```
 
+**Success Criteria:**
+
+- [ ] Diagnosed an `ImagePullBackOff` by reading Pod Events and identifying the failing image reference.
+- [ ] Designed a corrected image reference and pull policy that allows the workload to start predictably.
+- [ ] Confirmed a private registry Pod references the expected `imagePullSecrets` entry.
+- [ ] Compared Kubernetes `command` and `args` with Dockerfile `ENTRYPOINT` and `CMD` behavior in a live Pod.
+- [ ] Optimized a Dockerfile for layer caching, smaller base image selection, and cleaner runtime contents.
+- [ ] Evaluated whether OCI image indexes, digests, signatures, or referrers would matter for the workload you just debugged.
+
+<details>
+  <summary>Solution notes</summary>
+  A successful run shows the broken Deployment or Pod entering `ImagePullBackOff`, Events explaining that the requested tag does not exist, and a corrected workload reaching `Running` after the image is changed. The private registry task may still fail to pull because the registry is illustrative, but the Pod spec should show the Secret reference. The command override task should print `Custom command`, and the JSONPath checks should show the command and args arrays you applied.
+</details>
+
+## Sources
+
+- https://kubernetes.io/docs/concepts/containers/images/
+- https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+- https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/
+- https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+- https://github.com/opencontainers/image-spec/blob/v1.1.1/spec.md
+- https://github.com/opencontainers/image-spec/blob/v1.1.1/media-types.md
+- https://github.com/opencontainers/distribution-spec/blob/v1.1.1/spec.md
+- https://github.com/opencontainers/runtime-spec/releases/tag/v1.3.0
+- https://docs.docker.com/reference/dockerfile/
+- https://docs.docker.com/build/building/multi-stage/
+- https://docs.docker.com/build/buildkit/
+- https://docs.docker.com/engine/storage/containerd/
+- https://docs.sigstore.dev/cosign/
+- https://www.alpinelinux.org/releases/
+
 ## Next Module
 
-[Module 1.2: Jobs and CronJobs](../module-1.2-jobs-cronjobs/) - Master executing isolated workloads and scheduling highly resilient cron infrastructure.
+[Module 1.2: Jobs and CronJobs](../module-1.2-jobs-cronjobs/) - Master executing isolated workloads and scheduling resilient batch infrastructure.
