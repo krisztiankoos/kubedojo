@@ -531,7 +531,7 @@ spec:
     emptyDir: {}
 ```
 
-Run the verification commands in order and pause after each one to state what evidence it should produce. You are looking for four proofs: the Pod becomes Ready, the init container completed, nginx serves the generated file, and the monitor sidecar can read the same content. If one proof is missing, diagnose that boundary before changing unrelated YAML.
+Run the verification commands in order and pause after each one to state what evidence it should produce. You are looking for four proofs: the Pod becomes Ready, the init container completed, the monitor sidecar can read the shared file directly, and the monitor logs show the same content over time. If one proof is missing, diagnose that boundary before changing unrelated YAML.
 
 ```bash
 # Apply
@@ -546,8 +546,8 @@ kubectl wait --for=condition=Ready pod/full-pattern --timeout=60s
 # Check init completed
 kubectl describe pod full-pattern | grep -A5 "Init Containers"
 
-# Check nginx serves content
-kubectl exec full-pattern -c nginx -- curl localhost
+# Check monitor reads shared content
+kubectl exec full-pattern -c monitor -- cat /data/index.html
 
 # Check monitor logs
 kubectl logs full-pattern -c monitor
@@ -560,7 +560,7 @@ Success criteria should be evidence-based rather than hope-based. A Pod phase al
 
 - [ ] Pod reaches the `Running` state successfully.
 - [ ] Init container logs show the configuration was written.
-- [ ] Nginx container successfully serves the content on localhost.
+- [ ] Monitor sidecar can read the shared file from `/data/index.html`.
 - [ ] Monitor sidecar continuously logs the configuration content.
 - [ ] Pod initialization transitions were clearly observed using `kubectl get pod -w`.
 
