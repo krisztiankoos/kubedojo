@@ -211,8 +211,8 @@ INCIDENTS: dict[str, list[str]] = {
         r"(O2|SoftBank).{0,200}(certificate|expir).{0,200}(2018|December)",
     ],
     "GitHub October 2018 split-brain": [
-        r"GitHub.{0,400}(October 2018|October 21,\s*2018|optical (hardware|cable)|43[\s\-]second|split[\s\-]brain|US-East.{0,40}(database|primary|hub)|webhook payloads?\s*(were\s*)?(permanently\s*)?dropped)",
-        r"(43[\s\-]second|split[\s\-]brain|optical (hardware|cable)|webhook payloads).{0,400}GitHub",
+        r"GitHub.{0,400}(October 21,\s*2018|optical (hardware|cable)|43[\s\-]second|split[\s\-]brain|US-East.{0,40}(database|primary|hub)|webhook payloads?\s*(were\s*)?(permanently\s*)?dropped)",
+        r"(October 21,\s*2018|43[\s\-]second|split[\s\-]brain|optical (hardware|cable)|webhook payloads?\s*(were\s*)?(permanently\s*)?dropped).{0,400}GitHub",
     ],
     "Atlassian April 2022 data deletion": [
         r"Atlassian.{0,400}(April 2022|April 5,?\s*2022|delete[\s\-]site|delete script|775 customers|14 days|cloud data deletion)",
