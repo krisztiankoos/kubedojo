@@ -271,7 +271,7 @@ ls /etc/kubernetes/manifests/
 # kube-scheduler.yaml
 ```
 
-The API server shows mirror pods for visibility, but it does not own the source of truth for static pods. If you delete the mirror pod with `kubectl`, kubelet notices that the manifest file still exists and recreates the container and mirror representation. That behavior is surprising only if you assume every pod seen through the API is controlled through the API. Pause and predict: if you run `kubectl delete pod kube-apiserver-controlplane -n kube-system`, who recreates it, and what file decides the answer?
+The API server shows mirror pods for visibility, but it does not own the source of truth for static pods. If you delete the mirror pod with `kubectl`, kubelet notices that the manifest file still exists and recreates the mirror pod object in the API. The underlying container is NOT restarted by this — kubelet does not remove the manifest, so the static pod process keeps running uninterrupted. This is a classic CKA gotcha: deleting a mirror pod with `kubectl` does not restart a stuck control-plane component, because the API operation never reaches the runtime. That behavior is surprising only if you assume every pod seen through the API is controlled through the API. Pause and predict: if you run `kubectl delete pod kube-apiserver-controlplane -n kube-system`, what changes (and what does not) at the container-runtime level, and what file decides the answer?
 
 ```text
 ┌────────────────────────────────────────────────────────────────┐
@@ -397,13 +397,20 @@ sudo ETCDCTL_API=3 etcdctl snapshot restore /var/backups/etcd-snapshot.db \
 Upgrades fit into the same risk model. kubeadm can plan and apply a control-plane upgrade, but you still drain nodes, respect version skew, upgrade kubelet and kubectl packages, and verify each step before moving on. The safe order is control plane first, then workers one at a time, with a rollback and backup plan that exists before you touch the first component. For CKA purposes, know the shape of the workflow and the commands you use to inspect the plan.
 
 ```bash
-# Control plane planning step
+# Step 1: upgrade the kubeadm binary itself to the target version FIRST.
+# `kubeadm upgrade apply` validates that the running kubeadm matches the
+# target version, so skipping this step fails immediately. Exact package
+# string varies by distro and repo (apt example shown).
+sudo apt-get update && sudo apt-get install -y --allow-change-held-packages kubeadm=1.35.1-1.1
+
+# Step 2: control-plane planning step (read-only, safe to re-run)
 sudo kubeadm upgrade plan
 
-# Example control plane apply step for a patch release in the same minor line
+# Step 3: control-plane apply for a patch release in the same minor line
 sudo kubeadm upgrade apply v1.35.1
 
-# Restart kubelet after package changes on the upgraded node
+# Step 4: upgrade kubelet and kubectl packages, then restart kubelet
+sudo apt-get install -y --allow-change-held-packages kubelet=1.35.1-1.1 kubectl=1.35.1-1.1
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 ```
@@ -690,7 +697,7 @@ Generate a fresh join command on the control plane with `kubeadm token create --
 <details>
 <summary>Question 3: You delete `kube-apiserver-controlplane` with `kubectl`, and it comes back almost immediately. What does that tell you about ownership?</summary>
 
-It tells you the visible pod is a mirror of a static pod, not a normal pod owned by a Deployment or ReplicaSet. kubelet is watching `/etc/kubernetes/manifests/kube-apiserver.yaml` and recreates the container because the manifest still exists. To intentionally stop or change that static pod, you must edit or move the manifest on the control-plane node. This is also why local node access matters when the API server is the component you are troubleshooting.
+It tells you the visible pod is a mirror of a static pod, not a normal pod owned by a Deployment or ReplicaSet. kubelet is watching `/etc/kubernetes/manifests/kube-apiserver.yaml`, so when you delete the mirror pod through the API, kubelet recreates the mirror pod object — but the underlying container is never restarted, because kubelet has not been instructed to remove the manifest. The static pod process keeps running across the `kubectl delete` operation. To intentionally stop or change that static pod, you must edit or move the manifest on the control-plane node. This is also why local node access matters when the API server is the component you are troubleshooting.
 
 </details>
 
