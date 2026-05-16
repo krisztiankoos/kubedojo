@@ -461,7 +461,7 @@ The decision rule is simple: use this module to decide what to practice and how 
 
 ## Did You Know?
 
-- **CKA came first in 2017, and CKAD followed in May 2018.** CKAD was created for developers who design, build, configure, and expose applications on Kubernetes without necessarily managing the cluster itself.
+- **CKA came first in 2016, and CKAD followed in May 2018.** CKAD was created for developers who design, build, configure, and expose applications on Kubernetes without necessarily managing the cluster itself.
 - **The current CNCF CKAD page lists five domains with weights of 20%, 20%, 15%, 25%, and 20%.** Those numbers are a planning tool because the largest domain is environment, configuration, and security.
 - **The CKAD exam is performance-based and runs for approximately two hours.** That format rewards command-line execution and verification, not just knowing resource definitions in theory.
 - **CNCF states that quarterly exam updates are planned to match Kubernetes releases.** For this curriculum, practice with Kubernetes 1.35 or newer so your commands and API versions stay current.
