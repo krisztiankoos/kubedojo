@@ -110,6 +110,11 @@ CLAUDE_DEFAULT_MODEL = "claude-sonnet-4-6"
 CODEX_DEFAULT_MODEL = "codex"  # lets codex CLI pick the default model
 CODEX_REVIEW_DEFAULT_MODEL = "codex"
 CODEX_PATCH_DEFAULT_MODEL = "gpt-5.4"
+GROK_DEFAULT_MODEL = os.environ.get("AB_GROK_MODEL", "grok-4")
+GROK_PROVIDER = os.environ.get("AB_GROK_PROVIDER", "xai-oauth")
+# Grok via hermes -z toolsets. Match dispatch_smart task-class semantics:
+# review/research = web only; write paths can opt-in to terminal+file via env.
+GROK_DEFAULT_TOOLSETS = os.environ.get("AB_GROK_TOOLSETS", "web")
 
 # ---------------------------------------------------------------------------
 # Rate limit detection + pacing
@@ -731,6 +736,75 @@ def dispatch_codex_patch(prompt: str, model: str = CODEX_PATCH_DEFAULT_MODEL,
         return False, "TIMEOUT"
 
 
+def dispatch_grok(prompt: str, model: str = GROK_DEFAULT_MODEL,
+                  timeout: int = 900, toolsets: str | None = None,
+                  isolated: bool = False, yolo: bool | None = None,
+                  effort: str | None = None) -> tuple[bool, str]:
+    """Call Grok via ``hermes -z`` with the xai-oauth provider. Returns (success, output).
+
+    ``isolated=True`` adds ``--ignore-user-config --ignore-rules`` to bypass
+    hermes's project-context injection (used for calibration / benchmark
+    runs where deterministic output matters more than situational awareness).
+
+    ``yolo`` auto-accepts tool calls. Defaults to True when toolsets include
+    a write-capable lane (file / terminal / code_execution), False otherwise.
+
+    ``effort`` forwards a reasoning-effort hint as a prompt prefix. Hermes
+    has no direct flag for this today (see ``project_hermes_model_inventory.md``).
+    """
+    toolsets = toolsets or GROK_DEFAULT_TOOLSETS
+    write_lanes = {"file", "terminal", "code_execution"}
+    has_write_lane = any(t.strip() in write_lanes for t in toolsets.split(","))
+    if yolo is None:
+        yolo = has_write_lane
+
+    final_prompt = prompt
+    if effort and effort != "default":
+        final_prompt = f"[Reasoning effort hint: {effort}]\n\n{prompt}"
+
+    # IMPORTANT: pass prompt via argv, NOT stdin. `hermes -z -` is interpreted
+    # as "no prompt, project-introspection mode" — see comment in
+    # scripts/agent_runtime/adapters/grok.py for the empirical evidence.
+    cmd = [
+        "hermes", "-z", final_prompt,
+        "-m", model,
+        "--provider", GROK_PROVIDER,
+        "-t", toolsets,
+    ]
+    if yolo:
+        cmd.append("--yolo")
+    if isolated:
+        cmd.extend(["--ignore-user-config", "--ignore-rules"])
+
+    t0 = time.time()
+    try:
+        result = _run_with_process_group(
+            cmd, "", timeout, str(REPO_ROOT), _agent_env("grok")
+        )
+        elapsed = time.time() - t0
+        if result.returncode != 0:
+            print(f"Grok error (exit {result.returncode}): {redact_text(result.stderr)[:500]}", file=sys.stderr)
+            _log("grok", model, prompt, "", False, elapsed, result.stderr)
+            if _is_rate_limited(result.stderr) or _is_rate_limited(result.stdout):
+                # Grok via xai-oauth shares the OAuth-tier cap class — surface
+                # as a generic rate-limit error so callers can decide whether
+                # to fall back to claude-sonnet (per session-16 reviewer cascade).
+                print("Grok rate-limited (xai-oauth tier).", file=sys.stderr)
+            return False, redact_text(result.stderr)
+        output = result.stdout.strip()
+        _log("grok", model, prompt, output, True, elapsed)
+        return True, output
+    except FileNotFoundError:
+        _log("grok", model, prompt, "", False, time.time() - t0, "hermes CLI not found")
+        print("hermes CLI not found — install via 'pip install hermes-agent' "
+              "and authenticate with 'hermes login xai-oauth'.", file=sys.stderr)
+        return False, ""
+    except subprocess.TimeoutExpired:
+        _log("grok", model, prompt, "", False, time.time() - t0, "TIMEOUT")
+        print(f"Grok timed out after {timeout}s", file=sys.stderr)
+        return False, ""
+
+
 def post_to_github(issue_num: int, content: str, model: str) -> bool:
     """Post review content to a GitHub issue as comment(s)."""
     if not content:
@@ -959,6 +1033,22 @@ def main():
                          "Use for v2 quality writer/reviewer dispatches where stdout = full module text.")
     cp.add_argument("--timeout", type=int, default=600, help="Timeout in seconds (default: 600)")
 
+    # grok (via hermes -z xai-oauth)
+    rp = subparsers.add_parser("grok", help="Dispatch prompt to Grok via hermes -z (xai-oauth)")
+    rp.add_argument("prompt", help="Prompt text (use '-' to read from stdin)")
+    rp.add_argument("--model", default=GROK_DEFAULT_MODEL, help=f"Grok model (default: {GROK_DEFAULT_MODEL!r})")
+    rp.add_argument("--toolsets", default=None,
+                    help=f"Comma-separated hermes toolsets (default: {GROK_DEFAULT_TOOLSETS!r}; "
+                         "write paths typically use 'web,file,terminal,code_execution,todo').")
+    rp.add_argument("--isolated", action="store_true",
+                    help="Pass --ignore-user-config --ignore-rules (suppress project-context injection).")
+    rp.add_argument("--no-yolo", dest="no_yolo", action="store_true",
+                    help="Disable --yolo (default: auto-on when write-capable toolsets are enabled).")
+    rp.add_argument("--effort", default=None, choices=["default", "low", "medium", "high", "xhigh"],
+                    help="Reasoning-effort hint (forwarded as prompt prefix; hermes has no direct flag yet).")
+    rp.add_argument("--github", type=int, metavar="ISSUE", help="Post output to GitHub issue")
+    rp.add_argument("--timeout", type=int, default=900, help="Timeout in seconds (default: 900)")
+
     # codex
     xp = subparsers.add_parser("codex", help="Dispatch prompt to Codex CLI (codex exec)")
     xp.add_argument("prompt", help="Prompt text (use '-' to read from stdin)")
@@ -1008,6 +1098,20 @@ def main():
     elif args.agent == "codex":
         prompt = sys.stdin.read() if args.prompt == "-" else args.prompt
         ok, output = dispatch_codex(prompt, args.model, args.timeout)
+        if ok:
+            print(output)
+        sys.exit(0 if ok else 1)
+
+    elif args.agent == "grok":
+        prompt = sys.stdin.read() if args.prompt == "-" else args.prompt
+        yolo = None if not args.no_yolo else False
+        ok, output = dispatch_grok(
+            prompt, args.model, args.timeout,
+            toolsets=args.toolsets, isolated=args.isolated,
+            yolo=yolo, effort=args.effort,
+        )
+        if ok and args.github:
+            post_to_github(args.github, output, args.model)
         if ok:
             print(output)
         sys.exit(0 if ok else 1)

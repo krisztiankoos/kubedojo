@@ -59,12 +59,14 @@ _DISCUSSION_CLARIFICATION_MODES = {
     "claude": "bypass",
     "gemini": "yolo",
     "codex": "danger",
+    "grok": "yolo",
 }
 
 _DISCUSSION_RUNTIME_MODES = {
     "claude": "read-only",
     "gemini": "workspace-write",
     "codex": "danger",
+    "grok": "workspace-write",
 }
 
 _DISCUSSION_MCP_EXCLUDE_TOKENS: tuple[str, ...] = (
@@ -161,6 +163,12 @@ def _agent_runtime_mode(agent_name: str, sandbox_mode: str | None) -> str:
     if agent_name == "claude":
         # Claude uses a permission-mode override, not a dedicated mode value.
         return "read-only"
+    if agent_name == "grok":
+        # Grok via hermes accepts workspace-write; sandbox is enforced by
+        # toolset selection (see _agent_tool_config), not a mode flag.
+        if sandbox_mode == "read-only":
+            return "read-only"
+        return "workspace-write"
     if sandbox_mode == "read-only":
         return "read-only"
     return "workspace-write"
@@ -195,6 +203,29 @@ def _agent_tool_config(
         return tc or None
     if agent_name == "codex":
         return {"enable_search": True}
+    if agent_name == "grok":
+        # Sandbox enforcement for grok is via toolset selection (hermes has
+        # no CLI sandbox flag). GrokAdapter.build_invocation honors caller
+        # overrides for toolsets/yolo over its mode defaults, so we MUST
+        # gate write-capable tools (file/terminal/code_execution) and --yolo
+        # on sandbox_mode here. Gemini-pro adversarial review on PR #1245
+        # caught this — earlier revision hardcoded write tools regardless
+        # of mode, which would have let read-only bridge sessions execute
+        # arbitrary shell.
+        if sandbox_mode == "read-only":
+            grok_tc: dict[str, object] = {
+                "toolsets": "web",
+                "yolo": False,
+            }
+        else:
+            # workspace-write / yolo / bypass / None → grant the full
+            # deliberation toolset so grok can inspect repo state and curl
+            # primary sources. Skills/memory stay off for reproducibility.
+            grok_tc = {
+                "toolsets": "web,file,terminal,code_execution,todo",
+                "yolo": True,
+            }
+        return grok_tc
     return None
 
 

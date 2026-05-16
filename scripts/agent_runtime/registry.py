@@ -81,10 +81,15 @@ AGENTS: dict[str, AgentEntry] = {
     },
     "grok": {
         "adapter": "scripts.agent_runtime.adapters.grok:GrokAdapter",
-        "default_model": None,
-        "cost_tier": "unknown",
-        "capabilities": frozenset(),
-        "cli_available": False,
+        "default_model": os.environ.get("AB_GROK_MODEL", "grok-4"),
+        "cost_tier": "medium",
+        "capabilities": frozenset({
+            "code_review",
+            "adversarial_review",
+            "debugging",
+            "deliberation",
+        }),
+        "cli_available": True,
         "resume_policy": "never",
     },
 }

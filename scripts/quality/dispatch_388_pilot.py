@@ -17,12 +17,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 
 import yaml
 
@@ -350,6 +352,45 @@ def dispatch_claude_review(pr_num: int, module_path: str, slug: str):
     return text, classify_verdict(text)
 
 
+def dispatch_grok_review(pr_num: int, module_path: str, slug: str):
+    """Cross-family review via Grok-4 (xai-oauth, hermes -z).
+
+    Grok is a peer cross-family reviewer alongside gemini-pro and claude-sonnet.
+    Uses the same prompt (gemini_review_prompt). Grok's strengths: independent
+    family (xAI), tool-using via hermes terminal/file toolsets so it can curl
+    URLs and inspect the diff itself.
+
+    Selection:
+        - Primary: set ``KUBEDOJO_388_PRIMARY_REVIEWER=grok`` to make this the
+          first-pass reviewer in the cascade.
+        - Tertiary: if gemini and claude both return ERROR/UNCLEAR, grok is
+          the third-line reviewer.
+        - Manual: callable directly from one-off review scripts (mirrors
+          dispatch_gemini_review / dispatch_claude_review shape).
+    """
+    log({"event": "grok_review_start", "pr": pr_num, "module": module_path})
+    try:
+        result = invoke(
+            agent_name="grok",
+            prompt=gemini_review_prompt(pr_num, module_path),  # reuse same prompt
+            mode="workspace-write",  # grok benefits from terminal+file tools (curl, gh pr diff)
+            cwd=REPO,
+            task_id=f"388-pilot-review-grok-{slug}",
+            entrypoint="dispatch",
+            hard_timeout=600,  # hermes startup + first-token latency tends to be higher than gemini-pro
+            tool_config={
+                "toolsets": "web,file,terminal,code_execution,todo",
+                "yolo": True,
+            },
+        )
+    except Exception as e:  # noqa: BLE001
+        log({"event": "grok_review_error", "pr": pr_num, "error": repr(e)})
+        return None, "ERROR"
+    text = result.response or ""
+    log({"event": "grok_review_done", "pr": pr_num, "ok": result.ok, "response_excerpt": text[-2000:]})
+    return text, classify_verdict(text)
+
+
 def classify_verdict(text: str) -> str:
     """Classify a gemini review into APPROVE / APPROVE_WITH_NITS / NEEDS CHANGES / UNCLEAR.
 
@@ -504,11 +545,28 @@ def main(argv: list[str] | None = None) -> int:
             if pr_num is None:
                 log({"event": "module_skip", "module": module_path, "reason": "pr_creation_failed"})
                 continue
-        review_text, verdict = dispatch_gemini_review(pr_num, module_path, slug)
-        if verdict in ("ERROR", "UNCLEAR"):
-            # Gemini hung or returned ambiguous output — fall back to Claude.
-            log({"event": "review_fallback_to_claude", "pr": pr_num, "module": module_path})
-            review_text, verdict = dispatch_claude_review(pr_num, module_path, slug)
+        # Reviewer cascade. Primary defaults to gemini-pro; override via
+        # KUBEDOJO_388_PRIMARY_REVIEWER (gemini | claude | grok).
+        # Cascade order is always primary → claude → grok (each only fires
+        # when the prior tier returned ERROR/UNCLEAR). The slot the primary
+        # occupies is skipped in the fallback chain.
+        primary = os.environ.get("KUBEDOJO_388_PRIMARY_REVIEWER", "gemini").lower()
+        cascade: list[tuple[str, Callable]] = []
+        if primary == "claude":
+            cascade = [("claude", dispatch_claude_review), ("gemini", dispatch_gemini_review), ("grok", dispatch_grok_review)]
+        elif primary == "grok":
+            cascade = [("grok", dispatch_grok_review), ("gemini", dispatch_gemini_review), ("claude", dispatch_claude_review)]
+        else:  # default: gemini
+            cascade = [("gemini", dispatch_gemini_review), ("claude", dispatch_claude_review), ("grok", dispatch_grok_review)]
+
+        review_text, verdict = (None, "ERROR")
+        for tier_name, tier_fn in cascade:
+            if review_text is not None and verdict not in ("ERROR", "UNCLEAR"):
+                break
+            if cascade.index((tier_name, tier_fn)) > 0:
+                log({"event": f"review_fallback_to_{tier_name}", "pr": pr_num, "module": module_path})
+            review_text, verdict = tier_fn(pr_num, module_path, slug)
+
         if review_text:
             post_review_comment(pr_num, review_text)
         if verdict == "APPROVE":
