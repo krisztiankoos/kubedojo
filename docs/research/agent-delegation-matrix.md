@@ -158,10 +158,12 @@ unit tests): delegate to Codex/Gemini in their sandboxes.
 
 ### 4. Save Claude budget for things only Claude can do
 
-Claude main session is the bottleneck — peak hours penalty, finite Sonnet/Opus
-calls, irreplaceable for synthesis tasks. Anything that can plausibly be done
-by Codex or Gemini SHOULD be done by them, especially while Codex is on the
-10x tier through 2026-05-17.
+Claude main session is the bottleneck — finite Sonnet/Opus calls, irreplaceable
+for synthesis tasks. Anything that can plausibly be done by Codex or Gemini
+SHOULD be done by them, especially while Codex is on the 10x tier through
+2026-05-17. (The Anthropic 14-20 CET 2x peak-hours pricing was canceled
+~2026-05-09; the dispatch.py guard tracking it is now stale — slated for
+removal, see STATUS.md TODO.)
 
 ### 5. Cross-family review is non-negotiable
 

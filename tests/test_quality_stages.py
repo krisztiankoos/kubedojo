@@ -495,14 +495,14 @@ def test_write_one_hang_double_retry_fails(fake_repo, monkeypatch):
 
 
 def test_write_one_dispatcher_unavailable_reverts_to_pending(fake_repo, monkeypatch):
-    """Peak-hours / budget refusal must REVERT to WRITE_PENDING so the
+    """Dispatcher unavailability must REVERT to WRITE_PENDING so the
     module stays retryable. v1's failure mode silently drained the queue."""
     slug = _bootstrap(fake_repo)
     stages.audit_one(slug)
     stages.route_one(slug)
 
     def unavail(agent, prompt, *, timeout, model=None, cwd=None, tools_disabled=False):
-        raise dispatchers.DispatcherUnavailable("claude peak hours")
+        raise dispatchers.DispatcherUnavailable("claude unavailable")
 
     monkeypatch.setattr(stages, "dispatch", unavail)
     with pytest.raises(dispatchers.DispatcherUnavailable):

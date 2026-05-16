@@ -33,7 +33,6 @@ def test_dispatch_claude_pipes_special_prompt_to_stdin(monkeypatch):
 
     monkeypatch.setattr("dispatch._run_with_process_group", fake_run_with_process_group)
     monkeypatch.setattr("dispatch._log", lambda *args, **kwargs: None)
-    monkeypatch.setattr("dispatch._is_claude_peak_hours", lambda: False)
     monkeypatch.setattr("dispatch._check_claude_budget", lambda: None)
     monkeypatch.setattr("dispatch._claude_call_count", 0)
 

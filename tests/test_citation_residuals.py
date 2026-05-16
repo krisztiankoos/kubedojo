@@ -1193,8 +1193,7 @@ def test_claude_wrapper_passes_short_timeout(
 def test_main_aborts_cleanly_on_dispatcher_unavailable(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """If the Claude dispatcher raises DispatcherUnavailable (peak
-    hours, budget), main() must:
+    """If the Claude dispatcher raises DispatcherUnavailable, main() must:
       1. NOT mark the in-flight finding as unresolvable — it stays in
          needs_citation for retry.
       2. Exit with a non-zero code (3) signaling operator retry.
@@ -1215,7 +1214,7 @@ def test_main_aborts_cleanly_on_dispatcher_unavailable(
     monkeypatch.setattr(citation_residuals, "HUMAN_REVIEW_DIR", queue_dir)
 
     def _unavailable(qp: Path, **_: Any) -> dict[str, Any]:
-        raise citation_backfill.DispatcherUnavailable("peak hours in effect")
+        raise citation_backfill.DispatcherUnavailable("dispatcher temporarily unavailable")
 
     monkeypatch.setattr(citation_residuals, "resolve_module", _unavailable)
 

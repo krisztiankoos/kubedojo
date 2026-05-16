@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 14 handoff — model calibration sweep + T5 canary outcome (CKA 1.6 GREEN with lab bugs, CKA 1.7 held)</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .status-good{color:var(--good);font-weight:600;}
+  .status-partial{color:var(--partial);font-weight:600;}
+  .status-gap{color:var(--gap);font-weight:600;}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 14 handoff — model calibration sweep + T5 canary outcome (CKA 1.6 GREEN with lab bugs, CKA 1.7 held)</h1>
+<p class="meta">2026-05-16 (continuation of session 13) · driver: claude opus 4.7 (1M context, orchestrator) · code agents: codex gpt-5.5 high (1× reviewer + 1× coder + 1× writer + 1× researcher + 1× hallucination dispatches) · grok-4.3 via hermes (3× efforts × 5 roles = 15 dispatches) · gemini-3.1-pro-preview + gemini-3-flash-preview (10 dispatches across 5 roles) · claude {sonnet-4-6, opus-4-7, opus-4-6} headless (15 dispatches)</p>
+
+<div class="tldr">
+  <strong>TL;DR.</strong> Two major workstreams in this session: <strong>(1) T5 pipeline_v2 burn-down canary close-out</strong> — PR #1229 (CKA 1.6 RBAC) merged GREEN on content gates but 2 real lab-breaking bugs landed on main (gemini-3-flash production reviewer gave APPROVE while missing both). PR #1230 (CKA 1.7 kubeadm) reached MERGE_HELD on the same incident-dedup-gate false-positive that's blocked the last 6+ admin-merges. <strong>(2) Multi-model calibration sweep</strong> — 45 dispatches across 5 roles × 9 models (grok-4.3 × 3 efforts + gemini × 2 + codex gpt-5.5 high + claude × 3). Findings: <strong>gemini-3.1-pro is the only model that caught both #1229 bugs</strong>; claude-sonnet-4-6 caught 1 of 2 (beating both opus-4-7 and opus-4-6); codex caught 1 of 2 and remains the gold standard for hallucination resistance (only model with real HTTP verification on the fake-URL probe). <strong>Grok-4.3 reasoning effort does not differentiate</strong> on reviewer or coder; slight effect on hallucination (high best). Production reviewer slot is the urgent fix — current configuration silently permits lab bugs to reach main. Action items deferred to next session per user direction.
+</div>
+
+<h2>What shipped</h2>
+
+<h3>PRs merged (1)</h3>
+
+<table>
+<thead><tr><th>PR</th><th>Title</th><th>What it did</th></tr></thead>
+<tbody>
+<tr><td class="col-id">#1229</td><td><code>feat(388): density+structure rewrite of RBAC — Role-Based Access Control (#388 pilot)</code></td><td>T5 canary close-out for CKA 1.6 RBAC. Codex authored (5118 words, T0 verifier, body_words≥5000, mean_wpp 62.4, all gates clear). Gemini-3-flash review APPROVED. Admin-merged via <code>GH_TOKEN= gh pr merge 1229 --admin --squash</code> to bypass the known incident-dedup-gate false-positive. Squash commit <code>6b5db8c4</code>. <strong>Two lab-breaking bugs landed unfixed</strong>: (a) lab step 7 runs <code>kubectl exec dev-shell -- kubectl get pods</code> against a pod with <code>image: nginx</code> which lacks the kubectl binary; (b) drill-7 <code>dm-edit</code> Role grants <code>create,update,delete</code> but missing <code>get,list</code> verbs needed for operational <code>kubectl edit</code>/<code>kubectl delete</code>. Both surfaced only in the post-merge calibration sweep when gemini-3.1-pro reviewed the diff. Fix queued for next session.</td></tr>
+</tbody>
+</table>
+
+<h3>PRs opened (1, held)</h3>
+
+<table>
+<thead><tr><th>PR</th><th>Title</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td class="col-id">#1230</td><td><code>feat(388): rewrite kubeadm Basics — Cluster Bootstrap (#388 pilot)</code></td><td><strong>MERGE_HELD</strong>. Codex authored (5114 words, T0 verifier). Gemini-3-flash review APPROVED — but the calibration revealed that flash production reviewer reliably misses lab bugs, so this APPROVE is suspect. Held on incident-dedup-gate false-positive (the bare "split-brain" false-fire). <em>Re-review with gemini-3.1-pro is the recommended next-session action</em> before admin-merging.</td></tr>
+</tbody>
+</table>
+
+<h3>Multi-model calibration sweep — primary research output</h3>
+
+<p>45 dispatches across 5 roles × 9 models. All outputs preserved under <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/</code>. Full report at <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/REPORT.html</code> (servable at <code>http://127.0.0.1:8768/artifacts/audit/2026-05-16-grok-4.3-kubedojo-calibration/REPORT.html</code>).</p>
+
+<table>
+<thead><tr><th>Model</th><th>Reviewer<br>(#1229 bugs / 2)</th><th>Coder<br>(dedup-gate fix)</th><th>Writer<br>(module 1.7 opener)</th><th>Researcher<br>(Azure App Gateway Stage-0)</th><th>Hallucination<br>(refusals / 4)</th></tr></thead>
+<tbody>
+<tr><td><strong>codex gpt-5.5 high</strong></td><td class="status-partial">1</td><td class="status-good">★ best (added year signals)</td><td class="status-good">★ tightest</td><td class="status-good">★ shell-grounded against live repo tree</td><td class="status-good">4 ★ + real HTTP verification</td></tr>
+<tr><td><strong>gemini-3.1-pro-preview</strong></td><td class="status-good">2 ★ (caught both)</td><td class="status-good">✓ surgical</td><td class="status-good">✓ verbose</td><td class="status-partial">✓ (truncated mid-section)</td><td class="status-good">4 (dubious "I checked")</td></tr>
+<tr><td>claude-sonnet-4-6</td><td class="status-partial">1 (caught nginx-kubectl)</td><td class="status-good">✓</td><td class="status-good">✓ concrete</td><td class="status-good">✓ grounded</td><td class="status-good">4</td></tr>
+<tr><td>claude-opus-4-7</td><td class="status-gap">0</td><td class="status-good">✓</td><td class="status-good">✓ sophisticated (--v=6, SLO framing)</td><td class="status-good">✓ grounded (7 modules verified)</td><td class="status-good">4</td></tr>
+<tr><td>claude-opus-4-6</td><td class="status-gap">0</td><td class="status-good">✓</td><td class="status-good">✓</td><td class="status-good">✓ grounded</td><td class="status-good">4</td></tr>
+<tr><td>grok-4.3 medium</td><td class="status-gap">0</td><td class="status-good">✓ identical</td><td class="status-good">✓ "02:17" scenario</td><td class="status-good">✓ grounded (5 modules verified)</td><td class="status-partial">3 (Q3 slip)</td></tr>
+<tr><td>grok-4.3 high</td><td class="status-gap">0</td><td class="status-good">✓ identical</td><td class="status-good">✓</td><td class="status-good">✓ grounded</td><td class="status-good">4</td></tr>
+<tr><td>grok-4.3 xhigh</td><td class="status-gap">0</td><td class="status-good">✓ identical</td><td class="status-good">✓ most concrete</td><td class="status-good">✓ grounded</td><td class="status-partial">3 (Q3 slip)</td></tr>
+<tr><td>gemini-3-flash-preview <em>(current prod reviewer)</em></td><td class="status-gap">0</td><td class="status-good">✓</td><td class="status-good">✓</td><td class="status-partial">wrote to <code>docs/briefs/azure-app-gateway-stage0.md</code> (file, not stdout)</td><td class="status-good">4 (specific factual context)</td></tr>
+</tbody>
+</table>
+
+<h2>Decisions</h2>
+
+<ol class="tight">
+<li><strong>Production reviewer slot must move off <code>gemini-3-flash-preview</code>.</strong> Single sample (1 PR) but the data is consistent: 0/2 bugs caught, same glowing APPROVE in the canary log as in my isolated test (100% reproducibility). PR #1229's bugs are the directly-observable consequence. Recommended primary: <code>gemini-3.1-pro-preview</code> (2/2 bugs caught in the test). Recommended cross-family fallback: <code>claude-sonnet-4-6</code> (1/2 bugs caught — better than every other claude variant including opus-4-7/opus-4-6, and avoids the cost of opus models). Application of this change deferred to next session.</li>
+<li><strong>Grok-4.3 medium is the production default for grok dispatches.</strong> Reasoning_effort=high does not improve reviewer or coder; xhigh adds output length without proportional quality gain. Learn-ukrainian's "use medium" guidance holds for kubedojo content. Hallucination is the one exception (high marginally better) but inconsistent.</li>
+<li><strong>Codex is the only model that actually verifies URLs.</strong> Concrete: on the fake-URL probe (Q3 of the hallucination test), only codex performed a real HTTP request and quoted the resulting 404. All other models either fabricated a status code (grok medium/xhigh), claimed verification they couldn't have done ("I checked the URL" — gemini-pro, gemini-flash), or honestly refused without verification (claude × 3, grok high). For citation-backfill and link-verification work, codex is the unique right tool. Aligns with <code>feedback_citation_verify_or_remove.md</code>.</li>
+<li><strong>Calibration methodology gap noted</strong>: gemini-3-flash's researcher dispatch wrote its 8.9 KB Stage-0 brief to <code>docs/briefs/azure-app-gateway-stage0.md</code> via the dispatch path's enabled shell tools, not to stdout. Initial "hallucination" call (from me) was wrong — file exists with substantive content. Future calibration prompts must include "output to stdout only; do not write any files."</li>
+<li><strong>Sample size warning</strong>: 1 task per cell. Findings are directional. Reviewer recommendation is high-confidence (the bug-catch / bug-miss pattern is binary and the production canary log corroborates the test result). Other role recommendations are weaker; replicate on 2-3 more real tasks before locking.</li>
+</ol>
+
+<h2>Contract changes</h2>
+
+<h3>Hermes-mediated Grok access (new tool pattern)</h3>
+
+<p>Grok-4.3 is reachable via <code>hermes -z PROMPT -m grok-4.3</code> subprocess. Direct <code>api.x.ai/v1</code> returns 403 on the OAuth-scoped token; subprocess is the only path. Hermes' default toolset is broad — for pure-text calibration use <code>hermes -z "$PROMPT" -m grok-4.3</code> with prompt as a direct argument (NOT stdin via <code>-</code>; the dash is interpreted as a literal prompt). Reasoning effort is configured via line 52 of <code>~/.hermes/config.yaml</code> (key: <code>agent.reasoning_effort</code>; values: medium|high|xhigh). Atomic config-swap helper at <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/grok-effort.sh</code> backs up + swaps + restores via trap. Caller responsibility: do NOT run two grok-effort.sh invocations in parallel (race on shared config). All grok dispatches in the calibration were serialized.</p>
+
+<h3>GH_TOKEN scrub for batch invocations (re-confirmed)</h3>
+
+<p>The stale per-project <code>.envrc</code> GH_TOKEN continues to shadow the valid keyring auth. All <code>gh</code>-using subprocesses (run_388_batch.py, dispatch_388_pilot.py, the merge step inside pipeline_v2, all dispatch.py invocations) MUST be invoked via <code>env -u GH_TOKEN ...</code> until the token is rotated. Cross-thread note line 132 already documents this; reinforced by today's canary which failed merge_pr with HTTP 401 until I scrubbed the env. For long-term: patch <code>scripts/lib/pr_merge.py:_run_gh</code> to pop GH_TOKEN before <code>subprocess.run</code>. Not done this session.</p>
+
+<h2>Open / In flight</h2>
+
+<ul class="tight">
+<li><strong>PR #1230 (CKA 1.7 kubeadm)</strong> — MERGE_HELD. Content APPROVE'd by gemini-3-flash (production reviewer; now under calibration cloud). Recommended action: re-review with gemini-3.1-pro before admin-merging; if pro also APPROVEs, admin-merge per the existing protocol; if pro flags bugs, re-dispatch codex on the worktree branch with the gemini-pro review as the brief.</li>
+<li><strong>PR #1229 lab bugs need a follow-up PR.</strong> Two surgical edits in <code>src/content/docs/k8s/cka/part1-cluster-architecture/module-1.6-rbac.md</code>: (a) ~line 784 change <code>image: nginx</code> to <code>image: bitnami/kubectl:1.35</code> + add <code>command: ["sleep", "infinity"]</code>; (b) ~line 990 change <code>--verb=create,update,delete</code> to <code>--verb=get,list,create,update,delete</code> on the <code>dm-edit</code> Role. Concrete fix proposals are in gemini-3.1-pro's review at <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/reviewer/gemini-3.1-pro.out</code>.</li>
+<li><strong>Production reviewer reassignment</strong> — user approved option 1 ("Fix the fallback chain + patch #1229 bugs") but session was cut for handoff before applying. The actual patch shape on review: the production review prompt in <code>scripts/quality/dispatch_388_pilot.py:gemini_review_prompt</code> needs a 6th explicit "LAB RUNNABILITY" dimension that probes whether container images include the binaries lab steps use, and whether Role verbs cover lab operations. My calibration's 6-dim test prompt caught bugs that the production 5-dim prompt missed (in both gemini-pro and codex). Also: <code>scripts/dispatch.py:99 GEMINI_REVIEW_FALLBACK_MODEL = "gemini-3-flash-preview"</code> should change to <code>"claude-sonnet-4-6"</code> (route through <code>dispatch_claude_review</code>) or simply be removed — the existing per-call fallback in <code>dispatch_388_pilot.py:324 dispatch_claude_review</code> already does the right cross-family thing on ERROR/UNCLEAR.</li>
+<li><strong>Incident-dedup-gate false-positive STILL active.</strong> 9 of 9 calibration models produced valid fixes for this; codex's variant is best (additional <code>October 2018|October 21, 2018</code> anchors on pattern #2). Patch is a 1-line regex change. Continues to block every PR's required check; session 14 admin-merged the canary around it.</li>
+<li><strong>Unexpected file written by gemini-3-flash researcher dispatch</strong>: <code>docs/briefs/azure-app-gateway-stage0.md</code> (8.9 KB substantive Stage-0 brief). Content is real and grounded but the file was not authorized — gemini-flash decided to use its shell tool. Recommended action: either move it to <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/researcher/gemini-3-flash.brief.md</code> (alongside its summary in the .out), OR keep it as a starting point for the eventual T7 KodeKloud Tier-1 module work. Defer to next session.</li>
+<li><strong>Hermes config currently restored to <code>reasoning_effort: medium</code></strong>. Confirmed via <code>sed -n '52p' ~/.hermes/config.yaml</code>. The race condition encountered mid-sweep (two parallel grok dispatches) was diagnosed + serialized; no remaining drift.</li>
+</ul>
+
+<h2>Calibration findings — promote to MEMORY?</h2>
+
+<table>
+<thead><tr><th>Finding</th><th>Worth promoting</th></tr></thead>
+<tbody>
+<tr><td>Gemini-3-flash as production reviewer reliably misses lab-runnability bugs (single sample but corroborated by canary log)</td><td>YES — high-impact. Once #1229 bugs are patched, save a TOP-PRIORITY feedback note about reviewer model selection: never use flash for code-content review.</td></tr>
+<tr><td>Codex is the only model that performs real HTTP verification on URL probes</td><td>YES — narrow but powerful. Save under reference: codex is the unique tool for citation-backfill / link-verification.</td></tr>
+<tr><td>Cheaper claude (sonnet-4-6) beat expensive claude (opus-4-7/opus-4-6) on bug-catching reviews</td><td>YES — counterintuitive finding. Defer until N=3 replication; could be single-sample noise.</td></tr>
+<tr><td>Grok-4.3 reasoning_effort does NOT differentiate on review/coder; "use medium" guidance from learn-ukrainian holds for kubedojo</td><td>YES — confirms existing learn-ukrainian pattern. One-line memory addition.</td></tr>
+<tr><td>Hermes -z + grok-effort.sh atomic config-swap pattern</td><td>YES if grok-4.3 wiring is approved for kubedojo production (currently deferred). Save the helper script path.</td></tr>
+</tbody>
+</table>
+
+<h2>Smoke tests (cold-start function for next session)</h2>
+
+<pre># Briefing + orientation
+curl -s --max-time 2 http://127.0.0.1:8768/api/orient
+curl -s --max-time 2 "http://127.0.0.1:8768/api/briefing/session?compact=1"
+
+# Verify session-14 calibration artifacts are reachable
+curl -s -o /dev/null -w "%{http_code}\n" \
+  "http://127.0.0.1:8768/artifacts/audit/2026-05-16-grok-4.3-kubedojo-calibration/REPORT.html"
+
+# Verify hermes + grok stack still works (single quick refusal probe)
+hermes -z "Reply with just OK and nothing else." -m grok-4.3
+# Expected: OK
+
+# Confirm hermes cfg is medium (not stuck on xhigh from a prior race)
+sed -n '52p' ~/.hermes/config.yaml
+# Expected: reasoning_effort: medium
+
+# PR state verification
+GH_TOKEN= gh pr view 1230 --json state,mergeable,mergeStateStatus
+# Expected: state OPEN, mergeable MERGEABLE, mergeStateStatus BLOCKED (incident-dedup-gate FP)
+</pre>
+
+<h2>Next-session pointers</h2>
+
+<ol class="tight">
+<li><strong>Effort-sweet-spot calibration (NEW — top user direction at handoff time).</strong> User hypothesis: gemini's weak reviewer performance may be partly recoverable by tuning reasoning_effort, which session 14 did NOT vary for gemini-3.1-pro or gemini-3-flash. Same hypothesis for claude — opus-4-7 missed both bugs at default but the local Claude Code CLI has a <code>/effort</code> slash command that can set opus-4-7 to <strong>max</strong>, which the calibration did not exercise. Plus: add untested cost tiers <code>gpt-5.3-codex-spark</code> and <code>gpt-5.4-mini</code> across the 5 roles — these are real production candidates for #388 high-volume writer dispatches if they pass the contract. Concrete plan for next session: (a) verify which knob each dispatch path actually exposes (gemini-cli OAuth path may not honor an effort flag without adapter work; the npx-launched claude-code CLI may or may not propagate the <code>/effort</code>-set level to <code>-p</code> subprocesses); (b) once knobs are confirmed, re-test gemini-3.1-pro at low/medium/high efforts, gemini-3-flash same, claude-opus-4-7 at max via <code>/effort</code>; (c) add gpt-5.3-codex-spark + gpt-5.4-mini default-effort across all 5 roles (~10 dispatches). Methodology caveat reinforced: sample size is still N=1 per cell; breadth-of-tasks (replicate on PR #1230 or another critical-pool PR) tightens the recommendation more than breadth-of-models.</li>
+<li><strong>Apply the reviewer reassignment per session-14 user approval (option 1):</strong>
+  <ul class="tight">
+    <li>Patch <code>scripts/quality/dispatch_388_pilot.py:gemini_review_prompt</code> — add a "6. LAB RUNNABILITY" dimension that explicitly probes: container images vs binaries used in lab steps; Role verbs vs operations referenced in drills.</li>
+    <li>Patch <code>scripts/dispatch.py:99 GEMINI_REVIEW_FALLBACK_MODEL</code> — either change to a string the codebase wires to claude-sonnet-4-6, OR remove the variable and document that review-class never falls to flash; rely on the existing per-call <code>dispatch_claude_review</code> fallback in dispatch_388_pilot.py.</li>
+    <li>One small PR with both changes + a smoke test on PR #1230 (re-review with the new prompt + pro model, see if it catches anything flash missed).</li>
+  </ul>
+</li>
+<li><strong>Patch the 2 #1229 lab bugs</strong> in a separate follow-up PR: <code>module-1.6-rbac.md:784</code> (nginx → bitnami/kubectl + sleep infinity) and <code>module-1.6-rbac.md:990</code> (add get,list to dm-edit verbs).</li>
+<li><strong>Re-review PR #1230 with gemini-3.1-pro</strong> after the prompt patch is in. If pro APPROVEs cleanly, admin-merge via the incident-dedup-gate workaround. If pro flags bugs, re-dispatch codex on the worktree branch with pro's review as the brief.</li>
+<li><strong>Fix the incident-dedup-gate false-positive</strong> at last. Codex's diff variant (additional <code>October 2018|October 21,\s*2018</code> anchors on pattern #2 of <code>scripts/audit_incident_reuse.py:215</code>) is the best version from the calibration. Small PR, unblocks the auto-merge path for every future PR.</li>
+<li><strong>(Optional)</strong> Wire grok-4.3 adapter at <code>scripts/agent_runtime/adapters/grok.py</code> + dispatch_smart route + scripts/ab ask-grok. Use learn-ukrainian's adapter pattern as the template. ~30-60 min. Becomes meaningful for cost-sensitive high-volume runs only — defer until the reviewer + bug fixes are done.</li>
+<li><strong>Resume T5 burn-down</strong> on the 196-module critical pool only after the reviewer is upgraded. Otherwise we'll continue letting lab bugs through.</li>
+<li><strong>Carryover from session 13:</strong> T2.2 remaining endpoints (<code>/api/rules?format=markdown</code> + <code>/api/comms/inbox?agent=X</code>); T3 Wave 2 (module 2.2 Repository Engineering for Agents); T7 KodeKloud Tier-1 Stage-0 brief — the gemini-3-flash dispatched file at <code>docs/briefs/azure-app-gateway-stage0.md</code> can be a starting point if validated.</li>
+</ol>
+
+<h2>Prep work for the expanded calibration (user-directed, session 14 end)</h2>
+
+<p>User expanded the available model panel at handoff time by wiring Hermes Agent for claude (8 variants) + codex (6 variants) + grok + copilot. Gemini stays on gemini-cli (3rd-party-license restriction). Full inventory captured in memory <code>project_hermes_model_inventory.md</code>; hermes config defaults to <code>claude-opus-4-7</code> via <code>anthropic</code> provider with <code>reasoning_effort: medium</code>.</p>
+
+<p>User cannot run long dispatches now (traveling); prep work landed:</p>
+
+<ul class="tight">
+<li><strong>Run plan written</strong> at <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/RUN-PLAN-next-session.md</code> — 5-phase plan with concrete commands, parallelism rules, time estimates (~4-5 hr wall total). Phases: (0) fix hermes→claude smoke; (1) default-effort calibration on 8 untested variants; (2) effort variation on flagship variants; (3) local <code>/effort</code> propagation test; (4) N=2 replication on a different PR; (5) apply deferred action items.</li>
+<li><strong>Diagnostic finding parked:</strong> <code>hermes -z "smoke" -m claude-opus-4-7</code> returned NO OUTPUT non-interactively at handoff time (gpt-5.5 and grok-4.3 both succeeded the same way; <code>hermes auth list</code> shows anthropic OAuth credential present). Likely first-call auth refresh that needs an interactive session to trigger. Diagnostic procedure in run-plan Phase 0; falls back to existing <code>dispatch.py claude --model</code> path for the 3 already-validated variants if hermes-claude stays broken.</li>
+<li><strong>Untested model panel</strong>: 8 codex/claude variants we have access to but never tested in calibration (claude-haiku-4-5-20251001, claude-opus-4-5-20251101, claude-sonnet-4-5-20250929, gpt-5.4, gpt-5.4-mini, gpt-5.3-codex, gpt-5.3-codex-spark, gpt-5.2). Strategy: ONE row per role per variant at DEFAULT effort first (~40 dispatches), then effort variation only on competitive performers. Avoids re-testing the 9 cells already done.</li>
+<li><strong>grok-effort.sh still hardcoded to line 52</strong> — but the actual <code>reasoning_effort</code> key is now at line 62 in the user's updated config (had drifted between session 13 and session 14 end). Helper will fail-safely with "line 52 unexpected" rather than corrupt config, but won't function until updated. Generalize next session: search for <code>reasoning_effort</code> line dynamically, possibly also rename to <code>hermes-effort.sh</code> since it can now support claude/codex/grok via the same hermes path.</li>
+</ul>
+
+<h2>Open methodology questions for the effort-sweet-spot follow-up</h2>
+
+<ul class="tight">
+<li><strong>How does the local <code>/effort</code> slash command interact with headless dispatches?</strong> The user noted it can set opus-4-7 to max in this CLI's interactive context. Unclear whether the effort level propagates to subprocess-launched <code>npx @anthropic-ai/claude-code@latest -p</code> invocations from <code>dispatch.py:dispatch_claude</code>, or only to the interactive session. Investigate: read <code>--help</code> on the npx-launched claude-code CLI for an effort/thinking-budget flag.</li>
+<li><strong>Does gemini-cli (subscription/OAuth path used by dispatch.py) honor a reasoning-effort flag?</strong> Gemini-3 has Deep Think in the consumer surface but the OAuth-CLI shape may not expose it. Without dispatch-path support, varying gemini effort requires either an adapter rewrite or a switch to API-key auth (which has its own complications — see Cross-thread note line 149 on the 2026-05-07 OAuth migration).</li>
+<li><strong>Hermes as harness for gemini models (NEW user-directed investigation).</strong> User observation at handoff time: of all the CLIs we use, gemini-cli is the weakest. Hypothesis: Hermes might be a better harness for gemini-3.1-pro / gemini-3-flash than gemini-cli — and possibly better as a general harness layer over multiple model providers. Concrete checks needed: (1) Does Hermes support gemini providers? (Earlier <code>hermes auth list</code> showed only <code>copilot</code> and <code>xai-oauth</code>; would need to add a gemini provider auth — check <code>hermes auth add</code> options for google/gemini variants.) (2) If Hermes can route to gemini, does <code>hermes -z PROMPT -m gemini-3.1-pro-preview</code> produce different / better output than <code>dispatch.py gemini --model gemini-3.1-pro-preview</code> on the same calibration prompts? (3) Hermes' feature surface is broad: skills + curator (self-learning), kanban, memory, cron, webhooks, multi-platform delivery, proxy, fallback, computer-use, ACP, dashboard. Several overlap with our existing orchestration (dispatch_smart, scripts/ab, local_api). Piece-by-piece evaluation: which Hermes features genuinely improve on what we have, vs duplicate it? (4) Hermes' reasoning_effort knob is per-call via config-swap (we built grok-effort.sh); if Hermes adds gemini support with the same knob, we get gemini effort tuning "for free" — closes one of the open methodology questions above. Investment estimate: ~1-2 hr to validate gemini-via-hermes feasibility + small calibration head-to-head on PR #1229 reviewer task; +4-8 hr to wire production gemini dispatches through Hermes if validated. Defer until reviewer reassignment + #1229 bug fixes are applied; this is a research direction, not an immediate blocker.</li>
+<li><strong>What's the cheapest model that still catches the #1229 nginx-kubectl bug?</strong> Direct cost-vs-quality optimization. Calibration showed claude-sonnet-4-6 catches it; if gpt-5.3-codex-spark or gpt-5.4-mini also catch it, those become production-tier candidates for reviewer.</li>
+<li><strong>Do we need full effort matrices across all model families, or default-vs-max binary first?</strong> Recommend default-vs-max binary as the cheap first pass; expand to low/medium intermediate efforts only if max materially outperforms default.</li>
+</ul>
+
+<h2>Untracked files at session end</h2>
+
+<pre>audit/                                                        ← calibration outputs + REPORT.html + grok-effort.sh
+docs/briefs/azure-app-gateway-stage0.md                       ← unintended gemini-flash file write (real content)
+scripts/quality/day3-bucket-cka-2026-05-15.txt                ← session-13 carryover, not used in session 14
+scripts/quality/day4-pilot-cka-1.7.txt                        ← single-module bucket for the CKA 1.7 canary (held in #1230)
+</pre>
+
+<p>None of these are commit-ready as-is. The <code>audit/</code> directory will eventually move to a permanent artifact location once role reassignments are applied. The <code>docs/briefs/</code> file is a methodology side-effect to be reclassified next session. Both bucket files are throwaway pilot inputs.</p>
+
+</main>
+</body>
+</html>

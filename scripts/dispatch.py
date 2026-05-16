@@ -129,44 +129,21 @@ def _is_rate_limited(text: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Claude peak-hours pricing guard + per-run budget
+# Claude per-process call budget
 # ---------------------------------------------------------------------------
 #
-# Anthropic charges 2x for Claude API calls during weekday peak hours
-# (14:00-20:00 local). To avoid accidental spend, the pipeline refuses to
-# invoke Claude during those hours. Weekends are exempt — no peak pricing
-# applies Sat/Sun regardless of clock time.
-#
-# Separately, we cap the number of Claude calls per process to prevent a
-# stuck module or runaway retry loop from draining the user's Max-plan quota.
-# Default is 30, override via KUBEDOJO_MAX_CLAUDE_CALLS.
-#
-# Overrides:
-#   KUBEDOJO_IGNORE_PEAK_HOURS=1  → bypass peak-hours refusal
-#   KUBEDOJO_MAX_CLAUDE_CALLS=N   → change per-process call budget
+# We cap the number of Claude calls per process to prevent a
+# stuck module or runaway retry loop from draining quota unexpectedly.
+# Default is 30; override with KUBEDOJO_MAX_CLAUDE_CALLS.
 
-_CLAUDE_PEAK_START_HOUR = 14  # 14:00 local time
-_CLAUDE_PEAK_END_HOUR = 20    # 20:00 local time
 _CLAUDE_CALL_BUDGET_DEFAULT = 30
 _claude_call_count = 0
 
 
 class ClaudeUnavailableError(Exception):
-    """Raised when a Claude call is blocked (peak hours / budget) or fails
+    """Raised when a Claude call is blocked by budget exhaustion or fails
     terminally (rate limit / quota). The pipeline catches this and pauses the
     affected module so it can resume on the next run without losing state."""
-
-
-def _is_claude_peak_hours() -> bool:
-    """Return True if current local time is inside weekday peak hours
-    (14:00-20:00 Mon-Fri). Weekends are always off-peak.
-    KUBEDOJO_IGNORE_PEAK_HOURS=1 disables the check entirely."""
-    if os.environ.get("KUBEDOJO_IGNORE_PEAK_HOURS", "") == "1":
-        return False
-    now = datetime.now()
-    if now.weekday() >= 5:  # Sat=5, Sun=6
-        return False
-    return _CLAUDE_PEAK_START_HOUR <= now.hour < _CLAUDE_PEAK_END_HOUR
 
 
 def _claude_call_budget() -> int:
@@ -554,23 +531,11 @@ def dispatch_claude(prompt: str, model: str = CLAUDE_DEFAULT_MODEL,
     files in cwd, returning only a summary on stdout.
 
     Raises:
-        ClaudeUnavailableError: during weekday 14:00-20:00 local peak-hours
-            (2x pricing), when the per-process call budget is exhausted, or
+        ClaudeUnavailableError: when the per-process call budget is exhausted or
             on terminal rate-limit / quota errors. The pipeline catches this
             and pauses the affected module so it can resume on the next run.
     """
     global _claude_call_count
-
-    if _is_claude_peak_hours():
-        hour = datetime.now().hour
-        msg = (
-            f"Claude peak hours in effect ({_CLAUDE_PEAK_START_HOUR}:00-"
-            f"{_CLAUDE_PEAK_END_HOUR}:00 local Mon-Fri, currently {hour:02d}:xx). "
-            f"Refusing to dispatch to avoid 2x pricing. "
-            f"Set KUBEDOJO_IGNORE_PEAK_HOURS=1 to override."
-        )
-        print(f"⏸ {msg}", file=sys.stderr)
-        raise ClaudeUnavailableError(msg)
 
     _check_claude_budget()
 
