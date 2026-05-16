@@ -190,12 +190,59 @@ grep "GEMINI_REVIEW_FALLBACK_MODEL" scripts/dispatch.py | head -2
 
 <h2>Notes for the cold-start agent</h2>
 <ul class="tight">
-<li>Primary tree at <code>main</code> @ <code>d5c4c4c6</code>. Worktrees: <code>.worktrees/fix-reviewer-reassignment</code> (PR #1235 branch), <code>.worktrees/fix-incident-dedup-gate</code> (PR #1234 branch), <code>.worktrees/fix-1230-task3</code> (PR #1230 codex/388-pilot-module-1-7-kubeadm branch). Clean these up after PRs land.</li>
+<li>Primary tree at <code>main</code> @ <code>a4d5ad2c</code> (post-handoff commit). Worktrees: <code>.worktrees/fix-reviewer-reassignment</code> (PR #1235 branch), <code>.worktrees/fix-incident-dedup-gate</code> (PR #1234 branch), <code>.worktrees/fix-1230-task3</code> (PR #1230 codex/388-pilot-module-1-7-kubeadm branch). Clean these up after PRs land.</li>
 <li>Local API + dev + feedback are running (3 alive pids in <code>.pids/</code>). Briefing + orient endpoints serving normally.</li>
 <li>No pending decisions in <code>docs/decisions/pending/</code>.</li>
 <li>Codex 10×→5× Pro cut lands 2026-05-17 (tomorrow). Plan: don't reflex-degrade quality; if needed, surface the budget question to user (per <code>feedback_quality_over_budget_in_role_allocation</code>).</li>
-<li>Hermes reasoning_effort currently medium (line 62 of <code>~/.hermes/config.yaml</code>). H6 test should use <code>grok-4.20-0309-non-reasoning</code> (no reasoning at all) rather than <code>grok-4.3</code> at effort=disabled.</li>
+<li><strong>Hermes reasoning_effort: xhigh</strong> (line 62 of <code>~/.hermes/config.yaml</code>) — kubedojo standard for grok-4.3 per user direction post-handoff. Caveat: config has been observed drifting (saw both <code>medium</code> and <code>high</code> at different points during sessions 14-15); worth a stability check at next cold-start.</li>
 </ul>
+
+<hr style="margin:40px 0 24px;border:none;border-top:2px solid var(--accent);">
+
+<h2>Post-handoff appendix — H6 N=1 + grok-4.3 standard effort</h2>
+
+<p class="meta">Added after the main handoff was committed (<code>a4d5ad2c</code>). Single-session continuation of the grok-cap investigation per user direction "do b after session handoff."</p>
+
+<h3>H6 measurement — N=1, strong signal</h3>
+<p>Dispatched the full production <code>codex_prompt(CKAD 0.1, body_words_target=5000)</code> via <code>hermes -z "$PROMPT" -m grok-4.20-0309-non-reasoning</code> from <code>/tmp</code> (out-of-tree CWD to neutralize any tool-write side effects). The wrapped prompt with a stdout-only preamble was 22,420 bytes / 3,331 words.</p>
+
+<table>
+<tr><th>Model</th><th>Output words</th><th>Output bytes</th><th>Source</th></tr>
+<tr><td><code>grok-4.20-0309-non-reasoning</code> (via hermes / xai-oauth)</td><td><span class="status-good">4,942</span></td><td>34,090</td><td><code>audit/2026-05-16-grok-4.3-kubedojo-calibration/h6/grok-4.20-0309-non-reasoning-ckad-0.1.out</code></td></tr>
+<tr><td><em>baseline (reasoning=true)</em> — learn-ukrainian's recorded measurement on their writer prompt</td><td>909-1,423</td><td>—</td><td>(learn-ukrainian project; their data not in this repo)</td></tr>
+</table>
+
+<p>The non-reasoning variant <strong>blew past the ~1,400 word ceiling by 3.5×</strong>, producing 4,942 words on a 5,000-word target. Strongly suggests <strong>H6 confirmed at N=1: reasoning_effort was the binding constraint on the visible output budget</strong>. H4 (grok intrinsically can't produce 5k words) is further weakened. The cap source is hermes-passing-through some reasoning-eats-budget pattern (likely <code>max_output_tokens=8192</code> default from <code>agent/models_dev.py:407</code> getting consumed by thinking tokens at reasoning_effort=medium/high/xhigh).</p>
+
+<p><strong>Important caveat (user-flagged):</strong> non-reasoning grok is not a production candidate. The measurement isolates the cause but doesn't answer the production question "can grok-4.3 (reasoning=true, kubedojo standard xhigh) produce 5,000 words of quality writing on kubedojo content?" That requires <strong>Test A</strong>: grok-4.3 reasoning=xhigh + explicit <code>max_output_tokens=30000</code> override (the catalog limit from models_dev cache). Test A was set up but not run — hermes config does not expose <code>model.max_output_tokens</code> as a knob; the override would need either a hermes-config schema extension, a per-call CLI flag (none exists per <code>hermes --help</code>), or a code-side patch to where api_kwargs is constructed in the adapter path.</p>
+
+<h3>Hermes config corrections</h3>
+<ul class="tight">
+<li><strong>Drift observed</strong>: line 62 (<code>agent.reasoning_effort</code>) was found at <code>high</code> earlier in this continuation, despite session 14's handoff claim that it was restored to <code>medium</code>. Then later re-read as <code>medium</code>. The grok-effort.sh helper or hermes itself may not be restoring atomically. Worth tracking.</li>
+<li><strong>Set to <code>xhigh</code></strong> at user direction: "for grok 4.3 we should use xhigh." This is now the kubedojo standard reasoning_effort. Captured in <code>project_grok_4_3_via_hermes.md</code> with rationale (quality-first; budget-via-<code>max_output_tokens</code> not effort-reduction; explicit override of learn-ukrainian's medium recommendation since their domain differs from kubedojo).</li>
+</ul>
+
+<h3>Memory revisions in the appendix window</h3>
+<ul class="tight">
+<li><code>project_grok_4_3_via_hermes.md</code> — added "KubeDojo standard effort: xhigh" with rationale; flagged that the prior learn-ukrainian "medium is best" recommendation does not apply to kubedojo.</li>
+<li><code>project_grok_writer_word_cap_2026-05-16.md</code> (pending — handed back to user for handoff): should record H6 partially confirmed at N=1 (non-reasoning blew past 1,400w cap by 3.5×).</li>
+</ul>
+
+<h3>What Test A still needs (next-session)</h3>
+<ol class="tight">
+<li>Discover how to set <code>max_output_tokens=30000</code> for grok-4.3 dispatches via hermes. Three candidate paths: (a) hermes config schema extension to expose <code>model.max_output_tokens</code> as a per-model setting (needs source code investigation of how api_kwargs gets built in <code>agent/codex_responses_adapter.py</code> at line 752); (b) HERMES_MAX_OUTPUT_TOKENS env var if hermes recognizes one (untested); (c) wait for hermes to ship the knob.</li>
+<li>Once the knob is settable, re-run the same <code>codex_prompt(CKAD 0.1, 5000)</code> through grok-4.3 reasoning_effort=xhigh + max_output_tokens=30000. Measure word count + content quality.</li>
+<li>If Test A produces ≥5,000 words at acceptable quality: grok-4.3 enters the writer-lane candidate pool at N=1. Need N=3+ replication vs codex baseline (per <code>feedback_quality_over_budget_in_role_allocation</code>) before production change.</li>
+</ol>
+
+<h3>Updated next-session execution order</h3>
+<ol class="tight">
+<li>Wait for PR #1234 + PR #1235 to land via cross-family review.</li>
+<li>Re-review PR #1230 with the patched dispatcher once #1235 merges.</li>
+<li><strong>Test A path</strong>: investigate hermes <code>max_output_tokens</code> override mechanics, then re-run H6 on grok-4.3 xhigh + budget tune (the actual production-candidate measurement).</li>
+<li>Resume T5 burn-down after the reviewer reassignment lands.</li>
+<li>Correct <code>project_hermes_model_inventory</code> "Gemini NOT via hermes" line (one-line memory fix; still pending from main handoff).</li>
+</ol>
 
 </main>
 </body>
