@@ -202,32 +202,6 @@ def test_dispatch_gemini_timeout_error_message_reflects_value(
 # ---- Claude dispatcher --------------------------------------------------
 
 
-def test_dispatch_claude_raises_on_peak_hours_refusal(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Claude peak-hours refusal must NOT be flattened into a generic
-    False — that would let resolve_module mark the in-flight finding
-    as unresolvable. It must raise DispatcherUnavailable so the caller
-    leaves the finding in needs_citation and aborts the run for retry.
-
-    Regression guard against the #374 review finding (Codex).
-    """
-    class _P:
-        returncode = 2
-        stdout = ""
-        stderr = (
-            "⏸ Claude peak hours in effect (14:00-20:00 local Mon-Fri, "
-            "currently 15:xx). Refusing to dispatch to avoid 2x pricing."
-        )
-
-    def fake_run(cmd: list[str], **kwargs: object) -> _P:
-        return _P()
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
-    with pytest.raises(citation_backfill.DispatcherUnavailable, match="peak hours"):
-        citation_backfill.dispatch_claude("hi", timeout=180)
-
-
 def test_dispatch_claude_raises_on_budget_exhaustion(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

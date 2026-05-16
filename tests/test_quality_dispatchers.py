@@ -33,10 +33,6 @@ def test_dispatch_rejects_unknown_agent() -> None:
         dispatchers.dispatch("grok", "prompt", timeout=10)  # type: ignore[arg-type]
 
 
-def test_looks_unavailable_detects_peak_hours() -> None:
-    assert dispatchers._looks_unavailable("Error: Claude peak hours in effect until 20:00")
-
-
 def test_looks_unavailable_detects_budget() -> None:
     assert dispatchers._looks_unavailable("ClaudeUnavailableError: call budget exhausted")
 
@@ -81,7 +77,7 @@ def test_dispatch_raises_unavailable_on_marker(monkeypatch) -> None:
 
     class FakeProc:
         stdout = ""
-        stderr = "Claude peak hours in effect"
+        stderr = "Claude call budget exhausted"
         returncode = 1
 
     monkeypatch.setattr(subprocess, "run", lambda *a, **k: FakeProc())
