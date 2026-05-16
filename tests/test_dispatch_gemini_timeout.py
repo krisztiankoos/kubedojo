@@ -223,19 +223,25 @@ def test_gemini_with_retry_double_429_falls_back_to_subscription_backoff():
     sleep_mock.assert_called_once()  # exactly one backoff between the two subscription attempts
 
 
-def test_gemini_with_retry_falls_back_to_review_fallback_model_on_exhaust():
-    """When every retry on the primary review model returns rate-limit, the
-    last-ditch dispatch must hit GEMINI_REVIEW_FALLBACK_MODEL on subscription
-    once before giving up. This covers the gemini-3.1-pro-preview capacity-out
-    case from PR #891 / #892 (2026-05-05)."""
+def test_gemini_with_retry_review_no_gemini_fallback_on_exhaust():
+    """When every retry on the primary review model rate-limits, the function
+    must return failure WITHOUT dispatching to any gemini fallback model.
+
+    Pre-2026-05-16 behavior was: fall back to gemini-3-flash-preview. Post the
+    2026-05-16 multi-model calibration sweep (which measured flash at 0/2 lab
+    bug-catch on PR #1229 + 0/2 on PR #1230 N=2 replication), reviews never
+    fall back to a same-family cheaper-tier model. Instead, this function
+    returns False so the upstream caller (dispatch_388_pilot.dispatch_gemini_review)
+    can fall through to dispatch_claude_review (cross-family). See
+    GEMINI_REVIEW_FALLBACK_MODEL docstring for full rationale."""
+    assert dispatch.GEMINI_REVIEW_FALLBACK_MODEL is None, \
+        "Reviews must not have a gemini fallback (cross-family is the fallback)."
+
     calls: list[dict] = []
 
     def fake_dispatch(prompt, model, review, timeout, mcp, use_subscription=None):
         calls.append({"model": model, "review": review,
                       "use_subscription": use_subscription})
-        # Every primary-model attempt rate-limits; the fallback model succeeds.
-        if model == dispatch.GEMINI_REVIEW_FALLBACK_MODEL:
-            return True, "fallback-model verdict"
         return False, "429 rate limit"
 
     with patch("dispatch.dispatch_gemini", side_effect=fake_dispatch), \
@@ -247,12 +253,12 @@ def test_gemini_with_retry_falls_back_to_review_fallback_model_on_exhaust():
             review=True, max_retries=2,
         )
 
-    assert ok is True
-    assert output == "fallback-model verdict"
-    # Final call must be the review fallback model on subscription.
-    assert calls[-1]["model"] == dispatch.GEMINI_REVIEW_FALLBACK_MODEL
-    assert calls[-1]["use_subscription"] is True
-    assert calls[-1]["review"] is True
+    assert ok is False
+    assert "429" in output
+    # Every dispatch call must stay on the primary review model — no fallback
+    # to a different gemini variant fired.
+    assert all(c["model"] == dispatch.GEMINI_REVIEW_MODEL for c in calls)
+    assert all(c["review"] is True for c in calls)
 
 
 def test_gemini_with_retry_no_fallback_when_already_on_fallback_model():
@@ -284,41 +290,13 @@ def test_gemini_with_retry_no_fallback_when_already_on_fallback_model():
     assert all(c["model"] == dispatch.GEMINI_FALLBACK_MODEL for c in calls)
 
 
-def test_gemini_with_retry_no_fallback_when_review_already_on_review_fallback():
-    """Recursion guard, review variant: if a review caller is already on
-    GEMINI_REVIEW_FALLBACK_MODEL and every retry rate-limits, no extra
-    dispatch must fire. Mirrors the writer-side guard test but on the
-    review path so the explicit-pin branch is also exercised.
-
-    Patches GEMINI_DEFAULT_MODEL to a synthetic value so dispatch.py:423's
-    auto-promote-to-Pro doesn't silently swap our test model: the real
-    GEMINI_DEFAULT_MODEL and GEMINI_REVIEW_FALLBACK_MODEL are both
-    "gemini-3-flash-preview", so passing the latter as the explicit
-    starting model would otherwise trigger the auto-promote branch.
-    """
-    calls: list[dict] = []
-
-    def fake_dispatch(prompt, model, review, timeout, mcp, use_subscription=None):
-        calls.append({"model": model, "review": review,
-                      "use_subscription": use_subscription})
-        return False, "429 rate limit"
-
-    with patch("dispatch.dispatch_gemini", side_effect=fake_dispatch), \
-         patch("dispatch.dispatch_gemini_rest", return_value=(False, "REST not used in this test")), \
-         patch("dispatch.time.sleep"), \
-         patch.object(dispatch, "_FORCE_GEMINI_SUBSCRIPTION", False), \
-         patch.object(dispatch, "GEMINI_DEFAULT_MODEL", "_synthetic-default-not-real"):
-        ok, output = dispatch.dispatch_gemini_with_retry(
-            "review this", model=dispatch.GEMINI_REVIEW_FALLBACK_MODEL,
-            review=True, max_retries=2,
-        )
-
-    assert ok is False
-    assert "429" in output
-    # Every dispatch call stays on the review fallback model — no double-burn
-    # on a different model after exhausting retries.
-    assert all(c["model"] == dispatch.GEMINI_REVIEW_FALLBACK_MODEL for c in calls)
-    assert all(c["review"] is True for c in calls)
+# NOTE: The pre-2026-05-16 test
+# `test_gemini_with_retry_no_fallback_when_review_already_on_review_fallback`
+# was removed when GEMINI_REVIEW_FALLBACK_MODEL was retired (set to None).
+# That test exercised a recursion guard against double-dispatching on the
+# flash fallback model; with no gemini fallback on the review path, the
+# guard is moot. The new contract is covered by
+# test_gemini_with_retry_review_no_gemini_fallback_on_exhaust above.
 
 
 def test_gemini_with_retry_non_review_uses_auto_fallback():

@@ -91,12 +91,21 @@ GEMINI_WRITER_MODEL = "gemini-3.1-pro-preview"
 GEMINI_DEFAULT_MODEL = "gemini-3-flash-preview"
 GEMINI_REVIEW_MODEL = "gemini-3.1-pro-preview"  # Pro for reviews — hallucinations on Flash cost real iteration time
 GEMINI_FALLBACK_MODEL = "auto"
-# Last-ditch fallback when the review model is rate-limited on every tier.
-# Pinned to gemini-3-flash-preview rather than "auto" because auto can pick
-# gemini-2.5-flash which hallucinates on review tasks (per memory
-# feedback_gemini_models.md). Flash-3 misses some Pro nuance but is the agreed
-# "good enough to publish a verdict" floor when Pro is capacity-out.
-GEMINI_REVIEW_FALLBACK_MODEL = "gemini-3-flash-preview"
+# Reviews: NO gemini-family fallback. When the review model (gemini-3.1-pro-preview)
+# is rate-limited / capacity-out on every tier, return failure so the upstream
+# caller (e.g. scripts/quality/dispatch_388_pilot.py:dispatch_gemini_review)
+# can fall through to the cross-family claude-sonnet-4-6 path via
+# dispatch_claude_review.
+#
+# Why None instead of "gemini-3-flash-preview" (which was the value pre-2026-05-16):
+# the 2026-05-16 multi-model calibration sweep (audit/2026-05-16-grok-4.3-kubedojo-calibration/)
+# measured gemini-3-flash-preview at 0/2 lab-bug-catch on PR #1229 (NEEDS CHANGES
+# bugs both shipped to main) and 0/2 on PR #1230 N=2 replication — flash
+# reliably rubber-stamps lab-breaking PRs with APPROVE. Falling back to flash
+# silently downgraded the gate. Per session-14 user-approved option 1, the
+# correct fallback path is cross-family (claude-sonnet-4-6), not same-family
+# cheaper-tier.
+GEMINI_REVIEW_FALLBACK_MODEL: str | None = None
 CLAUDE_DEFAULT_MODEL = "claude-sonnet-4-6"
 CODEX_DEFAULT_MODEL = "codex"  # lets codex CLI pick the default model
 CODEX_REVIEW_DEFAULT_MODEL = "codex"
@@ -454,18 +463,24 @@ def dispatch_gemini_with_retry(prompt: str, model: str = GEMINI_DEFAULT_MODEL,
                 time.sleep(delay)
                 continue
             # All retries exhausted on the primary model — last-ditch try the
-            # fallback model on subscription. If gemini-3.1-pro-preview is
-            # capacity-out, gemini-3-flash-preview often still answers.
-            # Reviews use GEMINI_REVIEW_FALLBACK_MODEL (explicit, never "auto")
-            # to avoid silently picking gemini-2.5-flash for verdicts.
+            # fallback model on subscription. For non-review writer/translator
+            # calls, gemini-3-flash-preview still serves as a cheap fallback
+            # (writer-side hallucinations are caught downstream by the verifier
+            # and cross-family review). For reviews, GEMINI_REVIEW_FALLBACK_MODEL
+            # is None — see the comment on its definition: flash rubber-stamps
+            # lab-breaking PRs, so we return failure here and let the upstream
+            # caller fall through to the cross-family claude-sonnet path.
             fallback = GEMINI_REVIEW_FALLBACK_MODEL if review else GEMINI_FALLBACK_MODEL
-            if model != fallback:
+            if fallback is not None and model != fallback:
                 print(f"Rate-limit retries exhausted on {model} — last-ditch on fallback model {fallback} (subscription)",
                       file=sys.stderr)
                 ok, output = dispatch_gemini(prompt, fallback, review, timeout, mcp,
                                              use_subscription=True)
                 if ok:
                     return True, output
+            elif fallback is None:
+                print(f"Rate-limit retries exhausted on {model} — no gemini fallback configured for review path; returning failure so caller can fall through to cross-family review.",
+                      file=sys.stderr)
             return False, output
 
         # Timeout — don't retry, just fail (Gemini is slow, not broken)
@@ -473,10 +488,12 @@ def dispatch_gemini_with_retry(prompt: str, model: str = GEMINI_DEFAULT_MODEL,
             return False, output
 
         # Non-rate-limit, non-timeout failure — try fallback model once.
-        # Reviews use the explicit GEMINI_REVIEW_FALLBACK_MODEL pin to avoid
-        # silently routing verdicts through "auto" (which can pick 2.5-flash).
+        # Reviews: GEMINI_REVIEW_FALLBACK_MODEL is None (see its definition);
+        # we return failure and let the upstream caller fall through to the
+        # cross-family claude-sonnet path. Writers/translators still get the
+        # "auto" fallback.
         nrl_fallback = GEMINI_REVIEW_FALLBACK_MODEL if review else GEMINI_FALLBACK_MODEL
-        if model != nrl_fallback:
+        if nrl_fallback is not None and model != nrl_fallback:
             print(f"Retrying with fallback model: {nrl_fallback}", file=sys.stderr)
             return dispatch_gemini(prompt, nrl_fallback, review, timeout, mcp,
                                    use_subscription=use_subscription)
