@@ -16,6 +16,7 @@ A `/goal` session has one active goal at a time.
 - Goal persists across `--resume`/`--continue` (turn counter resets, condition stays active).
 - There is no `maxTurns` config key; all termination logic must be in the goal text.
 - No JSON/IPC transport is used for the overlay panel; elapsed/turns/tokens are visible to humans only.
+- **Pre-2.1.143 footgun (now fixed)**: the evaluator could fire while a background shell or delegated subagent was still running, judging completion on stale transcript state. Fixed in Claude Code 2.1.143 — the evaluator now waits for background shells and delegated subagents to finish before reading the transcript. On older CLI versions this risk remains; emit `GOAL_STATUS` only AFTER pasting evidence from the same turn.
 
 ## 3. The status-line convention (THE LOAD-BEARING PART)
 
