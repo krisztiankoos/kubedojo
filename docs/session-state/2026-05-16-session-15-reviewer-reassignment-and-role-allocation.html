@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 15 handoff — crash recovery, reviewer reassignment, role-allocation memory correction</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .status-good{color:var(--good);font-weight:600;}
+  .status-partial{color:var(--partial);font-weight:600;}
+  .status-gap{color:var(--gap);font-weight:600;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 15 — crash recovery, reviewer reassignment, role-allocation memory correction</h1>
+<p class="meta">2026-05-16 (continuation of session 14, post-crash) · driver: claude opus 4.7 (1M context, orchestrator, inline) · code agents: claude-sonnet-4-6 + claude-opus-4-7 (dispatch.py) for reviewer-effort tests · codex gpt-5.5 high (dispatch.py + codex exec) for citation/calibration · gemini-3.1-pro-preview + gemini-3-flash-preview (dispatch.py) for reviewer N=2 replication · hermes-grok-4.3 (medium) for one H6-probe attempt</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> Recovered cleanly from a PC crash mid-session-14, shipped the session-14-user-approved reviewer reassignment (PR #1235 — drop gemini-flash fallback, add LAB RUNNABILITY review dimension), shipped the incident-dedup-gate Oct-2018 FP fix (PR #1234), addressed PR #1230's two real NEEDS CHANGES findings (commit <code>d3549f8d</code> on its branch). Calibration phase-2 ran 7 new dispatches that confirm the N=2 reviewer ranking (gemini-3.1-pro primary, claude-sonnet-4-6 fallback) and proved the <code>--effort</code> knob does NOT lift claude reviewer bug-catch. Role-allocation memory <em>corrected twice</em> after two user pushbacks: first from budget-first to quality-first (codex stays primary writer; grok lane gated), then from "permanently disqualified" to "suspect, on hold" after user surfaced grok's own statement that no ~1400w cap exists at the model level. Hermes researched in earnest (1102-line AGENTS.md + Docusaurus docs); discovered the <code>codex_responses_adapter</code> only passes <code>max_output_tokens</code> when the caller provides one, models_dev cache lists grok-4.3 at 30000-token output limit — hermes is exonerated as the proximate cap source; H6 (reasoning eats output budget) is the new leading hypothesis. <strong>User-queued next-action: run H6 test on the full kubedojo <code>codex_prompt()</code> writer (5000w body target) via hermes-grok-non-reasoning, AFTER this handoff.</strong>
+</div>
+
+<h2>What shipped</h2>
+
+<h3>PRs opened (3)</h3>
+<table>
+<tr><th>PR</th><th>Title</th><th>Status</th><th>What it does</th></tr>
+<tr><td class="col-id">#1234</td><td>fix(audit): incident-dedup-gate GitHub Oct-2018 false-positive</td><td><span class="pill pill-partial">OPEN</span></td><td>Salvage commit from the crashed session-14 working tree. Tightens pattern #2 of the GitHub October 2018 split-brain matcher in <code>scripts/audit_incident_reuse.py:215</code> — removes the bare <code>split-brain</code> anchor (the FP source), adds <code>October 2018|October 21,\s*2018</code> + <code>43-second</code> + <code>optical hardware</code> + <code>webhook payloads dropped</code> anchors. Locally smoke-tested: prior FP case no longer matches, real-incident strings still match. Codex's calibration variant. Also drops a stale TODO line in STATUS.md for the peak-hours-guard removal already shipped in d5c4c4c6.</td></tr>
+<tr><td class="col-id">#1235</td><td>fix(388-reviewer): drop gemini-flash fallback + add LAB RUNNABILITY review dimension</td><td><span class="pill pill-partial">OPEN</span></td><td>Implements session-14-user-approved option 1. <code>scripts/dispatch.py:99 GEMINI_REVIEW_FALLBACK_MODEL</code> changed from <code>"gemini-3-flash-preview"</code> to <code>None</code>; lines 461 + 478 updated to skip the gemini fallback path when <code>fallback is None</code> (writer/translator path unchanged — still <code>auto</code>). <code>scripts/quality/dispatch_388_pilot.py:gemini_review_prompt</code> grows a 6th LAB RUNNABILITY dimension probing (a) container-binary-vs-image mismatch, (b) Role/ClusterRole verb-vs-operation coverage, (c) namespace/scope mismatch, (d) order-of-operations gaps. Floor for any failing lab check is NEEDS CHANGES. <code>test_dispatch_gemini_timeout.py</code> rewrote the falls-back-on-exhaust test to assert the new contract; removed the now-moot recursion-guard test. 16 dispatch tests + 135 dispatcher-adjacent tests pass; ruff clean.</td></tr>
+<tr><td class="col-id">#1230</td><td>(round 2 commit on existing PR) <code>d3549f8d</code>: mirror-pod semantics + kubeadm upgrade ordering</td><td><span class="pill pill-partial">OPEN</span></td><td>Addresses the two NEEDS CHANGES findings from the 2026-05-16 N=2 reviewer panel. (1) Lines 274 + 693 of <code>module-1.7-kubeadm.md</code> previously said kubelet "recreates the container" after <code>kubectl delete</code> on a mirror pod — corrected to recreate-mirror-pod-object-only-not-the-container (CKA gotcha, surfaced by gemini-3.1-pro). (2) Upgrade bash block (lines 399-409) previously jumped from <code>kubeadm upgrade plan</code> straight to <code>apply</code> with no kubeadm-binary upgrade prerequisite — added <code>apt-get install -y --allow-change-held-packages kubeadm=1.35.1-1.1</code> before <code>apply</code>, plus the parallel kubelet/kubectl upgrade and daemon-reload ordering (surfaced by claude-sonnet-4-6). Codex's review of the same PR flagged a "missing kubectl run test-pod" issue at Task 3 — confirmed false positive; the bash block already has both commands.</td></tr>
+</table>
+
+<h3>Calibration phase-2 — 7 new cells produced under <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/</code></h3>
+<p>Phase-1 (45 cells from session 14) was already complete; phase-2 added the missing data needed to crystallize the N=2 reviewer ranking and answer the effort-knob question.</p>
+<table>
+<tr><th>Cell</th><th>Result</th></tr>
+<tr><td><code>researcher/gemini-3-flash-stdout-only.out</code></td><td>14,720 bytes inline Stage-0 brief (was 2,009-byte stub in phase-1 because flash wrote the brief to <code>docs/briefs/azure-app-gateway-stage0.md</code> via shell tool). Methodology gap closed. Flash IS a viable researcher when constrained.</td></tr>
+<tr><td><code>reviewer/claude-opus-4-7-max.out</code> + <code>claude-opus-4-7-max-pr1230.out</code></td><td>0/2 bug-catch on PR #1229 (same as default); same verdict label on PR #1230 (APPROVE WITH NITS) but the max-effort review surfaced 2 substantive nits the default missed (flannel <code>master</code> URL fragility, <code>rm -rf /var/lib/etcd</code> worker/control-plane distinction). Effort knob does NOT unlock bug-catch; does add doc-rot signal.</td></tr>
+<tr><td><code>reviewer/claude-sonnet-4-6-high.out</code></td><td><strong>0/2 — REGRESSED from default 1/2.</strong> High effort makes sonnet <em>more lenient</em>, not more rigorous. Don't use <code>--effort high</code> on sonnet for review.</td></tr>
+<tr><td><code>reviewer/{gemini-3-flash, claude-sonnet-4-6, claude-opus-4-7, codex-gpt-5.5-high}-pr1230.out</code></td><td>N=2 reviewer replication on PR #1230. Verdicts: gemini-3.1-pro <span class="status-gap">NEEDS CHANGES</span> + caught the mirror-pod factual error, sonnet <span class="status-gap">NEEDS CHANGES</span> + caught the kubeadm package-upgrade gap, codex APPROVE WITH NITS + caught a lab-runnability bug (false positive on inspection), opus APPROVE WITH NITS no bugs caught, flash <span class="status-good">APPROVE</span> no bugs caught (rubber-stamp at N=2 confirmed).</td></tr>
+</table>
+
+<h3>Hygiene</h3>
+<ul class="tight">
+<li>3 stale pid files removed (<code>.pids/v2-{patch,review,write}-worker.pid</code> — confirmed dead).</li>
+<li>1 stale research worktree removed (<code>.worktrees/research-codex-triplet</code>, 0 commits ahead of origin/main, session-12 era leftover).</li>
+<li>0 PR-merge / branch operations on main beyond the salvage commit going through PR #1234.</li>
+</ul>
+
+<h2>Decisions</h2>
+
+<h3>Reviewer reassignment (shipped as PR #1235)</h3>
+<p>N=2 calibration data corroborates session-14 finding. Production reviewer is now <strong>gemini-3.1-pro-preview primary, claude-sonnet-4-6 cross-family fallback</strong>. Gemini-3-flash is OFF for reviews; <code>GEMINI_REVIEW_FALLBACK_MODEL</code> is <code>None</code>, callers fall through to <code>dispatch_claude_review</code>. The LAB RUNNABILITY dimension in <code>gemini_review_prompt</code> codifies the bug class that let #1229's lab-breaking PRs through (image-vs-binary, verb-vs-operation, scope, order-of-ops).</p>
+
+<h3>Role-allocation memory — corrected twice</h3>
+<p><strong>First correction (user pushback "why pick a cheap model? I'd rather upgrade codex subscription than have lower quality content"):</strong> I had placed grok-4.3 as primary writer on a budget rationale (offload codex pre-10×→5× cut on 2026-05-17). That was wrong — calibration's writer cell starred codex gpt-5.5 high as quality-best ("tightest"); "equivalent" doesn't beat the star. Flipped codex back to primary writer, demoted grok to a budget-burn-down lane gated behind N=3+ replication. <strong>New rule saved</strong>: <code>feedback_quality_over_budget_in_role_allocation</code> — quality-best wins each lane in role allocation; don't substitute "equivalent" cheaper models on budget rationale alone; surface trade explicitly to user rather than silently downgrade.</p>
+<p><strong>Second correction (user surfaced learn-ukrainian empirical N>1 ~1400w grok cap, then later surfaced grok's own statement that no such cap exists at the model level):</strong> Initial reaction was "grok writer permanently disqualified." After grok-itself testimony (grok-4 variants support ~8k-16k output tokens; explicit "no 1400w cap"; specifically points at "third-party tools" as the likely cap source), revised to "suspect, on hold pending H6/H5b OAuth-compatible tests." Grok is NOT permanently DQ; lane stays out of the default chart until the test resolves.</p>
+
+<h3>OAuth-first supply chain (codified as feedback rule)</h3>
+<p>User direction 2026-05-16: "I won't get an API key. Everybody is going toward OAuth anyway." Subscription-OAuth IS this project's model supply chain (Claude Max, Codex via ChatGPT, gemini-cli, SuperGrok via xai-oauth, GitHub Copilot OAuth). API keys are not in the picture. Budget lever is to upgrade subscription, not switch to API-rate billing. Saved as <code>feedback_oauth_first_supply_chain</code>.</p>
+
+<h3>Don't ask within an endorsed queue (codified as feedback rule)</h3>
+<p>User pushback "why did you stop... was this a real reason?" after I paused with "Want me to draft [the next PR]?" between items the user had already endorsed. Saved as <code>feedback_dont_ask_within_endorsed_queue</code> — when the user endorses a queue (explicit "go ahead" / "drive it" or implicit responding-to-recommendation-without-redirect), execute the queue end-to-end without per-item permission asks. Real reasons to stop mid-queue: ambiguous-and-costly-wrong-choice, irreversible action, new info that wasn't in the original endorsement, decision-card from cross-agent deliberation.</p>
+
+<h2>Contract changes</h2>
+
+<h3>dispatch.py + dispatch_388_pilot.py review path (PR #1235 — pending merge)</h3>
+<ul class="tight">
+<li><code>scripts/dispatch.py:99 GEMINI_REVIEW_FALLBACK_MODEL: str | None = None</code> — was <code>"gemini-3-flash-preview"</code>. Type annotation widened to allow None.</li>
+<li><code>scripts/dispatch.py:461,478</code> — both gemini fallback paths now check <code>if fallback is not None and model != fallback</code> before dispatching; otherwise return failure and let the caller use cross-family path.</li>
+<li><code>scripts/quality/dispatch_388_pilot.py:gemini_review_prompt</code> — adds 6th LAB RUNNABILITY dimension (4 sub-checks), word limit widened from 600 to 700, explicit "If any LAB RUNNABILITY check fails, the floor is NEEDS CHANGES" sentence.</li>
+<li><code>tests/test_dispatch_gemini_timeout.py</code> — <code>test_gemini_with_retry_review_no_gemini_fallback_on_exhaust</code> replaces the prior <code>falls_back_to_review_fallback_model_on_exhaust</code> test. <code>test_gemini_with_retry_no_fallback_when_review_already_on_review_fallback</code> deleted as moot.</li>
+</ul>
+
+<h3>Codex dispatch — new deterministic rule (memory)</h3>
+<p><code>codex exec ... "$(cat large.txt)"</code> with stdin open and positional prompt deadlocks waiting on stdin EOF (rc=0, 0 bytes output). The pipe form <code>cat large.txt | codex exec ...</code> works first try. Affects any codex bash-shell dispatch, even sequential ones. This is separate from the existing concurrent-codex-dies rule; same symptom class but different trigger. Captured in <code>audit/.../REPORT-PHASE2.md</code>. (Not yet baked into <code>dispatch.py:dispatch_codex</code> — current impl uses <code>_run_with_process_group</code> with explicit stdin handling, so it's not affected. Bare-shell callers in calibration scripts need the pipe pattern.)</p>
+
+<h2>Memory changes (8 total)</h2>
+
+<table>
+<tr><th>File</th><th>Action</th><th>Why</th></tr>
+<tr><td><code>project_role_allocation_2026-05-16.md</code></td><td>NEW + corrected twice</td><td>Quality-first allocation; codex primary writer; grok suspect-on-hold.</td></tr>
+<tr><td><code>project_grok_writer_word_cap_2026-05-16.md</code></td><td>NEW + revised</td><td>~1400w cap finding from learn-ukrainian; reopened to suspect status after grok's own testimony; H6/H5b/H4/H7 hypotheses with OAuth-compatible test plan.</td></tr>
+<tr><td><code>feedback_quality_over_budget_in_role_allocation.md</code></td><td>NEW</td><td>Quality-best wins each lane in model selection; budget trades surface explicitly, never silent downgrade.</td></tr>
+<tr><td><code>feedback_oauth_first_supply_chain.md</code></td><td>NEW</td><td>OAuth-only supply chain reality for this project; no API-key fallbacks in proposals.</td></tr>
+<tr><td><code>feedback_dont_ask_within_endorsed_queue.md</code></td><td>NEW</td><td>Drive the endorsed queue end-to-end; don't pause for procedural permission.</td></tr>
+<tr><td><code>MEMORY.md</code></td><td>Index updated</td><td>5 new entries under Feedback + Project sections.</td></tr>
+<tr><td><code>project_hermes_model_inventory.md</code></td><td>Pending correction (queued — not done this session)</td><td>"Gemini NOT via hermes (3rd-party restriction)" is wrong; hermes ships <code>gemini</code> + <code>google-gemini-cli</code> providers per <code>website/docs/integrations/providers.md</code>. One-line fix.</td></tr>
+</table>
+
+<h2>Hermes research — concrete findings</h2>
+
+<p>Read after user correction "did you research hermes docs and guides and tutorials?" — answer was no, gap closed.</p>
+<ul class="tight">
+<li><strong>Hermes is by Nous Research</strong>, MIT-licensed, public Docusaurus docs at <code>hermes-agent.nousresearch.com/docs/</code> + local copy at <code>~/.hermes/hermes-agent/website/docs/</code>. 1102-line <code>AGENTS.md</code> dev guide. Substantial product, not a thin wrapper.</li>
+<li><strong>30+ inference providers</strong> wired in <code>plugins/model-providers/</code> including <code>gemini</code> + <code>google-gemini-cli</code> (OAuth, free-tier supported) — contradicts the earlier "Gemini NOT via hermes" memory.</li>
+<li><strong><code>codex_responses_adapter.py:752-754</code></strong>: only passes <code>max_output_tokens</code> if caller provides it. No hermes-imposed default cap on grok at the adapter level.</li>
+<li><strong><code>agent/models_dev.py:407,495</code></strong>: defaults <code>max_output_tokens</code> to 8192 for unknown models. The <code>models_dev_cache.json</code> lists grok-4.3 with <code>limit: {output: 30000}</code> — 22k words. Hermes <em>should</em> send 30000 not 8192 for grok-4.3.</li>
+<li><strong>Available non-reasoning grok variants in the OAuth path</strong>: <code>grok-4.20-0309-non-reasoning</code> (per xAI OAuth docs), <code>grok-4-fast-non-reasoning</code> (in models_dev cache, output=2M tokens), <code>grok-3-mini</code> (output=131k). These are testable via the same SuperGrok OAuth subscription — no API key needed.</li>
+<li><strong><code>hermes fallback</code> is a first-class subcommand</strong> for managing primary/fallback model chains. PR #1235 just reimplemented this in <code>dispatch.py</code> Python. Worth knowing exists; not migrating today.</li>
+<li><strong><code>hermes -z</code> stdin handling is finicky</strong>: <code>cat prompt | hermes -z "$(cat -)"</code> falls through to TUI mode (banner + tool list output, no model response). Correct invocation is <code>hermes -z "$PROMPT"</code> with prompt as direct arg. Confirmed empirically this session.</li>
+<li><strong>Hermes is exonerated as the proximate cap source for grok writer.</strong> H6 (reasoning_effort eats output budget) is now the leading hypothesis; grok-itself agrees, models_dev catalog agrees, codex_responses_adapter doesn't impose anything.</li>
+</ul>
+
+<h2>Open / In flight</h2>
+<ul class="tight">
+<li><strong>PR #1234</strong> (incident-dedup-gate FP fix) — OPEN, awaiting cross-family review. Cold-start: tree at <code>main</code> @ <code>d5c4c4c6</code>; this PR adds 1 file diff (audit_incident_reuse.py) + 1 line removal (STATUS.md).</li>
+<li><strong>PR #1235</strong> (reviewer reassignment + LAB RUNNABILITY) — OPEN, awaiting cross-family review. <strong>Recommended reviewer for this PR specifically</strong>: codex gpt-5.5 high (since the change touches review dispatch infrastructure and codex is the most rigorous on code-correctness; cross-family relative to claude orchestrator).</li>
+<li><strong>PR #1230</strong> (CKA 1.7 kubeadm) — round-2 commit pushed; awaiting re-review after #1235 lands so the new reviewer config + LAB RUNNABILITY dim is in force. Likely path: gemini-3.1-pro re-review → admin-merge around incident-dedup-gate FP (or wait for #1234 to land first).</li>
+<li><strong>Unauthorized file from session 14</strong>: <code>docs/briefs/azure-app-gateway-stage0.md</code> (8.9 KB) — written by gemini-3-flash researcher dispatch via its shell tool. Content is grounded but file was not authorized. Still on main from session 14. Decision deferred: keep as starting point for T7 KodeKloud Tier-1 module work, OR move to <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/researcher/gemini-3-flash.brief.md</code>.</li>
+<li><strong>Calibration grading helper</strong> at <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/grade-reviews.sh</code> + tabular snapshot at <code>grading-tabular-phase2.txt</code>. Re-runs idempotently on new cells.</li>
+</ul>
+
+<h2>Smoke tests (cold-start function for next session)</h2>
+<pre><code># Orient + briefing
+curl -s --max-time 2 http://127.0.0.1:8768/api/orient
+curl -s --max-time 2 "http://127.0.0.1:8768/api/briefing/session?compact=1"
+
+# PR state verification
+env -u GH_TOKEN gh pr view 1234 --json state,mergeable,mergeStateStatus
+env -u GH_TOKEN gh pr view 1235 --json state,mergeable,mergeStateStatus
+env -u GH_TOKEN gh pr view 1230 --json state,mergeable,mergeStateStatus
+
+# Calibration phase-2 artifacts reachable
+curl -s -o /dev/null -w "%{http_code}\n" \
+  "http://127.0.0.1:8768/artifacts/audit/2026-05-16-grok-4.3-kubedojo-calibration/REPORT-PHASE2.md"
+
+# Hermes path still works (smoke probe — grok via OAuth)
+hermes -z "Reply with just OK and nothing else." -m grok-4.3
+# Expected: OK (~20-40s wall via SuperGrok OAuth subscription)
+
+# Confirm reviewer-reassignment patch landed (when #1235 merges)
+grep "GEMINI_REVIEW_FALLBACK_MODEL" scripts/dispatch.py | head -2
+# Expected after merge: "GEMINI_REVIEW_FALLBACK_MODEL: str | None = None"
+</code></pre>
+
+<h2>Next-session pointers</h2>
+
+<h3>1. User-queued: H6 test on full kubedojo writer prompt (TOP PRIORITY after handoff)</h3>
+<p>User direction at handoff time: "do b after session handoff" — run the H6 (reasoning eats budget) test against the production <code>codex_prompt()</code> in <code>scripts/quality/dispatch_388_pilot.py:164</code>. That prompt asks for a full module rewrite with <code>body_words >= 5000</code> in one shot — the actual production writer dispatch shape.</p>
+<p><strong>Procedure</strong>:</p>
+<ol class="tight">
+<li>Pick a rubric-critical kubedojo module (top of <code>/api/orient</code> alternatives, e.g. <code>CKAD 0.1</code> or <code>CKA 1.7 kubeadm</code> as a known-good test).</li>
+<li>Construct the full <code>codex_prompt(module_path, body_words_target=5000)</code> output as a literal string.</li>
+<li>Dispatch via <code>hermes -z "$PROMPT" -m grok-4.20-0309-non-reasoning</code> (or <code>grok-4-fast-non-reasoning</code> if that's the OAuth-accessible non-reasoning variant). Save output to <code>/tmp/h6-full-writer.out</code>.</li>
+<li>Count words. If ≥ 5000 → H6 confirmed, reasoning was the cap source; grok-non-reasoning is structurally viable for kubedojo writer. If still ≤ ~2000w → H6 disconfirmed, the cap has another source we haven't found yet.</li>
+<li>Optional cross-check: same prompt to <code>grok-4.3</code> (reasoning=true) via hermes for direct comparison.</li>
+<li>Record results in <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/REPORT-PHASE3.md</code>; update <code>project_grok_writer_word_cap_2026-05-16.md</code> with the result and revise <code>project_role_allocation_2026-05-16.md</code> accordingly.</li>
+</ol>
+<p><strong>Important caveat</strong>: even if H6 lands positive, that doesn't promote grok to the writer lane today — it only opens the path. N=3+ quality calibration vs codex baseline on real modules is still required before any production change. See <code>feedback_quality_over_budget_in_role_allocation</code>.</p>
+
+<h3>2. PR re-reviews after #1235 lands</h3>
+<p>Once #1235 merges, the new reviewer config (gemini-3.1-pro primary + claude-sonnet-4-6 cross-family fallback + LAB RUNNABILITY dim) is active for any new review dispatch. Re-review PR #1230 via the patched dispatcher. If it cleanly APPROVEs (or APPROVE WITH NITS), admin-merge around the incident-dedup-gate FP (which is also being fixed by #1234, so the order may flip).</p>
+
+<h3>3. Effort-sweet-spot calibration — partially resolved this session</h3>
+<p>Phase-2 dispatches answered the claude side of this: <code>--effort max</code> on opus and <code>--effort high</code> on sonnet do NOT improve reviewer bug-catch (sonnet high actively regressed). Knob is exposed via <code>npx @anthropic-ai/claude-code -p --effort &lt;level&gt;</code> directly; no <code>/effort</code> slash-command-propagation needed. Gemini side of the question (does gemini-cli expose an effort knob?) was NOT investigated. Still open as a small follow-up.</p>
+
+<h3>4. Hermes-as-harness investigation — partially resolved this session</h3>
+<p>I spent ~30 min reading the docs + walking the code (after explicit user pushback). Concrete findings captured above. Remaining work: spend ~30 min on <code>hermes dashboard</code>, <code>hermes doctor</code>, <code>hermes fallback</code>, <code>hermes skills</code> for hands-on feel of feature surface. Lower priority than the H6 test and pending PR merges.</p>
+
+<h3>5. Carryover from session 14 (still open)</h3>
+<ul class="tight">
+<li>T2.2 remaining endpoints: <code>/api/rules?format=markdown</code> + <code>/api/comms/inbox?agent=X</code> (parity with learn-ukrainian Monitor API).</li>
+<li>T3 Wave 2: module 2.2 Repository Engineering for Agents.</li>
+<li>Stale local_api PID origin investigation.</li>
+<li>Date-bound reminders: 2026-06-15 (agentic pool lands → workflow shift, <code>--agent claude</code> becomes economically sane for citation_backfill.py), 2026-07-13 (Claude weekly "doubled" bump expires).</li>
+<li><code>(#N)</code> / <code>docs(status):</code> / <code>backfill</code> / <code>handoff</code> remain the allowlist commit-prefix set for direct-main commits per <code>block-direct-commit-on-main.sh</code>.</li>
+</ul>
+
+<h2>Notes for the cold-start agent</h2>
+<ul class="tight">
+<li>Primary tree at <code>main</code> @ <code>d5c4c4c6</code>. Worktrees: <code>.worktrees/fix-reviewer-reassignment</code> (PR #1235 branch), <code>.worktrees/fix-incident-dedup-gate</code> (PR #1234 branch), <code>.worktrees/fix-1230-task3</code> (PR #1230 codex/388-pilot-module-1-7-kubeadm branch). Clean these up after PRs land.</li>
+<li>Local API + dev + feedback are running (3 alive pids in <code>.pids/</code>). Briefing + orient endpoints serving normally.</li>
+<li>No pending decisions in <code>docs/decisions/pending/</code>.</li>
+<li>Codex 10×→5× Pro cut lands 2026-05-17 (tomorrow). Plan: don't reflex-degrade quality; if needed, surface the budget question to user (per <code>feedback_quality_over_budget_in_role_allocation</code>).</li>
+<li>Hermes reasoning_effort currently medium (line 62 of <code>~/.hermes/config.yaml</code>). H6 test should use <code>grok-4.20-0309-non-reasoning</code> (no reasoning at all) rather than <code>grok-4.3</code> at effort=disabled.</li>
+</ul>
+
+</main>
+</body>
+</html>
