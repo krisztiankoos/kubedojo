@@ -8,6 +8,8 @@ sidebar:
 
 ## May 2026
 
+- **Azure Essentials edge-operations gap filled.** [Azure Application Gateway — Operator Path](/cloud/azure-essentials/module-3.13-application-gateway/) now covers WAF policy tuning, Key Vault-backed TLS, AGIC versus Application Gateway for Containers, autoscaling capacity units, Log Analytics/KQL diagnostics, and v1-to-v2 migration gotchas.
+
 - **Cloud governance gap filled.** [Cloud Custodian -- Policy-as-Code Governance Across Multi-Cloud](/cloud/enterprise-hybrid/module-10.11-cloud-custodian/) now covers declarative multi-cloud remediation, AWS/Azure examples, and production operations.
 
 - **Agent runtime expanded.** DeepSeek V4 Pro and Flash are now integrated as

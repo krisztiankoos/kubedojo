@@ -26,8 +26,9 @@ Microsoft built Azure to extend Windows Server, Active Directory, and enterprise
 | 10 | [Azure Monitor & Log Analytics](module-3.10-monitor/) | 2.5h | KQL, alerts, App Insights |
 | 11 | [CI/CD: Azure DevOps & GitHub Actions](module-3.11-cicd/) | 2h | Pipelines YAML, OIDC, self-hosted agents |
 | 12 | [ARM & Bicep](module-3.12-bicep/) | 1.5h | Templates, modules, What-If deployments |
+| 13 | [Azure Application Gateway — Operator Path](module-3.13-application-gateway/) | 1.5h | WAF policies, TLS, AKS ingress, diagnostics |
 
-**Total time**: ~24 hours
+**Total time**: ~25.5 hours
 
 ---
 
