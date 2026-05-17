@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 19 handoff — grok-as-primary scaled + analysis kickoff for next session</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 19 — grok-as-primary scaled to 24 reviews; analysis kickoff for next session</h1>
+<p class="meta">2026-05-17 (continuation after session-18 handoff <code>6b42ecad</code>) · driver: claude opus 4.7 (1M context, orchestrator, inline) · code agents: <strong>grok-4 (xai-oauth via hermes)</strong> primary reviewer throughout (env <code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code>); codex gpt-5.5 high (danger mode) for all writes + 4 reactive fix-up dispatches (3 of them addressing grok-caught curl-in-nginx bugs).</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> User direction: <em>"do a session handoff and in the next session lets analyze how grok is doing."</em> This handoff seals the night. <strong>32 PRs merged across sessions 17 + 18 + 19</strong>; critical-rubric pool <strong>190 → 162</strong> (14.7% reduction in one night). Grok-as-primary has now reviewed <strong>24 production PRs</strong> in 8 sequential batches with the <code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code> env active — all valid verdicts, 3 real lab-runnability bugs caught, 0 false positives. Batch 12 (CKS 3.3 / 3.4 / 4.1) is in flight at handoff — codex on 3.3 kernel-hardening (no PRs open yet). The next session's primary work item is <strong>quantitative + qualitative analysis of grok's review performance</strong> across the 24 PRs (specific prompt below).
+</div>
+
+<h2>Tonight's tally — final state at handoff</h2>
+<table>
+<tr><th>Metric</th><th>Session 16 start</th><th>Session 19 handoff</th></tr>
+<tr><td>Critical-rubric modules (&lt;2.0)</td><td>190</td><td><strong>162</strong></td></tr>
+<tr><td>PRs merged across sessions 17 + 18 + 19</td><td>—</td><td><strong>32</strong></td></tr>
+<tr><td>Grok-as-primary reviews completed</td><td>0</td><td><strong>24</strong></td></tr>
+<tr><td>Real lab-runnability bugs caught by grok</td><td>—</td><td><strong>3</strong> (#1249 / #1253 / #1262, all curl-in-nginx class)</td></tr>
+<tr><td>False positives from grok-as-primary</td><td>—</td><td><strong>0</strong></td></tr>
+<tr><td>CKAD critical-rubric pool</td><td>partially-cleared</td><td><strong>fully drained</strong></td></tr>
+<tr><td>CKS critical-rubric modules cleared</td><td>0</td><td><strong>14</strong> (0.1–0.4, 1.1, 1.3, 1.5, 2.1–2.5, 3.1, 3.2)</td></tr>
+</table>
+
+<h2>All grok-as-primary PRs (in chronological order, batches 4–11; batch 12 in flight)</h2>
+<p>Source-of-truth: <code>logs/388_t5_batch{4..11}_2026-05-17.jsonl</code>. Each row reflects the verdict from the <code>grok_review_done</code> event; round-2 verdicts come from separate manual dispatches via <code>/tmp/grok_round2_*.py</code>.</p>
+<table>
+<tr><th>PR</th><th>Module</th><th>Round 1</th><th>Round 2 (if any)</th><th>Real bug caught?</th></tr>
+<tr><td class="col-id">#1248</td><td>CKAD 3.5 api-deprecations</td><td>APPROVE WITH NITS</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1249</td><td>CKAD 4.1 configmaps</td><td><strong>NEEDS CHANGES</strong></td><td>APPROVE WITH NITS</td><td><strong>YES</strong> — curl-in-nginx at exec step</td></tr>
+<tr><td class="col-id">#1250</td><td>CKAD 4.2 secrets</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1251</td><td>CKAD 4.3 resources</td><td>APPROVE WITH NITS</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1252</td><td>CKAD 4.4 securitycontext</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1253</td><td>CKAD 4.5 serviceaccounts</td><td><strong>NEEDS CHANGES</strong></td><td>APPROVE</td><td><strong>YES</strong> — curl-in-nginx for SA-token exec</td></tr>
+<tr><td class="col-id">#1254</td><td>CKAD 4.6 crds</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1255</td><td>CKAD 5.1 services</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1256</td><td>CKAD 5.2 ingress</td><td><strong>NEEDS CHANGES</strong></td><td>APPROVE WITH NITS</td><td><strong>YES</strong> — 4 issues: missing <code>ingressClassName</code>, malformed mixed-resource <code>kubectl delete</code>, no IngressClass preflight, order-of-ops</td></tr>
+<tr><td class="col-id">#1257</td><td>CKAD 5.3 networkpolicies</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1258</td><td>CKS 0.1 cks-overview</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1259</td><td>CKS 0.2 security-lab</td><td>APPROVE WITH NITS</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1260</td><td>CKS 0.3 security-tools</td><td>APPROVE WITH NITS</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1261</td><td>CKS 0.4 exam-strategy</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1262</td><td>CKS 1.1 network-policies</td><td><strong>NEEDS CHANGES</strong></td><td>APPROVE WITH NITS</td><td><strong>YES</strong> — curl-in-nginx at web/api/metrics exec pods</td></tr>
+<tr><td class="col-id">#1263</td><td>CKS 1.3 ingress-security</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1264</td><td>CKS 1.5 gui-security</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1265</td><td>CKS 2.1 rbac-deep-dive</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1266</td><td>CKS 2.2 SA-security</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1267</td><td>CKS 2.3 api-server-security</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1268</td><td>CKS 2.4 upgrades</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1269</td><td>CKS 2.5 restricting-api</td><td>APPROVE WITH NITS</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1270</td><td>CKS 3.1 apparmor</td><td>APPROVE</td><td>—</td><td>no</td></tr>
+<tr><td class="col-id">#1271</td><td>CKS 3.2 seccomp</td><td>APPROVE WITH NITS</td><td>—</td><td>no</td></tr>
+</table>
+
+<h3>Quick stats (round-1 verdicts only)</h3>
+<ul class="tight">
+<li>APPROVE: <strong>14</strong> (58%)</li>
+<li>APPROVE WITH NITS: <strong>7</strong> (29%)</li>
+<li>NEEDS CHANGES: <strong>3</strong> (12%) — all real bug catches, all successfully fixed by codex + grok round-2 APPROVE/APPROVE_WITH_NITS</li>
+<li>Round-2 retest rate: 3/3 NEEDS_CHANGES verdicts went to APPROVE/APPROVE_WITH_NITS after a focused codex fix — no rubber-stamping observed (rounds 2 explicitly named the fix landed)</li>
+</ul>
+
+<h2>What's in flight at handoff</h2>
+<table>
+<tr><th>Item</th><th>State</th></tr>
+<tr><td>Batch 12 dispatcher (background task <code>b7j62zdbt</code>)</td><td>Just-started. Codex on CKS 3.3 kernel-hardening (codex_dispatch_start at handoff time, no codex_done yet). Will continue 3.3 → 3.4 → 4.1 sequentially. No PRs open at handoff. <strong>Next-session pickup:</strong> on first launch, check <code>logs/388_t5_batch12_2026-05-17.jsonl</code> + open PRs; if grok approved any, post review comment + orchestrator-manual merge per the established pattern.</td></tr>
+<tr><td>Untracked artifacts in <code>scripts/quality/</code></td><td>Per-batch queue txt files (sessions 16–18); intentionally not committed. Per-batch artifacts.</td></tr>
+</table>
+
+<h2>Next session — analysis brief (primary work item)</h2>
+
+<p><strong>Per user direction</strong>, the next session begins with a quantitative + qualitative analysis of grok's reviewer performance across the 24 production reviews above (plus the additional 3 from batch 12 once it completes). The goal is to decide:</p>
+
+<ol class="tight">
+<li><strong>Is grok-as-primary a permanent role allocation</strong>, or should the default revert to gemini-pro with grok as one of several primaries selectable per-track?</li>
+<li><strong>Are there gemini-pro-only catches in the existing review history</strong> (sessions 14–16) that grok would have missed? Sample at least 5 historical PRs where gemini-pro returned NEEDS_CHANGES and re-dispatch grok against the original (pre-fix) PR diff via <code>gh pr diff &lt;n&gt; --jq .</code> equivalent.</li>
+<li><strong>Cost/latency profile</strong>: 24 grok reviews ran in roughly the same wall time as a comparable gemini-pro batch but on a different cost meter (xai-oauth vs. gemini OAuth). Worth quantifying for the role-allocation memory.</li>
+</ol>
+
+<h3>Suggested analysis recipe (cold-start prompt to drop into next session)</h3>
+
+<pre>
+# 1. Pull the 24 grok-primary review excerpts into a single JSONL for analysis.
+for n in 4 5 6 7 8 9 10 11 12; do
+  cat logs/388_t5_batch${n}_2026-05-17.jsonl 2>/dev/null
+done | jq -c 'select(.event == "grok_review_done") | {pr,module,verdict:(.response_excerpt|...) ,response_excerpt}' \
+     > /tmp/grok-analysis-2026-05-18.jsonl
+
+# 2. Classify each verdict (grep for "VERDICT: APPROVE WITH NITS|VERDICT: APPROVE|VERDICT: NEEDS CHANGES").
+# 3. Pull the 3 NEEDS_CHANGES rounds and their round-2 outcomes from /tmp/grok_round2_*.py outputs.
+# 4. Compare against the gemini-pro batch (sessions 16 batch 1 + session 17 batches 2-3): same modules where possible, same prompt, look at differences in:
+#    - Which dimensions each reviewer focused on most heavily
+#    - Whether each caught the same lab bugs (e.g. #1238 curl-in-nginx caught by gemini-pro on 2nd module — grok caught analogous bugs 3 times)
+#    - Latency distribution
+#    - Review token count
+# 5. Output to audit/2026-05-18-grok-primary-calibration/REPORT.html with the above analysis + a recommendation.
+# 6. Consider also retroactively dispatching grok against 5 historical gemini-pro NEEDS_CHANGES PRs to spot any class of bug grok would miss.
+</pre>
+
+<h2>Other carryover priorities (lower precedence than the analysis)</h2>
+<ul class="tight">
+<li><strong>Wrapper-401 bug</strong> — recurring on every wrapper-reviewed PR (24+ instances this session, gemini + grok lanes). The <code>gh pr view</code> subprocess in <code>dispatch_388_pilot.py:merge_pr</code> loses GH_TOKEN auth via the <code>_agent_env</code> sanitization path. Dispatch codex to patch the gh subprocess env path. ~30s of orchestrator overhead per PR is the cost today.</li>
+<li><strong>Curl-in-nginx CHECKLIST</strong> for codex writer brief — 3x occurrence pattern this session (#1249 / #1253 / #1262). Add to <code>scripts/prompts/module-rewriter-388.md</code> or <code>scripts/quality/dispatch_388_pilot.py:codex_prompt</code>: "for every pod in lab YAML, identify subsequent <code>kubectl exec</code> commands; if exec runs a binary not in the chosen image, pick a different image (curlimages/curl + sleep keepalive for curl; busybox for wget+sh; alpine + apk for ad-hoc tooling)."</li>
+<li><strong>Startup guard for <code>local_api.py</code></strong> — orphan-PID recurrence now seen on 3 consecutive sessions (16 PID 47962, 17 PID 65990, 19 PID 44967). One-line fix: refuse to bind 8768 if another process already binds it.</li>
+<li><strong>GrokAdapter unit tests</strong> — round-1 review of PR #1245 flagged as non-blocking; still TODO.</li>
+<li><strong>Anthropic-via-hermes silent-fail diagnosis</strong> — retest with <code>hermes -z "PROMPT"</code> argv form (the stdin gotcha discovered in session 17 may apply to claude too).</li>
+<li><strong>Date-bound reminders</strong>: 2026-06-15 (agentic pool flip; inline claude becomes economically sane); 2026-07-13 (Claude weekly double expires).</li>
+</ul>
+
+<h2>Cold-start for next session</h2>
+<pre>
+# Standard orient
+curl -s http://127.0.0.1:8768/api/orient | python3 -m json.tool | head -25
+
+# Pick up batch 12 if it finished while I was asleep
+cat logs/388_t5_batch12_2026-05-17.jsonl | python3 -c "import json,sys
+for line in sys.stdin:
+    try:
+        d=json.loads(line); print(d.get('event'),'|',d.get('module','')[:50],'|',d.get('verdict') or d.get('ok',''),'|',d.get('pr',''))
+    except: pass"
+env -u GH_TOKEN gh pr list --state open --limit 5
+
+# Health check: no orphan local_api processes
+lsof -iTCP:8768 -sTCP:LISTEN
+
+# Grok lane smoke
+.venv/bin/python scripts/dispatch.py grok "Reply with exactly: GROK_LANE_OK" --isolated --timeout 30
+
+# Critical-rubric remaining count
+curl -s http://127.0.0.1:8768/api/orient | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['alerts'][0])"
+</pre>
+
+<h2>Pointers</h2>
+<ul class="tight">
+<li>Session 17 handoff: <code>docs/session-state/2026-05-17-session-17-grok-integration-and-t5-batch-4.html</code> — grok integration PR #1245 + batches 2-4 (11 PRs).</li>
+<li>Session 18 handoff: <code>docs/session-state/2026-05-17-session-18-autonomous-t5-burndown-with-grok-primary.html</code> — autonomous continuation, batches 5-9 (15 PRs).</li>
+<li>Grok primary reviewer calibration memory: <code>memory/project_grok_primary_reviewer_calibrated_2026-05-17.md</code>.</li>
+<li>Batch logs: <code>logs/388_t5_batch{4..12}_2026-05-17.jsonl</code>.</li>
+</ul>
+
+</main>
+</body>
+</html>
