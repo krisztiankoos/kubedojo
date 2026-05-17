@@ -72,7 +72,7 @@ def _primary_checkout_root(repo_root: Path) -> Path:
 PRIMARY_REPO = _primary_checkout_root(REPO)
 
 
-SUPPORTED_AGENTS = ("claude", "codex", "grok")
+SUPPORTED_AGENTS = ("claude", "codex", "deepseek", "gemini", "grok")
 
 
 @dataclass(frozen=True)
@@ -89,6 +89,8 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         models={
             "claude": "claude-haiku-4-5-20251001",
             "codex": "gpt-5.4-mini",
+            "deepseek": "deepseek-v4-flash",
+            "gemini": "gemini-3.1-flash-lite-preview",
             "grok": "grok-4",
         },
         default_mode="read-only",
@@ -100,6 +102,8 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         models={
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.3-codex-spark",
+            "deepseek": "deepseek-v4-pro",
+            "gemini": "gemini-3.1-pro-preview",
             "grok": "grok-4",
         },
         default_mode="workspace-write",
@@ -111,6 +115,8 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         models={
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.3-codex-spark",
+            "deepseek": "deepseek-v4-pro",
+            "gemini": "gemini-3.1-pro-preview",
             "grok": "grok-4",
         },
         default_mode="workspace-write",
@@ -122,6 +128,8 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         models={
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.5",
+            "deepseek": "deepseek-v4-pro",
+            "gemini": "gemini-3.1-pro-preview",
             "grok": "grok-4",
         },
         default_mode="read-only",
@@ -133,6 +141,8 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
         models={
             "claude": "claude-opus-4-7",
             "codex": "gpt-5.5",
+            "deepseek": "deepseek-v4-pro",
+            "gemini": "gemini-3.1-pro-preview",
             "grok": "grok-4",
         },
         default_mode="workspace-write",
