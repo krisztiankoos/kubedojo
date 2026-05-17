@@ -113,7 +113,8 @@ spec:
   serviceAccountName: my-app-sa    # Use this ServiceAccount
   containers:
   - name: app
-    image: nginx
+    image: curlimages/curl
+    command: ["sleep", "3600"]
 ```
 
 With Deployments, DaemonSets, StatefulSets, Jobs, and CronJobs, the ServiceAccount belongs in the Pod template. Putting `serviceAccountName` on the controller object itself will not work because the controller is not the process that needs the runtime identity. The controller stamps out Pods from `spec.template`, so the identity must be inside `spec.template.spec`. When you change that field on a Deployment, expect a new ReplicaSet and a rollout because the Pod template changed.
@@ -136,7 +137,8 @@ spec:
       serviceAccountName: my-app-sa    # Pod template uses this SA
       containers:
       - name: app
-        image: nginx
+        image: curlimages/curl
+        command: ["sleep", "3600"]
 ```
 
 Before running this, what output do you expect from `kubectl get pod my-pod -o jsonpath='{.spec.serviceAccountName}'` after the Pod above is admitted? If you expect `my-app-sa`, you are tracking the admission path correctly. If the command prints `default`, inspect whether you applied the manifest you think you applied, whether the Pod was recreated after editing the Deployment template, and whether the ServiceAccount name exists in the same namespace.
@@ -227,7 +229,8 @@ spec:
   automountServiceAccountToken: false    # Don't mount token
   containers:
   - name: app
-    image: nginx
+    image: curlimages/curl
+    command: ["sleep", "3600"]
 ```
 
 The ServiceAccount setting is useful when you want a named identity but still want token mounting to be opt-in. That sounds unusual until you consider controllers, webhook sidecars, or policy-constrained namespaces where identity labels and ownership conventions matter even for workloads that should not call the API. A restricted ServiceAccount can express "this workload belongs to this application" while still refusing the default credential mount.
