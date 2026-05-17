@@ -4,6 +4,10 @@
   "env": {
     "ENABLE_PROMPT_CACHING_1H": "1"
   },
+  "statusLine": {
+    "type": "command",
+    "command": "bash -lc 'command -v jq >/dev/null 2>&1 || exit 0; input=$(cat); project_dir=$(printf \"%s\" \"$input\" | jq -r \".workspace.project_dir // empty\"); script=\"$project_dir/.claude/statusline/statusline.sh\"; if [ -n \"$project_dir\" ] && [ -f \"$script\" ]; then printf \"%s\" \"$input\" | bash \"$script\"; fi'"
+  },
   "hooks": {
     "PreToolUse": [
       {
