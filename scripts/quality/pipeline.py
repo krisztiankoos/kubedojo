@@ -979,6 +979,23 @@ def cmd_reset_stage(args: argparse.Namespace) -> int:
 # ---- cleanup banners ---------------------------------------------------
 
 
+def _cleanup_banner_for_module(
+    primary: Path, slug: str, st: dict[str, Any]
+) -> bool:
+    """Clear a stranded COMMITTED module's banner and mark queue completion."""
+    is_auto_approved = any(
+        h.get("note") == "auto-approved under KUBEDOJO_SKIP_REVIEW"
+        for h in st.get("history", [])
+    )
+    try:
+        stages._clear_banner_and_complete_queue(
+            primary, slug, st["module_path"], auto_approved=is_auto_approved
+        )
+        return True
+    except Exception:
+        return False
+
+
 def cmd_cleanup_banners(args: argparse.Namespace) -> int:
     """Sweep for stranded COMMITTED modules (where completion/banner clear
     failed) and try to clear them again.
@@ -1000,20 +1017,14 @@ def cmd_cleanup_banners(args: argparse.Namespace) -> int:
             q = st.get("queue")
             if not q or q.get("completed_at") is not None:
                 continue
+            module_state = dict(st)
 
-            print(f"Cleaning stranded banner for {slug}...")
-            try:
-                # We need to make sure we don't accidentally do auto_approved=True 
-                # unless it really was auto-approved. It's stored in history or we can default to False.
-                is_auto_approved = any(h.get("note") == "auto-approved under KUBEDOJO_SKIP_REVIEW" for h in st.get("history", []))
-                
-                stages._clear_banner_and_complete_queue(
-                    primary, slug, st["module_path"], auto_approved=is_auto_approved
-                )
-                fixed += 1
-            except Exception as e:
-                print(f"Failed to clean banner for {slug}: {e}")
-                failed += 1
+        print(f"Cleaning stranded banner for {slug}...")
+        if _cleanup_banner_for_module(primary, slug, module_state):
+            fixed += 1
+        else:
+            print(f"Failed to clean banner for {slug}")
+            failed += 1
 
     print(f"\nCleanup complete. Fixed: {fixed}, Failed: {failed}")
     return 0 if failed == 0 else 1
