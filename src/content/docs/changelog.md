@@ -8,6 +8,8 @@ sidebar:
 
 ## May 2026
 
+- **Cloud governance gap filled.** [Cloud Custodian -- Policy-as-Code Governance Across Multi-Cloud](/cloud/enterprise-hybrid/module-10.11-cloud-custodian/) now covers declarative multi-cloud remediation, AWS/Azure examples, and production operations.
+
 - **Agent runtime expanded.** DeepSeek V4 Pro and Flash are now integrated as
   production peer agents via ``hermes --provider deepseek`` with a dedicated adapter,
   registry entry, and bridge-mode tool/mode wiring. Pro defaults to

@@ -50,7 +50,7 @@ That analogy has a practical limit. Kubernetes does not give each helper an inde
 
 The four patterns in this module describe common reasons to share a Pod boundary. Init containers handle blocking setup that must finish before the app starts. Sidecars run alongside the app to provide continuous support such as logging or synchronization. Ambassadors proxy local application traffic to something outside the Pod, usually hiding connection details. Adapters translate one local format into another format that outside systems expect. These names are not Kubernetes object kinds; they are design patterns expressed with normal Pod fields.
 
-Pause and predict: if a Pod must wait for a database name to resolve, serve web traffic, and continuously ship access logs to another system, which responsibilities should run before startup and which should run for the lifetime of the app? Write down the container names you would choose before reading the YAML examples, because the CKAD exam often tests this recognition step more than it tests memorized definitions.
+> **Pause and predict**: If a Pod must wait for a database name to resolve, serve web traffic, and continuously ship access logs to another system, which responsibilities should run before startup and which should run for the lifetime of the app? Write down the container names you would choose before reading the YAML examples, because the CKAD exam often tests this recognition step more than it tests memorized definitions.
 
 ---
 
@@ -196,7 +196,7 @@ That separation has a cost. The Pod readiness view includes multiple containers,
 
 Sidecars also compete for node resources inside the same Pod. If the log shipper has no CPU or memory limit, it can interfere with the main container during bursts. If it has limits that are too tight, it may crash or lag behind the file it reads. The clean architecture is not complete until the helper has realistic resource requests, a foreground command, and a failure mode that matches how important the helper is to the workload.
 
-Stop and think: two containers in the same Pod need to communicate, and you can choose between a shared volume and localhost networking. Which approach would you choose for append-only logs, and which would you choose for a request that needs a response before the app can continue? The answer should depend on the shape of the data, not on which example you memorized most recently.
+> **Stop and think**: Two containers in the same Pod need to communicate, and you can choose between a shared volume and localhost networking. Which approach would you choose for append-only logs, and which would you choose for a request that needs a response before the app can continue? The answer should depend on the shape of the data, not on which example you memorized most recently.
 
 ---
 
@@ -230,7 +230,7 @@ spec:
 
 Setting `shareProcessNamespace: true` allows containers in the Pod to view processes from other containers. That can be valuable when a debug or helper container needs to inspect process IDs, send signals, or use tools that depend on a shared process table. It also weakens isolation, because process visibility crosses container boundaries inside the Pod. Treat it as a targeted diagnostic or supervision tool rather than a default setting for ordinary sidecar designs.
 
-Before running a shared-volume Pod, predict the first observable proof that the volume is working. You might look for the reader container printing content written by the writer, or for nginx serving a file created by an init container. Making that success signal explicit helps you avoid a common debugging trap: staring at Pod phase while the actual contract between containers is a missing file, an empty directory, or a wrong mount path.
+> **Before running** a shared-volume Pod, predict the first observable proof that the volume is working. You might look for the reader container printing content written by the writer, or for nginx serving a file created by an init container. Making that success signal explicit helps you avoid a common debugging trap: staring at Pod phase while the actual contract between containers is a missing file, an empty directory, or a wrong mount path.
 
 ---
 
