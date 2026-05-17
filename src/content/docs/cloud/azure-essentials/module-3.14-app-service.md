@@ -692,7 +692,7 @@ Use this right after deployment or swap. It finds application startup errors, de
 AppServiceHTTPLogs
 | where TimeGenerated > ago(30m)
 | summarize Requests = count(), Errors = countif(ScStatus >= 500)
-  by CIp, UserAgent, CsUriStem
+  by CIp, CsUserAgent, CsUriStem
 | top 20 by Requests desc
 ```
 
