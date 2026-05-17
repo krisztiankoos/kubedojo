@@ -24,8 +24,9 @@ Enterprise Kubernetes is not a technology problem -- it is an organizational one
 | 8 | [Enterprise GitOps & Platform Engineering](module-10.8-enterprise-gitops/) | `[COMPLEX]` | 2.5h | Backstage IDP, ArgoCD at scale, ApplicationSets, multi-tenant Git strategies, RBAC |
 | 9 | [Zero Trust Architecture in Hybrid Cloud](module-10.9-zero-trust/) | `[COMPLEX]` | 2.5h | BeyondCorp, Identity-Aware Proxies, micro-segmentation, VPN replacement, SLSA |
 | 10 | [FinOps at Enterprise Scale](module-10.10-enterprise-finops/) | `[COMPLEX]` | 2h | Enterprise discounts, forecasting, chargeback models, multi-cloud cost, FinOps culture |
+| 11 | [Cloud Custodian -- Policy-as-Code Governance Across Multi-Cloud](module-10.11-cloud-custodian/) | `[COMPLEX]` | 45-60m | Declarative governance, AWS/Azure policy examples, Custodian vs OPA/Kyverno, production operations |
 
-**Total time**: ~26 hours
+**Total time**: ~27 hours
 
 ---
 

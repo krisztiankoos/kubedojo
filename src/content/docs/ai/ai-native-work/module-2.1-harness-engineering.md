@@ -702,4 +702,4 @@ You can still keep the repository “boring” while adding complexity. The targ
 
 ## Next Module
 
-Continue in [Module 2.2 — Orchestrating fleets: Symphony and project-management-as-control-plane](./module-2.2-orchestrating-fleets-symphony.md).
+Continue in [Module 2.2 — Orchestrating fleets: Symphony and project-management-as-control-plane](./module-2.2-orchestrating-fleets-symphony/).
