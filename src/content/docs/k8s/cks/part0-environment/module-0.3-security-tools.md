@@ -344,7 +344,7 @@ The condition in this custom rule is deliberately narrow. It matches `cat` readi
 # Trigger shell detection
 kubectl run test --image=nginx --restart=Never
 kubectl wait --for=condition=Ready pod/test --timeout=60s
-kubectl exec test -- /bin/bash -c "exit"
+kubectl exec test -- /bin/sh -c "exit"
 
 # Check Falco logs for alert
 kubectl logs -n falco -l app.kubernetes.io/name=falco | grep "shell"
