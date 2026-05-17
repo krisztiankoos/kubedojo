@@ -124,3 +124,11 @@ docs/quality-progress.tsv.lock
 batch_state/
 logs/
 .envrc
+
+# clawpatch — commit config.json + project.json + features/ (deterministic from repo state)
+# ignore session-local noise: findings/, reports/, runs/, locks/, patches/
+.clawpatch/findings/
+.clawpatch/reports/
+.clawpatch/runs/
+.clawpatch/locks/
+.clawpatch/patches/

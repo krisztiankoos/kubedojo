@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 21 — clawpatch adopted + 6-agent 10-role calibration + Mistral dropped</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 21 — clawpatch adopted, 6-agent 10-role calibration, Mistral dropped</h1>
+<p class="meta">2026-05-17 (continuation after session-20 handoff <code>f0b6d48f</code>) · driver: claude opus 4.7 (1M context, orchestrator, inline) · sweep wall-time ~70 min · 60 fresh dispatches.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> Two parallel tracks delivered:
+<ol class="tight">
+<li><strong>Clawpatch wired in + 4 verified bugs filed.</strong> acpx@0.8.0 installed, <code>.clawpatch/</code> baselined (config + project + 44 features), routing matrix brief shipped, one smoke review on <code>scripts/quality#2</code> → <strong>4/4 verified-real bugs</strong> filed as <a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/1281">#1281</a>, <a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/1282">#1282</a>, <a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/1283">#1283</a>, <a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/1284">#1284</a>. Cross-family-reviewed fixes pending in next session.</li>
+<li><strong>6-agent calibration over 10 roles.</strong> Confirmed roster: codex / claude-opus / gemini-pro / grok-4 / <strong>DeepSeek V4 Pro (hermes)</strong> / <strong>DeepSeek V4 Flash (hermes)</strong>. <strong>Mistral 3.5 DROPPED</strong> per user direction (vibe path + smaller/less-idiomatic outputs vs DS Flash). Full agent inventory + routing matrix at <code>audit/2026-05-17-deepseek-mistral-calibration/REPORT.html</code>.</li>
+</ol>
+<strong>One non-obvious finding:</strong> all 6 agents fabricate HTTP status codes when no probe access is available — they pattern-recognize fabricated URLs from training but claim to "see" HTTP 200/404. Only codex + <code>KUBEDOJO_CODEX_SEARCH=1</code> does real probes. DeepSeek (both tiers) fabricates most overtly ("verified via browser"). Claude-opus uniquely detected a prompt-injection attempt embedded in a fake-WebFetch body.
+</div>
+
+<h2>Tonight's tally</h2>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>PRs merged this session</td><td><strong>0</strong> (1 PR pending — see Commit/PR section)</td></tr>
+<tr><td>GH issues filed</td><td><strong>4</strong> (#1281–#1284, all confirmed-bug, clawpatch-sourced)</td></tr>
+<tr><td>Clawpatch reviews completed</td><td>1 (codex provider on <code>scripts/quality#2</code>, 4 findings, 4/4 verified-real)</td></tr>
+<tr><td>Calibration dispatches</td><td><strong>60</strong> (40 first-pass parallel-6 + 20 hermes second-pass parallel-2)</td></tr>
+<tr><td>Calibration timeouts</td><td>4 (3 DeepSeek-opencode + 1 DeepSeek-Pro-hermes writer; latter recovered at 900s retry)</td></tr>
+<tr><td>Memory files: new</td><td>1 (<code>feedback_clawpatch_identify_dont_fix.md</code>)</td></tr>
+<tr><td>Memory files: amended</td><td>2 (<code>project_role_allocation_2026-05-16.md</code> roster update; <code>feedback_claude_invoke_npx_not_path.md</code> fix verified)</td></tr>
+<tr><td>Briefs shipped</td><td>2 (<code>2026-05-17-clawpatch-6agent-routing.html</code>, <code>2026-05-17-deepseek-mistral-test-plan.html</code> — latter now superseded by the REPORT.html)</td></tr>
+</table>
+
+<h2>Track 1 — clawpatch adopted</h2>
+
+<h3>What landed</h3>
+<ul class="tight">
+<li><code>npm install -g acpx@latest</code> → v0.8.0. Doctored clean for claude-opus + claude-sonnet + gemini-pro + gemini-flash. Adds 4 acpx-routed providers to clawpatch's native codex.</li>
+<li><code>.clawpatch/config.json</code> hand-edited: commands.test=<code>pytest -q --timeout=120</code>, commands.lint=<code>ruff check scripts/ tests/</code>, commands.format=<code>ruff format --check</code> (previously auto-detected as <code>npm run test/lint</code> which is wrong for the Python stack).</li>
+<li><code>.clawpatch/project.json</code> — auto-generated baseline.</li>
+<li><code>.clawpatch/features/</code> — 44 feature JSON files from <code>clawpatch map</code> (heuristic, 2 seconds, no LLM).</li>
+<li><code>.gitignore</code> — 5 new entries: <code>.clawpatch/findings/</code>, <code>reports/</code>, <code>runs/</code>, <code>locks/</code>, <code>patches/</code> (per learn-ukrainian decision: commit features baseline + config; ignore session-local noise).</li>
+<li><code>docs/briefs/2026-05-17-clawpatch-6agent-routing.html</code> — per-area provider primary+fallback, shim work sized for grok/mistral/deepseek (now partly obsolete: DS uses hermes not acpx; Mistral dropped).</li>
+</ul>
+
+<h3>The 4 verified bugs (all in scripts/quality/, all surfaced by codex via clawpatch)</h3>
+<table>
+<tr><th>#</th><th>Issue</th><th>File:line</th><th>Class</th></tr>
+<tr><td>1</td><td><a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/1281">#1281</a> — cleanup-banners holds state lease across nested record_completion</td><td><code>pipeline.py:1010</code></td><td>concurrency / nested lock + silent failure</td></tr>
+<tr><td>2</td><td><a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/1282">#1282</a> — module_key-form leases bypass select_modules skip check (HIGHEST blast radius)</td><td><code>run_388_batch.py:104, 238</code></td><td>concurrency / path normalization</td></tr>
+<tr><td>3</td><td><a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/1283">#1283</a> — post-merge ledger writes can dirty primary outside _merge_lock</td><td><code>stages.py:1443-1444, 1469-1473</code></td><td>concurrency / locking boundary</td></tr>
+<tr><td>4</td><td><a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/1284">#1284</a> — cmd_audit / cmd_route return 0 on DispatcherUnavailable abort (docs promise exit 3)</td><td><code>pipeline.py:22, 368, 378, 384</code></td><td>api-contract</td></tr>
+</table>
+
+<p><strong>None of these were caught by the existing gemini-pro / grok / codex prose-review cascade.</strong> Clawpatch's structured prompt envelope (evidence quotes + reproduction steps + suggested regression test) is the lever. <code>memory/feedback_clawpatch_identify_dont_fix.md</code> locks in the rule: use clawpatch for find-and-track only; fixes go through our normal dispatch flow.</p>
+
+<h2>Track 2 — 6-agent calibration (final roster)</h2>
+
+<h3>The 5 brains / 6 slots</h3>
+<table>
+<tr><th>Agent</th><th>CLI path</th><th>Role primary</th><th>Notes</th></tr>
+<tr><td>codex gpt-5.5 high</td><td><code>scripts/dispatch.py codex --model gpt-5.5</code></td><td>writer ★, URL/citation-with-search, coder, hallucination guard</td><td>Calibration ★ "tightest"; only model with real HTTP probes under <code>KUBEDOJO_CODEX_SEARCH=1</code></td></tr>
+<tr><td>claude opus 4.7</td><td><code>scripts/dispatch.py claude --model claude-opus-4-7 --no-tools</code> (inline this terminal post-2026-06-15)</td><td>orchestrator, senior content, plan ★, UK translation ★</td><td>Only model using native UK "шаблони"; only model that flagged prompt-injection in a fake-WebFetch body</td></tr>
+<tr><td>gemini 3.1 pro</td><td><code>scripts/dispatch.py gemini --model gemini-3.1-pro-preview</code></td><td>production reviewer (calibrated 2026-05-16), verbose architect (10.9 KB output)</td><td>OAuth, cost-effective; output had a duplicated-paragraph bug under structured prompts</td></tr>
+<tr><td>grok-4</td><td><code>scripts/dispatch.py grok --model grok-4 --effort medium</code> (hermes xai-oauth)</td><td>#388 production reviewer (30+ PRs); architect's only Option-C-proposer</td><td>FASTEST premium agent (~14-16s/role); honestly refused UK translation</td></tr>
+<tr><td>DeepSeek V4 Pro <span class="pill pill-good">NEW</span></td><td><code>hermes -z "$P" -m deepseek-v4-pro</code> · <span class="pill pill-gap">NOT</span> opencode</td><td>cross-family premium reviewer, content-review, research, architect, UK translation (tied 5/5 with claude)</td><td>Gold-tier reviewer (verified PR #134577 by name, caught ASCII-diagram bug). Writer needs 900s budget. Hallucination 3/4 (fabricates probe).</td></tr>
+<tr><td>DeepSeek V4 Flash <span class="pill pill-good">NEW — replaces Mistral 3.5</span></td><td><code>hermes -z "$P" -m deepseek-v4-flash</code></td><td>lightweight tier — plan, architect, UK translation at 3× speed of Pro</td><td>10/10 roles in 11 min. Plan output (6.1 KB) larger than Pro's (4.8 KB). Native UK "шаблони".</td></tr>
+</table>
+
+<h3>Mistral 3.5 dropped</h3>
+<p>User direction 2026-05-17: <em>"i cancled mistral"</em>. Calibration data supports the drop: smaller outputs (1.2-4.9 KB vs verbose-tier 2.6-11 KB); UK uses Anglicism "пакети" + "патерни" (DS Flash uses native "пакунки" + "шаблони"); plan wasted 2 of 5 numbered steps. DeepSeek V4 Flash covers the lightweight tier with cleaner integration (no <code>--trust</code> warning, no vibe-specific quirks).</p>
+
+<h3>Updated routing matrix (post-2026-05-17 hermes-final)</h3>
+<table>
+<tr><th>Role</th><th>Primary</th><th>Cross-family fallback</th><th>Budget option</th></tr>
+<tr><td>Code reviewer (#388 PR gate)</td><td>grok-4</td><td>DeepSeek V4 Pro (hermes)</td><td>DeepSeek V4 Flash</td></tr>
+<tr><td>Content writer (#388)</td><td>codex gpt-5.5 high</td><td>claude-opus-4-7</td><td>DS Pro @ 900s with output filter</td></tr>
+<tr><td>Content reviewer (rubric)</td><td>claude-opus-4-7 OR gemini-3.1-pro</td><td>DeepSeek V4 Pro</td><td>DS Flash</td></tr>
+<tr><td>Plan / refactor</td><td>claude-opus-4-7</td><td>codex gpt-5.5 high</td><td>DS Flash (3× speed, comparable quality)</td></tr>
+<tr><td>Architect</td><td>gemini-3.1-pro OR grok-4 OR DS Pro</td><td>codex</td><td>DS Flash</td></tr>
+<tr><td>Coding</td><td>codex gpt-5.5 high</td><td>DeepSeek V4 Pro</td><td>DS Flash or claude-opus</td></tr>
+<tr><td>Research</td><td>codex + <code>KUBEDOJO_CODEX_SEARCH=1</code></td><td>DS Pro (hermes)</td><td>gemini-3-flash-preview</td></tr>
+<tr><td>URL/citation verify</td><td>codex + <code>--search</code> (unique real-probe)</td><td>—</td><td>all 6 do pattern-recognition only</td></tr>
+<tr><td>Hallucination guard</td><td>codex / claude / gemini / DS Flash (tied 4/4)</td><td>—</td><td>DS Pro 3/4 — usable</td></tr>
+<tr><td>UK translation</td><td>claude-opus-4-7 OR DS V4 Pro (tied 5/5)</td><td>DS Flash</td><td>gemini-3.1-pro</td></tr>
+</table>
+
+<h2>Memory updates this session</h2>
+<ul class="tight">
+<li><strong>NEW</strong> <code>feedback_clawpatch_identify_dont_fix.md</code> — Clawpatch is find-and-track ONLY. Never <code>clawpatch fix</code>. Use review→report→triage→file as GH issue→fix via codex/claude/gemini per normal flow. User explicit 2026-05-17.</li>
+<li><strong>AMENDED</strong> <code>project_role_allocation_2026-05-16.md</code> — roster update: DS Pro + DS Flash added; Mistral dropped. The two DS tiers split: Pro for premium reasoning, Flash for cost/speed-pressured lanes.</li>
+<li><strong>CORRECTED</strong> <code>feedback_claude_invoke_npx_not_path.md</code> — verified the adapter fix is in place at <code>scripts/agent_runtime/adapters/claude.py:122</code> (PR #1078 landed). Rule still active for ad-hoc subprocess.run uses.</li>
+<li><strong>MEMORY.md</strong> — added clawpatch-identify-don't-fix to TOP PRIORITY; updated the claude_invoke_npx entry to reflect the landed fix.</li>
+</ul>
+
+<h2>Tooling state at handoff</h2>
+<table>
+<tr><th>Tool</th><th>Version</th><th>State</th></tr>
+<tr><td>clawpatch</td><td>0.2.0</td><td>installed via homebrew (pre-existing); kubedojo-baselined this session</td></tr>
+<tr><td>acpx</td><td>0.8.0</td><td>installed via <code>npm install -g acpx@latest</code> this session</td></tr>
+<tr><td>opencode</td><td>1.15.3</td><td>installed pre-existing; user configured DeepSeek V4 Pro max-effort but this path is RETIRED for DeepSeek dispatches (tool overhead caused timeouts). Use hermes -z instead.</td></tr>
+<tr><td>hermes</td><td>(version per <code>hermes status</code>)</td><td>Configured for DeepSeek. Now the canonical path for DS V4 Pro + V4 Flash. Verified <code>hermes -z -m deepseek-v4-pro</code> + <code>-m deepseek-v4-flash</code> both work.</td></tr>
+<tr><td>vibe (Mistral)</td><td>installed pre-existing</td><td>Mistral path RETIRED. User cancelled Mistral 2026-05-17.</td></tr>
+</table>
+
+<h2>Next session — carryover priorities</h2>
+
+<ol class="tight">
+<li><strong>Fix the 4 clawpatch-surfaced bugs</strong> (#1281–#1284) via standard cross-family-reviewed PRs. Each is small (1–3 file changes). #1282 (lease normalization) is highest priority — concurrency blast radius.</li>
+<li><strong>Replicate plan/architect calibration on 2-3 more real tasks</strong> with the existing roster. N=1 today; the new placements (plan/architect/content-review/url-verify/uk-translation) need replication before locking.</li>
+<li><strong>DS Pro full-writer test</strong> at 900s on the FULL #388 writer brief (not the short calibration prompt). Decide whether DS Pro hits the 5,000-body-word verifier gate. Will determine whether DS Pro is a real writer fallback to codex.</li>
+<li><strong>UK translation second-opinion</strong> from a Ukrainian speaker on the 4 produced translations (claude-opus, DS Pro, DS Flash, gemini, mistral) to confirm/refine the 5/5 ties.</li>
+<li><strong>Qwen 3.6 single-lane test</strong> (UK translation + hallucination) if user wants to explore. Setup needed (DashScope or OpenRouter key); ~30 min plumbing + ~5 min dispatches. Defer unless lightweight tier needs reconsideration.</li>
+<li><strong>Drop obsolete brief</strong>: <code>docs/briefs/2026-05-17-deepseek-mistral-test-plan.html</code> — superseded by the REPORT.html.</li>
+<li><strong>Update <code>docs/briefs/2026-05-17-clawpatch-6agent-routing.html</code></strong> to remove Mistral references and update DeepSeek to hermes path. Or supersede with a new brief.</li>
+<li><strong>Date reminders</strong>: 2026-06-15 agentic-pool flip (inline claude becomes economically sane); 2026-07-13 Claude weekly double expires.</li>
+</ol>
+
+<h2>Cold-start for next session</h2>
+<pre>
+# Standard orient
+curl -s http://127.0.0.1:8768/api/orient | python3 -m json.tool | head -25
+
+# Confirm session 21 commit landed
+git log --oneline -5
+
+# Confirm the 4 issues are open
+GH_TOKEN='' gh issue list --state open --search "is:issue clawpatch in:body" --limit 10
+
+# Confirm clawpatch baseline is on main
+ls .clawpatch/config.json .clawpatch/project.json .clawpatch/features/ | head
+
+# Pull the agent inventory (rendered)
+echo "open http://127.0.0.1:8768/artifacts/audit/2026-05-17-deepseek-mistral-calibration/REPORT.html"
+</pre>
+
+<h2>Pointers</h2>
+<ul class="tight">
+<li><strong>Routing matrix brief:</strong> <code>docs/briefs/2026-05-17-clawpatch-6agent-routing.html</code> (clawpatch-side; needs amendment for DS hermes path)</li>
+<li><strong>Agent inventory report:</strong> <code>audit/2026-05-17-deepseek-mistral-calibration/REPORT.html</code> (gitignored — on-disk only; serve via local API)</li>
+<li><strong>Raw calibration outputs:</strong> <code>audit/2026-05-17-deepseek-mistral-calibration/{role}/{agent}.out</code></li>
+<li><strong>Test plan brief (superseded):</strong> <code>docs/briefs/2026-05-17-deepseek-mistral-test-plan.html</code></li>
+<li><strong>Predecessor:</strong> <code>docs/session-state/2026-05-18-session-20-grok-audit-and-verifier-hardening.html</code></li>
+<li><strong>Sibling decisions:</strong> learn-ukrainian's clawpatch adoption at <code>/Users/krisztiankoos/projects/learn-ukrainian/docs/decisions/2026-05-17-clawpatch-adoption.md</code></li>
+</ul>
+
+</main>
+</body>
+</html>
