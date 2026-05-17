@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>clawpatch — kubedojo evaluation brief (2026-05-18)</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  .status{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:#fce7c8;color:var(--partial);}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>clawpatch — kubedojo evaluation brief</h1>
+<p class="meta">2026-05-18 · author: claude opus 4.7 (orchestrator, inline) · <span class="status">QUEUED — supervised eval, awaiting user go-ahead before any install</span> · sibling: <code>/Users/krisztiankoos/projects/learn-ukrainian/docs/dispatch-briefs/2026-05-17-clawpatch-evaluation.md</code> (also pre-install, also queued)</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> <a href="https://github.com/openclaw/clawpatch">openclaw/clawpatch</a> is a 4-day-old (created 2026-05-15, v0.2.0 shipped 2026-05-17, 377 stars / 168 commits at time of read) CLI that <em>slices a repo into semantic feature units, runs an agent-driven review per slice, persists findings to <code>.clawpatch/</code>, and exposes a separate <code>fix --finding &lt;id&gt;</code> command that produces patches without committing or pushing</em>. Provider-agnostic via codex / acpx (Claude/Gemini bridge) / grok / opencode. The interesting kubedojo angle is <strong>not</strong> markdown-curriculum review (clawpatch's slicers don't know Astro/Starlight content) — it's <strong>reviewing our pipeline + verifier code</strong> (~150 Python files in <code>scripts/</code>) and converting findings to <em>suggested regression tests</em>, exactly the deterministic gate the grok audit just recommended. Eval target proposed below: have clawpatch review <code>scripts/quality/</code> and check if it independently surfaces the image-binary preflight gap that the grok audit identified. If yes → strong adopt signal. If no → drop it; we don't get value from another LLM-reviewer overlay on what gemini-pro / codex / grok already cover.
+</div>
+
+<h2>1. Independent investigation (kubedojo-side, do not just defer to learn-ukrainian's brief)</h2>
+
+<p>Verified directly from <code>github.com/openclaw/clawpatch</code> + <code>clawpatch.ai</code> homepage + <code>docs/{findings,providers,configuration,quickstart}.md</code>, not via the sibling brief:</p>
+
+<table>
+<tr><th>Aspect</th><th>What clawpatch is</th></tr>
+<tr><td>Maturity</td><td>Created 2026-05-15. v0.2.0 shipped 2026-05-17. <strong>168 commits / 377 stars / 44 forks</strong> at read time. README self-describes as <em>"early CLI. Review/report/state are implemented; patching exists behind <code>clawpatch fix --finding &lt;id&gt;</code> and still requires manual review of the resulting worktree changes."</em></td></tr>
+<tr><td>Tagline (homepage)</td><td><em>"Code review with explicit fixes"</em></td></tr>
+<tr><td>Tagline (README)</td><td><em>"Review code. Patch bugs. Land PRs."</em> (the "land PRs" half is aspirational — the binary does not push or open PRs today)</td></tr>
+<tr><td>Distribution</td><td><code>pnpm add -g clawpatch</code> or from source (<code>pnpm install &amp;&amp; pnpm build &amp;&amp; pnpm link --global</code>). TypeScript codebase. MIT license.</td></tr>
+<tr><td>Workflow</td><td><code>init → map → review → report → next → show → triage → fix → revalidate</code>. Plus <code>doctor</code> (provider smoke-test) and <code>clean-locks</code>.</td></tr>
+<tr><td>Critical safety property</td><td><strong><code>fix --finding</code> does NOT commit, push, or open PRs.</strong> It writes worktree changes + records a patch attempt under <code>.clawpatch/patches/</code>. Operator drives commit + push + PR through their existing flow.</td></tr>
+<tr><td>Supported languages (slicer)</td><td>Node/TypeScript workspaces, Go packages, Java/Kotlin Gradle, Ruby, Rust, C/C++, Python, SwiftPM, Laravel/PHP. <strong>Markdown / curriculum content is NOT mentioned</strong> (relevant: kubedojo is ~648 markdown content files in <code>src/content/docs/</code>; clawpatch wouldn't auto-slice these).</td></tr>
+<tr><td>Providers</td><td><code>codex</code> (shells out to local <code>codex exec</code>), <code>acpx</code> (Agent Client Protocol bridge to <code>codex|claude|ollama|...</code> via <code>&lt;agent&gt;:&lt;model&gt;</code> syntax), <code>grok</code> (local Grok Build CLI, headless <code>--prompt-file --output-format json --always-approve</code>), <code>opencode</code>, plus <code>mock</code> / <code>mock-fail</code> deterministic fixtures.</td></tr>
+<tr><td>Codex env</td><td><code>CLAWPATCH_MODEL</code>, <code>--model</code> flag, <code>CLAWPATCH_REASONING_EFFORT</code>. Default reasoning effort = Codex's own configured default (no override).</td></tr>
+<tr><td>State on disk</td><td><code>.clawpatch/{config.json, project.json, features/, findings/, patches/, reports/, runs/}</code></td></tr>
+</table>
+
+<h3>What a finding looks like (per <code>docs/findings.md</code>)</h3>
+
+<p>Each finding record contains: <em>feature ID, title, category, severity, confidence, triage status, evidence, reasoning, reproduction notes, recommendation, test coverage analysis, <strong>suggested regression test</strong>, minimum fix scope, status, linked patch attempts, triage/revalidation history</em>. Status values: <code>open / false-positive / fixed / wont-fix / uncertain</code>.</p>
+
+<p>The <strong>suggested regression test</strong> field is the standout — that's exactly the artifact the grok-audit action item 2 (deterministic image-binary preflight) needs. Most LLM reviewers produce prose findings without a paired test scaffolding; clawpatch's schema treats the test as a first-class output.</p>
+
+<h2>2. What's in kubedojo that clawpatch can slice</h2>
+
+<table>
+<tr><th>Code surface</th><th>Approx size</th><th>clawpatch slicer support</th><th>Eval value</th></tr>
+<tr><td><code>scripts/</code> (Python orchestration, dispatch, quality pipeline)</td><td>~150 .py files, ~30 KLOC</td><td><span class="pill pill-good">YES</span> Python supported</td><td><strong>HIGH</strong> — overlaps with codex adversarial review pattern, persists findings between sessions (today we lose them)</td></tr>
+<tr><td><code>scripts/quality/</code> (verifier, #388 pilot, dispatchers)</td><td>~25 .py files</td><td><span class="pill pill-good">YES</span></td><td><strong>HIGHEST</strong> — the verifier is the gate the grok audit recommended hardening. clawpatch finding-with-regression-test schema is the ideal output shape here.</td></tr>
+<tr><td><code>scripts/agent_runtime/</code> (runner + adapters)</td><td>~20 .py files</td><td><span class="pill pill-good">YES</span></td><td>Medium — already well-tested; finding signal-to-noise may be low.</td></tr>
+<tr><td><code>src/content/docs/</code> (curriculum markdown)</td><td>~648 EN + ~115 UK files</td><td><span class="pill pill-gap">NO</span></td><td>Out of scope — clawpatch's slicer doesn't handle markdown content; our existing module-quality reviewers cover this.</td></tr>
+<tr><td>Astro/Starlight frontend</td><td>~10 .astro/.ts files (mostly Starlight defaults)</td><td><span class="pill pill-partial">YES (TS workspaces)</span></td><td>Low — minimal custom code, low bug surface.</td></tr>
+<tr><td>Hooks (<code>.claude/hooks/*.sh</code>)</td><td>~14 bash hooks</td><td><span class="pill pill-gap">NO</span> bash not in slicer language list</td><td>Out of scope.</td></tr>
+</table>
+
+<h2>3. Where clawpatch could plug into kubedojo's workflow (5 candidate slots)</h2>
+
+<ol class="tight">
+<li><strong>Pipeline-code review</strong> (HIGHEST leverage). Run <code>clawpatch review --provider codex</code> against <code>scripts/quality/</code> after any change to <code>dispatch_388_pilot.py</code>, <code>verify_module.py</code>, or <code>dispatch_smart.py</code>. Persistent findings DB means cross-session continuity — we currently re-discover the same code smells session after session because <code>code-review</code> skill output evaporates with the conversation.</li>
+<li><strong>Verifier-spec generation</strong>. The grok-audit action item 2 asks for a deterministic image-binary preflight. Use <code>clawpatch fix --finding X --provider acpx --model claude-opus-4-7</code> to draft the implementation, taking advantage of the <em>suggested regression test</em> field as the contract spec. This is exactly the lab-hardening focus the user signaled.</li>
+<li><strong>Cross-family reviewer rotation per feature</strong>. <code>clawpatch review --provider codex</code> for one slice, <code>--provider acpx --model claude-opus-4-7</code> for another, <code>--provider grok</code> for a third. Matches our cross-family rule per <code>docs/review-protocol.md</code>. Materially better than today: today the cross-family choice is per-PR, not per-feature-slice within a PR.</li>
+<li><strong>Codex-budget-friendlier triage</strong>. Today, mid-session reviews burn codex weekly because codex is the default reviewer for non-trivial Python. clawpatch's persistent finding state means a codex review's output survives the conversation, so we don't need to re-run when context drops. Indirect budget win.</li>
+<li><strong>Regression-test scaffolding</strong>. Every finding ships a <em>suggested regression test</em> field. If the field reliably produces runnable pytest fixtures, that's a meaningful uplift over what our LLM reviewers produce today (prose-only). This is the kind of structural contract advantage that's hard to replicate via prompt-engineering alone.</li>
+</ol>
+
+<h3>Where it does NOT fit</h3>
+
+<ul class="tight">
+<li><strong>Curriculum content review</strong> — clawpatch's slicer is code-only. The <code>module-quality-reviewer</code> skill, <code>review-module</code> / <code>review-part</code> commands, and the gemini/grok cross-family reviewer cascade cover this surface and clawpatch adds nothing.</li>
+<li><strong>The #388 batch pipeline gate</strong> — that's already a fully-instrumented codex-writes / grok-reviews / verifier-gates flow with 27 reviews under its belt. Inserting clawpatch in the middle doesn't make it faster or cheaper.</li>
+<li><strong>Auto-merge</strong> — clawpatch deliberately does not commit/push/open PRs. So it doesn't replace any existing automation.</li>
+</ul>
+
+<h2>4. Proposed supervised eval — narrow, tied to lab-hardening focus</h2>
+
+<p>User has signaled (2026-05-17): <em>"we have to harden lab and i want to focus on labs after we finish reviews, and writing the identified gaps."</em> Eval should test clawpatch on a task that's directly on the critical path, not a generic smoke test.</p>
+
+<h3>Step 0 — user sign-off</h3>
+<p>Confirm: target slice = <code>scripts/quality/</code>, provider = codex, eval cap = 5 findings total. No <code>pnpm add -g</code>; non-global install in a sandbox dir.</p>
+
+<h3>Step 1 — non-global install (matches learn-ukrainian's recommendation)</h3>
+<pre>mkdir -p ~/sandbox/clawpatch-trial &amp;&amp; cd ~/sandbox/clawpatch-trial
+pnpm init -y
+pnpm add clawpatch@&lt;exact-version-at-read-time&gt;
+# Invoke via ~/sandbox/clawpatch-trial/node_modules/.bin/clawpatch
+# Clean uninstall via: rm -rf ~/sandbox/clawpatch-trial</pre>
+
+<h3>Step 2 — init on a worktree, NOT the primary tree</h3>
+<p>(per <a href="#"><code>feedback_never_branch_in_primary_dir</code></a> + the existing <code>block-branch-create-in-primary.sh</code> hook)</p>
+<pre>cd /Users/krisztiankoos/projects/kubedojo
+git worktree add .claude/worktrees/clawpatch-eval origin/main
+cd .claude/worktrees/clawpatch-eval
+~/sandbox/clawpatch-trial/node_modules/.bin/clawpatch init
+~/sandbox/clawpatch-trial/node_modules/.bin/clawpatch doctor   # provider smoke test
+~/sandbox/clawpatch-trial/node_modules/.bin/clawpatch map
+# Inspect: ls -la .clawpatch/features/ — confirm scripts/quality/ shows up as one or more slices</pre>
+
+<h3>Step 3 — acid test: review <code>scripts/quality/verify_module.py</code></h3>
+<p>The grok audit found that the verifier <em>does not</em> check image-binary compatibility (the bug that grok hallucinated past on PR #1257). A useful clawpatch finding for this slice would surface that gap as a real concrete issue.</p>
+<pre>clawpatch review --feature &lt;verify_module-slice-id&gt; --limit 5 --jobs 1 --provider codex
+clawpatch report</pre>
+<p><strong>Acid-test scorecard</strong> (apply to clawpatch's findings, regardless of how many it produces):</p>
+<ul class="tight">
+<li>Does it surface "exec binary not in pod image" as a missing check? <span class="pill pill-good">Strong adopt</span></li>
+<li>Does it surface stale-PR check, density-gate edge cases, or other real-but-known issues? <span class="pill pill-partial">Weak adopt</span></li>
+<li>Does it produce only nit-class findings (naming, docstring style, type hint coverage)? <span class="pill pill-gap">Drop</span> — we don't need another nit linter</li>
+<li>Does it hallucinate findings against code that's clearly correct? <span class="pill pill-gap">Drop</span> — false positives are worse than no review</li>
+</ul>
+
+<h3>Step 4 — try <code>fix --dry-run</code> on the top finding</h3>
+<pre>clawpatch fix --finding &lt;id&gt; --dry-run</pre>
+<p>Inspect the proposed patch + the <em>suggested regression test</em>. Test quality is the key signal: if clawpatch generates a runnable pytest case that fails before the patch and passes after, that's the differentiator vs. our existing LLM reviewers.</p>
+
+<h3>Step 5 — decision card</h3>
+<p>Write <code>docs/decisions/pending/2026-05-XX-clawpatch-adoption.md</code> with:</p>
+<ul class="tight">
+<li>Slice-id → finding count for the eval</li>
+<li>Acid-test scorecard outcome</li>
+<li>Regression-test quality (did it actually run? did it fail correctly pre-patch?)</li>
+<li>Codex usage during eval (vs the 5-finding cap)</li>
+<li>Recommendation: adopt / partial-adopt / drop, with rationale</li>
+</ul>
+
+<h2>5. Risks specific to kubedojo (different from learn-ukrainian)</h2>
+
+<ol class="tight">
+<li><strong>Existing hooks interaction.</strong> Kubedojo has 6 PreToolUse hooks at <code>.claude/settings.json</code>, including <code>block-orchestrator-content-edits.sh</code>, <code>block-branch-create-in-primary.sh</code>, <code>block-direct-commit-on-main.sh</code>. clawpatch runs as its own subprocess <em>outside</em> Claude Code, so these hooks don't gate it. That's <em>actually good</em> for safety (clawpatch can't accidentally trigger them) but means clawpatch's <code>fix</code> output is a worktree we must inspect manually before committing. Same gate posture as today.</li>
+<li><strong>Codex budget collision.</strong> Codex has been on a 5× weekly cut since 2026-05-17 (per <code>memory/project_budget_and_delegation.md</code>). Adding clawpatch reviews as another codex consumer needs the budget tree: each clawpatch <code>review --jobs N</code> spawns N concurrent codex calls. Cap at <code>--jobs 1</code> for the eval; respect the existing 2-Codex-in-flight ceiling for any production use.</li>
+<li><strong>pnpm dependency.</strong> Kubedojo uses npm (not pnpm) for the Astro frontend. pnpm 10.28 is installed system-wide, so this isn't blocking, but it adds a tool surface. Mitigation: <code>npx clawpatch@&lt;version&gt;</code> per run avoids any global install.</li>
+<li><strong><code>.clawpatch/</code> directory churn.</strong> Default location is repo root. Findings DB is regenerable, but the config + project.json baseline should be committed. Add <code>.clawpatch/findings/</code>, <code>.clawpatch/patches/</code>, <code>.clawpatch/runs/</code> to <code>.gitignore</code> and commit <code>.clawpatch/config.json</code> + <code>.clawpatch/project.json</code> only — if we adopt.</li>
+<li><strong>API churn risk.</strong> 4 days old, 168 commits, just shipped v0.2.0. Expect breakage every few weeks. Pin exact version in any wrapper script.</li>
+<li><strong>No Monitor API integration.</strong> kubedojo's local API at <code>:8768</code> wouldn't surface clawpatch findings. If clawpatch becomes important, we'd need a <code>/api/clawpatch/findings</code> bridge that reads <code>.clawpatch/findings/*.json</code>. Cost: small (file-system poll). Defer until adoption decision.</li>
+</ol>
+
+<h2>6. Open decisions for the user</h2>
+
+<ol class="tight">
+<li><strong>Eval target — <code>scripts/quality/</code> or something else?</strong> <code>scripts/quality/</code> recommended because (a) directly tied to the lab-hardening focus, (b) the grok-audit identified a concrete gap there that's a natural test for clawpatch, (c) recent activity = high relevance.</li>
+<li><strong>Provider for eval — codex only, or rotate?</strong> Codex-only recommended for clean signal. Provider rotation is the eventual production pattern but adds noise to the eval verdict.</li>
+<li><strong>Eval budget cap.</strong> Recommend cap at 5 findings total = roughly 5 codex calls. Stop early if findings are obvious nits.</li>
+<li><strong>If eval succeeds, who owns the integration?</strong> The wrapper script + the <code>.gitignore</code> + the optional <code>/api/clawpatch/findings</code> bridge is ~half a day of work. Codex-dispatched per [[feedback_dispatch_codex_for_code_changes]]? Or inline post-2026-06-15 when the agentic-pool flip happens?</li>
+</ol>
+
+<h2>7. Cross-references</h2>
+<ul class="tight">
+<li>Sibling brief (learn-ukrainian, same status — PROPOSED, not yet run): <code>/Users/krisztiankoos/projects/learn-ukrainian/docs/dispatch-briefs/2026-05-17-clawpatch-evaluation.md</code></li>
+<li>Grok audit (the gap-finding that motivates the eval target): <code>audit/2026-05-18-grok-primary-calibration/REPORT.html</code></li>
+<li>Existing review skills overlap: <code>code-review</code>, <code>review</code>, <code>simplify</code>, <code>security-review</code>, <code>module-quality-reviewer</code></li>
+<li>Cross-family rule (clawpatch can enforce this per-slice): <code>docs/review-protocol.md</code></li>
+<li>Relevant memory: <code>feedback_dispatch_codex_for_code_changes.md</code>, <code>feedback_codex_budget_prefer_gemini.md</code>, <code>feedback_codex_review_danger_mode.md</code>, <code>project_budget_and_delegation.md</code></li>
+</ul>
+
+<h2>8. Status</h2>
+<p><strong>This brief is the queue entry.</strong> No install, no <code>.clawpatch/</code> directory, no codex calls have been made. Section 4 (the supervised eval) requires user sign-off before any of those happen. If adopted, the eval is ~30 min of orchestrator time + ~5 codex calls. If not adopted, this file is the only artifact and can be deleted by a single <code>rm</code>.</p>
+
+</main>
+</body>
+</html>
