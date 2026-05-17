@@ -1439,9 +1439,10 @@ def _post_merge_gates(slug: str) -> None:
         real_llm = {"ok": False, "error": f"sampler raised: {exc}"}
 
     try:
-        row = gates.build_ledger_row(slug=slug, state_payload=st, real_llm_result=real_llm)
-        gates.append_ledger(row)
-        _commit_ledger_row(slug)
+        with _merge_lock():
+            row = gates.build_ledger_row(slug=slug, state_payload=st, real_llm_result=real_llm)
+            gates.append_ledger(row)
+            _commit_ledger_row(slug)
     except Exception as exc:
         print(f"[gate-warn] {slug}: ledger append raised {type(exc).__name__}: {exc}")
 
@@ -1466,11 +1467,25 @@ def _commit_ledger_row(slug: str) -> None:
     if diff.returncode == 0:
         # No changes (e.g. lock-only, or another worker already committed).
         return
-    subprocess.run(["git", "add", ledger_rel], cwd=primary, check=True)
-    subprocess.run(
-        ["git", "commit", "-m", f"quality(ledger): post-merge audit row for {slug}"],
-        cwd=primary, check=True,
-    )
+
+    committed = False
+    try:
+        subprocess.run(["git", "add", ledger_rel], cwd=primary, check=True)
+        subprocess.run(
+            ["git", "commit", "-m", f"quality(ledger): post-merge audit row for {slug}"],
+            cwd=primary, check=True,
+        )
+        committed = True
+    finally:
+        if not committed:
+            subprocess.run(
+                ["git", "restore", "--staged", ledger_rel],
+                cwd=primary, check=False, capture_output=True,
+            )
+            subprocess.run(
+                ["git", "restore", ledger_rel],
+                cwd=primary, check=False, capture_output=True,
+            )
 
 
 # ---- resume logic -----------------------------------------------------
