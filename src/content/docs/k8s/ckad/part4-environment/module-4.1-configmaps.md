@@ -813,9 +813,9 @@ spec:
       name: drill6-nginx
 EOF
 
-# Test (wait for pod ready)
+# Verify nginx loaded the mounted ConfigMap-backed config
 kubectl wait --for=condition=Ready pod/drill6 --timeout=30s
-kubectl exec drill6 -- curl -s localhost:8080
+kubectl exec drill6 -- nginx -T 2>&1 | grep -F "Custom Config Works!"
 
 kubectl delete pod drill6 cm drill6-nginx
 ```
@@ -823,7 +823,7 @@ kubectl delete pod drill6 cm drill6-nginx
 <details>
 <summary>Solution notes</summary>
 
-The curl command should return `Custom Config Works!` from nginx. The `subPath` mount places one ConfigMap key at the file path nginx expects while preserving the rest of the directory. If you change `/tmp/nginx.conf` and recreate the ConfigMap, replace the Pod as well because the `subPath` file does not live-update.
+The `nginx -T` command dumps the effective nginx configuration, and the `grep` match should print the `Custom Config Works!` response rule from the mounted file. The `subPath` mount places one ConfigMap key at the file path nginx expects while preserving the rest of the directory. If you change `/tmp/nginx.conf` and recreate the ConfigMap, replace the Pod as well because the `subPath` file does not live-update.
 
 </details>
 
