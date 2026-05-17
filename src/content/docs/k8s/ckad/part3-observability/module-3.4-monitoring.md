@@ -680,7 +680,7 @@ The expected workflow is selector first, sorted selector second, container break
 - [Kubernetes documentation: Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
 - [Kubernetes documentation: Metrics API](https://kubernetes.io/docs/reference/external-api/metrics.v1beta1/)
 - [Metrics Server GitHub repository](https://github.com/kubernetes-sigs/metrics-server)
-- [Metrics Server high availability documentation](https://github.com/kubernetes-sigs/metrics-server/blob/master/docs/high-availability.md)
+- [Metrics Server FAQ — high availability and scaling](https://github.com/kubernetes-sigs/metrics-server/blob/master/FAQ.md)
 - [KubeDojo lab scenario: CKAD 3.4 Monitoring](https://killercoda.com/kubedojo/scenario/ckad-3.4-monitoring)
 
 ## Next Module
