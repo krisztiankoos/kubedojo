@@ -601,8 +601,8 @@ You should see configuration for the intended plugin and not a pile of stale fil
 
 ```bash
 # Create two pods
-kubectl run test1 --image=nginx
-kubectl run test2 --image=nginx
+kubectl run test1 --image=nginx:alpine
+kubectl run test2 --image=nginx:alpine
 
 # Wait for pods to be ready
 kubectl wait --for=condition=Ready pod/test1 pod/test2 --timeout=60s
@@ -612,7 +612,7 @@ kubectl get pods -o wide
 
 # Test connectivity
 TEST2_IP=$(kubectl get pod test2 -o jsonpath='{.status.podIP}')
-kubectl exec test1 -- curl -s $TEST2_IP:80
+kubectl exec test1 -- wget -qO- $TEST2_IP:80
 ```
 
 <details>
@@ -867,8 +867,8 @@ Verify CNI behavior across nodes when your cluster has more than one worker. On 
 NODE1=$(kubectl get nodes -o jsonpath='{.items[0].metadata.name}')
 NODE2=$(kubectl get nodes -o jsonpath='{.items[1].metadata.name}')
 NODE2=${NODE2:-$NODE1}
-kubectl run net-test-1 --image=nginx --overrides='{"spec":{"nodeName":"'"$NODE1"'"}}'
-kubectl run net-test-2 --image=nginx --overrides='{"spec":{"nodeName":"'"$NODE2"'"}}'
+kubectl run net-test-1 --image=nginx:alpine --overrides='{"spec":{"nodeName":"'"$NODE1"'"}}'
+kubectl run net-test-2 --image=nginx:alpine --overrides='{"spec":{"nodeName":"'"$NODE2"'"}}'
 
 # Wait for running
 kubectl wait --for=condition=Ready pod/net-test-1 pod/net-test-2 --timeout=60s
@@ -878,8 +878,8 @@ POD1_IP=$(kubectl get pod net-test-1 -o jsonpath='{.status.podIP}')
 POD2_IP=$(kubectl get pod net-test-2 -o jsonpath='{.status.podIP}')
 
 # Test cross-node connectivity
-kubectl exec net-test-1 -- curl -s --connect-timeout 5 $POD2_IP:80
-kubectl exec net-test-2 -- curl -s --connect-timeout 5 $POD1_IP:80
+kubectl exec net-test-1 -- wget -qO- --timeout=5 $POD2_IP:80
+kubectl exec net-test-2 -- wget -qO- --timeout=5 $POD1_IP:80
 
 # Cleanup
 kubectl delete pod net-test-1 net-test-2
