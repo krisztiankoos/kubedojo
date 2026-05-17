@@ -62,7 +62,7 @@ API_BASE = "http://127.0.0.1:8768"
 CRITICAL_THRESHOLD = 2.0  # rubric score below this = critical (mirrors API definition)
 
 sys.path.insert(0, str(REPO / "scripts"))
-from quality.dispatch_388_pilot import slugify  # noqa: E402
+from quality.dispatch_388_pilot import module_slug_for_pipeline  # noqa: E402
 
 
 # Top-level aliases → list of filesystem prefixes the alias covers.
@@ -249,7 +249,7 @@ def select_modules(
         ):
             reasons.append(f"  skip [done]      {api_path}")
             continue
-        slug = slugify(api_path)
+        slug = module_slug_for_pipeline(api_path)
         if slug in pilot_map:
             reason = f"[skip] {slug}: active remote branch {pilot_map[slug]}"
             reasons.append(reason)

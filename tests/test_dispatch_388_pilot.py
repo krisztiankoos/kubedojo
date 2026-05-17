@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.quality import dispatch_388_pilot as pilot
@@ -132,13 +134,68 @@ def test_main_chain_calls_backfill_after_merge_and_continues_on_failure(tmp_path
         rc = pilot.main(["--input", str(queue)])
 
     assert rc == 0
-    expected_slug_1 = pilot.slugify("src/content/docs/k8s/cka/module-1.md")
-    expected_slug_2 = pilot.slugify("src/content/docs/k8s/cka/module-2.md")
+    expected_slug_1 = pilot.module_slug_for_pipeline("src/content/docs/k8s/cka/module-1.md")
+    expected_slug_2 = pilot.module_slug_for_pipeline("src/content/docs/k8s/cka/module-2.md")
     mock_backfill.assert_any_call(expected_slug_1, "src/content/docs/k8s/cka/module-1.md")
     mock_backfill.assert_any_call(expected_slug_2, "src/content/docs/k8s/cka/module-2.md")
     assert mock_backfill.call_count == 2
     events = [c.args[0]["event"] for c in mock_log.call_args_list]
     assert events.count("merged") == 2
+
+
+def test_slugify_uses_repo_relative_path_not_stem():
+    module_cka = "src/content/docs/k8s/cka/module-5.1-image-security.md"
+    module_cks = "src/content/docs/k8s/cks/module-5.1-image-security.md"
+
+    assert pilot.module_slug_for_pipeline(module_cka) == "k8s-cka-module-5.1-image-security"
+    assert pilot.module_slug_for_pipeline(module_cks) == "k8s-cks-module-5.1-image-security"
+    assert pilot.module_slug_for_pipeline(module_cka) != pilot.module_slug_for_pipeline(module_cks)
+
+
+def test_make_worktree_rejects_existing_worktree_for_different_module(tmp_path, monkeypatch):
+    monkeypatch.setattr(pilot, "REPO", tmp_path)
+    slug = "k8s-cka-module-1"
+    worktree = tmp_path / ".worktrees" / f"codex-388-pilot-{slug}"
+    worktree.mkdir(parents=True)
+    (worktree / ".module_path").write_text("src/content/docs/k8s/cks/module-1.md", encoding="utf-8")
+
+    with patch("scripts.quality.dispatch_388_pilot.subprocess.run"):
+        with pytest.raises(RuntimeError, match="existing worktree"):
+            pilot.make_worktree(slug, "src/content/docs/k8s/cka/module-1.md")
+
+
+def test_make_worktree_reuses_existing_worktree_for_same_module_and_records_marker(tmp_path, monkeypatch):
+    monkeypatch.setattr(pilot, "REPO", tmp_path)
+    slug = "k8s-cka-module-1"
+    worktree = tmp_path / ".worktrees" / f"codex-388-pilot-{slug}"
+    worktree.mkdir(parents=True)
+    expected_module_path = "src/content/docs/k8s/cka/module-1.md"
+    (worktree / ".module_path").write_text(expected_module_path, encoding="utf-8")
+
+    with patch("scripts.quality.dispatch_388_pilot.subprocess.run") as mock_run:
+        reused = pilot.make_worktree(slug, expected_module_path)
+
+    assert reused == worktree
+    assert (worktree / ".module_path").read_text(encoding="utf-8").strip() == expected_module_path
+    assert mock_run.call_count == 0
+
+
+def test_make_worktree_writes_module_path_marker_for_new_tree(tmp_path, monkeypatch):
+    monkeypatch.setattr(pilot, "REPO", tmp_path)
+    slug = "k8s-cka-module-2"
+    module_path = "src/content/docs/k8s/cka/module-2.md"
+    worktree = tmp_path / ".worktrees" / f"codex-388-pilot-{slug}"
+    (tmp_path / ".worktrees").mkdir(parents=True, exist_ok=True)
+
+    with patch(
+        "scripts.quality.dispatch_388_pilot.subprocess.run",
+        side_effect=[_mock_run(0), _mock_run(0)],
+    ) as mock_run:
+        result = pilot.make_worktree(slug, module_path)
+
+    assert result == worktree
+    assert (worktree / ".module_path").read_text(encoding="utf-8").strip() == module_path
+    assert mock_run.call_count == 2
 
 
 def test_dispatch_backfill_sha_regex_parses_ok_line():

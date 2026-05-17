@@ -70,6 +70,20 @@ def module_slug_for_pipeline(module_path: str) -> str:
     return relative.as_posix().removesuffix(".md").replace("/", "-")
 
 
+def _module_path_for_marker(module_path: str) -> str:
+    module = Path(module_path)
+    if module.is_absolute():
+        try:
+            module = module.relative_to(PRIMARY_REPO)
+        except ValueError:
+            module = module
+    normalized = module.as_posix().replace("\\", "/")
+    normalized = normalized.removeprefix("./")
+    if normalized.startswith("/"):
+        normalized = normalized[1:]
+    return normalized
+
+
 def _module_budget_slug(module_path: str) -> str:
     module = Path(module_path)
     if not module.is_absolute():
@@ -146,20 +160,32 @@ def log(event: dict) -> None:
 
 
 def slugify(path: str) -> str:
-    stem = Path(path).stem
-    return re.sub(r"[^a-z0-9]+", "-", stem.lower()).strip("-")
+    return module_slug_for_pipeline(path)
 
 
-def make_worktree(slug: str) -> Path:
+def make_worktree(slug: str, module_path: str) -> Path:
     branch = f"codex/388-pilot-{slug}"
     wt = REPO / f".worktrees/codex-388-pilot-{slug}"
     if wt.exists():
+        marker = wt / ".module_path"
+        if not marker.exists():
+            raise RuntimeError(f"cannot reuse worktree {wt}: marker file .module_path missing")
+        expected = _module_path_for_marker(module_path)
+        actual = marker.read_text(encoding="utf-8").strip()
+        if actual != expected:
+            raise RuntimeError(
+                f"existing worktree {wt} was created for {actual!r}, not {expected!r}"
+            )
         return wt
+    wt.parent.mkdir(parents=True, exist_ok=True)
     subprocess.run(["git", "fetch", "origin", "main"], cwd=REPO, check=True)
     subprocess.run(
         ["git", "worktree", "add", "-b", branch, str(wt), "origin/main"],
         cwd=REPO, check=True,
     )
+    wt.mkdir(parents=True, exist_ok=True)
+    marker = wt / ".module_path"
+    marker.write_text(_module_path_for_marker(module_path), encoding="utf-8")
     return wt
 
 
@@ -533,10 +559,10 @@ def main(argv: list[str] | None = None) -> int:
         if requested_budget is not None:
             _write_budget_sidecar(module_path, body_words_target)
             log({"event": "budget_sidecar_written", "module": module_path, "body_words_min": body_words_target})
-        slug = slugify(module_path)
+        slug = module_slug_for_pipeline(module_path)
         log({"event": "module_start", "module": module_path, "slug": slug})
         try:
-            wt = make_worktree(slug)
+            wt = make_worktree(slug, module_path)
         except Exception as e:  # noqa: BLE001
             log({"event": "worktree_error", "module": module_path, "error": repr(e)})
             continue
