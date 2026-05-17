@@ -989,6 +989,8 @@ def _cleanup_banner_for_module(
     primary: Path, slug: str, st: dict[str, Any]
 ) -> bool:
     """Clear a stranded COMMITTED module's banner and mark queue completion."""
+    # The lease must remain external to this helper to avoid nested
+    # state-lock re-entry during cleanup.
     is_auto_approved = any(
         h.get("note") == "auto-approved under KUBEDOJO_SKIP_REVIEW"
         for h in st.get("history", [])
