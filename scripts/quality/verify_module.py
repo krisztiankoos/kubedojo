@@ -148,6 +148,64 @@ DEBIAN_COREUTILS_UTIL_LINUX_BINARIES = {
     "whoami",
     "xargs",
 }
+DEBIAN_EXTENDED_UTIL_LINUX_BINARIES = {
+    "blkid",
+    "dmesg",
+    "free",
+    "getconf",
+    "getent",
+    "getopt",
+    "groups",
+    "hexdump",
+    "ipcrm",
+    "ipcs",
+    "kill",
+    "killall",
+    "ldd",
+    "less",
+    "locale",
+    "lsof",
+    "lsblk",
+    "more",
+    "nice",
+    "od",
+    "pgrep",
+    "pkill",
+    "sleep",
+    "strings",
+    "sync",
+    "uname",
+    "users",
+    "w",
+    "who",
+    "whoami",
+}
+BUSYBOX_EXTENDED_APPLET_BINARIES = {
+    "blkid",
+    "dmesg",
+    "free",
+    "getopt",
+    "groups",
+    "hexdump",
+    "ipcs",
+    "kill",
+    "killall",
+    "ldd",
+    "less",
+    "lsblk",
+    "more",
+    "nice",
+    "od",
+    "pgrep",
+    "pkill",
+    "strings",
+    "sync",
+    "uname",
+    "users",
+    "w",
+    "who",
+    "whoami",
+}
 BUSYBOX_COREUTILS_NETWORK_BINARIES = DEBIAN_COREUTILS_UTIL_LINUX_BINARIES | {
     "hexdump",
     "ifconfig",
@@ -221,7 +279,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "echo",
         "env",
     }
-    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
     "nginx:stable": {
         "sh",
         "dash",
@@ -238,7 +297,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "echo",
         "env",
     }
-    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
     "nginx:1.27": {
         "sh",
         "dash",
@@ -255,7 +315,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "echo",
         "env",
     }
-    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
     # Docker Official nginx Alpine variants inherit Alpine/BusyBox applets, including wget.
     "nginx:alpine": {
         "sh",
@@ -277,7 +338,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "ping",
         "vi",
     }
-    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
     "nginx:1.27-alpine": {
         "sh",
         "ash",
@@ -298,7 +360,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "ping",
         "vi",
     }
-    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
     # Docker Official BusyBox image: BusyBox applet set, including ash and wget.
     "busybox": {
         "sh",
@@ -320,7 +383,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "vi",
         "id",
     }
-    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
     "busybox:1.36": {
         "sh",
         "ash",
@@ -341,7 +405,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "vi",
         "id",
     }
-    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
     # Docker Alpine Official Image uses BusyBox and apk.
     "alpine": {
         "sh",
@@ -363,7 +428,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "ping",
         "vi",
     }
-    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
     "alpine:3.20": {
         "sh",
         "ash",
@@ -384,7 +450,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "ping",
         "vi",
     }
-    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
     # curlimages/curl Docker Hub overview documents curl as the image entrypoint/tool.
     "curlimages/curl": CURLIMAGES_CURL_BUSYBOX_SUBSET,
     "curlimages/curl:latest": CURLIMAGES_CURL_BUSYBOX_SUBSET,
@@ -408,7 +475,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "apt-get",
         "dpkg",
     }
-    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
     "ubuntu:24.04": {
         "sh",
         "bash",
@@ -428,7 +496,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "apt-get",
         "dpkg",
     }
-    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
     # nicolaka/netshoot Dockerfile installs network-debug tools via apk.
     "nicolaka/netshoot": {
         "curl",
@@ -477,7 +546,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "env",
         "pip3",
     }
-    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
 }
 
 LEARNING_OUTCOME_HEADINGS = (
