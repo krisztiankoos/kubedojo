@@ -782,9 +782,9 @@ Exercise scenario: you will build a small three-tier namespace and move it from 
 
 ```bash
 # Create pods with different roles
-kubectl run frontend --image=nginx --labels="tier=frontend"
+kubectl run frontend --image=nginx:alpine --labels="tier=frontend"
 kubectl run backend --image=nginx --labels="tier=backend"
-kubectl run database --image=nginx --labels="tier=database"
+kubectl run database --image=nginx:alpine --labels="tier=database"
 
 # Wait for pods to be ready
 kubectl wait --for=condition=ready pod/frontend pod/backend pod/database --timeout=60s
