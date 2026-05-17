@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Session 22b — clawpatch sweep (8 findings) + dispatch tooling + DS guard</title>
+<style>
+:root { color-scheme: light dark; }
+body { font: 14px/1.55 system-ui, -apple-system, "SF Pro Text", sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; }
+h1 { font-size: 22px; margin: 0 0 6px; }
+h2 { font-size: 16px; margin: 24px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #8884; }
+h3 { font-size: 14px; margin: 16px 0 6px; font-weight: 600; }
+code { font-family: "SF Mono", Menlo, monospace; background: #8881; padding: 1px 4px; border-radius: 3px; font-size: 12.5px; }
+pre { background: #8881; padding: 10px 12px; border-radius: 4px; overflow-x: auto; font-size: 12.5px; line-height: 1.45; }
+table { border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+th, td { border: 1px solid #8884; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #8881; font-weight: 600; }
+.pill { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+.pill-good { background: #2a8; color: white; }
+.pill-warn { background: #c85; color: white; }
+.pill-hi { background: #c44; color: white; }
+.pill-info { background: #58a; color: white; }
+ul li, ol li { margin: 3px 0; }
+.tldr { background: #58a2; border-left: 3px solid #58a; padding: 10px 14px; border-radius: 0 4px 4px 0; margin: 12px 0; }
+.lesson { background: #c854; border-left: 3px solid #c85; padding: 10px 14px; border-radius: 0 4px 4px 0; margin: 12px 0; }
+</style>
+</head>
+<body>
+
+<h1>Session 22b — clawpatch sweep (8 findings filed) + dispatch tooling + DS guard</h1>
+<p><em>2026-05-17 (continuation of session 22; predecessor handoff <code>daeb6507</code>) · driver: claude opus 4.7 (1M context, orchestrator, inline) · code agents: codex gpt-5.3-codex-spark (danger mode, all writes via <code>dispatch_smart.py edit --agent codex</code> in per-task worktree); grok-4 cross-family reviewer; claude-sonnet-4-6 tiebreak on PR #1287 (carried over). All merges via squash.</em></p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> User: <em>"keep working no need to handoff yet"</em>. <strong>3 more PRs merged</strong> (#1288 / #1289 / #1298) on top of session 22's #1285/#1286/#1287 — total <strong>6 PRs this session</strong>. <strong>Clawpatch swept on 2 unreviewed slices</strong> (<code>scripts/local_api</code> + <code>scripts/quality#1</code>), filed <strong>8 GH issues</strong> (#1290–#1297). <strong>2 HIGH-severity findings shipped same-session</strong> via #1298: slug collision in pilot-388 dispatch (7 same-basename module pairs exist in repo!) and duplicate-URL citation keep violating the strict verify-or-remove policy. <strong>DeepSeek V4 Pro first-production-use revealed a tool-degradation footgun</strong>: in read-only mode DS Pro emits unfulfilled <code>&lt;bash&gt;</code> tool-use intent instead of degrading gracefully — guarded by PR #1289. <strong>dispatch_smart.py</strong> now supports all 5 agent families (#1288). <strong>tests/test_grok_adapter.py</strong> long-standing carryover from PR #1245 closed (#1288). <strong>6 medium/low clawpatch findings remain open</strong> as next-session work.
+</div>
+
+<h2>What shipped (this continuation)</h2>
+
+<table>
+<tr><th>PR</th><th>What</th><th>Reviewer</th><th>Notes</th></tr>
+<tr><td>#1288</td><td><strong>dispatch_smart.py + Grok tests</strong> — extends <code>SUPPORTED_AGENTS</code> to <code>("claude","codex","deepseek","gemini","grok")</code>; adds DS+gemini to all 5 task-class model maps; new <code>tests/test_grok_adapter.py</code> (117 LOC, 6 tests mirroring <code>test_deepseek_adapter.py</code>). 128+/1-.</td><td>grok APPROVE (6s, high)</td><td>Closes the carryover I flagged in PR #1286's handoff. DS Pro review attempted first (proof-of-life smoke test) — failed with tool-use intent in read-only mode → falled back to claude (rate-limited mid-stream) → grok succeeded. Three reviewers in cascade.</td></tr>
+<tr><td>#1289</td><td><strong>DeepSeekAdapter parse-time tool-use guard</strong> — detects unfulfilled <code>&lt;bash&gt;</code>/<code>&lt;tool_use&gt;</code> tags in short (&lt;1000 char) responses → <code>ok=False</code> with helpful <code>stderr_excerpt</code> suggesting <code>--mode workspace-write</code>. Threshold prevents false-trigger on long real reviews that quote tool markup in code blocks. 65+/0-, 8 tests pass (6 existing + 2 new).</td><td>grok APPROVE (9s, high)</td><td>Direct response to #1288's first-prod-use finding. Route A chosen (parse-time guard) over Route B (silent mode-promotion) because DS Pro has 3/4 code-hallucination rate per session-21 calibration; auto-granting terminal authority is the wrong default.</td></tr>
+<tr><td>#1298</td><td><strong>2 HIGH clawpatch fixes</strong> — closes #1296 (slug collision: now uses <code>module_slug_for_pipeline</code> repo-relative slugs + <code>.module_path</code> marker validation on worktree reuse) and #1297 (citation rebuild now dedups by <code>(url, claim, raw_line)</code> Counter instead of URL set). 147+/11-, 242 tests pass.</td><td>grok APPROVE (11s, high)</td><td>Both production-risk fixes shipped same-session as the clawpatch run that found them. #1297 was a TOP-PRIORITY memory policy violation (<code>feedback_citation_verify_or_remove.md</code>) — strict verify-or-remove was silently letting rejected duplicate-URL claims survive rebuild.</td></tr>
+</table>
+
+<h2>Clawpatch sweep — 8 findings filed as GH issues</h2>
+
+<p>User ask: <em>"do 3 first then i would like clawpatch review the api code and quality as well"</em>. Ran clawpatch via <code>codex</code> provider on the 2 unreviewed slices (<code>scripts/quality#2</code> was last session — produced #1281–#1284 already shipped).</p>
+
+<table>
+<tr><th>Slice</th><th>Feature ID</th><th>Files</th><th>Wall</th><th>Findings</th></tr>
+<tr><td><code>scripts/local_api</code></td><td><code>feat_library_e429adc71e</code></td><td>6</td><td>279s</td><td>3 (low/med/med)</td></tr>
+<tr><td><code>scripts/quality#1</code></td><td><code>feat_library_486114c4c2</code></td><td>12</td><td>346s</td><td>5 (low/med/med/<strong>HIGH</strong>/<strong>HIGH</strong>)</td></tr>
+</table>
+
+<h3>Issues filed (all spot-verified real)</h3>
+
+<table>
+<tr><th>#</th><th>Sev</th><th>File · function</th><th>Bug</th><th>Status</th></tr>
+<tr><td>1290</td><td>medium</td><td><code>local_api/routes/decisions.py::_decision_files</code></td><td>Sidecar <code>README.md</code> + <code>_template.md</code> treated as decision cards → false pending/stale signals to AFK notifier. Spot-verified: those files exist today.</td><td>open</td></tr>
+<tr><td>1291</td><td>medium</td><td><code>local_api/routes/decisions.py::_refresh_decisions_fts</code></td><td>Warm <code>_DECISIONS_FTS_META</code> cache skips files even after <code>.bridge/messages.db</code> is recreated empty → silent empty search results until process restart.</td><td>open</td></tr>
+<tr><td>1292</td><td>low</td><td><code>local_api/routes/channels.py::find_decision_id_for_thread</code></td><td>Only searches <code>docs/decisions/*.md</code> top-level; pending cards with <code>**Thread:**</code> reference invisible to channel-graph footer. Coordinate with #1290.</td><td>open</td></tr>
+<tr><td>1293</td><td>low</td><td><code>quality/check_uk_changed.py::RUSSIAN_ONLY_CHARS_RE</code></td><td>Regex matches lowercase <code>ы ё ъ э</code> only; uppercase <code>Ы Ё Ъ Э</code> slip through (e.g. Russicism at sentence start). 1-line fix (<code>re.IGNORECASE</code>).</td><td>open</td></tr>
+<tr><td>1294</td><td>medium</td><td><code>quality/check_citations.py</code> + <code>check_code_blocks.py</code> CLI</td><td>Missing explicit paths return exit 0 — typo / deleted path / stale CI invocation silently passes the gate.</td><td>open</td></tr>
+<tr><td>1295</td><td>medium</td><td><code>quality/extractors.py::_unwrap_outer_fence</code></td><td>Prose-prefixed + code-fenced module output (common LLM shape) rejected as truncated by fence-balance check.</td><td>open</td></tr>
+<tr><td><strong>1296</strong></td><td><span class="pill pill-hi">HIGH</span></td><td><code>quality/dispatch_388_pilot.py::slugify</code></td><td>Same-basename modules in different dirs collide on worktree+branch. <strong>7 pairs verified in repo</strong> (e.g. <code>module-5.1-image-security.md</code> × 2 across CKS/CKA). Production overwrite risk.</td><td><span class="pill pill-good">CLOSED</span> via #1298</td></tr>
+<tr><td><strong>1297</strong></td><td><span class="pill pill-hi">HIGH</span></td><td><code>quality/citations.py::rebuild_section</code></td><td>Rebuild keyed by URL set, not <code>SourceEntry</code>: same URL with two different claims (one <code>supports</code>, one rejected) → BOTH survive. Violates TOP-PRIORITY <code>feedback_citation_verify_or_remove.md</code> ("Unverified = lie").</td><td><span class="pill pill-good">CLOSED</span> via #1298</td></tr>
+</table>
+
+<h2>New / updated memory</h2>
+
+<table>
+<tr><th>Memory</th><th>Change</th></tr>
+<tr><td><code>feedback_ds_pro_review_needs_workspace_write.md</code></td><td>NEW. DS V4 Pro in read-only mode doesn't degrade gracefully — emits tool-use intent. Use <code>--mode workspace-write</code> or fall back to grok/claude. PR #1289 adds the adapter-side guard. (Index entry added to MEMORY.md.)</td></tr>
+<tr><td><code>feedback_grok_truncated_diff_context.md</code></td><td>From session 22a — surfaced grok-4 false-positive on PR #1287 truncated diff. Reaffirmed this continuation: grok APPROVE'd PR #1289/#1298 cleanly when the hunks had full scope context.</td></tr>
+</table>
+
+<h2>Reviewer-cascade behavior observed</h2>
+
+<div class="lesson">
+<strong>Cross-family review cascade on PR #1288:</strong> DS Pro → claude → grok.
+</div>
+
+<ol>
+<li><strong>DS Pro (first prod use of #1286 adapter)</strong>: 217-char tool-use intent (<code>&lt;bash&gt;gh pr view 1288 ...&lt;/bash&gt;</code>). 74s elapsed. <code>ok=True</code> (adapter didn't catch the failure shape — fixed in #1289).</li>
+<li><strong>Claude-sonnet-4-6 fallback</strong>: rate-limited mid-stream at 145s. Output truncated as <code>RateLimitedError</code> with partial verdict visible in the error message ("Good — the file is pre-merge..." + "VERDICT:" before cutoff). Today's sub-limits are doubled (until 2026-07-13) but still bind on long-form reviews.</li>
+<li><strong>Grok-4</strong>: APPROVE in 9s, high confidence, no false-positive (anchors fully in-hunk this time). Calibrated primary reviewer remains the most reliable path.</li>
+</ol>
+
+<p>For DS Pro reviews going forward: use <code>--mode workspace-write</code> (per PR #1289 guard's message), OR keep DS for content review where it's calibrated gold-tier without the tool dependency.</p>
+
+<h2>Carryover into next session</h2>
+
+<h3>6 open clawpatch findings (none HIGH; all spot-verifiable)</h3>
+
+<ul>
+<li><strong>#1290</strong> medium — sidecar decision-card filter. Easy ~30 LOC codex job. Has a shared-helper coordination with #1292.</li>
+<li><strong>#1291</strong> medium — FTS warm-cache validation. Same file (<code>decisions.py</code>) — natural bundle with #1290/#1292.</li>
+<li><strong>#1292</strong> low — channel summary pending-decision link. Depends on #1290's helper.</li>
+<li><strong>#1293</strong> low — UK Russicism regex 1-line (<code>re.IGNORECASE</code>) + 1 test. Trivial.</li>
+<li><strong>#1294</strong> medium — CLI exit-code on missing paths. Two scripts, parallel fix.</li>
+<li><strong>#1295</strong> medium — extractor fence unwrap. One function, one test.</li>
+</ul>
+
+<p><strong>Suggested bundle</strong>: ship #1290+#1291+#1292 as one local_api PR (shared helper); ship #1293+#1294+#1295 as one quality-pipeline PR (or split #1293 separately — it's trivial enough to land in 5 min).</p>
+
+<h3>Older carryover (still active)</h3>
+
+<ul>
+<li><strong>DS V4 Pro production proof-of-life on a real #388 PR</strong> — adapter is now guarded (PR #1289); use <code>--mode workspace-write</code> on next attempt. Calibration says gold-tier; the read-only path is now well-documented as the wrong path.</li>
+<li><strong>Clawpatch §4 supervised eval</strong> (from session 20 brief at <code>docs/briefs/2026-05-18-clawpatch-evaluation.html</code>) — informally satisfied: this continuation IS the eval. 8 verified findings across 2 fresh slices = clawpatch found bugs the existing reviewer cascade missed. Decision: <strong>keep using it on a per-slice cadence</strong>; don't run on every PR (too slow, ~5 min/slice).</li>
+<li><strong>T5 burn-down on remaining ~160 CKS critical-rubric modules</strong> — unchanged.</li>
+<li><strong>wrapper-401 caveat</strong> still hits in some shells — <code>feedback_no_gh_token_unset.md</code> needs an update or env-cleanup script.</li>
+<li><strong>Date-bound</strong>: 2026-06-15 (agentic pool flip), 2026-07-13 (weekly-double bump expires).</li>
+</ul>
+
+<h2>Cold-start verification (run from primary repo dir)</h2>
+
+<pre>cd /Users/krisztiankoos/projects/kubedojo
+
+# (1) Clean tree on main:
+git status --short    # → empty
+git log --oneline -7
+# expected (newest first):
+#   9173c40b fix(quality): 2 HIGH clawpatch findings ... (#1298)
+#   35e5df4c fix(deepseek): detect unfulfilled tool-use intent ... (#1289)
+#   56aad5a2 feat(dispatch): add deepseek + gemini ... (#1288)
+#   daeb6507 handoff: session 22 — DeepSeek production wiring ...
+#   395b710d fix(quality): 4 clawpatch-found correctness bugs ... (#1287)
+#   f85987fc feat(agents): integrate DeepSeek V4 ... (#1286)
+#   80ff6ad6 session 21: clawpatch adopted ... (#1285)
+
+# (2) Agent registry has 5 families:
+.venv/bin/python -c "
+from scripts.agent_runtime.registry import available_agents
+assert sorted(available_agents()) == ['claude', 'codex', 'deepseek', 'gemini', 'grok']
+print('OK')
+"
+
+# (3) dispatch_smart.py supports all 5:
+.venv/bin/python scripts/dispatch_smart.py --help | head -2
+# expected: --agent {claude,codex,deepseek,gemini,grok}
+
+# (4) Open clawpatch carryover issues:
+env -u GH_TOKEN gh issue list --search "clawpatch" --state open | head -10
+# expected: #1290, #1291, #1292, #1293, #1294, #1295 (6 items)
+</pre>
+
+<h2>Refs</h2>
+
+<ul>
+<li>Dispatch briefs (AI→AI, MD): <code>docs/briefs/2026-05-17-dispatch-smart-gemini-deepseek-and-grok-tests-brief.md</code>, <code>docs/briefs/2026-05-17-ds-pro-tool-degrade-brief.md</code>, <code>docs/briefs/2026-05-17-quality-high-2fix-bundle-brief.md</code></li>
+<li>Predecessor handoff this session: <code>docs/session-state/2026-05-17-session-22-deepseek-prod-and-4fix.html</code> (commit <code>daeb6507</code>)</li>
+<li>Clawpatch reports: <code>.clawpatch/reports/20260517T201107-28ccc0.md</code> (local_api), <code>.clawpatch/reports/20260517T201555-cc8fa3.md</code> (quality#1)</li>
+<li>PRs this continuation: #1288 (dispatch_smart + grok tests), #1289 (DS Pro tool guard), #1298 (2 HIGH quality fixes)</li>
+<li>Issues filed: #1290–#1297 (6 still open, 2 closed via #1298)</li>
+<li>Issues closed this continuation: #1296, #1297</li>
+</ul>
+
+</body>
+</html>
