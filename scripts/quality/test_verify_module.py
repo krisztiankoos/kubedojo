@@ -28,6 +28,7 @@ def _base_gates() -> dict[str, bool | None]:
         "sources_all_reachable": None,
         "anti_leak": True,
         "runnable_no_kubectl_alias": True,
+        "lab_image_binary_match": True,
         "anti_fabrication_no_unsourced_anecdote": True,
         "practice_mcq_four_options_with_distractors": True,
         "outcomes_aligned": True,
@@ -37,6 +38,7 @@ def _base_gates() -> dict[str, bool | None]:
 def _gate_results(
     *,
     runnable_shell: dict[str, object] | None = None,
+    lab_runnability: dict[str, object] | None = None,
     anti_fabrication: dict[str, object] | None = None,
     practice_mcq: dict[str, object] | None = None,
 ) -> dict[str, bool | None]:
@@ -64,6 +66,7 @@ def _gate_results(
         {"count": 10, "url_status": {"skipped": 10}, "urls": []},
         {"forbidden_tokens": [], "has_emoji": False, "has_47": False},
         runnable_shell or {"kubectl_alias_violations": []},
+        lab_runnability or {"image_binary_violations": [], "unknown_images": []},
         anti_fabrication or {"unsourced_anecdotes": []},
         practice_mcq or {"applies": False, "question_count": 0, "violations": []},
         {"all_outcomes_covered": True},
@@ -275,6 +278,7 @@ def test_density_metrics_on_synthetic_short_module_fail() -> None:
         {"count": 10, "url_status": {"skipped": 10}, "urls": []},
         {"forbidden_tokens": [], "has_emoji": False, "has_47": False},
         {"kubectl_alias_violations": []},
+        {"image_binary_violations": [], "unknown_images": []},
         {"unsourced_anecdotes": []},
         {"applies": False, "question_count": 0, "violations": []},
         {"all_outcomes_covered": True},
@@ -598,3 +602,181 @@ def test_cli_all_revision_pending_writes_jsonl(tmp_path: Path, monkeypatch) -> N
     lines = out.read_text(encoding="utf-8").splitlines()
     assert len(lines) == 1
     assert json.loads(lines[0])["tier"] == "T3"
+
+
+class TestLabRunnability:
+    def test_kubectl_run_nginx_then_exec_wget_violates(self) -> None:
+        text = """
+```bash
+kubectl run pod1 --image=nginx -n default
+kubectl exec pod1 -- wget http://svc:80
+```
+"""
+        metrics = verify_module.lab_runnability_metrics(text)
+
+        assert metrics["image_binary_violations"] == [
+            {
+                "pod": "pod1",
+                "image": "nginx",
+                "binary": "wget",
+                "line": 4,
+                "snippet": "kubectl exec pod1 -- wget http://svc:80",
+            }
+        ]
+
+    def test_kubectl_run_nginx_alpine_then_exec_wget_clean(self) -> None:
+        text = """
+```bash
+kubectl run pod1 --image=nginx:alpine -n default
+kubectl exec pod1 -- wget http://svc:80
+```
+"""
+        metrics = verify_module.lab_runnability_metrics(text)
+
+        assert metrics["image_binary_violations"] == []
+
+    def test_busybox_then_exec_wget_clean(self) -> None:
+        text = """
+```bash
+kubectl run pod1 --image=busybox -n default
+kubectl exec pod1 -- wget http://svc:80
+```
+"""
+        metrics = verify_module.lab_runnability_metrics(text)
+
+        assert metrics["image_binary_violations"] == []
+
+    def test_nginx_then_exec_cat_clean(self) -> None:
+        text = """
+```bash
+kubectl run pod1 --image=nginx -n default
+kubectl exec pod1 -- cat /etc/nginx/nginx.conf
+```
+"""
+        metrics = verify_module.lab_runnability_metrics(text)
+
+        assert metrics["image_binary_violations"] == []
+
+    def test_yaml_inline_manifest_nginx_then_exec_curl_violates(self) -> None:
+        text = """
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webserver
+spec:
+  containers:
+  - name: web
+    image: nginx
+```
+
+```bash
+kubectl exec webserver -- curl http://example/
+```
+"""
+        metrics = verify_module.lab_runnability_metrics(text)
+
+        assert metrics["image_binary_violations"] == [
+            {
+                "pod": "webserver",
+                "image": "nginx",
+                "binary": "curl",
+                "line": 14,
+                "snippet": "kubectl exec webserver -- curl http://example/",
+            }
+        ]
+
+    def test_unknown_image_does_not_flag(self) -> None:
+        text = """
+```bash
+kubectl run pod1 --image=my-org/custom:v3
+kubectl exec pod1 -- frobnicate --flag
+```
+"""
+        metrics = verify_module.lab_runnability_metrics(text)
+
+        assert metrics["image_binary_violations"] == []
+        assert metrics["unknown_images"] == ["my-org/custom:v3"]
+
+    def test_curlimages_curl_then_exec_curl_clean(self) -> None:
+        text = """
+```bash
+kubectl run pod1 --image=curlimages/curl --command -- sleep 3600
+kubectl exec pod1 -- curl http://example/
+```
+"""
+        metrics = verify_module.lab_runnability_metrics(text)
+
+        assert metrics["image_binary_violations"] == []
+
+    def test_exec_with_namespace_flag_parsed(self) -> None:
+        text = """
+```bash
+kubectl run frontend --image=nginx -n netpol-demo
+kubectl exec -n netpol-demo frontend -- wget http://backend:80
+```
+"""
+        metrics = verify_module.lab_runnability_metrics(text)
+
+        assert metrics["image_binary_violations"] == [
+            {
+                "pod": "frontend",
+                "image": "nginx",
+                "binary": "wget",
+                "line": 4,
+                "snippet": "kubectl exec -n netpol-demo frontend -- wget http://backend:80",
+            }
+        ]
+
+    def test_pre_fix_module_5_3_pattern_violates(self) -> None:
+        text = """
+## Hands-On Exercise
+
+```bash
+kubectl create namespace netpol-demo
+kubectl run frontend --image=nginx -n netpol-demo -l tier=frontend
+kubectl run backend  --image=nginx -n netpol-demo -l tier=backend
+kubectl run database --image=nginx -n netpol-demo -l tier=database
+```
+
+### Task 2
+
+```bash
+kubectl exec -n netpol-demo frontend -- wget -qO- --timeout=2 backend:80
+kubectl exec -n netpol-demo backend  -- wget -qO- --timeout=2 database:80
+kubectl exec -n netpol-demo database -- wget -qO- --timeout=2 frontend:80
+```
+
+### Task 3
+
+```bash
+kubectl exec -n netpol-demo frontend -- wget -qO- --timeout=2 backend:80
+kubectl exec -n netpol-demo backend  -- wget -qO- --timeout=2 database:80
+kubectl exec -n netpol-demo database -- wget -qO- --timeout=2 frontend:80
+```
+"""
+        metrics = verify_module.lab_runnability_metrics(text)
+        violations = metrics["image_binary_violations"]
+
+        assert len(violations) == 6
+        assert {violation["binary"] for violation in violations} == {"wget"}
+        assert {violation["image"] for violation in violations} == {"nginx"}
+        assert {violation["pod"] for violation in violations} == {"frontend", "backend", "database"}
+
+    def test_gate_results_lab_image_binary_match_false_on_violation(self) -> None:
+        gates = _gate_results(
+            lab_runnability={
+                "image_binary_violations": [
+                    {
+                        "pod": "pod1",
+                        "image": "nginx",
+                        "binary": "wget",
+                        "line": 4,
+                        "snippet": "kubectl exec pod1 -- wget http://svc:80",
+                    }
+                ],
+                "unknown_images": [],
+            }
+        )
+
+        assert gates["lab_image_binary_match"] is False
