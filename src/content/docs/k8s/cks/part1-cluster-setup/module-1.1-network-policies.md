@@ -692,7 +692,7 @@ A proxy, ingress controller, load balancer, or NAT device may be changing the so
 
 ## Hands-On Exercise
 
-In this exercise, you will secure a three-tier application named `web`, `api`, and `db` by writing and debugging NetworkPolicies. The lab intentionally uses simple `nginx` pods so the network behavior is easier to observe than the application behavior. Your goal is to make the intended path work, make the direct web-to-database path fail, and fix a broken policy by reasoning about target and source selectors.
+In this exercise, you will secure a three-tier application named `web`, `api`, and `db` by writing and debugging NetworkPolicies. The lab intentionally uses simple pods so the network behavior is easier to observe than the application behavior. Your goal is to make the intended path work, make the direct web-to-database path fail, and fix a broken policy by reasoning about target and source selectors.
 
 ### Setup
 
@@ -702,8 +702,8 @@ Run the following commands to create the environment:
 kubectl create namespace exercise
 kubectl label namespace exercise name=exercise
 
-kubectl run web --image=nginx -n exercise --labels="tier=web" --port=80
-kubectl run api --image=nginx -n exercise --labels="tier=api" --port=80
+kubectl run web --image=curlimages/curl -n exercise --labels="tier=web" --command -- sleep 3600
+kubectl run api --image=curlimages/curl -n exercise --labels="tier=api" --command -- sleep 3600
 kubectl run db --image=nginx -n exercise --labels="tier=db" --port=80
 
 kubectl wait --for=condition=Ready pod --all -n exercise
@@ -816,7 +816,7 @@ Exercise scenario: a junior engineer attempted to allow a new `metrics` pod to s
 Apply their broken policy and the metrics pod:
 
 ```bash
-kubectl run metrics --image=nginx -n exercise --labels="tier=metrics"
+kubectl run metrics --image=curlimages/curl -n exercise --labels="tier=metrics" --command -- sleep 3600
 
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.k8s.io/v1
