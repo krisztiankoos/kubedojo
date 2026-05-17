@@ -63,6 +63,27 @@ The {{BODY_WORDS_TARGET}}-7,000 target is a depth budget, not a quota. If a topi
 
 Do NOT rely on shell aliases in runnable Bash examples. Specifically: do NOT write `alias k=kubectl` or use `k <subcommand>` (e.g., `k get`, `k describe`) inside fenced ```bash / ```sh / ```shell / ```zsh blocks. Aliases do not expand in non-interactive shells, so a learner who copies the block into a script will see `command not found`. Always use the full `kubectl` binary name in copy-paste examples. Prose like "many engineers alias kubectl to k for interactive use" is fine; running `k <cmd>` in a code block is not.
 
+## Image-binary compatibility (lab-runnability contract)
+
+Every `kubectl exec POD -- BIN` you write must satisfy BIN ∈ POD's image binary set. The verifier (`scripts/quality/verify_module.py` → `lab_runnability_metrics`) enforces this deterministically with an allowlist; the reviewer (LAB RUNNABILITY dimension (a)) checks it with citation.
+
+Common image cheat-sheet (verified against Docker Hub overview pages):
+
+| Image | Has wget | Has curl | Has bash | Notes |
+|---|---|---|---|---|
+| `nginx` (= `nginx:latest`, debian-slim) | ✗ | ✗ | ✗ | has `sh`, `cat`, `head`, `tail`, `grep`, `nginx` |
+| `nginx:alpine` | ✓ (busybox) | ✗ | ✗ | alpine base; busybox provides wget by default |
+| `busybox` | ✓ | ✗ | ✗ | wget, sh, ash, ls, cat, grep, find, nc |
+| `alpine` | ✓ (busybox) | ✗ | ✗ | + `apk` package manager |
+| `curlimages/curl` | ✗ | ✓ | ✗ | purpose-built — `curl`, `sh` |
+| `debian:bookworm-slim` | ✗ | ✗ | ✓ | bash present; wget/curl require `apt install` |
+| `nicolaka/netshoot` | ✓ | ✓ | ✓ | network debugging toolkit — wget, curl, dig, tcpdump |
+| `python:3.12-slim` | ✗ | ✗ | ✓ | `python3`, `pip` |
+
+If your lab needs `kubectl exec POD -- wget ...`, choose `nginx:alpine` over `nginx`. If your lab needs `kubectl exec POD -- curl ...` and the pod should also serve HTTP, choose `nginx:alpine` (no curl) + use `wget` instead, or use `curlimages/curl` + `--command -- sleep 3600` if the pod doesn't need to serve. Never write `--image=nginx` followed by an exec wget/curl — this is the exact bug #1257 shipped with and #1229 precedent.
+
+Reference: `audit/2026-05-18-grok-primary-calibration/REPORT.html` § 4 (the #1257 anatomy).
+
 Do NOT invent business incidents, client stories, anonymized companies, or "war story" anecdotes. A scenario is allowed only if (a) it is clearly labeled hypothetical with a `Hypothetical scenario:` or `Exercise scenario:` prefix, OR (b) it is a sourced real incident with enough specific detail to verify against the cited source. Do not imply an event happened with phrasing like "a payments company once...", "a team I worked with...", "a customer reported...", "War story:..." unless the incident is real and sourced. The incident-dedup gate only catches catalog matches; this rule catches the rest.
 
 For practice-question / mock-exam modules, preserve exam-style MCQ structure. Each question must include four visible answer options labeled `1-4` or `A-D` (visible in the rendered question, NOT hidden in `<details>`), followed by answer reasoning that explains why the correct option is correct AND why each distractor is wrong. The reasoning may live in `<details>` blocks; the numbered options must remain visible.

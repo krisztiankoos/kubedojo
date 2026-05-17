@@ -294,10 +294,16 @@ Inspect with `gh pr view {pr_num}` and `gh pr diff {pr_num}`. Then evaluate:
 4. PROTECTED ASSETS — Code blocks, ASCII/mermaid diagrams, tables, source URLs preserved across the rewrite (counts in PR body should match).
 5. SOURCES — Each source actually reaches a primary/vendor doc, not marketing fluff. Flag dead/redirect URLs if you can spot any.
 6. LAB RUNNABILITY — Walk every lab step and drill in order. For each `kubectl exec`, `kubectl run`, `kubectl edit`, `kubectl delete`, or container-shell command the lab tells the learner to run, check:
-   (a) Container binaries: does the image actually contain the binary the step uses? `image: nginx` lacks `kubectl`; `image: busybox` lacks `bash`; `image: alpine` lacks `curl` by default. Flag any binary-vs-image mismatch.
+   (a) Container binaries — citation-forced check. For EACH `kubectl exec POD -- BIN [args]` in the module:
+       (i)   Quote the line that establishes POD's image. This is either a `kubectl run POD --image=IMAGE` line earlier in the module, or an inline YAML manifest `name: POD` followed by `image: IMAGE`. Include the line as-is in your review.
+       (ii)  State the EXACT image tag from (i), including the tag suffix. `nginx` is debian-slim (no wget, no curl). `nginx:alpine` is alpine + busybox (has wget). `busybox` has wget. `curlimages/curl` has curl. Do NOT confuse `nginx` with `nginx:alpine` — they are different images with different binary inventories.
+       (iii) Cite a primary source for the binary presence: the Docker Hub image overview page, the upstream Dockerfile, or a known reference (e.g. "alpine busybox ships wget by default" — link the busybox project page). A confident assertion without a citation is NOT acceptable — flag NEEDS CHANGES on any uncited binary claim.
+       (iv)  If the binary is NOT in the image and there is no alternative path (an init container that installs it, a sidecar with the binary, a `kubectl cp` of a static binary), this is a blocking LAB RUNNABILITY failure. Cite #1229 and #1257 as precedents — both shipped because this check was performed without citation.
    (b) Role / ClusterRole verbs vs operations: does the Role grant ALL the verbs the lab actually exercises? `kubectl edit` needs `get,list,update`; `kubectl delete` needs `get,list,delete`; `kubectl exec` needs `get` on pods + `create` on pods/exec. Cross-reference every `--verb=...` line in the YAML against every operation the lab/drill performs.
    (c) Resource scope mismatch: namespaced operations attempted with cluster-scoped permissions (or vice versa).
    (d) Order of operations: lab steps that reference prior state (a pod, secret, configmap) that wasn't actually created in an earlier step.
+
+   (e) Hallucination self-check. After completing (a)-(d), re-read your own LAB RUNNABILITY paragraph. For every factual claim about an image's binary inventory, ensure you quoted the image tag verbatim from the module AND cited a source. Claims like "nginx ships wget" without a paired image-tag quote and source citation are exactly the pattern that produced the #1257 false-approval. Strike any uncited claim from your review.
 
    This dimension catches the bug class that lets lab-breaking PRs through content review (#1229 shipped with nginx-image-vs-kubectl and missing-verb bugs because no review dimension explicitly probed it).
 
