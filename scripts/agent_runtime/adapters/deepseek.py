@@ -28,6 +28,11 @@ factual claims (mirrors gemini hallucination policy per
 [[feedback_gemini_hallucinates_anchors]]). Flash is 3× faster than Pro;
 suited for plan / architect / UK translation lanes.
 
+In read-only mode, DeepSeek runs with a restricted Hermes toolset (web-only). If
+the model emits unfulfilled tool-use intent (e.g. ``<bash>`` blocks), the returned
+text is a non-executable stub and not a useful review. See
+``feedback_ds_pro_review_needs_workspace_write.md``.
+
 Status flagged for the user:
 - DeepSeek adds a second cheap/fast lane (V4 Flash) while preserving Pro for
   high-value review roles.
@@ -56,6 +61,10 @@ _RATE_LIMIT_PATTERNS = (
     r"\b429\b",
 )
 _RATE_LIMIT_RE = re.compile("|".join(_RATE_LIMIT_PATTERNS), re.IGNORECASE)
+_TOOL_USE_INTENT_RE = re.compile(
+    r"<\s*(bash|tool_use|tool|terminal|shell)\b[^>]*>",
+    re.IGNORECASE,
+)
 
 # Hermes startup warnings we strip before declaring success.
 _HERMES_BANNER_RE = re.compile(
@@ -208,6 +217,23 @@ class DeepSeekAdapter:
 
         # Strip hermes banners that aren't part of the response.
         clean_stdout = _HERMES_BANNER_RE.sub("", stdout or "").strip()
+        tool_use_unfulfilled = bool(_TOOL_USE_INTENT_RE.search(clean_stdout))
+
+        if tool_use_unfulfilled and len(clean_stdout) < 1000:
+            return ParseResult(
+                ok=False,
+                response="",
+                stderr_excerpt=(
+                    "DS Pro returned tool-use intent without execution "
+                    f"({len(clean_stdout)} chars). The hermes toolset for this mode "
+                    "doesn't include the requested tool. For DS Pro reviews, re-dispatch "
+                    "with --mode workspace-write (grants terminal/file tools), or fall "
+                    "back to grok/claude. Raw stub: " + clean_stdout[:200]
+                ),
+                rate_limited=False,
+                session_id=None,
+                tokens=None,
+            )
 
         combined = f"{clean_stdout}\n{stderr or ''}"
         rate_limited = bool(_RATE_LIMIT_RE.search(combined))
