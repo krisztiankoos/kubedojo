@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Session 22 — DeepSeek production wiring + 4 quality-pipeline fixes</title>
+<style>
+:root { color-scheme: light dark; }
+body { font: 14px/1.55 system-ui, -apple-system, "SF Pro Text", sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; }
+h1 { font-size: 22px; margin: 0 0 6px; }
+h2 { font-size: 16px; margin: 24px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #8884; }
+h3 { font-size: 14px; margin: 16px 0 6px; font-weight: 600; }
+code { font-family: "SF Mono", Menlo, monospace; background: #8881; padding: 1px 4px; border-radius: 3px; font-size: 12.5px; }
+pre { background: #8881; padding: 10px 12px; border-radius: 4px; overflow-x: auto; font-size: 12.5px; line-height: 1.45; }
+table { border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+th, td { border: 1px solid #8884; padding: 6px 10px; text-align: left; vertical-align: top; }
+th { background: #8881; font-weight: 600; }
+.pill { display: inline-block; padding: 1px 6px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+.pill-good { background: #2a8; color: white; }
+.pill-warn { background: #c85; color: white; }
+.pill-info { background: #58a; color: white; }
+ul li, ol li { margin: 3px 0; }
+.tldr { background: #58a2; border-left: 3px solid #58a; padding: 10px 14px; border-radius: 0 4px 4px 0; margin: 12px 0; }
+.lesson { background: #c854; border-left: 3px solid #c85; padding: 10px 14px; border-radius: 0 4px 4px 0; margin: 12px 0; }
+</style>
+</head>
+<body>
+
+<h1>Session 22 — DeepSeek production wiring + 4 quality-pipeline correctness fixes</h1>
+<p><em>2026-05-17 · driver: claude opus 4.7 (1M context, orchestrator, inline) · code agents: codex gpt-5.5 (danger mode, all writes via <code>dispatch_smart.py edit --agent codex</code> in per-task worktree); grok-4 + claude-sonnet-4-6 cross-family reviewers; all merges via squash.</em></p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> User asks (in order): <em>"why do we have dirty main? fix that first then work and we have a pr to merge"</em>, <em>"make sure all our agents are fully support and they can be dispatched and partisicpate in production"</em>, <em>"and then we have 4 urgent fixes waiting in issues"</em>. <strong>3 PRs merged</strong> (#1285 / #1286 / #1287). Session-21 reconciled into main; <strong>DeepSeek V4 Pro + Flash now first-class peer agents</strong> in <code>agent_runtime/registry.py</code> (5 families registered: claude, codex, deepseek, gemini, grok); 4 clawpatch-found pipeline correctness bugs closed (#1281–#1284). <strong>Grok-4 false-positive surfaced</strong> on truncated-diff review of #1287 — claude-sonnet-4-6 tiebreak confirmed grok was wrong. <strong>New failure mode worth memorializing</strong>: grok over-extrapolates from diff context windows that don't include the relevant unchanged anchor lines.
+</div>
+
+<h2>What shipped</h2>
+
+<table>
+<tr><th>PR</th><th>What</th><th>Reviewer</th><th>Notes</th></tr>
+<tr><td>#1285</td><td><strong>session-21 handoff reconcile</strong> — clawpatch baseline (44 features) + .gitignore + 2 briefs + session-21 handoff HTML</td><td>none (docs/config only, all checks green)</td><td>Already authored last session in <code>kubedojo-session-21</code> worktree. Same files leaked into primary as untracked artifacts → "dirty main." Merge + pull + worktree retire = clean.</td></tr>
+<tr><td>#1286</td><td><strong>DeepSeek V4 adapter</strong> — new <code>scripts/agent_runtime/adapters/deepseek.py</code>, registry entry, channels-cli wiring, 6 unit tests, changelog. 401 LOC.</td><td>grok-4 APPROVE (high confidence, 9s)</td><td>Modeled on PR #1245 (Grok integration). Same hermes transport, swap <code>--provider xai-oauth</code> for <code>--provider deepseek</code>; default model <code>deepseek-v4-pro</code>, env-overridable via <code>AB_DEEPSEEK_MODEL</code> (set to <code>deepseek-v4-flash</code> for cheap lane). Pro: gold-tier reviewer per session-21 calibration; Flash: 3× faster, plan/architect/UK translation lane.</td></tr>
+<tr><td>#1287</td><td><strong>quality-pipeline 4-fix bundle</strong> — closes #1281 (lease leak in <code>cmd_cleanup_banners</code>), #1282 (lease-key normalization in <code>run_388_batch</code>), #1283 (merge-lock + ledger restore in <code>stages._post_merge_gates</code>), #1284 (exit-3 propagation on <code>DispatcherUnavailable</code>). 232+/27-, 4 commits, 68 tests pass.</td><td>grok-4 NEEDS_CHANGES (false-positive) → claude-sonnet-4-6 tiebreak GROK_WRONG (high confidence)</td><td>See "Grok false-positive autopsy" below.</td></tr>
+</table>
+
+<h2>Contract changes</h2>
+
+<h3>Agent registry now has 5 keys</h3>
+
+<p><code>scripts/agent_runtime/registry.py::AGENTS</code> after this session:</p>
+
+<pre>['claude', 'codex', 'deepseek', 'gemini', 'grok']</pre>
+
+<p>DeepSeek registry entry:</p>
+
+<pre>"deepseek": {
+    "adapter": "scripts.agent_runtime.adapters.deepseek:DeepSeekAdapter",
+    "default_model": os.environ.get("AB_DEEPSEEK_MODEL", "deepseek-v4-pro"),
+    "cost_tier": "low",       # hermes-routed; cheaper than codex/claude/grok
+    "capabilities": frozenset({
+        "code_review", "content_review", "adversarial_review",
+        "research", "deliberation", "architecture",
+    }),
+    "cli_available": True,
+    "resume_policy": "never",  # same hermes session-cross-worktree footgun as grok
+}</pre>
+
+<p><code>ai_agent_bridge/_channels_cli.py</code> also extended with <code>deepseek</code> entries in <code>_DISCUSSION_CLARIFICATION_MODES</code>, <code>_DISCUSSION_RUNTIME_MODES</code>, <code>_agent_runtime_mode</code>, and <code>_agent_tool_config</code> (read-only vs workspace-write toolset gating mirrors the grok preventive fix from PR #1245).</p>
+
+<h3>Calibration caveat carried into docstring</h3>
+
+<p>DS V4 Pro hallucinated 3/4 on code per session-21 calibration. Adapter docstring documents this: callers SHOULD NOT promote a DS-Pro claim to Green without independent verification (mirrors gemini hallucination policy per <code>feedback_gemini_hallucinates_anchors.md</code>).</p>
+
+<h2>Quality-pipeline correctness fixes (#1281–#1284)</h2>
+
+<table>
+<tr><th>#</th><th>File · function</th><th>Bug</th><th>Fix</th></tr>
+<tr><td>1281</td><td><code>pipeline.py::cmd_cleanup_banners</code></td><td>Held <code>state_lease(slug)</code> across nested <code>record_completion</code> call → re-entry deadlock-prone, exception swallowed, counter still incremented</td><td>Extract <code>_cleanup_banner_for_module</code> helper. Lease scope shrunk to state-read + copy; helper called OUTSIDE the lease.</td></tr>
+<tr><td>1282</td><td><code>run_388_batch.py::fetch_active_leases</code> / <code>select_modules</code></td><td>Bare <code>module_key</code> form leases (no <code>.md</code>, no prefix) silently ignored → double-dispatch risk</td><td>Single normalization helper used at fetch + lookup. Canonical = no prefix, no <code>.md</code>.</td></tr>
+<tr><td>1283</td><td><code>stages.py::_post_merge_gates</code> + <code>_commit_ledger_row</code></td><td>Ledger append + commit ran OUTSIDE <code>_merge_lock</code>; commit-fail leaves <code>docs/quality-progress.tsv</code> staged → next merge sees "foreign edit"</td><td>Wrap append+commit inside <code>_merge_lock</code>. <code>finally:</code> runs <code>git restore --staged</code> + <code>git restore</code> on the ledger TSV.</td></tr>
+<tr><td>1284</td><td><code>pipeline.py::_process_batch</code> + <code>cmd_audit</code> / <code>cmd_route</code></td><td>Module docstring promises exit 3 on <code>DispatcherUnavailable</code>; actual return is 0 → CI / cron miss dispatcher outages silently</td><td><code>_process_batch</code> returns <code>(ok, fail, aborted: bool)</code>. <code>cmd_audit</code> / <code>cmd_route</code> map <code>aborted=True</code> → return 3 regardless of fail count.</td></tr>
+</table>
+
+<h2>Grok false-positive autopsy</h2>
+
+<div class="lesson">
+<strong>New failure mode: grok-4 over-extrapolates from truncated diff hunks.</strong>
+</div>
+
+<p>PR #1287 grok-4 review returned <code>NEEDS_CHANGES</code> with this finding (verbatim):</p>
+
+<pre>[high] scripts/quality/pipeline.py:1025 — cmd_cleanup_banners iterates modules
+and calls _cleanup_banner_for_module with no state.state_lease acquisition or
+release visible in the diff. The lease must still be taken then released
+before the helper call.</pre>
+
+<p><strong>Actual code</strong> (line 1020 of the branch's pipeline.py, just OUTSIDE grok's hunk window <code>@@ -1000,20 +1025,14 @@</code>):</p>
+
+<pre>with state.state_lease(slug, timeout=5) as lease:
+    st = lease.load()
+    if st is None or st["stage"] != "COMMITTED":
+        continue
+    q = st.get("queue")
+    if not q or q.get("completed_at") is not None:
+        continue
+    module_state = dict(st)           # ← last line inside `with` block
+
+print(f"Cleaning stranded banner for {slug}...")
+if _cleanup_banner_for_module(primary, slug, module_state):   # ← OUTSIDE `with`</pre>
+
+<p>The lease IS acquired and IS released before the helper call. The signal is the <strong>indentation drop</strong> from 3 levels (inside <code>with</code>) to 2 levels (outside). Grok-4 missed it because the <code>with</code> line was NOT in the diff hunk's context window — the hunk header starts at line 1000 of the original file, but the <code>with</code> statement was at line 994 (unchanged, outside the +3 context lines git diff shows). The test <code>test_cmd_cleanup_banners_releases_state_lease_before_cleanup</code> explicitly asserts <code>in_lease["open"]</code> is False when the cleanup helper is called — which would fail if grok's reading were correct.</p>
+
+<p><strong>Tiebreak</strong>: claude-sonnet-4-6 dispatched with the actual function body (lines 986–1041) pasted inline → <code>VERDICT: GROK_WRONG</code>, confidence high, 29s elapsed. Same reasoning.</p>
+
+<p><strong>Generalization</strong>: <code>git diff -U3</code> (gh's default) shows 3 context lines around each hunk. Anchor statements that establish scope (with-blocks, if-blocks, function defs) can fall OUTSIDE that window when the actual edit is several lines below the anchor. Reviewers reading only the diff can mis-attribute "no anchor visible in the hunk" → "anchor doesn't exist." Affects grok-4; likely affects all LLMs reviewing diffs without file-fetch fallback.</p>
+
+<p><strong>Memory note added</strong>: <code>feedback_grok_truncated_diff_context.md</code> (this session). Memory + handoff are the durable record; no code change needed — orchestrators should ALWAYS do a quick "is the cited anchor actually missing or just outside the hunk?" sanity check on grok NEEDS_CHANGES before bouncing back a fixup.</p>
+
+<h2>Cold-start verification (run from primary repo dir)</h2>
+
+<pre>cd /Users/krisztiankoos/projects/kubedojo
+
+# (1) Clean working tree, on main at the post-session-22 head:
+git status --short    # → empty
+git log --oneline -3
+# expected:
+#   b377573b fix(quality): 4 clawpatch-found correctness bugs ... (#1287)
+#   5f490793 feat(agents): integrate DeepSeek V4 (Pro + Flash, hermes ...) (#1286)
+#   80ff6ad6 session 21: clawpatch adopted + 6-agent 10-role calibration (#1285)
+
+# (2) DeepSeek dispatchable end-to-end (production path):
+.venv/bin/python -c "
+from scripts.agent_runtime.registry import AGENTS, available_agents
+assert sorted(available_agents()) == ['claude', 'codex', 'deepseek', 'gemini', 'grok']
+print('OK')
+"
+# Live smoke (5s each, ~no cost):
+timeout 30 hermes -z 'Respond with exactly one word: PONG' -m deepseek-v4-pro   --provider deepseek
+timeout 30 hermes -z 'Respond with exactly one word: PONG' -m deepseek-v4-flash --provider deepseek
+
+# (3) Tests green:
+.venv/bin/pytest tests/test_deepseek_adapter.py tests/test_quality_pipeline.py \
+                 tests/test_agent_runtime_runner.py tests/test_quality_dispatchers.py -q
+
+# (4) Issues closed:
+for n in 1281 1282 1283 1284; do
+  echo "#$n: $(env -u GH_TOKEN gh issue view $n --json state -q .state)"
+done   # → all CLOSED
+</pre>
+
+<h2>Carryover into next session</h2>
+
+<ul>
+<li><strong>Session 20's "Next session" priorities</strong> still apply — clawpatch §4 supervised eval (the brief at <code>docs/briefs/2026-05-18-clawpatch-evaluation.html</code> still queued), citation-forced reviewer prompt calibration over next 2-3 #388 PRs, T5 burn-down on remaining ~160 CKS critical-rubric modules.</li>
+<li><strong>Wrapper-401 NOT fully resolved</strong> — <code>feedback_no_gh_token_unset.md</code> says workaround retired, but this session's shell still required <code>env -u GH_TOKEN gh ...</code> for every gh call (keyring auth works, but stale <code>GH_TOKEN</code> env var collides). User may want to clear that env var from shell init, or the memory needs an "in some shells you still need the workaround" caveat.</li>
+<li><strong>Add unit tests for <code>GrokAdapter</code></strong> (still open from session 17 carryover). <code>tests/test_deepseek_adapter.py</code> just landed; mirror its shape.</li>
+<li><strong>Extend <code>dispatch_smart.py SUPPORTED_AGENTS</code></strong> from <code>("claude", "codex", "grok")</code> to include <code>"deepseek"</code> + <code>"gemini"</code>. Add task-class model mappings for both. Out-of-scope this session (DS production adapter was the primary lift); ~30 min focused codex dispatch.</li>
+<li><strong>DS V4 Pro production proof-of-life</strong> — adapter shipped and PONG-tested, but not yet used as a primary reviewer on a real PR. Session-21 calibration says gold-tier; next session: use DS Pro as one of the cross-family reviewers on a #388 batch to validate.</li>
+<li><strong>Date-bound</strong>: 2026-06-15 (agentic pool flip), 2026-07-13 (weekly-double bump expires).</li>
+</ul>
+
+<h2>Refs</h2>
+
+<ul>
+<li>Dispatch briefs (AI→AI, MD): <code>docs/briefs/2026-05-17-deepseek-adapter-brief.md</code>, <code>docs/briefs/2026-05-17-quality-pipeline-4fix-bundle-brief.md</code></li>
+<li>Predecessor handoff: <code>docs/session-state/2026-05-18-session-20-grok-audit-and-verifier-hardening.html</code> (note: session-21 handoff was authored last session but reconciled into main only THIS session via PR #1285)</li>
+<li>Source issues: #1281, #1282, #1283, #1284 (all CLOSED)</li>
+<li>PRs: #1285 (handoff reconcile), #1286 (DeepSeek adapter), #1287 (4-fix bundle)</li>
+<li>Memory updates this session: <code>feedback_grok_truncated_diff_context.md</code> (new)</li>
+</ul>
+
+</body>
+</html>
