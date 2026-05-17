@@ -1,5 +1,5 @@
 ---
-revision_pending: true
+revision_pending: false
 title: "Module 3.5: API Deprecations"
 slug: k8s/ckad/part3-observability/module-3.5-api-deprecations
 sidebar:
@@ -13,7 +13,7 @@ lab:
 ---
 > **Complexity**: `[QUICK]` - Conceptual understanding with practical commands
 >
-> **Time to Complete**: 20-25 minutes
+> **Time to Complete**: 35-40 minutes
 >
 > **Prerequisites**: Understanding of Kubernetes API versioning
 
@@ -21,31 +21,28 @@ lab:
 
 ## Learning Outcomes
 
-After completing this module, you will be able to:
-- **Diagnose** a failed `kubectl apply` caused by a removed API and fix it in under 2 minutes
-- **Find** the correct API version for any resource using `kubectl explain` and `kubectl api-resources`
-- **Update** a deprecated manifest to the current API version, including structural changes
-- **Explain** the Kubernetes deprecation policy and what guarantees it provides
+After completing this module, you will be able to use the live Kubernetes API as your reference instead of relying on memory, copied manifests, or stale examples. Each outcome below is something you can practice directly on a Kubernetes 1.35+ cluster and verify with the quiz or hands-on exercise.
 
----
+- **Diagnose** a failed `kubectl apply` caused by a removed API and select the current API version with `kubectl explain` and `kubectl api-resources`.
+- **Update** deprecated Kubernetes manifests, including Ingress and CronJob examples where the `apiVersion` change may also require spec changes.
+- **Evaluate** deprecation warnings and removed-API errors so you can decide whether a manifest needs a quick version bump or a deeper migration.
+- **Implement** server-side dry-run and manifest-audit checks that catch deprecated APIs before they break deployment work.
 
 ## Why This Module Matters
 
-It was 2 AM on a Tuesday when the on-call engineer at a fintech startup ran `kubectl apply -f deploy/` after upgrading their cluster from 1.21 to 1.22. Every single Ingress resource failed. The CI/CD pipeline that had been deploying fine for two years was suddenly broken — 14 microservices went down because every manifest still used `networking.k8s.io/v1beta1`. The team had ignored deprecation warnings in their server logs for three releases. Total downtime: 3 hours. Revenue lost: $180K.
+Hypothetical scenario: you join an application team after a cluster upgrade window. The workloads still exist, but the next deployment fails because several YAML files use API versions that the new API server no longer serves. The application code did not change, the image did not change, and the Service did not change; the deployment broke because the contract between the manifest and the Kubernetes API changed while the repository stayed frozen.
 
-This wasn't a bug. It was entirely preventable. The API server had been printing warnings for over a year.
+That scenario is common enough to deserve its own troubleshooting habit. Kubernetes deprecates APIs before it removes them, and during the grace period the API server can warn clients that a version still works today but will not work later. Those warnings are like construction signs on a road: first they tell you a route will close, then they give you time to take another route, and finally the road is gone. If you ignore the signs, the failure feels sudden even though the platform warned you in advance.
 
-> **The Road Construction Analogy**
->
-> API deprecation is like road construction. First, signs warn you the road will close (deprecation). You have time to find alternate routes (new API version). Eventually, the old road closes completely (API removal). If you ignore the warnings, you're stuck when the road disappears.
+The key CKAD skill is not memorizing every API version. The exam cluster, your practice cluster, and a production cluster can be on different minor releases, and Kubernetes keeps evolving. The reliable skill is knowing how to ask the cluster what it serves right now, how to compare that answer with the YAML in front of you, and how to recognize when a new API version changed the shape of the spec rather than only the version string.
 
-**The key skill isn't memorizing API versions** — it's knowing how to look them up instantly with `kubectl explain`. The exam cluster might be a different version than what you practiced on. The commands always work.
+This module treats API deprecation as an observability and maintenance problem. You will inspect the served API surface, read warning and error messages, update a legacy Ingress manifest, and build a small audit loop that checks commonly used resources. Pause before you run the first command: if a manifest worked on Kubernetes 1.21 but fails on Kubernetes 1.35+, what evidence would prove whether the problem is the API version, the resource kind, or the fields under `spec`?
 
----
+## How Kubernetes API Versions Age
 
-## API Versioning Basics
+Every Kubernetes manifest starts by naming two things: the API version and the kind. The kind says what you want, such as a `Deployment`, `Ingress`, or `CronJob`; the API version says which schema and behavior contract should interpret that object. A useful mental model is a library card catalog. The title of the book is the kind, but the shelf and edition are the API group and version, and using an old shelf label will not help if the library moved or retired that edition.
 
-### Version Stages
+Kubernetes separates core resources from named API groups. Core resources, such as Pods and Services, use `apiVersion: v1` without a group prefix. Many other resources live in named groups such as `apps`, `batch`, or `networking.k8s.io`, and the group is part of the lookup key. That is why `apps/v1` Deployment and `networking.k8s.io/v1` Ingress are not interchangeable labels; they point the API server to different resource families.
 
 | Stage | Meaning | Stability |
 |-------|---------|-----------|
@@ -53,13 +50,13 @@ This wasn't a bug. It was entirely preventable. The API server had been printing
 | `beta` (v1beta1) | Feature complete, may change | Mostly stable |
 | `stable` (v1, v2) | Production ready, backward compatible | Stable |
 
-### Version Progression
+The stage names are not decoration. Alpha APIs can change quickly and may be disabled by default. Beta APIs are closer to real use, but Kubernetes still reserves room to adjust fields or behavior before the API graduates. Stable APIs have stronger compatibility expectations, which is why most built-in Kubernetes resources you use for CKAD tasks should be on stable versions in a modern cluster.
 
-```
-v1alpha1 → v1alpha2 → v1beta1 → v1beta2 → v1
+```text
+v1alpha1 -> v1alpha2 -> v1beta1 -> v1beta2 -> v1
 ```
 
-### API Groups
+Do not read that progression as a promise that every API graduates cleanly through every step. Some APIs graduate with changed fields, some are replaced by a different mechanism, and some are removed without a stable replacement because the feature was retired. PodSecurityPolicy is the classic reminder: there is no `policy/v1` PodSecurityPolicy to change into, so the correct migration is to Pod Security Admission or another policy mechanism rather than a blind version edit.
 
 ```yaml
 # Core group (no prefix)
@@ -77,11 +74,60 @@ apiVersion: batch/v1
 kind: Job
 ```
 
----
+The API server uses the group, version, and kind together to find the resource mapping. When that mapping exists, the server can validate fields, apply defaults, store the object, and return warnings when the version is deprecated. When the mapping does not exist, the request fails before field validation because Kubernetes cannot even find the schema for that kind and version pair. That distinction matters during troubleshooting because a removed API fails differently from an old but still-served API.
 
-## Common Deprecations
+Kubernetes also distinguishes API deprecation from API removal. Deprecation means the version still works but clients should move away from it because removal is planned or already scheduled. Removal means the API server no longer serves that version, so a manifest using it cannot be accepted. In the exam, this distinction tells you whether you are reading a warning that deserves cleanup soon or an error that blocks the task immediately.
 
-### Historical Examples
+## Inspect the Cluster Before Editing YAML
+
+The fastest way to avoid stale API versions is to ask the cluster before you write or repair a manifest. `kubectl api-resources` shows the resources currently served by the API server, including their short names, API groups, namespaced status, and kind names. `kubectl explain` shows the version and schema path for a resource, which is especially useful when you need to know whether the current object shape contains a field such as `pathType` or a nested `backend.service.port.number`.
+
+The habit is simple: use `api-resources` when you need to discover resource names and groups, then use `explain` when you need the schema of a specific kind or field. This is faster and safer than searching old notes because both commands talk to the API server you are actually using. Before running the next block, predict which resources will show a named API group and which will show the core `v1` group.
+
+```bash
+# All resources with API versions
+kubectl api-resources
+
+# Specific resource
+kubectl api-resources | grep -i deployment
+# Output: deployments   deploy   apps/v1   true   Deployment
+
+# With short names
+kubectl api-resources --sort-by=name
+```
+
+The output of `api-resources` can feel wide at first, but it answers a practical question: "Can this cluster serve the thing I am about to apply?" If the resource kind is not listed, the manifest is not going to work without installing the missing API or changing the object. If the resource is listed under a different group than the manifest uses, the manifest may be old, copied from a different Kubernetes era, or meant for a CRD that is not installed in this cluster.
+
+```bash
+# Get API version for a resource
+kubectl explain deployment
+# Output shows: VERSION: apps/v1
+
+kubectl explain ingress
+# Output shows: VERSION: networking.k8s.io/v1
+
+kubectl explain cronjob
+# Output shows: VERSION: batch/v1
+```
+
+`kubectl explain` is the command to reach for when you need field-level confidence. The top of its output shows the current version for the resource, and deeper paths show the fields Kubernetes expects. For example, `kubectl explain ingress.spec.rules.http.paths` shows the current Ingress path structure, which is exactly where many old examples fail because `serviceName` and `servicePort` moved under `backend.service`.
+
+```bash
+# See what version existing objects use
+kubectl get deployment nginx -o yaml | head -5
+# apiVersion: apps/v1
+# kind: Deployment
+```
+
+Looking at an existing object can help when the cluster already has a similar resource. Kubernetes stores and serves objects through preferred versions, so the first lines of `kubectl get ... -o yaml` usually show the version the API server returns now. That output should not be treated as a conversion guide by itself, but it gives you a concrete reference for the group and version in the same cluster.
+
+Use this check whenever a manifest came from a repository, a tutorial, a generated chart, or a teammate's snippet. A manifest that was correct in 2020 can be wrong on a Kubernetes 1.35+ cluster, and a manifest that works in one vendor environment can fail in another if a CRD is missing. Which approach would you choose here and why: editing the `apiVersion` from memory, checking `kubectl explain`, or trying `kubectl apply` first and reading the error?
+
+## Recognize Deprecated and Removed APIs
+
+Kubernetes deprecations are visible in two places: documentation that announces version lifecycles, and API server responses that warn when you use a deprecated version that still works. The warning path is valuable because it appears in the workflow you already run. If CI logs include a deprecation warning, the deployment may still succeed today, but the log is telling you that a future upgrade can turn the same YAML into a hard failure.
+
+The table below preserves the historical examples that matter most for CKAD-style maintenance work. You should not memorize it as the only source of truth, but it gives you pattern recognition for common stale manifests. The repeated theme is that a removed beta API is not a runtime application failure; it is a schema negotiation failure between client and API server.
 
 | Old API | Current API | Removed In |
 |---------|-------------|------------|
@@ -92,93 +138,83 @@ kind: Job
 | `batch/v1beta1 CronJob` | `batch/v1` | 1.25 |
 | `policy/v1beta1 PodSecurityPolicy` | Removed (use Pod Security Admission) | 1.25 |
 
-### Current Exam Environment
-
-The CKAD exam uses recent Kubernetes versions. Most beta APIs have been removed. Always use stable (`v1`) versions.
-
----
-
-## Finding Correct API Versions
-
-### List API Resources
-
-```bash
-# All resources with API versions
-k api-resources
-
-# Specific resource
-k api-resources | grep -i deployment
-# Output: deployments   deploy   apps/v1   true   Deployment
-
-# With short names
-k api-resources --sort-by=name
-```
-
-### Explain Command
-
-```bash
-# Get API version for a resource
-k explain deployment
-# Output shows: VERSION: apps/v1
-
-k explain ingress
-# Output shows: VERSION: networking.k8s.io/v1
-
-k explain cronjob
-# Output shows: VERSION: batch/v1
-```
-
-### Get Current Objects
-
-```bash
-# See what version existing objects use
-k get deployment nginx -o yaml | head -5
-# apiVersion: apps/v1
-# kind: Deployment
-```
-
----
-
-## Checking for Deprecated APIs
-
-### kubectl Convert (if available)
+The CKAD exam uses recent Kubernetes versions, and this module assumes Kubernetes 1.35+ for examples. That means most built-in beta APIs from the early Kubernetes era are gone, not merely discouraged. The practical consequence is that you should expect old blog-post YAML to fail fast when it names `extensions/v1beta1` Ingress or `batch/v1beta1` CronJob, while a still-served deprecated API would normally print a warning before a later release removes it.
 
 ```bash
 # Convert old manifest to new API
 kubectl convert -f old-deployment.yaml --output-version apps/v1
 ```
 
-Note: `kubectl convert` may not be available in all environments.
-
-> **Stop and think**: You find a working Kubernetes manifest in your company's git repo that was last modified in 2020. Would you trust its `apiVersion` field on a 2026 cluster? What's the fastest way to verify it?
-
-### Manual Check
+`kubectl convert` is useful when it is available, but it is not a substitute for understanding the resource shape. The plugin can help with version conversion, yet you still need to inspect required fields and review the result. In exam environments you may not have the plugin, so treat it as a convenience rather than a foundation for your troubleshooting strategy.
 
 ```bash
 # Check what the manifest uses
 head -5 my-manifest.yaml
 
 # Compare with current API
-k api-resources | grep -i <resource-type>
+kubectl api-resources | grep -i <resource-type>
 ```
 
-### API Server Warnings
-
-When you apply a deprecated API, the server warns you:
+A manual check is often enough. The first few lines of the file tell you the manifest's declared version and kind, while `api-resources` or `explain` tells you what the cluster serves. This comparison is also a good code review habit: if a pull request introduces `v1beta1` for a built-in resource in a modern cluster, the reviewer should ask for proof that the API is still served.
 
 ```bash
-$ k apply -f old-ingress.yaml
+$ kubectl apply -f old-ingress.yaml
 Warning: networking.k8s.io/v1beta1 Ingress is deprecated in v1.19+,
 unavailable in v1.22+; use networking.k8s.io/v1 Ingress
 ```
 
----
+The warning example is the best case because it gives you time. The server still accepted the object, but it also told you the old version is deprecated and named the replacement. If you see that warning in CI, the correct response is not "green build, ignore it." The correct response is to create a small migration change while the system is healthy, because the same warning can become `no matches for kind` after an upgrade crosses the removal release.
 
-## Updating Manifests
+```text
+1.19: v1beta1 deprecated (warning)
+1.20: v1beta1 still works (warning continues)
+1.21: v1beta1 still works (warning continues)
+1.22: v1beta1 REMOVED (error if used)
+```
 
-### Example: Ingress Update
+The timeline above is a simplified Ingress-style example, and the exact releases differ by API. What matters is the lifecycle shape: deprecation precedes removal, and warnings exist so users can migrate before the failure is unavoidable. When you troubleshoot a failed manifest, ask whether you are before or after the removal point. Before removal, you can apply and migrate calmly; after removal, the manifest must change before it can be accepted.
 
-**Old (deprecated):**
+```mermaid
+timeline
+    title API Deprecation Lifecycle (v1beta1 Example)
+    1.19 : API Deprecated : Warning Printed
+    1.20 : Grace Period : Still Works
+    1.21 : Grace Period : Warning Continues
+    1.22 : API Removed : Manifests Fail
+```
+
+Deprecation policy gives Kubernetes users a predictable runway, but it does not remove the need to read release notes and warning output. The policy is strongest for stable APIs and less comforting for beta or alpha versions. In everyday terms, a stable API is like a public road the city is expected to maintain carefully, while an alpha API is closer to a temporary construction path. You can use it, but you should not be surprised when its shape changes.
+
+## Read API Errors as Evidence
+
+Kubernetes API errors are not random complaint text. They usually tell you which layer rejected the object, and that layer tells you what kind of fix is possible. A removed API fails during resource mapping because the server cannot match the group, version, and kind to a served endpoint. A current API with old fields fails during decoding or validation because the server found the endpoint but rejected the object shape. An admission rejection happens later, after the object is syntactically valid, because a policy or controller decided the request is not allowed.
+
+This order is useful because it keeps your troubleshooting narrow. If the message says `no matches for kind`, do not start editing probes, labels, or Service ports. Kubernetes has not reached those fields yet. Your immediate job is to discover the correct API or confirm that the resource no longer exists. Once the group-version-kind maps successfully, then field errors become meaningful, and only after field validation passes should you think about admission policies, quota, or runtime behavior.
+
+The phrase `resource mapping not found` usually points to discovery. The client tried to build a REST mapping for the object and could not find a matching served resource. In a built-in resource, that often means the manifest uses a removed API version such as an old Ingress or CronJob beta. In a custom resource, the same wording can mean the CRD is missing, the CRD uses a different group, or you are connected to the wrong cluster. The fix depends on whether the resource should be built in or installed by an extension.
+
+The phrase `no matches for kind` is especially direct. It names the kind and the version that failed, so you can compare those two values against `kubectl api-resources`. If the kind appears under a different API group, update the manifest to the served group and then inspect the spec. If the kind does not appear at all, changing random version strings is guesswork. You either need to install the API provider, choose a different resource, or remove that manifest from the target environment.
+
+Field errors have a different flavor. They often say that a field is unknown, required, invalid, or not allowed in a certain location. That means Kubernetes recognized the resource version and moved on to validating the object body. For deprecation work, this is the point where a version-only migration reveals its weakness. The manifest is no longer stale at the first line, but parts of the body still belong to the old schema.
+
+Ingress makes this concrete. If you change only `networking.k8s.io/v1beta1` to `networking.k8s.io/v1`, the old `serviceName` and `servicePort` fields are still in the wrong place. A field error is not evidence that stable Ingress is broken; it is evidence that the manifest still describes the beta shape. The right next move is to inspect the exact schema path and rewrite the backend block, not to try another API version.
+
+Warnings sit between success and failure, which is why they are easy to mishandle. A warning can appear while `kubectl apply` exits successfully because the API server accepted the object but wants the client to change behavior before a future release. In a human terminal, the warning is visible. In automation, it may be buried between normal apply lines. Teams that treat warnings as background noise lose the cheapest possible signal for upgrade readiness.
+
+Admission errors are different from deprecation errors, even when they appear during the same apply command. A policy can reject a valid `apps/v1` Deployment because it lacks resource limits, uses a forbidden image registry, or violates Pod Security Admission. Changing the `apiVersion` will not fix that because discovery and schema validation already succeeded. The repair belongs to the policy requirement named in the message, not to the API lifecycle.
+
+The practical debugging sequence is therefore discovery, schema, admission, and runtime. Discovery asks whether the API server serves this group-version-kind. Schema asks whether the object body matches that version. Admission asks whether cluster policy allows the request. Runtime asks whether controllers, the scheduler, kubelet, and application process can make the accepted object work. API deprecation usually lives in the first two layers, so keep the investigation there until the evidence moves you forward.
+
+Pause and predict: if `kubectl apply --dry-run=server` returns an unknown field error for an Ingress, would installing a different Ingress controller fix the manifest? Usually no, because the API server validates the built-in Ingress schema before any controller reconciles the object. The controller may affect behavior after the object is accepted, but it does not make old beta fields valid inside the stable API.
+
+This evidence-based reading also helps when you review pull requests. A changed `apiVersion` should invite a small checklist: did the kind still map, did the spec shape change, did the rendered manifest pass server-side dry run, and did any policy reject the accepted object? That checklist is short enough for CKAD practice and concrete enough for team review. It turns opaque apply output into a decision tree you can run without panic.
+
+## Update Manifests Without Guessing
+
+Many removed-API fixes look like simple `apiVersion` edits until they do not. Some resources kept nearly the same spec when they graduated, while others changed field names, nesting, defaults, or required fields. Ingress is the best training example because the migration from `networking.k8s.io/v1beta1` to `networking.k8s.io/v1` requires more than changing the first line. If you only update the version, the API server moves from "unknown API" to "known API with invalid fields."
+
+Start by reading the old manifest as a shape, not just as text. It declares an Ingress, it has a rule for `example.com`, and under each path it points to a Service by the older flat fields `serviceName` and `servicePort`. Those fields were valid in the old beta shape, but the stable Ingress API uses a nested backend object and requires an explicit path matching strategy.
+
 ```yaml
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
@@ -195,7 +231,8 @@ spec:
           servicePort: 80
 ```
 
-**New (current):**
+Before looking at the updated manifest, pause and predict: which fields are part of the object identity, which fields describe HTTP routing, and which fields tell Kubernetes how to reach the Service backend? If you can separate those responsibilities, the new shape is easier to remember because the nested `service` block groups the Service name and port together.
+
 ```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -215,148 +252,143 @@ spec:
               number: 80
 ```
 
-> **Pause and predict**: Looking at the old and new Ingress specs above, can you spot all three structural changes? Try listing them before reading the summary below.
+The three important changes are the version, the required `pathType`, and the backend structure. `pathType: Prefix` tells the controller how to match the path, while `backend.service.name` and `backend.service.port.number` replace the older flat backend fields. This is why `kubectl explain ingress.spec.rules.http.paths.backend` is worth the few seconds it takes; it shows the current shape instead of leaving you to remember every migration detail.
 
-### Key Changes Often Required
-
-1. **apiVersion** - Update to stable version
-2. **spec structure** - May change between versions
-3. **New required fields** - Like `pathType` for Ingress
-
----
-
-## Exam Strategy
-
-### Before Writing YAML
+Some migrations are less dramatic. A stale Deployment using `apps/v1beta1` usually becomes `apps/v1` with a familiar pod template shape, but you still need to validate the selector and template labels because stable Deployments require a selector. A CronJob migration from `batch/v1beta1` to `batch/v1` is usually straightforward for common fields, but you should still ask the cluster for the current schema and run a server-side dry run before merging the change.
 
 ```bash
 # Always check current API version first
-k explain <resource>
+kubectl explain <resource>
 
 # Example
-k explain ingress
-k explain cronjob
-k explain networkpolicy
+kubectl explain ingress
+kubectl explain cronjob
+kubectl explain networkpolicy
 ```
 
-### Don't Memorize — Look It Up
-
-You might be tempted to memorize API versions for every resource. Don't. The exam environment might use a different Kubernetes version than what you studied. Instead, build muscle memory for the lookup:
+The command above is deliberately boring. It is also the command that saves time under pressure because it converts uncertainty into evidence. In CKAD work, a correct lookup beats a confident guess, and the cost is only a few seconds. The same habit scales to real repositories because you can audit manifests for declared versions first, then use server-side validation to catch the field-level issues.
 
 ```bash
 # This is the ONLY command you need to remember
-k explain <resource> | head -5
+kubectl explain <resource> | head -5
 
 # Practice: what happens if you guess wrong?
 # Try applying a manifest with the wrong version and read the error.
 ```
 
-> **Pause and predict**: If you applied a Deployment with `apiVersion: extensions/v1beta1` on a 1.35 cluster, what would happen? Would it warn you, error out, or silently succeed? Think about it before reading on.
+If you applied a Deployment with `apiVersion: extensions/v1beta1` on a Kubernetes 1.35+ cluster, it would fail immediately with a message like `no matches for kind "Deployment" in version "extensions/v1beta1"`. That error means the API server cannot find the group-version-kind mapping. It is different from a deprecation warning, which appears only when the old API is still served and the server can process the request while warning you to move.
 
-The answer: it would error out immediately. `extensions/v1beta1` Deployments were removed in 1.16 — that's almost 20 versions ago. The error message would say `no matches for kind "Deployment" in version "extensions/v1beta1"`. This is different from a deprecation warning, which only appears for APIs that still work but are scheduled for removal.
+## Build a Verification Workflow for CKAD and CI
 
----
+The best manifest workflow has two loops: a quick human loop for interactive work and an automated loop for repositories. In the human loop, you check the resource version with `explain`, update the manifest, and run `kubectl apply --dry-run=server` before applying for real. In the automated loop, CI runs a server-side dry run or an equivalent policy check against a representative cluster version so deprecated or removed APIs do not wait until an upgrade night to fail.
 
-## Deprecation Policy
+Server-side dry run matters because it asks the API server to validate the request without persisting the object. Client-side generation can catch YAML syntax and produce default shapes, but it cannot prove that the live API server accepts the resource version or all fields. For deprecations, that server contact is the point. You want the same component that would reject the real deployment to reject the test deployment first.
 
-### Kubernetes Guarantees
+A useful review rule is to separate "version accepted" from "field accepted." A manifest can fail because the API version is removed, or it can pass the version lookup and fail because the spec still uses old fields. The first failure usually says no matches for kind and version; the second failure usually names an unknown or missing field. When you read errors this way, you avoid the common trap of fixing the first line and assuming the migration is done.
 
-1. **Beta APIs deprecated at least 3 releases** before removal
-2. **Stable APIs almost never removed** (only in major version changes)
-3. **Deprecation warnings** shown in API server responses
+Use generated YAML as a learning aid when the exam allows it. Imperative `kubectl create` commands are good at producing current API versions for common workload objects, and the output can serve as a skeleton. The generated file is not always the final answer because you may need labels, probes, volume mounts, or policy fields, but it reduces the chance that your first two lines are stale.
 
-### Timeline Example
+In production-style repositories, add a manifest audit step near the code that already renders Helm, Kustomize, or plain YAML. Render first, then validate the rendered result, because deprecations hide in templates until values expand them. This keeps the check honest: you test the object that would reach the API server, not the partial template that humans read in review.
 
-```text
-1.19: v1beta1 deprecated (warning)
-1.20: v1beta1 still works (warning continues)
-1.21: v1beta1 still works (warning continues)
-1.22: v1beta1 REMOVED (error if used)
-```
+## Patterns & Anti-Patterns
 
-```mermaid
-timeline
-    title API Deprecation Lifecycle (v1beta1 Example)
-    1.19 : API Deprecated : Warning Printed
-    1.20 : Grace Period : Still Works
-    1.21 : Grace Period : Warning Continues
-    1.22 : API Removed : Manifests Fail
-```
+The main pattern is evidence-first migration. Use the live API to learn what the cluster serves, update the manifest shape with the schema in view, then validate with server-side dry run. This works for CKAD tasks because it is fast, and it works for larger teams because it leaves a repeatable audit trail in CI. The scaling consideration is cluster coverage: if you deploy to several Kubernetes minor versions, validate against the oldest and newest supported versions instead of assuming one cluster proves every target.
 
----
+A second useful pattern is inventory before upgrade. Before a cluster upgrade, search rendered manifests and live audit logs for deprecated versions, then rank findings by removal release and blast radius. This is different from waiting for deployment errors after the upgrade. The inventory tells you which manifests must change before the control plane moves, which teams own them, and which changes require behavior migration rather than a version bump.
+
+The third pattern is schema-guided code review. When a pull request changes `apiVersion`, reviewers should also look for nearby field-shape changes, especially on resources with known migration differences such as Ingress. This keeps review focused on the contract being changed. The reviewer does not need to recite the entire Kubernetes API; they need to ask whether the new version's schema still contains the fields in the manifest.
+
+The most damaging anti-pattern is "version-string only" migration. Teams fall into it because the failure message names the old API version, so changing the first line feels like the whole fix. The better alternative is to use `kubectl explain` on the relevant spec path and run a server-side dry run. That combination catches the next layer of errors before the manifest reaches a real deployment.
+
+Another anti-pattern is trusting examples by age or search ranking. A tutorial can be correct for the Kubernetes release it targeted and still be wrong for your cluster. Treat external YAML as a starting point, not as an authority. The cluster is the authority, and Kubernetes documentation or vendor release notes should be the reference for migrations that change behavior.
+
+A final anti-pattern is ignoring warnings because the command exited successfully. Warnings are easy to lose in CI logs, especially when a deployment prints many normal lines. Make deprecation warnings visible by failing a dedicated audit job or by opening tracked cleanup work when warnings appear. The fix is usually cheaper during normal maintenance than during a blocked upgrade or an exam timer.
+
+## Decision Framework
+
+Use this framework when a manifest fails or warns during apply. First decide whether the API server recognizes the group-version-kind. If it does not, use `api-resources` and `explain` to find the current version or to confirm that the resource was removed without a direct replacement. If it does recognize the version but warns, treat the warning as a migration task with a deadline. If it recognizes the version but rejects fields, you have a spec-shape problem rather than a version-discovery problem.
+
+| Situation | Evidence | Best Next Move | Tradeoff |
+|-----------|----------|----------------|----------|
+| Removed built-in API | `no matches for kind` names an old group or version | Find the current API with `kubectl explain` and update the manifest shape | Fast fix when the resource graduated, but some APIs require replacement |
+| Deprecated but still served API | `Warning:` appears while the object applies | Migrate during normal work and validate with server-side dry run | Deployment is not blocked today, but upgrade risk remains |
+| Current API with invalid fields | Error names unknown, missing, or invalid fields | Inspect the exact spec path with `kubectl explain` and edit fields | Requires more care than a version bump |
+| Missing CRD or extension API | Resource kind is absent from `api-resources` | Install the owning CRD/operator or remove the dependent object | Not a CKAD built-in-resource fix, but common in platform repos |
+| Removed API with no stable equivalent | Documentation shows replacement mechanism, not a new version | Plan a behavioral migration, such as Pod Security Admission | More work, but avoids inventing non-existent APIs |
+
+This decision table also keeps you from overcorrecting. If the cluster says an API is missing because a CRD is not installed, changing `apiVersion` randomly will not help. If the resource is built in and removed, installing a CRD will not help. The right fix follows the evidence category, which is why the first question is always whether the API server can map the kind and version at all.
+
+For CKAD timing, the fastest safe path is usually lookup, edit, dry-run, then apply. Do not spend exam minutes trying many versions by trial and error. The API server already exposes the served version, and field-level explanation is available for the resource path you are editing. A calm two-command check is usually faster than debugging a chain of avoidable validation errors.
 
 ## Did You Know?
 
-- **PodSecurityPolicy was completely removed** in Kubernetes 1.25. It was replaced by Pod Security Admission, which works differently.
-
-- **The `kubectl convert` plugin** can convert between API versions, but it's not installed by default and may not be on the exam.
-
-- **CRDs can have their own deprecation** schedule set by the operator/vendor who created them.
-
-- **Running `kubectl apply` with deprecated APIs** still works until removal, but you'll get warnings every time.
-
----
+- **Ingress `networking.k8s.io/v1beta1` was removed in Kubernetes 1.22.** The stable `networking.k8s.io/v1` shape requires `pathType` and a nested backend service reference.
+- **CronJob `batch/v1beta1` was removed in Kubernetes 1.25.** Modern clusters serve CronJob through `batch/v1`, so old beta examples fail on Kubernetes 1.35+.
+- **PodSecurityPolicy was completely removed in Kubernetes 1.25.** It did not graduate to `policy/v1`; migration means using Pod Security Admission or another supported policy system.
+- **The API server can return deprecation warnings before removal.** A successful `kubectl apply` can still be telling you that the manifest needs migration before a future upgrade.
 
 ## Common Mistakes
 
-| Mistake | Why It Hurts | Solution |
-|---------|--------------|----------|
-| Copying YAML from old blog posts or Stack Overflow | Examples from 2019 use removed APIs (`extensions/v1beta1`) | Always verify with `k explain` on YOUR cluster |
-| Ignoring deprecation warnings in CI/CD logs | Warnings become errors after 3 releases — but the upgrade happens silently | Treat deprecation warnings as bugs; fix in the next sprint |
-| Memorizing API versions instead of learning the lookup | Exam cluster version may differ from what you studied | Build muscle memory for `k explain <resource>` — takes 3 seconds |
-| Only updating `apiVersion` without checking spec changes | Ingress, CronJob, and others changed their spec structure between versions | Always run `k explain <resource>.spec` after changing apiVersion |
-| Not testing manifests after a cluster upgrade | Old manifests silently become time bombs | Add `kubectl apply --dry-run=server` to your CI pipeline |
-| Using `kubectl convert` without understanding the changes | `convert` handles apiVersion but may miss structural changes | Use `convert` as a starting point, then verify with `explain` |
-
----
+| Mistake | Why It Happens | How to Fix It |
+|---------|----------------|---------------|
+| Copying YAML from old blog posts or Stack Overflow | Examples from older releases may use removed APIs such as `extensions/v1beta1` | Verify the resource with `kubectl explain` on your cluster before using the manifest |
+| Ignoring deprecation warnings in CI logs | The deployment still succeeds, so the warning feels harmless | Treat the warning as upgrade work and migrate before the removal release |
+| Memorizing API versions instead of learning lookup commands | Practice clusters, exam clusters, and production clusters can use different minor versions | Build muscle memory for `kubectl explain <resource>` and `kubectl api-resources` |
+| Only updating `apiVersion` without checking spec changes | The error message names the version, so the first line gets all the attention | Inspect the relevant `spec` path and run `kubectl apply --dry-run=server` |
+| Assuming every beta API has a stable replacement | Some features are removed or replaced by a different mechanism | Read the deprecation guide and confirm the replacement before editing manifests |
+| Testing only with client-side dry run | Client-side generation cannot prove that the live API server accepts the resource | Use server-side dry run when checking API availability and schema validation |
+| Auditing source templates instead of rendered manifests | Helm and Kustomize can hide deprecated APIs until values or overlays are rendered | Validate the rendered YAML that would be sent to the API server |
 
 ## Quiz
 
-1. **Your team just upgraded a cluster from 1.24 to 1.25. Deployments work fine but all CronJobs fail to apply. What's likely wrong and how would you fix it?**
-   <details>
-   <summary>Answer</summary>
-   CronJob moved from `batch/v1beta1` to `batch/v1` and `v1beta1` was removed in 1.25. The manifests still reference the old API version. Fix: run `k explain cronjob | head -5` to confirm the current version, then update every CronJob manifest's `apiVersion` to `batch/v1`. Also check if the CronJob spec structure changed between versions — in this case, it didn't significantly, but always verify with `k explain cronjob.spec`.
-   </details>
+Use these scenarios to test whether you can distinguish API discovery, field-shape migration, warning cleanup, and validation workflow. The questions are intentionally practical because real deprecation work rarely asks for a definition; it asks you to decide which evidence changes your next command.
 
-2. **You run `kubectl apply -f ingress.yaml` and get: `no matches for kind "Ingress" in version "extensions/v1beta1"`. But your colleague says "it worked last week." What happened?**
-   <details>
-   <summary>Answer</summary>
-   The cluster was upgraded between last week and now. `extensions/v1beta1` Ingresses were removed in Kubernetes 1.22. Before that version, the API still worked but printed deprecation warnings. After the upgrade crossed that boundary, the API was completely removed. The fix isn't just changing the apiVersion to `networking.k8s.io/v1` — you also need to update the spec structure: `backend.serviceName` becomes `backend.service.name`, `backend.servicePort` becomes `backend.service.port.number`, and you must add `pathType: Prefix` (or `Exact`).
-   </details>
+<details>
+<summary>1. Your team upgraded a cluster from 1.24 to 1.25. Deployments work, but all CronJobs fail to apply with a `batch/v1beta1` message. What is likely wrong, and how would you fix it?</summary>
 
-3. **You're writing a manifest during the CKAD exam and you're not sure if NetworkPolicy uses `v1` or `v1beta1`. What's the fastest way to find out, and why shouldn't you guess?**
-   <details>
-   <summary>Answer</summary>
-   Run `k explain networkpolicy | head -5` — this shows the current VERSION on the exam cluster, which may differ from what you studied. Guessing is risky because the exam uses a specific Kubernetes version that you won't know in advance. Even if you memorized versions for 1.35, the exam might use 1.34 or 1.36. The `explain` command always gives you the truth for the cluster you're on. It takes 3 seconds and eliminates a category of errors entirely.
-   </details>
+CronJob `batch/v1beta1` was removed in Kubernetes 1.25, so the manifests still declare an API version the server no longer serves. The first fix is to confirm the current version with `kubectl explain cronjob | head -5`, then update the manifests to `batch/v1`. After the version change, run a server-side dry run so the API server validates the full object. This is not a Deployment problem or a scheduler problem because the failure happens before Kubernetes accepts the CronJob object.
+</details>
 
-4. **Your CI pipeline applies manifests with `kubectl apply --server-side`. The server returns `Warning: batch/v1beta1 CronJob is deprecated`. The manifests still apply successfully. Should you fix this now or later?**
-   <details>
-   <summary>Answer</summary>
-   Fix it now. A deprecation warning means the API still works in the current version but has a removal date. Kubernetes guarantees at least 3 releases between deprecation and removal, so you have time — but ignoring it means your manifests will break silently during a future upgrade. The safest approach: update the apiVersion immediately, verify the spec structure hasn't changed, test in staging, and update all copies of the manifest (Helm charts, Kustomize bases, GitOps repos). The cost of fixing now is 5 minutes; the cost of fixing during a 2 AM outage after an upgrade is hours.
-   </details>
+<details>
+<summary>2. You run `kubectl apply -f ingress.yaml` and get `no matches for kind "Ingress" in version "extensions/v1beta1"`. A teammate says the same file worked last month. What changed, and what should you inspect before reapplying?</summary>
 
-5. **You find a Stack Overflow answer from 2019 that shows how to create a Deployment using `apiVersion: extensions/v1beta1`. Can you trust it? How would you adapt it?**
-   <details>
-   <summary>Answer</summary>
-   You cannot trust the apiVersion from any online example — only `kubectl explain` on your actual cluster tells you the truth. `extensions/v1beta1` Deployments were removed in Kubernetes 1.16 (released 2019). To adapt: change `apiVersion` to `apps/v1`, then verify the spec structure with `k explain deployment.spec`. For Deployments, the v1 spec is essentially the same as v1beta1, so the rest of the manifest likely works. For other resources like Ingress, the spec changed significantly between versions. Always validate with `--dry-run=client -o yaml` before applying.
-   </details>
+The cluster likely crossed a Kubernetes version boundary where that old Ingress API is no longer served. The fix is not only changing the first line to `networking.k8s.io/v1`; you must also inspect the stable Ingress schema because the backend fields and `pathType` requirement changed. Use `kubectl explain ingress.spec.rules.http.paths` to confirm the current structure. Then run `kubectl apply --dry-run=server` to catch field errors before creating or updating the object.
+</details>
 
-6. **You are reviewing a pull request that updates a Helm chart. The author noticed deprecation warnings for `policy/v1beta1` PodSecurityPolicies in the CI logs and simply changed the `apiVersion` to `policy/v1` to make the warnings stop. Is this the correct approach for this specific API, and what consequences might this have?**
-   <details>
-   <summary>Answer</summary>
-   No, this is not the correct approach, as PodSecurityPolicy was completely removed in Kubernetes 1.25 and does not have a `v1` equivalent API. The author is assuming that all beta APIs simply graduate to stable by changing the version string, which is a dangerous assumption. By blindly changing the version without checking `kubectl explain podsecuritypolicy`, the updated chart will immediately fail to apply on the cluster, causing a deployment outage. The correct action is to read the deprecation notice, research the replacement (which is Pod Security Admission), and migrate the security controls entirely rather than just bumping the version string.
-   </details>
+<details>
+<summary>3. During CKAD practice, you are not sure whether NetworkPolicy uses `v1` or `v1beta1`. What should you do, and why is guessing the weaker option?</summary>
 
----
+Run `kubectl explain networkpolicy | head -5` or check `kubectl api-resources | grep -i networkpolicy` on the cluster. Guessing is weaker because the exam grades against the API server in front of you, not against what you remember from a tutorial or another cluster. The lookup takes seconds and also reinforces the group name. If the command shows `networking.k8s.io/v1`, that is the version your manifest should use in that environment.
+</details>
+
+<details>
+<summary>4. Your CI pipeline prints `Warning: batch/v1beta1 CronJob is deprecated`, but the deployment exits successfully. Should the team fix it now or wait for the next cluster upgrade window?</summary>
+
+The team should fix it during normal work, not during the upgrade window. A deprecation warning means the API still works today, but Kubernetes is telling you the version is on the path to removal. Migrating while the deployment still succeeds gives you time to validate behavior and update every copy of the manifest. Waiting converts a low-pressure maintenance task into a blocked deployment when the API is removed.
+</details>
+
+<details>
+<summary>5. A pull request changes `policy/v1beta1` PodSecurityPolicy to `policy/v1` because the author expects beta APIs to graduate. Is that a valid migration?</summary>
+
+No. PodSecurityPolicy was removed and does not have a `policy/v1` replacement object. The correct response is to confirm the resource with documentation and `kubectl api-resources`, then migrate the security controls to Pod Security Admission or another supported policy mechanism. A blind version bump would create a manifest that the API server still cannot map. This question tests whether you distinguish graduation from removal.
+</details>
+
+<details>
+<summary>6. A manifest uses `networking.k8s.io/v1` Ingress, but server-side dry run rejects `serviceName` and `servicePort`. What category of problem is this, and what is the next command?</summary>
+
+This is a current-version, old-field-shape problem. The API server recognizes `networking.k8s.io/v1` Ingress, but the manifest still contains fields from the beta schema. The next command is `kubectl explain ingress.spec.rules.http.paths.backend` or a nearby schema path so you can see the nested `service.name` and `service.port.number` fields. After editing, rerun `kubectl apply --dry-run=server` to validate the full object.
+</details>
 
 ## Hands-On Exercise: Fix the Broken Manifests
 
-**Scenario**: You've inherited a repository of Kubernetes manifests from a team that left the company. The manifests were last updated for Kubernetes 1.21. Your cluster runs 1.35. Some manifests will fail to apply. Your job: find what's broken, fix it, and verify it works.
+Exercise scenario: you inherited a repository of Kubernetes manifests from a team that last validated them on Kubernetes 1.21. Your current cluster runs Kubernetes 1.35+, and at least one manifest uses a removed API. The goal is to diagnose the failure, update the version and fields, and prove with server-side dry run that the API server accepts the corrected object.
 
-**Part 1: Diagnose the Problem**
+Work in a scratch namespace or a local practice cluster if you have one. You do not need to create real Services for the Ingress dry-run validation, but you should read the error output carefully because it tells you whether the server failed at resource mapping or field validation. The sequence matters: diagnose the old API first, inspect the current schema second, edit the manifest third, and validate last.
 
-Save this broken manifest as `broken-ingress.yaml`:
+### Part 1: Diagnose the Problem
+
+Save this broken manifest as `broken-ingress.yaml`. It is intentionally written with an old Ingress API and old backend fields so you can see both layers of the migration. Do not fix it before you run the dry-run command; the point of the first pass is to read the API server's evidence.
+
 ```yaml
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
@@ -377,28 +409,19 @@ spec:
           servicePort: 80
 ```
 
-Try to apply it: `k apply -f broken-ingress.yaml --dry-run=server`
+Try to apply it with server-side dry run, then read the first resource-mapping error. That error tells you the API version is removed before Kubernetes even reaches the old backend fields.
 
-What error do you get? Read it carefully — it tells you exactly what's wrong.
-
-<details>
-<summary>Expected error</summary>
-
-```
+```text
 error: resource mapping not found for name: "legacy-app" namespace: "" from "broken-ingress.yaml":
 no matches for kind "Ingress" in version "networking.k8s.io/v1beta1"
 ```
 
-This means `v1beta1` has been completely removed. You need `networking.k8s.io/v1`.
-</details>
+### Part 2: Fix the Manifest
 
-**Part 2: Fix the Manifest**
+Use `kubectl explain ingress | head -5` to confirm the current version, then inspect `kubectl explain ingress.spec.rules.http.paths` to see the required path structure. Update the manifest only after you have looked at the schema. This forces you to practice the habit that prevents a version-only fix from leaving old fields behind.
 
-Update `broken-ingress.yaml` to use the correct API version. Hint: the spec structure ALSO changed — use `k explain ingress.spec.rules.http.paths` to see the current structure.
-
-Verify your fix works before proceeding:
 ```bash
-k apply -f broken-ingress.yaml --dry-run=server
+kubectl apply -f broken-ingress.yaml --dry-run=server
 ```
 
 <details>
@@ -430,79 +453,77 @@ spec:
               number: 80
 ```
 
-Key changes: `apiVersion` updated, `pathType: Prefix` added (now required), `backend` structure completely changed from flat to nested (`service.name` and `service.port.number`).
+The key changes are the updated `apiVersion`, the required `pathType: Prefix`, and the nested backend structure under `service.name` and `service.port.number`.
 </details>
 
-**Part 3: Audit All Resources**
+After editing the file, run the same server-side dry run again. A clean dry run means the API server recognizes the resource version and accepts the shape of the object. If you still get an error, classify it: is Kubernetes still unable to map the group-version-kind, or is it now rejecting fields under a known version?
 
-Run this to check all API versions available on your cluster:
+### Part 3: Audit All Resources
+
+The next task builds a small lookup table for resources you commonly use. This is not meant to replace documentation; it is meant to train your reflex to ask the cluster for the current served versions. If one resource is missing, read the error and decide whether you used the wrong resource name or whether the API is not installed.
+
 ```bash
 # Find the current version for every resource you commonly use
 for res in pod service deployment statefulset daemonset job cronjob ingress networkpolicy; do
-  version=$(k explain $res 2>/dev/null | grep "VERSION:" | awk '{print $2}')
+  version=$(kubectl explain "$res" 2>/dev/null | grep "VERSION:" | awk '{print $2}')
   echo "$res: $version"
 done
 ```
 
-**Part 4: Generate Correct YAML from Scratch**
+The output should show a mix of core and named API groups. Pods and Services should be `v1`, Deployments should be `apps/v1`, Jobs and CronJobs should be in `batch/v1`, and Ingress and NetworkPolicy should be in `networking.k8s.io/v1`. If your cluster differs because of distribution-specific APIs or missing resources, treat the difference as evidence to investigate, not as a reason to guess.
 
-Without looking at any reference, generate correct manifests using imperative commands:
+### Part 4: Generate Correct YAML from Scratch
+
+Imperative generation is a useful CKAD tactic because it asks `kubectl` to create a current skeleton for common objects. The generated YAML still needs review, but it gives you a correct starting `apiVersion` and kind. Use this tactic when you need speed, then edit the generated file for labels, probes, environment variables, or other required fields.
+
 ```bash
-k create deploy audit-app --image=nginx --dry-run=client -o yaml > deployment.yaml
-k create job audit-job --image=busybox -- echo done --dry-run=client -o yaml > job.yaml
-k create cronjob audit-cron --image=busybox --schedule="0 * * * *" -- echo check --dry-run=client -o yaml > cronjob.yaml
+kubectl create deploy audit-app --image=nginx --dry-run=client -o yaml > deployment.yaml
+kubectl create job audit-job --image=busybox -- echo done --dry-run=client -o yaml > job.yaml
+kubectl create cronjob audit-cron --image=busybox --schedule="0 * * * *" -- echo check --dry-run=client -o yaml > cronjob.yaml
 ```
 
-Verify each one: `grep apiVersion *.yaml`
+Verify each generated manifest with `grep apiVersion *.yaml`, then run server-side dry run for any file you plan to apply. The comparison between generated YAML and repaired legacy YAML is useful: generated files start from current APIs, while repaired files teach you how old shapes migrate.
 
-**Success Criteria**:
-- [ ] Broken ingress manifest diagnosed and fixed
-- [ ] Fixed manifest applies successfully with `--dry-run=server`
-- [ ] You can explain the 3 structural changes between v1beta1 and v1 Ingress
-- [ ] You can look up any resource's API version in under 10 seconds
+### Practice Drills
 
----
-
-## Practice Drills
-
-### Drill 1: API Resources (Target: 2 minutes)
+Drill 1 trains fast resource lookup. Run the commands one by one and say the expected version before the output appears. The value is not in the specific answer for one cluster; the value is in building a low-friction habit for checking the current API surface.
 
 ```bash
 # Find API version for various resources
-k explain pod | head -5
-k explain service | head -5
-k explain deployment | head -5
-k explain ingress | head -5
-k explain networkpolicy | head -5
+kubectl explain pod | head -5
+kubectl explain service | head -5
+kubectl explain deployment | head -5
+kubectl explain ingress | head -5
+kubectl explain networkpolicy | head -5
 ```
 
-### Drill 2: API Resource List (Target: 2 minutes)
+Drill 2 uses the resource list instead of field explanation. This is the command to use when you are not sure about names, short names, namespaced status, or API groups. It also helps you spot whether an extension resource exists at all.
 
 ```bash
 # List resources and their groups
-k api-resources --sort-by=name | grep -E "^NAME|deployment|ingress|job|cronjob"
+kubectl api-resources --sort-by=name | grep -E "^NAME|deployment|ingress|job|cronjob"
 ```
 
-### Drill 3: Generate Correct YAML (Target: 3 minutes)
+Drill 3 practices generation and verification together. You are using client-side dry run to generate YAML, then immediately checking the API version it produced. In a real workflow, the next step would be server-side dry run before apply.
 
 ```bash
 # Generate manifests and verify API versions
 
 # Deployment
-k create deploy drill3-deploy --image=nginx --dry-run=client -o yaml | grep apiVersion
+kubectl create deploy drill3-deploy --image=nginx --dry-run=client -o yaml | grep apiVersion
 
 # Job
-k create job drill3-job --image=busybox -- echo done --dry-run=client -o yaml | grep apiVersion
+kubectl create job drill3-job --image=busybox -- echo done --dry-run=client -o yaml | grep apiVersion
 
 # CronJob
-k create cronjob drill3-cron --image=busybox --schedule="* * * * *" -- echo hi --dry-run=client -o yaml | grep apiVersion
+kubectl create cronjob drill3-cron --image=busybox --schedule="* * * * *" -- echo hi --dry-run=client -o yaml | grep apiVersion
 ```
 
-### Drill 4: Identify Resource Groups (Target: 2 minutes)
+Drill 4 connects kinds to groups. The important learning point is that Services are core `v1`, while Deployments, Ingresses, and NetworkPolicies live in named groups. If you can say the group before reading it, you are less likely to paste a stale `apiVersion` during an exam.
 
 ```bash
 # Which group does each belong to?
-k api-resources | grep -E "^NAME|^deployments|^services|^ingresses|^networkpolicies"
+kubectl api-resources | grep -E "^NAME|^deployments|^services|^ingresses|^networkpolicies"
 
 # Expected:
 # deployments - apps
@@ -511,9 +532,7 @@ k api-resources | grep -E "^NAME|^deployments|^services|^ingresses|^networkpolic
 # networkpolicies - networking.k8s.io
 ```
 
-### Drill 5: Full Version Lookup (Target: 3 minutes)
-
-**Scenario**: You need to write YAML for multiple resources. Find the correct API versions.
+Drill 5 combines several common resources into one lookup loop. This is the same pattern you can adapt for a repository audit by feeding resource kinds from rendered YAML, then comparing the result with the versions declared in manifests.
 
 ```bash
 # Resources needed: Deployment, Service, Ingress, ConfigMap, Secret, NetworkPolicy
@@ -521,24 +540,39 @@ k api-resources | grep -E "^NAME|^deployments|^services|^ingresses|^networkpolic
 # Quick lookup
 for res in deployment service ingress configmap secret networkpolicy; do
   echo -n "$res: "
-  k explain $res 2>/dev/null | grep "VERSION:" | awk '{print $2}'
+  kubectl explain "$res" 2>/dev/null | grep "VERSION:" | awk '{print $2}'
 done
 ```
 
----
+### Success Criteria
 
-## Part 3 Summary
+- [ ] Diagnose a failed `kubectl apply` caused by the removed `networking.k8s.io/v1beta1` Ingress API.
+- [ ] Update the deprecated Ingress manifest to `networking.k8s.io/v1`, including `pathType` and nested backend fields.
+- [ ] Evaluate the difference between a deprecation warning, a removed-API error, and a current-version field-validation error.
+- [ ] Implement a server-side dry-run check that validates the fixed manifest before a real apply.
+- [ ] Use `kubectl explain` or `kubectl api-resources` to find any common resource API version in under 10 seconds.
 
-You've completed the Application Observability and Maintenance section:
+### Part 3 Section Wrap-Up
 
-- **Module 3.1**: Probes - Health checking with liveness, readiness, startup
-- **Module 3.2**: Logging - Accessing container logs
-- **Module 3.3**: Debugging - Systematic troubleshooting workflow
-- **Module 3.4**: Monitoring - Resource usage with kubectl top
-- **Module 3.5**: API Deprecations - Using current API versions
+Part 3 covered the maintenance skills that keep applications observable and repairable after they are deployed. Probes tell Kubernetes when a container is alive and ready, logs expose application output, debugging commands let you move from symptoms to evidence, metrics show current resource pressure, and API deprecation checks keep manifests compatible with the cluster. The unifying habit is the same across the section: read what Kubernetes already knows before making a change.
 
----
+API deprecations fit naturally at the end because they connect day-two maintenance with cluster lifecycle. A manifest is not a timeless artifact; it is a request written against a moving API surface. When you treat API versions as contracts that can age, warnings become useful early signals instead of noisy log lines, and removed APIs become straightforward repair tasks rather than mysterious deployment failures.
 
-## Next Steps
+## Sources
 
-Take the [Part 3 Cumulative Quiz](../part3-cumulative-quiz/) to test your understanding, then proceed to [Part 4: Application Environment, Configuration and Security](/k8s/ckad/part4-environment/module-4.1-configmaps/).
+- [Kubernetes API deprecation policy](https://kubernetes.io/docs/reference/using-api/deprecation-policy/)
+- [Kubernetes API concepts](https://kubernetes.io/docs/reference/using-api/api-concepts/)
+- [Kubernetes deprecated API migration guide](https://kubernetes.io/docs/reference/using-api/deprecation-guide/)
+- [kubectl api-resources reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_api-resources/)
+- [kubectl explain reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_explain/)
+- [kubectl apply reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_apply/)
+- [kubectl create deployment reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_deployment/)
+- [kubectl create job reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_job/)
+- [kubectl create cronjob reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_cronjob/)
+- [Kubernetes Ingress concept](https://kubernetes.io/docs/concepts/services-networking/ingress/)
+- [Kubernetes CronJob concept](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/)
+- [Pod Security Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/)
+
+## Next Module
+
+Take the [Part 3 Cumulative Quiz](../part3-cumulative-quiz/) to test your observability and maintenance workflow, then continue to [Part 4: Application Environment, Configuration and Security](/k8s/ckad/part4-environment/module-4.1-configmaps/).
