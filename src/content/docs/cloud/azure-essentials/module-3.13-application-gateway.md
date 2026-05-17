@@ -5,11 +5,9 @@ sidebar:
   order: 14
 ---
 
-> **Complexity**: [COMPLEX]
->
-> **Time to Complete**: 3h
->
-> **Prerequisites**: [Module 3.2: Virtual Networks](module-3.2-vnet/), [Module 3.9: Azure Key Vault](module-3.9-key-vault/), [Module 3.10: Azure Monitor & Log Analytics](module-3.10-monitor/), basic Azure CLI, and basic Kubernetes Ingress
+> **Complexity:** [COMPLEX]  
+> **Time:** 60-90 min  
+> **Prereqs:** [3.2-vnet](../module-3.2-vnet/), [3.5-dns](../module-3.5-dns/), [3.10-monitor](../module-3.10-monitor/)
 
 ## What You'll Be Able to Do
 
@@ -49,7 +47,7 @@ The operator goal is not to memorize every property. The goal is to know which p
 
 > **Pause and predict:** If a backend service is healthy at `https://api.internal.example.com/ready` but the gateway probe checks `/` with the wrong host header, what will the application team see, and what will the gateway see?
 
-## When App Gateway, When Front Door, When AKS Ingress (mental model)
+## When App Gateway, Front Door, or AKS Ingress
 
 Start with the traffic boundary.
 
@@ -84,7 +82,7 @@ The same pattern would be overkill for an internal admin tool used by one operat
 
 > **Stop and think:** Which team owns each boundary in your organization: public DNS, global edge, regional listener, WAF policy, Kubernetes route, certificate, and incident dashboard? If the answer is "everyone," the design needs clearer ownership.
 
-## Provisioning Patterns (azurerm Terraform + Bicep snippet for each)
+## Provisioning Patterns
 
 Application Gateway has many nested child resources. Provision it as code so listener, rule, probe, WAF, and certificate changes are reviewable together.
 
@@ -532,7 +530,7 @@ The [WAF customization guidance](https://learn.microsoft.com/en-us/azure/web-app
 
 > **Pause and predict:** If a checkout payload trips a SQL injection rule because a product name contains suspicious punctuation, which is safer: disabling the SQLi rule group globally or excluding one selector for one path after log review?
 
-## Backend Pools: AKS Integration (AGIC vs AGfC, with a worked example)
+## Backend Pools: AKS Integration — AGIC vs AGfC
 
 AKS integration is a control-plane decision. You are choosing who expresses routing intent and who is allowed to mutate the edge.
 
@@ -686,7 +684,7 @@ Application Gateway v2 supports autoscaling. The [autoscaling documentation](htt
 
 Autoscaling does not remove capacity planning. You still choose minimum capacity for baseline reliability and maximum capacity for cost and blast-radius control.
 
-Capacity units represent consumption across compute, persistent connections, and throughput. Microsoft defines one capacity unit as the highest pressure among one compute unit, 2,500 persistent connections, or 2.22 Mbps throughput. A traffic pattern with many long-lived connections can stress the gateway differently than a burst of small requests.
+Capacity units represent consumption across compute, persistent connections, and throughput. The [pricing documentation](https://learn.microsoft.com/en-us/azure/application-gateway/understanding-pricing) defines one capacity unit as the highest pressure among one compute unit, 2,500 persistent connections, or 2.22 Mbps throughput. A traffic pattern with many long-lived connections can stress the gateway differently than a burst of small requests.
 
 ```text
 capacity_units = max(
@@ -943,6 +941,37 @@ This does not create Azure resources. It gives you local Kubernetes objects for 
 4. Draft a WAF false-positive runbook using the KQL queries from this module.
 5. Decide whether AGIC or Application Gateway for Containers is a better starting point for a new multi-team AKS ingress platform, and explain why.
 
+### Azure Subscription Note
+
+Only run these commands if you have an Azure subscription and permission to create billable networking resources:
+
+```bash
+az group create \
+  --name rg-appgw-operator-lab \
+  --location eastus
+
+az network vnet create \
+  --resource-group rg-appgw-operator-lab \
+  --name vnet-appgw-operator-lab \
+  --address-prefixes 10.42.0.0/16 \
+  --subnet-name snet-appgw \
+  --subnet-prefixes 10.42.0.0/24
+
+az network public-ip create \
+  --resource-group rg-appgw-operator-lab \
+  --name pip-appgw-operator-lab \
+  --sku Standard \
+  --allocation-method Static
+```
+
+Clean up optional Azure resources when finished:
+
+```bash
+az group delete \
+  --name rg-appgw-operator-lab \
+  --yes
+```
+
 ### Success Criteria
 
 - Your diagram separates global, regional, and Kubernetes boundaries.
@@ -954,23 +983,18 @@ This does not create Azure resources. It gives you local Kubernetes objects for 
 ## Sources
 
 - [Azure Application Gateway overview](https://learn.microsoft.com/en-us/azure/application-gateway/overview)
-- [Application Gateway components](https://learn.microsoft.com/en-us/azure/application-gateway/application-gateway-components)
 - [Application Gateway autoscaling and zone redundancy](https://learn.microsoft.com/en-us/azure/application-gateway/application-gateway-autoscaling-zone-redundant)
 - [Understanding pricing for Azure Application Gateway and Web Application Firewall](https://learn.microsoft.com/en-us/azure/application-gateway/understanding-pricing)
 - [Application Gateway TLS overview](https://learn.microsoft.com/en-us/azure/application-gateway/ssl-overview)
 - [Use Key Vault certificates with Application Gateway](https://learn.microsoft.com/en-us/azure/application-gateway/key-vault-certs)
 - [Application Gateway backend HTTP settings](https://learn.microsoft.com/en-us/azure/application-gateway/configuration-http-settings)
 - [Monitor Application Gateway](https://learn.microsoft.com/en-us/azure/application-gateway/monitor-application-gateway)
-- [Application Gateway diagnostics](https://learn.microsoft.com/en-us/azure/application-gateway/application-gateway-diagnostics)
 - [Application Gateway WAF overview](https://learn.microsoft.com/en-us/azure/web-application-firewall/ag/ag-overview)
-- [WAF exclusion lists in Azure Application Gateway](https://learn.microsoft.com/en-us/azure/web-application-firewall/ag/application-gateway-waf-configuration)
-- [Create rate limiting custom rules for Application Gateway WAF v2](https://learn.microsoft.com/en-us/azure/web-application-firewall/ag/rate-limiting-configure)
 - [Customize WAF rules for Application Gateway](https://learn.microsoft.com/en-us/azure/web-application-firewall/ag/application-gateway-customize-waf-rules-portal)
 - [Application Gateway Ingress Controller overview](https://learn.microsoft.com/en-us/azure/application-gateway/ingress-controller-overview)
-- [Application Gateway Ingress Controller annotations](https://learn.microsoft.com/en-us/azure/application-gateway/ingress-controller-annotations)
 - [Application Gateway for Containers overview](https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/overview)
-- [Application Gateway V1 retirement](https://learn.microsoft.com/en-us/azure/application-gateway/v1-retirement)
+- [Migrate Azure Application Gateway and WAF from v1 to v2](https://learn.microsoft.com/en-us/azure/application-gateway/migrate-v1-v2)
 
 ## Next Module
 
-Module 3.14 is not present in this checkout. This closes the Azure Essentials sequence for now.
+Module 3.14 is not present in this checkout. Continue with the [Enterprise Hybrid Cloud track](../../enterprise-hybrid/).
