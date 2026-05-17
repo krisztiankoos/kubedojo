@@ -59,6 +59,7 @@ _DISCUSSION_CLARIFICATION_MODES = {
     "claude": "bypass",
     "gemini": "yolo",
     "codex": "danger",
+    "deepseek": "yolo",
     "grok": "yolo",
 }
 
@@ -66,6 +67,7 @@ _DISCUSSION_RUNTIME_MODES = {
     "claude": "read-only",
     "gemini": "workspace-write",
     "codex": "danger",
+    "deepseek": "workspace-write",
     "grok": "workspace-write",
 }
 
@@ -169,6 +171,12 @@ def _agent_runtime_mode(agent_name: str, sandbox_mode: str | None) -> str:
         if sandbox_mode == "read-only":
             return "read-only"
         return "workspace-write"
+    if agent_name == "deepseek":
+        # DeepSeek via hermes accepts workspace-write; sandbox is enforced by
+        # toolset selection (see _agent_tool_config), not a mode flag.
+        if sandbox_mode == "read-only":
+            return "read-only"
+        return "workspace-write"
     if sandbox_mode == "read-only":
         return "read-only"
     return "workspace-write"
@@ -226,6 +234,26 @@ def _agent_tool_config(
                 "yolo": True,
             }
         return grok_tc
+    if agent_name == "deepseek":
+        # Sandbox enforcement for deepseek is via toolset selection (hermes has
+        # no CLI sandbox flag). DeepSeekAdapter.build_invocation honors caller
+        # overrides for toolsets/yolo over its mode defaults, so we MUST
+        # gate write-capable tools (file/terminal/code_execution) and --yolo
+        # on sandbox_mode here.
+        if sandbox_mode == "read-only":
+            deepseek_tc: dict[str, object] = {
+                "toolsets": "web",
+                "yolo": False,
+            }
+        else:
+            # workspace-write / yolo / bypass / None → grant the full
+            # deliberation toolset so DeepSeek can inspect repo state and
+            # execute tool calls.
+            deepseek_tc = {
+                "toolsets": "web,file,terminal,code_execution,todo",
+                "yolo": True,
+            }
+        return deepseek_tc
     return None
 
 

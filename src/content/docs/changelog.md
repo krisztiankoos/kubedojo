@@ -8,6 +8,12 @@ sidebar:
 
 ## May 2026
 
+- **Agent runtime expanded.** DeepSeek V4 Pro and Flash are now integrated as
+  production peer agents via ``hermes --provider deepseek`` with a dedicated adapter,
+  registry entry, and bridge-mode tool/mode wiring. Pro defaults to
+  ``deepseek-v4-pro`` and Flash can be selected through ``AB_DEEPSEEK_MODEL``,
+  including dispatch coverage for review, research, and code lanes.
+
 - **On-prem multi-cluster track complete.** Four new modules in [On-Premises Multi-Cluster](/on-premises/multi-cluster/): [Gardener](/on-premises/multi-cluster/module-5.6-gardener/) (open-source Kubernetes-as-a-Service with a three-tier Gardens/Seeds/Shoots architecture), [Karmada + Liqo + kube-vip](/on-premises/multi-cluster/module-5.7-multi-cluster-on-prem/) (federation and virtual-IP advertisement for on-prem clusters), [OpenStack on Kubernetes](/on-premises/multi-cluster/module-5.8-openstack-on-kubernetes/) (running OpenStack's own control plane as Kubernetes workloads), and [VMware Tanzu](/on-premises/multi-cluster/module-5.9-vmware-tanzu/) (the full Tanzu portfolio — TKG, vSphere with Tanzu, TMC, TAP — plus an honest look at enterprise decisions after the Broadcom acquisition).
 
 - **ML model-serving toolkit.** [KServe](/platform/toolkits/data-ai-platforms/ml-platforms/module-9.8-kserve/), [Seldon Core](/platform/toolkits/data-ai-platforms/ml-platforms/module-9.9-seldon-core/), and [BentoML](/platform/toolkits/data-ai-platforms/ml-platforms/module-9.10-bentoml/) now have full modules — covering inference graphs, A/B experiments, and Python-first model packaging. The new [bare-metal MLOps capstone](/platform/toolkits/data-ai-platforms/ml-platforms/module-9.11-bare-metal-mlops/) shows how to wire all three into a complete production stack on your own hardware, from GPU scheduling and storage through to observability.
