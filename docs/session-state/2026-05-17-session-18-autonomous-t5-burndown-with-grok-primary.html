@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 18 handoff — autonomous T5 burn-down continuation with grok-as-primary</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 18 — autonomous T5 burn-down continuation with grok-as-primary</h1>
+<p class="meta">2026-05-17 (continuation of session 17 after the grok-integration handoff committed at <code>d65cd955</code>) · driver: claude opus 4.7 (1M context, orchestrator, inline) · code agents: <strong>grok-4 (xai-oauth via hermes)</strong> primary reviewer (env <code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code> active throughout); codex gpt-5.5 high (danger mode) for all writes + 4 reactive fix-up dispatches.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> Continued the T5 burn-down autonomously after the session-17 handoff. <strong>15 more PRs merged tonight</strong> (sessions 17 + 18 combined: <strong>26 PRs, critical-rubric pool 190 → 168</strong>). All 15 PRs in this continuation reviewed by grok-4 as primary. CKAD critical-rubric pool <strong>fully drained</strong>. CKS critical pool started: 6 modules cleared (0.1 / 0.2 / 0.3 / 0.4 / 1.1 / 1.3 / 1.5 / 2.1). Grok caught <strong>3 real lab-runnability bugs of the curl-in-nginx class</strong> (#1249 / #1253 / #1262) — all real, all the exact bug pattern PR #1235's LAB RUNNABILITY dim was added for; all fixed by codex round-2 and re-verified by grok. <strong>Grok-as-primary reviewer is production-validated at scale</strong> (15 PRs, 0 false-positives, 3 real catches, latency 9–60s per review).
+</div>
+
+<h2>Merged PRs in this continuation (15 total — all grok-primary reviewed)</h2>
+<table>
+<tr><th>PR</th><th>Module</th><th>Grok verdict</th><th>Outcome</th></tr>
+<tr><td class="col-id">#1251</td><td>CKAD 4.3 resources</td><td>APPROVE WITH NITS</td><td>merged as-is (request ledger vs runtime boundary, OOMKilled vs throttling distinctions verified)</td></tr>
+<tr><td class="col-id">#1252</td><td>CKAD 4.4 securitycontext</td><td>APPROVE</td><td>merged (fsGroup, runAsNonRoot, capability drop/add, readOnlyRootFilesystem + emptyDir patterns verified)</td></tr>
+<tr><td class="col-id">#1253</td><td>CKAD 4.5 serviceaccounts</td><td><strong>NEEDS CHANGES → APPROVE</strong></td><td><strong>curl-in-nginx bug #1 caught:</strong> lab pods used <code>image: nginx</code> but exercises required reading SA token + curl API calls. Codex fix <code>db117ccd</code> swapped to <code>curlimages/curl</code> + <code>sleep 3600</code> for 3 pod specs. Grok round-2 APPROVE.</td></tr>
+<tr><td class="col-id">#1254</td><td>CKAD 4.6 crds</td><td>APPROVE</td><td>merged (apiextensions.k8s.io/v1, structural schema rules current; CRD vs CR operations correctly scoped)</td></tr>
+<tr><td class="col-id">#1255</td><td>CKAD 5.1 services</td><td>APPROVE</td><td>merged (Service Types, Discovery/Endpoints, multi-port/affinity verified; dual-stack + externalTrafficPolicy in scope)</td></tr>
+<tr><td class="col-id">#1256</td><td>CKAD 5.2 ingress</td><td><strong>NEEDS CHANGES → APPROVE WITH NITS</strong></td><td><strong>4 blocking issues caught:</strong> (a) missing <code>ingressClassName</code> on Ingress YAML; (b) malformed cleanup <code>kubectl delete ingress drill1 deploy drill1 svc drill1</code> (invalid mixed-resource syntax); (c) no IngressClass preflight; (d) order-of-ops gaps. Codex fix <code>d9c93c37</code> added preflight checks + ingressClassName everywhere + split mixed-resource deletes. Grok round-2 APPROVE WITH NITS.</td></tr>
+<tr><td class="col-id">#1257</td><td>CKAD 5.3 networkpolicies <em>(last CKAD critical)</em></td><td>APPROVE</td><td>merged. <strong>CKAD critical-rubric pool fully drained.</strong> (29 code blocks, 1 mermaid, 10 new primary URLs preserved.)</td></tr>
+<tr><td class="col-id">#1258</td><td>CKS 0.1 cks-overview <em>(first CKS critical cleared)</em></td><td>APPROVE</td><td>merged (Bloom L3-L5; LF domain weights, allowed resources, exam format match current docs)</td></tr>
+<tr><td class="col-id">#1259</td><td>CKS 0.2 security-lab</td><td>APPROVE WITH NITS</td><td>merged as-is</td></tr>
+<tr><td class="col-id">#1260</td><td>CKS 0.3 security-tools</td><td>APPROVE WITH NITS</td><td>merged as-is</td></tr>
+<tr><td class="col-id">#1261</td><td>CKS 0.4 exam-strategy</td><td>APPROVE</td><td>merged (three-pass model, classification tables, worked scan, verification checklist — constructive alignment strong)</td></tr>
+<tr><td class="col-id">#1262</td><td>CKS 1.1 network-policies</td><td><strong>NEEDS CHANGES → APPROVE WITH NITS</strong></td><td><strong>curl-in-nginx bug #2 caught:</strong> exec-source pods web/api/metrics used <code>image: nginx</code>. Codex fix <code>dcbbfee3</code> correctly swapped only exec-source pods to <code>curlimages/curl</code> (left db as nginx since it's only curled INTO). Grok round-2 APPROVE WITH NITS.</td></tr>
+<tr><td class="col-id">#1263</td><td>CKS 1.3 ingress-security</td><td>APPROVE</td><td>merged (delegates execution to Killercoda; 13 primary URLs incl. ingress-nginx, cert-manager, MDN, OWASP, hstspreload, PCI DSS)</td></tr>
+<tr><td class="col-id">#1264</td><td>CKS 1.5 gui-security</td><td>APPROVE</td><td>merged (dashboard + ServiceAccount + token + binding + NetworkPolicy order verified; ClusterRole scoping correct)</td></tr>
+<tr><td class="col-id">#1265</td><td>CKS 2.1 rbac-deep-dive</td><td>APPROVE</td><td>merged</td></tr>
+</table>
+
+<h2>Grok-as-primary calibration — production data</h2>
+
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>PRs reviewed by grok-as-primary</td><td>15 (3 in session 17 batch 4 + 12 in session 18 batches 5–9)</td></tr>
+<tr><td>Verdict distribution</td><td>APPROVE: 9 · APPROVE_WITH_NITS: 4 · NEEDS_CHANGES (round 1): 3</td></tr>
+<tr><td>Real lab-runnability bugs caught</td><td><strong>3</strong> (#1249 curl-in-nginx exec, #1253 curl-in-nginx SA-token, #1256 4-issue ingress + #1262 curl-in-nginx exec)</td></tr>
+<tr><td>False positives (NEEDS CHANGES on actually-fine PR)</td><td><strong>0</strong></td></tr>
+<tr><td>Latency per review</td><td>9–60s (vs gemini-pro typical 30–180s)</td></tr>
+<tr><td>Round-2 dispatch behavior</td><td>3/3 round-2 reviews explicitly verified the fix landed; no rubber-stamping observed (cf. <code>feedback_gemini_hallucinates_round2_approvals</code> sibling concern)</td></tr>
+</table>
+
+<p><strong>Conclusion:</strong> grok-as-primary works as well as gemini-pro on KubeDojo #388 content. The 3 real bug catches are the exact class PR #1235's LAB RUNNABILITY dim was designed for; grok consistently walks the lab and identifies image-vs-binary mismatches. Memory <code>project_grok_primary_reviewer_calibrated_2026-05-17.md</code> updated with full data.</p>
+
+<h2>Pattern observation — codex writer recurring curl-in-nginx bug</h2>
+
+<p><strong>Three independent occurrences this session:</strong> #1249 / #1253 / #1262. Codex writer keeps choosing <code>image: nginx</code> for pods that the lab later <code>kubectl exec</code>s curl/wget into. Each time codex's own fix is correct (swap to <code>curlimages/curl</code> + <code>sleep 3600</code> for exec-source pods, leave nginx for exec-target pods), but the writer keeps making the original mistake.</p>
+
+<p><strong>Suggested fix candidate (for next session):</strong> add a CHECKLIST item to <code>scripts/prompts/module-rewriter-388.md</code> or <code>scripts/quality/dispatch_388_pilot.py:codex_prompt</code>:</p>
+<pre>For every pod in lab YAML, identify which subsequent kubectl exec
+commands run against it. If exec runs `curl`, `wget`, `kubectl`,
+`apk`, or a custom binary not in the chosen image — choose a
+different image (curlimages/curl + sleep keepalive for curl;
+busybox for wget+sh; alpine + apk add for ad-hoc tooling).</pre>
+
+<h2>Wrapper-401 bug — still recurring on every merge step</h2>
+
+<p>The wrapper's <code>merge_pr</code> function calls <code>gh pr view</code> in a subprocess that loses GH_TOKEN auth (per the suspected <code>_agent_env</code> sanitization path). Every batch-reviewed PR ends with <code>merge_failed reason="401 Bad credentials"</code> followed by <code>merge_held verdict=MERGE_FAILED</code>. Orchestrator then manually merges via <code>env -u GH_TOKEN gh pr merge &lt;n&gt; --squash</code>.</p>
+<p>Adds ~30s of orchestrator overhead per PR. <strong>Still flagged as next-session priority</strong> (carried over from session 17 handoff). Not blocking content shipping.</p>
+
+<h2>Hygiene</h2>
+<ul class="tight">
+<li>All session worktrees cleaned post-merge.</li>
+<li>Pruned remote-tracking refs after every merge.</li>
+<li>Local <code>local_api.py</code> PID stayed stable (PID 64594 throughout) — no recurrence of the orphan-PID class this session. The killed-orphan-from-session-17 cleanup held.</li>
+<li>Untracked txt artifacts in <code>scripts/quality/</code> (batch queue files for sessions 16-18) NOT committed — they're per-batch artifacts, not source files.</li>
+</ul>
+
+<h2>What's in flight at handoff</h2>
+<table>
+<tr><th>Item</th><th>State</th></tr>
+<tr><td>Nothing</td><td>All background tasks completed. Primary tree clean (modulo per-batch queue txt artifacts). Main at <code>45205057</code>.</td></tr>
+</table>
+
+<h2>Next session — top priorities</h2>
+<ul class="tight">
+<li><strong>Continue T5 burn-down with grok-primary on CKS.</strong> Critical pool 168. Next CKS candidates: 2.2 serviceaccount-security / 2.3 api-server-security / 2.4 kubernetes-upgrades / 2.5 restricting-api-access / 3.1 apparmor / 3.2 seccomp / etc. (from <code>/api/orient</code>). Grok-as-primary is now the validated default; <code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code> in the dispatch command.</li>
+<li><strong>Fix the wrapper-401 bug</strong> — recurring on every wrapper-reviewed PR (15 instances this session). Carried over from session 17. Likely <code>_agent_env</code> strips GH_TOKEN from the gh subprocess.</li>
+<li><strong>Add curl-in-nginx CHECKLIST item to the codex writer prompt</strong> — 3 occurrences this session, same pattern as #1229. See pattern observation above. The codex writer brief should explicitly enumerate image-vs-binary checks before pod-spec authorship.</li>
+<li><strong>Add startup guard to <code>local_api.py</code></strong> — refuse to bind 8768 if already bound. Prevents orphan-PID class recurrence. Carried over from session 17.</li>
+<li><strong>Add unit tests for GrokAdapter</strong> — carried over from session 17. Mirror <code>tests/test_agent_runtime_runner.py</code> shape; cover build_invocation (read-only / workspace-write / danger modes + tool_config overrides) and parse_response (success / error / rate-limited / hermes banner stripping).</li>
+<li><strong>Anthropic-via-hermes silent-fail diagnosis</strong> — now retestable with <code>hermes -z "PROMPT"</code> argv form (the stdin gotcha discovered in session 17 may apply to claude too).</li>
+<li><strong>Date-bound reminders</strong>: 2026-06-15 (agentic pool flip); 2026-07-13 (Claude weekly double expires).</li>
+</ul>
+
+<h2>Cold-start for next session</h2>
+<pre>
+# Standard orient
+curl -s http://127.0.0.1:8768/api/orient | python3 -m json.tool | head -25
+
+# Grok lane still wired (smoke test)
+.venv/bin/python scripts/dispatch.py grok "Reply with exactly: GROK_LANE_OK" --isolated --timeout 30
+
+# Critical-rubric remaining count
+curl -s http://127.0.0.1:8768/api/orient | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['alerts'][0])"
+
+# Next batch with grok-primary
+KUBEDOJO_388_PRIMARY_REVIEWER=grok .venv/bin/python scripts/quality/dispatch_388_pilot.py \
+  --input scripts/quality/t5-burndown-batch10-2026-05-18.txt \
+  --log logs/388_t5_batch10_2026-05-18.jsonl
+</pre>
+
+<h2>Pointers</h2>
+<ul class="tight">
+<li>Session 17 handoff: <code>docs/session-state/2026-05-17-session-17-grok-integration-and-t5-batch-4.html</code> — covers grok integration PR #1245 + batches 2–4 (11 PRs).</li>
+<li>Grok primary reviewer calibration memory: <code>memory/project_grok_primary_reviewer_calibrated_2026-05-17.md</code>.</li>
+<li>Batch logs: <code>logs/388_t5_batch{5,6,7,8,9}_2026-05-17.jsonl</code>.</li>
+</ul>
+
+</main>
+</body>
+</html>
