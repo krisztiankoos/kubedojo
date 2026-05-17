@@ -7,6 +7,7 @@ import concurrent.futures
 import glob as globlib
 import json
 import re
+import shlex
 import statistics
 import sys
 from collections import Counter
@@ -90,6 +91,464 @@ UNSOURCED_ANECDOTE_RE = re.compile(
 SCENARIO_PREFIX_RE = re.compile(r"^(?:[*_#\s]*)(?:Hypothetical scenario|Exercise scenario):", re.IGNORECASE)
 MCQ_OPTION_RE = re.compile(r"(?m)^(?:[-*]\s*)?(?:\*\*)?(?:[A-D]|[1-4])[\).:](?:\*\*)?\s+\S")
 MCQ_REASONING_KEYWORD_RE = re.compile(r"\b(?:wrong|not correct|incorrect|because|why)\b", re.IGNORECASE)
+
+# Sources: Docker Official image Dockerfiles, Debian/Ubuntu coreutils + util-linux
+# packages, Alpine/BusyBox applets, curlimages/curl Dockerfile, and nicolaka/netshoot
+# Dockerfile package list.
+DEBIAN_COREUTILS_UTIL_LINUX_BINARIES = {
+    "[",
+    "base64",
+    "basename",
+    "chmod",
+    "chown",
+    "cmp",
+    "cp",
+    "cut",
+    "date",
+    "dd",
+    "df",
+    "diff",
+    "dirname",
+    "du",
+    "false",
+    "file",
+    "gunzip",
+    "gzip",
+    "hostname",
+    "id",
+    "less",
+    "ln",
+    "md5sum",
+    "mkdir",
+    "mktemp",
+    "more",
+    "mount",
+    "mv",
+    "paste",
+    "readlink",
+    "rm",
+    "rmdir",
+    "sha1sum",
+    "sha256sum",
+    "sleep",
+    "sort",
+    "stat",
+    "tar",
+    "tee",
+    "test",
+    "touch",
+    "tr",
+    "true",
+    "type",
+    "umount",
+    "uname",
+    "uniq",
+    "wc",
+    "which",
+    "whoami",
+    "xargs",
+}
+DEBIAN_EXTENDED_UTIL_LINUX_BINARIES = {
+    "blkid",
+    "dmesg",
+    "free",
+    "getconf",
+    "getent",
+    "getopt",
+    "groups",
+    "hexdump",
+    "ipcrm",
+    "ipcs",
+    "kill",
+    "killall",
+    "ldd",
+    "less",
+    "locale",
+    "lsof",
+    "lsblk",
+    "more",
+    "nice",
+    "od",
+    "pgrep",
+    "pkill",
+    "sleep",
+    "strings",
+    "sync",
+    "uname",
+    "users",
+    "w",
+    "who",
+    "whoami",
+}
+BUSYBOX_EXTENDED_APPLET_BINARIES = {
+    "blkid",
+    "dmesg",
+    "free",
+    "getopt",
+    "groups",
+    "hexdump",
+    "ipcs",
+    "kill",
+    "killall",
+    "ldd",
+    "less",
+    "lsblk",
+    "more",
+    "nice",
+    "od",
+    "pgrep",
+    "pkill",
+    "strings",
+    "sync",
+    "uname",
+    "users",
+    "w",
+    "who",
+    "whoami",
+}
+BUSYBOX_COREUTILS_NETWORK_BINARIES = DEBIAN_COREUTILS_UTIL_LINUX_BINARIES | {
+    "hexdump",
+    "ifconfig",
+    "ip",
+    "netstat",
+    "nslookup",
+    "od",
+    "route",
+    "telnet",
+    "traceroute",
+}
+CURLIMAGES_CURL_BUSYBOX_SUBSET = {
+    "ash",
+    "cat",
+    "cp",
+    "curl",
+    "echo",
+    "env",
+    "find",
+    "grep",
+    "head",
+    "ls",
+    "mkdir",
+    "mv",
+    "rm",
+    "sh",
+    "sleep",
+    "tail",
+    "touch",
+}
+NETSHOOT_EXTRA_BINARIES = {
+    "ab",
+    "arping",
+    "bpftool",
+    "conntrack",
+    "dog",
+    "drill",
+    "ebpf-exporter",
+    "fortio",
+    "fping",
+    "helm",
+    "iperf3",
+    "jq",
+    "kubectl",
+    "mtr",
+    "ngrep",
+    "openssl",
+    "scp",
+    "socat",
+    "ssh",
+    "tshark",
+}
+
+# Image-binary allowlist for the lab-runnability preflight. Entries are intentionally
+# conservative: known images use strict membership; unknown images are informational.
+IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
+    # Docker Official nginx Debian-family images; audit #1257 requires no wget/curl for plain nginx tags.
+    "nginx": {
+        "sh",
+        "dash",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "nginx",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
+    "nginx:stable": {
+        "sh",
+        "dash",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "nginx",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
+    "nginx:1.27": {
+        "sh",
+        "dash",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "nginx",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
+    # Docker Official nginx Alpine variants inherit Alpine/BusyBox applets, including wget.
+    "nginx:alpine": {
+        "sh",
+        "ash",
+        "wget",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "nginx",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+        "nc",
+        "ping",
+        "vi",
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
+    "nginx:1.27-alpine": {
+        "sh",
+        "ash",
+        "wget",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "nginx",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+        "nc",
+        "ping",
+        "vi",
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
+    # Docker Official BusyBox image: BusyBox applet set, including ash and wget.
+    "busybox": {
+        "sh",
+        "ash",
+        "wget",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+        "nc",
+        "ping",
+        "vi",
+        "id",
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
+    "busybox:1.36": {
+        "sh",
+        "ash",
+        "wget",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+        "nc",
+        "ping",
+        "vi",
+        "id",
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
+    # Docker Alpine Official Image uses BusyBox and apk.
+    "alpine": {
+        "sh",
+        "ash",
+        "apk",
+        "wget",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+        "nc",
+        "ping",
+        "vi",
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
+    "alpine:3.20": {
+        "sh",
+        "ash",
+        "apk",
+        "wget",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+        "nc",
+        "ping",
+        "vi",
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | BUSYBOX_EXTENDED_APPLET_BINARIES,
+    # curlimages/curl Docker Hub overview documents curl as the image entrypoint/tool.
+    "curlimages/curl": CURLIMAGES_CURL_BUSYBOX_SUBSET,
+    "curlimages/curl:latest": CURLIMAGES_CURL_BUSYBOX_SUBSET,
+    # Docker Official Debian/Ubuntu slim bases: shell/coreutils only, no wget/curl in this seed.
+    "debian:bookworm-slim": {
+        "sh",
+        "bash",
+        "dash",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+        "apt",
+        "apt-get",
+        "dpkg",
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
+    "ubuntu:24.04": {
+        "sh",
+        "bash",
+        "dash",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+        "apt",
+        "apt-get",
+        "dpkg",
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
+    # nicolaka/netshoot Dockerfile installs network-debug tools via apk.
+    "nicolaka/netshoot": {
+        "curl",
+        "wget",
+        "sh",
+        "bash",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+        "nc",
+        "ping",
+        "dig",
+        "tcpdump",
+        "ip",
+        "iptables",
+        "ss",
+        "host",
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | NETSHOOT_EXTRA_BINARIES,
+    # Docker Official Python 3.12 slim Dockerfile builds Python on debian:bookworm-slim and adds pip symlinks.
+    "python:3.12-slim": {
+        "sh",
+        "bash",
+        "python3",
+        "python",
+        "pip",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+        "pip3",
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES
+    | DEBIAN_EXTENDED_UTIL_LINUX_BINARIES,
+}
 
 LEARNING_OUTCOME_HEADINGS = (
     "Learning Outcomes",
@@ -767,6 +1226,267 @@ def runnable_shell_metrics(text: str) -> dict[str, object]:
     return {"kubectl_alias_violations": violations}
 
 
+def _fenced_code_blocks_with_lines(text: str) -> list[tuple[str, str, int]]:
+    blocks: list[tuple[str, str, int]] = []
+    for match in re.finditer(r"```([^\n]*)\n(.*?)```", text, re.DOTALL):
+        blocks.append((match.group(1).strip(), match.group(2), text[: match.start(2)].count("\n") + 1))
+    return blocks
+
+
+def _shell_logical_lines(code: str, start_line: int) -> list[tuple[str, int]]:
+    logical_lines: list[tuple[str, int]] = []
+    current = ""
+    current_start = start_line
+    for offset, physical in enumerate(code.splitlines()):
+        stripped = physical.strip()
+        if not current:
+            current_start = start_line + offset
+            current = stripped
+        else:
+            current = f"{current} {stripped}"
+        if current.rstrip().endswith("\\"):
+            current = current.rstrip()[:-1].rstrip()
+            continue
+        if current:
+            logical_lines.append((current, current_start))
+        current = ""
+    if current:
+        logical_lines.append((current, current_start))
+    return logical_lines
+
+
+def _shell_tokens(line: str) -> list[str]:
+    if line.lstrip().startswith("$ "):
+        line = line.lstrip()[2:]
+    try:
+        return shlex.split(line, comments=True, posix=True)
+    except ValueError:
+        return line.split()
+
+
+def _kubectl_indices(tokens: list[str], verb: str) -> Iterable[int]:
+    for idx, token in enumerate(tokens[:-1]):
+        if token == "kubectl" and tokens[idx + 1] == verb:
+            yield idx
+
+
+def _option_consumes_value(token: str) -> bool:
+    return token in {
+        "-n",
+        "--namespace",
+        "-c",
+        "--container",
+        "--context",
+        "--kubeconfig",
+        "--as",
+        "--as-group",
+        "--field-manager",
+        "--request-timeout",
+        "--image",
+    }
+
+
+def _skip_option(tokens: list[str], idx: int) -> int:
+    token = tokens[idx]
+    if _option_consumes_value(token) and idx + 1 < len(tokens):
+        return idx + 2
+    if token.startswith("-"):
+        return idx + 1
+    return idx
+
+
+def _namespace_from_tokens(tokens: list[str]) -> str:
+    for idx, token in enumerate(tokens):
+        if token in {"-n", "--namespace"} and idx + 1 < len(tokens):
+            return tokens[idx + 1]
+        if token.startswith("--namespace="):
+            return token.split("=", 1)[1]
+        if token.startswith("-n="):
+            return token.split("=", 1)[1]
+    return ""
+
+
+def _parse_kubectl_run_images(tokens: list[str]) -> list[tuple[str, str, str]]:
+    pod_images: list[tuple[str, str, str]] = []
+    for kubectl_idx in _kubectl_indices(tokens, "run"):
+        pod_name = ""
+        namespace = _namespace_from_tokens(tokens[kubectl_idx + 2 :])
+        idx = kubectl_idx + 2
+        while idx < len(tokens):
+            token = tokens[idx]
+            if token == "--":
+                break
+            if token.startswith("-"):
+                idx = _skip_option(tokens, idx)
+                continue
+            pod_name = token
+            break
+        if not pod_name:
+            continue
+        image = ""
+        for idx, token in enumerate(tokens[kubectl_idx + 2 :], start=kubectl_idx + 2):
+            if token == "--image" and idx + 1 < len(tokens):
+                image = tokens[idx + 1]
+                break
+            if token.startswith("--image="):
+                image = token.split("=", 1)[1]
+                break
+        if image:
+            pod_images.append((namespace, pod_name, image))
+    return pod_images
+
+
+def _parse_kubectl_execs(tokens: list[str]) -> list[tuple[str, str, str]]:
+    execs: list[tuple[str, str, str]] = []
+    for kubectl_idx in _kubectl_indices(tokens, "exec"):
+        pod_name = ""
+        namespace = _namespace_from_tokens(tokens[kubectl_idx + 2 :])
+        idx = kubectl_idx + 2
+        while idx < len(tokens):
+            token = tokens[idx]
+            if token == "--":
+                break
+            if token.startswith("-"):
+                idx = _skip_option(tokens, idx)
+                continue
+            pod_name = token
+            idx += 1
+            break
+        if not pod_name:
+            continue
+        while idx < len(tokens) and tokens[idx] != "--":
+            idx += 1
+        if idx + 1 >= len(tokens):
+            continue
+        binary = tokens[idx + 1].rsplit("/", 1)[-1]
+        if binary:
+            execs.append((namespace, pod_name, binary))
+    return execs
+
+
+def _yaml_name_image_pairs(code: str) -> list[tuple[str, str]]:
+    name_re = re.compile(r"^\s*name:\s*['\"]?([^'\"\s#]+)")
+    image_re = re.compile(r"^\s*image:\s*['\"]?([^'\"\s#]+)")
+    lines = code.splitlines()
+    pairs: list[tuple[str, str]] = []
+    for idx, line in enumerate(lines):
+        name_match = name_re.match(line)
+        if not name_match:
+            continue
+        name = name_match.group(1)
+        for following in lines[idx + 1 : idx + 31]:
+            image_match = image_re.match(following)
+            if image_match:
+                pairs.append((name, image_match.group(1)))
+                break
+    return pairs
+
+
+def _normalize_image_name(image: str) -> str:
+    normalized = image.strip().strip("'\"").lower()
+    normalized = normalized.split("@", 1)[0]
+    parts = normalized.split("/")
+    if len(parts) > 1 and ("." in parts[0] or ":" in parts[0] or parts[0] == "localhost"):
+        parts = parts[1:]
+    if len(parts) == 2 and parts[0] == "library":
+        parts = parts[1:]
+    return "/".join(parts)
+
+
+def _image_without_tag(image: str) -> str:
+    slash_idx = image.rfind("/")
+    colon_idx = image.rfind(":")
+    if colon_idx > slash_idx:
+        return image[:colon_idx]
+    return image
+
+
+def _allowlist_key_for_image(image: str) -> str | None:
+    normalized = _normalize_image_name(image)
+    if normalized in IMAGE_BINARY_ALLOWLIST:
+        return normalized
+    without_tag = _image_without_tag(normalized)
+    if without_tag in IMAGE_BINARY_ALLOWLIST:
+        return without_tag
+    return None
+
+
+def lab_runnability_metrics(text: str) -> dict[str, object]:
+    """Detect kubectl-exec calls whose binary is not in the target pod's image.
+
+    Algorithm:
+      1. Walk fenced bash/sh/shell/zsh code blocks for kubectl commands.
+      2. Build a pod image map from `kubectl run NAME --image=IMAGE` and simple
+         inline YAML `name:` / following `image:` pairs within about 30 lines.
+      3. Find every `kubectl exec [-n NS] POD -- BIN [args]`.
+      4. If POD's image is unknown, skip the exec check because there is no ground truth.
+      5. Look up BIN in IMAGE_BINARY_ALLOWLIST and flag strict allowlist misses.
+
+    Returns:
+      {
+        "image_binary_violations": [
+          {
+            "pod": str,
+            "image": str,
+            "binary": str,
+            "line": int,
+            "snippet": str,
+          },
+          ...
+        ],
+        "unknown_images": [str, ...],
+      }
+    """
+    pod_images: dict[tuple[str, str], str] = {}
+    blocks = _fenced_code_blocks_with_lines(text)
+
+    for info, code, _start_line in blocks:
+        language = _fence_language(info)
+        if language in RUNNABLE_SHELL_LANGS:
+            for line, _line_number in _shell_logical_lines(code, 1):
+                for namespace, pod, image in _parse_kubectl_run_images(_shell_tokens(line)):
+                    pod_images[(namespace, pod)] = image
+        if language in RUNNABLE_SHELL_LANGS or language in {"yaml", "yml"}:
+            for pod, image in _yaml_name_image_pairs(code):
+                pod_images[("", pod)] = image
+
+    unknown_images: dict[str, None] = {}
+    for image in pod_images.values():
+        if _allowlist_key_for_image(image) is None:
+            unknown_images.setdefault(image, None)
+
+    violations: list[dict[str, object]] = []
+    for info, code, start_line in blocks:
+        if _fence_language(info) not in RUNNABLE_SHELL_LANGS:
+            continue
+        for line, line_number in _shell_logical_lines(code, start_line):
+            tokens = _shell_tokens(line)
+            for namespace, pod, binary in _parse_kubectl_execs(tokens):
+                image = pod_images.get((namespace, pod)) or pod_images.get(("", pod))
+                if not image and not namespace:
+                    matching_images = {value for (image_namespace, image_pod), value in pod_images.items() if image_pod == pod}
+                    if len(matching_images) == 1:
+                        image = next(iter(matching_images))
+                if not image:
+                    continue
+                allowlist_key = _allowlist_key_for_image(image)
+                if allowlist_key is None:
+                    continue
+                if binary.lower() in IMAGE_BINARY_ALLOWLIST[allowlist_key]:
+                    continue
+                violations.append(
+                    {
+                        "pod": pod,
+                        "image": image,
+                        "binary": binary,
+                        "line": line_number,
+                        "snippet": line.strip()[:120],
+                    }
+                )
+
+    return {"image_binary_violations": violations, "unknown_images": list(unknown_images)}
+
+
 def anti_fabrication_metrics(text: str) -> dict[str, object]:
     _, body = _strip_frontmatter(text)
     body_no_code = _strip_code_blocks(body, "\n")
@@ -927,6 +1647,7 @@ def gate_results(
     sources: dict[str, object],
     anti_leak: dict[str, object],
     runnable_shell: dict[str, object],
+    lab_runnability: dict[str, object],
     anti_fabrication: dict[str, object],
     practice_mcq: dict[str, object],
     alignment: dict[str, object],
@@ -961,6 +1682,7 @@ def gate_results(
         and not anti_leak["has_emoji"]
         and not anti_leak["has_47"],
         "runnable_no_kubectl_alias": not runnable_shell["kubectl_alias_violations"],
+        "lab_image_binary_match": not lab_runnability["image_binary_violations"],
         "anti_fabrication_no_unsourced_anecdote": not anti_fabrication["unsourced_anecdotes"],
         "practice_mcq_four_options_with_distractors": None
         if not practice_mcq["applies"]
@@ -986,12 +1708,18 @@ def classify_tier(metrics: dict[str, float | int], gates: dict[str, bool | None]
     }
     structure_failed = [key for key in failed if key.startswith("structure_")]
     density_failed = [key for key in failed if key in density_keys]
-    other_failed = [key for key in failed if key not in density_keys and not key.startswith("structure_")]
+    lab_failed = [key for key in failed if key == "lab_image_binary_match"]
+    other_failed = [
+        key for key in failed if key not in density_keys and not key.startswith("structure_") and key not in lab_failed
+    ]
     if density_failed and structure_failed:
         return "T3", failed
-    if structure_failed and not density_failed and not other_failed and len(structure_failed) <= 2:
+    if structure_failed and not density_failed and not lab_failed and not other_failed and len(structure_failed) <= 2:
         return "T1", failed
     if density_failed and not structure_failed and not other_failed:
+        return "T2", failed
+    # Lab-runnability failures are blocking but localized, so lab-only failures classify with T2.
+    if lab_failed and not density_failed and not structure_failed and not other_failed:
         return "T2", failed
     return "T3", failed
 
@@ -1006,6 +1734,7 @@ def verify(path: str | Path, skip_source_check: bool = False, max_workers: int =
     assets = protected_assets(text)
     anti = anti_leak_metrics(text)
     runnable_shell = runnable_shell_metrics(text)
+    lab_runnability = lab_runnability_metrics(text)
     anti_fabrication = anti_fabrication_metrics(text)
     practice_mcq = practice_mcq_metrics(module_path, text)
     alignment = alignment_metrics(text)
@@ -1017,6 +1746,7 @@ def verify(path: str | Path, skip_source_check: bool = False, max_workers: int =
         sources,
         anti,
         runnable_shell,
+        lab_runnability,
         anti_fabrication,
         practice_mcq,
         alignment,
@@ -1042,6 +1772,7 @@ def verify(path: str | Path, skip_source_check: bool = False, max_workers: int =
         "protected_assets": assets,
         "anti_leak": anti,
         "runnable_shell": runnable_shell,
+        "lab_runnability": lab_runnability,
         "anti_fabrication": anti_fabrication,
         "practice_mcq": practice_mcq,
         "alignment": alignment,
