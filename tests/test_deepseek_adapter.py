@@ -115,3 +115,42 @@ def test_parse_response_detects_rate_limit() -> None:
 
     assert result.rate_limited is True
     assert result.ok is False
+
+
+def test_parse_response_detects_unfulfilled_tool_use_intent() -> None:
+    """DS Pro tool-use intent without execution → ok=False, helpful stderr."""
+    adapter = DeepSeekAdapter()
+    raw = (
+        "I'll verify the PR commits first and then systematically review the diff.\n"
+        "<bash>gh pr view 1288 --json commits</bash>"
+    )
+    result = adapter.parse_response(
+        stdout=raw,
+        stderr="",
+        returncode=0,
+        output_file=None,
+    )
+
+    assert result.ok is False
+    assert result.response == ""
+    assert "tool-use intent" in (result.stderr_excerpt or "")
+    assert "workspace-write" in (result.stderr_excerpt or "")
+
+
+def test_parse_response_long_response_with_bash_codeblock_still_passes() -> None:
+    """A long real review that happens to quote <bash> in a code block must pass."""
+    adapter = DeepSeekAdapter()
+    raw = (
+        "VERDICT: APPROVE\n\n"
+        + "SUMMARY: All criteria met. " * 40
+        + "\n\nThe author also added the `<bash>` toolset gating which is correct."
+    )
+    result = adapter.parse_response(
+        stdout=raw,
+        stderr="",
+        returncode=0,
+        output_file=None,
+    )
+
+    assert result.ok is True
+    assert result.response.startswith("VERDICT: APPROVE")
