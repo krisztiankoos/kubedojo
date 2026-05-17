@@ -552,6 +552,15 @@ The first goal is not to memorize YAML. The goal is to see how small changes in 
 
 ### Setup
 
+This lab assumes the lab platform already has the ingress-nginx controller and the `nginx` IngressClass installed. Verify both before creating application resources, because the Ingress manifests below bind explicitly to `spec.ingressClassName: nginx`.
+
+```bash
+kubectl get pods -n ingress-nginx
+kubectl get ingressclass nginx
+```
+
+Only continue when the controller Pods are running and the `nginx` IngressClass exists. If either command fails, install or enable ingress-nginx through your lab environment first.
+
 ```bash
 # Create two deployments
 kubectl create deployment web --image=nginx
@@ -577,6 +586,7 @@ kind: Ingress
 metadata:
   name: simple-ingress
 spec:
+  ingressClassName: nginx
   rules:
   - http:
       paths:
@@ -609,6 +619,7 @@ kind: Ingress
 metadata:
   name: path-ingress
 spec:
+  ingressClassName: nginx
   rules:
   - http:
       paths:
@@ -647,6 +658,7 @@ kind: Ingress
 metadata:
   name: host-ingress
 spec:
+  ingressClassName: nginx
   rules:
   - host: web.local
     http:
@@ -702,6 +714,7 @@ kind: Ingress
 metadata:
   name: drill1
 spec:
+  ingressClassName: nginx
   rules:
   - http:
       paths:
@@ -715,7 +728,9 @@ spec:
 EOF
 
 kubectl get ingress drill1
-kubectl delete ingress drill1 deploy drill1 svc drill1
+kubectl delete ingress drill1
+kubectl delete deployment drill1
+kubectl delete svc drill1
 ```
 
 #### Drill 2: Host-Based Routing (Target: 3 minutes)
@@ -732,6 +747,7 @@ kind: Ingress
 metadata:
   name: drill2
 spec:
+  ingressClassName: nginx
   rules:
   - host: app1.local
     http:
@@ -756,7 +772,9 @@ spec:
 EOF
 
 kubectl describe ingress drill2
-kubectl delete ingress drill2 deploy app1 app2 svc app1 app2
+kubectl delete ingress drill2
+kubectl delete deployment app1 app2
+kubectl delete svc app1 app2
 ```
 
 #### Drill 3: Path-Based Routing (Target: 3 minutes)
@@ -773,6 +791,7 @@ kind: Ingress
 metadata:
   name: drill3
 spec:
+  ingressClassName: nginx
   rules:
   - host: myapp.local
     http:
@@ -794,7 +813,9 @@ spec:
 EOF
 
 kubectl get ingress drill3
-kubectl delete ingress drill3 deploy frontend backend svc frontend backend
+kubectl delete ingress drill3
+kubectl delete deployment frontend backend
+kubectl delete svc frontend backend
 ```
 
 #### Drill 4: Ingress with Default Backend (Target: 3 minutes)
@@ -811,6 +832,7 @@ kind: Ingress
 metadata:
   name: drill4
 spec:
+  ingressClassName: nginx
   defaultBackend:
     service:
       name: default-app
@@ -829,7 +851,9 @@ spec:
 EOF
 
 kubectl describe ingress drill4
-kubectl delete ingress drill4 deploy default-app api-app svc default-app api-app
+kubectl delete ingress drill4
+kubectl delete deployment default-app api-app
+kubectl delete svc default-app api-app
 ```
 
 #### Drill 5: Create Ingress Imperatively (Target: 2 minutes)
@@ -839,12 +863,14 @@ kubectl create deployment drill5 --image=nginx
 kubectl expose deployment drill5 --port=80
 
 # Create ingress imperatively
-kubectl create ingress drill5 --rule="drill5.local/=drill5:80"
+kubectl create ingress drill5 --class=nginx --rule="drill5.local/=drill5:80"
 
 kubectl get ingress drill5
 kubectl describe ingress drill5
 
-kubectl delete ingress drill5 deploy drill5 svc drill5
+kubectl delete ingress drill5
+kubectl delete deployment drill5
+kubectl delete svc drill5
 ```
 
 #### Drill 6: Ingress with TLS (Target: 4 minutes)
@@ -867,6 +893,7 @@ kind: Ingress
 metadata:
   name: drill6
 spec:
+  ingressClassName: nginx
   tls:
   - hosts:
     - secure.local
@@ -886,7 +913,10 @@ EOF
 
 kubectl describe ingress drill6
 
-kubectl delete ingress drill6 secret drill6-tls deploy drill6 svc drill6
+kubectl delete ingress drill6
+kubectl delete secret drill6-tls
+kubectl delete deployment drill6
+kubectl delete svc drill6
 rm /tmp/tls.key /tmp/tls.crt
 ```
 
