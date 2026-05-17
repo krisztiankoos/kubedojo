@@ -67,6 +67,21 @@ AGENTS: dict[str, AgentEntry] = {
         "cli_available": True,
         "resume_policy": "bridge_only",
     },
+    "deepseek": {
+        "adapter": "scripts.agent_runtime.adapters.deepseek:DeepSeekAdapter",
+        "default_model": os.environ.get("AB_DEEPSEEK_MODEL", "deepseek-v4-pro"),
+        "cost_tier": "low",
+        "capabilities": frozenset({
+            "code_review",
+            "content_review",
+            "adversarial_review",
+            "research",
+            "deliberation",
+            "architecture",
+        }),
+        "cli_available": True,
+        "resume_policy": "never",
+    },
     "gemini": {
         "adapter": "scripts.agent_runtime.adapters.gemini:GeminiAdapter",
         "default_model": GEMINI_WRITER_MODEL,
