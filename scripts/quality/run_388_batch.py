@@ -95,6 +95,21 @@ def fetch_quality_board() -> dict[str, dict]:
     return {m["path"]: m for m in d.get("modules", [])}
 
 
+def normalize_lease_module_key(module_key: str) -> str:
+    """Normalize module lease keys into canonical API-path slug form.
+
+    Returns keys with no ``src/content/docs/`` prefix and no ``.md``
+    suffix so ``api_path``, ``module_path`` and bare ``module_key`` all
+    compare equal at lookup time.
+    """
+    key = module_key.strip().lstrip("/")
+    if key.startswith("src/content/docs/"):
+        key = key.removeprefix("src/content/docs/")
+    if key.endswith(".md"):
+        key = key.removesuffix(".md")
+    return key
+
+
 def fetch_active_leases() -> set[str]:
     """GET /api/pipeline/leases — return the set of paths currently leased."""
     d = api_get("/api/pipeline/leases")
@@ -103,7 +118,12 @@ def fetch_active_leases() -> set[str]:
         # lease shape exposes module_key/slug/path depending on revision; cover all common keys
         for key in ("path", "module_path", "module_key"):
             if key in lease:
-                paths.add(lease[key])
+                val = lease[key]
+                if isinstance(val, str):
+                    paths.add(normalize_lease_module_key(val))
+                else:
+                    paths.add(str(val))
+                break
     return paths
 
 
@@ -236,6 +256,9 @@ def select_modules(
             print(reason)
             continue
         if api_path in leases or repo_path in leases:
+            reasons.append(f"  skip [leased]    {api_path}")
+            continue
+        if normalize_lease_module_key(api_path) in leases:
             reasons.append(f"  skip [leased]    {api_path}")
             continue
         selected.append(repo_path)

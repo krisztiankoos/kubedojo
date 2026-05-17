@@ -354,33 +354,39 @@ def _process_batch(
     *,
     limit: int | None,
     only: Iterable[str] | None,
-) -> tuple[int, int]:
+) -> tuple[int, int, bool]:
     slugs = [st["slug"] for st in iter_states(only) if st["stage"] in eligible_stages]
     if limit is not None:
         slugs = slugs[:limit]
     ok = fail = 0
+    aborted = False
     for slug in slugs:
         try:
             fn(slug)
             ok += 1
         except DispatcherUnavailable as exc:
             print(f"[abort] dispatcher unavailable — {exc}")
-            return ok, fail
+            aborted = True
+            return ok, fail, aborted
         except Exception as exc:  # pragma: no cover — unexpected failures logged
             print(f"[fail] {slug}: {exc}")
             fail += 1
-    return ok, fail
+    return ok, fail, aborted
 
 
 def cmd_audit(args: argparse.Namespace) -> int:
-    ok, fail = _process_batch({"UNAUDITED"}, stages.audit_one, limit=args.limit, only=args.only)
+    ok, fail, aborted = _process_batch({"UNAUDITED"}, stages.audit_one, limit=args.limit, only=args.only)
     print(f"audit: ok={ok} fail={fail}")
+    if aborted:
+        return 3
     return 0 if fail == 0 else 1
 
 
 def cmd_route(args: argparse.Namespace) -> int:
-    ok, fail = _process_batch({"AUDITED"}, stages.route_one, limit=args.limit, only=args.only)
+    ok, fail, aborted = _process_batch({"AUDITED"}, stages.route_one, limit=args.limit, only=args.only)
     print(f"route: ok={ok} fail={fail}")
+    if aborted:
+        return 3
     return 0 if fail == 0 else 1
 
 
@@ -979,6 +985,25 @@ def cmd_reset_stage(args: argparse.Namespace) -> int:
 # ---- cleanup banners ---------------------------------------------------
 
 
+def _cleanup_banner_for_module(
+    primary: Path, slug: str, st: dict[str, Any]
+) -> bool:
+    """Clear a stranded COMMITTED module's banner and mark queue completion."""
+    # The lease must remain external to this helper to avoid nested
+    # state-lock re-entry during cleanup.
+    is_auto_approved = any(
+        h.get("note") == "auto-approved under KUBEDOJO_SKIP_REVIEW"
+        for h in st.get("history", [])
+    )
+    try:
+        stages._clear_banner_and_complete_queue(
+            primary, slug, st["module_path"], auto_approved=is_auto_approved
+        )
+        return True
+    except Exception:
+        return False
+
+
 def cmd_cleanup_banners(args: argparse.Namespace) -> int:
     """Sweep for stranded COMMITTED modules (where completion/banner clear
     failed) and try to clear them again.
@@ -1000,20 +1025,14 @@ def cmd_cleanup_banners(args: argparse.Namespace) -> int:
             q = st.get("queue")
             if not q or q.get("completed_at") is not None:
                 continue
+            module_state = dict(st)
 
-            print(f"Cleaning stranded banner for {slug}...")
-            try:
-                # We need to make sure we don't accidentally do auto_approved=True 
-                # unless it really was auto-approved. It's stored in history or we can default to False.
-                is_auto_approved = any(h.get("note") == "auto-approved under KUBEDOJO_SKIP_REVIEW" for h in st.get("history", []))
-                
-                stages._clear_banner_and_complete_queue(
-                    primary, slug, st["module_path"], auto_approved=is_auto_approved
-                )
-                fixed += 1
-            except Exception as e:
-                print(f"Failed to clean banner for {slug}: {e}")
-                failed += 1
+        print(f"Cleaning stranded banner for {slug}...")
+        if _cleanup_banner_for_module(primary, slug, module_state):
+            fixed += 1
+        else:
+            print(f"Failed to clean banner for {slug}")
+            failed += 1
 
     print(f"\nCleanup complete. Fixed: {fixed}, Failed: {failed}")
     return 0 if failed == 0 else 1
