@@ -3,6 +3,7 @@ title: "Module 2.3: API Server Security"
 slug: k8s/cks/part2-cluster-hardening/module-2.3-api-server-security
 sidebar:
   order: 3
+revision_pending: false
 lab:
   id: cks-2.3-api-server-security
   url: https://killercoda.com/kubedojo/scenario/cks-2.3-api-server-security
@@ -15,7 +16,7 @@ lab:
 >
 > **Time to Complete**: 45-50 minutes
 >
-> **Prerequisi`tes**: CKA API server knowledge, Module 1.2 (CIS Benchmarks) --- ## What You'll B`e learning in this module requires deep understanding of control plane architectures.
+> **Prerequisites**: CKA API server knowledge, Module 1.2 (CIS Benchmarks), static pod troubleshooting, and basic RBAC fluency
 
 ---
 
@@ -23,31 +24,27 @@ lab:
 
 After completing this module, you will be able to:
 
-1. **Design** a hardened API server configuration that completely mitigates unauthenticated access and enforces strict authorization boundaries.
-2. **Audit** API server configuration against security best practices and CIS benchmarks.
-3. **Implement** robust audit logging policies to capture security-relevant events without overwhelming storage systems.
-4. **Diagnose** complex cluster authentication and authorization failures by analyzing API server behavior and container runtime logs.
-5. **Evaluate** existing cluster deployments and upgrade paths, ensuring that deprecated flags from older versions are safely transitioned to modern Kubernetes v1.35 standards.
-
----
+1. **Design** API server authentication and authorization boundaries that reject anonymous access while preserving kubelet and user workflows.
+2. **Audit** kube-apiserver static pod flags for anonymous auth, Node/RBAC authorization, admission plugins, profiling, and deprecated settings.
+3. **Implement** audit logging and encryption-at-rest settings that capture security events without exhausting control plane storage.
+4. **Diagnose** API server restart, TLS, and kubelet communication failures using container runtime logs and Kubernetes status checks.
+5. **Evaluate** Kubernetes v1.35 upgrade readiness by detecting removed insecure flags and choosing a safe remediation order.
 
 ## Why This Module Matters
 
-The API server is the control plane's front door. Every `kubectl` command, every automated controller, every worker node—they all talk to the API server. Compromising it means compromising the entire cluster. CKS tests your ability to harden API server configuration and understand its security boundaries thoroughly. 
+Hypothetical scenario: a team exposes a Kubernetes control plane endpoint to a broad corporate network because it is "only for administrators," then later discovers that an old ClusterRoleBinding grants read access to `system:unauthenticated`. The API server did not need a zero-day to become dangerous; it only needed network reachability, anonymous authentication, and a permissive authorization rule to line up at the same time. In a CKS context, your job is to recognize that this is a layered failure, not a single bad flag.
 
-Real-world control plane compromises overwhelmingly trace back to basic configuration oversights on default-open pathways, rather than sophisticated zero-day exploits. Attackers continuously scan the public internet for exposed endpoints, immediately capitalizing on unrestricted access to administrative interfaces. The [2018 Tesla cluster compromise](/k8s/cks/part1-cluster-setup/module-1.5-gui-security/) <!-- incident-xref: tesla-2018-cryptojacking --> serves as a prime example of this attack pattern, where an unauthenticated, publicly accessible interface provided adversaries with direct command execution capabilities within the environment. When the API server is exposed, its orchestration capabilities can be weaponized by the attacker, allowing them to rapidly extract sensitive secrets, manipulate existing workloads, and provision unauthorized compute resources.
+The API server is the control plane's front door. Every `kubectl` request, every controller reconciliation loop, every admission webhook call, and every kubelet status update eventually passes through this process. If an attacker can submit accepted requests to it, the attacker is no longer merely touching a server port; they are asking Kubernetes to create workloads, read Secrets, change RBAC, and reshape the cluster through the same orchestration machinery that administrators use.
 
-Securing the API server requires an approach that assumes hostile network conditions. A single misconfiguration can reduce the time between initial discovery and complete cluster takeover to mere minutes. Robust API server security mandates that anonymous authentication is explicitly disabled, every request is validated through strict Role-Based Access Control (RBAC), and network access is tightly restricted to known, trusted IP ranges. By implementing these overlapping controls, administrators ensure that even if one defensive layer fails or is bypassed, the control plane remains resilient against unauthorized administrative access and systemic exploitation.
+The lesson in this module is not that one flag magically hardens the cluster. A secure API server combines identity checks, authorization modes, admission controls, audit records, encrypted storage, and constrained network paths so that one mistake does not collapse the whole security model. You will practice reading the static pod manifest like an evidence file: each flag explains what the API server will trust, what it will reject, what it will record, and how it will behave when a node or user presents credentials.
 
----
+The [2018 Tesla cluster compromise](/k8s/cks/part1-cluster-setup/module-1.5-gui-security/) <!-- incident-xref: tesla-2018-cryptojacking --> is a useful reminder that exposed administrative interfaces turn configuration errors into operational incidents quickly. This module keeps the focus on the API server rather than a dashboard, but the pattern is the same: a reachable control surface with weak authentication becomes a path to data access, workload manipulation, and unauthorized compute. Treat the API server as a public-facing security boundary even when it sits behind private addresses.
 
-## Section 1: The API Server Authentication Flow
+## API Server Authentication and Authorization Boundaries
 
-When a request arrives at the API server, it must pass through a strict sequence of security gates. Think of the API server as a highly secure bank vault entrance. Authentication is the ID check, Authorization is the VIP guest list, Admission Control is the metal detector and bag search, and etcd is the vault itself. If a request fails at any stage, it is immediately rejected with a corresponding HTTP error code. 
+The API server processes requests in a fixed security sequence, and the order matters because each stage answers a different question. Authentication asks who is making the request, authorization asks whether that identity may perform the requested action, admission asks whether the request should be changed or rejected before persistence, and etcd stores the final object. A request that fails authentication usually returns `401 Unauthorized`; a request that authenticates but lacks permission usually returns `403 Forbidden`.
 
-The main API group is located at `api/v1`, while other resources exist under specific API groups like `apps/v1` or `rbac.authorization.k8s.io/v1`. Regardless of the endpoint, the flow remains the same.
-
-Below is the legacy architectural view of this flow:
+Think of the sequence as a secure building entrance rather than a single locked door. The receptionist checks identity, the access list decides which rooms the person may enter, the security scanner blocks unsafe items, and the records office stores the approved paperwork. If the receptionist accepts "unknown person" as a real identity, the access list becomes the next line of defense, but it is now handling traffic that should never have entered the lobby.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -88,8 +85,6 @@ Below is the legacy architectural view of this flow:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Modernized Flowchart Representation
-
 ```mermaid
 sequenceDiagram
     participant U as Request
@@ -104,17 +99,27 @@ sequenceDiagram
     Adm->>E: Persist the resource
 ```
 
-Understanding this sequence is critical because a misconfiguration in one layer cannot always be caught by the next. For instance, if anonymous authentication is enabled, the request skips standard identity validation and proceeds directly to Authorization as the `system:anonymous` user. 
+The main API group is located at `api/v1`, while other resources live under groups such as `apps/v1` and `rbac.authorization.k8s.io/v1`. That grouping changes the resource path and RBAC rule shape, but it does not change the security flow. A request to list Pods and a request to patch a ClusterRole both pass through authentication, authorization, admission, and persistence in that order.
 
----
+Anonymous authentication is especially important because Kubernetes can assign unauthenticated requests to the `system:anonymous` user and `system:unauthenticated` group when it is enabled. That identity sounds harmless, but RBAC can bind permissions to groups, and old troubleshooting shortcuts sometimes leave broad read access attached to unauthenticated subjects. Designing API server authentication and authorization boundaries means rejecting anonymous traffic before RBAC ever has to decide what that traffic may see.
 
-## Section 2: Critical API Server Flags & Security Settings
+Pause and predict: what do you think happens if anonymous authentication stays enabled, but no RBAC rule grants permissions to `system:anonymous` or `system:unauthenticated`? The request still reaches authorization with an identity, but authorization should deny it with `403 Forbidden`; that distinction matters because the API server has accepted the request as an anonymous principal rather than rejecting it as unauthenticated at the first gate.
 
-The API server is a static pod managed by the kubelet on the control plane nodes. Its behavior is entirely driven by command-line flags defined in its manifest file. 
+The Node authorizer solves a different boundary problem. Kubelets need API access to report node status, read Pods scheduled to their node, and manage related resources, but a kubelet should not be able to manage every Pod in the cluster merely because it is a node component. `Node,RBAC` makes kubelet permissions topology-aware before RBAC handles ordinary user and controller decisions, which is why a CKS answer that says "use RBAC" is often incomplete.
 
-### Authentication Flags
+ServiceAccount tokens deserve the same careful reading because they are the most common in-cluster API credential. Modern bound ServiceAccount tokens include an issuer and audience model, so the API server needs issuer configuration that matches the tokens it is asked to validate. If the issuer is wrong, Pods can fail to authenticate even though RBAC and admission are perfectly configured, which makes token validation a control plane trust problem rather than an application bug.
 
-The first line of defense is ensuring that only verified identities can even ask for access.
+Admission controllers operate after authorization, so they are not a substitute for either authentication or RBAC. They can still be decisive because they inspect the object that is about to be stored, not just the identity and verb. `NodeRestriction` limits what kubelets can mutate, `PodSecurity` enforces pod security standards, and validating webhooks can reject dangerous object shapes that would otherwise be authorized.
+
+Response codes are useful evidence when you diagnose this flow. A `401` usually tells you the request did not present an acceptable identity, while a `403` usually tells you the identity was recognized but denied by authorization. A successful response followed by a rejected object can point to admission, especially when the error message names a policy, webhook, or Pod Security profile rather than an RBAC rule.
+
+Do not confuse authentication strength with authorization shape. A client certificate signed by the cluster CA can prove identity very strongly while still mapping to a subject that should have almost no privileges. The API server security model depends on both pieces being true at the same time: identities must be hard to forge, and the permissions attached to those identities must be narrow enough that a stolen credential does not become cluster-wide control.
+
+## Auditing Static Pod Flags and Deprecated Settings
+
+In kubeadm-style clusters, the API server runs as a static pod watched by the kubelet, and the manifest normally lives at `/etc/kubernetes/manifests/kube-apiserver.yaml`. That file is both the control plane configuration and the recovery surface. If you add a misspelled flag, the kubelet will restart the static pod, the API server may fail before serving traffic, and `kubectl` will stop being useful until you inspect the container runtime directly.
+
+The first audit pass should identify flags that decide who may ask for access. The following preserved manifest fragment shows the authentication settings that usually matter first: anonymous authentication, client certificate roots, bootstrap token handling, and ServiceAccount token validation. The key habit is to read these as trust statements, not as memorized exam trivia; every file path points to a key or CA the API server will accept as proof.
 
 ```yaml
 # /etc/kubernetes/manifests/kube-apiserver.yaml
@@ -136,9 +141,7 @@ spec:
     - --service-account-issuer=https://kubernetes.default.svc
 ```
 
-### Authorization Flags
-
-Once authenticated, the API server must determine if the identity has the necessary permissions. The order of authorization modes matters significantly. 
+Authentication settings are only useful when authorization is strict enough to make identities meaningful. `AlwaysAllow` effectively tells the API server that an authenticated identity may do anything, which collapses the boundary you just established. For hardened clusters and CKS exercises, the expected baseline is `Node,RBAC`, with the Node authorizer placed where kubelet-scoped decisions can be made before generic RBAC grants are considered.
 
 ```yaml
     # Authorization modes (order matters!)
@@ -148,9 +151,7 @@ Once authenticated, the API server must determine if the identity has the necess
     # Don't use: AlwaysAllow (dangerous!)
 ```
 
-### Admission Controller Flags
-
-Admission controllers can mutate or validate requests before they are persisted. They represent the final security check.
+Admission plugins complete the static-pod flag audit because they provide object-level controls that authentication and authorization do not express. `NodeRestriction` is commonly paired with the Node authorizer, while `PodSecurity` gives namespaces an enforceable pod security profile. `EventRateLimit` can reduce control plane noise, but it needs configuration and operational care because rate limits can also hide useful event streams during an incident.
 
 ```yaml
     # Enable essential admission controllers
@@ -160,11 +161,9 @@ Admission controllers can mutate or validate requests before they are persisted.
     - --disable-admission-plugins=AlwaysAdmit
 ```
 
-> **Stop and think**: The API server manifest lives at `/etc/kubernetes/manifests/kube-apiserver.yaml`. When you edit this file, the kubelet detects the change and restarts the API server. What happens to your cluster if you introduce a typo in a flag? How would you recover if `kubectl` stops working?
+Before editing this file, ask yourself what will keep working if the API server does not come back. `kubectl get pods -n kube-system` depends on the API server, so it is not your first recovery tool when the process is down. The safer workflow is to keep one root shell on the control plane node, use `crictl` to inspect static pod containers, and be prepared to revert a single line in the manifest.
 
-### Security-Critical Settings Overview
-
-The following ASCII diagram maps out the most critical settings to monitor. 
+The security-critical settings fit together as a checklist, but the checklist is not a substitute for understanding the failure modes. `--anonymous-auth=false` blocks unauthenticated principals, `--authorization-mode=Node,RBAC` prevents broad kubelet authority and user overreach, `--enable-admission-plugins=NodeRestriction,PodSecurity` controls object shape and node claims, `--audit-log-path` creates evidence, and `--profiling=false` removes debug endpoints that are rarely needed in production.
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -215,17 +214,19 @@ graph TD
     G --> G1[Disables profiling endpoints]
 ```
 
-In historical cluster deployments, such as Kubernetes `v1.2`, security defaults were significantly looser, often relying heavily on implicit trust within the network. Today, explicitly defining these parameters is required for CIS compliance.
+Kubernetes v1.35 clusters should not carry removed insecure serving flags from older releases. The historical `--insecure-port` path is gone, so leaving a stale `--insecure-port=8080` line in a manifest is not a harmless no-op; a modern API server rejects unknown flags during startup. Upgrade readiness therefore includes flag hygiene, not just checking that workloads use supported API versions.
 
----
+High-availability control planes add another audit detail: every API server instance must enforce the same security posture. A load balancer can hide drift because requests appear healthy as long as at least one instance works, while another instance may still be missing audit flags or carrying a deprecated setting. When you audit an HA cluster, inspect each control plane node and compare the static pod manifests rather than assuming one healthy endpoint proves uniform configuration.
 
-## Section 3: Audit Logging Deep Dive
+Static pod edits also have a timing model that can surprise new administrators. The kubelet watches the manifest directory, notices a file update, and recreates the container when the pod spec changes. That means a half-written file, a bad indentation level, or a duplicate flag can immediately affect the API server; use careful editor saves, keep the old manifest close, and avoid unrelated cleanup while you are changing security controls under exam pressure.
 
-Without visibility, you cannot defend your cluster. Audit logging provides a chronological record of every request made to the API server.
+Before running this audit on a real control plane, decide how you would prove each finding. A visible flag in the manifest proves intended configuration, a running static pod command line proves active configuration, and an external request proves observed behavior. CKS tasks often reward the administrator who can connect all three without losing access to the cluster during the edit.
 
-### Enable Audit Logging
+## Audit Logging and Evidence Without Exhausting Storage
 
-To enable audit logging, you must define the log location, rotation policies, and the policy file itself.
+Audit logging gives you a chronological record of API server requests, but it is not a free security feature. The API server must evaluate an audit policy, write events, rotate files, and sometimes include request or response bodies. A useful policy records security-relevant activity with enough detail for investigation while avoiding uncontrolled disk growth on high-volume resources.
+
+The enablement flags define the policy file location, log path, and rotation limits. These flags are part of the static pod manifest, so the host paths must also be visible inside the container. A common failure is to add `--audit-log-path` without creating the host directory or mounting it, which makes the API server fail during startup even though the flag itself is spelled correctly.
 
 ```yaml
 # API server flags
@@ -236,9 +237,7 @@ To enable audit logging, you must define the log location, rotation policies, an
 - --audit-log-maxsize=100
 ```
 
-### Audit Policy
-
-The policy file dictates *what* is logged. You must strike a balance between visibility and storage overhead. Logging every single request payload will rapidly exhaust your node's disk space.
+The policy controls what gets written and at which level. `Metadata` records who did what to which resource without object bodies, `Request` includes the submitted object, and `RequestResponse` includes both the request and response. That last level is powerful for Secrets and RBAC changes, but it is usually too expensive for noisy resources such as watches, events, endpoints, or leases.
 
 ```yaml
 # /etc/kubernetes/audit-policy.yaml
@@ -276,10 +275,6 @@ rules:
     - group: ""
       resources: ["endpoints", "services"]
 ```
-
-### Audit Log Levels
-
-The API server supports four distinct verbosity levels for auditing:
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
@@ -322,17 +317,25 @@ graph TD
     E --> E2[Most verbose, use selectively]
 ```
 
-Choosing the right level is paramount. Applying `RequestResponse` to all resources is a classic mistake that can crash the control plane due to extreme I/O exhaustion.
+A practical audit policy usually starts with broad `Metadata` coverage, raises selected sensitive resources to `Request` or `RequestResponse`, and explicitly drops low-value watch traffic. That structure lets investigators answer "who touched this Secret or ClusterRole?" without filling a control plane disk with repetitive status streams. The rotation flags then act as the last guardrail, not the primary design.
 
----
+Which approach would you choose here and why: `RequestResponse` for every resource, or `Metadata` for most resources with elevated logging for Secrets and RBAC? The second approach is usually stronger in production because it preserves evidence for high-risk operations while keeping the API server healthy enough to continue producing evidence during an incident.
 
-## Section 4: API Server Access Control & Network Boundaries
+Audit events also help diagnose authentication and authorization boundaries because they record the user, groups, verb, resource, namespace, and response status. If a scanner reports anonymous access, audit logs can show whether the request was rejected at authentication, denied by authorization, or allowed through a binding. That is much more useful than simply knowing that a curl command returned JSON.
 
-Beyond authentication, you must restrict network access. If an attacker cannot reach the API server port, they cannot exploit it.
+The `omitStages` field is another practical tuning point. `RequestReceived` can be noisy because it records requests before authorization and admission reach a final result, while later stages are often more useful for investigations that ask whether the request succeeded. A thoughtful policy records enough stage information to reconstruct security decisions without doubling log volume for requests whose final response is the only fact you need.
 
-### Restrict API Server Network Access
+Audit webhooks can stream events to external systems, but the local file backend remains important during a control plane incident. If the network path to a SIEM is broken, a local rotated log may be the only evidence left on the node. For CKS work, the file backend is also easier to validate quickly because you can trigger a request and inspect the local log without debugging an external collector.
 
-By default, the API server binds to all interfaces (`0.0.0.0`). It is strongly recommended to restrict this in production environments using explicit bind addresses and network firewalls.
+Do not place audit logs on a tiny root filesystem without thinking about disk pressure. Control plane nodes often host etcd, kubelet state, container logs, and static pod volumes on the same underlying storage. If audit logging fills that storage, the cluster can lose both availability and evidence, so the policy and rotation settings are availability controls as much as security controls.
+
+Audit policies should also reflect how Kubernetes controllers behave. A controller can perform frequent reads and watches that are normal during reconciliation, while a human modifying a ClusterRoleBinding is comparatively rare and security-sensitive. Good policy design separates those patterns, so normal automation does not drown out the events that would explain privilege escalation, Secret access, or an unexpected workload creation.
+
+## Network Boundaries, NodeRestriction, and Secure Kubelet Communication
+
+Hardening the API server begins with request processing, but network reachability still decides who gets to test those controls. The secure port normally listens on TCP 6443, and the API server may bind broadly while firewalls, security groups, load balancers, or private routing decide who can reach it. A private address is not a complete defense if the private network includes untrusted workloads, compromised jump hosts, or broad peering.
+
+The preserved flag fragment below shows the difference between advertising an address and binding a listener. `--advertise-address` tells other components which address to use for the API server, while `--bind-address` decides where the process listens. In many production designs the bind address remains broad because the node network requires it, so the effective restriction must come from host firewall rules and upstream network controls.
 
 ```yaml
 # API server flags to bind to specific address
@@ -344,9 +347,7 @@ By default, the API server binds to all interfaces (`0.0.0.0`). It is strongly r
 # iptables -A INPUT -p tcp --dport 6443 -j DROP
 ```
 
-### NodeRestriction Admission
-
-The `NodeRestriction` plugin is a critical layer of defense that limits what a compromised worker node can do. Without it, a rogue kubelet could modify pods or labels on entirely different nodes.
+Network restrictions reduce exposure, but they do not replace API authorization because kubelets, controllers, and administrators still need access. That is why `NodeRestriction` matters. It narrows the blast radius of a compromised kubelet by preventing it from changing other Node objects or using node labels in ways that could influence scheduling and trust decisions outside its own lane.
 
 ```yaml
 # Enable NodeRestriction (limits what kubelets can modify)
@@ -358,17 +359,38 @@ The `NodeRestriction` plugin is a critical layer of defense that limits what a c
 # - Kubelets cannot modify other nodes' labels
 ```
 
-> **What would happen if**: You set `--authorization-mode=RBAC` without including `Node` in the mode list. The cluster seems to work fine for users. But what subtle security risk have you introduced for kubelet communication?
+The subtle trap is to treat `NodeRestriction` as optional because RBAC is already enabled. RBAC can say that a node identity has access to pod-related resources, but it does not by itself understand which node a Pod is scheduled to. The Node authorizer and NodeRestriction admission plugin add that context, creating a boundary that follows scheduling rather than broad role membership.
 
+When the API server connects to kubelets for `kubectl logs`, `kubectl exec`, and port-forward style flows, it also needs secure client and CA material. These requests feel like direct user actions, but the API server is the component that proxies the connection to the kubelet. If the kubelet serving certificate cannot be verified, you may see x509 errors even though your local kubeconfig and user certificate are fine.
+
+```yaml
+spec:
+  containers:
+  - command:
+    - kube-apiserver
+    # API server flags for secure kubelet communication
+    - --kubelet-certificate-authority=/etc/kubernetes/pki/ca.crt
+    - --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt
+    - --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key
 ---
+# Enable HTTPS for kubelet (on kubelet side)
+# /var/lib/kubelet/config.yaml
+serverTLSBootstrap: true
+```
 
-## Section 5: Encryption at Rest (etcd)
+In exam troubleshooting, separate three traffic directions in your head. A user connecting to the API server depends on the API server serving certificate and user authentication. A kubelet connecting to the API server depends on node credentials and Node/RBAC authorization. The API server connecting to a kubelet depends on kubelet serving trust and API server kubelet client credentials.
 
-The API server is entirely stateless. All cluster state, including sensitive Secrets, is persisted in etcd. By default, etcd stores data in plain text. If an attacker gains access to the etcd volume or a backup file, they possess every secret in the cluster.
+Exercise scenario: you set `--authorization-mode=RBAC` without including `Node`, and user requests still appear normal. The missing damage is in node-scoped authorization, not ordinary user access. A compromised or misconfigured kubelet may be evaluated through broad RBAC grants without the topology-aware Node authorizer narrowing the request to resources related to that node.
 
-### Enable etcd Encryption
+Front-proxy and aggregation settings are another API server trust surface, even though they are not the main focus of this module. Aggregated API servers rely on request headers and proxy client certificates to preserve user identity across the aggregation layer. If you encounter custom API groups that authenticate differently from core resources, include the aggregation trust chain in your investigation instead of assuming the core API server flags explain every response.
 
-You must provide an `EncryptionConfiguration` file to define how the API server encrypts data before sending it to etcd.
+Load balancers need the same skepticism as firewalls. A health check that only confirms the TCP port is open can mark an API server healthy even when authentication, audit logging, or encryption settings are wrong. A stronger operational check validates the secure endpoint, the serving certificate, and an authenticated lightweight API request, then leaves detailed authorization and admission tests to Kubernetes-aware probes.
+
+## Encryption at Rest and etcd Verification
+
+The API server is stateless in the sense that it does not keep the cluster object database inside its own process. It validates, authorizes, admits, and translates API requests, then stores cluster state in etcd. That distinction matters for security because a well-hardened API server can still leave sensitive data exposed if etcd snapshots or disks contain cleartext Secret values.
+
+Encryption at rest is configured through an `EncryptionConfiguration` file consumed by the API server. The provider order is significant: the first provider writes new data, while later providers can read older data. Keeping `identity` as a fallback during migration lets the API server read existing unencrypted objects, but it also means old objects remain unencrypted until they are rewritten.
 
 ```yaml
 # Create encryption configuration
@@ -386,7 +408,7 @@ resources:
     - identity: {}  # Fallback for reading old unencrypted data
 ```
 
-To activate this, you pass the configuration to the API server via a flag and ensure the file is mounted into the static pod container. 
+The static pod must receive both the flag and the mounted file path. This creates a dependency that is easy to overlook during a fast CKS edit: the file can exist on the host, but the container cannot read it unless the hostPath volume and volumeMount are present. A missing mount can make the API server fail as decisively as a malformed YAML document.
 
 ```yaml
 spec:
@@ -407,9 +429,7 @@ spec:
       path: /etc/kubernetes/enc
 ```
 
-### Verify Encryption
-
-After configuration, you must verify that new secrets are actually being encrypted at the storage layer.
+Verification must read from etcd rather than merely checking that the API server flag exists. A configured flag proves intent, but an etcd read proves the storage result. The following command creates a Secret and reads the raw etcd key so you can inspect whether the value is stored with an encrypted provider prefix instead of human-readable Secret data.
 
 ```bash
 # Create a secret
@@ -426,38 +446,21 @@ ETCDCTL_API=3 etcdctl \
 # Should see encrypted data, not plain text
 ```
 
-> **Pause and predict**: You enable encryption at rest for secrets using `aescbc` provider. Existing secrets were created before encryption was enabled. Are they now encrypted, or do you need to take additional action?
+Pause and predict: you enable `aescbc` encryption today, but the cluster already contains Secrets created last week. Those existing objects do not magically rewrite themselves when the provider config changes. You need a deliberate rewrite operation, such as replacing Secrets through the API, so the API server stores them again using the new first provider.
 
----
+Key rotation adds another operational requirement. You add a new key as the first write provider, keep older keys available for reads, rewrite the protected resources, and remove stale keys only after confirming that no object still depends on them. Removing a key too early can turn encrypted data into unreadable data, which is much worse than failing a compliance check.
 
-## Section 6: Secure Kubelet Communication
+Encryption scope is resource-specific, so verify the exact resources listed under the configuration rather than assuming the entire database is encrypted. Secrets are the common baseline because they contain credentials, but some organizations also encrypt ConfigMaps or custom resources that carry sensitive configuration. Expanding the resource list increases protection, yet it also increases the importance of key rotation discipline and restore testing.
 
-When the API server initiates a connection to a kubelet (for example, when you run `kubectl logs` or `kubectl exec`), it must verify the kubelet's identity and encrypt the channel.
+Backups are part of the encryption story. If an etcd snapshot was taken before encryption was enabled or before old Secrets were rewritten, that snapshot may still contain cleartext data even after the live cluster is fixed. A complete remediation plan identifies which backups predate the encryption change, decides how long they must be retained, and applies compensating controls such as restricted access or accelerated expiration.
 
-```yaml
-spec:
-  containers:
-  - command:
-    - kube-apiserver
-    # API server flags for secure kubelet communication
-    - --kubelet-certificate-authority=/etc/kubernetes/pki/ca.crt
-    - --kubelet-client-certificate=/etc/kubernetes/pki/apiserver-kubelet-client.crt
-    - --kubelet-client-key=/etc/kubernetes/pki/apiserver-kubelet-client.key
----
-# Enable HTTPS for kubelet (on kubelet side)
-# /var/lib/kubelet/config.yaml
-serverTLSBootstrap: true
-```
+Restore testing closes the loop. A cluster that can encrypt new data but cannot be restored with the current provider configuration has traded one security risk for an availability risk. Keep the encryption configuration, key material, and restore procedure under the same operational discipline as etcd backups, because all three are required when a control plane node fails and the encrypted data must become usable again.
 
-If these flags are missing, the API server might connect to a spoofed kubelet, potentially leaking sensitive command payloads or allowing a man-in-the-middle attack.
+## Diagnosing Restarts and Real Exam Scenarios
 
----
+API server hardening is risky because the component you are editing is also the component that makes normal cluster inspection possible. When a static pod change breaks startup, `kubectl` fails because there is no healthy API server to answer it. That is why the exam skill is not simply "know the flag"; it is "change the flag, observe the restart, and recover through the node runtime if the API server disappears."
 
-## Section 7: Real Exam Scenarios & Troubleshooting
-
-In the CKS exam, you will frequently need to audit and repair broken clusters.
-
-### Scenario 1: Disable Anonymous Auth
+The first preserved scenario disables anonymous authentication. Notice the order: inspect the manifest, edit the static pod, then watch the kube-system pod as the API server restarts. In a real outage, the watch command may not work until the API server is back, so pair this workflow with runtime-level checks when you are not certain the manifest is valid.
 
 ```bash
 # Check current setting
@@ -473,7 +476,7 @@ sudo vi /etc/kubernetes/manifests/kube-apiserver.yaml
 kubectl get pods -n kube-system -w
 ```
 
-### Scenario 2: Enable Audit Logging
+The second scenario enables audit logging, which is more failure-prone because it adds flags, a policy file, a directory, and volume mounts. If the API server fails after this edit, check for misspelled flags, invalid policy YAML, missing host directories, and missing volume mounts before assuming a deeper control plane problem. Static pod logs usually tell you which of those conditions happened.
 
 ```bash
 # Create audit policy
@@ -506,7 +509,7 @@ sudo vi /etc/kubernetes/manifests/kube-apiserver.yaml
 # Add volume mounts for policy and logs
 ```
 
-### Scenario 3: Check Authorization Mode
+The third scenario checks authorization mode directly from the running static pod. This is useful after a manifest edit because the manifest and the active pod can briefly disagree while the kubelet is restarting the container. For an exam answer, the desired observation is explicit: `Node,RBAC` is present, and `AlwaysAllow` is absent.
 
 ```bash
 # Verify authorization mode
@@ -516,9 +519,7 @@ kubectl get pods -n kube-system kube-apiserver-* -o yaml | grep authorization-mo
 # Should NOT see: AlwaysAllow
 ```
 
-### API Server Hardening Checklist
-
-Use this script to quickly gather intelligence on a target cluster.
+The audit helper script gathers the same evidence in one pass. It is not a substitute for judgment, because a missing flag can mean a secure default, an insecure default, or a setting supplied through another mechanism depending on the flag. It is still a useful triage tool because it makes omissions visible and gives you a short list of claims to verify before editing.
 
 ```bash
 #!/bin/bash
@@ -554,156 +555,231 @@ echo "Profiling:"
 kubectl get $POD -n kube-system -o yaml | grep -E "profiling=false" || echo "  May be enabled"
 ```
 
----
+Worked example: you add audit logging flags, and then every `kubectl` command returns `The connection to the server <ip>:6443 was refused`. Because the API server is a static pod, your next move is not another `kubectl` command; it is `crictl ps -a` on the control plane node, followed by `crictl logs <container-id>` for the failed kube-apiserver container. If the log says `unknown flag: --audit-log-pathh`, the fix is to correct the manifest typo and let the kubelet recreate the static pod.
+
+Diagnosing kubelet communication failures requires a different mental path. If `kubectl get pods` works but `kubectl logs` or `kubectl exec` fails with a kubelet certificate error, the user-to-API-server path is probably fine. Focus on the API-server-to-kubelet path: kubelet serving certificate trust, the API server kubelet client certificate, and whether `serverTLSBootstrap` and the relevant CA chain are configured consistently.
+
+When you troubleshoot a failed static pod, capture the exact runtime error before editing again. Repeated blind edits make it harder to know which change fixed the problem and can introduce new mistakes while you are under pressure. A disciplined sequence is faster in practice: read the failing container log, make one targeted manifest correction, wait for kubelet reconciliation, and then prove recovery with both runtime state and an authenticated Kubernetes request.
+
+There is also a difference between startup failure and readiness failure. A kube-apiserver container can start, bind its secure port, and still fail readiness if it cannot reach etcd, load admission configuration, or initialize required controllers. If the process is running but the endpoint is unhealthy, inspect readiness messages and component logs instead of assuming the command-line flags parsed correctly means the API server is fully usable.
+
+## Patterns & Anti-Patterns
+
+Patterns and anti-patterns are useful only when they help you choose an operational shape, so this section focuses on decisions that change the behavior of a live cluster. The patterns below scale because they produce evidence, keep recovery paths open, and avoid relying on one control to compensate for another. The anti-patterns are common because they feel faster during setup, but they leave the control plane with weak or unprovable boundaries.
+
+| Pattern | When to Use It | Why It Works | Scaling Consideration |
+|---|---|---|---|
+| Manifest-first API server audit | Before CKS remediation, upgrades, or compliance review | Static pod flags reveal the active trust model and restart behavior | Pair manifest reads with running pod command-line checks in HA clusters |
+| `Node,RBAC` plus `NodeRestriction` | Any cluster with kubelets using node credentials | Node-scoped authorization and admission narrow compromised kubelet actions | Confirm bootstrap and certificate rotation flows still work for new nodes |
+| Tiered audit policy | Clusters that need investigation evidence without disk pressure | Metadata stays broad while sensitive resources receive deeper logging | Revisit noisy resources as controller count and workload churn increase |
+| Encryption verification through etcd | Clusters that store Secrets or external credentials | Raw storage inspection proves encryption rather than just configuration | Include rewrite and key-rotation steps in maintenance windows |
+
+An effective pattern has a feedback loop. For example, disabling anonymous authentication is not complete until an unauthenticated request returns `401 Unauthorized`, authenticated administrator traffic still works, and audit records show the expected rejection behavior. That feedback loop keeps you from mistaking "I added the flag" for "the cluster is hardened."
+
+| Anti-Pattern | What Goes Wrong | Better Alternative |
+|---|---|---|
+| Trusting private networks as the API server boundary | Any host on the private path can probe authentication and authorization weaknesses | Restrict reachability and still enforce authentication, RBAC, and admission controls |
+| Using `AlwaysAllow` during troubleshooting | Temporary access often becomes permanent full access | Create a narrow emergency ClusterRoleBinding and remove it after recovery |
+| Logging `RequestResponse` for everything | Control plane disks fill with low-value high-volume records | Use `Metadata` broadly and reserve payload logging for sensitive resources |
+| Enabling encryption without rewriting old Secrets | New objects are protected while old objects remain readable in etcd | Rewrite protected resources and verify raw etcd output after the change |
+
+The senior habit is to ask what a control cannot do. Network controls cannot decide Kubernetes verbs, RBAC cannot inspect a Pod security context deeply enough by itself, audit logs cannot prevent a bad request, and encryption at rest cannot stop a valid API client from reading a Secret. Layering works when each control owns a specific failure mode and you can test that ownership.
+
+Another useful pattern is to keep hardening changes reversible until they are proven. Copy the original static pod manifest, change one security boundary at a time, and record the command that proves the new behavior. This does not mean moving slowly for its own sake; it means preserving a clean recovery path so the control plane stays available while you tighten the most important controls.
+
+## Decision Framework
+
+Use this framework when you inherit a cluster and need to decide what to change first. The safest order is to protect access paths before making high-risk storage or logging changes, because a broken API server makes every later fix harder. In a high-availability control plane, apply the same reasoning node by node, but still avoid editing every API server manifest at once.
+
+| Observation | Primary Risk | First Check | Preferred Fix |
+|---|---|---|---|
+| Anonymous requests return Kubernetes objects | Unauthenticated discovery or data access | Test unauthenticated request and inspect RBAC bindings | Set `--anonymous-auth=false` and remove unauthenticated grants |
+| Manifest contains `AlwaysAllow` | Authenticated identities can perform unrestricted actions | Inspect running kube-apiserver command line | Use `--authorization-mode=Node,RBAC` and validate user workflows |
+| Kubelets can affect unrelated nodes | Node credential blast radius is too broad | Check Node authorizer and NodeRestriction | Enable `Node` authorization and `NodeRestriction` admission |
+| No audit log path is configured | Incidents cannot be reconstructed | Inspect API server flags and host mounts | Add policy, log path, rotation, directory, and volume mounts |
+| Secrets appear readable in raw etcd output | etcd disk or backup exposure leaks credentials | Read a test Secret directly from etcd | Add encryption provider config, mount it, rewrite Secrets, verify again |
+| Upgrade plan includes removed flags | API server may fail on restart | Compare manifest against v1.35 kube-apiserver flags | Remove obsolete flags before the control plane upgrade |
+
+Start with the change that gives you the largest security gain with the clearest rollback. Disabling anonymous authentication is usually a small, testable edit; enabling audit logging is slightly broader because it needs file paths and mounts; encryption at rest is broader still because it affects stored data and key management. The right sequence is not always the flashiest one, but it should preserve cluster access while reducing the most immediate exposure.
+
+If you must choose under exam time pressure, classify the task by symptom. A request that succeeds without credentials is an authentication and RBAC boundary problem. A kubelet that reaches across nodes is a Node authorizer and NodeRestriction problem. A missing investigation trail is an audit policy problem, while readable Secrets in etcd are an encryption and rewrite problem.
+
+For Kubernetes v1.35 readiness, search for old insecure serving assumptions before you run an upgrade. Removed flags, deprecated admission names, and stale config file paths can all break static pod startup. A clean upgrade plan proves that the current API server is secure enough to operate today and modern enough to restart tomorrow.
+
+The same framework helps you communicate risk to another engineer. Instead of saying "the API server is insecure," name the failed boundary, the evidence, and the next reversible fix. For example: "anonymous requests are accepted, the running command line lacks `--anonymous-auth=false`, and the next change is to add the flag and verify a `401` response." That phrasing turns security review into an executable plan.
 
 ## Did You Know?
 
-- **The insecure port (--insecure-port)** was completely removed in Kubernetes 1.24. Before that, it exposed an unauthenticated API on localhost. Furthermore, the underlying code path `** was completely removed in Kubernetes 1.24. Before that, it exposed an unauthentic`ated connection directly to the core runtime handlers.
-- **Audit logs can be sent to webhooks** for real-time security monitoring. Many organizations use this for SIEM integration, a feature that reached general stability in December 2018.
-- **Node authorization mode** was specifically engineered for kubelets in June 2017. It algorithmically restricts them to only access resources related to pods scheduled directly on their assigned node.
-- **The API server is entirely stateless**—all data is persisted in etcd. Since Kubernetes v1.0 (July 2015), you can run multiple API servers behind a load balancer for high availability without worrying about state synchronization between them.
-
----
+- **The insecure port flag was removed in Kubernetes 1.24.** Older clusters could expose an unauthenticated local HTTP API path, but modern kube-apiserver binaries reject the removed `--insecure-port` flag instead of silently ignoring it.
+- **Kubernetes audit logging reached stable status in the v1.12 release series in 2018.** That matters because modern clusters can treat audit policy as a normal control plane feature rather than an experimental add-on.
+- **Node authorization was introduced to constrain kubelet access by scheduled workload relationships.** It is different from plain RBAC because it can evaluate whether a kubelet is asking about resources tied to its own node.
+- **The API server remains stateless while etcd stores cluster state.** High-availability API servers can sit behind a load balancer, but every instance must share compatible authentication, authorization, audit, and encryption configuration.
 
 ## Common Mistakes
 
-| Mistake | Why It Hurts | Solution |
-|---------|--------------|----------|
-| Anonymous auth enabled | Unauthenticated access | `--anonymous-auth=false` |
-| AlwaysAllow authorization | No access control | Use `Node,RBAC` |
-| | No audit logging | Can't investigate incidents | Configure audit policy |
-| Unencrypted etcd | Secrets in plain text | Enable encryption at rest |
-| Missing NodeRestriction | Kubelets can modify any pod | Enable admission plugin |
-| Missing volume mounts | Audit logs fail to write | Mount hostPath to pod |
-| Incorrect CA files | Kubelet TLS bootstrap fails | Verify `--kubelet-certificate-authority` |
-| Leaving profiling on | Exposes debug metrics | `--profiling=false` |
-
----
+| Mistake | Why It Happens | How to Fix It |
+|---|---|---|
+| Anonymous auth left enabled | The default behavior is easy to forget when the flag is absent from the manifest | Add `--anonymous-auth=false`, test unauthenticated requests, and review unauthenticated RBAC bindings |
+| `AlwaysAllow` authorization used during setup | It makes early troubleshooting convenient and then remains in the manifest | Replace it with `--authorization-mode=Node,RBAC` and validate required users and controllers |
+| No audit logging configured | Teams focus on prevention and postpone investigation evidence until after an incident | Add an audit policy, log path, rotation flags, host directory, and static pod volume mounts |
+| etcd stores readable Secrets | Encryption configuration is mistaken for a default behavior | Add `EncryptionConfiguration`, mount it into the API server, rewrite Secrets, and verify raw etcd output |
+| `NodeRestriction` missing | RBAC is assumed to cover kubelet scope by itself | Enable the `Node` authorizer and `NodeRestriction` admission plugin together |
+| Audit volume mounts missing | Flags are added without making host files visible inside the static pod | Create host paths and add matching `volumes` and `volumeMounts` entries |
+| Kubelet CA flags incorrect | User-to-API-server TLS is confused with API-server-to-kubelet TLS | Configure `--kubelet-certificate-authority` and kubelet client certificate/key paths |
+| Profiling left enabled | Debug endpoints are treated as harmless because they are not normal user APIs | Set `--profiling=false` unless there is a documented diagnostic need |
 
 ## Quiz
 
-1. **A security scanner reports that your API server accepts anonymous requests and returns namespace listings to unauthenticated clients. You check the API server manifest and don't see `--anonymous-auth` at all. Why is anonymous access working, and what change fixes it?**
-   <details>
-   <summary>Answer</summary>
-   When `--anonymous-auth` is not explicitly set, it defaults to `true` -- anonymous authentication is enabled by default in Kubernetes. This means any unauthenticated request is assigned the `system:anonymous` user and `system:unauthenticated` group. If any ClusterRoleBinding grants permissions to these identities, anonymous users get access. Fix by explicitly adding `--anonymous-auth=false` to the API server manifest at `/etc/kubernetes/manifests/kube-apiserver.yaml`. The API server will restart automatically. Verify with `curl -k https://<api-server>:6443/api/v1/namespaces` -- it should return 401 Unauthorized.
-   </details>
+<details><summary>1. Scenario: A scanner reaches your API server without credentials and receives a namespace list. The manifest has no `--anonymous-auth` line. What do you check and change first?</summary>
 
-2. **After enabling audit logging on the API server, you notice the API server pod is in CrashLoopBackOff. The `crictl logs` output shows "open /var/log/kubernetes/audit.log: no such file or directory." You added `--audit-log-path` and `--audit-policy-file` flags. What did you miss?**
-   <details>
-   <summary>Answer</summary>
-   The API server container needs both the directory to exist AND volume mounts configured. Three things are required: (1) Create the log directory on the host: `mkdir -p /var/log/kubernetes`. (2) Add a `hostPath` volume in the API server manifest pointing to both the audit policy file and the log directory. (3) Add corresponding `volumeMounts` in the container spec. You also need the `--audit-policy-file` pointing to a valid audit policy YAML -- without a valid policy, the API server also fails. Always use `crictl logs` to diagnose static pod failures when `kubectl` is unavailable.
-   </details>
+First, check whether any RBAC binding grants permissions to `system:anonymous` or `system:unauthenticated`, because anonymous authentication can turn an unauthenticated request into a real Kubernetes identity. Then add `--anonymous-auth=false` to the kube-apiserver static pod manifest so unauthenticated traffic is rejected at authentication rather than merely denied later. After the restart, test a request such as `curl -k https://<api-server>:6443/api/v1/namespaces`; the expected result is `401 Unauthorized`, while authenticated `kubectl` traffic should still work.
 
-3. **During a compliance audit, the auditor asks you to prove that secrets stored in etcd are encrypted at rest. You show them the EncryptionConfiguration with `aescbc` provider. They say "prove it's actually encrypting, not just configured." How do you demonstrate this?**
-   <details>
-   <summary>Answer</summary>
-   Read a secret directly from etcd using etcdctl: `ETCDCTL_API=3 etcdctl get /registry/secrets/default/<secret-name> --endpoints=https://127.0.0.1:2379 --cacert=... --cert=... --key=... | hexdump -C | head`. If encryption is working, the output shows binary/encrypted data with the encryption provider prefix (e.g., `k8s:enc:aescbc:v1:key1`), not the plain-text secret value. If you see the actual secret data in readable form, encryption is not working despite being configured. Also important: existing secrets created before encryption was enabled remain unencrypted until you re-create them or run `kubectl get secrets -A -o json | kubectl replace -f -`.
-   </details>
+</details>
 
-4. **A compromised kubelet on worker node `node-3` is making API calls to modify pods on `node-1` and `node-2`. Your API server uses `--authorization-mode=RBAC` (without Node). Why doesn't RBAC prevent this cross-node manipulation, and what authorization mode is missing?**
-   <details>
-   <summary>Answer</summary>
-   RBAC alone grants permissions based on identity and role, not on node affinity. If the kubelet's credentials have a ClusterRoleBinding to `system:node` (which grants broad pod access), RBAC allows it to modify pods on any node. The missing mode is `Node` -- the Node authorizer restricts kubelets to only accessing resources related to pods scheduled on their own node. With `--authorization-mode=Node,RBAC`, a kubelet on `node-3` can only read/modify pods assigned to `node-3`. The NodeRestriction admission plugin adds further limits, preventing kubelets from modifying labels on other Node objects. Always use both: `Node,RBAC`.
-   </details>
+<details><summary>2. Scenario: You add audit logging flags and the API server enters CrashLoopBackOff. `crictl logs` says the audit log path cannot be opened. What is the likely missing piece?</summary>
 
-5. **Scenario: You configure an audit policy setting the level to `RequestResponse` for all core resources. Two days later, the control plane nodes crash due to disk pressure. How do you resolve this while maintaining security compliance?**
-   <details>
-   <summary>Answer</summary>
-   Logging full `RequestResponse` payloads for high-volume resources like Endpoints and Leases causes exponential disk writes. You must edit the audit policy to set `level: None` for noisy, non-security-critical resources like `endpoints` and `services`. Furthermore, ensure you are utilizing log rotation flags (`--audit-log-maxsize`, `--audit-log-maxbackup`) to prevent unbounded log growth. Finally, reserve `RequestResponse` strictly for highly sensitive resources like `secrets` or `configmaps`.
-   </details>
+The likely missing piece is the host directory or the static pod volume mount that exposes it inside the API server container. Audit logging needs a valid policy file, a writable log directory, and matching `volumes` and `volumeMounts` in addition to the flags. Fix the host path and mount first, then let the kubelet recreate the static pod and confirm that the API server stays running before testing audit records.
 
-6. **Scenario: A junior admin accidentally deletes the encryption-config file from the master node. The API server continues to run, but what happens when a new Secret is created?**
-   <details>
-   <summary>Answer</summary>
-   If the API server process is already running, it maintains the configuration in memory and will successfully encrypt new Secrets. However, if the API server pod restarts (e.g., due to a node reboot), the container will fail to start because the `hostPath` volume mount for the missing file will fail. You must immediately recreate the file with the exact original AES key before a restart occurs, or risk permanent data loss for all encrypted secrets.
-   </details>
+</details>
 
-7. **Scenario: You are tasked with upgrading an older cluster currently running Kubernetes 1.24. The API server manifest includes `--insecure-port=8080`. Will the upgrade to v1.35 succeed?**
-   <details>
-   <summary>Answer</summary>
-   No, the upgrade will fail violently. The `--insecure-port` flag was completely removed in Kubernetes 1.24 and is not recognized by modern API servers. The static pod will crash immediately with an `unknown flag` error. You must manually remove deprecated flags from the manifest prior to executing the control plane upgrade to ensure continuous availability.
-   </details>
+<details><summary>3. Scenario: An auditor asks you to prove that Secrets are encrypted at rest, not merely that an encryption config file exists. How do you demonstrate it?</summary>
 
-8. **Scenario: You execute `kubectl exec -it my-pod -- bash` and receive an x509 certificate error originating from the kubelet. Your client certificates are perfectly valid. What API server configuration is likely missing?**
-   <details>
-   <summary>Answer</summary>
-   The API server must establish a trusted TLS connection *to* the kubelet to proxy commands like `exec` and `logs`. If the API server's `--kubelet-certificate-authority` flag is missing or points to the wrong CA, it cannot verify the kubelet's serving certificate. You must configure the API server with the correct kubelet client certificates and CA to enable secure bidirectional communication.
-   </details>
+Create or rewrite a test Secret through the Kubernetes API, then read the corresponding key directly from etcd with authenticated `etcdctl` and inspect the bytes. If encryption is active for that object, the output should show an encrypted provider marker and not the cleartext value. This proves storage behavior, while the manifest flag only proves intended configuration; remember that older Secrets may need to be rewritten before they are encrypted.
 
----
+</details>
 
-## Practice Scenario: Securing the Control Plane
+<details><summary>4. Scenario: A compromised kubelet on one worker appears able to modify resources tied to other nodes. The API server uses `--authorization-mode=RBAC`. What is missing?</summary>
 
-Before diving into the exercise, let's look at how to troubleshoot an API server that fails to start after a configuration change.
+The missing authorization mode is `Node`, and the related admission protection is `NodeRestriction`. RBAC alone grants permissions based on roles and subjects, but it does not inherently restrict a kubelet to resources associated with its own node. Use `--authorization-mode=Node,RBAC` and enable `NodeRestriction` so node credentials are evaluated with node topology and mutation limits.
 
-### Worked Example: Diagnosing a CrashLooping API Server
+</details>
 
-**The Situation**: You added audit logging flags to `/etc/kubernetes/manifests/kube-apiserver.yaml`, but now `kubectl` commands immediately fail with `The connection to the server <ip>:6443 was refused`. 
+<details><summary>5. Scenario: Two days after setting audit level `RequestResponse` for nearly every resource, the control plane hits disk pressure. How do you keep useful evidence without repeating the failure?</summary>
 
-**The Thought Process**:
-1. **Identify the failure**: Since the API server is a static pod managed by the kubelet, `kubectl` won't work if the API server is down. I need to check the container runtime directly on the control plane node.
-2. **Check the logs**: I run `crictl ps -a | grep kube-apiserver` to find the recently exited container ID, then inspect it with `crictl logs <container-id>`.
-3. **Spot the error**: The logs clearly show `Error: unknown flag: --audit-log-pathh`.
-4. **Fix and verify**: I edit the manifest to correct the typo to `--audit-log-path`, wait 30 seconds for the kubelet to detect the change and restart the pod, and run `kubectl get nodes` to confirm recovery.
+Reduce high-volume resources to `Metadata` or `None`, and reserve `RequestResponse` for sensitive resources such as Secrets and RBAC objects where payloads are truly useful. Confirm that `--audit-log-maxsize`, `--audit-log-maxbackup`, and `--audit-log-maxage` are present so the log path cannot grow without bounds. This keeps investigation value focused on security decisions rather than filling disk with watch and status traffic.
 
-### Your Turn: Fix the Misconfigured API Server
+</details>
 
-**Task**: You have inherited a cluster with a dangerously misconfigured API server. Your job is to secure it without breaking existing cluster operations.
+<details><summary>6. Scenario: `kubectl get pods` works, but `kubectl exec` fails with an x509 error mentioning the kubelet. Which API server path do you investigate?</summary>
 
-1. **Verify the Vulnerability**:
-   Test if the API server currently accepts anonymous requests by running:
-   ```bash
-   curl -k https://localhost:6443/api/v1/namespaces
-   ```
-   *(If it returns a JSON list of namespaces instead of an "Unauthorized" message, your cluster is vulnerable).*
+Investigate the API-server-to-kubelet connection rather than the user-to-API-server connection. The API server needs a kubelet certificate authority and kubelet client certificate/key so it can verify and authenticate to kubelet endpoints when proxying logs or exec sessions. If those flags point to the wrong CA or missing files, normal API reads can work while kubelet-proxied operations fail.
 
-2. **Harden the Configuration**:
-   Edit the API server manifest at `/etc/kubernetes/manifests/kube-apiserver.yaml` to enforce the following security boundaries:
-   * Disable anonymous authentication completely.
-   * Ensure kubelets are restricted by adding the `Node` authorization mode (ensure `RBAC` remains in the list).
-   * Enable the `NodeRestriction` admission plugin.
+</details>
 
-3. **Validate the Fix**:
-   Monitor the API server restart using the container runtime:
-   ```bash
-   watch crictl ps
-   ```
-   Once the `kube-apiserver` container is up and running again for more than 30 seconds, re-run the `curl` command. You should now receive a `401 Unauthorized` err.
-   
-   Finally, verify that legitimate authenticated traffic still works:
-   ```bash
-   kubectl get nodes
-   ```
+<details><summary>7. Scenario: You are preparing a Kubernetes v1.35 upgrade and find `--insecure-port=8080` in an old API server manifest. What should happen before the upgrade?</summary>
 
-**Success criteria**: Anonymous access is explicitly denied, kubelets are restricted to their own nodes, and `kubectl` continues to function normally.
+Remove the obsolete flag before restarting or upgrading the API server, because modern kube-apiserver binaries do not accept the removed insecure port flag. Leaving it in place can make the static pod fail at startup with an unknown flag error. Treat deprecated and removed flags as upgrade readiness blockers, then verify that the secure port and authenticated access paths still work after the manifest cleanup.
 
----
+</details>
 
-## Summary
+<details><summary>8. Scenario: Your API server manifest includes encryption at rest, but old Secrets still appear readable in an etcd snapshot. What explains the mismatch?</summary>
 
-**Critical API Server Settings**:
-- `--anonymous-auth=false`
-- `--authorization-mode=Node,RBAC`
-- `--enable-admission-plugins=NodeRestriction,PodSecurity`
-- `--audit-log-path=<path>`
+Encryption providers affect writes after the configuration is active; they do not automatically rewrite existing objects. Old Secrets can remain stored under the previous identity provider until they are updated or replaced through the API server. Rewrite the protected resources, verify raw etcd output again, and keep old keys available until you prove that no encrypted object depends on them.
 
-**Security Layers**:
-1. Authentication (who are you)
-2. Authorization (what can you do)
-3. Admission Control (should we allow/modify)
+</details>
 
-**Audit Logging**:
-- Four levels: None, Metadata, Request, RequestResponse
-- Log sensitive operations (secrets, RBAC)
-- Store logs securely
+## Hands-On Exercise
 
-**Exam Tips**:
-- Know where API server manifest is located
-- Understand flag syntax and volume mounting requirements
-- Practice reading audit policies quickly
+Exercise scenario: you have inherited a single-control-plane training cluster with a dangerously permissive API server. Your goal is to harden authentication, authorization, admission, audit evidence, and verification without losing the ability to recover from a bad static pod edit. Keep one terminal on the control plane node for manifest and runtime work, and use a second terminal for `kubectl` checks after the API server is healthy.
 
----
+The setup assumption is a kubeadm-style cluster where the API server manifest lives at `/etc/kubernetes/manifests/kube-apiserver.yaml`, the container runtime is accessible through `crictl`, and your shell has administrator rights on the control plane node. If you are using the hosted lab, open the lab from the frontmatter URL and perform the steps there. If you are using your own disposable cluster, snapshot the control plane node or keep a copy of the original manifest before editing.
+
+### Task 1: Verify anonymous API behavior
+
+Run the unauthenticated request from the control plane node or another host that can reach the API server. A vulnerable configuration returns Kubernetes data instead of an authentication error. Record the exact HTTP behavior before changing anything so you can prove that your fix changed the boundary rather than merely changing the manifest.
+
+```bash
+curl -k https://localhost:6443/api/v1/namespaces
+```
+
+<details><summary>Solution guidance</summary>
+
+If the request returns a JSON namespace list, anonymous access is too permissive and must be blocked. If it returns `401 Unauthorized`, anonymous authentication is already rejected, but still inspect RBAC bindings for unauthenticated subjects because older clusters may carry risky grants. Do not rely on `curl` alone; the final solution needs manifest and behavior evidence.
+
+</details>
+
+### Task 2: Harden authentication, authorization, and admission
+
+Edit `/etc/kubernetes/manifests/kube-apiserver.yaml` and ensure the command section includes `--anonymous-auth=false`, `--authorization-mode=Node,RBAC`, and `--enable-admission-plugins=NodeRestriction,PodSecurity` or an equivalent list that preserves existing required admission plugins. Avoid deleting unrelated flags. Your edit should be the smallest change that closes the boundary and keeps existing control plane behavior intact.
+
+<details><summary>Solution guidance</summary>
+
+Use a root editor on the control plane node and place each flag as its own list item under the `command` array. If an admission plugin list already exists, add `NodeRestriction` and `PodSecurity` to that list rather than creating a duplicate flag. If an authorization mode already exists, replace unsafe values such as `AlwaysAllow` with `Node,RBAC` and verify that the manifest remains valid YAML.
+
+</details>
+
+### Task 3: Watch the static pod restart through the runtime
+
+Do not assume the API server is healthy immediately after the file save. Watch the runtime until the kube-apiserver container has restarted and stayed up long enough to suggest that the flags parsed correctly. If the container repeatedly exits, inspect its logs with `crictl logs` and fix the manifest before continuing.
+
+```bash
+watch crictl ps
+```
+
+<details><summary>Solution guidance</summary>
+
+A healthy static pod should recreate and remain running after the kubelet observes the manifest change. If it exits, look for unknown flags, missing file paths, malformed YAML, or invalid admission plugin names. Use the runtime logs because `kubectl` depends on the API server you are trying to recover.
+
+</details>
+
+### Task 4: Re-test unauthenticated and authenticated traffic
+
+Re-run the unauthenticated curl request and then verify normal authenticated cluster access. The desired result is a clear denial for anonymous traffic and a successful authenticated request for your administrator kubeconfig. This proves that the hardening rejected the wrong caller without breaking legitimate workflows.
+
+```bash
+kubectl get nodes
+```
+
+<details><summary>Solution guidance</summary>
+
+The unauthenticated request should return `401 Unauthorized`, while `kubectl get nodes` should list the cluster nodes. If anonymous traffic is still accepted, re-check the running kube-apiserver command line and RBAC bindings. If authenticated traffic fails, inspect certificate paths, authorization mode syntax, and API server logs before making additional changes.
+
+</details>
+
+### Task 5: Add audit evidence without causing disk pressure
+
+Create a small audit policy that records Secrets and RBAC changes at a higher level while avoiding noisy watch traffic, then add the audit policy file, log path, rotation flags, host directory, and static pod volume mounts. Keep the policy conservative enough that a busy cluster will not fill the control plane disk during normal controller activity. After the restart, trigger a simple allowed request and confirm that the audit log receives entries.
+
+<details><summary>Solution guidance</summary>
+
+Use `Metadata` as the broad default, elevate Secrets and RBAC resources where payload detail is valuable, and configure log rotation. If the API server fails to start, check that `/var/log/kubernetes` exists on the host and is mounted into the container. A correct answer includes both the policy file and the static pod mount plumbing.
+
+</details>
+
+### Task 6: Evaluate v1.35 upgrade readiness
+
+Search the API server manifest for removed or insecure legacy flags, especially `--insecure-port`, and remove obsolete flags before planning an upgrade. Confirm that the secure port remains the only serving path and that your hardening settings are explicit. Finish by documenting which flags you changed and which verification command proved each result.
+
+<details><summary>Solution guidance</summary>
+
+Modern kube-apiserver binaries reject removed flags, so upgrade readiness includes static pod flag cleanup. Do not leave stale insecure serving flags in place because they can turn an otherwise routine restart into an API server outage. The clean final state should include explicit anonymous-auth, Node/RBAC authorization, NodeRestriction admission, audit configuration if required, and no removed insecure port flag.
+
+</details>
+
+Success criteria:
+
+- [ ] Anonymous API requests are explicitly denied with an authentication failure.
+- [ ] Authenticated `kubectl get nodes` still succeeds after the static pod restart.
+- [ ] The running API server command line shows `--authorization-mode=Node,RBAC`.
+- [ ] `NodeRestriction` remains enabled alongside required admission plugins.
+- [ ] Audit logging has a valid policy, writable log path, rotation flags, and required mounts.
+- [ ] The manifest contains no removed insecure serving flags before a Kubernetes v1.35 upgrade.
+
+## Sources
+
+- https://kubernetes.io/docs/reference/access-authn-authz/authentication/
+- https://kubernetes.io/docs/reference/access-authn-authz/authorization/
+- https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+- https://kubernetes.io/docs/reference/access-authn-authz/node/
+- https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/
+- https://kubernetes.io/docs/concepts/security/pod-security-standards/
+- https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/
+- https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/
+- https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+- https://kubernetes.io/docs/reference/access-authn-authz/certificate-signing-requests/
+- https://kubernetes.io/docs/tasks/administer-cluster/kubelet-tls-bootstrapping/
+- https://etcd.io/docs/v3.6/op-guide/security/
 
 ## Next Module
 
-[Module 2.4: Kubernetes Upgrades](../module-2.4-kubernetes-upgrades/) - Master the intricate security considerations and operational procedures required for seamless cluster upgrades.
+[Module 2.4: Kubernetes Upgrades](../module-2.4-kubernetes-upgrades/) - Master the security considerations and operational procedures required for safe cluster upgrades.
