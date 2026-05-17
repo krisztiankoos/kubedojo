@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 17 handoff — Grok integration shipped + T5 burn-down batches 2–4</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .status-good{color:var(--good);font-weight:600;}
+  .status-partial{color:var(--partial);font-weight:600;}
+  .status-gap{color:var(--gap);font-weight:600;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 17 — Grok integration shipped + T5 burn-down batches 2–4</h1>
+<p class="meta">2026-05-17 (continuation of session 16) · driver: claude opus 4.7 (1M context, orchestrator, inline) · code agents: codex gpt-5.5 high (danger mode, per-module worktree) for #388 writes + reactive fixes; gemini-3.1-pro-preview (dispatch.py) primary reviewer batches 2–3 + grok integration review; <strong>grok-4 (xai-oauth via hermes -z)</strong> NEW — landed as full peer agent and ran as primary reviewer on batch 4.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> User instruction mid-session: "fully integrate grok by morning." Done. PR #1245 lands the grok runtime adapter + dispatch CLI + dispatch_smart routing + dispatch_388_pilot reviewer cascade + ab-bridge participation. Gemini-pro adversarial review caught one real safety bug (write-toolset leak on read-only bridge sessions); fix landed in round 2. Batch 4 (CKAD 3.5 / 4.1 / 4.2) then ran with <code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code> — 3/3 valid verdicts, and grok caught a real curl-in-nginx lab bug on #1249 that the LAB RUNNABILITY dim is designed to surface. <strong>11 PRs merged tonight</strong>; critical-rubric pool 190 → 182. Wrapper still hits 401 on the <code>gh pr view</code> merge step (orchestrator-manual merge after every wrapper-reviewed PR — known issue, fix not blocking content). Orphan <code>local_api.py</code> recurred (PID 65990, cwd in removed 2.3-kustomize worktree) and was killed mid-session.
+</div>
+
+<h2>What shipped — 11 PRs merged</h2>
+<table>
+<tr><th>PR</th><th>Title</th><th>Reviewer</th><th>Verdict path</th></tr>
+<tr><td class="col-id">#1240</td><td>feat(388): rewrite module-2.2-helm</td><td>gemini-pro</td><td>Codex write recovered from session-16-died wrapper; orchestrator-inline commit/push/PR. Gemini APPROVE 1st pass; merged.</td></tr>
+<tr><td class="col-id">#1241</td><td>feat(388): rewrite module-2.3-kustomize</td><td>gemini-pro</td><td>Codex+gemini APPROVE; wrapper merge hit 401 → orchestrator-manual merge.</td></tr>
+<tr><td class="col-id">#1242</td><td>chore(deps): bump devalue 5.6.4 → 5.8.1 (CVE high)</td><td>gemini-pro</td><td>Dependabot alert #15 cleared. <code>npm update devalue</code> + build verify + cross-family review per protocol (even on dep bumps).</td></tr>
+<tr><td class="col-id">#1243</td><td>feat(388): rewrite module-2.4-deployment-strategies</td><td>gemini-pro</td><td>Codex+gemini APPROVE ("gold standard for how to rewrite"); manual merge.</td></tr>
+<tr><td class="col-id">#1244</td><td>feat(388): rewrite module-3.2-logging</td><td>gemini-pro</td><td>Codex+gemini APPROVE; manual merge.</td></tr>
+<tr><td class="col-id">#1245</td><td><strong>feat(agents): integrate Grok-4 (xai-oauth via hermes) as full peer agent</strong></td><td>gemini-pro (2 rounds)</td><td>Round-1 NEEDS CHANGES — gemini caught <code>_agent_tool_config</code> for grok hardcoded write-tools regardless of <code>sandbox_mode</code>. Fix commit <code>298713b7</code> branches on mode (read-only → web+yolo=False; else → full deliberation toolset). Round-2 APPROVE.</td></tr>
+<tr><td class="col-id">#1246</td><td>feat(388): rewrite module-3.3-debugging</td><td>gemini-pro</td><td>Codex+gemini APPROVE; manual merge.</td></tr>
+<tr><td class="col-id">#1247</td><td>feat(388): rewrite module-3.4-monitoring</td><td>gemini-pro</td><td>APPROVE WITH NITS — dead metrics-server HA URL flagged. Orchestrator-inline 1-line fix replaced with live FAQ.md (commit <code>578104df</code>). Auto-merge.</td></tr>
+<tr><td class="col-id">#1248</td><td>feat(388): rewrite module-3.5-api-deprecations</td><td><strong>grok-4</strong></td><td><strong>First production primary review by grok.</strong> APPROVE WITH NITS (cosmetic — intro sentence + repetitive drill prose). Specific technical claims verified (Ingress v1beta1 at 1.22, CronJob at 1.25, PSP at 1.25). Manual merge.</td></tr>
+<tr><td class="col-id">#1249</td><td>feat(388): rewrite module-4.1-configmaps</td><td><strong>grok-4 (2 rounds)</strong></td><td>Round-1 <strong>NEEDS CHANGES — grok caught real lab bug:</strong> <code>kubectl exec drill6 -- curl -s localhost:8080</code> against <code>image: nginx</code> would fail (nginx ships no curl). Exactly the bug class PR #1235's LAB RUNNABILITY dim targets. Codex fix (Option A: <code>nginx -T</code> config-dump verification, commit <code>9dc1aa37</code>). Round-2 APPROVE WITH NITS explicitly verifying the fix. Manual merge.</td></tr>
+<tr><td class="col-id">#1250</td><td>feat(388): rewrite module-4.2-secrets</td><td><strong>grok-4</strong></td><td>APPROVE — substantive review (K8s 1.35+ etcd encryption / TokenRequest / 1 MiB limit verified). Manual merge.</td></tr>
+</table>
+
+<h2>Grok integration — full peer agent shipped</h2>
+<p>User instruction: <em>"DEADLINE IS MORNING. integrate fully grok. i want to see him being able to partisicpate in everything other agents can and reslve problrems."</em></p>
+
+<h3>What landed in PR #1245</h3>
+<table>
+<tr><th>Layer</th><th>File</th><th>Change</th></tr>
+<tr><td>Runtime adapter</td><td><code>scripts/agent_runtime/adapters/grok.py</code> (NEW)</td><td>Wraps <code>hermes -z &lt;prompt&gt; --provider xai-oauth -m grok-4 -t &lt;toolsets&gt;</code>. All 3 modes supported via toolset mapping (read-only → web; workspace-write → web+file+terminal+code_execution+todo; danger → +memory+skills). Defensively ignores session_id (resume_policy=never).</td></tr>
+<tr><td>Registry</td><td><code>scripts/agent_runtime/registry.py</code></td><td>Flips <code>cli_available=True</code>, adds capabilities (code_review, adversarial_review, debugging, deliberation).</td></tr>
+<tr><td>Dispatch CLI</td><td><code>scripts/dispatch.py</code></td><td><code>dispatch_grok()</code> + <code>python scripts/dispatch.py grok "..."</code> subparser mirroring claude/gemini/codex shape. Honors <code>--isolated</code>, <code>--toolsets</code>, <code>--no-yolo</code>, <code>--effort</code>, <code>--github</code>.</td></tr>
+<tr><td>Smart dispatcher</td><td><code>scripts/dispatch_smart.py</code></td><td>Adds "grok" to <code>SUPPORTED_AGENTS</code> and every task_class (search/edit/draft/review/architect).</td></tr>
+<tr><td>#388 pilot wrapper</td><td><code>scripts/quality/dispatch_388_pilot.py</code></td><td><code>dispatch_grok_review()</code>. Reviewer cascade configurable via <code>KUBEDOJO_388_PRIMARY_REVIEWER={gemini|claude|grok}</code>; remaining tiers serve as fallbacks in fixed order.</td></tr>
+<tr><td>ab bridge</td><td><code>scripts/ai_agent_bridge/_cli.py</code> + <code>_channels_cli.py</code></td><td>Adds "grok" to <code>ab send --to</code>, <code>ab ack-all</code>, <code>ab discuss</code>. Sandbox-aware tool_config: read-only → web+yolo=False; else → full deliberation toolset.</td></tr>
+</table>
+
+<h3>The bug that almost shipped (gemini-pro caught it)</h3>
+<p>Initial commit hardcoded write-capable toolsets in <code>_agent_tool_config</code> for grok regardless of <code>sandbox_mode</code>. Because <code>GrokAdapter.build_invocation</code> lets caller overrides win over mode defaults, read-only bridge sessions would have received write tools + auto-execution. Round-1 NEEDS CHANGES. Fix <code>298713b7</code> branches on mode.</p>
+
+<h3>The hermes bug we discovered</h3>
+<p><code>hermes -z -</code> (stdin marker) is interpreted as <strong>"no prompt, project-introspection mode"</strong> and <em>ignores</em> piped content. Empirical proof:</p>
+<pre>echo "Reply OK" | hermes -z - -m grok-4   →  "Workspace: primary on... | pipelines v2: 567 modules"
+hermes -z "Reply OK" -m grok-4              →  "Reply OK" ✓</pre>
+<p>Fix: pass prompt via argv positional, not stdin. ARG_MAX ~1 MB on macOS, fits review prompts (~10 KB) comfortably. Applied consistently in both the adapter and <code>scripts/dispatch.py:dispatch_grok()</code>.</p>
+
+<h3>Grok-as-primary calibration (batch 4, env <code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code>)</h3>
+<table>
+<tr><th>PR</th><th>Module</th><th>Verdict</th><th>Quality observation</th></tr>
+<tr><td class="col-id">#1248</td><td>CKAD 3.5 api-deprecations</td><td>APPROVE WITH NITS</td><td>Verified Ingress v1beta1/CronJob/PSP deprecation milestones; named specific kubernetes.io source pages; nits cosmetic.</td></tr>
+<tr><td class="col-id">#1249</td><td>CKAD 4.1 configmaps</td><td><strong>NEEDS CHANGES → APPROVE WITH NITS (after fix)</strong></td><td><strong>Caught curl-in-nginx lab bug</strong> at line 818 — exactly the bug class that PR #1235's LAB RUNNABILITY dim was designed to surface. Round-2 explicitly verified the fix landed.</td></tr>
+<tr><td class="col-id">#1250</td><td>CKAD 4.2 secrets</td><td>APPROVE</td><td>Verified K8s 1.35+ etcd encryption / TokenRequest / 1 MiB limit; walked images + binaries + scope + order.</td></tr>
+</table>
+<p>Latency: 9–57s per review (faster than gemini-pro's 30–180s on the same prompts). Memory landed: <code>project_grok_primary_reviewer_calibrated_2026-05-17</code>.</p>
+
+<h2>T5 burn-down progress</h2>
+<table>
+<tr><th>Metric</th><th>Session start</th><th>Session end</th></tr>
+<tr><td>Critical-rubric modules (<2.0)</td><td>190</td><td><strong>182</strong></td></tr>
+<tr><td>Modules merged this session</td><td colspan="2">8 (CKAD 2.2, 2.3, 2.4, 3.2, 3.3, 3.4, 3.5, 4.1, 4.2 — yes 9 CKAD modules)</td></tr>
+<tr><td>Other PRs merged</td><td colspan="2">2 (devalue CVE, grok integration)</td></tr>
+<tr><td>Grok-reviewed PRs in main</td><td>0</td><td><strong>3</strong></td></tr>
+</table>
+
+<h2>Hygiene — known issues + work done</h2>
+
+<h3>Wrapper-401 on <code>gh pr view</code> merge step (recurring across PR #1241, #1243, #1244, #1246, #1249, #1250)</h3>
+<p>The <code>dispatch_388_pilot.py:merge_pr</code> path calls <code>gh pr view</code> through a subprocess that loses <code>GH_TOKEN</code> auth in some env path (likely <code>_agent_env</code> stripping). Reviews still complete; only the merge step fails. Orchestrator manually merges after every wrapper-reviewed PR. Not blocking content. <strong>Fix candidate for next session:</strong> codex dispatch on <code>scripts/quality/dispatch_388_pilot.py:merge_pr</code> + <code>scripts/dispatch.py:_agent_env</code> interaction; likely just needs <code>GH_TOKEN</code> preserved in the gh-call's env.</p>
+
+<h3>Orphan <code>local_api.py</code> recurrence (PID 65990)</h3>
+<p>Same class as session-16 PID 47962. The codex-388-pilot-module-2-3-kustomize worktree spawned an auxiliary <code>local_api.py</code> whose <code>__file__</code> resolved to the worktree path. When I removed the worktree post-merge, the process survived bound to <code>localhost:8768</code> (more specific than the legit <code>*:8768</code> binding) and returned empty <code>/api/quality/scores</code>. Killed PID 65990; scores endpoint recovered (count: 757). <strong>Startup-guard still not implemented</strong> — same priority as listed in session 16.</p>
+
+<h3>Git hygiene done</h3>
+<ul class="tight">
+<li>Deleted 3 orphan remote branches from closed PRs: <code>codex/388-pilot-module-1-3-prompting-basics</code> (#1147), <code>codex/388-pilot-module-1-4-mlx-on-apple-silicon</code> (#1156), <code>codex/388-pilot-module-1-5-privacy-safety-and-trust</code> (#1149).</li>
+<li>Pruned remote-tracking refs.</li>
+<li>All session worktrees cleaned post-merge.</li>
+</ul>
+
+<h3>Stash maneuver for primary-tree-dirty integration commit</h3>
+<p>Per <code>feedback_never_branch_in_primary_dir.md</code> the <code>git checkout -b</code> hook blocked branching in primary. Maneuver: <code>git add scripts/agent_runtime/adapters/grok.py</code> → <code>git stash push -m "grok-integration" -- &lt;paths&gt;</code> → <code>git worktree add -b feat/grok-runtime-integration ... origin/main</code> → <code>cd</code> in → <code>git stash pop</code> → commit. Worked cleanly.</p>
+
+<h2>What's in flight at handoff</h2>
+<table>
+<tr><th>Item</th><th>State</th></tr>
+<tr><td>Nothing</td><td>All background tasks completed. Primary tree clean (modulo 3 untracked T5-burndown queue txt files in <code>scripts/quality/</code> from sessions 16+17 — not committed; per the dispatcher convention they're per-batch artifacts).</td></tr>
+</table>
+
+<h2>Next session — top priorities</h2>
+<ul class="tight">
+<li><strong>Continue T5 burn-down with grok-primary.</strong> 182 critical-rubric modules remaining. Next CKAD candidates from <code>/api/orient</code>: 4.3 resources / 4.4 securitycontext / 4.5 serviceaccounts / 4.6 crds / 5.1 services / 5.2 ingress. Set <code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code> — now production-validated.</li>
+<li><strong>Fix the wrapper-401 bug.</strong> Recurring on every wrapper-reviewed PR. Dispatch codex on <code>scripts/quality/dispatch_388_pilot.py:merge_pr</code>: likely the gh subprocess loses GH_TOKEN via <code>_agent_env</code> sanitization. Adds ~30s per PR of orchestrator manual-merge overhead that should be wrapper-automatic.</li>
+<li><strong>Add startup guard to <code>local_api.py</code></strong> — refuse to bind 8768 if another process already binds it. Prevents recurrence of the orphan-PID class (now seen on 2 consecutive sessions). One-line fix.</li>
+<li><strong>Add unit tests for GrokAdapter.</strong> Round-1 review flagged as missing-but-non-blocking. Pattern: mirror <code>tests/test_agent_runtime_runner.py</code>; cover build_invocation (read-only / workspace-write / danger modes + tool_config overrides) and parse_response (success / error / rate-limited / hermes banner stripping).</li>
+<li><strong>Anthropic-via-hermes silent-fail diagnosis</strong> (carryover from session 15+16). Auth IS wired (per <code>hermes auth list</code>), but <code>hermes -z PROMPT -m claude-opus-4-7</code> returns no output non-interactively. Now that we know the <code>hermes -z -</code> argv-vs-stdin gotcha, retest with <code>hermes -z "PROMPT"</code> (argv form) and see if it fixes claude too. Lower priority than burn-down.</li>
+<li><strong>Decide on <code>docs/briefs/azure-app-gateway-stage0.md</code></strong> (carryover from session 14): keep / move to <code>audit/</code> / delete. Decision waiting on KodeKloud Tier-1 prioritization.</li>
+<li><strong>Date-bound reminders</strong>: 2026-06-15 (agentic pool flips workflow shift, also when <code>--agent claude</code> becomes economically sane for citation_backfill.py), 2026-07-13 (Claude weekly "doubled" bump expires → revert baseline unless agentic pool replaced it).</li>
+</ul>
+
+<h2>Cold-start for next session</h2>
+
+<pre>
+# Standard orient — should now show 182 critical modules, new top of queue
+curl -s http://127.0.0.1:8768/api/orient | python3 -m json.tool | head -25
+
+# Check for stray local_api processes (orphan-PID class)
+lsof -iTCP:8768 -sTCP:LISTEN
+
+# Sanity: grok lane still wired
+.venv/bin/python scripts/dispatch.py grok "Reply with exactly: GROK_LANE_OK" --isolated --timeout 30
+
+# Critical-rubric remaining count
+curl -s http://127.0.0.1:8768/api/orient | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['alerts'][0])"
+</pre>
+
+<h2>Pointers</h2>
+<ul class="tight">
+<li>Session 16 handoff: <code>docs/session-state/2026-05-17-session-16-t5-burndown-launch-and-reviewer-config-live.html</code></li>
+<li>Grok integration PR: <a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1245">#1245</a></li>
+<li>Grok-as-primary calibration memory: <code>memory/project_grok_primary_reviewer_calibrated_2026-05-17.md</code></li>
+<li>Batch 4 log: <code>logs/388_t5_batch4_2026-05-17.jsonl</code></li>
+<li>Batch 3 log: <code>logs/388_t5_batch3_2026-05-17.jsonl</code></li>
+<li>Batch 2b log: <code>logs/388_t5_batch2b_2026-05-17.jsonl</code></li>
+</ul>
+
+</main>
+</body>
+</html>
