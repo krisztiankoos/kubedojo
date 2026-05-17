@@ -92,11 +92,136 @@ SCENARIO_PREFIX_RE = re.compile(r"^(?:[*_#\s]*)(?:Hypothetical scenario|Exercise
 MCQ_OPTION_RE = re.compile(r"(?m)^(?:[-*]\s*)?(?:\*\*)?(?:[A-D]|[1-4])[\).:](?:\*\*)?\s+\S")
 MCQ_REASONING_KEYWORD_RE = re.compile(r"\b(?:wrong|not correct|incorrect|because|why)\b", re.IGNORECASE)
 
+# Sources: Docker Official image Dockerfiles, Debian/Ubuntu coreutils + util-linux
+# packages, Alpine/BusyBox applets, curlimages/curl Dockerfile, and nicolaka/netshoot
+# Dockerfile package list.
+DEBIAN_COREUTILS_UTIL_LINUX_BINARIES = {
+    "[",
+    "base64",
+    "basename",
+    "chmod",
+    "chown",
+    "cmp",
+    "cp",
+    "cut",
+    "date",
+    "dd",
+    "df",
+    "diff",
+    "dirname",
+    "du",
+    "false",
+    "file",
+    "gunzip",
+    "gzip",
+    "hostname",
+    "id",
+    "less",
+    "ln",
+    "md5sum",
+    "mkdir",
+    "mktemp",
+    "more",
+    "mount",
+    "mv",
+    "paste",
+    "readlink",
+    "rm",
+    "rmdir",
+    "sha1sum",
+    "sha256sum",
+    "sleep",
+    "sort",
+    "stat",
+    "tar",
+    "tee",
+    "test",
+    "touch",
+    "tr",
+    "true",
+    "type",
+    "umount",
+    "uname",
+    "uniq",
+    "wc",
+    "which",
+    "whoami",
+    "xargs",
+}
+BUSYBOX_COREUTILS_NETWORK_BINARIES = DEBIAN_COREUTILS_UTIL_LINUX_BINARIES | {
+    "hexdump",
+    "ifconfig",
+    "ip",
+    "netstat",
+    "nslookup",
+    "od",
+    "route",
+    "telnet",
+    "traceroute",
+}
+CURLIMAGES_CURL_BUSYBOX_SUBSET = {
+    "ash",
+    "cat",
+    "cp",
+    "curl",
+    "echo",
+    "env",
+    "find",
+    "grep",
+    "head",
+    "ls",
+    "mkdir",
+    "mv",
+    "rm",
+    "sh",
+    "sleep",
+    "tail",
+    "touch",
+}
+NETSHOOT_EXTRA_BINARIES = {
+    "ab",
+    "arping",
+    "bpftool",
+    "conntrack",
+    "dog",
+    "drill",
+    "ebpf-exporter",
+    "fortio",
+    "fping",
+    "helm",
+    "iperf3",
+    "jq",
+    "kubectl",
+    "mtr",
+    "ngrep",
+    "openssl",
+    "scp",
+    "socat",
+    "ssh",
+    "tshark",
+}
+
 # Image-binary allowlist for the lab-runnability preflight. Entries are intentionally
 # conservative: known images use strict membership; unknown images are informational.
 IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
     # Docker Official nginx Debian-family images; audit #1257 requires no wget/curl for plain nginx tags.
-    "nginx": {"sh", "dash", "ls", "cat", "head", "tail", "grep", "find", "ps", "nginx", "sed", "awk", "echo", "env"},
+    "nginx": {
+        "sh",
+        "dash",
+        "ls",
+        "cat",
+        "head",
+        "tail",
+        "grep",
+        "find",
+        "ps",
+        "nginx",
+        "sed",
+        "awk",
+        "echo",
+        "env",
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
     "nginx:stable": {
         "sh",
         "dash",
@@ -112,7 +237,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "awk",
         "echo",
         "env",
-    },
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
     "nginx:1.27": {
         "sh",
         "dash",
@@ -128,7 +254,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "awk",
         "echo",
         "env",
-    },
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
     # Docker Official nginx Alpine variants inherit Alpine/BusyBox applets, including wget.
     "nginx:alpine": {
         "sh",
@@ -149,7 +276,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "nc",
         "ping",
         "vi",
-    },
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
     "nginx:1.27-alpine": {
         "sh",
         "ash",
@@ -169,7 +297,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "nc",
         "ping",
         "vi",
-    },
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
     # Docker Official BusyBox image: BusyBox applet set, including ash and wget.
     "busybox": {
         "sh",
@@ -190,7 +319,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "ping",
         "vi",
         "id",
-    },
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
     "busybox:1.36": {
         "sh",
         "ash",
@@ -210,7 +340,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "ping",
         "vi",
         "id",
-    },
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
     # Docker Alpine Official Image uses BusyBox and apk.
     "alpine": {
         "sh",
@@ -231,7 +362,8 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "nc",
         "ping",
         "vi",
-    },
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
     "alpine:3.20": {
         "sh",
         "ash",
@@ -251,10 +383,11 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "nc",
         "ping",
         "vi",
-    },
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES,
     # curlimages/curl Docker Hub overview documents curl as the image entrypoint/tool.
-    "curlimages/curl": {"curl", "sh", "ls", "cat", "head", "tail", "grep", "find", "echo", "env"},
-    "curlimages/curl:latest": {"curl", "sh", "ls", "cat", "head", "tail", "grep", "find", "echo", "env"},
+    "curlimages/curl": CURLIMAGES_CURL_BUSYBOX_SUBSET,
+    "curlimages/curl:latest": CURLIMAGES_CURL_BUSYBOX_SUBSET,
     # Docker Official Debian/Ubuntu slim bases: shell/coreutils only, no wget/curl in this seed.
     "debian:bookworm-slim": {
         "sh",
@@ -271,7 +404,11 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "awk",
         "echo",
         "env",
-    },
+        "apt",
+        "apt-get",
+        "dpkg",
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
     "ubuntu:24.04": {
         "sh",
         "bash",
@@ -287,7 +424,11 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "awk",
         "echo",
         "env",
-    },
+        "apt",
+        "apt-get",
+        "dpkg",
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
     # nicolaka/netshoot Dockerfile installs network-debug tools via apk.
     "nicolaka/netshoot": {
         "curl",
@@ -313,7 +454,9 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "iptables",
         "ss",
         "host",
-    },
+    }
+    | BUSYBOX_COREUTILS_NETWORK_BINARIES
+    | NETSHOOT_EXTRA_BINARIES,
     # Docker Official Python 3.12 slim Dockerfile builds Python on debian:bookworm-slim and adds pip symlinks.
     "python:3.12-slim": {
         "sh",
@@ -332,7 +475,9 @@ IMAGE_BINARY_ALLOWLIST: dict[str, set[str]] = {
         "awk",
         "echo",
         "env",
-    },
+        "pip3",
+    }
+    | DEBIAN_COREUTILS_UTIL_LINUX_BINARIES,
 }
 
 LEARNING_OUTCOME_HEADINGS = (

@@ -780,3 +780,24 @@ kubectl exec -n netpol-demo database -- wget -qO- --timeout=2 frontend:80
         )
 
         assert gates["lab_image_binary_match"] is False
+
+    def test_coreutils_in_nginx_clean_but_wget_still_blocked(self) -> None:
+        """nginx ships coreutils (touch, cp, mv) but NOT wget - both rules hold."""
+        text = (
+            "# m\n\n"
+            "```bash\n"
+            "kubectl run hardened --image=nginx -n default\n"
+            "kubectl exec hardened -- touch /etc/test\n"
+            "kubectl exec hardened -- chmod 600 /etc/test\n"
+            "kubectl exec hardened -- cp /etc/test /tmp/copy\n"
+            "kubectl exec hardened -- wget http://svc:80\n"
+            "```\n"
+        )
+        out = verify_module.lab_runnability_metrics(text)
+        # touch/chmod/cp are coreutils - present in debian-slim - must be CLEAN.
+        # wget is NOT present in nginx (debian-slim) - must be the SOLE violation.
+        violations = out["image_binary_violations"]
+        assert len(violations) == 1, f"expected exactly 1 violation (wget); got {violations}"
+        assert violations[0]["binary"] == "wget"
+        assert violations[0]["pod"] == "hardened"
+        assert violations[0]["image"] == "nginx"
