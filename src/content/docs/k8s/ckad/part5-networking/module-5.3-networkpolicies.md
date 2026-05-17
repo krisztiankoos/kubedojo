@@ -587,7 +587,7 @@ Run the lab slowly the first time and name the reason for every expected result.
 
 ### Task 1: Environment Setup
 
-Create a clean namespace and deploy three labeled pods with Services. These commands use `nginx` for every tier because the point is network reachability, not application behavior. Wait for readiness before testing so that a failed connection means policy behavior instead of a pod startup race.
+Create a clean namespace and deploy three labeled pods with Services. These commands use `nginx:alpine` for every tier because the alpine variant ships busybox wget, which the validation steps below use to test reachability. Wait for readiness before testing so that a failed connection means policy behavior instead of a pod startup race.
 
 The labels in this setup are intentionally simple because they become the identities used by the policies. If you change the labels, update the later policy manifests at the same time. A surprising number of policy failures are caused by a lab or deployment using labels that differ from the labels copied into the NetworkPolicy examples.
 
@@ -596,9 +596,9 @@ The labels in this setup are intentionally simple because they become the identi
 kubectl create ns netpol-demo
 
 # Create pods
-kubectl run frontend --image=nginx -n netpol-demo -l tier=frontend
-kubectl run backend --image=nginx -n netpol-demo -l tier=backend
-kubectl run database --image=nginx -n netpol-demo -l tier=database
+kubectl run frontend --image=nginx:alpine -n netpol-demo -l tier=frontend
+kubectl run backend --image=nginx:alpine -n netpol-demo -l tier=backend
+kubectl run database --image=nginx:alpine -n netpol-demo -l tier=database
 
 # Wait for pods
 kubectl wait --for=condition=Ready pod --all -n netpol-demo --timeout=60s
