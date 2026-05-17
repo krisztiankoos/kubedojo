@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -335,7 +336,7 @@ def rebuild_section(
 
     # Reconstruct with kept entries only. Drop ANY non-bullet line that
     # contains a URL — our parser missed it, so it's unverified.
-    kept_urls = {e.url for e in kept_entries}
+    kept = Counter((entry.url, entry.claim, entry.raw_line) for entry in kept_entries)
     rebuilt: list[str] = [lines[start]]  # heading line
     for line in lines[start + 1 : end]:
         parsed = _parse_bullet(line.rstrip("\n"))
@@ -344,8 +345,10 @@ def rebuild_section(
                 continue  # unverified URL in a non-bullet — drop
             rebuilt.append(line)  # pure prose / blank — preserve
             continue
-        if parsed.url in kept_urls:
+        key = (parsed.url, parsed.claim, parsed.raw_line)
+        if kept.get(key, 0) > 0:
             rebuilt.append(line)
+            kept[key] -= 1
         # else: drop this bullet
     new_lines = lines[:start] + rebuilt + lines[end:]
     return "".join(new_lines), False

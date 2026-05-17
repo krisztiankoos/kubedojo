@@ -295,6 +295,28 @@ def test_rebuild_all_kept_is_idempotent() -> None:
     assert new_text == text
 
 
+def test_rebuild_keeps_exact_matched_entries_for_duplicate_urls() -> None:
+    text = """---
+title: T
+---
+
+## Sources
+
+- [Image security guide](https://example.com) — k8s security hardening
+- [Image security guide](https://example.com) — image signing
+
+## Next
+"""
+    parsed = citations.parse_sources_section(text)
+    assert parsed is not None
+    start, end, entries = parsed
+    keep = [entries[0]]
+    new_text, dropped = citations.rebuild_section(text, start, end, keep)
+    assert dropped is False
+    assert "k8s security hardening" in new_text
+    assert "image signing" not in new_text
+
+
 def test_rebuild_preserves_non_bullet_prose_inside_section() -> None:
     text = """---
 title: T
@@ -388,6 +410,34 @@ def test_process_mixed_keeps_only_supports(module_file: Path) -> None:
     assert result.removed[0].verdict == CitationVerdict.PARTIAL
     assert _contains_url_host(result.new_text, "kubernetes.io")
     assert not _contains_url_host(result.new_text, "example.com")
+
+
+def test_process_mixed_keeps_supported_entry_by_url_claim_pair(tmp_path: Path) -> None:
+    module = tmp_path / "mod.md"
+    module.write_text("""---
+title: T
+---
+
+## Sources
+
+- [Image security guide](https://example.com) — k8s security hardening
+- [Image security guide](https://example.com) — image signing
+""")
+
+    result = citations.process_module_citations(
+        module,
+        verifier=lambda prompt: _verdict_result(
+            "supports" if "security hardening" in prompt else "partial",
+            excerpt="ok",
+        ),
+        fetcher=lambda _u: "page",
+    )
+    assert len(result.kept) == 1
+    assert result.kept[0].entry.claim == "k8s security hardening"
+    assert len(result.removed) == 1
+    assert "k8s security hardening" in result.new_text
+    assert "image signing" not in result.new_text
+    assert result.section_dropped is False
 
 
 def test_process_fetch_failure_treated_as_remove(module_file: Path) -> None:
