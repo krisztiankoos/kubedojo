@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gap-fill plan — synthesis of grok + deepseek (2026-05-17)</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  ol.tight,ul.tight{margin:6px 0;padding-left:22px;}
+  ol.tight li,ul.tight li{margin:4px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+  .pill-new{background:#e3edf9;color:var(--accent);}
+  .decide{background:#fff7e6;border:1px solid #f0d9a8;padding:12px 16px;border-radius:6px;margin:18px 0;}
+  .decide strong{color:var(--partial);}
+  .num{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Gap-fill plan — synthesis of grok + deepseek</h1>
+<p class="meta">2026-05-17 · synthesizer: claude opus 4.7 (orchestrator, inline) · GH umbrella: <a href="https://github.com/kube-dojo/kube-dojo.github.io/issues/1299">#1299</a> · inputs: <a href="/artifacts/audit/gap-analysis-2026-05-17/grok-report.html"><code>grok-report.html</code></a> (DOWN-WEIGHTED — see §1), <a href="/artifacts/audit/gap-analysis-2026-05-17/deepseek-report.html"><code>deepseek-report.html</code></a> (TRUSTED BASELINE)</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> <strong>Deepseek's report is trusted</strong> (17 min wall, grep-cited every verdict, all spot-checks passed); <strong>grok's is unreliable</strong> (44s wall, hallucinated path on first verdict, "over-scoped removals" section just ratified pre-deferred items). New memory <code>feedback_grok_curriculum_gap_analysis_dq</code> calibrates grok-DQ for curriculum gap analysis (reviewer lane on lab/code still calibrated). <strong>Material finding</strong>: live <code>/api/quality/scores?summary=1</code> confirms 3 tracks crossed the &lt;50 critical-rubric threshold since the roadmap was generated (Platform Disciplines 65→44, Platform Toolkits 52→35, CKS 29→11) — <strong>the quality-floor gate has opened for streaming ops Tier 1, Ansible operator arc, Dapr/Buildpacks, HCP Terraform, ML production gaps</strong>. Locked plan: 10 next moves, top 5 unambiguous, bottom 5 contingent on user-side decisions. 5 ab-discuss-class controversies surfaced as a single Decision Card below — answer those and I'll file per-module GH issues + dispatch codex writers.
+</div>
+
+<h2>1. Trust assessment — why grok's report is down-weighted</h2>
+
+<table>
+<tr><th>Metric</th><th>Grok-4</th><th>DeepSeek V4 Pro</th></tr>
+<tr><td>Wall time</td><td>44s</td><td>1028s (17 min)</td></tr>
+<tr><td>Report size</td><td>6.8 KB / 147 lines</td><td>41 KB / 568 lines</td></tr>
+<tr><td>First verdict accuracy</td><td><span class="pill pill-gap">Hallucinated path</span> — claimed Azure App Gateway is "already-covered" at <code>cloud/azure/networking/</code>. That path doesn't exist; actual is <code>cloud/azure-essentials/</code> with no App Gateway module.</td><td><span class="pill pill-good">grep-cited</span> — all 4 Tier 1 ratified with verifiable grep results.</td></tr>
+<tr><td>"Over-scoped removals" section</td><td>Just ratified Jenkins + Bicep + KServe (already-deferred items) — non-output.</td><td>4 substantive removals: Docker beginner arc (covered), ARM/Bicep migration (modern default is Bicep), gRPC/Envoy (substantial Istio coverage), Azure governance (will fold into Cloud Custodian).</td></tr>
+<tr><td>Caught "Harness/Symphony already shipped" status-lag</td><td>No</td><td>Yes — modules 2.1 + 2.2 verified on disk.</td></tr>
+<tr><td>Caught material quality-state shift</td><td>No</td><td>Yes — 249→157 critical, with per-track delta verified via live API.</td></tr>
+<tr><td>Spot-check verification</td><td>"Azure already-covered" FAILED. (Plus 2 of 3 net-new claims plausible.)</td><td>Cloud Custodian "0 mentions" VERIFIED. OTEL "tool-level, no pipeline framing" VERIFIED. Operator lifecycle "by-concern, not arc" VERIFIED.</td></tr>
+</table>
+
+<p>This is the same failure mode as memory <code>feedback_gemini_hallucinates_anchors</code> + <code>feedback_grok_truncated_diff_context</code>. <strong>Grok's net-new gaps (3) can be considered on merit since they don't depend on hallucinated paths</strong>; grok's verdicts on existing roadmap items are discarded. Calibration recorded in new memory <code>feedback_grok_curriculum_gap_analysis_dq</code>.</p>
+
+<h2>2. Verified quality-state vs roadmap-assumed state</h2>
+
+<table>
+<tr><th>Track</th><th>Roadmap-assumed (&lt;249 era)</th><th>Live now (2026-05-17)</th><th>Drafting gate</th></tr>
+<tr><td>Global critical (&lt;2.0)</td><td>249 of 754</td><td><strong>157 of 757</strong></td><td>Global still closed at &gt;50 baseline; per-track now the binding constraint.</td></tr>
+<tr><td>Platform Disciplines</td><td>65</td><td><strong>44</strong></td><td><span class="pill pill-good">OPEN</span> — was DEPTH-FIRST-blocked.</td></tr>
+<tr><td>Platform Toolkits</td><td>52</td><td><strong>35</strong></td><td><span class="pill pill-good">OPEN</span> — was DEPTH-FIRST-blocked.</td></tr>
+<tr><td>Platform Foundations</td><td>31</td><td>28</td><td><span class="pill pill-good">OPEN</span> (was &lt;50 already).</td></tr>
+<tr><td>CKS</td><td>29</td><td><strong>11</strong></td><td><span class="pill pill-good">OPEN</span> — was rewrite-first.</td></tr>
+<tr><td>CKAD</td><td>23</td><td>~0 (not on critical table)</td><td><span class="pill pill-good">OPEN</span> — cleared during T5 burndown.</td></tr>
+<tr><td>Average rubric score</td><td>3.84</td><td><strong>4.27</strong></td><td>+0.43 points.</td></tr>
+</table>
+
+<p><strong>Implication.</strong> Tier 1 row 3 (Streaming ops NATS/Strimzi/CloudEvents) was hard-blocked by Platform Disciplines &gt;50 — that's now OPEN. Tier 2 rows targeting Platform Disciplines, Platform Toolkits, and CKS that were previously rewrite-first are now writeable.</p>
+
+<h2>3. Synthesis: 24-row roadmap verdict (deepseek-driven, grok ignored)</h2>
+
+<table>
+<tr><th>#</th><th>Roadmap row</th><th>Verdict</th><th>Action</th></tr>
+<tr><td class="num">T1-1</td><td>Azure Application Gateway</td><td><span class="pill pill-good">ratify</span></td><td>Write — track open, prereqs ready.</td></tr>
+<tr><td class="num">T1-2</td><td>Azure App Service operations</td><td><span class="pill pill-good">ratify</span></td><td>Write — track open, prereqs ready.</td></tr>
+<tr><td class="num">T1-3</td><td>Streaming ops (NATS + Strimzi + CloudEvents)</td><td><span class="pill pill-good">ratify, unblocked</span></td><td>Write — Platform Disciplines now 44.</td></tr>
+<tr><td class="num">T1-4</td><td>Cloud Custodian policy-as-code governance</td><td><span class="pill pill-good">ratify — highest signal</span></td><td>Write — <strong>0 mentions in corpus</strong>.</td></tr>
+<tr><td class="num">T2-5</td><td>Harness engineering + Symphony orchestration</td><td><span class="pill pill-partial">status-lag</span></td><td><strong>Remove from inventory</strong> — modules 2.1 + 2.2 shipped. If quality &lt;3, route to #388 rewrite.</td></tr>
+<tr><td class="num">T2-6</td><td>Software engineering craft for operators</td><td><span class="pill pill-good">ratify</span></td><td>Write framing module first; full 4-7 arc deferred (sidebar placement needed).</td></tr>
+<tr><td class="num">T2-7</td><td>LLM-native application engineering on K8s</td><td><span class="pill pill-good">ratify</span></td><td>Brief #1187 exists; advance to Stage 2 (ab discuss pressure-test).</td></tr>
+<tr><td class="num">T2-8</td><td>Engineer mental models (distributed systems)</td><td><span class="pill pill-good">ratify</span></td><td>Write — broad prerequisite for many other gaps.</td></tr>
+<tr><td class="num">T2-9</td><td>Cost lens as cross-cutting habit</td><td><span class="pill pill-partial">nuance-needed</span></td><td>Decision card item below. Module + cross-cut checklist OR checklist-only.</td></tr>
+<tr><td class="num">T2-10</td><td>DVC data versioning arc</td><td><span class="pill pill-good">ratify</span></td><td>Write — Platform Disciplines now open.</td></tr>
+<tr><td class="num">T2-11</td><td>Great Expectations data-quality module</td><td><span class="pill pill-good">ratify</span></td><td>Write — Platform Disciplines now open.</td></tr>
+<tr><td class="num">T2-12</td><td>GitHub Actions dedicated modern CI</td><td><span class="pill pill-partial">nuance-needed</span></td><td>Decision card item — risks becoming a tool catalog; keep, scope it strictly, OR cut.</td></tr>
+<tr><td class="num">T2-13</td><td>Ansible operator arc</td><td><span class="pill pill-good">ratify</span></td><td>Write — Platform Toolkits now open.</td></tr>
+<tr><td class="num">T2-14</td><td>ML repository hygiene</td><td><span class="pill pill-good">ratify</span></td><td>Write — Platform Disciplines now open.</td></tr>
+<tr><td class="num">T2-15</td><td>Azure Event Hub + Event Grid</td><td><span class="pill pill-good">ratify</span></td><td>Write — Azure track open.</td></tr>
+<tr><td class="num">T2-16</td><td>Azure SQL Database operations</td><td><span class="pill pill-good">ratify</span></td><td>Write — Azure track open.</td></tr>
+<tr><td class="num">T2-17</td><td>Production model-serving traffic patterns</td><td><span class="pill pill-good">ratify</span></td><td>Write — Platform Disciplines now open.</td></tr>
+<tr><td class="num">T2-18</td><td>Drift-triggered auto-retraining loop</td><td><span class="pill pill-good">ratify</span></td><td>Write — Platform Disciplines now open.</td></tr>
+<tr><td class="num">T2-19</td><td>CML reference for ML CI</td><td><span class="pill pill-good">ratify</span></td><td>Write — Platform Disciplines now open.</td></tr>
+<tr><td class="num">T2-20</td><td>Dapr + Buildpacks application definition</td><td><span class="pill pill-partial">under-scoped</span></td><td>Decision card item — split into 2 separate modules OR keep combined.</td></tr>
+<tr><td class="num">T2-21</td><td>gRPC + Envoy service-to-service</td><td><span class="pill pill-partial">over-scoped</span></td><td>Downgrade to Tier 3 — Istio track covers it; remaining gap (gRPC internals) folds into networking.</td></tr>
+<tr><td class="num">T2-22</td><td>AWS data ingestion + transformation</td><td><span class="pill pill-good">ratify</span></td><td>Write — AWS Essentials has 13 modules, 0 cover Kinesis/Glue/Athena/MSK.</td></tr>
+<tr><td class="num">T2-23</td><td>HCP Terraform workflow operations</td><td><span class="pill pill-good">ratify</span></td><td>Write — Platform Toolkits now open.</td></tr>
+<tr><td class="num">T2-24</td><td>Azure Backup + Site Recovery</td><td><span class="pill pill-good">ratify, low urgency</span></td><td>Write last among Azure gaps.</td></tr>
+</table>
+
+<p><strong>Net</strong>: 17 ratify (write), 1 status-lag (remove), 1 over-scoped (downgrade), 3 nuance-needed (decision card), 2 split-vs-combined considerations. Roadmap is structurally sound; key fixes are status-lag cleanup + 1 downgrade.</p>
+
+<h2>4. Net-new gaps to add</h2>
+
+<p>10 candidates total: 7 from deepseek (grep-cited, spot-checks passed), 3 from grok (plausible, unverified). Grok's 3 marked <span class="pill pill-partial">unverified</span>.</p>
+
+<table>
+<tr><th>Source</th><th>Gap</th><th>Tier</th><th>Track</th><th>Est. modules</th><th>Status</th></tr>
+<tr><td>deepseek</td><td>OpenTelemetry production pipeline (SDK → Collector → backend, sampling, tail-based, multi-tenant)</td><td>T2</td><td><code>platform/disciplines/observability/</code></td><td>1-2</td><td><span class="pill pill-good">add</span></td></tr>
+<tr><td>deepseek</td><td>Platform API design + lifecycle (Backstage/Crossplane/IDP APIs, versioning, deprecation)</td><td>T2</td><td><code>platform/disciplines/core-platform/platform-engineering/</code></td><td>2-3</td><td><span class="pill pill-good">add</span></td></tr>
+<tr><td>deepseek</td><td>Kubernetes operators end-to-end lifecycle (build/test/deploy/upgrade/monitor/retire)</td><td>T2</td><td><code>k8s/extending/</code></td><td>2-3</td><td><span class="pill pill-good">add</span></td></tr>
+<tr><td>deepseek</td><td>Incident response automation (runbooks as code, Falco→action, post-incident auto-doc)</td><td>T2</td><td><code>platform/disciplines/reliability-security/</code></td><td>2-3</td><td><span class="pill pill-good">add</span></td></tr>
+<tr><td>deepseek</td><td>Policy engine selection framework (OPA vs Kyverno vs jsPolicy decision guide)</td><td>T2</td><td><code>platform/disciplines/reliability-security/devsecops/</code></td><td>1</td><td><span class="pill pill-good">add</span></td></tr>
+<tr><td>deepseek</td><td>GCP Essentials parity track — directory exists, module count unclear</td><td>T1 (if stubs) / drop (if full)</td><td><code>cloud/gcp-essentials/</code></td><td>10-13 (if stubs)</td><td><span class="pill pill-partial">needs audit first</span></td></tr>
+<tr><td>deepseek</td><td>Secrets management decision framework (Vault vs ESO vs Sealed Secrets vs cloud KMS)</td><td>T2</td><td><code>k8s/cks/</code> or <code>platform/disciplines/reliability-security/</code></td><td>1</td><td><span class="pill pill-good">add</span></td></tr>
+<tr><td>grok</td><td>GitOps reconciliation loops as explicit mental model <span class="pill pill-partial">unverified</span></td><td>T2 (grok said T1)</td><td><code>platform/foundations/</code></td><td>1-2</td><td><span class="pill pill-partial">verify-then-add</span></td></tr>
+<tr><td>grok</td><td>Production SLO / error-budget embedded across tracks <span class="pill pill-partial">unverified</span></td><td>T2</td><td>cross-cut</td><td>2-3</td><td><span class="pill pill-partial">verify-then-add</span></td></tr>
+<tr><td>grok</td><td>Cross-cloud workload identity federation (SPIRE + OIDC federation) <span class="pill pill-partial">unverified</span></td><td>T2</td><td><code>cloud/</code> or platform security</td><td>2</td><td><span class="pill pill-partial">verify-then-add</span></td></tr>
+</table>
+
+<h2>5. Locked next moves — top 10 (in order)</h2>
+
+<p>Each item below is a writable module given verified track-state. <strong>I'll file one GH sub-issue per item under #1299, then dispatch codex (gpt-5.5 high, danger mode, per-issue worktree) per issue with the existing reviewer cascade.</strong></p>
+
+<ol class="tight">
+<li><strong>Status cleanup</strong> — remove Harness/Symphony from gap inventory (already shipped as 2.1 + 2.2). 0 codex calls; STATUS.md + gap doc updates only.</li>
+<li><strong>T1-4 Cloud Custodian</strong> — <code>cloud/enterprise-hybrid/</code>. 0 mentions in corpus; highest signal Tier 1. 1 codex call.</li>
+<li><strong>T1-1 Azure Application Gateway</strong> — <code>cloud/azure-essentials/</code>. Prereqs VNet/DNS/Monitor verified at ≥3. 1 codex call.</li>
+<li><strong>T1-2 Azure App Service operations</strong> — <code>cloud/azure-essentials/</code>. Prereqs ACI/ACA/Functions/Key Vault/Monitor verified at ≥3. 1 codex call. Can share placement epic with item 3.</li>
+<li><strong>T1-3 Streaming ops (NATS + Strimzi + CloudEvents)</strong> — <code>platform/disciplines/data-ai/data-engineering/</code>. <strong>Newly unblocked</strong> by Platform Disciplines 44. 2-3 codex calls.</li>
+<li><strong>GCP audit</strong> — 30-second directory audit of <code>cloud/gcp-essentials/</code> to determine whether it's 13 full modules or stubs. Drives whether net-new gap stays Tier 1. 0 codex calls.</li>
+<li><strong>Net-new: Cloud Custodian Decision Card / pivot</strong> — depends on user answers to §6 controversies.</li>
+<li><strong>T2-8 Engineer mental models</strong> — <code>prerequisites/</code>. Broad-impact foundational gap. 2-3 codex calls.</li>
+<li><strong>Net-new: OpenTelemetry production pipeline</strong> — <code>platform/disciplines/observability/</code>. Newly unblocked. 1-2 codex calls.</li>
+<li><strong>T2-10/11 ML repo hygiene + DVC + Great Expectations bundle</strong> — <code>platform/disciplines/data-ai/mlops/</code>. Newly unblocked. 3 codex calls.</li>
+</ol>
+
+<h2>6. Decision Card — 5 controversies blocking full plan-lock</h2>
+
+<div class="decide">
+<strong>5 items need your call before I file all sub-issues. Pick a path on each.</strong>
+</div>
+
+<table>
+<tr><th>#</th><th>Question</th><th>My recommendation</th></tr>
+<tr><td>D1</td><td><strong>GitHub Actions module</strong> — keep T2 with strict anti-listicle guard, OR cut entirely (already referenced in 10+ files; risk of producing a "10 most common Actions" listicle is high). Reference memory <code>feedback_teaching_not_listicles</code>.</td><td><strong>Cut entirely</strong>. Existing references suffice; teaching the event-driven CI mental model is what's missing, but that's better folded into Modern DevOps as a cross-cut, not its own module. Save the budget for higher-leverage gaps.</td></tr>
+<tr><td>D2</td><td><strong>Dapr + Buildpacks</strong> — split into 2 separate modules (deepseek's view) OR keep combined as one "application definition beyond Helm" module (efficiency argument). Affects 1 vs 2 codex calls.</td><td><strong>Keep combined</strong>. CNCF classifies them differently but a single module teaching "application-definition layer above Helm" with both as worked examples is more pedagogically valuable than two thin standalone modules.</td></tr>
+<tr><td>D3</td><td><strong>Docker absolute-beginner arc</strong> — cut entirely (cloud-native-101 covers it), OR audit cloud-native-101 modules 1.1 + 1.2 first to confirm quality ≥3.</td><td><strong>Cut + audit existing</strong>. Default cut; if audit shows existing modules &lt;3, route them through #388 rewrite chain. Don't create parallel beginner content.</td></tr>
+<tr><td>D4</td><td><strong>Cost lens execution</strong> — write a framing module + cross-cut checklist, OR checklist-only (added to <code>module-writer.md</code>).</td><td><strong>Checklist-only first.</strong> If FinOps modules already carry the mental model, the framing module is redundant. Ship the checklist + revisit after 5 modules use it. Cheap; revertible.</td></tr>
+<tr><td>D5</td><td><strong>Priority #6 vs #10</strong> — GCP parity (10-13 modules, big surface) vs streaming ops (Tier 1, narrower). Which first?</td><td><strong>GCP audit first, then streaming.</strong> The audit is 30 seconds. If GCP turns out to be already-full, prioritization is moot. If GCP is stubs, the 10-13 module fill is too big for one wave anyway — start streaming as Tier 1 and add GCP gradually.</td></tr>
+</table>
+
+<h2>7. What I'll do once you respond</h2>
+
+<ol class="tight">
+<li>Answer D1–D5 → I lock the per-module write list.</li>
+<li>File one GH sub-issue per locked module under #1299 with: writer brief, track, prereqs, source citations from deepseek's report. Label <code>enhancement,content,gap-fill-2026-05</code>.</li>
+<li>Update <code>docs/research/content-gaps-2026-05.md</code> + <code>docs/research/gap-triangulation-roadmap-2026-05.html</code> to reflect: Harness/Symphony shipped, quality-state delta, gRPC/Envoy downgrade, net-new additions.</li>
+<li>Audit GCP Essentials directory (~30 sec).</li>
+<li>Dispatch codex writers per issue. Reviewer cascade: grok-4 primary (calibrated for review per <code>project_grok_primary_reviewer_calibrated_2026-05-17</code>), claude-sonnet-4-6 fallback.</li>
+<li>Squash-merge per existing pipeline as APPROVE/APPROVE_WITH_NITS verdicts return.</li>
+</ol>
+
+<p>Per your "make sure everything is tracked by gh issues" directive: every workstream becomes a sub-issue. Synthesis itself, the audit findings, and the grok DQ are tracked as comments on #1299. The 5 D-items above will also be recorded as a Decision Card in <code>docs/decisions/</code> once you respond, regardless of which way you pick.</p>
+
+<p class="num">Synthesis written inline by claude opus 4.7 (orchestrator) per memory <code>feedback_dispatch_codex_for_code_changes</code> carve-out ("write dispatch briefs"). ~2,400 words of substance.</p>
+
+</main>
+</body>
+</html>
