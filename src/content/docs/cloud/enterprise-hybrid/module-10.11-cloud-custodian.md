@@ -383,25 +383,11 @@ Every extra subdocument can mean more provider API calls.
 At small scale this is invisible.
 At hundreds or thousands of buckets across many accounts, unnecessary augmentation becomes latency, throttling, and cost noise.
 
-For S3 policies, narrow what the policy needs.
-If the rule only checks lifecycle and tags, avoid asking for every possible S3 subdocument.
-Provider documentation supports `augment-keys` so policies can avoid unrelated reads.
-
-```yaml
-policies:
-  - name: s3-lifecycle-report-only
-    resource: aws.s3
-    query:
-      - augment-keys:
-          - Lifecycle
-          - Tagging
-    filters:
-      - Lifecycle.Rules: absent
-    actions:
-      - type: tag
-        tag: lifecycle-review
-        value: required
-```
+For S3 policies, narrow the inventory before you ask Custodian to inspect expensive subdocuments.
+Use account selection, policy-directory boundaries, naming conventions, cheap metadata, and report-only canaries to reduce the bucket set first.
+Then inspect lifecycle, encryption, logging, policy, or tagging details only when the rule truly needs those fields.
+The operator habit is the important part: treat augmentation as a budgeted dependency, not a free background detail.
+If you want a provider-specific optimization knob, verify it against the exact Cloud Custodian resource documentation and validate the policy before adding it to a lab.
 
 The third AWS pattern is untagged-resource cleanup.
 Here the action should be slower and more conservative than the selection.
@@ -471,7 +457,7 @@ The exception and ownership tags are still your operating model.
 
 Exercise scenario: Your Azure subscription contains development VMs used by several teams.
 The FinOps lead wants low-CPU VMs tagged after seven days and stopped after fourteen days unless a `DoNotStop` tag is present.
-The Azure platform team also wants a variant that reports public-IP VMs without immediately changing them.
+The Azure platform team also wants a variant that reports VMs missing required ownership tags without immediately stopping or deleting anything.
 
 ```yaml
 # policies/azure-idle-vm.yml
@@ -531,30 +517,34 @@ custodian validate policies/azure-idle-vm.yml
 custodian run --dryrun -s output/azure-idle-vm policies/azure-idle-vm.yml
 ```
 
-The public-IP report shows a different governance posture.
-Public exposure can be a hard deny in Azure Policy for new resources.
-Custodian is useful for finding and routing existing drift.
+The missing-tag report shows a different governance posture.
+Required tags can be enforced with Azure Policy for new resources.
+Custodian is useful for finding and routing existing drift, especially VMs that predate the rule or arrived through import and migration paths.
 You might tag, notify, or open a ticket before blocking future creation with preventive controls.
 
 ```yaml
-# policies/azure-public-ip-report.yml
+# policies/azure-vm-required-tags-report.yml
 policies:
-  - name: azure-vms-with-public-ip-report
+  - name: azure-vms-missing-required-tags-report
     resource: azure.vm
     description: |
-      Identify VMs with public IP addresses so the platform team can
-      migrate them behind approved ingress patterns.
+      Identify VMs missing required ownership tags so the platform team can
+      route them to the right application owners before enforcement.
     filters:
-      - type: network-interface
-        key: "properties.ipConfigurations[].properties.publicIPAddress.id"
-        value: not-null
+      - or:
+          - type: value
+            key: "tags.Owner"
+            value: absent
+          - type: value
+            key: "tags.CostCenter"
+            value: absent
     actions:
       - type: tag
-        tag: network-review
-        value: public-ip-detected
+        tag: tag-review
+        value: required
 ```
 
-> **Which approach would you choose here and why:** Azure Policy deny for public IP creation, Custodian report for existing public IPs, or both?
+> **Which approach would you choose here and why:** Azure Policy deny for missing required tags on new VMs, Custodian report for existing missing tags, or both?
 
 The answer is usually both.
 Azure Policy is better for preventing new non-compliant resources at the ARM control plane.
@@ -842,7 +832,7 @@ The control-plane activity is the bill.
 Use this checklist before promoting a policy:
 
 - [ ] **What costs at moderate scale?** Provider API calls, CloudWatch or Azure Monitor metric queries, Lambda or container runtime, log ingestion, output storage, notification delivery, and reviewer time.
-- [ ] **What reduces cost?** Narrow resource filters, provider-side query filters, less frequent schedules, `augment-keys` for S3, canary account rollouts, centralized metrics with `ignore_zero`, and report-only dry runs before remediation.
+- [ ] **What reduces cost?** Narrow resource filters, provider-side query filters where documented, less frequent schedules, canary account rollouts, avoiding unnecessary S3 subdocument reads, centralized metrics with `ignore_zero`, and report-only dry runs before remediation.
 - [ ] **What makes cost spike?** Running broad policies across all accounts and regions, scanning high-cardinality resources every few minutes, fetching unnecessary S3 subdocuments, emitting every zero-value metric, retrying after IAM failures, and sending one notification per resource instead of batching.
 - [ ] **What is the business value?** Estimate idle resource savings, reduced audit-prep time, avoided policy drift, and fewer custom scripts before adding another recurring scan.
 - [ ] **What is the rollback plan?** Keep output artifacts, use reversible first actions, and define who can remove review tags or pause a policy.
@@ -1007,7 +997,7 @@ Use the engine closest to the resource and decision point.
 Read-only policies can still query many resources and fetch many subdocuments.
 S3 governance often requires lifecycle, tagging, policy, encryption, or logging details beyond the basic bucket list.
 At large scale, those extra reads create latency, throttling pressure, logs, and metrics.
-Use provider-side narrowing and S3 `augment-keys` so the policy fetches only the subdocuments it needs.
+Use provider-side narrowing where documented, scope the run to a smaller account or bucket set first, and inspect lifecycle, tagging, encryption, or logging details only when the decision truly needs those subdocuments.
 </details>
 
 <details>
@@ -1232,7 +1222,7 @@ Write one sentence explaining each choice.
 | New production S3 buckets must never be public |  |
 | Existing EC2 instances under 5% CPU for seven days should be tagged for review |  |
 | Pods must not run privileged containers |  |
-| Existing Azure VMs with public IPs should be reported and migrated |  |
+| Existing Azure VMs missing `Owner` or `CostCenter` tags should be reported and routed |  |
 | Terraform plans must not create unencrypted disks |  |
 
 <details>
@@ -1243,7 +1233,7 @@ Write one sentence explaining each choice.
 | New production S3 buckets must never be public | SCP/IAM guardrail plus S3 public access controls | It should be blocked before or at creation, not cleaned up later |
 | Existing EC2 instances under 5% CPU for seven days should be tagged for review | Cloud Custodian | The decision depends on current inventory, metrics, tags, and staged remediation |
 | Pods must not run privileged containers | Kyverno or OPA Gatekeeper | The decision belongs in Kubernetes admission before the Pod exists |
-| Existing Azure VMs with public IPs should be reported and migrated | Cloud Custodian | It scans existing state and can tag or notify owners |
+| Existing Azure VMs missing `Owner` or `CostCenter` tags should be reported and routed | Cloud Custodian | It scans existing state and can tag or notify owners |
 | Terraform plans must not create unencrypted disks | OPA/Conftest, Checkov, tfsec, or platform IaC policy checks | The decision should happen before infrastructure apply |
 
 </details>
