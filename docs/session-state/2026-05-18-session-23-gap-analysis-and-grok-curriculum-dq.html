@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 23 — independent gap analysis (grok + deepseek), grok DQ'd for curriculum, gap-fill epic launched</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 23 — independent gap analysis (grok + deepseek), grok DQ'd for curriculum, gap-fill epic launched</h1>
+<p class="meta">2026-05-17 → 2026-05-18 (crossed midnight; codex dispatch in-flight at handoff) · driver: claude opus 4.7 (1M context, orchestrator, inline) · code agents: codex gpt-5.5 high (danger mode), grok-4 + deepseek-v4-pro via <code>scripts/dispatch_smart.py</code>.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> User asked: "(a) save claude-i billing memory, (b) clawpatch §4 eval, then drive — independent gap analysis by grok + deepseek, send them our existing gaps + planned fills, build updated plan, start writing modules. Track everything by gh issues." Pivoted (b) since clawpatch §4 was informally satisfied in session 22b. <strong>Dispatched grok + deepseek in parallel</strong> with the same brief. <strong>Calibration finding</strong>: grok-4 ran 44s with hallucinated path on first verdict → DQ'd for curriculum gap analysis (reviewer lane still calibrated). Deepseek-V4-Pro ran 17 min, grep-cited every verdict, all spot-checks passed → <strong>trusted baseline</strong>. <strong>Material finding</strong>: 3 tracks crossed the &lt;50 critical threshold since the roadmap was generated (Platform Disciplines 65→44, Platform Toolkits 52→35, CKS 29→11) — quality-floor gate has opened. <strong>5 D-items locked via inline AskUserQuestion</strong>: GitHub Actions CUT, Dapr+Buildpacks COMBINED, Docker beginner CUT, cost-lens CHECKLIST-ONLY, GCP audit first. GCP turned out to be at full AWS parity (12 modules, 10K lines) → net-new GCP gap dropped. <strong>6 GH issues filed</strong> (#1299 umbrella + 4 T1 sub-issues + #1304 backlog tracker). <strong>Codex dispatch in-flight at handoff</strong>: <code>ba6pgjaf9</code> writing Cloud Custodian module to <code>.worktrees/gap-1300-cloud-custodian</code> on branch <code>codex/gap-1300-cloud-custodian</code> with gpt-5.5 (spark failed first attempt with 130s+0chars cap signature).
+</div>
+
+<h2>What shipped this session</h2>
+<table>
+<tr><th>Type</th><th>Path</th><th>Purpose</th></tr>
+<tr><td>Memory</td><td><code>reference_claude_i_billing_split.md</code></td><td>claude-i gist (tmux+Stop hook) routes scripted output to interactive billing pool. Pilot ~2026-06-08.</td></tr>
+<tr><td>Memory</td><td><code>feedback_grok_curriculum_gap_analysis_dq.md</code></td><td>Grok DQ'd for curriculum gap analysis. Reviewer lane on lab/code review still calibrated per <code>project_grok_primary_reviewer_calibrated_2026-05-17</code>.</td></tr>
+<tr><td>Memory index</td><td><code>MEMORY.md</code></td><td>+2 lines for above; existing TOP-PRIORITY section.</td></tr>
+<tr><td>Dispatch brief</td><td><code>docs/dispatch-briefs/2026-05-17-independent-gap-analysis.md</code></td><td>Same brief sent to grok + deepseek; canonical for reproducing the calibration.</td></tr>
+<tr><td>Report (down-weighted)</td><td><code>audit/gap-analysis-2026-05-17/grok-report.html</code> <span class="pill pill-gap">untrusted</span></td><td>6.8 KB / 147 lines / 44s. Path hallucination on first verdict.</td></tr>
+<tr><td>Report (trusted)</td><td><code>audit/gap-analysis-2026-05-17/deepseek-report.html</code> <span class="pill pill-good">trusted</span></td><td>41 KB / 568 lines / 17 min. Grep-cited, all spot-checks passed.</td></tr>
+<tr><td>Synthesis</td><td><code>docs/research/gap-plan-2026-05-17.html</code></td><td>Authoritative gap-fill plan. Supersedes content-gaps-2026-05.md + gap-triangulation-roadmap-2026-05.html where they conflict (legacy docs not yet annotated with deprecation banners).</td></tr>
+<tr><td>Decision card</td><td><code>docs/decisions/2026-05-17-gap-fill-decisions.md</code></td><td>5 D-items locked (D1 cut GH Actions, D2 combine Dapr/Buildpacks, D3 cut Docker beginner, D4 checklist-only cost lens, D5 GCP audit first → dropped from gaps).</td></tr>
+<tr><td>Writer prompt</td><td><code>scripts/prompts/module-writer.md</code> (edit)</td><td>Added cost-lens checklist (cross-cutting) to §4 Core content sections per D4.</td></tr>
+</table>
+
+<h2>GH issue tree</h2>
+<table>
+<tr><th>#</th><th>Title</th><th>State</th></tr>
+<tr><td class="col-id">#1299</td><td>Independent gap analysis (grok + deepseek) → updated gap plan → fill modules</td><td>UMBRELLA — open</td></tr>
+<tr><td class="col-id">#1300</td><td>T1 gap-fill: Cloud Custodian policy-as-code governance module</td><td><strong>In flight</strong> — codex dispatch <code>ba6pgjaf9</code> running (gpt-5.5; spark failed first attempt)</td></tr>
+<tr><td class="col-id">#1301</td><td>T1 gap-fill: Azure Application Gateway operator module</td><td>Open, next in sequential dispatch queue</td></tr>
+<tr><td class="col-id">#1302</td><td>T1 gap-fill: Azure App Service operations module</td><td>Open, after #1301</td></tr>
+<tr><td class="col-id">#1303</td><td>T1 gap-fill: Streaming ops epic (NATS + Strimzi + CloudEvents, 2-3 modules)</td><td>Open — 3 sub-issues to be filed when this advances</td></tr>
+<tr><td class="col-id">#1304</td><td>T2+net-new gap-fill backlog (19 modules, sequential dispatch)</td><td>TRACKING — open with 4-wave checklist</td></tr>
+</table>
+
+<h2>Calibration: why grok is DQ'd for curriculum, deepseek is trusted</h2>
+<table>
+<tr><th>Metric</th><th>Grok-4</th><th>DeepSeek V4 Pro</th></tr>
+<tr><td>Wall time</td><td>44s</td><td>1028s (17 min)</td></tr>
+<tr><td>Report size</td><td>6.8 KB / 147 lines</td><td>41 KB / 568 lines</td></tr>
+<tr><td>First-verdict accuracy</td><td><span class="pill pill-gap">Hallucinated path</span> — Azure App Gateway "already-covered" at <code>cloud/azure/networking/</code>; actual path is <code>cloud/azure-essentials/</code> with no App Gateway module.</td><td><span class="pill pill-good">grep-cited</span> — all 4 Tier 1 ratified with verifiable grep results.</td></tr>
+<tr><td>Caught status-lag</td><td>No</td><td>Yes — Harness/Symphony already shipped as 2.1+2.2.</td></tr>
+<tr><td>Caught material quality-state shift</td><td>No</td><td>Yes — 249→157 critical, per-track delta verified.</td></tr>
+<tr><td>"Over-scoped removals" section</td><td>Ratified Jenkins + Bicep + KServe (already-deferred items) — non-output.</td><td>4 substantive removals with grep-citations.</td></tr>
+<tr><td>Spot-check verification</td><td>Azure-covered claim FAILED. (2 of 3 net-new plausible.)</td><td>Cloud Custodian "0 mentions" VERIFIED. OTEL "tool-level only" VERIFIED. Operator lifecycle "by-concern" VERIFIED.</td></tr>
+</table>
+
+<p>This is the same failure mode as <code>feedback_gemini_hallucinates_anchors</code> + <code>feedback_grok_truncated_diff_context</code>. <strong>Grok stays calibrated for review-class dispatches</strong> per <code>project_grok_primary_reviewer_calibrated_2026-05-17</code> (3/3 valid verdicts on lab-runnability code review). The DQ is specific to curriculum/research/cross-document synthesis where context is large and verification matters.</p>
+
+<h2>The 5 D-items (locked)</h2>
+<table>
+<tr><th>#</th><th>Question</th><th>Decision</th></tr>
+<tr><td>D1</td><td>GitHub Actions dedicated module (T2-12)</td><td><strong>Cut entirely</strong>. Risk of listicle per <code>feedback_teaching_not_listicles</code>. Event-driven CI mental model folds into Modern DevOps cross-cut.</td></tr>
+<tr><td>D2</td><td>Dapr + Buildpacks split or combined</td><td><strong>Combined</strong> — single "application definition beyond Helm" module with both as worked examples.</td></tr>
+<tr><td>D3</td><td>Docker absolute-beginner arc</td><td><strong>Cut + audit cloud-native-101</strong> (verified 0 critical-rubric modules; no rewrite needed).</td></tr>
+<tr><td>D4</td><td>Cost lens execution</td><td><strong>Checklist-only first</strong>. Shipped to <code>scripts/prompts/module-writer.md</code> §4.</td></tr>
+<tr><td>D5</td><td>GCP audit vs streaming first</td><td><strong>GCP audit first → GCP dropped</strong> (12 modules at AWS parity, ~10,268 lines).</td></tr>
+</table>
+
+<h2>Material curriculum state shifts found this session</h2>
+<table>
+<tr><th>Item</th><th>Was (roadmap-assumed)</th><th>Live now</th><th>Implication</th></tr>
+<tr><td>Global critical (&lt;2.0)</td><td>249 of 754</td><td><strong>157 of 757</strong></td><td>Average score 3.84 → 4.27.</td></tr>
+<tr><td>Platform Disciplines critical</td><td>65</td><td><strong>44</strong></td><td><span class="pill pill-good">UNLOCKED</span> — Tier 1 streaming ops + 6 T2 rows newly writeable.</td></tr>
+<tr><td>Platform Toolkits critical</td><td>52</td><td><strong>35</strong></td><td><span class="pill pill-good">UNLOCKED</span> — Ansible operator arc + Dapr/Buildpacks + HCP Terraform writeable.</td></tr>
+<tr><td>CKS critical</td><td>29</td><td><strong>11</strong></td><td><span class="pill pill-good">UNLOCKED</span>.</td></tr>
+<tr><td>CKAD critical</td><td>23</td><td>~0 (not on critical table)</td><td>Cleared during T5 burndown.</td></tr>
+<tr><td>GCP Essentials</td><td>Net-new gap (likely stubs)</td><td><strong>12 full modules</strong> at ~860 lines/module avg</td><td>Net-new GCP gap DROPPED from inventory.</td></tr>
+<tr><td>Harness/Symphony</td><td>Tier 2 inventory entry</td><td>Already shipped as 2.1 + 2.2</td><td>Status-lag — REMOVED from inventory.</td></tr>
+<tr><td>gRPC/Envoy</td><td>Tier 2 row</td><td>Substantially covered by Istio + service-mesh tracks</td><td>DOWNGRADED T2 → T3.</td></tr>
+</table>
+
+<h2>In-flight at handoff</h2>
+<table>
+<tr><th>Item</th><th>State</th><th>Recovery</th></tr>
+<tr><td>Codex dispatch for Cloud Custodian (#1300)</td><td>Background task <code>ba6pgjaf9</code> running. Output file <code>/private/tmp/claude-501/-Users-krisztiankoos-projects-kubedojo/cb5d859b-4956-4d4f-99b4-9c5c31b5392a/tasks/ba6pgjaf9.output</code> at 0 bytes at handoff. Worktree <code>.worktrees/gap-1300-cloud-custodian</code> exists on branch <code>codex/gap-1300-cloud-custodian</code>. First attempt with gpt-5.3-codex-spark failed at 130s/0chars (cap signature). Retry with explicit <code>--model gpt-5.5</code> is what's currently running.</td><td>Next session: read the output file + check <code>git log codex/gap-1300-cloud-custodian</code> in the worktree. If PR opened → dispatch grok-4 reviewer. If not → re-fire with gpt-5.5 explicit or diagnose.</td></tr>
+<tr><td>3 streaming sub-issues</td><td>Not yet filed under #1303 epic. Will file when streaming wave starts.</td><td>Use the brief structure from #1300 as template; 3 sub-issues for fundamentals + Strimzi + CloudEvents.</td></tr>
+<tr><td>Legacy gap-doc deprecation banners</td><td>Not yet added to <code>content-gaps-2026-05.md</code> + <code>gap-triangulation-roadmap-2026-05.html</code>. Authority is now the synthesis HTML (<code>gap-plan-2026-05-17.html</code>).</td><td>Optional polish. Small inline edits.</td></tr>
+</table>
+
+<h2>Memory updates this session</h2>
+<ul class="tight">
+<li><strong>NEW</strong> <code>reference_claude_i_billing_split.md</code> — claude-i gist wraps interactive claude in tmux + Stop hook to produce <code>-p</code>-style scripted output billed against interactive pool. Pilot ~2026-06-08, before the 2026-06-15 agentic-pool flip.</li>
+<li><strong>NEW</strong> <code>feedback_grok_curriculum_gap_analysis_dq.md</code> — Grok DQ for curriculum gap analysis (44s + hallucinated path on first verdict vs deepseek's 17 min + grep-cited). Reviewer lane on lab/code review still calibrated.</li>
+<li><strong>EDIT</strong> <code>MEMORY.md</code> — +2 index lines (1 reference, 1 feedback). Note: MEMORY.md is 33+KB vs 24.4KB cap warning; still serviceable but index pruning is a standing task.</li>
+</ul>
+
+<h2>Next session — top priorities</h2>
+<ol class="tight">
+<li><strong>Check codex dispatch <code>ba6pgjaf9</code>.</strong> Read output file at the path above; check <code>git log codex/gap-1300-cloud-custodian</code> in the worktree. If PR opened → dispatch grok-4 reviewer via <code>scripts/dispatch_smart.py review --agent grok</code>; on APPROVE/APPROVE_WITH_NITS, squash-merge. On failure → diagnose (spark cap signature is 130s+0chars; gpt-5.5 cap is different).</li>
+<li><strong>Sequential Tier 1 chain</strong>: after Cloud Custodian merges, fire #1301 Azure App Gateway → #1302 Azure App Service → #1303 streaming ops epic (3 sub-issues + 3 dispatches). All with <code>--model gpt-5.5</code> upfront (spark is unreliable on greenfield content writes per memory <code>feedback_spark_rate_limit_fallback_ladder</code>).</li>
+<li><strong>Wave 2 backlog</strong> (#1304 checklist): newly-unblocked Platform Disciplines/Toolkits/CKS items. Start with DVC + Great Expectations + ML repo hygiene bundle.</li>
+<li><strong>Verify grok's 3 net-new candidates</strong> before adding (GitOps reconciliation mental model, SLO/error-budget cross-cut, cross-cloud workload identity federation). Quick grep+sample to confirm each gap is real before queueing.</li>
+<li><strong>Sidebar placement</strong> for software-engineering-craft track (per #1304 Wave 4). Needs new sidebar entry in <code>astro.config.mjs</code>; not greenfield writing.</li>
+<li><strong>Carryover from session 22b</strong> (still unshipped — DEPRIORITIZED behind Tier 1 gap-fill chain): 6 clawpatch findings #1290-#1295. Two suggested bundles: (i) local_api decisions cleanup #1290+#1291+#1292, (ii) quality-pipeline trio #1293+#1294+#1295. These compete for codex bandwidth — only pick up if Tier 1 chain stalls.</li>
+<li><strong>Date reminders</strong>: 2026-06-08 (pilot claude-i wrapper, 1 week pre-flip); 2026-06-15 (agentic-pool flip — inline claude becomes the cheap path per <code>feedback_inline_claude_post_agentic_pool</code>); 2026-07-13 (Claude weekly doubled bump expires).</li>
+</ol>
+
+<h2>Cold-start for next session</h2>
+<pre>
+# Standard orient
+curl -s http://127.0.0.1:8768/api/orient | python3 -m json.tool | head -25
+
+# Check the in-flight codex dispatch
+wc -c /private/tmp/claude-501/-Users-krisztiankoos-projects-kubedojo/cb5d859b-4956-4d4f-99b4-9c5c31b5392a/tasks/ba6pgjaf9.output
+ls -la .worktrees/gap-1300-cloud-custodian/src/content/docs/cloud/enterprise-hybrid/ | grep custodian
+cd .worktrees/gap-1300-cloud-custodian && git log --oneline -5 && cd -
+
+# Verify nothing was pushed yet
+GH_TOKEN="" gh pr list --state open --search "head:codex/gap-1300" --json number,title
+
+# Quality state (confirm 3 tracks still below 50)
+curl -s 'http://127.0.0.1:8768/api/quality/scores?summary=1' | python3 -c "import sys,json;from collections import Counter;d=json.load(sys.stdin);c=Counter();[c.update([e['track']]) for e in d['critical']];print(dict(c.most_common(10)))"
+
+# Open issues for this epic
+GH_TOKEN="" gh issue list --label gap-fill-2026-05 --state open
+
+# Read the authoritative plan
+open http://127.0.0.1:8768/artifacts/docs/research/gap-plan-2026-05-17.html
+</pre>
+
+<h2>Notes for the next driver</h2>
+<ul class="tight">
+<li><strong>User context</strong>: said "clear and not restart" — next conversation is a fresh Claude context but the project state continues. Background dispatches survive shell exit; they're tracked in the <code>/private/tmp/claude-501/...</code> task files but cross-session notification is not guaranteed.</li>
+<li><strong>Authoritative gap doc</strong>: <code>docs/research/gap-plan-2026-05-17.html</code>. The legacy <code>content-gaps-2026-05.md</code> + <code>gap-triangulation-roadmap-2026-05.html</code> are unsynced from this session's decisions (deprecation banners not yet added).</li>
+<li><strong>Reviewer cascade for gap-fill PRs</strong>: same as #388 pipeline — grok-4 primary (<code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code>), claude-sonnet-4-6 fallback. Grok stays calibrated for code/lab review; the DQ this session is curriculum-research only.</li>
+<li><strong>Spark cap is a real risk</strong>: dispatch_smart's default model for <code>draft</code> task class is gpt-5.3-codex-spark, which silently rejects (130s+0chars) on heavier prompts. <strong>For greenfield content &gt;600 lines, pass <code>--model gpt-5.5</code> upfront</strong>. Per memory <code>feedback_spark_rate_limit_fallback_ladder</code>.</li>
+<li><strong>gh CLI 401 workaround</strong>: this session used <code>GH_TOKEN="" gh ...</code> throughout per session-22b carryover. The fine-grained PAT in <code>.claude/settings.local.json</code> hits keyring 401s; clearing the env var falls back cleanly to keyring auth. Per memory <code>feedback_no_gh_token_unset</code> (which says the workaround is retired) — that memory is OUT OF DATE; the workaround is still needed for orchestrator-side gh calls.</li>
+</ul>
+
+</main>
+</body>
+</html>

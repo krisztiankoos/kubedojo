@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 24 — three T1 gap-fill modules shipped (#1300 / #1301 / #1302) + streaming sub-issues filed</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 24 — three T1 gap-fill modules shipped (#1300, #1301, #1302) + streaming sub-issues filed</h1>
+<p class="meta">2026-05-18 00:15 → 01:35 local · driver: claude opus 4.7 (1M context, orchestrator, inline) · code agents: codex gpt-5.5 high (danger mode, all writes via dispatch_smart + per-issue worktree); claude-sonnet-4-6 cross-family reviewer; admin squash-merges.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> Started by salvaging the in-flight session-23 codex dispatch <code>ba6pgjaf9</code> — it had silently written 1280-line Cloud Custodian module to disk but never committed. Shipped <strong>3 Tier-1 gap-fill PRs end-to-end</strong> in one session: #1305 Cloud Custodian (1270 lines after fix-pass), #1306 Azure Application Gateway (1000 lines), #1307 Azure App Service (1100 lines). <strong>3,370 net new content lines on main.</strong> Each went through codex writer (gpt-5.5, danger, action-first prompt) → claude-sonnet-4-6 cross-family review → fix-pass when NEEDS_CHANGES → squash-merge with admin override. <strong>Grok-4 deflected on long-content reviews</strong> (7s tool-stub on PR #1305) — confirmed pattern from session-23, fell back to sonnet per <code>feedback_headless_claude_gemini_fallback</code>. Filed <strong>2 streaming-ops sub-issues</strong> under #1303 (#1308 fundamentals, #1309 CloudEvents) — scope-refined from 3 to 2 after discovering existing <code>module-1.2-kafka.md</code> already covers Strimzi deep-dive content the deepseek gap analysis missed.
+</div>
+
+<h2>What shipped this session</h2>
+<table>
+<tr><th>PR</th><th>Title</th><th>Lines</th><th>Reviewer verdict</th><th>Merge commit</th></tr>
+<tr><td class="col-id">#1305</td><td>Cloud Custodian — policy-as-code governance multi-cloud (#1300)</td><td>1270 (after -10 fix-pass)</td><td>NEEDS_CHANGES → fix-pass → APPROVE</td><td><code>342d426f</code></td></tr>
+<tr><td class="col-id">#1306</td><td>Azure Application Gateway operator-path (#1301)</td><td>1000</td><td>APPROVE_WITH_NITS (2 nits, batch-merged)</td><td><code>70326d17</code></td></tr>
+<tr><td class="col-id">#1307</td><td>Azure App Service operator-path (#1302)</td><td>1100 (after KQL field fix)</td><td>NEEDS_CHANGES (KQL field name) → orchestrator inline fix → merge</td><td><code>136442a5</code></td></tr>
+</table>
+
+<h2>GH issue tree</h2>
+<table>
+<tr><th>#</th><th>Title</th><th>State</th></tr>
+<tr><td class="col-id">#1300</td><td>Cloud Custodian</td><td><span class="pill pill-good">CLOSED via #1305</span></td></tr>
+<tr><td class="col-id">#1301</td><td>Azure Application Gateway</td><td><span class="pill pill-good">CLOSED via #1306</span></td></tr>
+<tr><td class="col-id">#1302</td><td>Azure App Service</td><td><span class="pill pill-good">CLOSED via #1307</span></td></tr>
+<tr><td class="col-id">#1303</td><td>Streaming ops umbrella (NATS + Strimzi + CloudEvents)</td><td>OPEN — scope-refined; see below</td></tr>
+<tr><td class="col-id">#1308</td><td>T1 gap-fill: Event streaming fundamentals (Kafka vs NATS, ordering, exactly-once, backpressure)</td><td>OPEN — filed this session, not yet dispatched</td></tr>
+<tr><td class="col-id">#1309</td><td>T1 gap-fill: CloudEvents + event-driven architecture</td><td>OPEN — filed this session, not yet dispatched</td></tr>
+</table>
+
+<h2>#1303 scope refinement — original 3 sub-issues cut to 2</h2>
+<p>Original deepseek-trusted gap analysis recommended 3 streaming modules: fundamentals + Strimzi deep-dive + CloudEvents. Grepping the repo before filing showed <strong>existing <code>src/content/docs/platform/disciplines/data-ai/data-engineering/module-1.2-kafka.md</code> (1,143 lines, titled "Apache Kafka on Kubernetes (Strimzi)") already covers</strong>: Strimzi operator install, KafkaTopic / KafkaUser / KafkaConnect / KafkaConnector CRDs, schema management with Apicurio Registry, TLS/mTLS/SCRAM, Kafka Connect deployment, Debezium CDC example.</p>
+<p>Genuine gaps NOT covered by module-1.2:</p>
+<ul class="tight">
+<li>MirrorMaker2 for cross-DC DR (1 passing mention)</li>
+<li>Partition reassignment runbook (0 mentions)</li>
+<li>NATS JetStream comparison (0 mentions; will land in #1308)</li>
+<li>Production gotchas for storage-class selection + cruise-control rebalance</li>
+</ul>
+<p>Filed scope-refinement comment on #1303 recommending a follow-up PR to module-1.2 (~200-300 lines adding MirrorMaker2 + partition reassignment + cruise-control) rather than a separate module. This is a scope-tightening, not a scope-cut — the actual gap is smaller than the original analysis suggested. This is the same failure mode flagged by <code>feedback_gemini_hallucinates_anchors</code> — deepseek also reports "missing" for content that exists with a different naming convention.</p>
+
+<h2>Pattern observations this session (memory-worthy)</h2>
+<table>
+<tr><th>Pattern</th><th>Evidence</th><th>Implication</th></tr>
+<tr><td><strong>Codex writer can spiral in <code>--search</code> loops</strong></td><td>First #1301 dispatch wasted 14 min on 13 web searches before going silent. Output file was 211 bytes (header only); no patches.</td><td>Action-first writer prompts with explicit "minimize web search; use 2-3 verifications max; rely on your training for well-documented tech" prevent this. Worth a memory file.</td></tr>
+<tr><td><strong>Worktrees need <code>node_modules/@astrojs</code> relative symlink before <code>npm run build</code></strong></td><td>PR #1306 codex hit it; recipe is <code>mkdir -p node_modules && ln -s ../../../node_modules/@astrojs node_modules/@astrojs</code>. Bake into future writer briefs.</td><td>Operational, baked into brief. Not memory-worthy yet but worth tracking.</td></tr>
+<tr><td><strong>Codex amend + push behavior is non-deterministic</strong></td><td>#1300 fix-pass codex amended my prior commit (changed message only, no diff), then made a second commit with the actual fix, then tried to push (failed for one and succeeded for the other). Required orchestrator-side <code>git push origin</code> in two of three PRs.</td><td>Continue verifying push via <code>git ls-remote</code> after every codex push step per <code>feedback_codex_push_silent_failure</code>. Don't trust codex's "push: done" claim.</td></tr>
+<tr><td><strong>Sonnet review consistent at 30-200s, no deflection</strong></td><td>3 review runs: 200s/40s/145s (Cloud Custodian/Cloud Custodian re-review/App Service). All produced concrete actionable verdicts.</td><td>For long-content cross-family reviews, claude-sonnet-4-6 is the reliable lane; grok-4 is calibrated for code/lab review but not for 1000+ line content review per <code>feedback_grok_truncated_diff_context</code> and the curriculum DQ from session 23.</td></tr>
+<tr><td><strong>Orchestrator-inline fix on one-line review nits is fastest path</strong></td><td>PR #1307 KQL field-name bug (<code>UserAgent</code> → <code>CsUserAgent</code>) fixed in 30s via Edit tool + git commit + push. Dispatching codex for this would have taken 3-5 minutes.</td><td>Decision-card.md already exempts "One-line fixes (typos, dead URLs, redundant code lines — orchestrator fixes inline)" — confirmed working pattern. Reserve dispatch for &gt;5-line substantive edits.</td></tr>
+<tr><td><strong>OK: False ≠ work failed</strong></td><td>PR #1307 codex returned <code>OK: False  |  elapsed: 813s</code> but had committed clean work + tests passed. Failure was dispatch_smart's push-check tripping because I told codex NOT to push.</td><td>Don't act on <code>OK: False</code> without reading the actual rollout + worktree state. The wrapper's push-check has a false-positive when orchestrator-managed pushes are intentional.</td></tr>
+</table>
+
+<h2>Dispatch trail (full chain)</h2>
+<table>
+<tr><th>Task</th><th>Dispatch ID</th><th>Outcome</th><th>Wall time</th></tr>
+<tr><td>Cloud Custodian writer (carryover from session-23)</td><td><code>ba6pgjaf9</code></td><td>Wrote 1280 lines to disk in session 23; killed before commit. Session 24 orchestrator committed + opened PR.</td><td>~15 min (session 23)</td></tr>
+<tr><td>Cloud Custodian grok review</td><td><code>bjq6asrlz</code></td><td>Deflected (7s tool-stub on long content). Fallback to sonnet.</td><td>7s</td></tr>
+<tr><td>Cloud Custodian sonnet review (round 1)</td><td><code>bb3f5smzj</code></td><td>NEEDS_CHANGES — 2 HIGH lab-runnability bugs (hallucinated YAML in S3 + Azure VM examples).</td><td>200s</td></tr>
+<tr><td>Cloud Custodian codex fix-pass</td><td><code>b8ee7pktj</code></td><td>Applied 2 patches removing hallucinations. Did over-step (amended my commit, force-pushed; second commit landed correctly). Net result clean.</td><td>~2 min</td></tr>
+<tr><td>Cloud Custodian sonnet re-review</td><td><code>b13sicho8</code></td><td>APPROVE — both RCs confirmed fixed.</td><td>40s</td></tr>
+<tr><td>Azure App Gateway writer (v1)</td><td><code>(detached pid)</code></td><td>FAILED — wasted 14 min on 13 web searches, 0 patches, silent at 22:38.</td><td>14 min wasted</td></tr>
+<tr><td>Azure App Gateway writer (v2, action-first)</td><td><code>(detached, rollout 00-39-18)</code></td><td>1000-line module written in ~20 min including 2 build retries to fix worktree node_modules symlink. Committed. Polish-pass uncommitted at kill; orchestrator captured polish into commit <code>f4c99c69</code>.</td><td>~20 min</td></tr>
+<tr><td>Azure App Gateway sonnet review</td><td><code>bl24gri0z</code></td><td>APPROVE_WITH_NITS (rate-limit-duration missing in CLI; multi-line vs single-line complexity callout). Batch-merged per <code>feedback_ai_gate_is_the_gate</code>.</td><td>145s</td></tr>
+<tr><td>Azure App Service writer</td><td><code>(detached, rollout 01-03-10)</code></td><td>1100-line module written + tests pass + build pass. <code>OK: False</code> false-positive on dispatch_smart push-check.</td><td>~13.5 min</td></tr>
+<tr><td>Azure App Service sonnet review</td><td><code>b1lxjjz34</code></td><td>NEEDS_CHANGES — one KQL field-name bug. Orchestrator inline fix in 30s.</td><td>140s</td></tr>
+</table>
+
+<h2>Open questions for next session</h2>
+<ol class="tight">
+<li><strong>Streaming wave dispatch.</strong> #1308 (streaming fundamentals) and #1309 (CloudEvents) are filed with full briefs but not yet dispatched. Sequential codex+sonnet pattern is now reliable — fire one at a time. Use <code>--model gpt-5.5</code> upfront; spark too unreliable for greenfield 600+ line modules.</li>
+<li><strong>Module-1.2-kafka follow-up.</strong> Decide: add MirrorMaker2 + partition reassignment + cruise-control sections to <code>module-1.2-kafka.md</code> (~200-300 lines) as a single PR, OR leave as a Wave 2 backlog item. The scope-refinement note on #1303 recommends the former.</li>
+<li><strong>Verify grok's 3 net-new candidates</strong> from session-23 still pending: GitOps reconciliation mental model (PARTIAL coverage in <code>prerequisites/git-deep-dive/module-10-gitops-bridge</code>), SLO/error-budget cross-cut (COVERED via <code>k8s/pca/module-1.2-instrumentation-alerting</code>), cross-cloud workload identity federation (GENUINE GAP — only passing mentions). Surface the workload identity federation as a Tier 2 backlog candidate.</li>
+<li><strong>Wave 2 from #1304</strong> — DVC + Great Expectations + ML repo hygiene bundle (newly unblocked Platform Disciplines). Sequential dispatch when streaming wave drains.</li>
+<li><strong>Clawpatch carryover</strong> from session 22b (#1290-#1295) — still deprioritized behind T1 gap-fill chain. Pick up only if greenfield writer chain stalls.</li>
+<li><strong>Sidebar placement</strong> for software-engineering-craft track (per #1304 Wave 4) — needs <code>astro.config.mjs</code> entry, not greenfield writing.</li>
+<li><strong>Date reminders unchanged</strong>: 2026-06-08 pilot claude-i wrapper, 2026-06-15 agentic-pool flip, 2026-07-13 weekly-double bump expires.</li>
+</ol>
+
+<h2>Memory updates this session</h2>
+<ul class="tight">
+<li><strong>Memory worth adding next session</strong> (not yet written): codex writer dispatches with <code>--search</code> can spiral into multi-search research loops. Action-first prompts (<em>"Action first. Minimize web search. Use 2-3 verifications max; rely on training for well-documented tech."</em>) prevent this. Evidence: session-24 first #1301 dispatch wasted 14 min on 13 web searches before going silent.</li>
+<li>No other new memory needed — existing memories cover all observed patterns (codex push silent failure, grok long-content deflection, headless-claude fallback, AI-gate-is-the-gate, inline one-line fixes per decision-card.md).</li>
+</ul>
+
+<h2>Worktree state at session end</h2>
+<table>
+<tr><th>Worktree</th><th>Branch</th><th>Status</th></tr>
+<tr><td><code>.worktrees/gap-1300-cloud-custodian</code></td><td><code>codex/gap-1300-cloud-custodian</code></td><td>MERGED — cleanup pending (branch deletion needs <code>git worktree remove</code> first because worktree still holds branch ref)</td></tr>
+<tr><td><code>.worktrees/gap-1301-azure-app-gateway</code></td><td><code>codex/gap-1301-azure-app-gateway</code></td><td>MERGED — cleanup pending</td></tr>
+<tr><td><code>.worktrees/gap-1302-azure-app-service</code></td><td><code>codex/gap-1302-azure-app-service</code></td><td>MERGED — cleanup pending</td></tr>
+</table>
+<p>Next session can clean up with <code>git worktree remove .worktrees/gap-130{0,1,2}-*</code> + <code>git branch -D codex/gap-130{0,1,2}-*</code> in primary.</p>
+
+<h2>Cold-start for next session</h2>
+<pre>
+# Standard orient
+curl -s http://127.0.0.1:8768/api/orient | python3 -m json.tool | head -25
+
+# Verify the 3 merged commits are on main
+git log origin/main --oneline -5
+# Expect: 136442a5 (App Service), 70326d17 (App Gateway), 342d426f (Cloud Custodian), 3561be4d (session-22b), 9173c40b (#1298)
+
+# Check open T1 issues
+GH_TOKEN="" gh issue list --label gap-fill-2026-05 --state open
+
+# Decide: dispatch #1308 streaming fundamentals next, or pick up Wave 2 from #1304
+# Either way: codex gpt-5.5, danger mode, action-first prompt, per-issue worktree
+# Reviewer cascade: claude-sonnet-4-6 (skip grok for long content)
+
+# Cleanup merged worktrees first
+git worktree remove .worktrees/gap-1300-cloud-custodian
+git worktree remove .worktrees/gap-1301-azure-app-gateway
+git worktree remove .worktrees/gap-1302-azure-app-service
+git branch -D codex/gap-1300-cloud-custodian codex/gap-1301-azure-app-gateway codex/gap-1302-azure-app-service
+</pre>
+
+<h2>Notes for the next driver</h2>
+<ul class="tight">
+<li><strong>Authoritative gap doc remains <code>docs/research/gap-plan-2026-05-17.html</code></strong>. The 2-of-3-not-3-of-3 sub-issue scope refinement on #1303 is now the truth; update the gap plan if you redrive it.</li>
+<li><strong>Action-first writer prompts are the new default</strong> for codex greenfield writes. Bake "minimize web search" into every brief. Spark is still unreliable for greenfield &gt;600 lines.</li>
+<li><strong>Worktree build needs <code>node_modules/@astrojs</code> relative symlink</strong>: <code>mkdir -p node_modules && ln -s ../../../node_modules/@astrojs node_modules/@astrojs</code> from inside the worktree. Bake into briefs.</li>
+<li><strong>Grok-4 still DQ'd for long-content reviews</strong>. Use sonnet primary; grok is calibrated for code/lab review on small diffs per <code>project_grok_primary_reviewer_calibrated_2026-05-17</code> only.</li>
+<li><strong><code>gh pr merge --squash --admin</code> is the merge path</strong> — branch protection blocks the default; admin bypass is the user's standard pattern.</li>
+<li><strong><code>GH_TOKEN=""</code> prefix still required</strong> for gh CLI per session-22b carryover. The memory <code>feedback_no_gh_token_unset</code> says workaround is retired but it's still needed for orchestrator-side gh calls.</li>
+</ul>
+
+</main>
+</body>
+</html>
