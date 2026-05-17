@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeepSeek V4 Pro + Mistral 3.5 — test plan (queued, 2026-05-17)</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  .status{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;background:#fce7c8;color:var(--partial);}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>DeepSeek V4 Pro + Mistral 3.5 — test plan (queued)</h1>
+<p class="meta">2026-05-17 · author: claude opus 4.7 (orchestrator, inline) · <span class="status">QUEUED — next-session execution, awaits orchestrator pull</span></p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> Two premium-tier agents added to the kubedojo arsenal this week: <strong>DeepSeek V4 Pro</strong> (via hermes already configured; alternative path via opencode <code>/connect deepseek</code>) and <strong>Mistral 3.5</strong> (via <code>vibe</code> CLI). User direction 2026-05-17: <em>"schedule the testing of deepseek v4 pro and mistral 3.5; don't bother with the cheaper variants."</em> Two complementary test arcs proposed: <strong>(A) 5-role calibration sweep</strong> (reviewer / coder / writer / researcher / hallucination — same shape as the 2026-05-16 grok-4.3 calibration); <strong>(B) clawpatch routing probe</strong> (run the same <code>scripts/quality#2</code> slice that codex / claude-opus / gemini-pro have already covered and compare bug-find overlap). Both arcs assume cost-bounded eval (~$5 total) and produce data that feeds the role-allocation table in <code>memory/project_role_allocation_2026-05-16.md</code>. <strong>Pre-condition</strong>: configure DeepSeek inside opencode for the cleanest clawpatch path (see §3.A.1 below); no setup needed for Mistral if test is via direct <code>vibe -p</code> CLI dispatch (only needed for clawpatch routing).
+</div>
+
+<h2>1. Agents in scope</h2>
+
+<table>
+<tr><th>Agent</th><th>Tier</th><th>Access path (current)</th><th>Out-of-scope variants</th></tr>
+<tr><td>DeepSeek V4 Pro</td><td>premium reasoning</td><td>Configured in hermes (<code>hermes status</code> shows model=<code>deepseek-v4-pro</code>, provider=DeepSeek, API key set). Direct: <code>hermes -z &lt;prompt&gt;</code> uses this as the default.</td><td>DeepSeek-V4 base, DeepSeek-V3, DeepSeek-Coder, DeepSeek-R1 distilled tiers</td></tr>
+<tr><td>Mistral 3.5</td><td>premium</td><td><code>vibe -p &lt;prompt&gt; --output json</code> @ <code>~/.local/bin/vibe</code> (Mistral Vibe CLI; <code>vibe --setup</code> for API key).</td><td>Mistral Small, Mistral Nemo, Codestral, Pixtral</td></tr>
+</table>
+
+<h2>2. Test Arc A — 5-role calibration sweep</h2>
+
+<p>Mirror the 2026-05-16 grok-4.3 calibration shape (<code>audit/2026-05-16-grok-4.3-kubedojo-calibration/</code>). 5 roles × 2 new models = 10 dispatches. Compare each cell to the calibration's gpt-5.5 / claude-opus-4-7 / gemini-3.1-pro-preview baselines.</p>
+
+<table>
+<tr><th>Role</th><th>Task prompt (reuse from 2026-05-16 sweep)</th><th>Pass criterion</th><th>Stretch criterion</th></tr>
+<tr><td>Reviewer</td><td>PR #1229 lab-bug detection prompt — same Markdown diff, same rubric (5 dimensions + LAB RUNNABILITY)</td><td>Catch ≥1 of the 2 known lab bugs (gemini-flash caught 0/2; gemini-pro caught 2/2 — the calibration baseline)</td><td>Match gemini-pro at 2/2 with citation-forced format</td></tr>
+<tr><td>Coder</td><td>Incident-dedup-gate fix prompt — codex's calibration winner. Same patch target.</td><td>Produce a runnable patch that adds year-signal anchors</td><td>Match codex's anchor coverage exactly</td></tr>
+<tr><td>Writer</td><td>CKA module 1.7 opener — same brief.md as the 2026-05-16 writer cell</td><td>Pass the 5,000 body-word #388 verifier gate</td><td>Match codex gpt-5.5 high "tightest" star</td></tr>
+<tr><td>Researcher</td><td>Azure App Gateway Stage-0 brief — same source-discovery prompt</td><td>Produce a brief with ≥3 verified URLs, not write to a file (stdout discipline)</td><td>≥5 sources + cross-citation web/docs/blogs</td></tr>
+<tr><td>Hallucination guard</td><td>Fake-URL probe Q3 — same prompt (<em>"What's the SLA for kubedojo.example?"</em> + a fabricated URL)</td><td>Refuse to fabricate, mark URL as unverified or perform a real HTTP probe</td><td>Match codex's unique "actually fetched 404" behavior</td></tr>
+</table>
+
+<p><strong>Dispatch via:</strong></p>
+<pre># DeepSeek V4 Pro
+hermes -z -m deepseek-v4-pro "$(cat /tmp/role-prompt.md)"
+
+# Mistral 3.5 (vibe defaults to the configured Mistral model after `vibe --setup`)
+vibe -p "$(cat /tmp/role-prompt.md)" --output json</pre>
+
+<p><strong>Artifact target:</strong> <code>audit/2026-05-18-deepseek-mistral-calibration/REPORT.html</code> following the 2026-05-16 layout (per-cell raw output + verdict + extracted metric + citation chain).</p>
+
+<p><strong>Cost cap:</strong> 10 dispatches × ~5KB context each = trivial token cost. Likely under $0.50 total. No codex consumption.</p>
+
+<h2>3. Test Arc B — clawpatch routing probe</h2>
+
+<p>Same slice that already has empirical data from the codex / claude-opus / gemini-pro runs this session (<code>scripts/quality#2</code>, feature <code>feat_library_9ff8b28c45</code>). The cross-comparison gives provider-agreement / disagreement matrix on the EXACT same code.</p>
+
+<h3>3.A — Setup paths (one-time)</h3>
+
+<h4>A.1 — DeepSeek via opencode (recommended, native clawpatch provider)</h4>
+
+<pre># In opencode TUI:
+opencode
+# Then in the input box:
+/connect
+# Type: deepseek
+# Enter DeepSeek API key (from platform.deepseek.com/api_keys)
+# Select model: DeepSeek-V4-Pro
+
+# Verify:
+opencode providers list
+# Should show: deepseek (configured)
+
+# Then doctor-test via clawpatch:
+clawpatch doctor --provider opencode
+# Expected: state=ok, providerVersion=opencode &gt;=1.14.24</pre>
+
+<h4>A.2 — DeepSeek via hermes-ACP escape (alternative, no opencode config needed)</h4>
+
+<pre># Hermes already configured for deepseek-v4-pro (verified 2026-05-17 via `hermes status`).
+# Route through acpx:
+acpx --agent "hermes acp" --format json --max-turns 1 "test prompt"
+
+# Doctor-test via clawpatch (acpx custom-agent escape):
+clawpatch doctor --provider acpx --agent "hermes acp"
+# NOTE: clawpatch's acpx provider may not accept the --agent escape directly;
+# may need wrapper script. If doctor fails, fall back to path A.1 above.</pre>
+
+<h4>A.3 — Mistral via vibe (needs ACP adapter for clawpatch)</h4>
+
+<pre># vibe has -p (programmatic) mode but no ACP server mode (`vibe acp` does not exist).
+# Two options:
+
+# Option i — write a small ACP shim (~100 LOC TS or Python):
+#   - Reads ACP JSON-RPC from stdin
+#   - Calls vibe -p --output json with the extracted prompt
+#   - Wraps response into ACP envelope on stdout
+#   - Save as scripts/clawpatch-shims/vibe-acp.ts
+# Then: clawpatch review --provider acpx --agent "node scripts/clawpatch-shims/vibe-acp.ts"
+
+# Option ii — direct CLI dispatch outside clawpatch:
+#   For role-A calibration (where we don't need clawpatch), just use vibe -p directly.
+#   Skip clawpatch routing for Mistral entirely if the ACP shim cost exceeds the expected
+#   value. Defer until calibration tells us Mistral is worth wiring deeper.</pre>
+
+<h3>3.B — The probe</h3>
+
+<p>Same command shape as today's runs, three target providers:</p>
+
+<pre># DeepSeek
+clawpatch review --feature feat_library_9ff8b28c45 --jobs 1 --limit 5 --provider opencode
+
+# Mistral (if A.3 option i is built)
+clawpatch review --feature feat_library_9ff8b28c45 --jobs 1 --limit 5 \
+  --provider acpx --agent "node scripts/clawpatch-shims/vibe-acp.ts"</pre>
+
+<h3>3.C — Analysis grid</h3>
+
+<p>Compare findings against the codex + claude-opus + gemini-pro baseline (this session's runs):</p>
+
+<table>
+<tr><th>Finding</th><th>codex</th><th>claude-opus</th><th>gemini-pro</th><th>DeepSeek V4 Pro</th><th>Mistral 3.5</th></tr>
+<tr><td>1 — cleanup-banners nested lease</td><td><span class="pill pill-good">✓</span></td><td>TBD</td><td>TBD</td><td>TBD</td><td>TBD</td></tr>
+<tr><td>2 — lease module_key normalization</td><td><span class="pill pill-good">✓</span></td><td>TBD</td><td>TBD</td><td>TBD</td><td>TBD</td></tr>
+<tr><td>3 — ledger commit outside merge_lock</td><td><span class="pill pill-good">✓</span></td><td>TBD</td><td>TBD</td><td>TBD</td><td>TBD</td></tr>
+<tr><td>4 — dispatcher abort exit code</td><td><span class="pill pill-good">✓</span></td><td>TBD</td><td>TBD</td><td>TBD</td><td>TBD</td></tr>
+<tr><td>New findings unique to provider X</td><td>—</td><td>TBD</td><td>TBD</td><td>TBD</td><td>TBD</td></tr>
+</table>
+
+<h3>3.D — Interpretation</h3>
+
+<ul class="tight">
+<li><strong>If DeepSeek/Mistral find different bugs than codex</strong>: strong rotation signal; add them to the routing matrix's reviewer fallback list.</li>
+<li><strong>If they overlap with codex's 4 but find nothing new</strong>: validation that codex's prompt envelope is the lever (not the model); add them as cheap-reviewer fallback for budget-pressured runs only.</li>
+<li><strong>If they find fewer than 4 of codex's findings</strong>: drop from clawpatch routing; reserve for direct CLI dispatch on non-review tasks (role-A may still place them in writer or researcher lanes).</li>
+</ul>
+
+<h2>4. Execution order (recommended for next session)</h2>
+
+<ol class="tight">
+<li><strong>Setup Arc A first</strong> (no opencode/ACP plumbing needed). 10 calibration dispatches, ~30 min wall, &lt;$1 total. Produces <code>audit/2026-05-18-deepseek-mistral-calibration/REPORT.html</code>.</li>
+<li><strong>Decide on Arc B based on Arc A.</strong> If neither model placed in the calibration's top-2 for any role, skip the clawpatch shim work. Arc A is a cheap gatekeeper.</li>
+<li><strong>If Arc B proceeds:</strong> path A.1 (opencode <code>/connect</code>) for DeepSeek; defer Mistral ACP shim unless Arc A shows clear signal.</li>
+<li><strong>Update role-allocation memory</strong> with calibration results. Place each model in its winning lane or document as "tested, no production placement."</li>
+<li><strong>Update routing matrix brief</strong> with Arc B results (if run).</li>
+</ol>
+
+<h2>5. Cost + budget caveats</h2>
+
+<ul class="tight">
+<li>DeepSeek + Mistral API costs are per-token API consumption (not subscription rate-limit). The 5-role sweep is small (≤5KB context, ~2-3KB output per cell × 10 = ~50KB total). At DeepSeek's $0.27/MTok-input + $1.10/MTok-output pricing, full Arc A ≈ $0.05. Mistral 3.5 pricing comparable. Trivial.</li>
+<li>Arc B (clawpatch review) is ~3KB owned files + ~10KB context = ~40KB context per run × 2 providers = ~$0.30 if pricing holds. Still trivial.</li>
+<li>No impact on Codex 5x weekly cut. No impact on Claude Max weekly window. No impact on Gemini OAuth allowance.</li>
+<li>If either DeepSeek or Mistral lands in a production lane, factor monthly cost into budget review.</li>
+</ul>
+
+<h2>6. Open questions</h2>
+
+<ol class="tight">
+<li>Does the user have a preference for which Arc to run first? Default proposal: Arc A (calibration) → decide Arc B based on results.</li>
+<li>If Arc B proceeds, OK with opencode <code>/connect deepseek</code> UI flow (one-time interactive setup) vs hand-editing <code>~/.config/opencode/opencode.jsonc</code>?</li>
+<li>If neither model lands in a production lane after testing, OK to delete this brief + the calibration artifact, or keep as a "negative-result" reference?</li>
+</ol>
+
+<h2>7. Cross-references</h2>
+<ul class="tight">
+<li>Role allocation memory: <code>memory/project_role_allocation_2026-05-16.md</code> (roster update appended for these two agents)</li>
+<li>Sibling routing matrix: <code>docs/briefs/2026-05-17-clawpatch-6agent-routing.html</code></li>
+<li>Grok calibration shape to mirror: <code>audit/2026-05-16-grok-4.3-kubedojo-calibration/REPORT.html</code></li>
+<li>Clawpatch identification-only rule: <code>memory/feedback_clawpatch_identify_dont_fix.md</code></li>
+<li>Integration docs: <a href="https://api-docs.deepseek.com/quick_start/agent_integrations/opencode">DeepSeek + opencode</a>, <a href="https://api-docs.deepseek.com/quick_start/agent_integrations/hermes">DeepSeek + hermes</a></li>
+</ul>
+
+</main>
+</body>
+</html>
