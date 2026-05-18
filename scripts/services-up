@@ -4,9 +4,25 @@
 # every session.
 #
 # Usage: scripts/services-up [--api-only | --workers-only]
+#
+# REPO_ROOT always resolves to the primary working tree, even when this script
+# is invoked from inside a git worktree (`.worktrees/<name>/`). Otherwise the
+# API would start with cwd inside the worktree; removing the worktree would
+# orphan the API process with a dangling repo_root — manifested as /artifacts/*
+# returning 404 for every file. Recurring footgun; see session-24 handoff.
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+GIT_COMMON_DIR="$(git -C "$SCRIPT_DIR" rev-parse --git-common-dir 2>/dev/null || echo "")"
+if [ -n "$GIT_COMMON_DIR" ]; then
+  case "$GIT_COMMON_DIR" in
+    /*) ABS_GIT_COMMON_DIR="$GIT_COMMON_DIR" ;;
+    *)  ABS_GIT_COMMON_DIR="$(cd "$SCRIPT_DIR" && cd "$GIT_COMMON_DIR" && pwd)" ;;
+  esac
+  REPO_ROOT="$(dirname "$ABS_GIT_COMMON_DIR")"
+else
+  REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
 cd "$REPO_ROOT"
 
 VENV_PY="$REPO_ROOT/.venv/bin/python"
@@ -57,13 +73,55 @@ is_alive() {
   kill -0 "$pid" 2>/dev/null
 }
 
+# Detect and kill any API process that is NOT running with the primary repo
+# tree as cwd. Two recurring failure modes:
+#   1. Worktree orphan — started inside .worktrees/<name>, that worktree later
+#      removed, API kept running with a dangling repo_root that 404s
+#      /artifacts/* for everything.
+#   2. Wrong-tree orphan — started from a different project (e.g. inherited
+#      cwd from a sibling Claude Code session), serving stale state.
+# The recorded pid in .pids/api.pid may not point at the orphan (the pid file
+# gets clobbered when multiple worktrees ran services-up), so scan all python
+# processes that match the local_api.py argv signature.
+kill_orphan_api() {
+  local found=0
+  # Match on argv: local_api.py running --port 8768. Avoids killing a peer
+  # project's local_api.py on a different port.
+  for pid in $(pgrep -f "local_api.py.*--port 8768" 2>/dev/null); do
+    local cwd
+    cwd="$(lsof -p "$pid" -d cwd -Fn 2>/dev/null | awk '/^n/ {sub(/^n/,""); print; exit}')"
+    if [ -z "$cwd" ]; then
+      continue
+    fi
+    if [ "$cwd" != "$REPO_ROOT" ]; then
+      echo "api: orphan pid=$pid cwd=$cwd (expected $REPO_ROOT) — killing" >&2
+      kill "$pid" 2>/dev/null || true
+      found=1
+    fi
+  done
+  if [ "$found" -eq 1 ]; then
+    sleep 1
+  fi
+}
+
 start_api() {
+  kill_orphan_api
   if is_alive .pids/api.pid; then
-    echo "api: already running (pid $(cat .pids/api.pid))"
-    return
+    local recorded_pid
+    recorded_pid=$(cat .pids/api.pid 2>/dev/null || true)
+    local recorded_cwd
+    recorded_cwd="$(lsof -p "$recorded_pid" -d cwd -Fn 2>/dev/null | awk '/^n/ {sub(/^n/,""); print; exit}')"
+    if [ -n "$recorded_cwd" ] && [[ "$recorded_cwd" == *"/.worktrees/"* ]]; then
+      echo "api: recorded pid $recorded_pid is in worktree ($recorded_cwd) — killing + restarting" >&2
+      kill "$recorded_pid" 2>/dev/null || true
+      sleep 1
+    else
+      echo "api: already running (pid $recorded_pid)"
+      return
+    fi
   fi
   launch_detached .pids/api.pid logs/api.log \
-    "$VENV_PY" scripts/local_api.py --host 127.0.0.1 --port 8768
+    "$VENV_PY" scripts/local_api.py --host 127.0.0.1 --port 8768 --repo-root "$REPO_ROOT"
   sleep 1
   if is_alive .pids/api.pid; then
     echo "api: started (pid $(cat .pids/api.pid))"
