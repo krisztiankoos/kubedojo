@@ -463,7 +463,21 @@ export default defineConfig({
                   label: 'Data & AI',
                   collapsed: true,
                   items: [
-                    { label: 'Data Engineering', autogenerate: { directory: 'platform/disciplines/data-ai/data-engineering' }, collapsed: true },
+                    {
+                      label: 'Data Engineering',
+                      collapsed: true,
+                      items: [
+                        { label: 'Overview', link: '/platform/disciplines/data-ai/data-engineering/' },
+                        { label: '1.1: Stateful Workloads & Storage', link: '/platform/disciplines/data-ai/data-engineering/module-1.1-stateful-workloads/' },
+                        { label: '1.2: Apache Kafka on K8s', link: '/platform/disciplines/data-ai/data-engineering/module-1.2-kafka/' },
+                        { label: '1.3: Stream Processing with Flink', link: '/platform/disciplines/data-ai/data-engineering/module-1.3-flink/' },
+                        { label: '1.4: Batch Processing with Spark', link: '/platform/disciplines/data-ai/data-engineering/module-1.4-spark/' },
+                        { label: '1.5: Data Orchestration with Airflow', link: '/platform/disciplines/data-ai/data-engineering/module-1.5-airflow/' },
+                        { label: '1.6: Building a Data Lakehouse', link: '/platform/disciplines/data-ai/data-engineering/module-1.6-lakehouse/' },
+                        { label: '1.7: Event Streaming Fundamentals', link: '/platform/disciplines/data-ai/data-engineering/module-1.7-event-streaming-fundamentals/' },
+                        { label: '1.8: CloudEvents & Event-Driven Architecture', link: '/platform/disciplines/data-ai/data-engineering/module-1.8-cloudevents-event-driven-arch/' },
+                      ],
+                    },
                     { label: 'MLOps', autogenerate: { directory: 'platform/disciplines/data-ai/mlops' }, collapsed: true },
                     { label: 'AIOps', autogenerate: { directory: 'platform/disciplines/data-ai/aiops' }, collapsed: true },
                     { label: 'AI Infrastructure', autogenerate: { directory: 'platform/disciplines/data-ai/ai-infrastructure' }, collapsed: true },
