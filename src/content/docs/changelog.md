@@ -8,6 +8,8 @@ sidebar:
 
 ## May 2026
 
+- **MLOps repository-hygiene gap filled.** [ML Repository Hygiene](/platform/disciplines/data-ai/mlops/module-5.9-ml-repository-hygiene/) now covers clean `src/` layouts, DVC-aware ignore policy, uv lock discipline, notebook output stripping, pre-commit gates, CI split, and cost controls for ML repository bloat.
+
 - **MLOps data-quality gap filled.** [Great Expectations Data Quality](/platform/disciplines/data-ai/mlops/module-5.8-great-expectations-data-quality/) now covers GX Core 1.x suites, checkpoints, Data Docs, DVC baseline review, cost controls, and Kubernetes/Argo validation gates.
 
 - **MLOps data-versioning gap filled.** [Data Versioning with DVC](/platform/disciplines/data-ai/mlops/module-5.7-dvc-data-versioning/) now covers Git-plus-DVC artifact lineage, DVC pipelines, MinIO remotes on kind, cost controls, and CI/Kubeflow integration boundaries.
