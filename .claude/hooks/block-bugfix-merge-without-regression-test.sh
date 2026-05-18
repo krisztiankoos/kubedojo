@@ -48,16 +48,31 @@ try:
     tokens = shlex.split(command)
 except ValueError:
     sys.exit(0)
-found = False
-for index, token in enumerate(tokens):
-    if found:
-        if token.startswith("-"):
-            continue
-        print(token)
+# Find the `gh pr merge` triple, then walk past it and print the first
+# non-flag token (the PR number / URL / branch). The previous version
+# stopped immediately after matching `gh` and printed the literal `pr`
+# token on the next iteration — which made gh pr view pr 404 and the
+# hook silently fail open for every explicit-PR-ref merge.
+i = 0
+while i < len(tokens):
+    if (
+        tokens[i] == "gh"
+        and i + 2 < len(tokens)
+        and tokens[i + 1] == "pr"
+        and tokens[i + 2] == "merge"
+    ):
+        j = i + 3
+        while j < len(tokens):
+            if tokens[j].startswith("-"):
+                j += 1
+                continue
+            print(tokens[j])
+            sys.exit(0)
         sys.exit(0)
-    if token == "gh" and index + 2 < len(tokens) and tokens[index + 1] == "pr" and tokens[index + 2] == "merge":
-        found = True
+    i += 1
 ' "$COMMAND" || true)
+
+HOOK_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 
 if [ -n "${KUBEDOJO_HOOK_GH_JSON:-}" ] && [ -f "${KUBEDOJO_HOOK_GH_JSON}" ]; then
   PR_JSON=$(cat "${KUBEDOJO_HOOK_GH_JSON}")
@@ -68,14 +83,18 @@ else
   if [ -n "$PR_REF" ]; then
     PR_JSON=$(gh pr view "$PR_REF" --json body,files,headRefOid,title,number 2>/dev/null || true)
   else
-    PR_JSON=$(cd "$CWD" 2>/dev/null && gh pr view --json body,files,headRefOid,title,number 2>/dev/null || true)
+    # No explicit PR ref: gh auto-detects from the current branch. Resolve the
+    # effective cwd by walking `cd X` segments — the harness-reported cwd can
+    # be the primary tree even when the user is running
+    # `cd .worktrees/X && gh pr merge` from a worktree. Same bug class as
+    # #1321 (false-negative-allow direction instead of false-positive-deny).
+    EFFECTIVE_DIR=$(python3 "$HOOK_DIR/_lib_resolve_cwd.py" "$COMMAND" "$CWD" gh 2>/dev/null || printf '%s' "$CWD")
+    PR_JSON=$(cd "$EFFECTIVE_DIR" 2>/dev/null && gh pr view --json body,files,headRefOid,title,number 2>/dev/null || true)
   fi
   if [ -z "$PR_JSON" ]; then
     exit 0
   fi
 fi
-
-HOOK_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 VERDICT=$(KUBEDOJO_HOOK_FILE_FIXTURE_DIR="${KUBEDOJO_HOOK_FILE_FIXTURE_DIR:-}" \
   python3 "$HOOK_DIR/_lib_pr_check.py" regression "$PR_JSON" || true)
 

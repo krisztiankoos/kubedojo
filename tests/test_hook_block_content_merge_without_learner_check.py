@@ -244,6 +244,123 @@ def test_learner_check_quote_in_one_of_many_files_is_allowed(tmp_path: Path) -> 
     assert result.returncode == 0, result.stderr
 
 
+def test_explicit_pr_ref_is_passed_to_gh_view(tmp_path: Path) -> None:
+    """Regression test for a latent bug in the PR_REF parser. The previous
+    parser stopped immediately on matching `gh` and printed the next
+    non-flag token — which was always the literal `pr` token. As a
+    result `gh pr view pr` 404'd and the hook silently failed open for
+    every explicit-PR-ref merge. The fixed parser skips past the
+    `gh pr merge` triple and prints the first non-flag token after it.
+
+    Behavioural test: a fake `gh` shim records its argv. The assertion
+    is that the recorded argv contains the correct PR number, not `pr`.
+    """
+    primary = tmp_path / "primary"
+    primary.mkdir()
+
+    shim_dir = tmp_path / "bin"
+    shim_dir.mkdir()
+    argv_log = tmp_path / "gh_argv.log"
+    shim = shim_dir / "gh"
+    shim.write_text(
+        "#!/bin/bash\n"
+        f'printf "%s\\0" "$@" >> "{argv_log}"\n'
+        'printf "\\n" >> "' + str(argv_log) + '"\n'
+        "exit 1\n"
+    )
+    shim.chmod(0o755)
+
+    env = os.environ.copy()
+    env["PATH"] = f"{shim_dir}:{env.get('PATH', '')}"
+    env["CLAUDE_PROJECT_DIR"] = str(primary)
+    env.pop("KUBEDOJO_HOOK_GH_JSON", None)
+
+    payload = {
+        "tool_name": "Bash",
+        "tool_input": {
+            "command": "gh pr merge 1234 --squash",
+            "cwd": str(primary),
+        },
+    }
+    result = subprocess.run(
+        [BASH, str(HOOK)],
+        input=json.dumps(payload),
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+        cwd=primary,
+    )
+
+    assert result.returncode == 0, result.stderr
+    argv = argv_log.read_bytes().split(b"\x00")
+    # Expect `gh pr view 1234 --json body,files,headRefOid,title,number`.
+    # The buggy parser returned `pr` as PR_REF → argv[2] would be `b"pr"`.
+    # The fixed parser returns `1234` → argv[2] is `b"1234"`.
+    assert argv[:3] == [b"pr", b"view", b"1234"], (
+        f"Old PR_REF parser bug regression: expected gh argv[:3] == "
+        f"[b'pr', b'view', b'1234'], got argv={argv!r}"
+    )
+
+
+def test_no_pr_ref_resolves_cwd_via_cd_segments(tmp_path: Path) -> None:
+    """When `gh pr merge` is invoked without an explicit PR number, gh
+    auto-detects the PR from the current branch — so the hook must run
+    `gh pr view` from the EFFECTIVE cwd resolved by walking `cd X`
+    segments in the command, not the harness-reported cwd. Otherwise a
+    `cd .worktrees/X && gh pr merge --squash` invocation from a worktree
+    silently bypasses this content-quality gate. Same bug class as #1321
+    (false-negative-allow direction).
+
+    Behavioural test: a fake `gh` shim records the cwd it was called from.
+    The assertion is that the recorded cwd is the worktree, not the
+    primary tree (harness cwd).
+    """
+    primary = tmp_path / "primary"
+    worktree = primary / ".worktrees" / "feat-x"
+    worktree.mkdir(parents=True)
+
+    shim_dir = tmp_path / "bin"
+    shim_dir.mkdir()
+    cwd_log = tmp_path / "gh_cwd.log"
+    shim = shim_dir / "gh"
+    shim.write_text(
+        "#!/bin/bash\n"
+        f'pwd -P >> "{cwd_log}"\n'
+        "exit 1\n"
+    )
+    shim.chmod(0o755)
+
+    env = os.environ.copy()
+    env["PATH"] = f"{shim_dir}:{env.get('PATH', '')}"
+    env["CLAUDE_PROJECT_DIR"] = str(primary)
+    env.pop("KUBEDOJO_HOOK_GH_JSON", None)
+    env.pop("KUBEDOJO_HOOK_FILE_FIXTURE_DIR", None)
+
+    payload = {
+        "tool_name": "Bash",
+        "tool_input": {
+            "command": "cd .worktrees/feat-x && gh pr merge --squash",
+            "cwd": str(primary),
+        },
+    }
+    result = subprocess.run(
+        [BASH, str(HOOK)],
+        input=json.dumps(payload),
+        text=True,
+        capture_output=True,
+        check=False,
+        env=env,
+        cwd=primary,
+    )
+
+    assert result.returncode == 0, result.stderr
+    recorded = cwd_log.read_text().strip()
+    assert recorded == str(worktree.resolve()), (
+        f"Expected gh invoked from worktree {worktree.resolve()}, got {recorded!r}"
+    )
+
+
 def test_gh_failure_fails_open(tmp_path: Path) -> None:
     # When `gh pr view` itself fails (auth, network, no PR on branch), the
     # hook must fail open — a quality gate should not trap the orchestrator
