@@ -36,23 +36,8 @@ if ! printf '%s\n' "$COMMAND" | grep -Eq '(^|[;&|[:space:]])gh[[:space:]]+pr[[:s
   exit 0
 fi
 
-PR_REF=$(python3 -c '
-import shlex, sys
-command = sys.argv[1]
-try:
-    tokens = shlex.split(command)
-except ValueError:
-    sys.exit(0)
-found = False
-for index, token in enumerate(tokens):
-    if found:
-        if token.startswith("-"):
-            continue
-        print(token)
-        sys.exit(0)
-    if token == "gh" and index + 2 < len(tokens) and tokens[index + 1] == "pr" and tokens[index + 2] == "merge":
-        found = True
-' "$COMMAND" || true)
+HOOK_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+PR_REF=$(python3 "$HOOK_DIR/_lib_parse_pr_ref.py" "$COMMAND" 2>/dev/null || true)
 
 if [ -n "${KUBEDOJO_HOOK_GH_JSON:-}" ] && [ -f "${KUBEDOJO_HOOK_GH_JSON}" ]; then
   PR_JSON=$(cat "${KUBEDOJO_HOOK_GH_JSON}")
@@ -63,14 +48,18 @@ else
   if [ -n "$PR_REF" ]; then
     PR_JSON=$(gh pr view "$PR_REF" --json body,files,headRefOid,title,number 2>/dev/null || true)
   else
-    PR_JSON=$(cd "$CWD" 2>/dev/null && gh pr view --json body,files,headRefOid,title,number 2>/dev/null || true)
+    # No explicit PR ref: gh auto-detects from the current branch. Resolve the
+    # effective cwd by walking `cd X` segments — the harness-reported cwd can
+    # be the primary tree even when the user is running
+    # `cd .worktrees/X && gh pr merge` from a worktree. Same bug class as
+    # #1321 (false-negative-allow direction instead of false-positive-deny).
+    EFFECTIVE_DIR=$(python3 "$HOOK_DIR/_lib_resolve_cwd.py" "$COMMAND" "$CWD" gh 2>/dev/null || printf '%s' "$CWD")
+    PR_JSON=$(cd "$EFFECTIVE_DIR" 2>/dev/null && gh pr view --json body,files,headRefOid,title,number 2>/dev/null || true)
   fi
   if [ -z "$PR_JSON" ]; then
     exit 0
   fi
 fi
-
-HOOK_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
 VERDICT=$(KUBEDOJO_HOOK_FILE_FIXTURE_DIR="${KUBEDOJO_HOOK_FILE_FIXTURE_DIR:-}" \
   python3 "$HOOK_DIR/_lib_pr_check.py" learner "$PR_JSON" || true)
 
