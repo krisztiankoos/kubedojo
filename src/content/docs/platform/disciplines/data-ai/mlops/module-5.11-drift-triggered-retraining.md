@@ -287,7 +287,7 @@ def main() -> None:
     reference = pd.read_parquet("reference.parquet")
     current = pd.read_parquet("current.parquet")
 
-    report = Report([DataDriftPreset(method="psi")])
+    report = Report([DataDriftPreset()])
     evaluation = report.run(current_data=current, reference_data=reference)
     evaluation.save_json("evidently-data-drift.json")
 
