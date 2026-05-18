@@ -846,7 +846,6 @@ curl -i -X POST http://127.0.0.1:8080/commerce/commerce \
   -H "ce-type: com.acme.orders.order-placed.v1" \
   -H "ce-subject: orders/ord-1001" \
   -H "ce-time: 2026-05-18T09:15:30Z" \
-  -H "ce-datacontenttype: application/json" \
   -H "ce-dataschema: https://schemas.acme.example/orders/order-placed/v1.json" \
   -H "ce-traceparent: 00-1af7651916cd43dd8448eb211c80319c-b9c7c989f97918e1-01" \
   -H "ce-partitionkey: ord-1001" \
@@ -1168,4 +1167,4 @@ Build a small CloudEvents path for `order-placed` events in a Kubernetes 1.35+ c
 
 ## Next Module
 
-Continue by applying these event contracts in [Module 1.3 - Stream Processing with Flink](../module-1.3-flink/) when you need stateful processors, windows, and projections over CloudEvents-backed streams.
+You've completed the Data Engineering track. Continue to the [MLOps discipline](../../mlops/) — [Module 5.1 — MLOps Fundamentals](../../mlops/module-5.1-mlops-fundamentals/) builds on these event-driven foundations when ML pipelines need to react to data-arrival events and emit prediction-emitted CloudEvents downstream. If you want to revisit stateful stream processing with the contracts from this module, return to [Module 1.3 — Stream Processing with Flink](../module-1.3-flink/).
