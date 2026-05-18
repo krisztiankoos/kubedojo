@@ -8,6 +8,8 @@ sidebar:
 
 ## May 2026
 
+- **MLOps**: Module 5.11 Drift-Triggered Auto-Retraining Loop (#1304 Wave 2, T2-18, ~2001 lines).
+
 - **MLOps model-serving traffic gap filled.** [Production Model-Serving Traffic Patterns](/platform/disciplines/data-ai/mlops/module-5.10-model-serving-traffic-patterns/) now covers KServe canaries, Istio A/B routing, shadow traffic, mirroring, bandits, rollback gates, and cost controls for production model promotion.
 
 - **MLOps repository-hygiene gap filled.** [ML Repository Hygiene](/platform/disciplines/data-ai/mlops/module-5.9-ml-repository-hygiene/) now covers clean `src/` layouts, DVC-aware ignore policy, uv lock discipline, notebook output stripping, pre-commit gates, CI split, and cost controls for ML repository bloat.

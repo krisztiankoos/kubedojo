@@ -4,7 +4,7 @@ sidebar:
   order: 0
   label: "MLOps"
 ---
-> **Discipline Track** | 10 Modules | ~8 hours total
+> **Discipline Track** | 11 Modules | ~9 hours total
 
 ## Overview
 
@@ -35,6 +35,7 @@ Before starting this track:
 | 5.8 | [Great Expectations Data Quality](module-5.8-great-expectations-data-quality/) | `[COMPLEX]` | 50-60 min |
 | 5.9 | [ML Repository Hygiene](module-5.9-ml-repository-hygiene/) | `[COMPLEX]` | 45-55 min |
 | 5.10 | [Production Model-Serving Traffic Patterns](module-5.10-model-serving-traffic-patterns/) | `[COMPLEX]` | 55-65 min |
+| 5.11 | [Drift-Triggered Auto-Retraining Loop](module-5.11-drift-triggered-retraining/) | `[COMPLEX]` | 60-70 min |
 
 ## Learning Outcomes
 
@@ -50,6 +51,7 @@ After completing this track, you will be able to:
 8. **Gate data quality** — Use Great Expectations to validate schema, completeness, and distribution contracts before training or serving
 9. **Maintain clean ML repositories** — Keep data, models, notebooks, dependencies, hooks, and CI policies reviewable without bloating Git history
 10. **Control serving exposure** — Use canary, A/B, shadow, mirroring, and bandit patterns to promote models with measurable rollback and cost controls
+11. **Close the model lifecycle loop** — Close the model lifecycle loop with drift-triggered automated retraining, gated promotion, and forensic rollback
 
 ## Key Concepts
 
@@ -150,6 +152,10 @@ Module 5.9: ML Repository Hygiene
 Module 5.10: Production Model-Serving Traffic Patterns
      │
      │  KServe canary, Istio A/B, shadow, mirroring, bandits, cost controls
+     ▼
+Module 5.11: Drift-Triggered Auto-Retraining Loop
+     │
+     │  Drift signals, Argo triggers, retraining DAGs, validation gates, rollback
      ▼
 [Track Complete] → ML Platforms Toolkit
 ```
