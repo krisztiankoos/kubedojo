@@ -221,3 +221,107 @@ def test_detached_head_allowed(tmp_path: Path) -> None:
 
     assert result.returncode == 0
     assert result.stderr == ""
+
+
+def _add_worktree(primary: Path, name: str, branch: str) -> Path:
+    """Create a worktree at primary/.worktrees/<name> on a fresh branch off main."""
+    worktree_path = primary / ".worktrees" / name
+    worktree_path.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["git", "worktree", "add", "-b", branch, str(worktree_path), "main"],
+        cwd=primary,
+        check=True,
+        capture_output=True,
+    )
+    return worktree_path
+
+
+def test_cd_into_worktree_branch_allowed(tmp_path: Path) -> None:
+    """`cd <worktree-on-non-main> && git commit ...` should be allowed even though
+    the harness-reported cwd is the primary tree on main."""
+    primary = tmp_path / "kubedojo"
+    init_git_main(primary)
+    _add_worktree(primary, "feat-x", "codex/feat-x")
+
+    # Harness reports cwd = primary (on main); the `cd` happens INSIDE the command.
+    result = run_hook(
+        'cd .worktrees/feat-x && git commit -m "wip: worktree change"', primary, primary
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_git_C_relative_worktree_branch_allowed(tmp_path: Path) -> None:
+    """`git -C <worktree-on-non-main> commit ...` (relative path) should be allowed."""
+    primary = tmp_path / "kubedojo"
+    init_git_main(primary)
+    _add_worktree(primary, "feat-y", "codex/feat-y")
+
+    result = run_hook(
+        'git -C .worktrees/feat-y commit -m "wip: feature work"', primary, primary
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_git_C_absolute_worktree_branch_allowed(tmp_path: Path) -> None:
+    """`git -C /abs/path commit ...` should be allowed when the path is on a non-main branch."""
+    primary = tmp_path / "kubedojo"
+    init_git_main(primary)
+    worktree = _add_worktree(primary, "feat-z", "codex/feat-z")
+
+    result = run_hook(
+        f'git -C {worktree} commit -m "wip: absolute path"', primary, primary
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_cd_into_primary_still_denies(tmp_path: Path) -> None:
+    """`cd <primary-on-main> && git commit ...` from a non-primary harness cwd
+    should still be denied when the resolved tree is on main and the subject
+    isn't allowlisted. The -C/cd resolution must NOT let main-commits slip."""
+    primary = tmp_path / "kubedojo"
+    init_git_main(primary)
+    subdir = primary / "subdir"
+    subdir.mkdir()
+
+    result = run_hook(
+        f'cd {primary} && git commit -m "fix: thing"', primary, subdir
+    )
+
+    assert result.returncode == 2, result.stderr
+    assert "direct commit to main without PR ref is blocked" in result.stderr
+
+
+def test_git_C_primary_still_denies(tmp_path: Path) -> None:
+    """`git -C <primary-on-main> commit ...` from a non-primary harness cwd
+    should still be denied — the -C wins over harness cwd."""
+    primary = tmp_path / "kubedojo"
+    init_git_main(primary)
+    other_dir = tmp_path / "elsewhere"
+    other_dir.mkdir()
+
+    result = run_hook(
+        f'git -C {primary} commit -m "fix: thing"', primary, other_dir
+    )
+
+    assert result.returncode == 2, result.stderr
+    assert "direct commit to main without PR ref is blocked" in result.stderr
+
+
+def test_cd_chain_resolves_last(tmp_path: Path) -> None:
+    """`cd A && cd B && git commit ...` should resolve to B."""
+    primary = tmp_path / "kubedojo"
+    init_git_main(primary)
+    _add_worktree(primary, "feat-chain", "codex/feat-chain")
+
+    # First `cd` goes to primary subdir (still on main); second `cd` goes to worktree.
+    # Hook should follow both cds and end at the worktree.
+    result = run_hook(
+        'cd .worktrees && cd feat-chain && git commit -m "wip: chained cd"',
+        primary,
+        primary,
+    )
+
+    assert result.returncode == 0, result.stderr
