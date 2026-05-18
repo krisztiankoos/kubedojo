@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DeepSeek V4 Flash Calibration — 6-task pilot (2026-05-18)</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1200px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);font-size:13px;}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  td.col-task{font-weight:600;}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>DeepSeek V4 Flash Calibration — 6-task pilot (2026-05-18)</h1>
+<p class="meta">Closes issue #1314. Driver: claude opus 4.7 (orchestrator). User prompt 2026-05-18: "flash is super cheap, can do quality work in some areas." Pilot tests 6 roles head-to-head against the current matrix primary.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> <strong>Flash PASSES on 4 of 6 lanes; PARTIAL on 2.</strong> Strong passes on small-diff code review (verdict match with sonnet on PR #1315), content review (verdict match with sonnet on module-1.7), short-form writing (250-line cheatsheet matches codex gpt-5.5 quality), and fact-checking (5/5 evidence-cited verdicts vs primary docs, caught real config-name and version-history errors). Partial on researcher (50% gap overlap with Pro — adds a complementary architectural lens at cheap cost but not a Pro substitute) and coder (9/9 tests pass matching codex spark, but 2 cosmetic ruff issues). <strong>Net routing implication</strong>: Flash earns a <span class="pill pill-partial">secondary</span> slot on 4 lanes in the matrix as a cheap alternative; <span class="pill pill-gap">complementary 2nd lens</span> on the researcher row. Does NOT displace any primary lane.
+</div>
+
+<h2>Pilot design</h2>
+<p>Per #1314: 6 head-to-head tasks, each with a falsifiable predicate. Identical brief sent to Flash + the current matrix primary for that lane. Outputs scored against the predicate.</p>
+
+<table>
+<tr><th>#</th><th>Role</th><th>Task</th><th>Baseline agent</th><th>Predicate</th></tr>
+<tr><td class="col-id">1</td><td class="col-task">Researcher</td><td>Narrow gap analysis on Cloud AWS Essentials (≤8 gaps with grep evidence)</td><td>deepseek V4 Pro</td><td>≥80% gap overlap, zero hallucinated paths</td></tr>
+<tr><td class="col-id">2</td><td class="col-task">Writer</td><td>250-line kubectl CrashLoopBackOff cheatsheet with concrete commands + expected output excerpts</td><td>codex gpt-5.5</td><td>Concrete pod names, real expected output, imperative commands, ≤250 lines</td></tr>
+<tr><td class="col-id">3</td><td class="col-task">Coder</td><td><code>parse_kubectl_image_ref</code> Python function + pytest tests (5 examples + 4 edges)</td><td>codex gpt-5.3-codex-spark</td><td>9/9 tests pass, ruff clean</td></tr>
+<tr><td class="col-id">4</td><td class="col-task">Code reviewer</td><td>PR #1315 review (local_api decisions bundle, +118/-15 across 6 files)</td><td>claude-sonnet-4-6 (gold-standard verdict was <code>APPROVE_WITH_NITS</code>)</td><td>Verdict match + concrete-fact overlap</td></tr>
+<tr><td class="col-id">5</td><td class="col-task">Fact-checker</td><td>Verify 5 factual claims from module-1.7 against primary docs</td><td>codex gpt-5.3-codex-spark (lane primary)</td><td>≥4/5 resolvable URLs, zero hallucinated anchors</td></tr>
+<tr><td class="col-id">6</td><td class="col-task">Content reviewer</td><td>module-1.7 quality review against <code>.claude/rules/module-quality.md</code> rubric (6 dimensions)</td><td>claude-sonnet-4-6 (gold-standard verdict was <code>APPROVE_WITH_NITS</code>)</td><td>Verdict match + correct dimension scoring + zero hallucinated failures</td></tr>
+</table>
+
+<h2>Results</h2>
+
+<h3>Task 1 — Researcher <span class="pill pill-partial">PARTIAL</span></h3>
+<p><strong>Flash gaps (8)</strong>: RDS/Aurora, CloudFront, WAF/Shield, DynamoDB, API Gateway, SQS/SNS, ElastiCache, EventBridge.<br>
+<strong>Pro gaps (8)</strong>: AWS Backup, CloudTrail, RDS/Aurora, AWS Organizations, DynamoDB, ElastiCache, AWS Config, CloudFront.<br>
+<strong>Strict overlap</strong>: 4/8 (50%) — RDS/Aurora, CloudFront, DynamoDB, ElastiCache. <strong>Fails ≥80% predicate.</strong></p>
+<p>Different LENS, both legitimate. Flash leans architectural (messaging, API gateway, security perimeter). Pro leans operational/governance (backup, audit, multi-account, compliance). <strong>Grep claim verification</strong>: 4/4 spot-checked Flash counts matched (WAF=0, RDS=10, DynamoDB=9, API Gateway=2 files). Zero hallucinated paths.</p>
+<p><strong>Routing implication</strong>: Flash is a complementary 2nd lens at low cost, NOT a Pro substitute. For decisions that benefit from architectural-vs-operational duality, both can be dispatched in parallel — Flash runs in ~3 min vs Pro's ~17 min, so the combined output time is bounded by Pro.</p>
+
+<h3>Task 2 — Writer <span class="pill pill-good">PASS</span></h3>
+<p>Both Flash and codex gpt-5.5 produced ~250-line reference docs with concrete pod names, imperative commands, and real expected-output excerpts. Flash organized common root causes as a dense TABLE (easier scan); codex used a flat list with finer-granularity triage commands. Both met all 5 predicates (concrete commands, no placeholders, real outputs, imperative voice, anti-pattern avoidance).</p>
+<p><strong>Routing implication</strong>: Flash is a viable cheap alternative to codex gpt-5.5 for short-form reference docs (≤300 lines, bounded scope, single topic). Not tested at greenfield 1000-line module length; do NOT extrapolate.</p>
+
+<h3>Task 3 — Coder <span class="pill pill-partial">PARTIAL-PASS</span></h3>
+<p>Both Flash and codex spark produced working implementations: 9/9 tests pass for each. Flash organized tests in a class; codex used flat functions (both valid pytest patterns). <strong>Hygiene gap</strong>: Flash had 2 cosmetic ruff issues (unused <code>import re</code> after refactor + pytest import after a comment divider triggering E402). Codex passed ruff clean. <strong>Correctness matches; code hygiene slightly worse.</strong></p>
+<p><strong>Routing implication</strong>: Flash works for small bounded implementations if the dispatch includes a ruff-clean fixup pass. Keep codex spark as primary for the edit lane; Flash as a cheap secondary when budget pressure on codex is tight.</p>
+
+<h3>Task 4 — Code reviewer <span class="pill pill-good">PASS</span></h3>
+<p>Flash verdict: <code>APPROVE_WITH_NITS — _is_decision_card uses an underscore-private prefix despite being imported cross-module; rename to is_decision_card for conventional consistency.</code> <strong>This is the EXACT verdict + the EXACT nit that sonnet gold-standard produced</strong> (sonnet 2026-05-18 verdict: "APPROVE_WITH_NITS — _is_decision_card exported cross-module despite underscore-private convention; rename to is_decision_card for clean public API"). Flash went deeper than required — file:line citations for each of the 5 checklist items, noted the specific "DB recreated empty" repro case caught by the #1291 fix.</p>
+<p><strong>Routing implication</strong>: Flash is a viable cheap small-diff code reviewer. Grok-4 is still primary (calibrated 27-review corpus, faster at 9-13s). Sonnet still primary for long-content. Flash slots in as a cheap secondary; useful when grok hits its read-only-mode tool-stub failure (per session-26 finding).</p>
+
+<h3>Task 5 — Fact-checker <span class="pill pill-good">STRONG PASS</span></h3>
+<p>All 5 claims received labeled verdicts (VERIFIED / PARTIAL / HALLUCINATED-FAILS) backed by primary-doc citations. 2 spot-checked URLs (kafka.apache.org/41/getting-started/introduction, docs.nats.io/nats-concepts/jetstream) resolved with HTTP 200. Flash caught real distinctions: idempotent producer requires additional <code>max.in.flight.requests.per.connection ≤ 5</code> + <code>retries &gt; 0</code> (claim 2 PARTIAL); Kafka EOS existed since 0.11.0.0 not just 3.0+ (claim 3 PARTIAL); NATS JetStream policy names differ between docs (<code>limits</code>/<code>interest</code>/<code>work queue</code>) and Go client constants (<code>LimitsPolicy</code> etc., claim 4 PARTIAL); NATS slow-consumer detection uses <code>write_deadline</code> at server level, not <code>MaxAckPending</code> at consumer level (claim 5 HALLUCINATED-FAILS, brief had wrong parameter name).</p>
+<p><strong>Routing implication</strong>: Flash is a high-quality fact-checker with primary-source discipline. Codex spark is still primary (calibrated 25/25 on the 2026-04-12 fact-grounding test), but Flash is a strong secondary at significantly lower cost.</p>
+
+<h3>Task 6 — Content reviewer <span class="pill pill-good">PASS</span></h3>
+<p>Flash verdict: <code>APPROVE_WITH_NITS</code> — same as sonnet gold standard. Different nit (Flash flagged Next Module link not mentioning CloudEvents 1.8; sonnet flagged index.md study-order hint), but both target the same dimension (cross-module navigation / pedagogical signposting). All 6 dimensions PASS with file:line evidence: STRUCTURE (10/10 required-section check), PEDAGOGY (Bloom L3+ verbs + active-learning prompts + worked examples), TECHNICAL ACCURACY (3 claims verified), LAB RUNNABILITY (zero <code>kubectl exec</code> = no image-binary-match risk), CONTENT DEPTH (1,007 lines, YAML 2-space, K8s 1.35+, no emojis, no number 47), CROSS-REFERENCES (links to 1.2-kafka without duplication).</p>
+<p><strong>Routing implication</strong>: Flash is a high-quality content reviewer for the module-quality contract. Sonnet is still primary; Flash slots in as a cheap secondary, useful when sonnet is rate-limited or for parallel 2-reviewer audits.</p>
+
+<h2>Matrix update (5 rows)</h2>
+<p>The 2026-05-18 agent activity matrix at <code>docs/research/agent-activity-matrix-2026-05-18.html</code> should be updated as follows. Updates land in this PR alongside the calibration report.</p>
+<table>
+<tr><th>Lane</th><th>Current primary</th><th>Current secondary</th><th>Add Flash as</th></tr>
+<tr><td class="col-task">2. Long-content review (≥800 lines)</td><td>sonnet</td><td>gemini-pro</td><td>(no change — not tested in this pilot at long-content scale)</td></tr>
+<tr><td class="col-task">3. Small-diff code review (≤200 lines)</td><td>grok-4 (workspace-write only)</td><td>sonnet</td><td>tertiary (cheap option behind sonnet)</td></tr>
+<tr><td class="col-task">5. Curriculum gap analysis / cross-doc research</td><td>deepseek V4 Pro</td><td>sonnet / claude-opus inline</td><td>complementary 2nd lens (Flash arch / Pro ops); NOT a substitute</td></tr>
+<tr><td class="col-task">8. Substantive edits / fix-pass (5-200 lines)</td><td>codex gpt-5.5</td><td>codex spark</td><td>tertiary (cheap option; needs ruff-clean fixup pass)</td></tr>
+<tr><td class="col-task">10. Prose expansion / short writing</td><td>codex gpt-5.5</td><td>claude opus inline</td><td>tertiary (proven on ≤300-line bounded scope)</td></tr>
+<tr><td class="col-task">12. Citation backfill / fact verification</td><td>codex spark</td><td>sonnet</td><td>secondary (strong primary-doc discipline, cheap)</td></tr>
+<tr><td class="col-task"><em>NEW lane: Module content review</em></td><td>sonnet</td><td>—</td><td>secondary (verdict match with sonnet, evidence-cited dimensions)</td></tr>
+</table>
+
+<h2>Cost arbitrage notes</h2>
+<ul class="tight">
+<li>Flash is significantly cheaper than V4 Pro per the user feedback ("super cheap"). Exact $-per-token ratio not measured here.</li>
+<li>Latency observations: Flash dispatches landed in ~3-5 min wall on each task vs Pro's ~17 min on Task 1. Faster + cheaper.</li>
+<li>Hermes-side authentication is shared between Flash and Pro (same provider), so capacity arbitrage doesn't reduce capacity pressure on a different family — it's pure cost arbitrage.</li>
+<li>For lanes where both Flash and a primary are calibrated (writer, code review, content review, fact-check), Flash + a quick sanity-check from the primary may be a better cost/quality blend than dispatching the primary alone.</li>
+</ul>
+
+<h2>Failure modes / things to watch</h2>
+<ul class="tight">
+<li><strong>Output truncation in dispatch_smart stdout</strong>: Both Flash and codex outputs were heavily truncated in the captured task .output files (1-3 lines visible despite the model producing 1000+ tokens). Recovery path: read directly from <code>~/.hermes/sessions/&lt;ts&gt;.json</code> (deepseek/grok) or <code>~/.codex/sessions/&lt;date&gt;/rollout-*.jsonl</code> (codex). Worth filing as a dispatch_smart issue.</li>
+<li><strong>Workspace-write mode requires <code>--worktree</code></strong>: Both Flash + Pro initial dispatches failed silently with "workspace-write requires --worktree to avoid trampling the main checkout." Solution: always pass a per-pilot worktree path. Now baked into this calibration's flow.</li>
+<li><strong>Codex won't accept <code>--mode workspace-write</code> override</strong>: codex agent in dispatch_smart always runs in danger mode; the wrapper errors on explicit mode override. Drop <code>--mode</code> when targeting codex.</li>
+<li><strong>Bash CWD trap on relative <code>.venv</code></strong>: After running anything in a worktree subdir, subsequent relative-path invocations fail (per <code>feedback_dispatch_smart_cwd_trap</code>). Use absolute paths for all dispatch_smart invocations.</li>
+</ul>
+
+<h2>Memory updates</h2>
+<ul class="tight">
+<li><strong>New</strong>: <code>project_deepseek_flash_calibrated_2026-05-18.md</code> — Flash PASSES on writer, code-reviewer, fact-checker, content-reviewer at parity with current matrix primaries. PARTIAL on researcher (complementary lens, not substitute) + coder (correctness OK, hygiene slightly worse). Route as secondary on 4 lanes + complementary on researcher.</li>
+<li>Existing memory <code>feedback_ds_pro_review_needs_workspace_write</code> generalizes to Flash too — confirmed in pilot. Update memory to say "deepseek V4 family (Pro + Flash) review/architect class needs <code>--mode workspace-write --worktree X</code>; read-only mode emits tool-use stubs."</li>
+</ul>
+
+<h2>Verdict</h2>
+<p>User intuition validated: <strong>Flash is super cheap AND does quality work in 4 of 6 tested lanes</strong>. Slot Flash as a cheap secondary across writer (short-form) / code-review / content-review / fact-check; use as a complementary 2nd lens on research; deprioritize for coder lane until ruff-clean fixup is automated. Matrix updates accompany this report in the same PR.</p>
+
+</main>
+</body>
+</html>

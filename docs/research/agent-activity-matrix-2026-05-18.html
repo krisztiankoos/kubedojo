@@ -59,7 +59,7 @@
 <tr><td class="agent">codex</td><td><code>gpt-5.5</code> (writer / refactor). <code>gpt-5.3-codex-spark</code> (cheap edit). <code>gpt-5.4-mini</code> (search/read). All via <code>codex exec</code>.</td><td><code>danger</code> for git/gh ops; <code>workspace-write</code> for plain code edits; <code>read-only</code> for triage</td><td>Greenfield content writer (with action-first prompt + minimize-search), multi-file refactor, fix-pass on review feedback, has 10x tier window (expired 2026-05-17)</td><td>Weekly cap pressure — see <code>feedback_codex_budget_prefer_gemini</code>.</td></tr>
 <tr><td class="agent">gemini</td><td><code>gemini-3.1-pro-preview</code> (UK translation, deliberation). <code>gemini-3-flash-preview</code> exists but DQ'd for code review.</td><td>OAuth via gemini-cli; MCP RAG for learn-ukrainian</td><td>Ukrainian translation (production), gap-analysis when deepseek capped, deliberation in <code>ab discuss</code></td><td>OAuth burns under heavy use; reserve for actual UK work.</td></tr>
 <tr><td class="agent">grok</td><td><code>grok-4</code> via <code>hermes -z --provider xai-oauth</code>. <code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code>.</td><td><code>workspace-write</code> standard; <code>read-only</code> for review-only paths</td><td>Small-diff code review on lab-runnability + citation-forced verifier paths. 9-13s latency.</td><td>xAI OAuth, no separate cap from chat.</td></tr>
-<tr><td class="agent">deepseek</td><td><code>deepseek V4 Pro</code> (cross-doc research). <code>V4 Flash</code> sibling exists. Via dispatch_smart adapter.</td><td><code>workspace-write</code> MANDATORY for review/research (read-only emits tool-use stubs, see <code>feedback_ds_pro_review_needs_workspace_write</code>)</td><td>Curriculum gap analysis with grep-cited findings, cross-doc synthesis, long-form research output (17 min &times; 41 KB on the 2026-05-17 calibration)</td><td>Long latency (~15-20 min/report) but thorough. Not weekly-capped against chat or codex.</td></tr>
+<tr><td class="agent">deepseek</td><td><code>deepseek V4 Pro</code> (cross-doc research, long-form). <code>deepseek V4 Flash</code> calibrated 2026-05-18 (#1314): PASS on writer / code-review / fact-check / content-review; PARTIAL on researcher (complementary lens) + coder (hygiene gap). Both via dispatch_smart adapter.</td><td><code>workspace-write</code> MANDATORY for review/research on BOTH Pro and Flash (read-only emits tool-use stubs, see <code>feedback_ds_pro_review_needs_workspace_write</code>). Always pass <code>--worktree</code>.</td><td>Pro: cross-doc research, long-form synthesis, grep-cited gap analysis. Flash: ~3-5 min wall, super cheap, viable cheap secondary on 4 lanes (see calibration report).</td><td>Pro: long latency (~15-20 min/report) but thorough. Flash: fast + cheap; routes as secondary on lanes 3, 8, 10, 12 + new row 13.</td></tr>
 </table>
 
 <h2>Activity matrix (12 lanes)</h2>
@@ -100,13 +100,13 @@
 
 <tr>
   <td class="col-activity">3. Small-diff code review (≤200 lines, code+lab focus)</td>
-  <td><span class="pill pill-good">primary</span> grok-4 (<code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code>)</td>
+  <td><span class="pill pill-good">primary</span> grok-4 (workspace-write only — read-only deflects with 49-char tool-stub per session-26 finding)</td>
   <td><span class="pill pill-partial">secondary</span> claude-sonnet-4-6 (review-class)</td>
-  <td><span class="pill pill-gap">tertiary</span> gemini-3.1-pro-preview</td>
-  <td><span class="pill pill-dq">DQ</span> gemini-3-flash-preview; deepseek-pro read-only sandbox</td>
-  <td>2026-05-17 (batch-4 calibration)</td>
-  <td>27 reviews / 26 valid verdicts (1 confirmed false-negative on PR #1257)</td>
-  <td><code>project_grok_primary_reviewer_calibrated_2026-05-17</code> + <code>audit/2026-05-18-grok-primary-calibration/REPORT.html</code></td>
+  <td><span class="pill pill-gap">tertiary</span> deepseek V4 Flash (cheap, 2026-05-18 calibration: verdict match with sonnet on PR #1315) OR gemini-3.1-pro-preview</td>
+  <td><span class="pill pill-dq">DQ</span> gemini-3-flash-preview; deepseek-pro/flash read-only sandbox (use workspace-write); grok-4 read-only</td>
+  <td>2026-05-17 (grok batch-4) + 2026-05-18 (Flash #1314 Task 4)</td>
+  <td>grok 27/26 valid; Flash 1/1 verdict-match with sonnet</td>
+  <td><code>project_grok_primary_reviewer_calibrated_2026-05-17</code> + <code>docs/research/calibration-deepseek-flash-2026-05-18.html</code></td>
 </tr>
 
 <tr>
@@ -124,11 +124,11 @@
   <td class="col-activity">5. Curriculum gap analysis / cross-doc research</td>
   <td><span class="pill pill-good">primary</span> deepseek V4 Pro (workspace-write, mandatory)</td>
   <td><span class="pill pill-partial">secondary</span> claude opus inline (post-2026-06-15) / claude-sonnet-4-6 dispatch (pre-flip)</td>
-  <td><span class="pill pill-gap">tertiary</span> gemini-3.1-pro-preview (less rigorous citations)</td>
+  <td><span class="pill pill-gap">complementary 2nd lens</span> deepseek V4 Flash (2026-05-18 calibration: 4/8 = 50% overlap with Pro — architectural lens vs Pro's operational lens; not a substitute) · gemini-3.1-pro-preview (less rigorous citations)</td>
   <td><span class="pill pill-dq">DQ</span> grok-4 (hallucinated path on first verdict, 44s vs deepseek's 17 min — see <code>feedback_grok_curriculum_gap_analysis_dq</code>); gemini-3-flash (priors / drift)</td>
-  <td>2026-05-17 (head-to-head grok-vs-deepseek)</td>
-  <td>1 brief, 2 agents in parallel — deepseek 7 grep-cited gaps, grok 3 plausible/unverified + 1 hallucinated path</td>
-  <td><code>feedback_grok_curriculum_gap_analysis_dq</code></td>
+  <td>2026-05-17 (grok-vs-Pro) + 2026-05-18 (Pro-vs-Flash)</td>
+  <td>Pro: 7 grep-cited gaps; Flash: 8 grep-cited (50% overlap, 4/4 grep verified)</td>
+  <td><code>feedback_grok_curriculum_gap_analysis_dq</code> + <code>docs/research/calibration-deepseek-flash-2026-05-18.html</code></td>
 </tr>
 
 <tr>
@@ -157,11 +157,11 @@
   <td class="col-activity">8. Substantive edits / fix-pass on review feedback (5-200 lines)</td>
   <td><span class="pill pill-good">primary</span> codex gpt-5.5 (danger mode, per-issue worktree)</td>
   <td><span class="pill pill-partial">secondary</span> codex gpt-5.3-codex-spark (cheap edit class when below cap)</td>
-  <td>—</td>
+  <td><span class="pill pill-gap">tertiary</span> deepseek V4 Flash (2026-05-18: 9/9 tests pass on parse_kubectl_image_ref, 2 ruff nits — needs cleanup pass)</td>
   <td><span class="pill pill-dq">DQ</span> claude opus inline pre-2026-06-15 (per <code>feedback_dispatch_codex_for_code_changes</code> — 30% weekly burn from inline work)</td>
-  <td>2026-05-18 (Cloud Custodian fix-pass, 2 patches, ~2 min)</td>
+  <td>2026-05-18 (Flash #1314 Task 3 + Cloud Custodian fix-pass session 24)</td>
   <td>dozens / week</td>
-  <td><code>feedback_dispatch_codex_for_code_changes</code> + session-24 trail</td>
+  <td><code>feedback_dispatch_codex_for_code_changes</code> + <code>docs/research/calibration-deepseek-flash-2026-05-18.html</code></td>
 </tr>
 
 <tr>
@@ -176,14 +176,14 @@
 </tr>
 
 <tr>
-  <td class="col-activity">10. Prose expansion (gemini draft → full depth)</td>
+  <td class="col-activity">10. Prose expansion / short-form writing (≤300 lines bounded scope)</td>
   <td><span class="pill pill-good">primary</span> codex gpt-5.5 (danger mode, default expander since 2026-04-29)</td>
-  <td><span class="pill pill-partial">secondary</span> claude opus inline (source-fidelity reviewer + expansion fallback)</td>
+  <td><span class="pill pill-partial">secondary</span> claude opus inline (source-fidelity reviewer + expansion fallback) · deepseek V4 Flash (2026-05-18: 250-line cheatsheet matches codex gpt-5.5 quality on bounded scope)</td>
   <td>—</td>
-  <td><span class="pill pill-dq">DQ</span> codex on strict-source content WITHOUT explicit "no meta-diction" prompt — leaks "the contract / Yellow / anchor" diction (see <code>feedback_codex_prose_meta_diction_leak</code>)</td>
-  <td>2026-04-29 (#394 prose pivot)</td>
-  <td>multiple chapter expansions</td>
-  <td><code>feedback_codex_default_prose_expander</code></td>
+  <td><span class="pill pill-dq">DQ</span> codex on strict-source content WITHOUT explicit "no meta-diction" prompt — leaks "the contract / Yellow / anchor" diction (see <code>feedback_codex_prose_meta_diction_leak</code>). Do NOT extrapolate Flash to greenfield 1000-line modules — only tested at ≤300 lines.</td>
+  <td>2026-04-29 (#394 prose pivot) + 2026-05-18 (Flash #1314 Task 2)</td>
+  <td>multiple chapter expansions + 1 Flash bounded-scope reference doc</td>
+  <td><code>feedback_codex_default_prose_expander</code> + <code>docs/research/calibration-deepseek-flash-2026-05-18.html</code></td>
 </tr>
 
 <tr>
@@ -200,12 +200,23 @@
 <tr>
   <td class="col-activity">12. Citation backfill / fact verification</td>
   <td><span class="pill pill-good">primary</span> codex gpt-5.3-codex-spark (fact-grounding role)</td>
-  <td><span class="pill pill-partial">secondary</span> claude-sonnet-4-6</td>
+  <td><span class="pill pill-partial">secondary</span> deepseek V4 Flash (2026-05-18: 5/5 evidence-cited verdicts, caught real config-name + version-history errors, 2/2 URLs spot-resolved)</td>
+  <td><span class="pill pill-gap">tertiary</span> claude-sonnet-4-6</td>
+  <td><span class="pill pill-dq">DQ</span> gemini (hallucinates anchors per <code>feedback_gemini_hallucinates_anchors</code>); grok (truncated-context misreads per <code>feedback_grok_truncated_diff_context</code>); gemini-3-flash-preview</td>
+  <td>2026-04-12 (codex spark) + 2026-05-18 (Flash #1314 Task 5)</td>
+  <td>codex spark 25/25; Flash 5/5 with primary-doc citations</td>
+  <td><code>docs/research/fact-grounding-calibration-2026-04-12.md</code> + <code>docs/research/calibration-deepseek-flash-2026-05-18.html</code></td>
+</tr>
+
+<tr>
+  <td class="col-activity">13. Module content review (pedagogy + rubric, NOT code review)</td>
+  <td><span class="pill pill-good">primary</span> claude-sonnet-4-6 (dispatch_smart review on module-quality.md rubric)</td>
+  <td><span class="pill pill-partial">secondary</span> deepseek V4 Flash (2026-05-18: verdict match with sonnet on module-1.7, 6/6 dimensions PASS with file:line evidence)</td>
   <td>—</td>
-  <td><span class="pill pill-dq">DQ</span> gemini (hallucinates anchors per <code>feedback_gemini_hallucinates_anchors</code>); grok (truncated-context misreads per <code>feedback_grok_truncated_diff_context</code>); flash variants</td>
-  <td>2026-04-12 (fact-grounding calibration, 25/25 perfect)</td>
-  <td>fact-ledger backfill, multiple modules</td>
-  <td><code>docs/research/fact-grounding-calibration-2026-04-12.md</code></td>
+  <td><span class="pill pill-dq">DQ</span> grok-4 (deflects at 7s on long content per session-24); gemini-3-flash-preview (insufficient on lab-runnability per <code>feedback_never_flash_for_code_review</code>); codex (lane is content not code)</td>
+  <td>2026-05-18 (session 26 sonnet runs + Flash #1314 Task 6)</td>
+  <td>sonnet 4/4 actionable verdicts; Flash 1/1 verdict-match</td>
+  <td>session-26 handoff dispatch trail + <code>docs/research/calibration-deepseek-flash-2026-05-18.html</code></td>
 </tr>
 
 </table>
