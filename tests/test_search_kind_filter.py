@@ -13,7 +13,7 @@ from local_api.routes import decisions, search as search_route
 def _seed_search_corpus(repo_root: Path, db_path: Path) -> None:
     decisions_dir = repo_root / "docs" / "decisions"
     decisions_dir.mkdir(parents=True)
-    (decisions_dir / "choice.md").write_text(
+    (decisions_dir / "2026-05-17-choice.md").write_text(
         "# Searchable Decision\n\nfiltertoken in decision body\n",
         encoding="utf-8",
     )

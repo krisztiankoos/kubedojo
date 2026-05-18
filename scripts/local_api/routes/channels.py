@@ -11,12 +11,14 @@ from typing import Any, Callable
 from urllib.parse import parse_qs, unquote
 
 try:
+    from local_api.routes.decisions import _is_decision_card
     from local_api.routes.ui_fragments import (
         AFK_NOTIFY_CSS,
         render_afk_notify_markup,
         render_search_widget,
     )
 except ModuleNotFoundError:
+    from scripts.local_api.routes.decisions import _is_decision_card
     from scripts.local_api.routes.ui_fragments import (
         AFK_NOTIFY_CSS,
         render_afk_notify_markup,
@@ -146,9 +148,15 @@ def find_decision_id_for_thread(repo_root: Path, thread_id: str) -> str | None:
     decisions_dir = repo_root / "docs" / "decisions"
     if not thread_id or not decisions_dir.exists():
         return None
-    for path in sorted(decisions_dir.glob("*.md")):
+    decision_paths = [
+        path
+        for pattern in ("*.md", "pending/*.md")
+        for path in sorted(decisions_dir.glob(pattern))
+        if _is_decision_card(path)
+    ]
+    for path in decision_paths:
         if thread_id in _decision_frontmatter_or_first_section(path):
-            return path.relative_to(repo_root).as_posix()
+            return path.relative_to(decisions_dir).as_posix()
     return None
 
 
