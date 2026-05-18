@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 26b — deepseek V4 Flash calibration + block-direct-commit hook fix</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1120px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:26px;}
+  h2{margin:32px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:20px;}
+  h3{margin:20px 0 8px;font-size:16px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);font-size:13px;}
+  th,td{padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 26b — deepseek V4 Flash calibration + block-direct-commit hook fix</h1>
+<p class="meta">2026-05-18 ~10:50 → 12:30 local · driver: claude opus 4.7 inline · 2 PRs shipped post-session-26 handoff. Counts as a continuation rather than a fresh session — same conversation thread.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> Two follow-up PRs shipped after the session-26 handoff (#1319) merged. <strong>PR #1320</strong>: 6-task deepseek V4 Flash calibration pilot (#1314) — Flash PASSES on writer / code-review / fact-check / content-review; PARTIAL on researcher (complementary lens, not Pro substitute) + coder (correctness OK, 2 ruff nits). Matrix rows 3, 5, 8, 10, 12 updated with Flash positioning + new row 13 (Module content review). <strong>PR #1321</strong>: bug fix in <code>block-direct-commit-on-main.sh</code> — the hook was using harness-reported cwd to decide branch instead of resolving <code>cd X</code> / <code>git -C path</code> from the command. False-positive denied legitimate worktree-branch commits (hit twice in session 26). Parser now walks tokens, 21/21 tests pass (14 existing + 7 new regression). Cumulative session 26 + 26b: <strong>8 PRs merged today</strong>, all green.
+</div>
+
+<h2>What shipped post-session-26</h2>
+<table>
+<tr><th>PR</th><th>Title</th><th>Merge commit</th><th>Closes</th></tr>
+<tr><td class="col-id">#1320</td><td>chore(docs): deepseek V4 Flash calibration report + matrix updates (#1314)</td><td><code>79a12e3f</code></td><td>#1314</td></tr>
+<tr><td class="col-id">#1321</td><td>fix(hooks): block-direct-commit-on-main resolves effective tree from cd / git -C</td><td><code>fb443019</code></td><td>(no GH issue; bug observed twice in session 26)</td></tr>
+</table>
+
+<h2>#1320 — V4 Flash calibration scorecard</h2>
+<table>
+<tr><th>Task</th><th>Role</th><th>Predicate</th><th>Verdict</th></tr>
+<tr><td class="col-id">1</td><td>Researcher (gap analysis vs V4 Pro on Cloud AWS Essentials)</td><td>≥80% overlap, zero hallucinated paths</td><td><span class="pill pill-partial">PARTIAL</span> — 4/8 (50%) overlap; 4/4 grep claims verified. Architectural lens vs Pro's operational lens.</td></tr>
+<tr><td class="col-id">2</td><td>Writer (250-line kubectl CrashLoopBackOff cheatsheet vs codex gpt-5.5)</td><td>Concrete commands + expected output excerpts + ≤250 lines</td><td><span class="pill pill-good">PASS</span> — matches codex quality at bounded scope.</td></tr>
+<tr><td class="col-id">3</td><td>Coder (<code>parse_kubectl_image_ref</code> + 9 tests vs codex spark)</td><td>9/9 tests pass, ruff clean</td><td><span class="pill pill-partial">PARTIAL</span> — 9/9 pass like spark, but 2 cosmetic ruff nits (unused <code>import re</code> + import position).</td></tr>
+<tr><td class="col-id">4</td><td>Code reviewer (PR #1315) vs sonnet gold</td><td>Verdict match + concrete-fact overlap</td><td><span class="pill pill-good">PASS</span> — exact <code>APPROVE_WITH_NITS</code> verdict, same concrete nit (underscore-private cross-module export).</td></tr>
+<tr><td class="col-id">5</td><td>Fact-checker (5 claims from module-1.7 vs codex spark)</td><td>≥4/5 URLs resolvable, zero hallucinated anchors</td><td><span class="pill pill-good">STRONG PASS</span> — 5/5 evidence-cited, 2/2 URLs spot-resolved, caught real config-name (<code>MaxAckPending</code> vs <code>MaxPending</code>) + version-history (EOS existed since 0.11.0.0, not 3.0+) errors.</td></tr>
+<tr><td class="col-id">6</td><td>Content reviewer (module-1.7 quality rubric) vs sonnet gold</td><td>Verdict match + correct dimension scoring</td><td><span class="pill pill-good">PASS</span> — <code>APPROVE_WITH_NITS</code> match, 6/6 dimensions PASS with file:line evidence.</td></tr>
+</table>
+
+<p>Net: <strong>Flash earns secondary/tertiary slots on 5 matrix rows + new Row 13 (module content review)</strong>. User intuition validated ("super cheap, quality on some areas"). Full report at <code>docs/research/calibration-deepseek-flash-2026-05-18.html</code>.</p>
+
+<h2>#1321 — hook fix detail</h2>
+<p><strong>Bug</strong>: <code>.claude/hooks/block-direct-commit-on-main.sh:27</code> used <code>git -C "$CWD" rev-parse --abbrev-ref HEAD</code> where <code>$CWD</code> = harness-reported cwd (workspace project_dir). When the actual <code>git commit</code> target was a worktree (via <code>cd .worktrees/X &amp;&amp;</code> prefix or <code>git -C /worktree</code> flag), the hook checked the wrong branch. False-positive denied legitimate worktree-branch commits.</p>
+
+<p>Hit twice in session 26:</p>
+<ul class="tight">
+<li>Session-26 handoff commit attempt (<code>handoff: session 26 ...</code>) — passed only because the <code>handoff:</code> prefix is in the allowlist.</li>
+<li>PR #1318 fix-pass commit (<code>fix(content): remove invalid ce-datacontenttype...</code>) — passed only because the subject happened to contain <code>(#1309)</code>.</li>
+</ul>
+
+<p><strong>Fix</strong>: parser now walks tokens left-to-right, tracking <code>cd &lt;path&gt;</code> segments and the <code>-C &lt;path&gt;</code> flag on the git invocation. Branch check runs against the resolved effective tree, not the harness cwd. Pre-filter regex loosened to match <code>git -C path commit</code> form (was only matching <code>git[space]commit</code> directly).</p>
+
+<p>21/21 tests pass: 14 existing + 7 new regression covering both directions (worktree commits pass; main commits still denied even when <code>git -C /primary</code> is used from elsewhere).</p>
+
+<h2>Open queue carried into session 27</h2>
+<ol class="tight">
+<li>Matrix row 3 caveat from session-26 (grok read-only-mode deflection) — partially captured in PR #1320 row update, but not as a standalone note. Low-priority polish.</li>
+<li><strong>Wave 2 from #1304</strong>: DVC + Great Expectations + ML repo hygiene bundle. Sequential codex gpt-5.5 dispatches. Reviewer: sonnet primary.</li>
+<li><strong>Verify grok's 3 net-new candidates from session-23</strong>: GitOps reconciliation mental model, SLO/error-budget cross-cut, cross-cloud workload identity federation. Quick grep + module sample (~5 min each).</li>
+<li><strong>Module-1.2-kafka follow-up PR</strong> (session 24 carryover): MirrorMaker2 + partition reassignment + cruise-control (~200-300 lines).</li>
+<li><strong>Add deprecation banners</strong> to legacy gap docs pointing to gap-plan-2026-05-17 as authoritative.</li>
+<li><strong>Add startup guard to <code>local_api.py</code></strong> (3+ sessions on TODO): refuse to bind 8768 if another process already does. One-line fix.</li>
+<li><strong>GrokAdapter unit tests</strong> — round-1 review flagged as non-blocking missing.</li>
+<li><strong>Audit other hooks for the same CWD class of bug</strong>: <code>block-content-merge-without-learner-check.sh</code> and <code>block-bugfix-merge-without-regression-test.sh</code> both call <code>gh pr view</code> from <code>$CWD</code>; need to confirm they don't have the same false-positive pattern.</li>
+<li><strong>Date-bound reminders unchanged</strong>: 2026-06-08 claude-i wrapper pilot, 2026-06-15 agentic-pool flip, 2026-07-13 weekly-double bump expires.</li>
+</ol>
+
+<h2>Cold-start commands for session 27</h2>
+<pre>
+curl -s http://127.0.0.1:8768/api/orient | python3 -m json.tool | head -25
+
+# Verify session-26 + 26b commits on main
+git log origin/main --oneline -10
+# Expect: fb443019 (#1321 hook fix), 79a12e3f (#1320 calibration), 7e572c86 (#1319 session-26 handoff),
+#         ed873909 (#1318 CloudEvents), fe5683d7 (#1317 streaming), 18bfcff5 (#1316 quality bundle),
+#         94f2cdbb (#1315 local_api bundle), e187e743 (#1313 matrix)
+
+# Check open gap-fill issues
+GH_TOKEN="" gh issue list --label gap-fill-2026-05 --state open
+# Expect: #1303 (umbrella, scope-refined), #1304 (backlog)
+
+# Issue #1314 (V4 Flash calibration) is now CLOSED via #1320
+</pre>
+
+<h2>Memory updates</h2>
+<ul class="tight">
+<li><strong>New</strong> (queued, not yet written): <code>project_deepseek_flash_calibrated_2026-05-18.md</code> — Flash PASSES on writer / code-review / fact-check / content-review; PARTIAL on researcher + coder. Route as secondary on 4 lanes + complementary on researcher. Full evidence at <code>docs/research/calibration-deepseek-flash-2026-05-18.html</code>.</li>
+<li><strong>Update existing</strong>: <code>feedback_ds_pro_review_needs_workspace_write</code> should generalize to "deepseek V4 family (Pro + Flash) — workspace-write + worktree required for review/research dispatches."</li>
+<li><strong>No new memory for the hook fix</strong> — the lesson is captured in the test cases + the PR body. If the bug class recurs in another hook, then memory-worthy.</li>
+</ul>
+
+<h2>Notes for the next driver</h2>
+<ul class="tight">
+<li><strong>V4 Flash is now wired as cheap secondary on 4 matrix lanes</strong>. When budget pressure on codex or sonnet hits, route to Flash. Cost: ~3-5 min wall vs Pro's ~17 min on equivalent tasks.</li>
+<li><strong>Hook bug fixed</strong>: you can now <code>cd .worktrees/X &amp;&amp; git commit ...</code> or <code>git -C /abs/worktree commit ...</code> without the hook false-positive denying you. Direct commits to main with non-allowlisted subjects are still blocked.</li>
+<li><strong>Codex stdout truncation</strong> (from session 26) recurred in session 26b — Flash/Pro dispatch outputs were truncated in the captured task .output files. Recovery: read from <code>~/.hermes/sessions/&lt;ts&gt;.json</code> (deepseek/grok) or <code>~/.codex/sessions/&lt;date&gt;/rollout-*.jsonl</code> (codex). Worth filing as a dispatch_smart bug at some point.</li>
+<li><strong>The other quality hooks</strong> (<code>block-content-merge-without-learner-check.sh</code>, <code>block-bugfix-merge-without-regression-test.sh</code>) should be audited for the same CWD-vs-effective-tree class of bug. They call <code>gh pr view</code> with <code>$CWD</code> as a fallback (line 66 of the learner-check hook). Low-priority but worth confirming.</li>
+</ul>
+
+</main>
+</body>
+</html>
