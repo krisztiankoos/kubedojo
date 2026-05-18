@@ -41,38 +41,8 @@ if ! printf '%s\n' "$COMMAND" | grep -Eq '(^|[;&|[:space:]])gh[[:space:]]+pr[[:s
   exit 0
 fi
 
-PR_REF=$(python3 -c '
-import shlex, sys
-command = sys.argv[1]
-try:
-    tokens = shlex.split(command)
-except ValueError:
-    sys.exit(0)
-# Find the `gh pr merge` triple, then walk past it and print the first
-# non-flag token (the PR number / URL / branch). The previous version
-# stopped immediately after matching `gh` and printed the literal `pr`
-# token on the next iteration — which made gh pr view pr 404 and the
-# hook silently fail open for every explicit-PR-ref merge.
-i = 0
-while i < len(tokens):
-    if (
-        tokens[i] == "gh"
-        and i + 2 < len(tokens)
-        and tokens[i + 1] == "pr"
-        and tokens[i + 2] == "merge"
-    ):
-        j = i + 3
-        while j < len(tokens):
-            if tokens[j].startswith("-"):
-                j += 1
-                continue
-            print(tokens[j])
-            sys.exit(0)
-        sys.exit(0)
-    i += 1
-' "$COMMAND" || true)
-
 HOOK_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+PR_REF=$(python3 "$HOOK_DIR/_lib_parse_pr_ref.py" "$COMMAND" 2>/dev/null || true)
 
 if [ -n "${KUBEDOJO_HOOK_GH_JSON:-}" ] && [ -f "${KUBEDOJO_HOOK_GH_JSON}" ]; then
   PR_JSON=$(cat "${KUBEDOJO_HOOK_GH_JSON}")
