@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 27 — Wave 2 mlops bundle (3 modules) + hook audit + reviewer flip</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1120px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:26px;}
+  h2{margin:32px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:20px;}
+  h3{margin:20px 0 8px;font-size:16px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);font-size:13px;}
+  th,td{padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+  .pill-inflight{background:#dde6f5;color:var(--accent);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 27 — Wave 2 mlops bundle (3 modules) + hook audit + reviewer flip</h1>
+<p class="meta">2026-05-18 ~21:10 → 2026-05-19 ~00:15 local · driver: claude opus 4.7 inline · 4 PRs merged, 1 codex dispatch in-flight at handoff. User-initiated handoff after Wave 2 mlops bundle closed.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> Four PRs shipped end-to-end. <strong>PR #1323</strong> hook audit: found and fixed two bypass bugs in <code>block-content-merge-without-learner-check.sh</code> + <code>block-bugfix-merge-without-regression-test.sh</code> — the audited-for CWD-vs-effective-tree class (false-negative-allow direction, same class as session-26b #1321) and a previously latent PR_REF parser bug that made <code>gh pr view pr</code> 404 on every explicit-PR-ref merge, silently failing both gates open since the hooks were originally written. Extracted two shared helpers (<code>_lib_resolve_cwd.py</code>, <code>_lib_parse_pr_ref.py</code>) with 20 new unit tests; total hook tests 75 → 103. Then triaged the 6-issue gap-fill stack the user dropped (#1304/#1303/#1299/#1187/#1186/#1183): closed 4 done (briefs already shipped on main; epics complete), opened #1324 kafka follow-up. Then Wave 2 mlops bundle SHIPPED 3 modules sequentially: <strong>#1325</strong> module 5.7 DVC (1947 lines), <strong>#1326</strong> module 5.8 Great Expectations (2074 lines), <strong>#1327</strong> module 5.9 ML repository hygiene (2115 lines) — total 6,136 net new content lines. <strong>Reviewer flipped grok-4 → deepseek-v4-pro for module-scale reviews</strong> mid-bundle after grok hallucinated 2 must-fix items on T2-10 round-1 (claimed missing Learner check + 1 active-learning prompt; both refuted by evidence); deepseek then gave clean APPROVE / 5-of-5-all-dimensions / file:line evidence on T2-11 and T2-14. New memory <code>feedback_deepseek_pro_for_module_reviews.md</code>. <strong>T2-17 codex dispatch (module 5.10 model-serving traffic patterns) was running at handoff</strong> — task <code>bcu7x17za</code>, started 00:13, expected complete ~00:35.
+</div>
+
+<h2>PRs merged</h2>
+<table>
+<tr><th>PR</th><th>Title</th><th>Merge commit</th><th>Lines</th><th>Closes</th></tr>
+<tr><td class="col-id">#1323</td><td>fix(hooks): merge hooks resolve effective tree + correct PR_REF parser</td><td><code>16c5452f</code></td><td>+556 / -40</td><td>(no GH issue; audit follow-up to #1321)</td></tr>
+<tr><td class="col-id">#1325</td><td>feat(content): module 5.7 Data Versioning with DVC (#1304)</td><td><code>08010321</code></td><td>+1947</td><td>#1304 T2-10</td></tr>
+<tr><td class="col-id">#1326</td><td>feat(content): module 5.8 Great Expectations data quality (#1304)</td><td><code>e4541b5a</code></td><td>+2074</td><td>#1304 T2-11</td></tr>
+<tr><td class="col-id">#1327</td><td>feat(content): module 5.9 ML repository hygiene (#1304)</td><td><code>0ca21215</code></td><td>+2115</td><td>#1304 T2-14</td></tr>
+</table>
+
+<h2>Issue triage</h2>
+<table>
+<tr><th>Issue</th><th>Title</th><th>Action</th><th>Why</th></tr>
+<tr><td class="col-id">#1183</td><td>Curriculum arc: AI-native engineering (harness + Symphony)</td><td>CLOSED</td><td>Both child modules 2.1 + 2.2 already on main (PRs #1220/#1221); children #1184/#1185 closed.</td></tr>
+<tr><td class="col-id">#1186</td><td>Stage-1 brief: gap-engineering-craft.md</td><td>CLOSED</td><td>Brief already shipped (400 lines, all 5 ACs satisfied — Ousterhout/Spinellis/Hunt/Spolsky/HashiCorp anchors, 7-module coverage map, 3-module mini-arc proposal).</td></tr>
+<tr><td class="col-id">#1187</td><td>Stage-1 brief: gap-llm-native-app-synthesis.md</td><td>CLOSED</td><td>Brief already shipped (473 lines, all ACs satisfied — vLLM/KServe/BentoML/DeepEval/Promptfoo anchors, fragmentation-map across 4 existing modules, 3-module mini-arc recommendation).</td></tr>
+<tr><td class="col-id">#1303</td><td>T1 gap-fill: Streaming operations</td><td>CLOSED</td><td>module-1.7 (#1308) + module-1.8 (#1309) already merged; Strimzi deep-dive carried to #1324 as a follow-up enhancement of module-1.2-kafka rather than a new module.</td></tr>
+<tr><td class="col-id">#1324</td><td>Content: module-1.2-kafka follow-up — MM2 + partition reassignment + cruise-control</td><td>OPENED</td><td>Carry-over from session 24 + session 26b queues. Tracks the ~200-300 line enhancement of module-1.2-kafka instead of a fresh Strimzi module.</td></tr>
+<tr><td class="col-id">#1299</td><td>Independent gap analysis (grok + deepseek) → updated gap plan → fill modules</td><td>still OPEN</td><td>Umbrella tracking the children. Stays open while #1304 backlog drains.</td></tr>
+<tr><td class="col-id">#1304</td><td>T2+net-new gap-fill backlog (19 modules, sequential dispatch)</td><td>still OPEN</td><td>Wave 2 mlops bundle (T2-10/T2-11/T2-14) shipped this session; 6 Wave 2 items + 4 Wave 3 + 2 Wave 4 remain. Update comment posted on the issue with the bundle close.</td></tr>
+</table>
+
+<h2>#1323 — hook audit detail</h2>
+
+<h3>Bug 1: CWD class (false-negative-allow direction, same as #1321)</h3>
+<p>Both merge hooks fell back to <code>cd "$CWD" &amp;&amp; gh pr view</code> when no explicit PR number was on the command (auto-detect from current branch). <code>$CWD</code> is the harness-reported cwd — the primary tree on <code>main</code>. When the orchestrator runs <code>cd .worktrees/X &amp;&amp; gh pr merge --squash</code> from primary, the fallback queried the wrong tree, got empty <code>PR_JSON</code>, and exited 0 (fail open). The quality gate was silently bypassed for any worktree-side merge without an explicit PR ref. PR #1321 fixed the false-positive-deny direction of the same bug class on the commit hook; this PR fixes the false-negative-allow direction on the merge hooks.</p>
+<p><strong>Fix:</strong> new helper <code>.claude/hooks/_lib_resolve_cwd.py</code> walks <code>cd &lt;path&gt;</code> segments and returns the effective dir; both hooks use it before invoking <code>gh pr view</code>.</p>
+
+<h3>Bug 2: latent PR_REF parser bug (hooks failed open on EVERY explicit-PR-ref merge)</h3>
+<p>This one was discovered during the audit. The existing inline parser set <code>found = True</code> on the <code>gh</code> token, then on the NEXT iteration consumed the literal <code>pr</code> token and printed it as <code>PR_REF</code>. Verified by direct test:</p>
+<pre>$ python3 -c '&lt;old parser&gt;' "gh pr merge 1234 --squash"
+pr
+$ python3 -c '&lt;new parser&gt;' "gh pr merge 1234 --squash"
+1234</pre>
+<p>In production <code>gh pr view pr</code> 404'd → <code>PR_JSON</code> empty → hook exited 0. Both the content-merge (Learner check) and bugfix-merge (regression test) gates have been silently bypassed for every explicit-PR-ref merge since the hooks were originally written. The existing test suite missed this because all tests use <code>KUBEDOJO_HOOK_GH_JSON</code> to bypass <code>gh</code> entirely.</p>
+<p><strong>Fix:</strong> new helper <code>.claude/hooks/_lib_parse_pr_ref.py</code> skips past the <code>gh pr merge</code> triple before consuming the first non-flag token as <code>PR_REF</code>. Edge cases verified: positional ref, flag-then-ref (<code>gh pr merge --squash 1234</code>), URL ref, <code>cd X &amp;&amp;</code> prefix, <code>sudo gh ...</code>, <code>GH_TOKEN= gh ...</code>, empty ref.</p>
+
+<h3>Test deltas</h3>
+<ul class="tight">
+<li>New file <code>tests/test_hook_lib_resolve_cwd.py</code> — 9 unit tests on the cd-walker.</li>
+<li>New file <code>tests/test_hook_lib_parse_pr_ref.py</code> — 11 unit tests on the PR_REF parser (including explicit regression assertion that the helper never returns the literal <code>pr</code> token).</li>
+<li>Behavioural integration tests added to both merge-hook test files (fake <code>gh</code> shim recording argv + <code>pwd -P</code>): <code>test_explicit_pr_ref_is_passed_to_gh_view</code> + <code>test_no_pr_ref_resolves_cwd_via_cd_segments</code>.</li>
+<li>Total hook tests: 75 → 103, all green.</li>
+</ul>
+
+<h3>Deferred to follow-up (NOT fixed in #1323)</h3>
+<p>Grok round-1 review flagged: <code>gh -R owner/repo pr merge 1</code> and similar interleaved-flag patterns bypass the pre-filter regex at line 35 of each hook. This is a pre-existing third bypass surface (the regex requires <code>gh</code> to be immediately followed by <code>pr merge</code>). Not introduced by this PR; worth a follow-up issue but expanding scope would have muddied the diff.</p>
+
+<h2>Wave 2 mlops bundle (T2-10 / T2-11 / T2-14)</h2>
+<table>
+<tr><th>Task</th><th>Module</th><th>PR</th><th>Lines</th><th>Codex elapsed</th><th>Review</th></tr>
+<tr><td class="col-id">T2-10</td><td>5.7 Data Versioning with DVC</td><td>#1325</td><td>1947</td><td>1321s</td><td>grok round-1 NEEDS_CHANGES (false), round-2 APPROVE_WITH_NITS after evidence</td></tr>
+<tr><td class="col-id">T2-11</td><td>5.8 Great Expectations data quality</td><td>#1326</td><td>2074</td><td>1711s</td><td>deepseek-v4-pro APPROVE high confidence, 5/5 all 8 dims, 0 issues</td></tr>
+<tr><td class="col-id">T2-14</td><td>5.9 ML repository hygiene</td><td>#1327</td><td>2115</td><td>1216s</td><td>deepseek-v4-pro APPROVE high confidence, 5/5 all 8 dims, 0 issues</td></tr>
+</table>
+<p>Pattern per module: open per-issue worktree off <code>origin/main</code> → <code>dispatch_smart.py draft --agent codex --model gpt-5.5 --mode danger</code> with full module-writer brief inline → codex writes module + updates index + writes changelog + commits + pushes + opens PR in one shot → cross-family review → <code>gh pr merge --squash</code> from primary tree → cleanup. Codex independently ran each lab end-to-end (DVC <code>repro</code> + GE Checkpoint + uv/pre-commit setup) before opening the PR. <code>npm run build</code> green for all three.</p>
+
+<h3>Track impact</h3>
+<p>MLOps Discipline track: 6 modules → 9 modules. New cross-link chain 5.7 ↔ 5.8 ↔ 5.9, plus forward-link from 5.8 to 5.9 (fixed in-place during 5.9 dispatch).</p>
+
+<h2>Decision: grok-4 → deepseek-v4-pro for module-scale reviews</h2>
+
+<p><strong>What happened:</strong> grok-4 was the default cross-family reviewer per <code>project_grok_primary_reviewer_calibrated_2026-05-17</code>. Dispatched it on the first Wave 2 module (T2-10 / DVC). Round-1 verdict was NEEDS_CHANGES with two must-fix items:</p>
+<ol class="tight">
+<li>"Missing <code>## Learner check</code> section containing a ≥30-char verbatim blockquote." — FALSE. The Learner check goes in the PR body (per <code>block-content-merge-without-learner-check.sh</code> contract), not the module. The PR body had the section with the 96-char quote, which was verbatim in the module at line ~440.</li>
+<li>"Only one active-learning prompt located; ≥2 required." — FALSE. The module had 3 prompts (lines 248, 474, 1066). Grok grep'd for one pattern and missed the variants.</li>
+</ol>
+<p>Both claims refuted by direct grep evidence. Round-2 dispatch with the evidence flipped grok to APPROVE_WITH_NITS. <strong>Wasted cycle.</strong> This is exactly the failure mode <code>feedback_grok_truncated_diff_context</code> warns about — grok's -U3 diff context window misses scope anchors in 2k-line bodies.</p>
+
+<p>User correction mid-session: <em>"i dont want grok reviewing, why is he the reviewer?"</em> — fair call-out. The grok primary calibration is from the #388 small-diff lab-content slice, not 2k-line module reviews. User chose deepseek-v4-pro for the rest of Wave 2. T2-11 and T2-14 reviews via deepseek-v4-pro were both clean APPROVE with file:line evidence, URL spot-resolution, and PyPI API-surface verification.</p>
+
+<p><strong>New memory:</strong> <code>feedback_deepseek_pro_for_module_reviews.md</code> — pinned to TOP PRIORITY in MEMORY.md. Refines the scope of <code>project_grok_primary_reviewer_calibrated_2026-05-17</code> down to its actual calibrated slice (#388 lab content).</p>
+
+<h2>In-flight at handoff</h2>
+<table>
+<tr><th>Item</th><th>State</th><th>Task ID</th><th>Started</th><th>Worktree</th><th>Branch</th></tr>
+<tr><td>T2-17 module 5.10 production model-serving traffic patterns</td><td><span class="pill pill-inflight">codex writing</span></td><td><code>bcu7x17za</code></td><td>2026-05-19 00:13 local</td><td><code>.worktrees/t2-17-serving-traffic</code></td><td><code>content/t2-17-serving-traffic</code></td></tr>
+</table>
+<p>Codex gpt-5.5 in danger mode. Expected complete ~00:35 (prior 3 dispatches averaged 22 min). Module not yet written to disk at handoff. Output file <code>/var/folders/pd/wvj52r1j3bd4z9y3dfc2k4180000gn/T/codex-runtime-smart-codex-draft-1779142422-2y8yz8kh.txt</code>; harness task output <code>/private/tmp/claude-501/-Users-krisztiankoos-projects-kubedojo/5831c159-f59d-4472-83a3-8d5602601fdf/tasks/bcu7x17za.output</code>.</p>
+
+<h3>How the next driver picks this up</h3>
+<ol class="tight">
+<li><code>/bin/ps -ef | grep codex | grep -v grep</code> — confirm codex still running (or completed).</li>
+<li>If still running, wait for harness completion notification. If completed: <code>tail -30 /private/tmp/claude-501/.../bcu7x17za.output</code> for PR URL + verification summary.</li>
+<li>If PR opened, dispatch deepseek-v4-pro review (NOT grok): <code>dispatch_smart.py review --agent deepseek --worktree /abs/path/.worktrees/t2-17-serving-traffic --mode workspace-write --model deepseek-v4-pro &lt;brief&gt;</code>. Use the T2-14 brief at <code>tasks/b2vzxrfxq.output</code> as a structural template — same 8 dimensions, swap topic-specific notes.</li>
+<li>On APPROVE: <code>cd /primary &amp;&amp; GH_TOKEN="" gh pr merge &lt;N&gt; --squash</code>, then <code>git worktree remove .worktrees/t2-17-serving-traffic</code> + <code>git branch -D content/t2-17-serving-traffic</code> + <code>git pull --ff-only origin main</code>.</li>
+<li>If codex died silently (0-byte runtime + no process): salvage from <code>~/.codex/sessions/2026/05/&lt;day&gt;/rollout-*.jsonl</code> for the relevant timestamp — see <code>feedback_codex_dispatch_sequential</code> + <code>feedback_codex_push_silent_failure</code>.</li>
+</ol>
+
+<h2>Open queue (carried into session 28)</h2>
+
+<h3>#1304 Wave 2 — remaining 5 single-module items + 1 multi-module arc</h3>
+<ul class="tight">
+<li>T2-17 — module 5.10 model-serving traffic patterns — <strong>in flight at handoff</strong></li>
+<li>T2-18 — module 5.11 drift-triggered auto-retraining loop</li>
+<li>T2-19 — module 5.12 CML for ML CI</li>
+<li>T2-20 — Dapr + Buildpacks combined application-definition module (<code>platform/toolkits/</code>)</li>
+<li>T2-23 — HCP Terraform workflow operations (<code>platform/toolkits/infrastructure-networking/iac-tools/</code>)</li>
+<li>T2-13 — Ansible operator arc (4-7 modules) — needs scope breakdown: write a foundational single module and file sub-issues for the rest, OR draft a multi-module dispatch chain</li>
+</ul>
+
+<h3>#1304 Wave 3 — Cloud track (4 items)</h3>
+<ul class="tight">
+<li>T2-15 Azure Event Hub + Event Grid</li>
+<li>T2-16 Azure SQL Database operations</li>
+<li>T2-22 AWS data ingestion + transformation (Kinesis/Glue/Athena/MSK, 2-3 modules)</li>
+<li>T2-24 Azure Backup + Site Recovery</li>
+</ul>
+
+<h3>#1304 Wave 4 — foundational (2 items)</h3>
+<ul class="tight">
+<li>T2-6 Software engineering craft framing module (single module; full 4-7 module arc deferred) — needs <code>astro.config.mjs</code> sidebar entry for <code>prerequisites/engineering-craft/</code> first</li>
+<li>T2-7 LLM-native application engineering arc — brief at <code>docs/research/gap-llm-native-app-synthesis.md</code> recommends a 3-module mini-arc; pick the foundational module to dispatch first</li>
+</ul>
+
+<h3>Other carry-overs</h3>
+<ul class="tight">
+<li>#1324 module-1.2-kafka follow-up (MM2 + partition reassignment + cruise-control, ~200-300 lines)</li>
+<li>Pre-filter regex bypass on <code>gh -R owner/repo pr merge</code> (deferred from #1323; grok round-1 finding)</li>
+<li>Audit other hooks for the same CWD class of bug — partially done this session; <code>block-content-merge-without-learner-check.sh</code> + <code>block-bugfix-merge-without-regression-test.sh</code> covered. Remaining hooks (<code>block-agent-worktree-isolation</code>, <code>block-branch-create-in-primary</code>, <code>block-orchestrator-content-edits</code>) not yet audited but they don't take a CWD payload the same way</li>
+<li>Add startup guard to <code>local_api.py</code> (one-line fix, 4+ sessions on TODO now)</li>
+<li>GrokAdapter unit tests — round-1 review nit, still open</li>
+<li>Update <code>feedback_no_gh_token_unset</code> memory accuracy (claims workaround retired; session 23 confirmed still needed). Was on session 26b queue; remains.</li>
+<li>Add deprecation banners to <code>docs/research/content-gaps-2026-05.md</code> + <code>docs/research/gap-triangulation-roadmap-2026-05.html</code> pointing to <code>gap-plan-2026-05-17.html</code></li>
+<li>Verify grok's 3 net-new curriculum candidates from session-23 (GitOps reconciliation, SLO/error-budget cross-cut, cross-cloud workload identity federation) — quick grep + module sample per <code>feedback_grok_curriculum_gap_analysis_dq</code></li>
+<li>Date-bound: 2026-06-08 claude-i wrapper pilot, 2026-06-15 agentic-pool flip, 2026-07-13 weekly-double bump expires</li>
+</ul>
+
+<h2>Cold-start commands for session 28</h2>
+<pre># 1. Orient (no autopilot expectation here — T2-17 codex may still be running).
+curl -s http://127.0.0.1:8768/api/orient | python3 -m json.tool | head -25
+
+# 2. Check the T2-17 codex dispatch — three states possible.
+/bin/ps -ef | grep codex | grep -v grep | head -3
+ls -la /private/tmp/claude-501/-Users-krisztiankoos-projects-kubedojo/5831c159-f59d-4472-83a3-8d5602601fdf/tasks/bcu7x17za.output
+ls /Users/krisztiankoos/projects/kubedojo/.worktrees/t2-17-serving-traffic/src/content/docs/platform/disciplines/data-ai/mlops/ 2>/dev/null
+# If: process gone + 0-byte task output → codex died silently → salvage from
+#     ~/.codex/sessions/2026/05/19/rollout-*.jsonl with timestamp ≈ 00:13.
+# If: non-zero task output → tail -30 for PR URL and verification summary.
+# If: process still running → wait; estimated complete by 00:35.
+
+# 3. Verify the 4 session-27 commits on origin/main.
+git log origin/main --oneline -8
+# Expect: 0ca21215 (#1327 ML repo hygiene), e4541b5a (#1326 GE),
+#         08010321 (#1325 DVC), 16c5452f (#1323 hook audit), ...
+
+# 4. Open issues snapshot.
+GH_TOKEN="" gh issue list --label gap-fill-2026-05 --state open
+# Expect at minimum: #1299 (umbrella), #1304 (backlog tracker).
+# #1324 (kafka follow-up) was opened this session; #1183/#1186/#1187/#1303 closed.
+
+# 5. Worktrees.
+git worktree list
+# Expect: primary only — plus .worktrees/t2-17-serving-traffic if T2-17 not yet merged/cleaned.
+</pre>
+
+<h2>Memory updates</h2>
+<table>
+<tr><th>File</th><th>Change</th></tr>
+<tr><td><code>feedback_deepseek_pro_for_module_reviews.md</code></td><td><strong>NEW</strong> — for codex-authored content-module reviews (>1k lines), use deepseek-v4-pro NOT grok-4. Grok's diff-context truncation hallucinated 2 must-fix items on T2-10 round-1. Pinned to TOP PRIORITY in <code>MEMORY.md</code>.</td></tr>
+<tr><td><code>MEMORY.md</code></td><td>Added the new feedback to TOP PRIORITY block. No other entries removed.</td></tr>
+</table>
+
+<p>No new memory for the hook audit itself — the lesson is captured in the test cases + PR body. The class of bug ("hooks that read <code>$CWD</code> from the harness payload may need to resolve the effective tree from the command's <code>cd</code>/<code>-C</code> segments") is now known across 3 sibling hooks (commit hook #1321, both merge hooks #1323).</p>
+
+<h2>Hook contract change (informational)</h2>
+<ul class="tight">
+<li>New shared helper <code>.claude/hooks/_lib_resolve_cwd.py</code> — walks <code>cd &lt;path&gt;</code> segments and returns effective dir. Reusable by any future hook that needs to know the effective tree at the point of a target command.</li>
+<li>New shared helper <code>.claude/hooks/_lib_parse_pr_ref.py</code> — extracts the PR ref from a <code>gh pr merge &lt;ref&gt;</code> shell command. Reusable by any future hook that needs to dispatch on PR identity.</li>
+<li>Both helpers are pure-Python, no external deps, called via <code>python3 "$HOOK_DIR/_lib_*.py" "$COMMAND" [args]</code> with stderr suppressed + fallback to original cwd / empty ref on parse failure.</li>
+</ul>
+
+<h2>Notes for the next driver</h2>
+<ul class="tight">
+<li><strong>Use deepseek-v4-pro for module reviews</strong> — not grok-4. Memory <code>feedback_deepseek_pro_for_module_reviews</code>. <code>dispatch_smart.py review --agent deepseek --worktree /abs/path --mode workspace-write --model deepseek-v4-pro</code>. ~3-5 min vs grok's ~30s; the latency is worth not burning a round-trip on hallucinated must-fix items.</li>
+<li>The codex sequential constraint per <code>feedback_codex_dispatch_sequential</code> still applies — don't dispatch a second codex while T2-17 is running.</li>
+<li>Codex dispatches for these mlops modules consistently produce ~2k-line bodies (1947 / 2074 / 2115 / TBD). All passed deepseek 5/5 dimensions. The brief format (5-7 sections × ~90 lines each + lab + cost lens + patterns/anti-patterns + 8 rubric dimensions called out explicitly) is reproducing well.</li>
+<li>If you continue Wave 2 autonomously: next is T2-18 drift-retraining (module 5.11), then T2-19 CML (5.12), then T2-20 Dapr+Buildpacks (toolkits), then T2-23 HCP Terraform, then T2-13 Ansible arc (multi-module — break down into a foundational module + sub-issues first).</li>
+<li>Wave 3 (Cloud) follows the same pattern but the track layout is different — modules go under <code>src/content/docs/cloud/aws-essentials/</code> / <code>azure-essentials/</code> etc. with their own existing index.md tables.</li>
+<li>If grok review is needed for ANY codex-authored content module, treat its NEEDS_CHANGES as suspect until verified — sanity-check with grep / Read before doing a fixup dispatch.</li>
+<li>The <code>## Learner check</code> contract: PR body must have it + the quote must be verbatim in a touched module file. Verified via grep before merge. The hook also enforces this (PR #1323 fixed it to actually work now — before the parser bug, the hook silently bypassed the check entirely).</li>
+</ul>
+
+</main>
+</body>
+</html>
