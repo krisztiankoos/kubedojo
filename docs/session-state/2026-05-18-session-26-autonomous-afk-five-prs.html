@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Session 26 — autonomous AFK run: agent matrix + 2 tech-debt bundles + streaming wave (5 PRs)</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1180px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;font-size:13px;}
+  th{background:#eef2f6;font-weight:600;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+</style>
+</head>
+<body>
+<main>
+
+<h1>Session 26 — autonomous AFK run: agent matrix + 2 tech-debt bundles + 2 streaming modules (5 PRs)</h1>
+<p class="meta">2026-05-18 ~08:50 → 10:40 local · driver: claude opus 4.7 (1M, orchestrator inline) · writer agent: codex gpt-5.5 high (danger, action-first prompt, all writes via dispatch_smart + per-issue worktree) · reviewer: claude-sonnet-4-6 (4/4 attempts clean; grok deflected once on small-diff code review, see below) · admin squash-merges throughout.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> User went AFK after a short clarifying exchange about deepseek V4 Flash calibration. Then full autonomous run per session-25 queue. <strong>5 PRs merged end-to-end</strong>: #1313 agent activity matrix HTML (5 agents × 12 lanes, supersedes 2026-04-12 MD), #1315 local_api decisions tech-debt bundle (#1290 + #1291 + #1292), #1316 quality-pipeline tech-debt bundle (#1293 + #1294 + #1295), #1317 event streaming fundamentals module (1007 lines, #1308), #1318 CloudEvents + EDA module (1188 lines, #1309 — one HIGH sonnet finding orchestrator-inline-fixed in 30s per decision-card exemption). <strong>1 issue filed</strong>: #1314 deepseek V4 Flash 3-task strict-predicate calibration pilot (replaces broader ab-discuss per user redirect). <strong>2,195 net new content lines on main</strong> from the two streaming modules + the matrix doc. <strong>Two new matrix-grade observations</strong> ready for memory: grok-4 read-only mode deflects on small-diff code review with a 49-char tool-use stub (same failure shape as ds-pro read-only); sonnet primary reviewer path remained reliable for both code and 1000+ line content (4/4 actionable verdicts at 25-90s). Clean worktree state at session end.
+</div>
+
+<h2>What shipped this session</h2>
+<table>
+<tr><th>PR</th><th>Title</th><th>Lines</th><th>Reviewer verdict</th><th>Merge commit</th></tr>
+<tr><td class="col-id">#1313</td><td>chore(docs): agent activity matrix 2026-05-18 (5 agents × 12 lanes)</td><td>+292</td><td>docs-precedent, no review (handoff-class artifact)</td><td><code>e187e743</code></td></tr>
+<tr><td class="col-id">#1315</td><td>fix(local_api): decision-card filter + FTS cache + pending-card thread summary (#1290 + #1291 + #1292)</td><td>+118 / -15 (6 files)</td><td>grok deflected (read-only tool-stub) → sonnet <code>APPROVE_WITH_NITS</code> (cosmetic naming)</td><td><code>94f2cdbb</code></td></tr>
+<tr><td class="col-id">#1316</td><td>fix(quality): Russicism uppercase + CLI exit-3 on missing paths + prose-prefixed fence unwrap (#1293 + #1294 + #1295)</td><td>+253 / -29 (8 files)</td><td>sonnet <code>APPROVE</code></td><td><code>18bfcff5</code></td></tr>
+<tr><td class="col-id">#1317</td><td>feat(content): event streaming fundamentals — Kafka vs NATS, ordering, exactly-once, backpressure (#1308)</td><td>+1009 / -1 (2 files)</td><td>sonnet <code>APPROVE_WITH_NITS</code> (index.md study-order hint)</td><td><code>fe5683d7</code></td></tr>
+<tr><td class="col-id">#1318</td><td>feat(content): CloudEvents + event-driven architecture module (#1309)</td><td>+1188 / -2 (3 files; +1 fix-pass commit)</td><td>sonnet flagged 1 HIGH (invalid <code>ce-datacontenttype</code> header) + 1 NIT (backward Next Module nav); both orchestrator-inline-fixed → merged</td><td><code>ed873909</code></td></tr>
+</table>
+
+<h2>GH issue tree this session</h2>
+<table>
+<tr><th>#</th><th>Title</th><th>State</th></tr>
+<tr><td class="col-id">#1290</td><td>local_api/decisions: sidecar README/_template treated as live cards</td><td><span class="pill pill-good">CLOSED via #1315</span></td></tr>
+<tr><td class="col-id">#1291</td><td>local_api/decisions: warm FTS cache leaves recreated DB empty</td><td><span class="pill pill-good">CLOSED via #1315</span></td></tr>
+<tr><td class="col-id">#1292</td><td>local_api/channels: pending decision cards invisible to thread summary</td><td><span class="pill pill-good">CLOSED via #1315</span></td></tr>
+<tr><td class="col-id">#1293</td><td>quality/check_uk_changed: Russicism regex misses uppercase</td><td><span class="pill pill-good">CLOSED via #1316</span></td></tr>
+<tr><td class="col-id">#1294</td><td>quality/check_citations + check_code_blocks: missing explicit paths return exit 0</td><td><span class="pill pill-good">CLOSED via #1316</span></td></tr>
+<tr><td class="col-id">#1295</td><td>quality/extractors: prose-prefixed fenced modules raise ModuleExtractError on odd backtick count</td><td><span class="pill pill-good">CLOSED via #1316</span></td></tr>
+<tr><td class="col-id">#1308</td><td>T1 gap-fill: Event streaming fundamentals</td><td><span class="pill pill-good">CLOSED via #1317</span></td></tr>
+<tr><td class="col-id">#1309</td><td>T1 gap-fill: CloudEvents + event-driven architecture</td><td><span class="pill pill-good">CLOSED via #1318</span></td></tr>
+<tr><td class="col-id">#1314</td><td>Calibration: deepseek V4 Flash 3-task strict-predicate pilot</td><td>OPEN — filed this session, not yet executed</td></tr>
+</table>
+
+<h2>User exchanges that shaped the run</h2>
+<ul class="tight">
+<li><strong>"how many agents are utilized atm?"</strong> — answered: 5 agent families (claude / codex / gemini / grok / deepseek). Just me (claude opus orchestrator inline) active right now.</li>
+<li><strong>"what do you mean deepseek is uncalibrated?"</strong> — clarified: V4 Pro IS calibrated (2026-05-17 head-to-head winner on curriculum gap analysis); V4 Flash is what's uncalibrated. The matrix's "Open calibrations" row covers this; my terse one-liner had collapsed the nuance.</li>
+<li><strong>"flash turns out to be really good actually. you need to calibrate it pls"</strong> — user clarified it's deepseek V4 Flash, super cheap, "can do quality work in some areas." Filed #1314 with 3-task strict-predicate pilot design (gap analysis vs Pro, code review vs grok, citation backfill vs spark). Calibration deferred (requires careful supervision, would have stalled the autonomous AFK queue).</li>
+<li><strong>"i am to work wobt be able to answer, go auto pls"</strong> — confirmation of autonomous mode. Continued queue end-to-end per <code>feedback_overnight_autonomous_codex_chain</code>.</li>
+</ul>
+
+<h2>Pattern observations this session (memory-worthy)</h2>
+<table>
+<tr><th>Pattern</th><th>Evidence</th><th>Memory file to add / update</th></tr>
+<tr><td><strong>Grok-4 deflects in read-only mode on small-diff code review</strong></td><td>PR #1315 grok review (8s, 49 chars): output was literally <code>gh pr view 1315 --json files --jq '.files[].path'</code> — an unfulfilled tool-use stub instead of the review. Same failure shape as DS Pro per <code>feedback_ds_pro_review_needs_workspace_write</code>. The matrix labeled grok as primary for ≤200-line code review, but only with workspace-write OR inlined-diff briefs.</td><td>New: <code>feedback_grok_review_needs_workspace_write_or_inlined_diff</code>. Update matrix row 3 (small-diff code review): primary path needs the workspace-write or inlined-diff caveat.</td></tr>
+<tr><td><strong>Sonnet primary reviewer path delivered 4/4 actionable verdicts at 25-90s</strong></td><td>4 sonnet reviews: PR #1315 (~30s, APPROVE_WITH_NITS), #1316 (~30s, APPROVE), #1317 (~90s, APPROVE_WITH_NITS), #1318 (1 HIGH + 1 NIT). Every verdict had concrete file:line citations. No tool-stub deflections, no timeouts, no hangs. Reliable for both code (small diffs) and long content (1000+ lines).</td><td>Reinforces existing memory <code>feedback_headless_claude_gemini_fallback</code>. No new memory; matrix row 2 already names sonnet as primary for long content.</td></tr>
+<tr><td><strong>Codex stdout truncation on dispatch output</strong></td><td>Bundle 2 (#1316) and streaming #1308 (#1317) dispatches both showed truncated stdout — PR URL line and dispatch-smart preamble were absent. Bundle 1 (#1315) showed everything. Same dispatch wrapper, different outputs. Inconsistent buffer flushing. Worked around by checking <code>gh pr list --head ...</code> directly.</td><td>Operational note. Worth adding to <code>reference_codex_dispatch_gotchas</code> if it recurs.</td></tr>
+<tr><td><strong>Orchestrator-inline fix on HIGH+NIT review feedback in 30s</strong></td><td>PR #1318 sonnet flagged 1 HIGH (invalid CloudEvents header) + 1 NIT (backward Next Module nav). Both were single-line edits in the same module file. Inline Edit + git commit + push took 30s — saved 3-5 min vs dispatching a codex fix-pass. Confirms the decision-card.md exemption pattern.</td><td>Existing memory <code>.claude/rules/decision-card.md</code> already captures this. No new memory; reinforces the pattern.</td></tr>
+<tr><td><strong>Bash cwd leakage between calls after <code>cd .worktrees/X</code></strong></td><td>Hit when committing the matrix doc — first <code>cd .worktrees/activity-matrix</code> succeeded, then subsequent <code>cd .worktrees/activity-matrix</code> failed because cwd was already inside the worktree (relative path resolved wrong). Per <code>feedback_dispatch_smart_cwd_trap</code> sibling. Always use absolute paths or <code>git -C &lt;abs&gt;</code> from the harness.</td><td>Reinforces <code>feedback_dispatch_smart_cwd_trap</code>. Operational note.</td></tr>
+<tr><td><strong>Hook <code>block-direct-commit-on-main.sh</code> reads CWD from harness, not from <code>cd</code> in the command</strong></td><td>Tried <code>cd .worktrees/gap-1309-cloudevents && git commit -m "fix(content):..."</code>. The cd succeeded but the hook saw CWD as primary (which is on main) and blocked. Fix: use <code>git -C /abs/path</code> form so the hook reads the worktree's HEAD branch instead.</td><td>Operational. Add to a <code>reference_hooks_cwd_resolution</code> note if it recurs.</td></tr>
+</table>
+
+<h2>Dispatch trail (full chain, chronological)</h2>
+<table>
+<tr><th>Task</th><th>Dispatch ID</th><th>Outcome</th><th>Wall</th></tr>
+<tr><td>Bundle 1 codex (local_api decisions)</td><td><code>bi629h6me</code></td><td>3 fixes + tests, 11 targeted pytest pass + 170-test pipeline pass. PR #1315 opened cleanly.</td><td>471s</td></tr>
+<tr><td>Bundle 1 grok review (read-only)</td><td><code>b8gxlko92</code></td><td>DEFLECTED — 49-char tool-use stub (<code>gh pr view 1315 ...</code>). Fell back to sonnet.</td><td>8s</td></tr>
+<tr><td>Bundle 1 sonnet review (read-only)</td><td><code>b6p602ta5</code></td><td><code>APPROVE_WITH_NITS</code> (cosmetic: <code>_is_decision_card</code> exported cross-module with underscore-private convention). Concrete file:line analysis for all 3 fixes.</td><td>~30s</td></tr>
+<tr><td>Bundle 2 codex (quality-pipeline trio)</td><td><code>bc2bjucgb</code></td><td>3 fixes + tests, 11 targeted + 27 extractor + 170-test pipeline all green. PR #1316. Stdout truncated; PR URL recovered via gh pr list.</td><td>653s</td></tr>
+<tr><td>Bundle 2 sonnet review</td><td><code>bjv14bvhw</code></td><td><code>APPROVE</code>. Confirmed each fix correctly addresses spec; tests cover all three; no scope creep.</td><td>~30s</td></tr>
+<tr><td>Streaming #1308 codex (event streaming fundamentals)</td><td><code>byyn1jdek</code></td><td>1007-line module + sidebar entry. <code>npm run build</code> passed 2031 pages. PR #1317.</td><td>~16 min</td></tr>
+<tr><td>Streaming #1308 sonnet review</td><td><code>blarbmqyc</code></td><td><code>APPROVE_WITH_NITS</code> (index.md study-order hint for learners who follow numeric order).</td><td>~90s</td></tr>
+<tr><td>Streaming #1309 codex (CloudEvents + EDA)</td><td><code>bkcq91tlp</code></td><td>1188-line module + sidebar entry. PR #1318. Stdout again truncated.</td><td>~17 min</td></tr>
+<tr><td>Streaming #1309 sonnet review</td><td><code>b5m1pbgn9</code></td><td>1 HIGH (line 849: invalid <code>ce-datacontenttype</code> HTTP binding header per CloudEvents spec) + 1 NIT (line 1171: Next Module link points backward to module-1.3 instead of forward to MLOps).</td><td>~60s</td></tr>
+<tr><td>Streaming #1309 orchestrator inline fix</td><td>(no dispatch)</td><td>Both review issues fixed inline via Edit tool: removed the invalid header (1-line delete) + forward-linked Next Module to MLOps discipline (1-line rewrite). Commit <code>6696e2e8</code>, pushed via <code>git -C</code>. PR re-merged.</td><td>30s</td></tr>
+</table>
+
+<h2>Worktree state at session end</h2>
+<p>All session-26 worktrees cleaned up. <code>git worktree list</code> shows primary tree only.</p>
+
+<h2>Memory updates queued this session (not yet written)</h2>
+<ul class="tight">
+<li><strong>New: <code>feedback_grok_review_needs_workspace_write_or_inlined_diff.md</code></strong> — Grok-4 deflects on review tasks in read-only mode with an unfulfilled tool-use stub (verified PR #1315). Same shape as DS Pro per <code>feedback_ds_pro_review_needs_workspace_write</code>. Fix: pass <code>--mode workspace-write</code> OR inline the diff in the review brief. Matrix row 3 ("Small-diff code review (≤200 lines)") needs a caveat note added.</li>
+<li><strong>Update: <code>docs/research/agent-activity-matrix-2026-05-18.html</code> row 3</strong> — add the read-only caveat under the grok-4 primary cell. Operational fix-up; not strictly memory, but the matrix needs updating before the next batch dispatch chooses grok review.</li>
+<li><strong>Reinforces existing</strong>: <code>feedback_headless_claude_gemini_fallback</code> (sonnet fallback worked again, 4/4 reviews), <code>feedback_dispatch_smart_cwd_trap</code> (cwd leakage in single-bash multi-cd), <code>feedback_codex_writer_needs_search</code> (action-first prompts continue to work; 2/2 streaming modules landed clean).</li>
+</ul>
+
+<h2>Open queue for session 27</h2>
+<ol class="tight">
+<li><strong>Execute deepseek V4 Flash calibration pilot (#1314)</strong> — 3 head-to-head tasks (gap analysis vs Pro, code review vs grok, citation backfill vs spark). Each predicate is falsifiable. 2+ passes → Flash routed to that lane for cost arbitrage; 0-1 passes → DQ recorded. ~30-45 min focused.</li>
+<li><strong>Update matrix row 3</strong> with grok read-only caveat (one-line edit to <code>docs/research/agent-activity-matrix-2026-05-18.html</code>).</li>
+<li><strong>Wave 2 from #1304</strong>: DVC + Great Expectations + ML repo hygiene bundle. Sequential codex gpt-5.5 dispatches. Reviewer: sonnet primary (matches lane per session-26 calibration).</li>
+<li><strong>Verify grok's 3 net-new candidates from session-23</strong> (still pending): GitOps reconciliation mental model, SLO/error-budget cross-cut, cross-cloud workload identity federation. Quick grep + module sample (~5 min each).</li>
+<li><strong>Module-1.2-kafka follow-up</strong> (from session 24 carryover): add MirrorMaker2 + partition reassignment + cruise-control sections (~200-300 lines) OR backlog. Session 24's recommendation was the former.</li>
+<li><strong>Add deprecation banners</strong> to legacy gap docs pointing to <code>docs/research/gap-plan-2026-05-17.html</code> as authoritative. 2 surgical edits in <code>docs/research/content-gaps-2026-05.md</code> + <code>docs/research/gap-triangulation-roadmap-2026-05.html</code>.</li>
+<li><strong>Add startup guard to <code>local_api.py</code></strong> — still on TODO across 3+ sessions. Refuse to bind 8768 if another process already binds it. One-line fix.</li>
+<li><strong>Add unit tests for <code>GrokAdapter</code></strong> — round-1 review of PR #1245 flagged as non-blocking missing. ~30 min focused codex dispatch.</li>
+<li><strong>Date-bound reminders unchanged</strong>: 2026-06-08 pilot claude-i wrapper, 2026-06-15 agentic-pool flip, 2026-07-13 weekly-double bump expires.</li>
+</ol>
+
+<h2>Cold-start commands for session 27</h2>
+<pre>
+# Standard orient
+curl -s http://127.0.0.1:8768/api/orient | python3 -m json.tool | head -25
+
+# Verify session-26 commits are on main
+git log origin/main --oneline -8
+# Expect: ed873909 (#1318 CloudEvents), fe5683d7 (#1317 streaming), 18bfcff5 (#1316 quality bundle),
+#         94f2cdbb (#1315 local_api bundle), e187e743 (#1313 matrix), 2da57f4f (session-25 handoff)
+
+# Check open T1 + clawpatch + calibration issues
+GH_TOKEN="" gh issue list --label gap-fill-2026-05 --state open
+# Expect: #1303 (umbrella, scope-refined), #1304 (backlog), #1308/#1309 CLOSED via #1317/#1318
+
+GH_TOKEN="" gh issue view 1314
+# Calibration pilot for deepseek V4 Flash — open, ready to execute
+
+# No worktree cleanup needed; session 26 cleaned its own.
+</pre>
+
+<h2>Notes for the next driver</h2>
+<ul class="tight">
+<li><strong>Sonnet primary reviewer is now production-validated</strong> for both small-diff code review and long-content review. 4/4 clean verdicts this session at 25-90s each. Grok read-only deflection means it's not a viable cheap-fast secondary in the current dispatch-smart shape (review class defaults to read-only).</li>
+<li><strong>Action-first writer prompts are still the right pattern</strong> for codex greenfield writes (per session-24 lesson). Both streaming modules landed clean writer-side; the only review findings were a single-line CloudEvents header bug + one cosmetic navigation nit.</li>
+<li><strong>Worktree build symlink dance</strong>: still required per session-24 handoff. <code>mkdir -p node_modules && ln -sf ../../../node_modules/@astrojs node_modules/@astrojs</code> from inside the worktree before <code>npm run build</code>. Codex did this automatically when the brief asked.</li>
+<li><strong>One-line review fixes go inline</strong> per decision-card.md exemption. Don't dispatch codex for &lt;5-line single-file edits — orchestrator inline saves 3-5 min round-trip.</li>
+<li><strong>HIGH severity ≠ blocking merge if it's a single-line fix</strong>. PR #1318 had a HIGH severity flag (invalid CloudEvents header) but it was a one-line delete; fixed inline and merged in the same session. Calibrate severity against fix-effort, not just risk.</li>
+<li><strong><code>GH_TOKEN=""</code> prefix still required</strong> for orchestrator-side gh CLI calls (per session-22b carryover; <code>feedback_no_gh_token_unset</code> still needs correction).</li>
+</ul>
+
+</main>
+</body>
+</html>
