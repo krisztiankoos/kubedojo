@@ -37,6 +37,7 @@ _PR_RE = _re.compile(r"\(#(\d+)\)")
 _ISSUE_REF_RE = _re.compile(r"#(\d+)")
 _PHASE_CELL_RE = _re.compile(r"^\|\s*(D\d+)\s*\|")
 _SAFE_DECISION_FILENAME_RE = _re.compile(r"^[A-Za-z0-9._-]+\.md$")
+_DECISION_CARD_RE = _re.compile(r"^\d{4}-\d{2}-\d{2}-.+\.md$")
 _STALE_SECONDS = 24 * 3600
 _CACHE_VERSION = 6
 _CACHE_LOCK = threading.Lock()
@@ -176,6 +177,10 @@ def _status_for_path(rel_path: str, mtime: float) -> str:
     return "decided"
 
 
+def _is_decision_card(path: Path) -> bool:
+    return bool(_DECISION_CARD_RE.match(path.name))
+
+
 def _lineage_from_commits(commits: list[dict[str, str]]) -> dict[str, list[dict[str, str]]]:
     prs: dict[str, dict[str, str]] = {}
     for commit in commits:
@@ -273,10 +278,10 @@ def _decision_files(repo_root: Path) -> list[Path]:
     decisions_dir = repo_root / "docs" / "decisions"
     files: list[Path] = []
     if decisions_dir.exists():
-        files.extend(sorted(decisions_dir.glob("*.md")))
+        files.extend(path for path in sorted(decisions_dir.glob("*.md")) if _is_decision_card(path))
     pending_dir = decisions_dir / "pending"
     if pending_dir.exists():
-        files.extend(sorted(pending_dir.glob("*.md")))
+        files.extend(path for path in sorted(pending_dir.glob("*.md")) if _is_decision_card(path))
     return files
 
 
@@ -338,7 +343,7 @@ def _refresh_decisions_fts(
                 except OSError:
                     continue
                 filename = path.name
-                if meta.get(filename) == mtime:
+                if meta.get(filename) == mtime and filename in existing_names:
                     continue
                 try:
                     body = path.read_text(encoding="utf-8")
@@ -419,6 +424,8 @@ def build_pending_decisions(repo_root: Path) -> dict[str, Any]:
     pending = 0
     if pending_dir.exists():
         for path in sorted(pending_dir.glob("*.md")):
+            if not _is_decision_card(path):
+                continue
             try:
                 rel = path.relative_to(repo_root).as_posix()
                 mtime = path.stat().st_mtime

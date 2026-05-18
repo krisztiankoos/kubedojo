@@ -35,7 +35,7 @@ def test_missing_pending_dir_returns_zero_counts(tmp_path: Path) -> None:
 def test_pending_decision_older_than_24h_is_stale(tmp_path: Path) -> None:
     pending_dir = tmp_path / "docs" / "decisions" / "pending"
     pending_dir.mkdir(parents=True)
-    decision = pending_dir / "test.md"
+    decision = pending_dir / "2026-05-17-test.md"
     decision.write_text("# Pending\n\n**Thread:** `a82ab60b4ce1457aa450f18dac7e8a54`\n", encoding="utf-8")
     old = time.time() - (25 * 3600)
     os.utime(decision, (old, old))
@@ -50,7 +50,7 @@ def test_pending_decision_older_than_24h_is_stale(tmp_path: Path) -> None:
 
     status, lineage, _ = decisions.route_decision_api_request(
         tmp_path,
-        "/api/decision/test.md/lineage",
+        "/api/decision/2026-05-17-test.md/lineage",
     )
     assert status == 200
     assert lineage["status"] == "stale"
@@ -59,7 +59,7 @@ def test_pending_decision_older_than_24h_is_stale(tmp_path: Path) -> None:
 def test_decisions_index_shows_banner_for_stale_pending_file(tmp_path: Path) -> None:
     pending_dir = tmp_path / "docs" / "decisions" / "pending"
     pending_dir.mkdir(parents=True)
-    decision = pending_dir / "test.md"
+    decision = pending_dir / "2026-05-17-test.md"
     decision.write_text("# Pending\n", encoding="utf-8")
     old = time.time() - (25 * 3600)
     os.utime(decision, (old, old))

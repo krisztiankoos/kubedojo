@@ -41,3 +41,18 @@ def test_vote_regex_extracts_last_structured_vote() -> None:
 
     for body, expected in cases:
         assert channels_route.extract_thread_vote(body) == expected
+
+
+def test_channel_summary_includes_pending_decision_link(tmp_path: Path) -> None:
+    pending_card = tmp_path / "docs/decisions/pending/2026-05-17-test.md"
+    pending_card.parent.mkdir(parents=True, exist_ok=True)
+    pending_card.write_text("**Thread:** ab-discuss-test-123\n# pending card", encoding="utf-8")
+
+    payload = channels_route.build_channel_thread_summary(
+        tmp_path,
+        "ab-discuss-test-123",
+        resolve_bridge_db_path_fn=lambda repo_root: repo_root / ".bridge" / "messages.db",
+        query_sqlite_rows_fn=lambda *args, **kwargs: [],
+    )
+
+    assert payload["decision_id"] == "pending/2026-05-17-test.md"
