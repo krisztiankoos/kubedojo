@@ -291,9 +291,9 @@ Issue tracker shrunk 40 → 14 open via batch triage 2026-05-01 (session 4); the
 
 ## TODO
 
-**Next session — top priorities (post 2026-05-18 → 19 session 27 — Wave 2 mlops bundle 3 modules + hook audit + reviewer flip, 4 PRs + 1 in flight):**
+**Next session — top priorities (post 2026-05-18 → 19 session 27 — Wave 2 mlops bundle 4 modules + hook audit + reviewer flip, 5 PRs):**
 
-- [ ] **Check T2-17 codex dispatch outcome** — task `bcu7x17za` was running at handoff (codex gpt-5.5 writing module 5.10 model-serving traffic patterns, started 2026-05-19 00:13 local in `.worktrees/t2-17-serving-traffic`). Three states possible: (a) process still running → wait; (b) task output non-empty → PR opened, dispatch deepseek-v4-pro review and merge; (c) process died + 0-byte output → salvage from `~/.codex/sessions/2026/05/19/rollout-*.jsonl`.
+- [x] ~~**Check T2-17 codex dispatch outcome**~~ — CLOSED in same session post-handoff. PR #1328 merged (`106e5d28`). Deepseek-v4-pro round-1 caught a KServe install URL 404 (line 1839); inline fix `79a7b6c9` swapped to canonical `hack/setup/quick-install/` path (curl-verified HTTP 200); deepseek round-2 APPROVE in 60s. Session 27 final: 5 PRs, 8,694 net new content lines, MLOps Discipline 6 → 10 modules. See `docs/session-state/2026-05-18-session-27-wave2-mlops-bundle-and-reviewer-flip.notes.md`.
 - [ ] **Continue Wave 2 from #1304 sequentially**: T2-18 drift retraining (module 5.11) → T2-19 CML (5.12) → T2-20 Dapr+Buildpacks (toolkits) → T2-23 HCP Terraform (iac-tools) → T2-13 Ansible operator arc (multi-module — break down into a foundational module + file sub-issues first). Use deepseek-v4-pro for reviews, NOT grok-4 (per `feedback_deepseek_pro_for_module_reviews`).
 - [ ] **Wave 3 from #1304** when Wave 2 closes: T2-15 Azure Event Hub+Event Grid, T2-16 Azure SQL, T2-22 AWS data ingestion (2-3 modules), T2-24 Azure Backup+Site Recovery.
 - [ ] **Wave 4 from #1304** when Wave 3 closes: T2-6 engineering-craft framing module (single — full arc deferred; needs `astro.config.mjs` sidebar entry first), T2-7 LLM-native app synthesis foundational module.
