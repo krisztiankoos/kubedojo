@@ -1,16 +1,38 @@
 from __future__ import annotations
 
+import importlib.util
 import subprocess
-import shutil
+import sys
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = REPO_ROOT / "scripts" / "quality" / "check_uk_changed.py"
-_PYTHON = REPO_ROOT / ".venv" / "bin" / "python"
-if not _PYTHON.exists():
-    _PYTHON = Path(shutil.which("python") or "python")
-PYTHON = _PYTHON
+
+
+def _venv_python() -> Path:
+    candidates = [REPO_ROOT / ".venv" / "bin" / "python"]
+    if REPO_ROOT.parent.name == ".worktrees":
+        candidates.append(REPO_ROOT.parent.parent / ".venv" / "bin" / "python")
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+PYTHON = _venv_python()
+
+
+def _load_check_uk_changed():
+    spec = importlib.util.spec_from_file_location("check_uk_changed_test", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+check_uk_changed = _load_check_uk_changed()
 
 
 def _run(paths: list[Path]) -> subprocess.CompletedProcess[str]:
@@ -52,6 +74,24 @@ def test_check_uk_changed_reports_russian_only_character_position(tmp_path: Path
     assert result.returncode == 1
     assert "forbidden Russian-only character" in result.stdout
     assert f"{path}:3:" in result.stdout
+
+
+def test_check_uk_changed_reports_uppercase_russian_only_character_position(
+    tmp_path: Path,
+) -> None:
+    assert check_uk_changed.RUSSIAN_ONLY_CHARS_RE.search("ЫЁЪЭ") is not None
+    path = tmp_path / "module.md"
+    path.write_text(
+        """# Переклад
+
+Ы тут не має проходити.
+""",
+        encoding="utf-8",
+    )
+
+    result = _run([path])
+    assert result.returncode == 1
+    assert f"{path}:3:1: forbidden Russian-only character 'Ы'" in result.stdout
 
 
 def test_check_uk_changed_clean_file_passes(tmp_path: Path) -> None:

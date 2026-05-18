@@ -7,6 +7,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import importlib
 import re
 import sys
 from pathlib import Path
@@ -15,9 +16,9 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[1]
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-from checks import ukrainian
+ukrainian = importlib.import_module("checks.ukrainian")
 
-RUSSIAN_ONLY_CHARS_RE = re.compile(r"[ыёъэ]")
+RUSSIAN_ONLY_CHARS_RE = re.compile(r"[ыёъэ]", re.IGNORECASE)
 
 
 def _check_file_for_russian_chars(path: Path) -> list[str]:

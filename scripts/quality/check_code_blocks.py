@@ -175,11 +175,15 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     all_results: list[BlockCheck] = []
+    missing_paths: list[Path] = []
+    files_checked = 0
     for p in args.paths:
         path = Path(p).resolve()
         if not path.exists():
             print(f"warning: {path} does not exist", file=sys.stderr)
+            missing_paths.append(path)
             continue
+        files_checked += 1
         all_results.extend(check_file(path, args.imports_only))
 
     if args.json_output:
@@ -203,6 +207,12 @@ def main(argv: list[str] | None = None) -> int:
             f"\n{len(failures)} of {len(all_results)} block(s) failed.",
             file=sys.stderr,
         )
+        return 1
+    if files_checked == 0:
+        print("\nNo existing files were checked.", file=sys.stderr)
+        return 1
+    if missing_paths:
+        print(f"\n{len(missing_paths)} provided path(s) were missing.", file=sys.stderr)
         return 1
     print(
         f"\nAll {len(all_results)} python block(s) parsed cleanly.",
