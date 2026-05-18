@@ -8,6 +8,8 @@ sidebar:
 
 ## May 2026
 
+- **MLOps data-quality gap filled.** [Great Expectations Data Quality](/platform/disciplines/data-ai/mlops/module-5.8-great-expectations-data-quality/) now covers GX Core 1.x suites, checkpoints, Data Docs, DVC baseline review, cost controls, and Kubernetes/Argo validation gates.
+
 - **MLOps data-versioning gap filled.** [Data Versioning with DVC](/platform/disciplines/data-ai/mlops/module-5.7-dvc-data-versioning/) now covers Git-plus-DVC artifact lineage, DVC pipelines, MinIO remotes on kind, cost controls, and CI/Kubeflow integration boundaries.
 
 - **Azure Essentials application-hosting gap filled.** [Azure App Service — Operator Path](/cloud/azure-essentials/module-3.14-app-service/) now covers App Service Plans and SKUs, deployment slots with slot-swap rollback, Hybrid Connections versus VNet integration versus Private Endpoint, managed identity, autoscale, App Service Environment v3, and the App Service versus Container Apps versus AKS decision.

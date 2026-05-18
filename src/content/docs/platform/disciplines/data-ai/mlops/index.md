@@ -4,7 +4,7 @@ sidebar:
   order: 0
   label: "MLOps"
 ---
-> **Discipline Track** | 7 Modules | ~5 hours total
+> **Discipline Track** | 8 Modules | ~6 hours total
 
 ## Overview
 
@@ -32,6 +32,7 @@ Before starting this track:
 | 5.5 | [Model Monitoring & Observability](module-5.5-model-monitoring/) | `[COMPLEX]` | 40-45 min |
 | 5.6 | [ML Pipelines & Automation](module-5.6-ml-pipelines/) | `[COMPLEX]` | 40-45 min |
 | 5.7 | [Data Versioning with DVC](module-5.7-dvc-data-versioning/) | `[COMPLEX]` | 50-60 min |
+| 5.8 | [Great Expectations Data Quality](module-5.8-great-expectations-data-quality/) | `[COMPLEX]` | 50-60 min |
 
 ## Learning Outcomes
 
@@ -44,6 +45,7 @@ After completing this track, you will be able to:
 5. **Monitor ML systems** — Detect drift, track performance without labels
 6. **Automate pipelines** — Kubeflow, continuous training, CI/CD for ML
 7. **Version data and models** — Use DVC to connect Git commits, data hashes, model artifacts, and metrics
+8. **Gate data quality** — Use Great Expectations to validate schema, completeness, and distribution contracts before training or serving
 
 ## Key Concepts
 
@@ -132,6 +134,10 @@ Module 5.6: ML Pipelines & Automation
 Module 5.7: Data Versioning with DVC
      │
      │  Git + DVC metadata, remotes, reproducible data pipelines
+     ▼
+Module 5.8: Great Expectations Data Quality
+     │
+     │  Data contracts, checkpoints, Data Docs, K8s validation Jobs
      ▼
 [Track Complete] → ML Platforms Toolkit
 ```
