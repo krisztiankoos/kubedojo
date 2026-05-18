@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KubeDojo Agent Activity Matrix — 2026-05-18</title>
+<style>
+  :root { --bg:#fafbfc; --fg:#1a1d23; --muted:#5b6573; --accent:#0057B7; --good:#0d8a4a; --partial:#b45c00; --gap:#b8001f; --dq:#6b1f24; --card:#ffffff; --border:#e2e6eb; --mono:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--bg);color:var(--fg);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+  main{max-width:1320px;margin:0 auto;padding:32px 24px 80px;}
+  h1{margin:0 0 8px;font-size:28px;}
+  h2{margin:36px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--accent);font-size:22px;}
+  h3{margin:22px 0 8px;font-size:17px;}
+  .meta{color:var(--muted);margin:0 0 24px;font-size:14px;}
+  .tldr{background:var(--card);border-left:4px solid var(--accent);padding:14px 18px;margin:16px 0 28px;border-radius:0 6px 6px 0;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;background:var(--card);border:1px solid var(--border);font-size:13px;}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;}
+  th{background:#eef2f6;font-weight:600;position:sticky;top:0;}
+  td.col-id{white-space:nowrap;font-family:var(--mono);}
+  td.col-activity{font-weight:600;}
+  code{background:#eef2f6;padding:1px 6px;border-radius:3px;font-family:var(--mono);font-size:12px;}
+  pre{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;}
+  ul.tight,ol.tight{margin:6px 0;padding-left:22px;}
+  ul.tight li,ol.tight li{margin:3px 0;}
+  .pill{display:inline-block;padding:1px 6px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .pill-good{background:#d8f0e2;color:var(--good);}
+  .pill-partial{background:#fce7c8;color:var(--partial);}
+  .pill-gap{background:#fbd5db;color:var(--gap);}
+  .pill-dq{background:#5b1f24;color:#fff;}
+  .agent{font-family:var(--mono);font-size:12px;}
+  .legend{background:var(--card);border:1px solid var(--border);padding:12px 18px;margin:12px 0 24px;border-radius:6px;font-size:13px;}
+  .footnote{color:var(--muted);font-size:12px;}
+  .small{font-size:12px;}
+</style>
+</head>
+<body>
+<main>
+
+<h1>KubeDojo Agent Activity Matrix — 2026-05-18</h1>
+<p class="meta">Living doc. Supersedes <code>docs/research/agent-delegation-matrix.md</code> (2026-04-12, pre-grok / pre-deepseek). Author: claude opus 4.7 inline, session 26. Reviewer cell: each row links to the calibration evidence (memory file, PR, or audit report) that pinned the lane.</p>
+
+<div class="tldr">
+<strong>TL;DR.</strong> Five agents in rotation: <strong>claude opus 4.7</strong> (orchestrator, inline), <strong>codex gpt-5.5</strong> (writer/refactor), <strong>claude-sonnet-4-6</strong> (long-content reviewer), <strong>grok-4 via hermes</strong> (small-diff code reviewer), <strong>gemini 3.1-pro-preview</strong> (UK translation, deliberator), <strong>deepseek V4 Pro</strong> (cross-doc research). Twelve activity types mapped below. <strong>Material DQs</strong>: grok-4 DQ'd for curriculum gap analysis + long-content reviews; gemini-3-flash-preview DQ'd for code review; deepseek V4 Pro DQ'd as reviewer in read-only sandbox (emits tool-use stubs); claude-opus-4-7 inline DQ'd for headless dispatches pre-2026-06-15 (chat-credit burn). Calibration anchored to the past 4 weeks of session handoffs + production audit reports.
+</div>
+
+<div class="legend">
+<strong>Legend.</strong>
+<span class="pill pill-good">primary</span> currently the first-choice lane &middot;
+<span class="pill pill-partial">secondary</span> calibrated fallback when primary is unavailable / capped &middot;
+<span class="pill pill-gap">tertiary</span> usable in a pinch; needs scrutiny &middot;
+<span class="pill pill-dq">DQ</span> disqualified for this lane with cited evidence
+</div>
+
+<h2>Agents in rotation (May 2026)</h2>
+<table>
+<tr><th>Agent</th><th>Model / handle</th><th>Sandbox modes</th><th>Strengths</th><th>Cost lane</th></tr>
+<tr><td class="agent">claude</td><td>opus 4.7 (1M context) — orchestrator inline. <code>claude-sonnet-4-6</code> via dispatch_smart for reviewer lane.</td><td>n/a (interactive) for opus; sandboxed via dispatch_smart for sonnet</td><td>Orchestration, synthesis, multi-step planning, reviewer at long content, one-line fixes inline, UI debugging via chrome-mcp</td><td>Chat-credit pool now; agentic-pool flip 2026-06-15.</td></tr>
+<tr><td class="agent">codex</td><td><code>gpt-5.5</code> (writer / refactor). <code>gpt-5.3-codex-spark</code> (cheap edit). <code>gpt-5.4-mini</code> (search/read). All via <code>codex exec</code>.</td><td><code>danger</code> for git/gh ops; <code>workspace-write</code> for plain code edits; <code>read-only</code> for triage</td><td>Greenfield content writer (with action-first prompt + minimize-search), multi-file refactor, fix-pass on review feedback, has 10x tier window (expired 2026-05-17)</td><td>Weekly cap pressure — see <code>feedback_codex_budget_prefer_gemini</code>.</td></tr>
+<tr><td class="agent">gemini</td><td><code>gemini-3.1-pro-preview</code> (UK translation, deliberation). <code>gemini-3-flash-preview</code> exists but DQ'd for code review.</td><td>OAuth via gemini-cli; MCP RAG for learn-ukrainian</td><td>Ukrainian translation (production), gap-analysis when deepseek capped, deliberation in <code>ab discuss</code></td><td>OAuth burns under heavy use; reserve for actual UK work.</td></tr>
+<tr><td class="agent">grok</td><td><code>grok-4</code> via <code>hermes -z --provider xai-oauth</code>. <code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code>.</td><td><code>workspace-write</code> standard; <code>read-only</code> for review-only paths</td><td>Small-diff code review on lab-runnability + citation-forced verifier paths. 9-13s latency.</td><td>xAI OAuth, no separate cap from chat.</td></tr>
+<tr><td class="agent">deepseek</td><td><code>deepseek V4 Pro</code> (cross-doc research). <code>V4 Flash</code> sibling exists. Via dispatch_smart adapter.</td><td><code>workspace-write</code> MANDATORY for review/research (read-only emits tool-use stubs, see <code>feedback_ds_pro_review_needs_workspace_write</code>)</td><td>Curriculum gap analysis with grep-cited findings, cross-doc synthesis, long-form research output (17 min &times; 41 KB on the 2026-05-17 calibration)</td><td>Long latency (~15-20 min/report) but thorough. Not weekly-capped against chat or codex.</td></tr>
+</table>
+
+<h2>Activity matrix (12 lanes)</h2>
+
+<table>
+<tr>
+  <th>Activity</th>
+  <th>Primary</th>
+  <th>Secondary</th>
+  <th>Tertiary</th>
+  <th>DQ'd</th>
+  <th>Calibration date</th>
+  <th>Sample N</th>
+  <th>Evidence</th>
+</tr>
+
+<tr>
+  <td class="col-activity">1. Greenfield content writing (≥600 lines)</td>
+  <td><span class="pill pill-good">primary</span> codex gpt-5.5 (danger, action-first prompt, per-issue worktree)</td>
+  <td><span class="pill pill-partial">secondary</span> claude-sonnet-4-6 (via dispatch_smart draft)</td>
+  <td>—</td>
+  <td><span class="pill pill-dq">DQ</span> grok-4 (1500-word ceiling, see <code>project_grok_writer_word_cap_2026-05-16</code>); claude opus inline (chat-credit burn pre-2026-06-15)</td>
+  <td>2026-05-18 (session 24, three 1000+ line modules shipped)</td>
+  <td>3 modules / 3 merged</td>
+  <td><code>docs/session-state/2026-05-18-session-24-T1-three-merged.html</code></td>
+</tr>
+
+<tr>
+  <td class="col-activity">2. Long-content review (≥800 lines, content-heavy modules)</td>
+  <td><span class="pill pill-good">primary</span> claude-sonnet-4-6 (dispatch_smart review)</td>
+  <td><span class="pill pill-partial">secondary</span> gemini-3.1-pro-preview</td>
+  <td>—</td>
+  <td><span class="pill pill-dq">DQ</span> grok-4 (deflects at 7s with tool-stub on long content — confirmed sessions 23, 24); gemini-3-flash-preview (0/2 bugs caught on PR #1229, see <code>feedback_never_flash_for_code_review</code>); deepseek-pro in read-only sandbox (tool-use stubs)</td>
+  <td>2026-05-18 (session 24, 3 sonnet reviews 30-200s, all actionable)</td>
+  <td>3 reviews / 3 actionable</td>
+  <td><code>feedback_headless_claude_gemini_fallback</code> + session-24 dispatch trail</td>
+</tr>
+
+<tr>
+  <td class="col-activity">3. Small-diff code review (≤200 lines, code+lab focus)</td>
+  <td><span class="pill pill-good">primary</span> grok-4 (<code>KUBEDOJO_388_PRIMARY_REVIEWER=grok</code>)</td>
+  <td><span class="pill pill-partial">secondary</span> claude-sonnet-4-6 (review-class)</td>
+  <td><span class="pill pill-gap">tertiary</span> gemini-3.1-pro-preview</td>
+  <td><span class="pill pill-dq">DQ</span> gemini-3-flash-preview; deepseek-pro read-only sandbox</td>
+  <td>2026-05-17 (batch-4 calibration)</td>
+  <td>27 reviews / 26 valid verdicts (1 confirmed false-negative on PR #1257)</td>
+  <td><code>project_grok_primary_reviewer_calibrated_2026-05-17</code> + <code>audit/2026-05-18-grok-primary-calibration/REPORT.html</code></td>
+</tr>
+
+<tr>
+  <td class="col-activity">4. Lab-runnability verification (image/binary match)</td>
+  <td><span class="pill pill-good">primary</span> <code>scripts/quality/verify_module.py</code> deterministic gate (<code>lab_image_binary_match</code>)</td>
+  <td><span class="pill pill-partial">secondary</span> grok-4 LAB RUNNABILITY dim (probabilistic catch)</td>
+  <td>—</td>
+  <td>—</td>
+  <td>2026-05-18 (PR #1277 merged, full-corpus scan 261 k8s modules)</td>
+  <td>5 violations surfaced post-merge, 4 confirmed real bugs</td>
+  <td>PR #1277 + grok-calibration amendment 2 + <code>feedback_advisory_vs_enforced_constraints</code></td>
+</tr>
+
+<tr>
+  <td class="col-activity">5. Curriculum gap analysis / cross-doc research</td>
+  <td><span class="pill pill-good">primary</span> deepseek V4 Pro (workspace-write, mandatory)</td>
+  <td><span class="pill pill-partial">secondary</span> claude opus inline (post-2026-06-15) / claude-sonnet-4-6 dispatch (pre-flip)</td>
+  <td><span class="pill pill-gap">tertiary</span> gemini-3.1-pro-preview (less rigorous citations)</td>
+  <td><span class="pill pill-dq">DQ</span> grok-4 (hallucinated path on first verdict, 44s vs deepseek's 17 min — see <code>feedback_grok_curriculum_gap_analysis_dq</code>); gemini-3-flash (priors / drift)</td>
+  <td>2026-05-17 (head-to-head grok-vs-deepseek)</td>
+  <td>1 brief, 2 agents in parallel — deepseek 7 grep-cited gaps, grok 3 plausible/unverified + 1 hallucinated path</td>
+  <td><code>feedback_grok_curriculum_gap_analysis_dq</code></td>
+</tr>
+
+<tr>
+  <td class="col-activity">6. Ukrainian translation</td>
+  <td><span class="pill pill-good">primary</span> gemini-3.1-pro-preview (via <code>uk_sync</code>, MCP RAG to learn-ukrainian)</td>
+  <td><span class="pill pill-partial">secondary</span> claude-sonnet-4-6 via dispatch_smart <code>--mcp</code></td>
+  <td>—</td>
+  <td>—</td>
+  <td>2026-04-12 (delegation matrix, still current)</td>
+  <td>~40% of curriculum translated (CKA/CKAD/prereqs)</td>
+  <td><code>docs/research/agent-delegation-matrix.md</code> §Pipeline + glossary at <code>docs/glossary.md</code></td>
+</tr>
+
+<tr>
+  <td class="col-activity">7. One-line text fixes (typos, dead URLs, KQL field-name, redundant code)</td>
+  <td><span class="pill pill-good">primary</span> orchestrator inline (claude opus, Edit tool)</td>
+  <td>—</td>
+  <td>—</td>
+  <td><span class="pill pill-dq">DQ</span> ANY dispatch — overhead 3-5 min vs orchestrator 30s. Per <code>.claude/rules/decision-card.md</code>: "One-line fixes — orchestrator fixes inline."</td>
+  <td>2026-05-18 (PR #1307 KQL field-name bug, 30s fix)</td>
+  <td>routine</td>
+  <td>Session-24 handoff pattern table + decision-card.md exemption</td>
+</tr>
+
+<tr>
+  <td class="col-activity">8. Substantive edits / fix-pass on review feedback (5-200 lines)</td>
+  <td><span class="pill pill-good">primary</span> codex gpt-5.5 (danger mode, per-issue worktree)</td>
+  <td><span class="pill pill-partial">secondary</span> codex gpt-5.3-codex-spark (cheap edit class when below cap)</td>
+  <td>—</td>
+  <td><span class="pill pill-dq">DQ</span> claude opus inline pre-2026-06-15 (per <code>feedback_dispatch_codex_for_code_changes</code> — 30% weekly burn from inline work)</td>
+  <td>2026-05-18 (Cloud Custodian fix-pass, 2 patches, ~2 min)</td>
+  <td>dozens / week</td>
+  <td><code>feedback_dispatch_codex_for_code_changes</code> + session-24 trail</td>
+</tr>
+
+<tr>
+  <td class="col-activity">9. Architecture / design consult / decisions</td>
+  <td><span class="pill pill-good">primary</span> <code>ab discuss</code> with claude+codex+gemini (and grok+deepseek for 5-agent decisions)</td>
+  <td><span class="pill pill-partial">secondary</span> codex gpt-5.5 (architect class via dispatch_smart)</td>
+  <td><span class="pill pill-gap">tertiary</span> single agent (claude/codex) for low-leverage decisions</td>
+  <td>—</td>
+  <td>2026-05-01 (#388 verifier-first decision via codex consult)</td>
+  <td>several high-leverage decisions / month</td>
+  <td><code>feedback_ab_discuss_for_decisions</code> + <code>.claude/rules/decision-card.md</code></td>
+</tr>
+
+<tr>
+  <td class="col-activity">10. Prose expansion (gemini draft → full depth)</td>
+  <td><span class="pill pill-good">primary</span> codex gpt-5.5 (danger mode, default expander since 2026-04-29)</td>
+  <td><span class="pill pill-partial">secondary</span> claude opus inline (source-fidelity reviewer + expansion fallback)</td>
+  <td>—</td>
+  <td><span class="pill pill-dq">DQ</span> codex on strict-source content WITHOUT explicit "no meta-diction" prompt — leaks "the contract / Yellow / anchor" diction (see <code>feedback_codex_prose_meta_diction_leak</code>)</td>
+  <td>2026-04-29 (#394 prose pivot)</td>
+  <td>multiple chapter expansions</td>
+  <td><code>feedback_codex_default_prose_expander</code></td>
+</tr>
+
+<tr>
+  <td class="col-activity">11. Multi-agent deliberation (<code>ab discuss</code> channels)</td>
+  <td><span class="pill pill-good">primary</span> all 5 agents (claude+codex+gemini+grok+deepseek) with <code>[AGREE]/[OPTION X]/[DEFER]</code> end-of-turn convention</td>
+  <td>—</td>
+  <td>—</td>
+  <td><span class="pill pill-dq">DQ</span> rubber-stamp <code>[AGREE]</code> with no rationale — pollutes deliberation; <code>[DEFER]</code> if no opinion</td>
+  <td>2026-05-02 (decision-card pattern imported from learn-ukrainian)</td>
+  <td>several channels open / closed</td>
+  <td><code>.claude/rules/decision-card.md</code> + <code>feedback_ab_discuss_for_decisions</code></td>
+</tr>
+
+<tr>
+  <td class="col-activity">12. Citation backfill / fact verification</td>
+  <td><span class="pill pill-good">primary</span> codex gpt-5.3-codex-spark (fact-grounding role)</td>
+  <td><span class="pill pill-partial">secondary</span> claude-sonnet-4-6</td>
+  <td>—</td>
+  <td><span class="pill pill-dq">DQ</span> gemini (hallucinates anchors per <code>feedback_gemini_hallucinates_anchors</code>); grok (truncated-context misreads per <code>feedback_grok_truncated_diff_context</code>); flash variants</td>
+  <td>2026-04-12 (fact-grounding calibration, 25/25 perfect)</td>
+  <td>fact-ledger backfill, multiple modules</td>
+  <td><code>docs/research/fact-grounding-calibration-2026-04-12.md</code></td>
+</tr>
+
+</table>
+
+<h2>Routing decision tree (high-signal cases)</h2>
+
+<pre>
+GREENFIELD CONTENT (≥600 lines)
+  └─ codex gpt-5.5, danger, per-issue worktree, action-first prompt
+     └─ if codex weekly capped → claude-sonnet-4-6 via dispatch_smart
+        └─ if both capped → defer (do not use grok writer, see word-cap DQ)
+
+REVIEW
+  ├─ Long content (≥800 lines, prose+lab)
+  │     └─ claude-sonnet-4-6 primary (grok deflects, gemini-flash misses)
+  ├─ Short code/lab diff (≤200 lines)
+  │     └─ grok-4 primary; sonnet secondary; gemini-pro tertiary
+  └─ Citation/factual verification
+        └─ codex spark primary; sonnet secondary
+
+RESEARCH / GAP ANALYSIS
+  └─ deepseek V4 Pro (workspace-write); sonnet secondary; gemini-pro tertiary
+     └─ grok is DQ'd here
+
+UK TRANSLATION
+  └─ gemini-3.1-pro-preview via uk_sync (MCP RAG)
+
+ONE-LINE FIX
+  └─ orchestrator inline (Edit tool); never dispatch
+
+5-200 LINE EDIT / FIX-PASS
+  └─ codex gpt-5.5, danger if push/PR, workspace-write if code-only
+
+HIGH-LEVERAGE DECISION
+  └─ ab discuss 5-agent channel with [AGREE]/[OPTION X]/[DEFER] convention
+</pre>
+
+<h2>Material DQs (cited)</h2>
+<table>
+<tr><th>Agent</th><th>Lane</th><th>Reason</th><th>Memory / evidence</th></tr>
+<tr><td class="agent">gemini-3-flash-preview</td><td>code review</td><td>0/2 bugs caught on PR #1229; same in canary log and isolated test</td><td><code>feedback_never_flash_for_code_review</code></td></tr>
+<tr><td class="agent">grok-4</td><td>greenfield content writer</td><td>1500-word ceiling on writer dispatches</td><td><code>project_grok_writer_word_cap_2026-05-16</code></td></tr>
+<tr><td class="agent">grok-4</td><td>long-content reviewer</td><td>Deflects at 7s with tool-stub on ≥800-line content (sessions 23, 24)</td><td>Session-24 handoff pattern table</td></tr>
+<tr><td class="agent">grok-4</td><td>curriculum gap analysis / cross-doc research</td><td>44s vs deepseek 17 min; hallucinated path on first verdict; "over-scoped removals" section just ratified existing T3 deferrals</td><td><code>feedback_grok_curriculum_gap_analysis_dq</code></td></tr>
+<tr><td class="agent">deepseek V4 Pro</td><td>reviewer in read-only sandbox</td><td>Emits unfulfilled <code>&lt;bash&gt;</code> tool-use intents (PR #1288 first prod-use 217-char tool-stub) instead of the review. Use <code>--mode workspace-write</code> or fall back</td><td><code>feedback_ds_pro_review_needs_workspace_write</code></td></tr>
+<tr><td class="agent">claude opus inline</td><td>headless dispatches (<code>claude -p</code>) pre-2026-06-15</td><td>Burns chat credits, not agentic-pool credits. Flip date is 2026-06-15.</td><td><code>feedback_inline_claude_post_agentic_pool</code></td></tr>
+<tr><td class="agent">gemini (any)</td><td>citation / anchor verification</td><td>Hallucinates URLs and page anchors; self-admitted 2026-04-27</td><td><code>feedback_gemini_hallucinates_anchors</code> + sibling round-2 approvals memory</td></tr>
+<tr><td class="agent">codex gpt-5.5</td><td>strict-source prose WITHOUT explicit "no meta-diction" prompt</td><td>Leaks contract diction ("Yellow", "anchor", "deliberately cautious") into reader-facing text</td><td><code>feedback_codex_prose_meta_diction_leak</code></td></tr>
+</table>
+
+<h2>Capacity arbitrage notes</h2>
+<ul class="tight">
+<li><strong>Codex weekly cap pressure</strong>: route to gemini for low-stakes / non-judgment work per <code>feedback_codex_budget_prefer_gemini</code>. Reserve gpt-5.5 for review/architect/judgment.</li>
+<li><strong>Gemini OAuth burns</strong>: don't fan out parallel gemini dispatches. Use the <code>KUBEDOJO_GEMINI_SUBSCRIPTION=1</code> env var to force subscription path (see <code>feedback_ab_discuss_two_bridge_bugs</code>).</li>
+<li><strong>Claude chat-credit pressure (pre-2026-06-15)</strong>: orchestrator inline burns chat credits. After 2026-06-15 agentic-pool flip, inline becomes the right path (see <code>feedback_inline_claude_post_agentic_pool</code>).</li>
+<li><strong>Grok / xAI OAuth</strong>: separate pool, no chat-credit interaction. Cheap secondary for small-diff reviews where it's calibrated.</li>
+<li><strong>Deepseek</strong>: not weekly-capped against chat or codex; long latency is the binding constraint, not budget.</li>
+</ul>
+
+<h2>Date-bound transitions / open calibrations</h2>
+<table>
+<tr><th>Date</th><th>What changes</th><th>Effect on matrix</th></tr>
+<tr><td><code>2026-06-08</code></td><td>claude-i wrapper pilot (tmux + Stop hook)</td><td>Scripted Claude output billed to interactive pool — opens a new dispatch lane that doesn't burn metered programmatic credits.</td></tr>
+<tr><td><code>2026-06-15</code></td><td>Agentic-credit pool flips for orchestrator inline</td><td>Claude opus inline becomes the right path for orchestrator-side work (was DQ'd before due to chat-credit burn).</td></tr>
+<tr><td><code>2026-07-13</code></td><td>Weekly-double bump expires</td><td>Codex cap halves back to pre-bump rate; expect more capacity pressure on writer lane.</td></tr>
+<tr><td>+30 days from 2026-05-17</td><td>Grok curriculum-research re-test</td><td>If grok-4 model update closes the deepseek gap on cross-doc research, the gap-analysis DQ can be revisited.</td></tr>
+<tr><td>TBD</td><td>Deepseek V4 Flash calibration</td><td>Sibling of V4 Pro — needs head-to-head on at least one task class before assignment.</td></tr>
+</table>
+
+<h2>Maintenance</h2>
+<p>Update this matrix when:</p>
+<ol class="tight">
+<li>A new model enters the rotation (smoke-test capabilities + run a calibration before adding a lane).</li>
+<li>Pricing / cap changes (re-evaluate the capacity-arbitrage section).</li>
+<li>A delegation produces a noticeably bad result — record as a memory file with <code>feedback_</code> prefix and link from this matrix.</li>
+<li>A new activity class emerges that doesn't fit the existing 12 lanes — add a row with calibration evidence.</li>
+<li>Quarterly: re-test the top 3 most-used lanes against a fresh 5-agent calibration to catch silent drift.</li>
+</ol>
+
+<p class="footnote">Last updated 2026-05-18. Predecessor: <code>docs/research/agent-delegation-matrix.md</code> (2026-04-12, retained for historical reference). Next planned re-cal: 2026-06-17 (grok curriculum-research re-test).</p>
+
+</main>
+</body>
+</html>
