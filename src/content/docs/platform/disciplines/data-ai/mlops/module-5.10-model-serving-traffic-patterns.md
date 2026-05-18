@@ -1836,7 +1836,7 @@ kubectl cluster-info
 Use the current KServe quickstart script for Knative mode.
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/kserve/kserve/refs/tags/v0.17.0/install/v0.17.0/kserve-knative-mode-full-install-with-manifests.sh" | bash
+curl -fsSL "https://raw.githubusercontent.com/kserve/kserve/refs/tags/v0.17.0/hack/setup/quick-install/kserve-knative-mode-full-install-with-manifests.sh" | bash
 kubectl wait --for=condition=Available deployment/kserve-controller-manager -n kserve --timeout=300s
 kubectl wait --for=condition=Ready pod -l app=istio-ingressgateway -n istio-system --timeout=300s
 ```
