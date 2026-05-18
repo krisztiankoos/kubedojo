@@ -4,7 +4,7 @@ sidebar:
   order: 0
   label: "MLOps"
 ---
-> **Discipline Track** | 9 Modules | ~7 hours total
+> **Discipline Track** | 10 Modules | ~8 hours total
 
 ## Overview
 
@@ -34,6 +34,7 @@ Before starting this track:
 | 5.7 | [Data Versioning with DVC](module-5.7-dvc-data-versioning/) | `[COMPLEX]` | 50-60 min |
 | 5.8 | [Great Expectations Data Quality](module-5.8-great-expectations-data-quality/) | `[COMPLEX]` | 50-60 min |
 | 5.9 | [ML Repository Hygiene](module-5.9-ml-repository-hygiene/) | `[COMPLEX]` | 45-55 min |
+| 5.10 | [Production Model-Serving Traffic Patterns](module-5.10-model-serving-traffic-patterns/) | `[COMPLEX]` | 55-65 min |
 
 ## Learning Outcomes
 
@@ -48,6 +49,7 @@ After completing this track, you will be able to:
 7. **Version data and models** — Use DVC to connect Git commits, data hashes, model artifacts, and metrics
 8. **Gate data quality** — Use Great Expectations to validate schema, completeness, and distribution contracts before training or serving
 9. **Maintain clean ML repositories** — Keep data, models, notebooks, dependencies, hooks, and CI policies reviewable without bloating Git history
+10. **Control serving exposure** — Use canary, A/B, shadow, mirroring, and bandit patterns to promote models with measurable rollback and cost controls
 
 ## Key Concepts
 
@@ -144,6 +146,10 @@ Module 5.8: Great Expectations Data Quality
 Module 5.9: ML Repository Hygiene
      │
      │  src layout, ignore policy, lock files, notebook discipline, pre-commit gates
+     ▼
+Module 5.10: Production Model-Serving Traffic Patterns
+     │
+     │  KServe canary, Istio A/B, shadow, mirroring, bandits, cost controls
      ▼
 [Track Complete] → ML Platforms Toolkit
 ```

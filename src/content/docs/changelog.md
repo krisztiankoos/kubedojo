@@ -8,6 +8,8 @@ sidebar:
 
 ## May 2026
 
+- **MLOps model-serving traffic gap filled.** [Production Model-Serving Traffic Patterns](/platform/disciplines/data-ai/mlops/module-5.10-model-serving-traffic-patterns/) now covers KServe canaries, Istio A/B routing, shadow traffic, mirroring, bandits, rollback gates, and cost controls for production model promotion.
+
 - **MLOps repository-hygiene gap filled.** [ML Repository Hygiene](/platform/disciplines/data-ai/mlops/module-5.9-ml-repository-hygiene/) now covers clean `src/` layouts, DVC-aware ignore policy, uv lock discipline, notebook output stripping, pre-commit gates, CI split, and cost controls for ML repository bloat.
 
 - **MLOps data-quality gap filled.** [Great Expectations Data Quality](/platform/disciplines/data-ai/mlops/module-5.8-great-expectations-data-quality/) now covers GX Core 1.x suites, checkpoints, Data Docs, DVC baseline review, cost controls, and Kubernetes/Argo validation gates.
