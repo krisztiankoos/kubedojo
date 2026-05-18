@@ -233,7 +233,7 @@ def check_file(path: Path) -> list[CitationCheck]:
     return out
 
 
-def iter_target_files(args: argparse.Namespace) -> Iterable[Path]:
+def iter_target_files(args: argparse.Namespace, missing_paths: list[Path]) -> Iterable[Path]:
     if args.all_ml:
         for d in ML_DIRS:
             if not d.exists():
@@ -247,6 +247,7 @@ def iter_target_files(args: argparse.Namespace) -> Iterable[Path]:
         path = Path(p).resolve()
         if not path.exists():
             print(f"warning: {path} does not exist", file=sys.stderr)
+            missing_paths.append(path)
             continue
         yield path
 
@@ -270,8 +271,13 @@ def main(argv: list[str] | None = None) -> int:
     if not args.paths and not args.all_ml:
         parser.error("provide one or more paths, or pass --all-ml")
 
+    explicit_path_mode = bool(args.paths) and not args.all_ml
+    missing_paths: list[Path] = []
+    files_checked = 0
+
     all_results: list[CitationCheck] = []
-    for path in iter_target_files(args):
+    for path in iter_target_files(args, missing_paths):
+        files_checked += 1
         all_results.extend(check_file(path))
 
     if args.json_output:
@@ -303,6 +309,12 @@ def main(argv: list[str] | None = None) -> int:
     failures = [r for r in all_results if not r.ok]
     if failures:
         print(f"\n{len(failures)} citation(s) failed verification.", file=sys.stderr)
+        return 1
+    if explicit_path_mode and files_checked == 0:
+        print("\nNo existing files were checked.", file=sys.stderr)
+        return 1
+    if missing_paths:
+        print(f"\n{len(missing_paths)} provided path(s) were missing.", file=sys.stderr)
         return 1
     print(f"\nAll {len(all_results)} citation(s) verified.", file=sys.stderr)
     return 0

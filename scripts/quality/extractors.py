@@ -123,30 +123,34 @@ def extract_module_markdown(raw: str) -> ModuleExtract:
 def _unwrap_outer_fence(raw: str) -> tuple[str, bool]:
     """Strip a surrounding ``` fence if the module is wholly inside one.
 
-    Heuristic: the first non-empty line after an optional prose prefix is
-    ``` or ```<lang>, and a matching ``` exists near the end of input.
-    Anything between them is the module. If no such fence structure is
-    present, returns the input unchanged.
+    Heuristic: skip optional prose, then unwrap the first ``` or ```markdown
+    fence whose body contains titled frontmatter. The closing fence is the
+    last ``` after the opener so fenced code blocks inside the module body do
+    not prematurely terminate the outer wrapper.
     """
     lines = raw.splitlines()
-    # Find first non-empty line — must be a fence to trigger unwrap.
-    i = 0
-    while i < len(lines) and not lines[i].strip():
-        i += 1
-    if i >= len(lines):
-        return raw, False
-    first = lines[i].strip()
-    if not first.startswith("```"):
-        return raw, False
-
-    # Find the last ``` in the input — paired with the opener if the
-    # interior contains the rest of the module. Naive: last non-empty
-    # line that is exactly ``` wins.
-    for j in range(len(lines) - 1, i, -1):
-        if lines[j].strip() == "```":
+    for i, line in enumerate(lines):
+        if line.strip().lower() not in {"```", "```markdown"}:
+            continue
+        for j in range(len(lines) - 1, i, -1):
+            if lines[j].strip() != "```":
+                continue
             inside = "\n".join(lines[i + 1 : j])
-            return inside, True
+            if _contains_titled_frontmatter(inside):
+                return inside, True
+            break
     return raw, False
+
+
+def _contains_titled_frontmatter(text: str) -> bool:
+    lines = text.splitlines()
+    start = _find_frontmatter_start(lines)
+    if start < 0:
+        return False
+    end = _find_frontmatter_end(lines, start)
+    if end < 0:
+        return False
+    return _extract_title(lines[start + 1 : end]) is not None
 
 
 def _find_frontmatter_start(lines: list[str]) -> int:
