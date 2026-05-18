@@ -2071,4 +2071,4 @@ The key learning goal is that the validation template is a required upstream tas
 
 ## Next Module
 
-Next: [Module 5.9: ML Repository Hygiene](module-5.9-ml-repo-hygiene/) will connect data-quality gates, DVC metadata, model artifacts, and CI policy into a maintainable ML repository layout.
+Next: [Module 5.9: ML Repository Hygiene](../module-5.9-ml-repository-hygiene/) will connect data-quality gates, DVC metadata, model artifacts, and CI policy into a maintainable ML repository layout.

@@ -4,7 +4,7 @@ sidebar:
   order: 0
   label: "MLOps"
 ---
-> **Discipline Track** | 8 Modules | ~6 hours total
+> **Discipline Track** | 9 Modules | ~7 hours total
 
 ## Overview
 
@@ -33,6 +33,7 @@ Before starting this track:
 | 5.6 | [ML Pipelines & Automation](module-5.6-ml-pipelines/) | `[COMPLEX]` | 40-45 min |
 | 5.7 | [Data Versioning with DVC](module-5.7-dvc-data-versioning/) | `[COMPLEX]` | 50-60 min |
 | 5.8 | [Great Expectations Data Quality](module-5.8-great-expectations-data-quality/) | `[COMPLEX]` | 50-60 min |
+| 5.9 | [ML Repository Hygiene](module-5.9-ml-repository-hygiene/) | `[COMPLEX]` | 45-55 min |
 
 ## Learning Outcomes
 
@@ -46,6 +47,7 @@ After completing this track, you will be able to:
 6. **Automate pipelines** — Kubeflow, continuous training, CI/CD for ML
 7. **Version data and models** — Use DVC to connect Git commits, data hashes, model artifacts, and metrics
 8. **Gate data quality** — Use Great Expectations to validate schema, completeness, and distribution contracts before training or serving
+9. **Maintain clean ML repositories** — Keep data, models, notebooks, dependencies, hooks, and CI policies reviewable without bloating Git history
 
 ## Key Concepts
 
@@ -138,6 +140,10 @@ Module 5.7: Data Versioning with DVC
 Module 5.8: Great Expectations Data Quality
      │
      │  Data contracts, checkpoints, Data Docs, K8s validation Jobs
+     ▼
+Module 5.9: ML Repository Hygiene
+     │
+     │  src layout, ignore policy, lock files, notebook discipline, pre-commit gates
      ▼
 [Track Complete] → ML Platforms Toolkit
 ```
