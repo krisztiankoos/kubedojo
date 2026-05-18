@@ -20,8 +20,9 @@ Kafka, Spark, Flink, Airflow — the backbone of modern data pipelines. This dis
 | 1.4 | [Batch Processing with Spark](module-1.4-spark/) | 3h | Spark on K8s, Spark Operator, dynamic allocation |
 | 1.5 | [Data Orchestration with Airflow](module-1.5-airflow/) | 2.5h | KubernetesExecutor, DAGs, Helm deployment |
 | 1.6 | [Building a Data Lakehouse](module-1.6-lakehouse/) | 3.5h | Iceberg, Delta Lake, Trino on K8s, Hive Metastore |
+| 1.7 | [Event Streaming Fundamentals](module-1.7-event-streaming-fundamentals/) | 3h | Kafka vs NATS, ordering, exactly-once, backpressure |
 
-**Total time**: ~19 hours
+**Total time**: ~22 hours
 
 ---
 
