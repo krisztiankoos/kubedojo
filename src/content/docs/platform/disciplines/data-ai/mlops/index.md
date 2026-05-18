@@ -4,13 +4,13 @@ sidebar:
   order: 0
   label: "MLOps"
 ---
-> **Discipline Track** | 6 Modules | ~4 hours total
+> **Discipline Track** | 7 Modules | ~5 hours total
 
 ## Overview
 
 MLOps brings engineering rigor to machine learning. Most ML projects fail not because of bad models, but because teams can't operationalize them. Data scientists build prototypes; MLOps turns them into production systems.
 
-This track covers the complete ML lifecycle—from experiment tracking and feature stores to model serving, monitoring, and automated pipelines—giving you the skills to deploy and maintain ML systems at scale.
+This track covers the complete ML lifecycle—from experiment tracking and feature stores to data versioning, model serving, monitoring, and automated pipelines—giving you the skills to deploy and maintain ML systems at scale.
 
 ## Prerequisites
 
@@ -31,6 +31,7 @@ Before starting this track:
 | 5.4 | [Model Serving & Inference](module-5.4-model-serving/) | `[COMPLEX]` | 40-45 min |
 | 5.5 | [Model Monitoring & Observability](module-5.5-model-monitoring/) | `[COMPLEX]` | 40-45 min |
 | 5.6 | [ML Pipelines & Automation](module-5.6-ml-pipelines/) | `[COMPLEX]` | 40-45 min |
+| 5.7 | [Data Versioning with DVC](module-5.7-dvc-data-versioning/) | `[COMPLEX]` | 50-60 min |
 
 ## Learning Outcomes
 
@@ -42,6 +43,7 @@ After completing this track, you will be able to:
 4. **Deploy models** — KServe, canary deployments, A/B testing
 5. **Monitor ML systems** — Detect drift, track performance without labels
 6. **Automate pipelines** — Kubeflow, continuous training, CI/CD for ML
+7. **Version data and models** — Use DVC to connect Git commits, data hashes, model artifacts, and metrics
 
 ## Key Concepts
 
@@ -126,6 +128,10 @@ Module 5.5: Model Monitoring & Observability
 Module 5.6: ML Pipelines & Automation
      │
      │  Kubeflow, CI/CD for ML
+     ▼
+Module 5.7: Data Versioning with DVC
+     │
+     │  Git + DVC metadata, remotes, reproducible data pipelines
      ▼
 [Track Complete] → ML Platforms Toolkit
 ```

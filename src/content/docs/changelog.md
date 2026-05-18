@@ -8,6 +8,8 @@ sidebar:
 
 ## May 2026
 
+- **MLOps data-versioning gap filled.** [Data Versioning with DVC](/platform/disciplines/data-ai/mlops/module-5.7-dvc-data-versioning/) now covers Git-plus-DVC artifact lineage, DVC pipelines, MinIO remotes on kind, cost controls, and CI/Kubeflow integration boundaries.
+
 - **Azure Essentials application-hosting gap filled.** [Azure App Service — Operator Path](/cloud/azure-essentials/module-3.14-app-service/) now covers App Service Plans and SKUs, deployment slots with slot-swap rollback, Hybrid Connections versus VNet integration versus Private Endpoint, managed identity, autoscale, App Service Environment v3, and the App Service versus Container Apps versus AKS decision.
 
 - **Azure Essentials edge-operations gap filled.** [Azure Application Gateway — Operator Path](/cloud/azure-essentials/module-3.13-application-gateway/) now covers WAF policy tuning, Key Vault-backed TLS, AGIC versus Application Gateway for Containers, autoscaling capacity units, Log Analytics/KQL diagnostics, and v1-to-v2 migration gotchas.
