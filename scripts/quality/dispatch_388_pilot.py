@@ -423,6 +423,34 @@ def dispatch_qwen_review(pr_num: int, module_path: str, slug: str):
     return text, classify_verdict(text)
 
 
+def dispatch_deepseek_review(pr_num: int, module_path: str, slug: str):
+    """Cross-family review via DeepSeek.
+
+    Calibration 2026-05-19 (session 30) showed DS Pro/Flash hallucinate on GH
+    Actions / Dependabot schemas during diff review. Use as primary only for
+    content-module review where its strong text recall outweighs the
+    schema-hallucination risk. NOT recommended as a default reviewer.
+    """
+    log({"event": "deepseek_review_start", "pr": pr_num, "module": module_path})
+    try:
+        result = invoke(
+            agent_name="deepseek",
+            prompt=gemini_review_prompt(pr_num, module_path),  # reuse same prompt
+            mode="workspace-write",  # deepseek benefits from terminal+file access
+            cwd=REPO,
+            model="deepseek-v4-pro",
+            task_id=f"388-pilot-review-deepseek-{slug}",
+            entrypoint="dispatch",
+            hard_timeout=600,
+        )
+    except Exception as e:  # noqa: BLE001
+        log({"event": "deepseek_review_error", "pr": pr_num, "error": repr(e)})
+        return None, "ERROR"
+    text = result.response or ""
+    log({"event": "deepseek_review_done", "pr": pr_num, "ok": result.ok, "response_excerpt": text[-2000:]})
+    return text, classify_verdict(text)
+
+
 def classify_verdict(text: str) -> str:
     """Classify a gemini review into APPROVE / APPROVE_WITH_NITS / NEEDS CHANGES / UNCLEAR.
 
@@ -454,7 +482,35 @@ def merge_pr(pr_num: int) -> str | None:
         return merge_when_green(pr_num, repo=REPO)
     except PrMergeError as exc:
         log({"event": "merge_failed", "pr": pr_num, "error": str(exc)})
-        return None
+    return None
+
+
+def build_reviewer_cascade(primary_reviewer: str) -> list[tuple[str, Callable]]:
+    if primary_reviewer == "claude":
+        return [
+            ("claude", dispatch_claude_review),
+            ("gemini", dispatch_gemini_review),
+            ("qwen", dispatch_qwen_review),
+        ]
+    if primary_reviewer == "deepseek":
+        return [
+            ("deepseek", dispatch_deepseek_review),
+            ("claude", dispatch_claude_review),
+            ("qwen", dispatch_qwen_review),
+        ]
+    if primary_reviewer == "qwen":
+        # qwen → gemini → claude
+        return [
+            ("qwen", dispatch_qwen_review),
+            ("gemini", dispatch_gemini_review),
+            ("claude", dispatch_claude_review),
+        ]
+    # default: gemini
+    return [
+        ("gemini", dispatch_gemini_review),
+        ("claude", dispatch_claude_review),
+        ("qwen", dispatch_qwen_review),
+    ]
 
 
 def dispatch_backfill(slug: str, module_path: str) -> bool:
@@ -577,21 +633,12 @@ def main(argv: list[str] | None = None) -> int:
             if pr_num is None:
                 log({"event": "module_skip", "module": module_path, "reason": "pr_creation_failed"})
                 continue
-        # Reviewer cascade. Primary defaults to gemini-pro; override via
-        # KUBEDOJO_388_PRIMARY_REVIEWER (gemini | claude | qwen).
-        # Cascade order is always primary → claude → qwen (each only fires
-        # when the prior tier returned ERROR/UNCLEAR). The slot the primary
-        # occupies is skipped in the fallback chain.
-        primary = os.environ.get("KUBEDOJO_388_PRIMARY_REVIEWER", "qwen").lower()
-        cascade: list[tuple[str, Callable]] = []
-        if primary == "claude":
-            cascade = [("claude", dispatch_claude_review), ("gemini", dispatch_gemini_review), ("qwen", dispatch_qwen_review)]
-        elif primary == "qwen":
-            # qwen → gemini → claude
-            cascade = [("qwen", dispatch_qwen_review), ("gemini", dispatch_gemini_review), ("claude", dispatch_claude_review)]
-        else:  # default: gemini
-            # gemini → claude → qwen
-            cascade = [("gemini", dispatch_gemini_review), ("claude", dispatch_claude_review), ("qwen", dispatch_qwen_review)]
+        # Reviewer cascade. Primary defaults to claude; override via
+        # KUBEDOJO_388_PRIMARY_REVIEWER (gemini | claude | qwen | deepseek).
+        # Cascade order is always primary → claude → qwen/deepseek fallback
+        # depending on the configured primary.
+        primary = os.environ.get("KUBEDOJO_388_PRIMARY_REVIEWER", "claude").lower()
+        cascade = build_reviewer_cascade(primary)
 
         review_text, verdict = (None, "ERROR")
         for tier_name, tier_fn in cascade:

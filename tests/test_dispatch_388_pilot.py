@@ -209,3 +209,17 @@ def test_dispatch_backfill_sha_regex_parses_ok_line():
     match = re.search(r"^\[ok\]\s+k8s-cka-module-8:\s+([0-9a-f]+)", output, re.MULTILINE)
     assert match is not None
     assert match.group(1) == "deadbeef12"
+
+
+@pytest.mark.parametrize(
+    ("primary", "expected"),
+    [
+        ("claude", ["claude", "gemini", "qwen"]),
+        ("qwen", ["qwen", "gemini", "claude"]),
+        ("deepseek", ["deepseek", "claude", "qwen"]),
+        ("gemini", ["gemini", "claude", "qwen"]),
+    ],
+)
+def test_reviewer_cascade_selection(primary: str, expected: list[str]) -> None:
+    cascade = pilot.build_reviewer_cascade(primary)
+    assert [name for name, _fn in cascade] == expected
