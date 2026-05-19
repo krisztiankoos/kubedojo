@@ -911,7 +911,8 @@ from `llm-apps` should succeed. The call from the outside namespace should time
 out or be rejected, depending on your CNI's enforcement behavior. A fast success
 from the outside namespace means the policy is not enforced or the namespace
 selector is too broad.
-A NetworkPolicy that successfully blocks traffic produces curl exit code 28 (timeout); a 4xx or 5xx response means the policy is not blocking — the traffic reached the server. Look specifically for exit 28 to confirm the policy works.
+
+Exit 28 (timeout) means packets are being silently dropped; exit 7 (connection refused) means the CNI is sending TCP RST. Both confirm the policy is enforced — the difference is purely a CNI implementation detail (Cilium and weave-net default to drop; Calico and eBPF data planes often default to RST). A 4xx/5xx HTTP response means the traffic reached the server and the NetworkPolicy is NOT blocking it.
 
 ```bash
 kubectl create namespace outside-llm-test
