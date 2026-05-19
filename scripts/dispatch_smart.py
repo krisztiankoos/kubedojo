@@ -199,11 +199,15 @@ def ensure_worktree(worktree: Path, new_branch: str | None,
     subprocess.run(cmd, cwd=PRIMARY_REPO, check=True)
     primary_venv = PRIMARY_REPO / ".venv"
     worktree_venv = worktree / ".venv"
-    if primary_venv.exists() and not worktree_venv.exists():
+    if primary_venv.exists() and not (
+            worktree_venv.exists() or worktree_venv.is_symlink()
+    ):
         worktree_venv.symlink_to(primary_venv)
     primary_node_modules = PRIMARY_REPO / "node_modules"
     worktree_node_modules = worktree / "node_modules"
-    if primary_node_modules.exists() and not worktree_node_modules.exists():
+    if primary_node_modules.exists() and not (
+            worktree_node_modules.exists() or worktree_node_modules.is_symlink()
+    ):
         worktree_node_modules.symlink_to(primary_node_modules)
 
 
@@ -408,7 +412,7 @@ def main() -> int:
         worktree = Path(args.worktree)
         if not worktree.is_absolute():
             worktree = PRIMARY_REPO / worktree
-    elif mode != "read-only" and not args.dry_run:
+    elif mode != "read-only" and not args.dry_run and args.agent != "agy":
         sys.stderr.write(
             f"[smart] mode={mode} requires --worktree to avoid trampling "
             "the main checkout\n"
