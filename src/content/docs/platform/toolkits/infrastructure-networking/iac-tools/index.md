@@ -4,7 +4,7 @@ sidebar:
   order: 0
   label: "IaC Tools"
 ---
-> **Toolkit Track** | 10 Modules | ~8.5 hours total
+> **Toolkit Track** | 11 Modules | ~9.5 hours total
 
 ## Overview
 
@@ -34,6 +34,7 @@ Before starting this toolkit:
 | 7.8 | [SST](module-7.8-sst/) | `[MEDIUM]` | 45-50 min |
 | 7.9 | [System Initiative](module-7.9-system-initiative/) | `[COMPLEX]` | 50-55 min |
 | 7.10 | [Nitric](module-7.10-nitric/) | `[MEDIUM]` | 45-50 min |
+| 7.11 | [HCP Terraform Workflow Operations](module-7.11-hcp-terraform-workflows/) | `[COMPLEX]` | 60-70 min |
 
 ## Learning Outcomes
 
@@ -49,6 +50,7 @@ After completing this toolkit, you will be able to:
 8. **Develop with SST** — Modern serverless framework with live Lambda
 9. **Explore System Initiative** — Reactive, visual DevOps automation
 10. **Build with Nitric** — Cloud-agnostic application framework
+11. **Operate Terraform at organizational scale** — HCP Terraform workspaces, dynamic provider credentials, Sentinel/OPA policy gates, drift detection, and private module registry workflows
 
 ## Tool Selection Guide
 
@@ -224,6 +226,11 @@ Module 7.10: Nitric
      │  Cloud-agnostic framework
      │  Deploy anywhere
      ▼
+Module 7.11: HCP Terraform Workflow Operations
+     │
+     │  Remote runs, governance, drift
+     │  Operate Terraform at org scale
+     ▼
 [Toolkit Complete] → Apply to production
 ```
 
@@ -241,6 +248,7 @@ Module 7.10: Nitric
 | SST | URL shortener with live Lambda development |
 | System Initiative | Reactive VPC with automatic subnet calculation |
 | Nitric | Multi-cloud notes API deployed everywhere |
+| HCP Terraform | VCS-driven workflow with dynamic credentials and policy gates |
 
 ## Related Tracks
 
