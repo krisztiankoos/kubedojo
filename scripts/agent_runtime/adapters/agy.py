@@ -9,8 +9,20 @@ Known behavioral facts as of issue #1350:
 
 - Headless prompt mode is ``agy -p "<prompt>"``. Stdin prompts are ignored.
 - Resume/new conversation is ``--conversation=<uuid>``.
-- Write-capable modes use ``--dangerously-skip-permissions``.
+- Write-capable modes use ``--dangerously-skip-permissions``. In addition,
+  ``dispatch_smart.py`` forces ``mode="danger"`` for ``--agent agy``
+  unconditionally because read-only would otherwise hang on the CLI's
+  interactive permission prompts (same protection as ``--agent codex``).
 - No known on-disk session or liveness file exists, so stdout is canonical.
+
+MCP / plugin configuration is a Phase-2 follow-up. ``agy plugin`` only
+exposes ``import gemini|claude``, ``install <known-target>``, ``enable``,
+and ``disable``. The CLI has no plugin-marketplace browse surface as of
+1.0.0, and ``agy plugin import gemini`` is a no-op in a default install
+because gemini-cli ships no extensions out of the box. The adapter
+accepts ``tool_config["mcp_server_names"]`` for API parity with
+``GeminiAdapter`` but does not act on it today — wire ``agy plugin
+enable <name>`` here once we have concrete MCP servers to consume.
 """
 from __future__ import annotations
 
@@ -81,7 +93,7 @@ class AgyAdapter:
         return InvocationPlan(
             cmd=cmd,
             cwd=cwd,
-            stdin_payload=None,
+            stdin_payload="",
             output_file=None,
             env_overrides={_MODEL_HINT_ENV: effective_model},
             liveness_paths=(),

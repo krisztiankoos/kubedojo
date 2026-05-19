@@ -359,6 +359,21 @@ def main() -> int:
             )
         mode = "danger"
 
+    # Agy always runs in danger mode for the same reason — read-only would
+    # cause its tool-permission prompts to hang waiting for human input in
+    # a headless dispatch, since the runtime cannot answer the prompt.
+    # `--dangerously-skip-permissions` is the equivalent of codex's danger
+    # sandbox: auto-approve all tool calls. User direction 2026-05-19.
+    if args.agent == "agy" and mode != "danger":
+        if args.mode is not None and args.mode != "danger":
+            p.error(
+                f"--agent agy always runs in danger mode (you passed "
+                f"--mode {args.mode!r}). agy in headless dispatch needs "
+                f"--dangerously-skip-permissions to avoid hanging on "
+                f"interactive permission prompts. Drop --mode to use the default."
+            )
+        mode = "danger"
+
     if args.prompt is None:
         sys.stderr.write("[smart] no prompt — pass as arg or `-` for stdin\n")
         return 2

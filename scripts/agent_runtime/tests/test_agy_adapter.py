@@ -81,7 +81,7 @@ def test_build_invocation_uses_home_fallback(monkeypatch) -> None:
     )
 
     assert plan.cmd[0].endswith("/.local/bin/agy")
-    assert plan.stdin_payload is None
+    assert plan.stdin_payload == ""
 
 
 def test_parse_response_happy_path() -> None:
