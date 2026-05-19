@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quality rankings per task lane — KubeDojo agent matrix consolidation, 2026-05-19</title>
+<link rel="stylesheet" href="../design-system.css">
+<style>
+  body { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+  h1 { margin-bottom: 0.25rem; }
+  h2 { margin-top: 2rem; padding-top: 0.5rem; border-top: 1px solid #ddd; }
+  h3 { margin-top: 1.5rem; }
+  p.meta { color: #555; font-size: 0.9rem; margin-top: 0.1rem; }
+  .tl { background:#fff8e1; padding:0.75rem 1rem; border-left:4px solid #ffb300; margin:0.75rem 0 1.25rem; border-radius:0.3rem; }
+  table { width:100%; border-collapse: collapse; margin: 0.75rem 0 1.25rem; font-size: 0.92rem; }
+  th, td { border:1px solid #ddd; padding:0.4rem 0.55rem; vertical-align: top; }
+  th { background:#f3f5f7; text-align:left; }
+  td.rank { font-weight: 700; text-align: center; width: 3rem; }
+  td.rank-1 { background:#d4edda; }
+  td.rank-1-tied { background:#d4edda; }
+  td.rank-dq { background:#f5c2c7; color:#842029; }
+  td.model { font-family: ui-monospace, "SF Mono", monospace; font-size: 0.88rem; }
+  code { background:#f3f5f7; padding:0 0.25rem; border-radius:0.2rem; font-size:0.88em; }
+  pre { background:#f6f8fa; padding:0.75rem; border-radius:0.4rem; overflow-x:auto; font-size:0.85em; }
+  details { margin: 0.5rem 0; }
+  summary { font-weight:600; cursor:pointer; padding:0.3rem 0; }
+  .pill { display:inline-block; padding:0.1rem 0.5rem; border-radius:0.35rem; font-size:0.78rem; font-weight:600; margin-right:0.25rem; }
+  .pill-win { background:#d4edda; color:#155724; }
+  .pill-dq { background:#f5c2c7; color:#842029; }
+  .pill-mixed { background:#fff3cd; color:#856404; }
+  .pill-untested { background:#e2e3e5; color:#41464b; }
+  .star { color:#b88500; }
+  .footnote { font-size: 0.85rem; color: #555; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+
+<h1>Quality rankings per task lane — KubeDojo agent matrix consolidation</h1>
+<p class="meta">Compiled 2026-05-19 session 32 · driver: claude opus 4.7 inline · synthesises calibration data from 5 sessions (14 / 17 / 26b / 29 / 30) + production track record through session 32. <strong>Quality-only ranking; pricing is at <a href="./openrouter-snapshot-2026-05-19.md">openrouter-snapshot-2026-05-19.md</a>.</strong></p>
+
+<div class="tl">
+<strong>TL;DR.</strong> Across 6 task lanes (code writing, code review, architecting, planning, content writing, content reviewing) the production-recommended quality stack is:
+<ul style="margin-top:0.4rem; margin-bottom:0.2rem;">
+  <li><strong>Code writing</strong>: codex gpt-5.5 high (calibration ★) · 2nd claude-sonnet-4-6</li>
+  <li><strong>Code review</strong>: claude-sonnet-4-6 (5/5 on calibrated ground truth, production-validated session 31+32) · 2nd qwen3.6-plus on Python diffs</li>
+  <li><strong>Architecting</strong>: claude-opus-4-7 OR deepseek-v4-pro (tied — DS uniquely good at risk-catching) · 2nd gemini-3.1-pro-preview</li>
+  <li><strong>Planning</strong>: claude-opus-4-7 OR codex gpt-5.5 (tied 5/5) · 2nd gemini-3.1-pro / DS-flash also 5/5</li>
+  <li><strong>Content writing</strong>: codex gpt-5.5 high + <code>--search</code> (★, 13+ production T0 modules) · 2nd claude-opus-4-7 (senior framing)</li>
+  <li><strong>Content reviewing</strong>: claude-sonnet-4-6 (only reviewer with clean production track record) · 2nd claude-opus-4-7 OR gemini-3.1-pro-preview</li>
+</ul>
+Two production-grade DQs: <strong>gemini-3-flash-preview</strong> (0/2 on the lab-bug catch corpus, approved real lab-breaking bugs) and <strong>grok-4.3 writer</strong> (DQ'd by the #388 5000-body-word verifier gate at N=2). DeepSeek tiers <strong>hallucinate factual GH-Actions/Dependabot schemas</strong> and approved skeleton modules in production (sessions 27-28), so use only where factual schema correctness is not load-bearing.
+</div>
+
+<h2>Methodology</h2>
+
+<p>Three independent calibration runs over the past 4 days converged on the rankings below. Each run was scored against a deterministic ground-truth corpus, not vibes. Cross-referenced with production review verdicts on shipped modules.</p>
+
+<table>
+<thead><tr><th>Calibration</th><th>Date</th><th>Scope</th><th>n dispatches</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>Grok-4.3 + role allocation</td><td>2026-05-16 (session 14)</td><td>5 roles × 9 models (claude × 3, codex, grok × 3 efforts, gemini × 2) on PR #1229 ground truth + 4 hallucination questions</td><td>45</td><td><code>audit/2026-05-16-grok-4.3-kubedojo-calibration/REPORT.html</code></td></tr>
+<tr><td>DeepSeek + Mistral</td><td>2026-05-17 (session 17)</td><td>10 roles × ~6 models (DS-pro, DS-flash, claude-opus, gemini-pro, codex, grok-4)</td><td>~60</td><td><code>audit/2026-05-17-deepseek-mistral-calibration/REPORT.html</code></td></tr>
+<tr><td>DS V4 Flash 6-task</td><td>2026-05-18 (session 26b)</td><td>6 tasks × DS-flash isolated calibration</td><td>6</td><td><code>docs/research/calibration-deepseek-flash-2026-05-18.html</code></td></tr>
+<tr><td>Replace grok with qwen</td><td>2026-05-19 (session 29)</td><td>5 lanes × qwen/kimi/glm; R1 + cost-walk-down R2 + cross-lane R3-R4</td><td>17</td><td><code>docs/agent-matrix/calibration-2026-05-19-review-lane.md</code></td></tr>
+<tr><td>5-way (claude/codex/DS)</td><td>2026-05-19 (session 30)</td><td>5 lanes × 5 models (claude-sonnet, claude-opus, codex, DS-pro, DS-flash) on same PR #1333 corpus as session 29; merged with R1+R3+R4 qwen data</td><td>25 + 4 re-runs</td><td><code>docs/session-state/2026-05-19-session-30-five-way-calibration.html</code></td></tr>
+<tr><td>Production validation</td><td>sessions 28-32 (2026-05-18 → 2026-05-19)</td><td>~15 shipped content modules + 1 dispatch-tooling PR; verifier T0 status + real-bug-catch verdicts</td><td>—</td><td>session handoffs <code>docs/session-state/*.html</code></td></tr>
+</tbody>
+</table>
+
+<p><strong>Models in scope</strong>: claude-opus-4-7, claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5, codex gpt-5.5 (high effort), gpt-5.3-codex-spark, gemini-3.1-pro-preview, gemini-3-flash-preview, deepseek-v4-pro, deepseek-v4-flash, qwen/qwen3.6-plus, qwen/qwen3.6-27b, moonshotai/kimi-k2.5, moonshotai/kimi-k2.6, z-ai/glm-5.1, grok-4 / grok-4.3 (removed from roster session 29).</p>
+
+<p><strong>Sample size caveat</strong>: most cells are n=1. Session-30's 5-way cells are n=1 on a single PR. Multi-prompt re-runs (codex R1 vs R6 same prompt) revealed real model variance, so single-shot verdicts on review/hallucination lanes are signal not proof. Production validation across 15+ shipped modules tightens the confidence on the content-writing and content-review lanes specifically.</p>
+
+<h2>1. Code writing (= edit / draft of working Python or YAML)</h2>
+
+<p>Workload: small/medium code fixes, single-file Python or YAML edits, "write a function that does X" style prompts. Measured: correctness, idiom, error-handling tightness.</p>
+
+<table>
+<thead><tr><th>Rank</th><th>Model</th><th>Test result</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td class="rank rank-1">1</td><td class="model">codex gpt-5.5 high</td><td>Calibration ★ "tightest" on PR #1229 fix lane. Session 30 R6 clean ✅. Production-validated as primary writer 2026-05-16 → current.</td><td>2026-05-16</td></tr>
+<tr><td class="rank rank-1-tied">1 (tied)</td><td class="model">claude-sonnet-4-6</td><td>Session 30 R6 edit (write Python from spec): clean ✅ — zero issues, idiomatic.</td><td>2026-05-19 session 30</td></tr>
+<tr><td class="rank">2</td><td class="model">claude-opus-4-7</td><td>Session 30 R6 edit: clean ✅. Effectively identical to sonnet on this lane. Opus is over-spec for code-writing where sonnet is already clean.</td><td>2026-05-19 session 30</td></tr>
+<tr><td class="rank">3</td><td class="model">deepseek-v4-pro</td><td>Session 30 R6 edit: clean ✅ but a minor nit. Acceptable cross-family backup.</td><td>2026-05-19 session 30</td></tr>
+<tr><td class="rank">4</td><td class="model">qwen/qwen3.6-plus</td><td>Session 29 R4: clean. Less battle-tested.</td><td>2026-05-19 session 29</td></tr>
+<tr><td class="rank">5</td><td class="model">deepseek-v4-flash</td><td>Session 30 R6: "minor nit" — acceptable but not preferred.</td><td>2026-05-19 session 30</td></tr>
+<tr><td class="rank">6</td><td class="model">moonshotai/kimi-k2.5</td><td>Session 29 R4: "broad except" — sloppy error handling pattern. Below the rest.</td><td>2026-05-19 session 29</td></tr>
+</tbody>
+</table>
+
+<h2>2. Code review (small/medium Python diffs + security YAML)</h2>
+
+<p>Workload: PR code review — security YAML, Python code review, "what's wrong with this diff?" style prompts. Measured: valid findings caught vs ground truth, hallucinations, soft-verdict (APPROVE despite real bugs) failure mode.</p>
+
+<table>
+<thead><tr><th>Rank</th><th>Model</th><th>Test result</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td class="rank rank-1">1</td><td class="model">claude-sonnet-4-6</td><td><strong>5/5 valid findings</strong> on PR #1333 ground truth — the ONLY models (with opus) to catch F1 + F2 + F3 + the novel pip-pin issue + zero hallucinations. <strong>Production-validated</strong> session 31 (4 content PRs with real catches: KQL Event Grid metric names, Azure SQL ZR pricing row, dead header) + session 32 (vLLM probe-path bug on Module 3.1).</td><td>2026-05-19 session 30 + production</td></tr>
+<tr><td class="rank rank-1-tied">1 (tied)</td><td class="model">claude-opus-4-7</td><td>5/5 valid findings, identical to sonnet on this corpus. Use opus only when sonnet rate-limits.</td><td>2026-05-19 session 30</td></tr>
+<tr><td class="rank">2</td><td class="model">qwen/qwen3.6-plus</td><td>R4 Python code-review: <strong>8 findings — edged claude on volume</strong>. R1 security YAML: 1 finding only (lane-dependent strength). No hallucinations.</td><td>2026-05-19 session 29 R1 + R4</td></tr>
+<tr><td class="rank">3</td><td class="model">codex gpt-5.5</td><td><strong>High variance</strong>: 3/3 valid R1 (ground-truth run), 1/4 on R6 re-run of identical prompt. Unsuitable as sole gate but valuable as one voice in a multi-agent verdict.</td><td>2026-05-19 R1 vs R6</td></tr>
+<tr><td class="rank">3 (tied)</td><td class="model">gemini-3.1-pro-preview</td><td>2/2 on PR #1229 lab-bug catch corpus — the ONLY model in session 14 to catch both real bugs. Later overtaken by claude on session-30 corpus. Strong fallback.</td><td>2026-05-16 session 14</td></tr>
+<tr><td class="rank">4</td><td class="model">moonshotai/kimi-k2.5</td><td>R4 Python code-review: "5 surface" findings — fewer than qwen, structurally clean.</td><td>2026-05-19 session 29 R4</td></tr>
+<tr><td class="rank">5</td><td class="model">deepseek-v4-flash</td><td>R6 Python code-review: "strong + test-bug catch". But on security YAML lane: <strong>hallucinated</strong> (claimed uk-quality-checks.yml lacks permissions block; wrong Dependabot YAML schema).</td><td>2026-05-19 session 30</td></tr>
+<tr><td class="rank rank-dq">DQ</td><td class="model">deepseek-v4-pro</td><td><strong>"Soft verdict (APPROVE despite real issues)"</strong> on Python code-review R6. <strong>Hallucinated</strong> specific GH-Actions schemas on security YAML (claimed actions/upload-pages-artifact needs pages: write — FALSE). <strong>Production session 27</strong> approved 2 modules (5.9 ML repo hygiene, 5.10 model-serving) that now show T3 with mean-words-per-paragraph ≈ 9 — skeleton structure that should have been blocked.</td><td>2026-05-19 session 30 + production</td></tr>
+<tr><td class="rank rank-dq">DQ</td><td class="model">gemini-3-flash-preview</td><td><strong>0/2 on PR #1229</strong> — APPROVE'd a PR with two real lab-breaking bugs (nginx-pod has no kubectl binary; dm-edit Role missing get/list verbs). Removed from production reviewer slot session 14.</td><td>2026-05-16 session 14</td></tr>
+<tr><td class="rank rank-dq">DQ</td><td class="model">qwen/qwen3.6-27b</td><td>R1 security YAML: hallucinated fake <code>actions/cache@v4</code> reference in uk-quality-checks.yml (action not in the workflow). False-positive confidence is disqualifying for an auto-merge reviewer.</td><td>2026-05-19 session 29 R1</td></tr>
+<tr><td class="rank rank-dq">DQ</td><td class="model">moonshotai/kimi-k2 (base)</td><td>R2 cost-walk-down: hallucinated "persist-credentials weakens security" finding. DQ'd for fabrication.</td><td>2026-05-19 session 29 R2</td></tr>
+</tbody>
+</table>
+
+<h2>3. Architecting (system design, risk-surfacing, multi-option proposals)</h2>
+
+<p>Workload: "design X system" / "what could go wrong with this approach?" / "propose options for Y". Measured: design soundness, unique risk-flags surfaced, multi-option breadth.</p>
+
+<table>
+<thead><tr><th>Rank</th><th>Model</th><th>Test result</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td class="rank rank-1">1</td><td class="model">claude-opus-4-7</td><td>Session 30 R6: "strong + ack-var idea" — concrete novel mitigation. 2026-05-17 cal: 5/5 score. <strong>Calibration ★ for senior-track SLO framing.</strong></td><td>2026-05-17 + session 30</td></tr>
+<tr><td class="rank rank-1-tied">1 (tied)</td><td class="model">deepseek-v4-pro</td><td>Session 30 R6: <strong>"strong + aliasing-risk ⭐"</strong> — surfaced OpenRouter silent model-id aliasing risk that NO other model caught. 2026-05-17 cal: 5/5, 9.9 KB. <strong>Genuinely best-in-class for risk-catching when factual schema knowledge isn't load-bearing.</strong></td><td>2026-05-17 + session 30</td></tr>
+<tr><td class="rank rank-1-tied">1 (tied)</td><td class="model">gemini-3.1-pro-preview</td><td>2026-05-17 cal: 5/5, 10.9 KB (largest output) — strong on design depth. Production fallback for sonnet rate-limits on architecture-class prompts.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank">2</td><td class="model">deepseek-v4-flash</td><td>Session 30 R6: <strong>"strong + usage-record-risk ⭐"</strong> — surfaced override path bypasses runner.invoke cost-tracking (unique catch). 2026-05-17 cal: 5/5, 8.9 KB on architect lane (surprisingly matched premium tier).</td><td>2026-05-17 + session 30</td></tr>
+<tr><td class="rank">2 (tied)</td><td class="model">claude-sonnet-4-6</td><td>Session 30 R6: "strong + parity-risk" — solid but didn't reach the unique-finding level of opus/DS-pro/DS-flash.</td><td>2026-05-19 session 30</td></tr>
+<tr><td class="rank">3</td><td class="model">grok-4</td><td>2026-05-17 cal: 5/5 — the ONLY agent to propose Option C beyond binary A/B framing. <strong>Removed from roster session 29</strong> (PR #1337) for unrelated reviewer-lane DQs.</td><td>2026-05-17 (historical)</td></tr>
+<tr><td class="rank">3 (tied)</td><td class="model">codex gpt-5.5</td><td>Session 30 R6 + 2026-05-17 cal: 5/5, 5.0 KB — disciplined and concise. No unique risk-flags compared to opus/DS-pro.</td><td>2026-05-17 + session 30</td></tr>
+<tr><td class="rank">4</td><td class="model">qwen/qwen3.6-plus</td><td>Session 29 R3 architect: "strong + variance-risk" — solid but below opus/DS-pro/gemini-pro on unique-finding density.</td><td>2026-05-19 session 29 R3</td></tr>
+<tr><td class="rank">5</td><td class="model">moonshotai/kimi-k2.5</td><td>Session 29 R3: "OK" — lowest in the field on this lane.</td><td>2026-05-19 session 29 R3</td></tr>
+</tbody>
+</table>
+
+<h2>4. Planning (concrete file:line + regression test + rollback)</h2>
+
+<p>Workload: "given bug X in file Y, produce a plan to fix it" — file:line precision, regression test placement, rollback procedure. Measured: actionability + completeness.</p>
+
+<table>
+<thead><tr><th>Rank</th><th>Model</th><th>Test result</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td class="rank rank-1">1</td><td class="model">claude-opus-4-7</td><td>2026-05-17 cal: 5/5 — tied tightest. Concrete file:line + regression test + rollback all present.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank rank-1-tied">1 (tied)</td><td class="model">codex gpt-5.5</td><td>2026-05-17 cal: 5/5 — tied tightest. Codex's strength on file-level precision shows here.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank">2</td><td class="model">gemini-3.1-pro-preview</td><td>2026-05-17 cal: 5/5, 5.3 KB — strong fallback.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank">2 (tied)</td><td class="model">deepseek-v4-flash</td><td>2026-05-17 cal: 5/5, 6.1 KB — <strong>surprisingly matches premium tier on plan</strong>. DS-flash is genuinely strong on planning specifically (even when it hallucinates on YAML schemas elsewhere).</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank">3</td><td class="model">deepseek-v4-pro</td><td>2026-05-17 cal: 5/5, 4.8 KB — viable but DS-flash matched it at lower cost.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank rank-dq" colspan="2" style="text-align:center;">Untested</td><td colspan="2">qwen, kimi, glm — no planning-lane data on the calibration corpus.</td></tr>
+</tbody>
+</table>
+
+<h2>5. Content writing (>1k-line teaching modules with code, tables, diagrams, sources)</h2>
+
+<p>Workload: a full KubeDojo curriculum module — 5,000+ body words, 10+ cited sources, scenario quiz, hands-on exercise, structured per <code>.claude/rules/module-quality.md</code>, passing <code>scripts/quality/verify_module.py</code> at T0. Measured: verifier-pass rate, body-word count, density, citation quality, factual correctness.</p>
+
+<table>
+<thead><tr><th>Rank</th><th>Model</th><th>Test result</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td class="rank rank-1">1</td><td class="model">codex gpt-5.5 (danger + <code>--search</code>)</td><td>Calibration ★ "tightest" on 2026-05-16 + 2026-05-17. <strong>Production: 13+ T0-passing modules sessions 28-32</strong> (body_words 5,000-8,500, sources 15-30, all reachable). Reliable T0 first-try on the verifier. Action-first prompt template (session 24) keeps spiral-search budget bounded.</td><td>multi-session production</td></tr>
+<tr><td class="rank">2</td><td class="model">claude-opus-4-7</td><td>2026-05-17 cal: "senior-track sophisticated SLO framing" lane. Calibration suggests opus produces richer prose than codex on conceptual depth. <strong>Zero production module count yet</strong> — claim is calibration-only.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank">3</td><td class="model">deepseek-v4-pro hermes</td><td>2026-05-17 cal: 4.6 KB dense opening prose at 900s but <strong>meta-text leak</strong> ("the contract", "anchor" — same pattern as <code>feedback_codex_prose_meta_diction_leak</code> but on DS this time). Not viable without a post-process strip.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank rank-dq">DQ</td><td class="model">grok-4.3 (all efforts)</td><td><strong>N=2 on the full kubedojo writer prompt</strong> (5000-word floor): grok-4.20-non-reasoning produced 4,942w with structural defects + hallucinated verifier output; grok-4.3 reasoning=xhigh produced 3,810w with clean structure. <strong>Both below the #388 5000-body-word verifier gate.</strong> Natural convergence ceiling on long structured prompts, not a budget cap. <code>project_grok_writer_word_cap_2026-05-16</code>.</td><td>2026-05-16 session 16 N=2</td></tr>
+<tr><td class="rank rank-dq">DQ</td><td class="model">deepseek-v4-flash</td><td>2026-05-17 cal: 941-byte writer output + <strong>fabricated "File written to:"</strong> action it can't perform (hermes can't write files). Not viable.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank rank-dq" colspan="2" style="text-align:center;">Untested</td><td colspan="2">qwen/qwen3.6-plus, moonshotai/kimi-k2.5, gemini-3.1-pro-preview at >1k content scale. Session 29's qwen R3 draft was small architectural prose, not a 5k-word module. <strong>This is the biggest data gap.</strong></td></tr>
+</tbody>
+</table>
+
+<h2>6. Content reviewing (>1k-line modules against the rubric)</h2>
+
+<p>Workload: review a >1k-line teaching module against <code>docs/quality-rubric.md</code> + <code>.claude/rules/module-quality.md</code>. Catch factual errors, structural failures, source quality issues. Measured: production track record (do shipped modules stay T0 a week later?) + factual catch rate.</p>
+
+<table>
+<thead><tr><th>Rank</th><th>Model</th><th>Test result</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td class="rank rank-1">1</td><td class="model">claude-sonnet-4-6</td><td><strong>Production-validated</strong>: 5 content modules reviewed across sessions 31 + 32; all still pass verifier T0 weeks later. Caught real factual errors: KQL Event Grid metric names (session 31 PR #1344), Azure SQL ZR pricing row + dead-header (session 31 PR #1345), <strong>vLLM probe-path bug</strong> (session 32 PR #1349 — codex hedged in prose then committed wrong paths in YAML; sonnet caught it). <strong>Only reviewer with a clean production track record on this lane.</strong></td><td>sessions 31-32 production</td></tr>
+<tr><td class="rank rank-1-tied">1 (tied)</td><td class="model">claude-opus-4-7</td><td>2026-05-17 cal: 5/5, 6.0 KB on module-quality review lane. Same family, deeper reasoning budget — likely equal-or-better than sonnet on hardest cases. <strong>Untested at production scale</strong> — claim is calibration-only.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank">2</td><td class="model">gemini-3.1-pro-preview</td><td>2026-05-17 cal: 5/5, 7.2 KB on rubric lane. Production fallback when claude rate-limits.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank rank-dq">Mixed</td><td class="model">deepseek-v4-pro</td><td><strong>Calibration: 5/5</strong> (2026-05-17 cal, 7.8 KB). <strong>Production: failed.</strong> Session 27 approved 2 modules (5.9 ML repo hygiene, 5.10 model-serving) that NOW show T3 with mean-words-per-paragraph ≈ 9 — skeleton bullet-list structure that should have been blocked. Plus session 30 schema hallucinations on GH-Actions/Dependabot. <strong>The "5/5 on rubric review" calibration claim is contradicted by what actually shipped.</strong></td><td>2026-05-17 cal + session 27 production</td></tr>
+<tr><td class="rank">3</td><td class="model">deepseek-v4-flash</td><td>2026-05-17 cal: 5.8 KB on rubric lane — acceptable for cross-family second opinion. Same hallucination caveat as DS-pro.</td><td>2026-05-17 session 17</td></tr>
+<tr><td class="rank rank-dq" colspan="2" style="text-align:center;">Untested</td><td colspan="2">qwen/qwen3.6-plus, moonshotai/kimi-k2.5 — <strong>no >1k-content-review evidence</strong>. Session 29's "qwen preferred for content modules" memory claim was never calibrated on this lane.</td></tr>
+</tbody>
+</table>
+
+<h2>Production track record (the test calibration can't substitute for)</h2>
+
+<p>Calibration is a controlled probe. Production is the real measure. The table below counts what each reviewer actually approved that has since aged well or poorly.</p>
+
+<table>
+<thead><tr><th>Reviewer</th><th>Modules approved in production</th><th>Still T0 today</th><th>Now T3</th><th>Real bugs caught at review time</th></tr></thead>
+<tbody>
+<tr><td class="model">claude-sonnet-4-6</td><td>5 (sessions 31-32: PRs #1344, #1345, #1346, #1347, #1349)</td><td><strong>5/5</strong></td><td>0/5</td><td><strong>3 real catches</strong> (KQL metric names, ZR pricing row, vLLM probe paths)</td></tr>
+<tr><td class="model">deepseek-v4-pro</td><td>4 (sessions 27-28: PRs #1325, #1326, #1327, #1330)</td><td>2/4</td><td><strong>2/4</strong> (modules 5.9 + 5.10 at mwpp ≈ 9)</td><td>1 catch (Evidently DataDriftPreset API arg)</td></tr>
+<tr><td class="model">grok-4</td><td>~27 (sessions 17-19, T5 burn-down)</td><td>not audited</td><td>not audited</td><td>3 real lab-runnability catches (#1249, #1253, #1262) + 1 false-positive (#1257 nginx-wget hallucination — session-19 audit) + later 2 hallucinated must-fix items on T2-10 round-1 (session 27, refuted by direct evidence; reviewer flipped to DS-pro)</td></tr>
+<tr><td class="model">gemini-3-flash-preview (DQ'd)</td><td>n/a (removed before production use)</td><td>—</td><td>—</td><td>0/2 on session-14 calibration on PR #1229 — would have approved real lab-breaking bugs</td></tr>
+</tbody>
+</table>
+
+<p>The production-vs-calibration gap on deepseek-v4-pro is the single most important datum here: a model can score 5/5 on a controlled rubric review and still approve structurally broken content in the wild. Production-validated reviewers are not interchangeable with calibration-rated ones.</p>
+
+<h2>Production-recommended quality stack</h2>
+
+<table>
+<thead><tr><th>Lane</th><th>Primary</th><th>Cross-family second opinion / fallback</th><th>Tertiary</th></tr></thead>
+<tbody>
+<tr><td>Code writing</td><td><strong>codex gpt-5.5 high</strong></td><td>claude-sonnet-4-6</td><td>deepseek-v4-pro hermes</td></tr>
+<tr><td>Code review</td><td><strong>claude-sonnet-4-6</strong></td><td>qwen/qwen3.6-plus (Python diff lane specifically)</td><td>claude-opus-4-7 (when sonnet rate-limits)</td></tr>
+<tr><td>Architecting</td><td><strong>claude-opus-4-7</strong></td><td>deepseek-v4-pro (for risk-catching; double-check any schema claim)</td><td>gemini-3.1-pro-preview</td></tr>
+<tr><td>Planning</td><td><strong>claude-opus-4-7 OR codex gpt-5.5</strong> (tied)</td><td>gemini-3.1-pro-preview</td><td>deepseek-v4-flash (unexpectedly strong on plan lane)</td></tr>
+<tr><td>Content writing</td><td><strong>codex gpt-5.5 high + <code>--search</code></strong> (danger mode + per-issue worktree)</td><td>claude-opus-4-7 (senior-track framing where opus differentiates)</td><td>—</td></tr>
+<tr><td>Content reviewing</td><td><strong>claude-sonnet-4-6</strong></td><td>claude-opus-4-7 OR gemini-3.1-pro-preview</td><td>deepseek-v4-pro <em>only</em> for second-opinion cross-family triangulation — never as sole gate</td></tr>
+</tbody>
+</table>
+
+<h2>Data gaps worth closing before the 160-module rewrite chain</h2>
+
+<ol>
+<li><strong>>1k-content-review calibration is unrun for qwen, kimi, gemini-pro.</strong> Calibration brief: pick 3 known-buggy shipped modules (e.g. module-5.9 ML repo hygiene at mwpp 9.1, module-5.10 model-serving at mwpp 10.6, module-3.14 App Service at body_words 4204 / 0 sources), run each through claude-sonnet + claude-opus + gemini-pro + DS-pro + qwen-plus reviews, score against the verifier-detectable failures. n=15 dispatches, ~$0.50, ~45 min wall. <strong>Closes the single biggest gap before pivoting the autonomous chain to rewrites.</strong></li>
+<li><strong>Content-writing calibration is missing for qwen/kimi/gemini-pro at &gt;1k scale.</strong> Session 29's qwen R3 was small architecture prose, not a full module. If we ever want to offload codex-writer (which we don't right now per quality-first policy), this gap matters. Defer.</li>
+<li><strong>Replicate session-30's 5-way on a different diff class.</strong> n=1 per cell on a single 3KB security PR is signal, not proof. A second corpus (a content-module diff, a refactor diff) would either confirm or noise-down the rankings.</li>
+<li><strong>Re-run review-lane calibration when qwen 3.7 lands.</strong> Tracked in <code>feedback_deepseek_pro_for_module_reviews</code> as "qwen 3.7 watch".</li>
+</ol>
+
+<h2>Honest caveats</h2>
+
+<ul>
+<li><strong>n=1 per cell on most data points.</strong> Codex variance (3/3 R1 → 1/4 R6 same prompt) demonstrates single-shot verdicts are signal, not ground truth. Multi-agent consensus reduces this risk.</li>
+<li><strong>Codex's "ground truth" on PR #1333 was itself incomplete</strong> — codex's own APPROVE missed the pip-pin issue 4/5 calibration candidates surfaced. So the deep claude-vs-codex comparison rests on a partially-flawed reference. Future calibrations should use multi-model consensus rather than one reviewer's verdict.</li>
+<li><strong>Some calibration cells aren't fair</strong>: codex caught F3 (cooldown) because it ran zizmor; candidates without tool-use received the diff text only. The lane "without tool-use codex still wins" is false — they're different test conditions.</li>
+<li><strong>Without HTTP probes, ALL models fabricate URL verification.</strong> Real URL verification requires <code>codex gpt-5.5 + KUBEDOJO_CODEX_SEARCH=1</code>. Every other model "verifies" via training-knowledge pattern-matching — sometimes right, sometimes confidently wrong.</li>
+<li><strong>Grok is removed from the roster</strong> as of session 29 (PR #1337). The architect-lane "Option C" strength was real but not enough to outweigh the reviewer-lane DQ pattern. Don't add back without re-calibration.</li>
+</ul>
+
+<h2>Source files</h2>
+
+<ul>
+<li><code>audit/2026-05-16-grok-4.3-kubedojo-calibration/REPORT.html</code> — 45-dispatch role allocation calibration</li>
+<li><code>audit/2026-05-17-deepseek-mistral-calibration/REPORT.html</code> — 10-lane DeepSeek + Mistral calibration, the source of the per-role winner table</li>
+<li><code>audit/2026-05-18-grok-primary-calibration/REPORT.html</code> — grok-as-primary 27-PR production audit</li>
+<li><code>docs/research/calibration-deepseek-flash-2026-05-18.html</code> — DS V4 Flash isolated 6-task calibration</li>
+<li><code>docs/agent-matrix/calibration-2026-05-19-review-lane.md</code> — session 29 qwen-replaces-grok review-lane calibration</li>
+<li><code>docs/agent-matrix/openrouter-snapshot-2026-05-19.md</code> — OpenRouter pricing snapshot for the same model set</li>
+<li><code>docs/session-state/2026-05-19-session-30-five-way-calibration.html</code> — session 30 5-way matrix (apples-to-apples with session 29 R1+R3+R4)</li>
+<li><code>docs/session-state/2026-05-19-session-31-wave3-complete-plus-infra.html</code> — production validation: 4 Wave-3 modules reviewed by claude-sonnet</li>
+<li><code>docs/session-state/2026-05-19-session-32-dispatch-fix-plus-t2-7-module-3.1.html</code> — production validation: vLLM probe-path bug catch</li>
+<li>Memory: <code>feedback_deepseek_pro_for_module_reviews.md</code>, <code>project_role_allocation_2026-05-16.md</code>, <code>reference_provider_routing_economics.md</code>, <code>reference_qwen_hermes_openrouter.md</code>, <code>feedback_quality_over_budget_in_role_allocation.md</code></li>
+</ul>
+
+<p class="footnote">Refresh procedure: re-run any single-lane calibration via <code>docs/agent-matrix/calibration-2026-05-19-review-lane.md</code>'s methodology section. Update this report's date + rankings; do NOT delete superseded calibration files (each is a dated artifact). The OpenRouter snapshot must be re-fetched before any budget-affecting routing change.</p>
+
+</body>
+</html>
