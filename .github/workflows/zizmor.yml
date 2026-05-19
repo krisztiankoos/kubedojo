@@ -30,7 +30,7 @@ jobs:
           persist-credentials: false
 
       - name: Install zizmor
-        run: pip install zizmor
+        run: pip install 'zizmor==1.25.2'
 
       - name: Run zizmor
         env:
