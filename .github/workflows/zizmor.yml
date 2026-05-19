@@ -7,12 +7,14 @@ on:
     paths:
       - '.github/workflows/**'
       - '.github/actions/**'
+      - '.github/dependabot.yml'
   push:
     branches:
       - main
     paths:
       - '.github/workflows/**'
       - '.github/actions/**'
+      - '.github/dependabot.yml'
 
 permissions:
   contents: read
@@ -33,4 +35,4 @@ jobs:
       - name: Run zizmor
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: zizmor --persona=regular .github/workflows/
+        run: zizmor --persona=regular --strict-collection .github/

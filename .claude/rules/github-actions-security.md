@@ -27,9 +27,15 @@ Unless the workflow needs to `git push` (almost never the case for this repo's w
 
 Workflow-level `permissions:` apply to all jobs. Privileged scopes (`pages: write`, `id-token: write`, `contents: write`, `packages: write`) must live on the specific job that needs them.
 
-## 5. Reviewing a Dependabot github-actions PR
+## 5. Dependabot `cooldown` is mandatory
 
-Dependabot maintains the SHA-pinning pattern when the existing entry uses a SHA. But the PR can still be the attack delivery vector if Dependabot is fed a poisoned tag. Before merging:
+`.github/dependabot.yml` MUST set `cooldown: { default-days: 7 }` (or stricter) on every `package-ecosystem` entry, especially `github-actions`. The cooldown delays Dependabot from proposing a move to a newly-published tag for N days — the exact window the security community needs to detect and disclose a tag-mutation attack. The 2026-05-19 actions-cool incident was public within hours; a 7-day cooldown would have prevented Dependabot consumers from ever auto-adopting the poisoned tags.
+
+zizmor's `dependabot-cooldown` audit will fail the build on any ecosystem without it.
+
+## 6. Reviewing a Dependabot github-actions PR
+
+Even with cooldown, the PR can still be the attack delivery vector if a poisoned tag survives the cooldown window. Before merging:
 
 ```bash
 # Verify the new SHA actually points to the claimed tag in the upstream repo
@@ -39,16 +45,16 @@ gh api /repos/<owner>/<repo>/git/refs/tags/<tag> --jq '.object.sha'
 
 **Do not enable auto-merge on `github-actions` Dependabot PRs.** They are the single highest-impact PR class in this repo (CI runs with broad permissions).
 
-## 6. New workflow checklist
+## 7. New workflow checklist
 
-When adding a `.github/workflows/*.yml`:
+When adding a `.github/workflows/*.yml` or `.github/actions/*/action.yml`:
 
 1. Every `uses:` is SHA-pinned with version comment.
 2. `permissions:` block is present and starts from `contents: read` minimum.
 3. Privileged scopes are job-level, not workflow-level.
 4. `actions/checkout` has `persist-credentials: false` unless the workflow pushes commits.
-5. Run `uvx zizmor --offline .github/workflows/<new-file>.yml` locally — must be clean.
-6. CI's `zizmor` workflow will re-run the scan on the PR and block on findings.
+5. Run `uvx zizmor --offline --strict-collection .github/` locally — must be clean. `--strict-collection` is required; without it, an unparseable workflow silently passes.
+6. CI's `zizmor` workflow (which scans `.github/` with `--strict-collection`) will re-run on the PR and block on findings.
 
 ## References
 
