@@ -216,7 +216,9 @@ class ClaudeAdapter:
 
         # Rate-limit detection across both streams
         combined = f"{stdout}\n{stderr}"
-        rate_limited = bool(_RATE_LIMIT_RE.search(combined))
+        pattern_hit = bool(_RATE_LIMIT_RE.search(combined))
+        call_failed = returncode != 0 or not stdout.strip()
+        rate_limited = pattern_hit and call_failed
 
         # Success classification
         ok = returncode == 0 and bool(stdout.strip()) and not rate_limited
