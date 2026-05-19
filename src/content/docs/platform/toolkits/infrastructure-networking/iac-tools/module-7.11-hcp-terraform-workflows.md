@@ -1676,8 +1676,8 @@ variable "cost_center" {
 
 variable "aws_region" {
   type        = string
-  description = "AWS region for the optional S3 exercise."
-  default     = "us-east-1"
+  description = "AWS region for the optional bucket exercise."
+  default     = "us-west-2"
 }
 
 variable "bucket_suffix" {
