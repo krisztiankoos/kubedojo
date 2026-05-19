@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Session 29 — Replace grok with qwen + security hardening (5 PRs, full calibration)</title>
+<link rel="stylesheet" href="../design-system.css">
+<style>
+  body { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+  h1 { margin-bottom: 0.25rem; }
+  p.meta { color: #555; font-size: 0.9rem; margin-top: 0.1rem; }
+  .pill { display:inline-block; padding:0.1rem 0.55rem; border-radius:0.35rem; font-size:0.78rem; font-weight:600; }
+  .pill-shipped { background:#d4edda; color:#155724; }
+  .pill-deferred { background:#fff3cd; color:#856404; }
+  .pill-decision { background:#cce5ff; color:#004085; }
+  .pill-flag { background:#f5c2c7; color:#842029; }
+  table { width:100%; border-collapse: collapse; margin: 0.75rem 0 1.25rem; }
+  th, td { border:1px solid #ddd; padding:0.35rem 0.55rem; font-size:0.92rem; vertical-align: top; }
+  th { background:#f3f5f7; text-align:left; }
+  code { background:#f3f5f7; padding:0 0.25rem; border-radius:0.2rem; font-size:0.88em; }
+  pre { background:#f6f8fa; padding:0.75rem; border-radius:0.4rem; overflow-x:auto; font-size:0.85em; }
+  details { margin: 0.5rem 0; }
+  summary { font-weight:600; cursor:pointer; padding:0.3rem 0; }
+  .tl { background:#fff8e1; padding:0.75rem 1rem; border-left:4px solid #ffb300; margin:0.75rem 0 1.25rem; border-radius:0.3rem; }
+</style>
+</head>
+<body>
+
+<h1>Session 29 — Replace grok with qwen, security hardening, full agent calibration</h1>
+<p class="meta">2026-05-19 ~05:00 → ~12:30 local · driver: claude opus 4.7 inline · user signaled AFK mid-session ("go ahead drive it i need to focus on other stuff") and resumed for the qwen-vs-kimi decision · 5 PRs (3 merged, 1 auto-merge queued, 1 awaiting cross-family review) · agent matrix changed structurally.</p>
+
+<div class="tl">
+<strong>TL;DR.</strong> Started as an "address Claude Code 2.1.144 release notes" task, escalated to a <strong>GitHub Actions supply-chain hardening PR</strong> (#1333, response to the 2026-05-19 <code>actions-cool</code> tag-mutation attack), which surfaced a full <strong>agent-matrix audit</strong>. User directive mid-session: drop grok entirely as reviewer, calibrate kimi vs qwen before wiring anything. Ran <strong>4 rounds of calibration</strong> across 5 lanes (review, draft, architect, edit, code-review), winner: <strong><code>qwen3.6-plus</code></strong> (3/5 lanes; pattern: qwen wins code lanes, kimi wins prose/security-YAML lanes). Wire-up shipped as PR #1337 (codex-authored, gemini cross-family review pending). Side wins: removed stale <code>github_pat_*</code> PAT injection from <code>.claude/settings.local.json</code> (root-cause of recurring gh auth bug, finally fixed); zizmor as CI gate; Dependabot cooldown configured; pip-install-zizmor pinned (security issue codex missed in #1333, surfaced by 4/5 calibration candidates).</p>
+</div>
+
+<h2>PRs this session</h2>
+
+<table>
+<thead><tr><th>PR</th><th>Title</th><th>State</th><th>What changed</th></tr></thead>
+<tbody>
+<tr>
+  <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1333">#1333</a></td>
+  <td>ci(security): SHA-pin actions + zizmor gate</td>
+  <td><span class="pill pill-shipped">merged</span></td>
+  <td>SHA-pinned all <code>uses:</code> in 3 workflows (uk-quality-checks, incident-dedup, deploy); <code>persist-credentials: false</code> on every checkout; scoped <code>pages: write</code> + <code>id-token: write</code> to deploy job only; added <code>.github/workflows/zizmor.yml</code> security gate with <code>--strict-collection</code> scanning <code>.github/</code>; Dependabot <code>cooldown: { default-days: 7 }</code> on both pip and github-actions ecosystems; new <code>.claude/rules/github-actions-security.md</code> rule. Codex round-1 NEEDS_CHANGES → round-2 APPROVE.</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1334">#1334</a></td>
+  <td>docs(agent-matrix): OpenRouter catalog snapshot 2026-05-19</td>
+  <td><span class="pill pill-shipped">merged</span></td>
+  <td>Dated immutable snapshot of OpenRouter's 356-model catalog filtered to ~120 open-model rows relevant to the kubedojo matrix. Includes naming-collision warning (qwen3.6-plus ≠ commercial qwen-plus), refresh procedure, first doc in new <code>docs/agent-matrix/</code> folder. Direct merge per user "feel free to commit it".</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1335">#1335</a></td>
+  <td>docs(agent-matrix): review-lane calibration 2026-05-19</td>
+  <td><span class="pill pill-shipped">merged</span></td>
+  <td>Round 1 (5 candidates) + Round 2 (kimi family walk-down) calibration data. Original 2-round verdict: kimi-k2.5. Subsequent R3 (draft, architect) and R4 (edit, code-review) extended this — final 5-lane verdict: <strong>qwen3.6-plus wins 3/5</strong>. Doc commits the R1+R2 data; the full 4-round verdict lives in this handoff + memory.</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1336">#1336</a></td>
+  <td>ci(security): pin pip install zizmor to 1.25.2</td>
+  <td><span class="pill pill-shipped">auto-merge queued (CI)</span></td>
+  <td>Follow-up to #1333. The R1 calibration surfaced that 4/5 candidates caught an issue codex missed: <code>pip install zizmor</code> was unpinned in <code>.github/workflows/zizmor.yml</code> — same supply-chain class the rest of #1333 defended against. Pinned to 1.25.2 (released 2026-05-16). Dependabot cooldown handles future bumps.</td>
+</tr>
+<tr>
+  <td><a href="https://github.com/kube-dojo/kube-dojo.github.io/pull/1337">#1337</a></td>
+  <td>feat(agents): replace grok with qwen3.6 across dispatch_smart, dispatch, agent_runtime</td>
+  <td><span class="pill pill-decision">awaiting gemini review</span></td>
+  <td>15 files (+140/-111). <code>scripts/agent_runtime/adapters/grok.py</code> → <code>qwen.py</code> via git rename (preserves history). <code>SUPPORTED_AGENTS</code> drops grok, adds qwen. All 5 TASK_CLASSES dicts updated. <code>KUBEDOJO_388_PRIMARY_REVIEWER</code> default flipped from <code>gemini</code> to <code>qwen</code>; supported values now <code>qwen | claude | gemini</code>. Cascade structure preserved. Codex spark wrote it in 181s; verification checks all pass.</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Calibration — the big finding</h2>
+
+<p>4 rounds, 17 dispatches, ~$0.30 USD total. Ground truth varied per lane (codex APPROVE chain for review; spec-compliance for edit; rubric scoring for prose/design).</p>
+
+<table>
+<thead><tr><th>Lane</th><th>Test</th><th>kimi-k2.5</th><th>qwen3.6-plus</th><th>Winner</th></tr></thead>
+<tbody>
+<tr><td>Review (security YAML)</td><td>PR #1333 round-1 SHA <code>6f541af2</code></td><td>2/2 findings caught (F2 + pip-pin)</td><td>1/2 (pip-pin only)</td><td><strong>kimi</strong></td></tr>
+<tr><td>Draft (prose section)</td><td>250-word "Why Dependabot cooldown matters"</td><td>Accurate, terse</td><td>Factually wrong on cooldown timing ("after a previous update is merged")</td><td><strong>kimi</strong></td></tr>
+<tr><td>Architect (system design)</td><td><code>KUBEDOJO_REVIEW_OVERRIDE</code> env-var hook design</td><td>Solid surface; loose validation</td><td>Deeper: <code>shutil.which</code> check, banner stripping, toolset, prepend-cascade integration</td><td><strong>qwen</strong></td></tr>
+<tr><td>Edit (write Python)</td><td><code>parse_dependabot_cooldown</code> function spec</td><td>Broad except, non-standard doctest idiom</td><td>Specific exception, isinstance int guard, standard idioms</td><td><strong>qwen</strong></td></tr>
+<tr><td>Code-Review (Python diff)</td><td>PR #1289 deepseek tool-use detection</td><td>APPROVE_WITH_NITS; 5 findings, surface</td><td>NEEDS_CHANGES; 8 findings with concrete code example showing backtick regression</td><td><strong>qwen</strong></td></tr>
+</tbody>
+</table>
+
+<p><strong>Aggregate: qwen3.6-plus 3/5, kimi-k2.5 2/5.</strong> Pattern: <strong>qwen wins Python/code lanes; kimi wins prose/security-YAML lanes.</strong> qwen is also ~3× faster.</p>
+
+<p><strong>Cost-walk-down (R2) winner within kimi family</strong>: kimi-k2.5 at $0.40/$1.90 matched k2.6's quality (F2 + pip-pin, no hallucinations) at 46% lower output cost and 48% faster latency. k2.6 ruled out per user "too expensive".</p>
+
+<p><strong>R5 backup smoke</strong>: qwen3.6-flash responds cleanly via OpenRouter passthrough; qwen3-coder-flash is FAST but produced spec-non-compliant doctests on the edit task — NOT wired as edit-lane default; qwen3.6-plus stays the edit-lane primary.</p>
+
+<h2>Decisions made this session</h2>
+
+<table>
+<thead><tr><th>Decision</th><th>Rationale</th></tr></thead>
+<tbody>
+<tr><td><strong>Drop grok entirely as agent</strong></td><td>User direct 2026-05-19. The 2026-05-17 calibration ("grok primary reviewer") was n=3 evidence and didn't generalize. Calibration data + Wave 2 T2-10 hallucination root-causes (<code>feedback_grok_truncated_diff_context</code>) made the case.</td></tr>
+<tr><td><strong>Wire qwen3.6-plus as the new fifth agent</strong></td><td>Calibration data: 3/5 lanes; ~3× faster; price ~equivalent. Original user preference ("replace with qwen") happened to align with the data once all 5 lanes were measured.</td></tr>
+<tr><td><strong>Calibration protocol = quality-ceiling first, cost walk-down second, no mixing</strong></td><td>User direction "quality first then rational cost optimising without sacrificing quality". Saved as memory <code>feedback_quality_ceiling_then_cost_walk_down</code>.</td></tr>
+<tr><td><strong>Provider routing rule: subscription &gt; hermes-native &gt; hermes-openrouter</strong></td><td>Western models via subscription (Claude/codex/gemini CLIs); deepseek-v4 via hermes-native (cheaper); qwen + everything else via hermes-openrouter. OpenRouter is fallback-only for western. Saved as memory <code>reference_provider_routing_economics</code>.</td></tr>
+<tr><td><strong>Snapshots are immutable (per-date files)</strong></td><td>Editing prices in place loses point-in-time decision context. Next refresh = new dated file in <code>docs/agent-matrix/</code>. Convention set with the OpenRouter snapshot.</td></tr>
+<tr><td><strong>Dependabot github-actions PRs do NOT auto-merge</strong></td><td>Per <code>.claude/rules/github-actions-security.md</code>: human/orchestrator must verify the new SHA matches the claimed tag against the upstream repo before merging.</td></tr>
+</tbody>
+</table>
+
+<h2>Contract changes</h2>
+
+<ul>
+  <li><strong><code>KUBEDOJO_388_PRIMARY_REVIEWER</code></strong> env var: supported values now <code>qwen | claude | gemini</code> (was <code>grok | claude | gemini</code>). Default flipped from <code>gemini</code> to <code>qwen</code>. (Pending #1337 merge.)</li>
+  <li><strong><code>dispatch_smart.py --agent</code></strong> choices: <code>(claude, codex, deepseek, gemini, qwen)</code>. Grok removed. (Pending #1337 merge.)</li>
+  <li><strong>New env var <code>AB_QWEN_MODEL</code></strong>: optional override for the default qwen model in the adapter (default: <code>qwen/qwen3.6-plus</code>). (Pending #1337 merge.)</li>
+  <li><strong><code>.github/workflows/zizmor.yml</code></strong>: CI gate enforces SHA-pinning + scopes + cooldown on every workflow PR. Failure blocks merge.</li>
+  <li><strong><code>.github/dependabot.yml</code></strong>: <code>cooldown: { default-days: 7 }</code> on both pip and github-actions ecosystems.</li>
+  <li><strong><code>.claude/settings.local.json</code> <code>env</code> block removed</strong>: stale <code>github_pat_*</code> PAT no longer injected. <code>gh</code> uses keyring directly. (Local-only, gitignored.)</li>
+</ul>
+
+<h2>Memory updates</h2>
+
+<table>
+<thead><tr><th>Memory</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><code>reference_provider_routing_economics</code></td><td><strong>New.</strong> Provider × cost-tier rule.</td></tr>
+<tr><td><code>feedback_quality_ceiling_then_cost_walk_down</code></td><td><strong>New.</strong> Calibration protocol.</td></tr>
+<tr><td><code>feedback_actions_pin_to_sha</code></td><td><strong>New.</strong> SHA-pin policy + Dependabot PR review checklist + zizmor as the CI enforcer.</td></tr>
+<tr><td><code>feedback_no_gh_token_unset</code></td><td><strong>Updated.</strong> Root-caused: stale PAT in <code>.claude/settings.local.json</code> env block; block removed. No more env-strip workaround needed in fresh sessions.</td></tr>
+<tr><td><code>feedback_deepseek_pro_for_module_reviews</code></td><td><strong>Updated.</strong> Qwen "preferred" claim scope-clarified — calibrated for security/code lanes; the original >1k-line content module lane is STILL UNTESTED.</td></tr>
+<tr><td><code>reference_claude_i_billing_split</code></td><td><strong>Updated.</strong> Claude Code 2.1.144 note — <code>/resume</code> now supports <code>--bg</code> sessions; narrows wrapper UX edge.</td></tr>
+</tbody>
+</table>
+
+<h2>Open items / deferred</h2>
+
+<ol>
+  <li><strong>&gt;1k-line content module review calibration — STILL UNTESTED.</strong> The original "qwen preferred for content modules" claim was never validated. Worth a separate calibration round (~$0.10, ~30 min) before fully trusting qwen on that lane. Until then, deepseek-v4-pro remains a safe fallback per existing memory.</li>
+  <li><strong><code>KUBEDOJO_REVIEW_OVERRIDE</code> env-var hook — designed, not implemented.</strong> R3 architect task produced two full designs (kimi + qwen versions). The qwen design (more complete) is in <code>/tmp/calib-r3-arch-qwen.txt</code>. Pattern: env var accepts any OpenRouter model id (e.g., <code>moonshotai/kimi-k2.5</code>), routes review-class dispatches through hermes-openrouter passthrough without registering as first-class agent. Tier-1 in cascade; existing primary becomes tier-2. Useful if user wants kimi-k2.5 specifically for the rare security-YAML review without re-wiring agents.</li>
+  <li><strong>Qwen 3.7 watch.</strong> When 3.7 lands, re-run the 4-round calibration (~$0.30, ~30 min wall) — especially the two lanes kimi won (review on security-YAML; prose drafting). If 3.7 flips them, no agent swap needed; we're already on qwen.</li>
+  <li><strong>Memory cleanup deferred.</strong> The 4 grok-related memories (<code>project_grok_primary_reviewer_calibrated_2026-05-17</code>, <code>feedback_grok_curriculum_gap_analysis_dq</code>, <code>feedback_grok_truncated_diff_context</code>, <code>project_grok_writer_word_cap_2026-05-16</code>) are now historical-only. Should be marked SUPERSEDED or consolidated into one autopsy entry next session. The role-allocation memory <code>project_role_allocation_2026-05-16</code> also needs grok → qwen update.</li>
+  <li><strong>Restart Claude Code at session end.</strong> Current shell has the stale <code>GH_TOKEN</code> env var because settings.local.json was injected at session start. Next session won't have it.</li>
+  <li><strong>Revoke the leaked PAT</strong> (prefix <code>github_pat_11ALQUS5...</code>) at <code>https://github.com/settings/tokens</code> for hygiene. <code>gh</code> reports it already invalid, so no urgency.</li>
+</ol>
+
+<h2>Cold-start (next session)</h2>
+
+<pre>1. curl -s --max-time 2 "http://127.0.0.1:8768/api/briefing/session?compact=1"
+2. git status --short
+3. ls docs/decisions/pending/
+4. curl -s --max-time 2 "http://127.0.0.1:8768/api/session/current" → this file
+5. Read docs/agent-matrix/{openrouter-snapshot-2026-05-19.md, calibration-2026-05-19-review-lane.md}</pre>
+
+<h2>Smoketests</h2>
+
+<p>After #1337 lands on main:</p>
+
+<pre># 1. dispatch_smart knows qwen, doesn't know grok
+python scripts/dispatch_smart.py review --agent qwen --dry-run "test"   # should resolve qwen/qwen3.6-plus
+python scripts/dispatch_smart.py review --agent grok --dry-run "test"   # should error: invalid choice
+
+# 2. qwen reachable via OpenRouter passthrough
+hermes --provider openrouter -m qwen/qwen3.6-plus -z "smoke ok"
+
+# 3. #388 cascade uses qwen as primary
+KUBEDOJO_388_PRIMARY_REVIEWER=qwen python -c "
+import os, scripts.quality.dispatch_388_pilot as p
+# inspect cascade construction — should NOT raise
+"
+
+# 4. zizmor CI gate green on next workflow-touching PR
+# (verified locally: env -u GH_TOKEN -u GITHUB_TOKEN uvx zizmor --offline --strict-collection .github/ → 0 findings)
+</pre>
+
+</body>
+</html>
