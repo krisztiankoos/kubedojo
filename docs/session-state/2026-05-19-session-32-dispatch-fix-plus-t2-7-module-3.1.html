@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Session 32 — dispatch truncation fix shipped + T2-7 Module 3.1 (LLM-Native Stack on K8s)</title>
+<link rel="stylesheet" href="../design-system.css">
+<style>
+  body { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+  h1 { margin-bottom: 0.25rem; }
+  p.meta { color: #555; font-size: 0.9rem; margin-top: 0.1rem; }
+  .pill { display:inline-block; padding:0.1rem 0.55rem; border-radius:0.35rem; font-size:0.78rem; font-weight:600; }
+  .pill-shipped { background:#d4edda; color:#155724; }
+  .pill-meta { background:#cce5ff; color:#004085; }
+  table { width:100%; border-collapse: collapse; margin: 0.75rem 0 1.25rem; }
+  th, td { border:1px solid #ddd; padding:0.35rem 0.55rem; font-size:0.92rem; vertical-align: top; }
+  th { background:#f3f5f7; text-align:left; }
+  code { background:#f3f5f7; padding:0 0.25rem; border-radius:0.2rem; font-size:0.88em; }
+  pre { background:#f6f8fa; padding:0.75rem; border-radius:0.4rem; overflow-x:auto; font-size:0.85em; }
+  details { margin: 0.5rem 0; }
+  summary { font-weight:600; cursor:pointer; padding:0.3rem 0; }
+  .tl { background:#fff8e1; padding:0.75rem 1rem; border-left:4px solid #ffb300; margin:0.75rem 0 1.25rem; border-radius:0.3rem; }
+</style>
+</head>
+<body>
+
+<h1>Session 32 — dispatch truncation fix shipped + T2-7 Module 3.1 (LLM-Native Stack on K8s)</h1>
+<p class="meta">2026-05-19 ~20:04 → ~21:00 local (~56 min) · driver: claude opus 4.7 inline · user signals: "orientate read last session handoff an continue auto" → "how is the tech debt status btw ?" → "does the tech debts has affect on the quality of the module writing ?" → "fix B and then continue as you see fit" · <strong>2 PRs MERGED, 1 memory-grade pattern observation, 2 deferred Wave 4 modules</strong>. Short follow-up to session 31's autonomous AFK drive.</p>
+
+<div class="tl">
+<strong>TL;DR.</strong> User came back, asked about tech debt, then directed: fix the dispatch log truncation hole that bit session 31 three times, then continue as I see fit. Shipped <code>#1348</code> (dispatch_smart.py persists full response body to <code>logs/dispatch_responses/&lt;task_id&gt;.txt</code> + anchors LOG_PATH/RESPONSE_DIR to PRIMARY_REPO so worktree dispatches don't fragment the audit trail + explicit utf-8 encoding) and <code>#1349</code> (Wave 4 T2-7 Module 3.1: LLM-Native Stack on Kubernetes — first of the 3-module synthesis-apps mini-arc, 1,518 net lines, 5,192 body words, 15 sources). Fittingly, the truncation fix bit me in real time on its own first review — the gemini round-1 verdict was tail-truncated and I had to re-dispatch from the worktree (which had the fix) to recover the body. The vLLM module's claude-sonnet review caught a real factual error: codex wrote a prose warning about <code>/health/live</code> and <code>/health/ready</code> not existing in the stock vLLM image, then used those exact non-existent paths in the Deployment YAML. Fixed inline (single endpoint + duration-discipline teaching). Strategic pivot noted but not acted on: the 160 "critical-quality" modules are full-rewrite scope, not citation-injection — surfaced as a flag for the user.</div>
+
+<h2>What landed</h2>
+
+<table>
+<thead><tr><th>#</th><th>PR</th><th>Subject</th><th>Lines</th><th>Reviewer</th><th>Verdict</th><th>Merge</th></tr></thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td><code>#1348</code></td>
+  <td>fix(dispatch): persist full response body to <code>logs/dispatch_responses/&lt;task_id&gt;.txt</code></td>
+  <td>+41 / -3</td>
+  <td>gemini-3.1-pro-preview (cross-family, code-authored = claude)</td>
+  <td>round 1 NEEDS_CHANGES → fixup → round 2 APPROVE</td>
+  <td>squash <code>fde85f53</code></td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>#1349</code></td>
+  <td>feat(content): module 3.1 LLM-Native Stack on Kubernetes (T2-7)</td>
+  <td>+1,518 / -6</td>
+  <td>claude-sonnet-4-6 (cross-family, content-authored = codex)</td>
+  <td>NEEDS_CHANGES (1 blocking + 3 nits) → orchestrator-inline fix → merge</td>
+  <td>squash <code>c2c2ee57</code></td>
+</tr>
+</tbody>
+</table>
+
+<p>Net new content: 1,518 lines / 5,192 body words / 15 sources cited (all HTTP 2xx/3xx). Net new dispatch tooling: response-body persistence with primary-tree anchoring.</p>
+
+<h2><code>#1348</code> — dispatch log truncation fix</h2>
+
+<details open>
+<summary>The hole</summary>
+<p>Session 31 lost the line-by-line findings of 3 claude-sonnet review dispatches because <code>logs/smart_dispatch.jsonl</code> only stored <code>response_chars</code> (count), and the body lived solely on stdout via <code>print(response)</code>. Callers that piped through <code>tail -N</code> kept the trailing verdict but discarded the actionable findings. The original code path:</p>
+<pre>append_log({..., "response_chars": len(response), ...})
+print("=" * 70)
+print(f"OK: {ok}  |  resp_chars: {len(response)}")
+print("=" * 70)
+if response:
+    print(response)   # ← only place the body lands; tail truncates this</pre>
+</details>
+
+<details>
+<summary>The fix (2 commits)</summary>
+<p><strong>Commit 1 (initial):</strong> add <code>persist_response()</code> that writes <code>logs/dispatch_responses/&lt;task_id&gt;.txt</code> (and <code>&lt;task_id&gt;.stderr.txt</code> if stderr_excerpt is non-empty). Add <code>response_path</code> to the JSONL row. Print the path before the body on stdout so even truncated callers see it. Also init <code>previous_search</code>/<code>previous_dispatched</code> to <code>None</code> before the try block (cheap proactive fix for a pyright warning while touching the file).</p>
+<p><strong>Commit 2 (fixup per gemini review):</strong></p>
+<ul>
+  <li><strong>Anchor LOG_PATH and RESPONSE_DIR to PRIMARY_REPO.</strong> The original placement resolved both against <code>REPO = Path(__file__).resolve().parents[1]</code>, which becomes the <code>.worktrees/X</code> path when dispatch_smart runs inside a worktree. That silently fragmented audit trails per-worktree (the JSONL row was landing in <code>.worktrees/X/logs/</code> for every worktree-cwd dispatch). Both now anchor to PRIMARY_REPO regardless of dispatch cwd. <code>rel_response_path</code> uses <code>relative_to(PRIMARY_REPO)</code> consistently to avoid a <code>ValueError</code> after the anchoring change.</li>
+  <li><strong>Explicit utf-8 encoding</strong> on both <code>write_text</code> calls. <code>Path.write_text()</code> default picks up locale encoding (cp1252 on Windows); not the platform we ship on, but cheap defensive code.</li>
+  <li><strong>Scope creep accepted:</strong> LOG_PATH was pre-existing-fragile (same root cause); fixing both in one PR is cleaner than splitting since the gemini review covered the same area. Documented in the commit message.</li>
+</ul>
+</details>
+
+<details>
+<summary>Verification + the meta-irony</summary>
+<p>Three live smoke tests on the worktree binary:</p>
+<ol>
+  <li><strong>Basic PONG dispatch:</strong> response file written, JSONL row has <code>response_path</code>, contents match <code>response_chars</code>.</li>
+  <li><strong>Pipe-truncation recovery:</strong> dispatch piped through <code>head -3</code> → stdout body discarded → recovered via <code>jq -r 'select(.task_id == "smoke-truncate-test") | .response_path' logs/smart_dispatch.jsonl | xargs cat</code>.</li>
+  <li><strong>From worktree:</strong> dispatch ran inside the worktree → response landed in PRIMARY's <code>logs/dispatch_responses/</code> as designed (post-fixup).</li>
+</ol>
+<p><strong>Meta-irony:</strong> the gemini round-1 review of this very PR was tail-truncated by the background dispatch wrapper (<code>2&gt;&amp;1 | tail -5</code> captured ~750 of 1437 response chars). I had to re-dispatch the same review from inside the worktree (which had the fix applied) to recover the full body — including the verdict and findings A–C. So the bug bit me in real time, and the persistence file recovered the situation. Confirms the bug was real and the fix works.</p>
+</details>
+
+<h2><code>#1349</code> — T2-7 Module 3.1 (LLM-Native Stack on Kubernetes)</h2>
+
+<details open>
+<summary>What landed</summary>
+<p>First of a 3-module mini-arc per <code>docs/research/gap-llm-native-app-synthesis.md</code> (Stage-1 brief from issue #1187). New section <code>src/content/docs/ai-ml-engineering/synthesis-apps/</code> with:</p>
+<ul>
+  <li><code>index.md</code> — section landing + 3-module roadmap table</li>
+  <li><code>module-3.1-llm-native-stack-k8s.md</code> — 5,192 body words, 15 sources, T0 PASS</li>
+  <li><code>astro.config.mjs</code> sidebar entry between AI Infrastructure and Advanced GenAI &amp; Safety</li>
+  <li><code>ai-ml-engineering/index.md</code> hub row</li>
+  <li><code>changelog.md</code> entry</li>
+</ul>
+<p>Module 3.1's scope: deploy vLLM + Qdrant as coordinated K8s services with NetworkPolicy, ResourceQuota, health probes, end-to-end <code>kubectl exec</code> verification, and a failure-injection exercise (delete vLLM pod / delete Qdrant pod / observe asymmetric failure). Includes an exponential-backoff Python helper (<code>call_with_backoff</code>) that names a <code>BackendUnavailable</code> exception module 3.2 will catch when it adds the LangGraph orchestration layer.</p>
+</details>
+
+<details>
+<summary>The blocking review finding (orchestrator-inline-fixed)</summary>
+<p>Claude-sonnet-4-6's review caught a real factual error: codex used <code>/health/live</code> and <code>/health/ready</code> in the vLLM Deployment manifest, but the stock <code>vllm/vllm-openai:latest</code> image (router source: <code>vllm/entrypoints/serve/instrumentator/health.py</code>) exposes exactly one endpoint, <code>/health</code>. The module's prose even <em>warned</em> about this divergence ("if your selected image only exposes <code>/health</code>...") then proceeded to use the non-existent paths in YAML anyway.</p>
+<p>8 occurrences fixed (reviewer flagged 4, I caught 4 more via grep):</p>
+<ul>
+  <li>3 Deployment probes (<code>startupProbe</code> / <code>livenessProbe</code> / <code>readinessProbe</code>) → all use <code>/health</code></li>
+  <li>4 verification <code>curl</code> commands (Verifying section, NetworkPolicy test, Task 4 solution, Task 4 redux)</li>
+  <li>Prose at lines 318–336 rewritten to teach the correct concept: the stock <code>/health</code> is a combined liveness+readiness signal; <em>durations</em> across the three probes (failureThreshold × periodSeconds) are how Kubernetes separates "restart this container?" from "route traffic here?", not different paths. The startup probe buys 6 minutes; once it succeeds, readiness gates traffic on a tight loop while liveness only restarts after three consecutive 30-second failures. <strong>Same endpoint; different cadences.</strong> This is the actual production pattern.</li>
+</ul>
+<p>Plus the 3 nits: removed DeepEval / Promptfoo / LangFuse from the Sources section (those tools belong in module 3.3, not 3.1). Two other nits (no inline source anchors, borderline DCGM ServiceMonitor scope) acknowledged as judgment calls and not addressed.</p>
+<p>Re-verifier: T0 PASS, body_words 5192 (up from 5088 after prose expansion), mean_wpp 66.6, median_wpp 68.0, short_para_rate 0.038, sources_count 15 (all reachable). Build green: 2,061 pages built in ~33s.</p>
+</details>
+
+<details>
+<summary>Pattern observation: codex prose-vs-code divergence</summary>
+<p>Codex hedged correctly in prose ("upstream vLLM documentation exposes <code>/health</code> on the OpenAI-compatible server, while some production wrappers split live and ready paths") but then committed to a specific (wrong) choice in the YAML. This is a memory-worthy pattern: when codex writes a hedging paragraph about an upstream divergence, audit the surrounding code/YAML to confirm it matches the most-conservative interpretation. The verifier didn't catch it (the gates are structural, not semantic). The cross-family review did, exactly as designed.</p>
+</details>
+
+<h2>Strategic note — tech debt status (surfaced to user mid-session)</h2>
+
+<p>User asked about tech debt status while the codex dispatch for T2-7 Module 3.1 was already drafted. Honest assessment:</p>
+<ul>
+  <li><strong>Most tech debt items are operational, not quality-affecting</strong> — astro check red (pre-existing TS diagnostics), <code>gh pr merge</code> flake, stale-base merge friction, #1343 incident-dedup false-positive class. None degrade content quality.</li>
+  <li><strong>One item DID affect quality:</strong> the dispatch log truncation, which is now fixed in <code>#1348</code>.</li>
+  <li><strong>The bigger surprise:</strong> the 160 modules at rubric score &lt;2.0 with "no citations" diagnostic are NOT citation-injection scope. Verifier on CKS 4.2 PSA (one of the 1.5-rated CKS modules) showed body_words=196 against a 5000 floor, mean_wpp 15.1 vs 30, 0 sources, 4 quiz items, 5 common-mistakes rows. They're full-rewrite-scope skeleton modules, equivalent in cost-per-module to fresh Wave 4 content. Worth a strategic conversation about whether the autonomous chain should keep producing net-new modules (Wave 4 / 5) while 159 existing-but-broken modules sit at &lt;2/5.</li>
+</ul>
+<p>This was surfaced, not actioned, because the user's directive was "fix B and continue as you see fit" — both are about driving forward, neither was about restructuring strategy. The note is here for the next deliberation cycle.</p>
+
+<h2>Memory-grade observations</h2>
+
+<ul>
+  <li><strong>The dispatch truncation bug + its fix.</strong> Real-world demonstration in the same session: gemini round-1 review of PR #1348 lost ~50% of its body to <code>tail -5</code>. JSONL row's <code>response_chars: 1437</code> was the deterministic signal that I'd only seen ~750 chars. Recovered by re-dispatching from the worktree (which had the fix applied) and reading from <code>logs/dispatch_responses/</code>. The fix's pattern (<code>response_path</code> printed before the body) means even a future <code>head -3</code> path would have surfaced the file location to the caller. <strong>New canonical recovery pattern</strong> for any dispatch consumer:
+<pre>cat "$(jq -r 'select(.task_id == "X") | .response_path' logs/smart_dispatch.jsonl)"</pre></li>
+  <li><strong>"Critical quality" diagnostic does not equal "citation-injection scope".</strong> The <code>/api/quality/scores</code> primary_issue field reports the loudest gate failure (e.g. "no citations"), not the totality of failing gates. CKS 4.2 PSA's verifier showed 9 failing gates including body_words and density. Lesson for future "rubric pivot" scoping: read the full <code>verify_module.py</code> JSON before estimating scope.</li>
+  <li><strong>Worktree node_modules is not auto-symlinked.</strong> <code>dispatch_smart.ensure_worktree</code> symlinks <code>.venv</code> from primary but not <code>node_modules</code>. Codex's writer dispatches apparently run <code>npm install</code> inside the worktree on their own (build reported clean in PR body), but a later orchestrator-side <code>npm run build</code> attempt failed with "Could not resolve <code>../../node_modules/@astrojs/starlight/style/layers.css</code>" because the worktree's node_modules was empty. Workaround: <code>ln -s /Users/.../node_modules .worktrees/X/node_modules</code> from inside the worktree before running build verification. Worth adding to <code>ensure_worktree</code> alongside the .venv symlink.</li>
+  <li><strong>Codex prose-vs-code divergence.</strong> Codex sometimes hedges correctly in prose about an upstream divergence ("path X may not exist") then commits to the specific wrong choice in surrounding YAML/code. Audit pattern: when a codex draft contains a prose hedge about a specific external behavior, grep the YAML/code blocks for the same identifier to confirm the conservative interpretation actually landed.</li>
+</ul>
+
+<h2>End state</h2>
+
+<ul>
+  <li><strong>Branch</strong>: <code>main</code> at <code>c2c2ee57</code> (Module 3.1 squash merge). Worktrees pruned (both <code>fix-dispatch-response-persistence</code> and <code>t2-7-llm-native-foundational</code> cleaned).</li>
+  <li><strong>Workspace</strong>: clean.</li>
+  <li><strong>Open PRs</strong>: 0.</li>
+  <li><strong>Pending decisions</strong>: 1 (<code>2026-05-19-t2-13-ansible-arc-scope.md</code>, unchanged — still blocked on user).</li>
+  <li><strong>Wave 4 status</strong>: 1/3 done (T2-7 module 3.1). Modules 3.2 (Wiring the LLM App / orchestration layer / LangGraph + retry logic) and 3.3 (Production Gates / DeepEval / Promptfoo / LangSmith / HPA on custom metrics) remain. T2-6 (engineering-craft framing) and T2-8 (engineer mental models — distributed systems) also still untouched.</li>
+  <li><strong>Budget</strong>: codex spend ~$0.50 for the T2-7 draft (1046s elapsed for a 5200-word module). Two cross-family reviews (gemini + claude-sonnet) on subscription. Very cheap session.</li>
+</ul>
+
+<h2>Carryovers — same shape as session 31, minus what's done</h2>
+
+<ul>
+  <li><strong>T2-13 Ansible operator arc</strong> — still blocked on user decision (Option A recommended).</li>
+  <li><strong>Wave 4 remaining</strong>: T2-7 modules 3.2 and 3.3 (synthesis-apps mini-arc continuation); T2-6 engineering-craft framing (still needs <code>astro.config.mjs</code> sidebar entry first); T2-8 engineer mental models.</li>
+  <li><strong>Wave 5</strong>: N1-N6 unchanged.</li>
+  <li><strong>Wave 6</strong>: grok's 3 candidates still need gap-existence verification before queueing.</li>
+  <li><strong>MSK + Lake Formation</strong> AWS data-ingestion follow-ups.</li>
+  <li><strong>Kafka follow-up PR</strong>: MirrorMaker2 + partition reassignment + cruise-control rebalance.</li>
+  <li><strong>Issue #1343</strong>: incident-dedup gate false-positive class.</li>
+  <li><strong>Update matrix row 3</strong>: post-grok-DQ reviewer status in <code>docs/research/agent-activity-matrix-2026-05-18.html</code>.</li>
+  <li><strong>Content-module review calibration</strong>: re-verify claude-sonnet-4-6 default against a known-bug content corpus. Session 32 used claude-sonnet on 1 content module with one real bug catch (vLLM probe paths), strengthening the case but still not a controlled corpus.</li>
+  <li><strong>160 modules at rubric &lt;2.0</strong>: STRATEGIC — decide whether autonomous chain pivots to existing-module rewrites or stays on net-new Wave content. Surface for user when next online.</li>
+  <li><strong>worktree node_modules symlink</strong> — add to <code>dispatch_smart.ensure_worktree</code>. One-line fix.</li>
+  <li><strong>Date-bound</strong>: 2026-06-08 pilot claude-i wrapper; 2026-06-15 agentic-credit-pool flip (claude work moves inline in this terminal); 2026-07-13 weekly-double bump expires.</li>
+</ul>
+
+</body>
+</html>
