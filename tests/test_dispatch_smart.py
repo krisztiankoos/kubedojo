@@ -31,3 +31,35 @@ def test_dispatch_smart_danger_allows_dry_run_with_worktree() -> None:
     assert result.returncode == 0
     assert "mode=danger" in result.stdout
     assert "[dry-run] task_id=" in result.stdout
+
+
+def test_dispatch_smart_agy_danger_no_worktree_passes_guards() -> None:
+    """agy review-class dispatches don't write to disk under danger mode,
+    so neither worktree guard should fire. We don't dry-run (which would
+    bypass both guards trivially) — instead we assert the worktree-required
+    error strings do NOT appear. The dispatch will fail later (no agy
+    binary in CI, or agent_runtime import) but BOTH worktree-guards must
+    be passed before that downstream failure."""
+    result = _run_dispatch_smart(
+        ["review", "--agent", "agy", "--mode", "danger", "x"]
+    )
+    merged_output = (result.stdout or "") + (result.stderr or "")
+    # Neither worktree guard should fire for agy.
+    assert "--mode danger requires --worktree" not in merged_output, (
+        f"agy hit the line-397 guard. stderr={result.stderr!r}"
+    )
+    assert "requires --worktree to avoid trampling" not in merged_output, (
+        f"agy hit the line-411 guard. stderr={result.stderr!r}"
+    )
+
+
+def test_dispatch_smart_codex_danger_still_requires_worktree() -> None:
+    """The agy carve-out must NOT loosen the requirement for codex,
+    which actually writes under danger mode."""
+    # Codex auto-forces mode=danger, so any codex dispatch without --worktree
+    # should hard-fail.
+    result = _run_dispatch_smart(["edit", "--agent", "codex", "x"])
+    merged_output = (result.stdout or "") + (result.stderr or "")
+    assert result.returncode != 0
+    assert "danger" in merged_output
+    assert "worktree" in merged_output

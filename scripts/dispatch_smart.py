@@ -199,8 +199,16 @@ def ensure_worktree(worktree: Path, new_branch: str | None,
     subprocess.run(cmd, cwd=PRIMARY_REPO, check=True)
     primary_venv = PRIMARY_REPO / ".venv"
     worktree_venv = worktree / ".venv"
-    if primary_venv.exists() and not worktree_venv.exists():
+    if primary_venv.exists() and not (
+            worktree_venv.exists() or worktree_venv.is_symlink()
+    ):
         worktree_venv.symlink_to(primary_venv)
+    primary_node_modules = PRIMARY_REPO / "node_modules"
+    worktree_node_modules = worktree / "node_modules"
+    if primary_node_modules.exists() and not (
+            worktree_node_modules.exists() or worktree_node_modules.is_symlink()
+    ):
+        worktree_node_modules.symlink_to(primary_node_modules)
 
 
 def append_log(entry: dict) -> None:
@@ -391,14 +399,20 @@ def main() -> int:
         return 2
 
     if mode == "danger" and not args.worktree and not args.dry_run:
-        p.error("--mode danger requires --worktree (no override)")
+        # agy carve-out: agy under danger mode only suppresses interactive
+        # permission prompts (--dangerously-skip-permissions); it does not
+        # write files. Review-class agy dispatches don't need a worktree.
+        # Codex under danger mode DOES write — its worktree requirement
+        # stays as-is.
+        if args.agent != "agy":
+            p.error("--mode danger requires --worktree (no override)")
 
     worktree: Path | None = None
     if args.worktree:
         worktree = Path(args.worktree)
         if not worktree.is_absolute():
             worktree = PRIMARY_REPO / worktree
-    elif mode != "read-only" and not args.dry_run:
+    elif mode != "read-only" and not args.dry_run and args.agent != "agy":
         sys.stderr.write(
             f"[smart] mode={mode} requires --worktree to avoid trampling "
             "the main checkout\n"
