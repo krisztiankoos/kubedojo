@@ -96,10 +96,18 @@ class TaskClassConfig:
     codex_search: bool = False  # opt-in per class
 
 
+# Note on the "agy" model entries below: Antigravity CLI's model is selected
+# interactively in its TUI panel and cannot be overridden per-invocation
+# (no -m / --model flag as of agy 1.0.0). The string `tui-controlled`
+# is an informational placeholder — the actual model in flight is whatever
+# the operator last picked in `agy`'s panel and is reported in the model
+# self-identify probe (`agy -p 'what model are you?'`). The per-class
+# distinction is therefore meaningless for agy until Google adds a model
+# flag or config-file path.
 TASK_CLASSES: dict[str, TaskClassConfig] = {
     "search": TaskClassConfig(
         models={
-            "agy": "gemini-3.5-flash-high",
+            "agy": "tui-controlled",
             "claude": "claude-haiku-4-5-20251001",
             "codex": "gpt-5.4-mini",
             "deepseek": "deepseek-v4-flash",
@@ -113,7 +121,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "edit": TaskClassConfig(
         models={
-            "agy": "gemini-3.5-flash-high",
+            "agy": "tui-controlled",
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.3-codex-spark",
             "deepseek": "deepseek-v4-pro",
@@ -127,7 +135,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "draft": TaskClassConfig(
         models={
-            "agy": "gemini-3.5-flash-high",
+            "agy": "tui-controlled",
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.3-codex-spark",
             "deepseek": "deepseek-v4-pro",
@@ -141,7 +149,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "review": TaskClassConfig(
         models={
-            "agy": "gemini-3.5-flash-high",
+            "agy": "tui-controlled",
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.5",
             "deepseek": "deepseek-v4-pro",
@@ -155,7 +163,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "architect": TaskClassConfig(
         models={
-            "agy": "gemini-3.5-flash-high",
+            "agy": "tui-controlled",
             "claude": "claude-opus-4-7",
             "codex": "gpt-5.5",
             "deepseek": "deepseek-v4-pro",

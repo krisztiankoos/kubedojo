@@ -23,29 +23,23 @@ def _build(mode: str) -> list[str]:
     return plan.cmd
 
 
-def test_build_invocation_read_only(monkeypatch) -> None:
+def test_build_invocation_always_includes_dangerously_skip(monkeypatch) -> None:
+    """--dangerously-skip-permissions is unconditional across all modes.
+
+    Agy has no finer-grained permission model than this single flag, and
+    leaving it off causes interactive permission prompts that hang a
+    headless dispatch. dispatch_smart.py also forces mode=danger as a
+    second line of defense, but the adapter must hold the invariant on
+    its own so direct runner.invoke callers get the right behavior.
+    """
     monkeypatch.setattr("agent_runtime.adapters.agy.shutil.which", lambda _: "agy")
 
-    cmd = _build("read-only")
-
-    assert cmd == ["agy", "-p", "p"]
-    assert "--dangerously-skip-permissions" not in cmd
-
-
-def test_build_invocation_workspace_write(monkeypatch) -> None:
-    monkeypatch.setattr("agent_runtime.adapters.agy.shutil.which", lambda _: "agy")
-
-    cmd = _build("workspace-write")
-
-    assert cmd == ["agy", "-p", "p", "--dangerously-skip-permissions"]
-
-
-def test_build_invocation_danger(monkeypatch) -> None:
-    monkeypatch.setattr("agent_runtime.adapters.agy.shutil.which", lambda _: "agy")
-
-    cmd = _build("danger")
-
-    assert cmd == ["agy", "-p", "p", "--dangerously-skip-permissions"]
+    for mode in ("read-only", "workspace-write", "danger"):
+        cmd = _build(mode)
+        assert cmd == ["agy", "-p", "p", "--dangerously-skip-permissions"], (
+            f"mode={mode} must produce the same cmd because agy has no "
+            f"mode-specific permission flag"
+        )
 
 
 def test_build_invocation_with_session_id(monkeypatch) -> None:
@@ -98,7 +92,25 @@ def test_parse_response_happy_path() -> None:
     assert result.rate_limited is False
     assert result.session_id is None
     assert result.tokens is None
-    assert "model" in (result.stderr_excerpt or "")
+    # stderr_excerpt is documented as a diagnostic signal — None when no
+    # diagnostic output. Don't pollute it with informational notes.
+    assert result.stderr_excerpt is None
+
+
+def test_parse_response_empty_stdout_happy_returncode_fails() -> None:
+    """Successful exit + no stdout is not a successful call."""
+    adapter = AgyAdapter()
+    result = adapter.parse_response(
+        stdout="",
+        stderr="",
+        returncode=0,
+        output_file=None,
+    )
+
+    assert result.ok is False
+    assert result.response == ""
+    assert result.rate_limited is False
+    assert result.stderr_excerpt is None
 
 
 def test_parse_response_detects_rate_limit() -> None:
