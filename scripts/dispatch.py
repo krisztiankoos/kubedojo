@@ -98,7 +98,7 @@ GEMINI_FALLBACK_MODEL = "auto"
 # dispatch_claude_review.
 #
 # Why None instead of "gemini-3-flash-preview" (which was the value pre-2026-05-16):
-# the 2026-05-16 multi-model calibration sweep (audit/2026-05-16-grok-4.3-kubedojo-calibration/)
+# the 2026-05-16 multi-model calibration sweep (audit/2026-05-16-hermes-calibration/)
 # measured gemini-3-flash-preview at 0/2 lab-bug-catch on PR #1229 (NEEDS CHANGES
 # bugs both shipped to main) and 0/2 on PR #1230 N=2 replication — flash
 # reliably rubber-stamps lab-breaking PRs with APPROVE. Falling back to flash
@@ -110,11 +110,11 @@ CLAUDE_DEFAULT_MODEL = "claude-sonnet-4-6"
 CODEX_DEFAULT_MODEL = "codex"  # lets codex CLI pick the default model
 CODEX_REVIEW_DEFAULT_MODEL = "codex"
 CODEX_PATCH_DEFAULT_MODEL = "gpt-5.4"
-GROK_DEFAULT_MODEL = os.environ.get("AB_GROK_MODEL", "grok-4")
-GROK_PROVIDER = os.environ.get("AB_GROK_PROVIDER", "xai-oauth")
-# Grok via hermes -z toolsets. Match dispatch_smart task-class semantics:
+QWEN_DEFAULT_MODEL = os.environ.get("AB_QWEN_MODEL", "qwen/qwen3.6-plus")
+QWEN_PROVIDER = os.environ.get("AB_QWEN_PROVIDER", "openrouter")
+# Qwen via hermes -z toolsets. Match dispatch_smart task-class semantics:
 # review/research = web only; write paths can opt-in to terminal+file via env.
-GROK_DEFAULT_TOOLSETS = os.environ.get("AB_GROK_TOOLSETS", "web")
+QWEN_DEFAULT_TOOLSETS = os.environ.get("AB_QWEN_TOOLSETS", "web")
 
 # ---------------------------------------------------------------------------
 # Rate limit detection + pacing
@@ -736,11 +736,11 @@ def dispatch_codex_patch(prompt: str, model: str = CODEX_PATCH_DEFAULT_MODEL,
         return False, "TIMEOUT"
 
 
-def dispatch_grok(prompt: str, model: str = GROK_DEFAULT_MODEL,
+def dispatch_qwen(prompt: str, model: str = QWEN_DEFAULT_MODEL,
                   timeout: int = 900, toolsets: str | None = None,
                   isolated: bool = False, yolo: bool | None = None,
                   effort: str | None = None) -> tuple[bool, str]:
-    """Call Grok via ``hermes -z`` with the xai-oauth provider. Returns (success, output).
+    """Call Qwen via ``hermes -z`` with the openrouter provider. Returns (success, output).
 
     ``isolated=True`` adds ``--ignore-user-config --ignore-rules`` to bypass
     hermes's project-context injection (used for calibration / benchmark
@@ -752,7 +752,7 @@ def dispatch_grok(prompt: str, model: str = GROK_DEFAULT_MODEL,
     ``effort`` forwards a reasoning-effort hint as a prompt prefix. Hermes
     has no direct flag for this today (see ``project_hermes_model_inventory.md``).
     """
-    toolsets = toolsets or GROK_DEFAULT_TOOLSETS
+    toolsets = toolsets or QWEN_DEFAULT_TOOLSETS
     write_lanes = {"file", "terminal", "code_execution"}
     has_write_lane = any(t.strip() in write_lanes for t in toolsets.split(","))
     if yolo is None:
@@ -764,11 +764,11 @@ def dispatch_grok(prompt: str, model: str = GROK_DEFAULT_MODEL,
 
     # IMPORTANT: pass prompt via argv, NOT stdin. `hermes -z -` is interpreted
     # as "no prompt, project-introspection mode" — see comment in
-    # scripts/agent_runtime/adapters/grok.py for the empirical evidence.
+    # scripts/agent_runtime/adapters/qwen.py for the empirical evidence.
     cmd = [
         "hermes", "-z", final_prompt,
         "-m", model,
-        "--provider", GROK_PROVIDER,
+        "--provider", QWEN_PROVIDER,
         "-t", toolsets,
     ]
     if yolo:
@@ -779,29 +779,31 @@ def dispatch_grok(prompt: str, model: str = GROK_DEFAULT_MODEL,
     t0 = time.time()
     try:
         result = _run_with_process_group(
-            cmd, "", timeout, str(REPO_ROOT), _agent_env("grok")
+            cmd, "", timeout, str(REPO_ROOT), _agent_env("qwen")
         )
         elapsed = time.time() - t0
         if result.returncode != 0:
-            print(f"Grok error (exit {result.returncode}): {redact_text(result.stderr)[:500]}", file=sys.stderr)
-            _log("grok", model, prompt, "", False, elapsed, result.stderr)
+            print(f"Qwen error (exit {result.returncode}): {redact_text(result.stderr)[:500]}", file=sys.stderr)
+            _log("qwen", model, prompt, "", False, elapsed, result.stderr)
             if _is_rate_limited(result.stderr) or _is_rate_limited(result.stdout):
-                # Grok via xai-oauth shares the OAuth-tier cap class — surface
+                # Qwen via openrouter can rate-limit or return capacity errors
+                # depending on model tier. Surface as a generic rate-limit error
+                # so callers can apply cross-family fallback.
+                print("Qwen rate-limited (openrouter tier).", file=sys.stderr)
                 # as a generic rate-limit error so callers can decide whether
                 # to fall back to claude-sonnet (per session-16 reviewer cascade).
-                print("Grok rate-limited (xai-oauth tier).", file=sys.stderr)
             return False, redact_text(result.stderr)
         output = result.stdout.strip()
-        _log("grok", model, prompt, output, True, elapsed)
+        _log("qwen", model, prompt, output, True, elapsed)
         return True, output
     except FileNotFoundError:
-        _log("grok", model, prompt, "", False, time.time() - t0, "hermes CLI not found")
+        _log("qwen", model, prompt, "", False, time.time() - t0, "hermes CLI not found")
         print("hermes CLI not found — install via 'pip install hermes-agent' "
-              "and authenticate with 'hermes login xai-oauth'.", file=sys.stderr)
+              "and authenticate with 'hermes login openrouter'.", file=sys.stderr)
         return False, ""
     except subprocess.TimeoutExpired:
-        _log("grok", model, prompt, "", False, time.time() - t0, "TIMEOUT")
-        print(f"Grok timed out after {timeout}s", file=sys.stderr)
+        _log("qwen", model, prompt, "", False, time.time() - t0, "TIMEOUT")
+        print(f"Qwen timed out after {timeout}s", file=sys.stderr)
         return False, ""
 
 
@@ -1033,12 +1035,12 @@ def main():
                          "Use for v2 quality writer/reviewer dispatches where stdout = full module text.")
     cp.add_argument("--timeout", type=int, default=600, help="Timeout in seconds (default: 600)")
 
-    # grok (via hermes -z xai-oauth)
-    rp = subparsers.add_parser("grok", help="Dispatch prompt to Grok via hermes -z (xai-oauth)")
+    # qwen (via hermes -z openrouter)
+    rp = subparsers.add_parser("qwen", help="Dispatch prompt to Qwen via hermes -z (openrouter)")
     rp.add_argument("prompt", help="Prompt text (use '-' to read from stdin)")
-    rp.add_argument("--model", default=GROK_DEFAULT_MODEL, help=f"Grok model (default: {GROK_DEFAULT_MODEL!r})")
+    rp.add_argument("--model", default=QWEN_DEFAULT_MODEL, help=f"Qwen model (default: {QWEN_DEFAULT_MODEL!r})")
     rp.add_argument("--toolsets", default=None,
-                    help=f"Comma-separated hermes toolsets (default: {GROK_DEFAULT_TOOLSETS!r}; "
+                    help=f"Comma-separated hermes toolsets (default: {QWEN_DEFAULT_TOOLSETS!r}; "
                          "write paths typically use 'web,file,terminal,code_execution,todo').")
     rp.add_argument("--isolated", action="store_true",
                     help="Pass --ignore-user-config --ignore-rules (suppress project-context injection).")
@@ -1102,10 +1104,10 @@ def main():
             print(output)
         sys.exit(0 if ok else 1)
 
-    elif args.agent == "grok":
+    elif args.agent == "qwen":
         prompt = sys.stdin.read() if args.prompt == "-" else args.prompt
         yolo = None if not args.no_yolo else False
-        ok, output = dispatch_grok(
+        ok, output = dispatch_qwen(
             prompt, args.model, args.timeout,
             toolsets=args.toolsets, isolated=args.isolated,
             yolo=yolo, effort=args.effort,

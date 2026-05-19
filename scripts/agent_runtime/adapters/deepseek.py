@@ -228,7 +228,7 @@ class DeepSeekAdapter:
                     f"({len(clean_stdout)} chars). The hermes toolset for this mode "
                     "doesn't include the requested tool. For DS Pro reviews, re-dispatch "
                     "with --mode workspace-write (grants terminal/file tools), or fall "
-                    "back to grok/claude. Raw stub: " + clean_stdout[:200]
+                    "back to qwen/claude. Raw stub: " + clean_stdout[:200]
                 ),
                 rate_limited=False,
                 session_id=None,

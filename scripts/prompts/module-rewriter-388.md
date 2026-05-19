@@ -82,7 +82,7 @@ Common image cheat-sheet (verified against Docker Hub overview pages):
 
 If your lab needs `kubectl exec POD -- wget ...`, choose `nginx:alpine` over `nginx`. If your lab needs `kubectl exec POD -- curl ...` and the pod should also serve HTTP, choose `nginx:alpine` (no curl) + use `wget` instead, or use `curlimages/curl` + `--command -- sleep 3600` if the pod doesn't need to serve. Never write `--image=nginx` followed by an exec wget/curl — this is the exact bug #1257 shipped with and #1229 precedent.
 
-Reference: `audit/2026-05-18-grok-primary-calibration/REPORT.html` § 4 (the #1257 anatomy).
+Reference: `docs/agent-matrix/calibration-2026-05-19-review-lane.md` § 4 (the #1257 anatomy context).
 
 Do NOT invent business incidents, client stories, anonymized companies, or "war story" anecdotes. A scenario is allowed only if (a) it is clearly labeled hypothetical with a `Hypothetical scenario:` or `Exercise scenario:` prefix, OR (b) it is a sourced real incident with enough specific detail to verify against the cited source. Do not imply an event happened with phrasing like "a payments company once...", "a team I worked with...", "a customer reported...", "War story:..." unless the incident is real and sourced. The incident-dedup gate only catches catalog matches; this rule catches the rest.
 

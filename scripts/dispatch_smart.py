@@ -72,7 +72,7 @@ def _primary_checkout_root(repo_root: Path) -> Path:
 PRIMARY_REPO = _primary_checkout_root(REPO)
 
 
-SUPPORTED_AGENTS = ("claude", "codex", "deepseek", "gemini", "grok")
+SUPPORTED_AGENTS = ("claude", "codex", "deepseek", "gemini", "qwen")
 
 
 @dataclass(frozen=True)
@@ -91,7 +91,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
             "codex": "gpt-5.4-mini",
             "deepseek": "deepseek-v4-flash",
             "gemini": "gemini-3.1-flash-lite-preview",
-            "grok": "grok-4",
+            "qwen": "qwen/qwen3.6-flash",
         },
         default_mode="read-only",
         default_timeout_s=600,
@@ -104,7 +104,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
             "codex": "gpt-5.3-codex-spark",
             "deepseek": "deepseek-v4-pro",
             "gemini": "gemini-3.1-pro-preview",
-            "grok": "grok-4",
+            "qwen": "qwen/qwen3.6-plus",
         },
         default_mode="workspace-write",
         default_timeout_s=1800,
@@ -117,7 +117,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
             "codex": "gpt-5.3-codex-spark",
             "deepseek": "deepseek-v4-pro",
             "gemini": "gemini-3.1-pro-preview",
-            "grok": "grok-4",
+            "qwen": "qwen/qwen3.6-plus",
         },
         default_mode="workspace-write",
         default_timeout_s=3600,
@@ -130,7 +130,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
             "codex": "gpt-5.5",
             "deepseek": "deepseek-v4-pro",
             "gemini": "gemini-3.1-pro-preview",
-            "grok": "grok-4",
+            "qwen": "qwen/qwen3.6-plus",
         },
         default_mode="read-only",
         default_timeout_s=1800,
@@ -143,7 +143,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
             "codex": "gpt-5.5",
             "deepseek": "deepseek-v4-pro",
             "gemini": "gemini-3.1-pro-preview",
-            "grok": "grok-4",
+            "qwen": "qwen/qwen3.6-plus",
         },
         default_mode="workspace-write",
         default_timeout_s=3600,

@@ -1,34 +1,37 @@
-"""GrokAdapter — wraps ``hermes -z`` (xai-oauth provider) for the agent runtime.
+"""QwenAdapter — wraps ``hermes -z`` (openrouter provider) for the agent runtime.
 
-Fourth production adapter. Brings grok-4 (and successors) online as a peer
-to codex / claude / gemini for code review, deliberation, and fix lanes.
+Fifth production adapter. Brings qwen3.6 plus/flash online as a
+peer to codex / claude / gemini / deepseek for code review, deliberation,
+and write lanes.
 
 Key design points:
 
 - **Transport:** ``hermes`` CLI in oneshot mode (``-z -`` reads prompt
-  from stdin). Hermes proxies to xAI via the ``xai-oauth`` provider
-  (loopback PKCE OAuth set up via ``hermes login``). No API key required.
+  from stdin). Hermes proxies to Qwen via the ``openrouter`` provider.
 - **Modes:** All three (read-only / workspace-write / danger) supported.
   Mode → hermes toolset mapping is conservative for read-only (no
   terminal/file tools), permissive for workspace-write and danger.
 - **Project context:** hermes injects KubeDojo project state via its
   ``memory`` + ``skills`` toolsets unless suppressed. We keep this on for
-  review/code work (gives grok situational awareness) but disable via
+  review/code work (gives Qwen situational awareness) but disable via
   ``--ignore-user-config --ignore-rules`` when the caller passes
-  ``tool_config={"isolated": True}`` (used for benchmark / calibration).
+  ``tool_config={"isolated": True}`` (used for calibration / benchmark).
 - **No session resume.** ``resume_policy=never`` in the registry — hermes
   has session semantics but cross-worktree contamination would mirror the
   Codex footgun. Defensively ignored even if passed.
 - **Liveness:** hermes streams output to stdout, so the runner's stdout
   watchdog handles liveness. ``liveness_signal_paths()`` returns ``()``.
 
-Status flagged for the user:
-- Grok writer DQ'd by the #388 deterministic verifier gate (see memory
-  ``project_grok_writer_word_cap_2026-05-16.md``). This adapter does NOT
-  unlock the writer lane — the verifier gate is the floor. It DOES unlock
-  reviewer, fixer, ab-discuss, and one-shot research lanes.
+Status: qwen replaces the legacy lane as the calibrated external reviewer per
+  2026-05-19 user direction.
 
-Issue: #1184 (agent-runtime), #1235 (reviewer reassignment context).
+In read-only mode, Qwen runs with a restricted Hermes toolset (web-only). If
+the model emits unfulfilled tool-use intent (e.g. ``<bash>`` blocks), the returned
+text is a non-executable stub and not a useful review. See
+``feedback_qwen_tool_use_stub_detection.md`` if present.
+
+Rate limit follows hermes transport patterns (mostly provider-side HTTP
+429-style failures).
 """
 from __future__ import annotations
 
@@ -41,8 +44,9 @@ from typing import Any
 from ..result import ParseResult
 from .base import InvocationPlan
 
-# Rate-limit patterns. xAI returns 429 like everyone else; hermes
-# surfaces rate-limit errors in stderr / stdout depending on transport.
+
+# Rate-limit patterns. Qwen follows Hermes transport patterns, including
+# standard 429 signaling.
 _RATE_LIMIT_PATTERNS = (
     r"rate limit",
     r"rate_limit",
@@ -52,10 +56,12 @@ _RATE_LIMIT_PATTERNS = (
     r"\bHTTP 429\b",
     r"\bstatus 429\b",
     r"\b429\b",
-    r"xai.*rate",
-    r"x-ai.*rate",
 )
 _RATE_LIMIT_RE = re.compile("|".join(_RATE_LIMIT_PATTERNS), re.IGNORECASE)
+_TOOL_USE_INTENT_RE = re.compile(
+    r"<\s*(bash|tool_use|tool|terminal|shell)\b[^>]*>",
+    re.IGNORECASE,
+)
 
 # Hermes startup warnings we strip before declaring success.
 _HERMES_BANNER_RE = re.compile(
@@ -72,14 +78,15 @@ _TOOLSETS_WORKSPACE = "web,file,terminal,code_execution,todo"
 _TOOLSETS_DANGER = "web,file,terminal,code_execution,todo,memory,skills"
 
 
-class GrokAdapter:
-    """Adapter for ``hermes -z`` with the xai-oauth provider."""
+class QwenAdapter:
+    """Adapter for ``hermes -z`` with the openrouter provider."""
 
-    name: str = "grok"
-    # grok-4 is the canonical model identifier for hermes via xai-oauth.
-    # User may override via env (e.g. when xAI ships grok-4.3 under a new
-    # identifier or routes effort=xhigh via a separate slug).
-    default_model: str = os.environ.get("AB_GROK_MODEL", "grok-4")
+    name: str = "qwen"
+    # qwen3.6-plus is the canonical model identifier for hermes via
+    # openrouter.
+    # User may override via env (e.g. when qwen3.6-flash is needed
+    # for a cheap search lane).
+    default_model: str = os.environ.get("AB_QWEN_MODEL", "qwen/qwen3.6-plus")
     supported_modes: frozenset[str] = frozenset({"read-only", "workspace-write", "danger"})
 
     def build_invocation(
@@ -103,8 +110,7 @@ class GrokAdapter:
             - ``toolsets: str`` — comma-separated override for ``-t``.
               Wins over the mode-default mapping.
             - ``provider: str`` — override hermes provider. Default
-              ``xai-oauth``. Useful for testing api-key transport once
-              ``xai`` provider gets re-auth'd.
+              ``openrouter``.
             - ``effort: str`` — reasoning effort label. Hermes does not
               expose this as a flag today; we forward it via prompt
               prefix when ``"xhigh"`` is requested. Tracking issue: see
@@ -115,7 +121,7 @@ class GrokAdapter:
               False; opt-in for callers that want project hooks to fire.
         """
         if mode not in self.supported_modes:
-            raise ValueError(f"GrokAdapter: unsupported mode {mode!r}")
+            raise ValueError(f"QwenAdapter: unsupported mode {mode!r}")
 
         tc: dict[str, Any] = tool_config or {}
 
@@ -141,9 +147,8 @@ class GrokAdapter:
         # Model
         cmd.extend(["-m", model or self.default_model])
 
-        # Provider — xai-oauth is the canonical KubeDojo path
-        # (loopback PKCE; no API key required).
-        provider = tc.get("provider", "xai-oauth")
+        # Provider — openrouter is the canonical qwen runtime path.
+        provider = tc.get("provider", "openrouter")
         cmd.extend(["--provider", provider])
 
         # Toolset selection — caller override wins, else mode default.
@@ -209,6 +214,23 @@ class GrokAdapter:
 
         # Strip hermes banners that aren't part of the response.
         clean_stdout = _HERMES_BANNER_RE.sub("", stdout or "").strip()
+        tool_use_unfulfilled = bool(_TOOL_USE_INTENT_RE.search(clean_stdout))
+
+        if tool_use_unfulfilled and len(clean_stdout) < 1000:
+            return ParseResult(
+                ok=False,
+                response="",
+                stderr_excerpt=(
+                    "Qwen returned tool-use intent without execution "
+                    f"({len(clean_stdout)} chars). The hermes toolset for this mode "
+                    "doesn't include the requested tool. For Qwen reviews, re-dispatch "
+                    "with --mode workspace-write (grants terminal/file tools), "
+                    "or fall back to claude. Raw stub: " + clean_stdout[:200]
+                ),
+                rate_limited=False,
+                session_id=None,
+                tokens=None,
+            )
 
         combined = f"{clean_stdout}\n{stderr or ''}"
         rate_limited = bool(_RATE_LIMIT_RE.search(combined))
