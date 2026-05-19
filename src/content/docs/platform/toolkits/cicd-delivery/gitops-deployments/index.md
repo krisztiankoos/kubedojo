@@ -4,7 +4,7 @@ sidebar:
   order: 0
   label: "GitOps & Deployments"
 ---
-> **Toolkit Track** | 4 Modules | ~3 hours total
+> **Toolkit Track** | 5 Modules | ~4 hours total
 
 ## Overview
 
@@ -28,6 +28,7 @@ Before starting this toolkit:
 | 2.2 | [Argo Rollouts](module-2.2-argo-rollouts/) | `[COMPLEX]` | 45-50 min |
 | 2.3 | [Flux](module-2.3-flux/) | `[COMPLEX]` | 40-45 min |
 | 2.4 | [Helm & Kustomize](module-2.4-helm-kustomize/) | `[MEDIUM]` | 35-40 min |
+| 2.5 | [Dapr and Buildpacks — Application Definition Beyond Helm](module-2.5-dapr-buildpacks/) | `[COMPLEX]` | 60-70 min |
 
 ## Learning Outcomes
 
@@ -38,6 +39,7 @@ After completing this toolkit, you will be able to:
 3. **Use Flux GitOps Toolkit** — Sources, Kustomizations, image automation
 4. **Package with Helm** — Charts, templates, dependencies, releases
 5. **Customize with Kustomize** — Bases, overlays, patches, components
+6. **Define beyond Helm** — Dapr Components plus Buildpacks-built images, with reproducible builds and runtime building blocks decoupled from Helm templates
 
 ## Tool Selection Guide
 
@@ -77,9 +79,22 @@ Package management?
                • Pure YAML
                • Environment overlays
 
+Application definition beyond Helm?
+├── Standard app image build → Buildpacks
+│                             • No Dockerfile
+│                             • Curated builders
+│                             • Rebase and SBOM discipline
+│
+└── Runtime building blocks → Dapr Components
+                              • State, pub-sub, secrets
+                              • Sidecar API contract
+                              • Plain manifest review path
+
 BEST PRACTICE: Combine tools!
 • Helm for packaging
 • Kustomize for environment variants
+• Buildpacks for repeatable image builds
+• Dapr for shared runtime building blocks
 • ArgoCD/Flux for deployment
 • Argo Rollouts for progressive delivery
 ```
@@ -154,6 +169,10 @@ Module 2.4: Helm & Kustomize
      │
      │  Package management, overlays
      ▼
+Module 2.5: Dapr and Buildpacks
+     │
+     │  Application definition beyond Helm
+     ▼
 [Toolkit Complete] → CI/CD Pipelines Toolkit
 ```
 
@@ -183,6 +202,11 @@ Your microservice to 3 envs           → Kustomize overlays
 ├── Same base, different configs
 ├── You control the manifests
 └── Simple differences
+
+Microservices share runtime needs     → Dapr + Buildpacks
+├── No Dockerfile per repo
+├── State/pub-sub/secrets as Components
+└── Plain manifests instead of template sprawl
 
 Breaking change in API                → Argo Rollouts canary
 ├── Need gradual rollout
