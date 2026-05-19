@@ -190,9 +190,9 @@ Two production-grade DQs: <strong>gemini-3-flash-preview</strong> (0/2 on the la
 </tr>
 <tr>
   <td>2</td>
-  <td>Content review on PR #1349 (vLLM probe-path)</td>
-  <td class="model"><strong>Test invalid — bug already fixed at smoke-test time</strong>. 3.5 Flash returned APPROVE_WITH_NITS on the POST-fix version (the smoke test ran after the session-32 orchestrator-inline correction landed /health). Two reasonable nits surfaced (Qdrant readiness path explicit-set, table column alignment) — no false positives, no false negatives. Inconclusive on whether 3.5 Flash would catch the original factual error.</td>
-  <td><strong>Test gap.</strong> Re-run on the pre-fix diff is the only way to score this lane. Defer to follow-up calibration.</td>
+  <td>Content review on PR #1349 (vLLM probe-path) — <strong>RE-RUN session 34</strong></td>
+  <td class="model"><strong>STRONG ✅</strong> (113s, 3286 chars). Caught the canonical vLLM probe-path hallucination (<code>/health/live</code> + <code>/health/ready</code> vs the real <code>/health</code>) — the same finding claude-sonnet caught originally. <strong>Also caught 3 ADDITIONAL real bugs that the production reviewer (claude-sonnet) missed in PR #1349</strong>: (a) ResourceQuota storage 300Gi vs sum of PVCs 320Gi → second PVC stays Pending forever, (b) missing <code>HF_TOKEN</code> Secret for the gated <code>meta-llama/Llama-3.1-8B-Instruct</code> model → crash loop on first reconcile, (c) NetworkPolicy verification used <code>curl -fsS</code> with ambiguous exit-code semantics (any non-zero exit interpreted as "blocked"). All 4 findings verified real against the pre-fix module 3.1 source. Fixed in PR #1353 (session 34).</td>
+  <td><strong>Top tier on content review</strong>, with caveat that this is n=1 on a vLLM-stack module. <strong>Outperformed claude-sonnet</strong> on this PR by catching 3 more real bugs than sonnet did in its original review of PR #1349. The Cell 6 result (partial catch on module-5.9) tempers the headline — single-PR data point, not a track record yet. But strong enough to promote agy from "supplemental only" to "primary-tier alongside sonnet" pending more data.</td>
 </tr>
 <tr>
   <td>3</td>
@@ -221,7 +221,9 @@ Two production-grade DQs: <strong>gemini-3-flash-preview</strong> (0/2 on the la
 </tbody>
 </table>
 
-<p><strong>Headline:</strong> Gemini 3.5 Flash (High) is <strong>strong on architect + code-writing + content review-as-supplement</strong>, <strong>unreliable on factual schema knowledge</strong> (same hallucination class as DeepSeek for GitHub Actions / Dependabot specifics), <strong>weaker than claude-sonnet on adversary code review</strong> but with the redeeming property of <strong>zero hallucinations on the security-YAML lane</strong> — the failure mode is silent-miss, not confident-fabrication.</p>
+<p><strong>Headline (REVISED session 34, 2026-05-20):</strong> Gemini 3.5 Flash (High) is <strong>strong on architect + code-writing + content review</strong> (Cell 2 re-run surfaced 3 bugs claude-sonnet missed on PR #1349; PR #1352 code review caught 2 real blockers the orchestrator missed). <strong>Unreliable on factual schema knowledge</strong> (same hallucination class as DeepSeek for GitHub Actions / Dependabot specifics). <strong>Weaker than claude-sonnet on adversary code review</strong> but with the redeeming property of <strong>zero hallucinations across all 2026-05-19/20 production lanes</strong> — the failure mode is silent-miss, not confident-fabrication.</p>
+
+<p class="tl" style="background:#d4edda; border-left:4px solid #28a745;"><strong>Session 34 update.</strong> Two production data points (PR #1352 code review catching 2 real blockers; PR #1353 content review catching 3 real bugs sonnet missed on PR #1349) converge: agy/Flash 3.5 (High) belongs in the <strong>primary content/code reviewer tier alongside sonnet</strong>, not "supplemental only." Promoted in the production-recommended stack below. Speed differential remains 3-10× — agy is fast enough to run alongside sonnet on every PR.</p>
 
 <p><strong>Speed bonus:</strong> agy/Gemini 3.5 Flash (High) is 3-10x faster than the existing review reviewers (19-56s vs claude-sonnet's 25-90s, gemini-pro's 60-180s). Useful when latency matters and the lane is one of the strong ones (architect / edit / content review supplement).</p>
 
@@ -231,11 +233,11 @@ Two production-grade DQs: <strong>gemini-3-flash-preview</strong> (0/2 on the la
 <thead><tr><th>Lane</th><th>Use agy / Gemini 3.5 Flash (High)?</th><th>Rationale</th></tr></thead>
 <tbody>
 <tr><td>Code writing</td><td>2nd-opinion / fallback acceptable</td><td>Clean on cell 5. No code-writing hallucinations observed in this calibration.</td></tr>
-<tr><td>Code review</td><td>Supplemental 2nd voice only, NOT sole gate</td><td>Catches some real findings but misses ground-truth (2/4 on PR #1333). Zero hallucinations is a redeeming property — useful as a cheap parallel reviewer surface area.</td></tr>
+<tr><td>Code review</td><td><strong>Primary-tier reviewer alongside claude-sonnet</strong> (promoted session 34)</td><td>Calibration showed 2/4 on PR #1333 (3rd tier), but PR #1352 session-34 production review caught 2 real blockers the orchestrator missed (line-411 elif guard + dry-run test bypass). Zero hallucinations across all session-34 reviews. Use in parallel with claude-sonnet; either reviewer's NEEDS_CHANGES blocks merge.</td></tr>
 <tr><td>Architecting</td><td>YES — strong 2nd opinion</td><td>Cell 3 surfaced a genuine unique risk-flag matching the top-tier pattern. Use alongside claude-opus / DS-pro for risk-catching breadth.</td></tr>
 <tr><td>Planning</td><td>Unknown — not tested in this calibration</td><td>Cell-missing. Defer.</td></tr>
 <tr><td>Content writing</td><td>NO</td><td>Untested at >1k scale. Cell 4's factual-schema hallucination on a 250w draft is a strong red flag for 5000w modules.</td></tr>
-<tr><td>Content review</td><td>Supplemental only, NOT sole gate</td><td>Cell 6 caught the loudest failures but missed the more subtle structural ones. Cell 2 inconclusive. Use alongside claude-sonnet, not instead of.</td></tr>
+<tr><td>Content review</td><td><strong>Primary-tier reviewer alongside claude-sonnet</strong> (promoted session 34)</td><td><strong>Cell 2 re-run (session 34, 2026-05-20) caught 3 real bugs that claude-sonnet's original PR #1349 review missed</strong>: ResourceQuota PVC mismatch, missing HF_TOKEN for gated Llama model, ambiguous NetworkPolicy exit-code semantics. Filed as PR #1353 + merged. n=1 caveat applies; Cell 6 (module-5.9) was partial catch — promote-pending-track-record but the n=1 result is genuinely strong enough to run in parallel with sonnet now.</td></tr>
 <tr><td>Factual schema (GH Actions / Dependabot YAML)</td><td>NO</td><td>Cell 4 hallucinated. Same DQ class as DS tiers. Verify any schema claim against vendor docs before merging.</td></tr>
 </tbody>
 </table>
