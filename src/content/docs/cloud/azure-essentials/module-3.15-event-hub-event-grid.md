@@ -1336,7 +1336,7 @@ loss:
 ```kusto
 AzureMetrics
 | where ResourceProvider == "MICROSOFT.EVENTGRID"
-| where MetricName in ("DeliveryFailedEvents", "DeliverySuccessEvents", "DroppedEvents")
+| where MetricName in ("DeliveryAttemptFailCount", "DeliverySuccessCount", "DroppedEventCount")
 | summarize Total = sum(Total) by Resource, MetricName, bin(TimeGenerated, 5m)
 | order by TimeGenerated desc
 ```
@@ -1350,9 +1350,9 @@ during a low-volume outage:
 ```kusto
 AzureMetrics
 | where ResourceProvider == "MICROSOFT.EVENTGRID"
-| where MetricName in ("DeliveryFailedEvents", "DeliverySuccessEvents")
-| summarize Failed = sumif(Total, MetricName == "DeliveryFailedEvents"),
-            Succeeded = sumif(Total, MetricName == "DeliverySuccessEvents")
+| where MetricName in ("DeliveryAttemptFailCount", "DeliverySuccessCount")
+| summarize Failed = sumif(Total, MetricName == "DeliveryAttemptFailCount"),
+            Succeeded = sumif(Total, MetricName == "DeliverySuccessCount")
             by Resource, bin(TimeGenerated, 10m)
 | extend FailureRate = todouble(Failed) / todouble(Failed + Succeeded)
 | where Failed > 0
@@ -1668,6 +1668,7 @@ az eventhubs eventhub create \
   --name "$EVENTHUB_NAME" \
   --partition-count 4 \
   --message-retention 1 \
+  --enable-capture true \
   --capture-interval 300 \
   --capture-size-limit 10485760 \
   --destination-name EventHubArchive.AzureBlockBlob \
