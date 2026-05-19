@@ -318,22 +318,32 @@ that rejects callers outside the intended application namespace.
 The probe wording deserves care because inference containers often have more
 than one "healthy" state. A process can be alive while the model is still
 loading. A TCP port can accept a connection while the engine is not ready to
-generate tokens. A health endpoint can return a simple process status while a
-readiness endpoint checks whether the model-serving path can take work. Current
-upstream vLLM documentation exposes `/health` on the OpenAI-compatible server,
-while some production wrappers split live and ready paths. The manifest below
-uses `/health/live` and `/health/ready` as the service-level probe paths for
-this exercise; if your selected image only exposes `/health`, either configure
-the paths to match that image or add a small proxy that turns process health
-and model readiness into separate endpoints.
+generate tokens. Ideally you would have separate "is the process alive?" and
+"is the model ready to take requests?" endpoints, and many production stacks
+build that split with a sidecar proxy or wrapper around the inference server.
+The stock `vllm/vllm-openai` image, however, exposes exactly one health route:
+`/health`. The router returns `200 OK` only after the model loads and the
+serving path is ready to generate tokens, so the same endpoint serves as the
+liveness *and* readiness signal — there is no separate `/health/live` or
+`/health/ready` in the upstream code. The manifest below uses `/health` for
+all three probes, and the *durations* — not the paths — are how we separate
+"should Kubernetes restart this container?" from "should the Service route
+user traffic here?".
 
-The important teaching point is not the literal path string. The important
-point is that liveness should answer "should Kubernetes restart this container?"
-while readiness should answer "should the Service route user traffic here?"
-For vLLM, readiness is the sharper signal because model loading can take
-roughly 30-60 seconds for modest models and much longer if weights are fetched
-over the network. A readiness probe that fails during load is normal. A
-liveness probe that kills the container during load creates a crash loop.
+The important teaching point is the duration discipline, not the literal path
+string. Liveness should answer "should Kubernetes restart this container?";
+readiness should answer "should the Service route user traffic here?". For
+vLLM, the model load takes roughly 30-60 seconds for modest models and much
+longer if weights are fetched over the network. A naive liveness probe with
+the default `failureThreshold: 3` and `periodSeconds: 10` will kill the
+container before the model finishes loading — that is the textbook crash
+loop. The startup probe below buys the model up to six minutes
+(`failureThreshold: 36 × periodSeconds: 10s`) before the liveness probe
+takes over. Until the startup probe succeeds, liveness and readiness are
+suppressed; once it succeeds, readiness gates traffic on a tight 10-second
+loop while liveness only restarts the pod after three consecutive 30-second
+failures. That difference in *cadence* against the *same* endpoint is what
+gives vLLM the load window it needs without sacrificing crash detection.
 
 Apply these five resources together after the `llm-system` namespace and quota
 exist. The PVC caches model weights under `HF_HOME`; the ConfigMap holds model
@@ -422,21 +432,21 @@ spec:
               mountPath: /models
           startupProbe:
             httpGet:
-              path: /health/ready
+              path: /health
               port: http
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 36
           livenessProbe:
             httpGet:
-              path: /health/live
+              path: /health
               port: http
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health/ready
+              path: /health
               port: http
             periodSeconds: 10
             timeoutSeconds: 5
@@ -788,7 +798,7 @@ application will use.
 
 ```bash
 kubectl exec -n llm-apps curl-client -- \
-  curl -fsS http://vllm.llm-system.svc.cluster.local:8000/health/ready
+  curl -fsS http://vllm.llm-system.svc.cluster.local:8000/health
 ```
 
 Now send a minimal OpenAI-compatible chat request. The small token budget keeps
@@ -901,7 +911,7 @@ kubectl wait pod/outside-probe \
   --timeout=90s
 
 kubectl exec -n outside-llm-test outside-probe -- \
-  curl -m 5 -fsS http://vllm.llm-system.svc.cluster.local:8000/health/ready
+  curl -m 5 -fsS http://vllm.llm-system.svc.cluster.local:8000/health
 ```
 
 If the outside call fails, keep the failed command in your notes. It is a
@@ -1262,7 +1272,7 @@ kubectl wait pod/curl-client -n llm-apps --for=condition=Ready --timeout=90s
 kubectl exec -n llm-apps curl-client -- \
   curl -fsS http://qdrant.llm-system.svc.cluster.local:6333/readyz
 kubectl exec -n llm-apps curl-client -- \
-  curl -fsS http://vllm.llm-system.svc.cluster.local:8000/health/ready
+  curl -fsS http://vllm.llm-system.svc.cluster.local:8000/health
 ```
 
 </details>
@@ -1284,7 +1294,7 @@ kubectl run outside-probe \
   --command -- sleep 3600
 kubectl wait pod/outside-probe -n outside-llm-test --for=condition=Ready --timeout=90s
 kubectl exec -n outside-llm-test outside-probe -- \
-  curl -m 5 -fsS http://vllm.llm-system.svc.cluster.local:8000/health/ready
+  curl -m 5 -fsS http://vllm.llm-system.svc.cluster.local:8000/health
 ```
 
 The final command should fail by timeout or rejection. If it succeeds, inspect
@@ -1327,9 +1337,6 @@ Success criteria:
 - https://github.com/bentoml/BentoML
 - https://github.com/kserve/kserve
 - https://github.com/ray-project/ray
-- https://github.com/confident-ai/deepeval
-- https://github.com/promptfoo/promptfoo
-- https://github.com/langfuse/langfuse
 - https://github.com/NVIDIA/gpu-operator
 - https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/index.html
 - https://github.com/qdrant/qdrant
