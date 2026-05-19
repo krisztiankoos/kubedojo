@@ -98,8 +98,6 @@ application data modeling, you will
 learn when to call a DBA and what
 evidence to bring.
 
-## Core Content
-
 ## 1. What Azure SQL Actually Means Today
 
 The first operator question is not
@@ -1263,11 +1261,12 @@ operator-controlled difference.
 
 | Example shape | Compute assumption | Compute monthly | Data storage monthly | PITR backup monthly | Approximate total |
 |---|---:|---:|---:|---:|---:|
-| General Purpose, 8 vCore, provisioned | $1.217736 per hour | $889.95 | $11.50 | $0.00 when within included allowance | $901.45 |
-| Business Critical, 8 vCore, provisioned | $2.43548 per hour | $1,778.90 | $25.00 | $0.00 when within included allowance | $1,803.90 |
-| General Purpose, 8 vCore, zone-redundant compute meter where selected | $0.73064 per hour for the zone-redundant vCore meter shown by API | $533.37 | $23.00 for zone-redundant GP storage | $0.00 when within included allowance | $556.37 |
+| General Purpose, 8 vCore, provisioned (Standard-series hardware) | $1.217736 per hour | $889.95 | $11.50 | $0.00 when within included allowance | $901.45 |
+| Business Critical, 8 vCore, provisioned (Standard-series hardware) | $2.43548 per hour | $1,778.90 | $25.00 | $0.00 when within included allowance | $1,803.90 |
 
-Read that table carefully. It is not a
+Zone-redundant configuration (where supported, including General Purpose and Business Critical) adds a premium of roughly 20-30% on the compute meter to account for the redundant deployment across availability zones. Use the [Azure Pricing Calculator](https://azure.microsoft.com/en-us/pricing/calculator/) to model the exact ZR rate for your chosen hardware family — published per-hour rates vary across Standard-series, Fsv2-series, and DC-series options and the public meter names change as new hardware families are introduced.
+
+Read the table above carefully. It is not a
 universal quote, and it does not
 include Defender for SQL, cross-region
 replicas, excess backup storage, LTR,
