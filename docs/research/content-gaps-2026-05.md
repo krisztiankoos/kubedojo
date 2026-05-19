@@ -1,6 +1,13 @@
 # KubeDojo content gap inventory — 2026-05-12
 
-> **Status**: Stage 0 in the gap-planning workflow. Captures candidate gaps;
+> **DEPRECATED — see [`gap-plan-2026-05-17.html`](./gap-plan-2026-05-17.html) instead.**
+> This Stage-0 inventory was superseded on 2026-05-17 by the deepseek+grok triangulation
+> synthesis (`gap-plan-2026-05-17.html`), which became the authoritative gap source. Most
+> items here either landed (T2-10 / T2-11 / T2-14 / T2-17 / T2-18 / T2-19 / T2-20 / T2-23
+> via Wave 2 of #1304), got de-scoped via [`docs/decisions/2026-05-17-gap-fill-decisions.md`](../decisions/2026-05-17-gap-fill-decisions.md),
+> or live as open Wave 3+ items in #1304. Kept for archival traceability; do not edit.
+
+> **Status (historical)**: Stage 0 in the gap-planning workflow. Captures candidate gaps;
 > per-gap research briefs (Stage 1) live as separate files in
 > `docs/research/gap-*.md`. Gap unlocks for drafting only after Stage 2
 > (`ab discuss` pressure-test), Stage 3 (parent epic + child issues),
