@@ -94,15 +94,17 @@ AGENTS: dict[str, AgentEntry] = {
         "cli_available": True,
         "resume_policy": "bridge_only",
     },
-    "grok": {
-        "adapter": "scripts.agent_runtime.adapters.grok:GrokAdapter",
-        "default_model": os.environ.get("AB_GROK_MODEL", "grok-4"),
+    "qwen": {
+        "adapter": "scripts.agent_runtime.adapters.qwen:QwenAdapter",
+        "default_model": os.environ.get("AB_QWEN_MODEL", "qwen/qwen3.6-plus"),
         "cost_tier": "medium",
         "capabilities": frozenset({
             "code_review",
+            "content_review",
             "adversarial_review",
             "debugging",
             "deliberation",
+            "research",
         }),
         "cli_available": True,
         "resume_policy": "never",

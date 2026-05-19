@@ -60,7 +60,7 @@ _DISCUSSION_CLARIFICATION_MODES = {
     "gemini": "yolo",
     "codex": "danger",
     "deepseek": "yolo",
-    "grok": "yolo",
+    "qwen": "yolo",
 }
 
 _DISCUSSION_RUNTIME_MODES = {
@@ -68,7 +68,7 @@ _DISCUSSION_RUNTIME_MODES = {
     "gemini": "workspace-write",
     "codex": "danger",
     "deepseek": "workspace-write",
-    "grok": "workspace-write",
+    "qwen": "workspace-write",
 }
 
 _DISCUSSION_MCP_EXCLUDE_TOKENS: tuple[str, ...] = (
@@ -165,8 +165,8 @@ def _agent_runtime_mode(agent_name: str, sandbox_mode: str | None) -> str:
     if agent_name == "claude":
         # Claude uses a permission-mode override, not a dedicated mode value.
         return "read-only"
-    if agent_name == "grok":
-        # Grok via hermes accepts workspace-write; sandbox is enforced by
+    if agent_name == "qwen":
+        # Qwen via hermes accepts workspace-write; sandbox is enforced by
         # toolset selection (see _agent_tool_config), not a mode flag.
         if sandbox_mode == "read-only":
             return "read-only"
@@ -211,9 +211,9 @@ def _agent_tool_config(
         return tc or None
     if agent_name == "codex":
         return {"enable_search": True}
-    if agent_name == "grok":
-        # Sandbox enforcement for grok is via toolset selection (hermes has
-        # no CLI sandbox flag). GrokAdapter.build_invocation honors caller
+    if agent_name == "qwen":
+        # Sandbox enforcement for qwen is via toolset selection (hermes has
+        # no CLI sandbox flag). QwenAdapter.build_invocation honors caller
         # overrides for toolsets/yolo over its mode defaults, so we MUST
         # gate write-capable tools (file/terminal/code_execution) and --yolo
         # on sandbox_mode here. Gemini-pro adversarial review on PR #1245
@@ -221,19 +221,19 @@ def _agent_tool_config(
         # of mode, which would have let read-only bridge sessions execute
         # arbitrary shell.
         if sandbox_mode == "read-only":
-            grok_tc: dict[str, object] = {
+            qwen_tc: dict[str, object] = {
                 "toolsets": "web",
                 "yolo": False,
             }
         else:
             # workspace-write / yolo / bypass / None → grant the full
-            # deliberation toolset so grok can inspect repo state and curl
+            # deliberation toolset so qwen can inspect repo state and curl
             # primary sources. Skills/memory stay off for reproducibility.
-            grok_tc = {
+            qwen_tc = {
                 "toolsets": "web,file,terminal,code_execution,todo",
                 "yolo": True,
             }
-        return grok_tc
+        return qwen_tc
     if agent_name == "deepseek":
         # Sandbox enforcement for deepseek is via toolset selection (hermes has
         # no CLI sandbox flag). DeepSeekAdapter.build_invocation honors caller

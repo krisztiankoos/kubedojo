@@ -16,7 +16,7 @@ class AgentRuntimeError(Exception):
 class AgentUnavailableError(AgentRuntimeError):
     """The requested agent is not in the registry or its CLI is not installed.
 
-    Also raised when registry entry has ``cli_available: False`` (e.g. Grok stub).
+    Also raised when registry entry has ``cli_available: False`` (e.g. peer stub).
     """
 
 

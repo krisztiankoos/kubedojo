@@ -30,7 +30,7 @@ def test_tiebreaker_is_gemini() -> None:
 
 def test_dispatch_rejects_unknown_agent() -> None:
     with pytest.raises(ValueError, match="unknown agent"):
-        dispatchers.dispatch("grok", "prompt", timeout=10)  # type: ignore[arg-type]
+        dispatchers.dispatch("madeup", "prompt", timeout=10)  # type: ignore[arg-type]
 
 
 def test_looks_unavailable_detects_budget() -> None:

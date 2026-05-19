@@ -81,7 +81,7 @@ class AgentAdapter(Protocol):
 
     Class attributes (MUST be defined at class level, not on instances):
         name: Registry key. Matches the key in ``registry.AGENTS``. Examples:
-            ``"codex"``, ``"claude"``, ``"gemini"``, ``"grok"``.
+            ``"codex"``, ``"claude"``, ``"gemini"``, ``"qwen"``.
         default_model: Model string passed to the CLI when the caller
             doesn't specify one. Example: ``"gpt-5.4"`` for Codex.
         supported_modes: Subset of ``{"read-only", "workspace-write", "danger"}``.
@@ -208,7 +208,7 @@ class AgentAdapter(Protocol):
         - Codex: return the ``-o <file>`` path + ``~/.codex/logs_1.sqlite``.
         - Gemini: return the active ``~/.gemini/tmp/<proj>/chats/<session>.json``.
         - Claude: return the active ``~/.claude/projects/.../<session>.jsonl``.
-        - Grok (stub): return ().
+        - Qwen (hermes): return ().
 
         Args:
             plan: The InvocationPlan returned by build_invocation(). Adapters

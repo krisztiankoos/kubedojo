@@ -18,7 +18,7 @@ ARCHITECTURAL OVERVIEW (read this first):
         ├── adapters/codex.py     → wraps `codex exec`
         ├── adapters/claude.py    → wraps `npx @anthropic-ai/claude-code -p`
         ├── adapters/gemini.py    → wraps `gemini -m ... -y`
-        └── adapters/grok.py      → stub (CLI doesn't exist yet)
+        └── adapters/qwen.py      — Hermes + openrouter adapter
 
 DESIGN PRINCIPLES:
 

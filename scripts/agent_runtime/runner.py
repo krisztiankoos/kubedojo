@@ -109,7 +109,7 @@ def _load_adapter(name: str) -> AgentAdapter:
         raise AgentUnavailableError(
             f"Agent {name!r} is registered but not available "
             f"(cli_available=False). This usually means its CLI does not "
-            f"exist yet (e.g., grok). Implement adapters/{name}.py and "
+            f"exist yet (e.g., qwen). Implement adapters/{name}.py and "
             f"flip the registry flag to enable it."
         )
 

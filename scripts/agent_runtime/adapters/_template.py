@@ -10,10 +10,10 @@ that the design doc and the agent-runtime-guide both point to.
 
 ---
 
-HOW TO ADD A NEW AGENT (e.g., "grok"):
+HOW TO ADD A NEW AGENT (e.g., "qwen"):
 
-1. Copy this file to ``adapters/grok.py``.
-2. Rename the class from ``TemplateAdapter`` to ``GrokAdapter``.
+1. Copy this file to ``adapters/qwen.py``.
+2. Rename the class from ``TemplateAdapter`` to ``QwenAdapter``.
 3. Fill in the class attributes at the top: ``name``, ``default_model``,
    ``supported_modes``.
 4. Implement ``build_invocation`` — describe the CLI argv for each mode.
@@ -21,7 +21,7 @@ HOW TO ADD A NEW AGENT (e.g., "grok"):
 6. Implement ``liveness_signal_paths`` — return files the runner can
    mtime-poll for stall detection. Return ``()`` if the CLI only writes
    to stdout (the runner's stdout streamer covers that case).
-7. Update ``registry.AGENTS["grok"]`` with real values and set
+7. Update ``registry.AGENTS["qwen"]`` with real values and set
    ``cli_available: True``.
 8. Write unit tests for your adapter mirroring
    ``tests/test_agent_runtime.py`` shape.
