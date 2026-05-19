@@ -44,7 +44,17 @@ Task classes — model mapping per agent:
     architect   claude-opus-4-7              gpt-5.5
 
 Each dispatch is recorded to ``logs/smart_dispatch.jsonl`` for usage
-auditing. Reuse with --dry-run to print the chosen plan without firing.
+auditing. The FULL response body is also persisted to
+``logs/dispatch_responses/<task_id>.txt`` so callers that pipe stdout
+through ``tail``/``head`` (e.g. background bash tasks) can recover the
+body even if the live stream was truncated. The JSONL row's
+``response_path`` field is the canonical pointer. Pattern::
+
+    python scripts/dispatch_smart.py review --task-id review-foo ... | tail -N
+    # body may be truncated in stdout; recover from disk:
+    cat "$(jq -r 'select(.task_id == "review-foo") | .response_path' logs/smart_dispatch.jsonl)"
+
+Reuse with --dry-run to print the chosen plan without firing.
 """
 from __future__ import annotations
 
@@ -59,6 +69,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 LOG_PATH = REPO / "logs" / "smart_dispatch.jsonl"
+RESPONSE_DIR = REPO / "logs" / "dispatch_responses"
 PRIMARY_REPO = REPO
 
 
@@ -184,6 +195,24 @@ def append_log(entry: dict) -> None:
         fp.write(json.dumps(entry) + "\n")
 
 
+def persist_response(task_id: str, response: str, stderr_excerpt: str) -> Path:
+    """Write the full response body (and stderr excerpt) to disk.
+
+    Returns the path of the response file. Callers that pipe dispatch output
+    through ``tail`` or similar truncation can still recover the full body
+    from this file. Prior to this, only ``response_chars`` was captured in
+    the JSONL row and the body lived solely in stdout, which got silently
+    dropped on ~3 of session-31's review dispatches.
+    """
+    RESPONSE_DIR.mkdir(parents=True, exist_ok=True)
+    response_path = RESPONSE_DIR / f"{task_id}.txt"
+    response_path.write_text(response or "")
+    if stderr_excerpt:
+        stderr_path = RESPONSE_DIR / f"{task_id}.stderr.txt"
+        stderr_path.write_text(stderr_excerpt)
+    return response_path
+
+
 def fire(*, agent: str, task_class: str, prompt: str, mode: str, model: str,
          worktree: Path | None, task_id: str, timeout_s: int) -> int:
     sys.path.insert(0, str(REPO / "scripts"))
@@ -196,6 +225,8 @@ def fire(*, agent: str, task_class: str, prompt: str, mode: str, model: str,
     print(f"[smart] task_id={task_id}")
 
     started = time.time()
+    previous_search: str | None = None
+    previous_dispatched: str | None = None
     try:
         previous_search = os.environ.get("KUBEDOJO_CODEX_SEARCH")
         previous_dispatched = os.environ.get("KUBEDOJO_DISPATCHED")
@@ -236,6 +267,8 @@ def fire(*, agent: str, task_class: str, prompt: str, mode: str, model: str,
             os.environ["KUBEDOJO_DISPATCHED"] = previous_dispatched
 
     elapsed = time.time() - started
+    response_path = persist_response(task_id, response, stderr_excerpt)
+    rel_response_path = str(response_path.relative_to(REPO))
     append_log({
         "ts": int(started),
         "elapsed_s": round(elapsed, 1),
@@ -248,12 +281,16 @@ def fire(*, agent: str, task_class: str, prompt: str, mode: str, model: str,
         "ok": ok,
         "session_id": session_id,
         "response_chars": len(response),
+        "response_path": rel_response_path,
         "stderr_excerpt": stderr_excerpt[:400] if stderr_excerpt else None,
     })
 
+    # Print response_path BEFORE the body so callers that truncate stdout
+    # (tail -N, head -N) still see the path and can `cat` the full file.
     print("=" * 70)
     print(f"OK: {ok}  |  elapsed: {elapsed:.0f}s  |  "
           f"resp_chars: {len(response)}")
+    print(f"response_path: {rel_response_path}")
     print("=" * 70)
     if response:
         print(response)
