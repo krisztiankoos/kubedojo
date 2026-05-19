@@ -4,11 +4,11 @@ sidebar:
   order: 0
   label: "IaC Tools"
 ---
-> **Toolkit Track** | 11 Modules | ~9.5 hours total
+> **Toolkit Track** | 12 Modules | ~11 hours total
 
 ## Overview
 
-The IaC Tools Toolkit covers the major infrastructure as code tools in depth. From HashiCorp's Terraform to OpenTofu, from Pulumi's programming language approach to Ansible's configuration management, from CloudFormation to Bicep—this toolkit gives you hands-on experience with the tools that define modern infrastructure.
+The IaC Tools Toolkit covers the major infrastructure as code tools in depth. From HashiCorp's Terraform to OpenTofu, from Pulumi's programming language approach to Ansible's configuration management, from CloudFormation to Bicep, and from Ansible roles to Kubernetes-native Ansible Operators—this toolkit gives you hands-on experience with the tools that define modern infrastructure.
 
 This toolkit applies concepts from [IaC Discipline](../../../disciplines/delivery-automation/iac/).
 
@@ -35,6 +35,7 @@ Before starting this toolkit:
 | 7.9 | [System Initiative](module-7.9-system-initiative/) | `[COMPLEX]` | 50-55 min |
 | 7.10 | [Nitric](module-7.10-nitric/) | `[MEDIUM]` | 45-50 min |
 | 7.11 | [HCP Terraform Workflow Operations](module-7.11-hcp-terraform-workflows/) | `[COMPLEX]` | 60-70 min |
+| 7.12 | [Ansible Operator SDK Fundamentals](module-7.12-ansible-operator-sdk/) | `[COMPLEX]` | ~90 min |
 
 ## Learning Outcomes
 
@@ -51,6 +52,7 @@ After completing this toolkit, you will be able to:
 9. **Explore System Initiative** — Reactive, visual DevOps automation
 10. **Build with Nitric** — Cloud-agnostic application framework
 11. **Operate Terraform at organizational scale** — HCP Terraform workspaces, dynamic provider credentials, Sentinel/OPA policy gates, drift detection, and private module registry workflows
+12. **Build Ansible Operators** — Map Kubernetes custom resources to Ansible roles with Operator SDK, `watches.yaml`, `kubernetes.core`, and status-aware reconciliation
 
 ## Tool Selection Guide
 
@@ -92,6 +94,13 @@ WHICH IAC TOOL?
      • Idempotent operations
      • Procedural + declarative
      • Great for OS configuration
+
+"I want an Ansible role to reconcile Kubernetes custom resources"
+└──▶ Ansible Operator SDK
+     • Kubernetes controller shell from Operator SDK
+     • Reconcile logic implemented as Ansible roles
+     • `watches.yaml` maps CRDs to roles or playbooks
+     • Strong when platform teams already own Ansible automation
 
 "I want Terraform without HashiCorp licensing concerns"
 └──▶ OpenTofu
@@ -231,6 +240,11 @@ Module 7.11: HCP Terraform Workflow Operations
      │  Remote runs, governance, drift
      │  Operate Terraform at org scale
      ▼
+Module 7.12: Ansible Operator SDK Fundamentals
+     │
+     │  Map CRDs to Ansible roles
+     │  Build a minimum viable operator
+     ▼
 [Toolkit Complete] → Apply to production
 ```
 
@@ -249,6 +263,7 @@ Module 7.11: HCP Terraform Workflow Operations
 | System Initiative | Reactive VPC with automatic subnet calculation |
 | Nitric | Multi-cloud notes API deployed everywhere |
 | HCP Terraform | VCS-driven workflow with dynamic credentials and policy gates |
+| Ansible Operator SDK | Build a DemoApp custom resource reconciled by an Ansible role |
 
 ## Related Tracks
 
