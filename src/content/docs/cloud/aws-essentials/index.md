@@ -26,8 +26,9 @@ Not everything goes into Kubernetes. This track covers the core AWS services eve
 | 10 | [CloudWatch & Observability](module-1.10-cloudwatch/) | 2h | Metrics, alarms, logs, X-Ray |
 | 11 | [CI/CD on AWS (Code Suite)](module-1.11-cicd/) | 2h | CodePipeline, CodeBuild, GitHub Actions OIDC |
 | 12 | [Infrastructure as Code on AWS](module-1.12-cloudformation/) | 1.5h | Templates, stacks, CDK overview |
+| 13 | [AWS Data Ingestion + Transformation](module-1.13-data-ingestion/) | 2h | Kinesis, Firehose, Glue, Athena |
 
-**Total time**: ~23 hours
+**Total time**: ~25 hours
 
 ---
 
