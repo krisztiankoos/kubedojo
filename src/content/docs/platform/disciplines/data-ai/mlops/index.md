@@ -4,7 +4,7 @@ sidebar:
   order: 0
   label: "MLOps"
 ---
-> **Discipline Track** | 11 Modules | ~9 hours total
+> **Discipline Track** | 12 Modules | ~10 hours total
 
 ## Overview
 
@@ -36,6 +36,7 @@ Before starting this track:
 | 5.9 | [ML Repository Hygiene](module-5.9-ml-repository-hygiene/) | `[COMPLEX]` | 45-55 min |
 | 5.10 | [Production Model-Serving Traffic Patterns](module-5.10-model-serving-traffic-patterns/) | `[COMPLEX]` | 55-65 min |
 | 5.11 | [Drift-Triggered Auto-Retraining Loop](module-5.11-drift-triggered-retraining/) | `[COMPLEX]` | 60-70 min |
+| 5.12 | [CML for ML CI](module-5.12-cml-for-ml-ci/) | `[COMPLEX]` | 55-60 min |
 
 ## Learning Outcomes
 
@@ -52,6 +53,7 @@ After completing this track, you will be able to:
 9. **Maintain clean ML repositories** — Keep data, models, notebooks, dependencies, hooks, and CI policies reviewable without bloating Git history
 10. **Control serving exposure** — Use canary, A/B, shadow, mirroring, and bandit patterns to promote models with measurable rollback and cost controls
 11. **Close the model lifecycle loop** — Close the model lifecycle loop with drift-triggered automated retraining, gated promotion, and forensic rollback
+12. **Surface model review evidence** — Surface model metric deltas, validation reports, and deployment health back into the Git PR review surface using CML on GitHub Actions or GitLab CI.
 
 ## Key Concepts
 
@@ -156,6 +158,10 @@ Module 5.10: Production Model-Serving Traffic Patterns
 Module 5.11: Drift-Triggered Auto-Retraining Loop
      │
      │  Drift signals, Argo triggers, retraining DAGs, validation gates, rollback
+     ▼
+Module 5.12: CML for ML CI
+     │
+     │  PR comments, DVC metric deltas, validation reports, runner cost controls
      ▼
 [Track Complete] → ML Platforms Toolkit
 ```
