@@ -2,7 +2,7 @@
 title: "Module 1.12: Infrastructure as Code on AWS"
 slug: cloud/aws-essentials/module-1.12-cloudformation
 sidebar:
-  order: 13
+  order: 12
 ---
 **Complexity:** `[MEDIUM]` | **Time to Complete:** 1.5 hours | **Track:** AWS DevOps Essentials
 
