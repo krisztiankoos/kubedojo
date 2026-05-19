@@ -31,3 +31,28 @@ def test_dispatch_smart_danger_allows_dry_run_with_worktree() -> None:
     assert result.returncode == 0
     assert "mode=danger" in result.stdout
     assert "[dry-run] task_id=" in result.stdout
+
+
+def test_dispatch_smart_agy_danger_no_worktree_ok() -> None:
+    """agy review-class dispatches don't write to disk under danger mode,
+    so the worktree requirement should not apply to --agent agy."""
+    result = _run_dispatch_smart(
+        ["review", "--agent", "agy", "--mode", "danger", "--dry-run", "x"]
+    )
+    # Should succeed (rc=0) — agy carve-out lets danger run without --worktree.
+    assert result.returncode == 0, (
+        f"agy danger-mode dry-run should not require --worktree. "
+        f"stderr={result.stderr!r}, stdout={result.stdout!r}"
+    )
+
+
+def test_dispatch_smart_codex_danger_still_requires_worktree() -> None:
+    """The agy carve-out must NOT loosen the requirement for codex,
+    which actually writes under danger mode."""
+    # Codex auto-forces mode=danger, so any codex dispatch without --worktree
+    # should hard-fail.
+    result = _run_dispatch_smart(["edit", "--agent", "codex", "x"])
+    merged_output = (result.stdout or "") + (result.stderr or "")
+    assert result.returncode != 0
+    assert "danger" in merged_output
+    assert "worktree" in merged_output
