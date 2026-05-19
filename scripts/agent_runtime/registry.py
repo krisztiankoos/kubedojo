@@ -41,6 +41,18 @@ class AgentEntry(TypedDict):
 
 
 AGENTS: dict[str, AgentEntry] = {
+    "agy": {
+        "adapter": "scripts.agent_runtime.adapters.agy:AgyAdapter",
+        "default_model": os.environ.get("KUBEDOJO_AGY_MODEL", "gemini-3.5-flash-high"),
+        "cost_tier": "low",
+        "capabilities": frozenset({
+            "content_writing",
+            "content_review",
+            "adversarial_review",
+        }),
+        "cli_available": True,
+        "resume_policy": "bridge_only",
+    },
     "codex": {
         "adapter": "scripts.agent_runtime.adapters.codex:CodexAdapter",
         "default_model": os.environ.get("AB_CODEX_MODEL", "gpt-5.5"),

@@ -84,7 +84,7 @@ LOG_PATH = PRIMARY_REPO / "logs" / "smart_dispatch.jsonl"
 RESPONSE_DIR = PRIMARY_REPO / "logs" / "dispatch_responses"
 
 
-SUPPORTED_AGENTS = ("claude", "codex", "deepseek", "gemini", "qwen")
+SUPPORTED_AGENTS = ("agy", "claude", "codex", "deepseek", "gemini", "qwen")
 
 
 @dataclass(frozen=True)
@@ -99,6 +99,7 @@ class TaskClassConfig:
 TASK_CLASSES: dict[str, TaskClassConfig] = {
     "search": TaskClassConfig(
         models={
+            "agy": "gemini-3.5-flash-high",
             "claude": "claude-haiku-4-5-20251001",
             "codex": "gpt-5.4-mini",
             "deepseek": "deepseek-v4-flash",
@@ -112,6 +113,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "edit": TaskClassConfig(
         models={
+            "agy": "gemini-3.5-flash-high",
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.3-codex-spark",
             "deepseek": "deepseek-v4-pro",
@@ -125,6 +127,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "draft": TaskClassConfig(
         models={
+            "agy": "gemini-3.5-flash-high",
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.3-codex-spark",
             "deepseek": "deepseek-v4-pro",
@@ -138,6 +141,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "review": TaskClassConfig(
         models={
+            "agy": "gemini-3.5-flash-high",
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.5",
             "deepseek": "deepseek-v4-pro",
@@ -151,6 +155,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "architect": TaskClassConfig(
         models={
+            "agy": "gemini-3.5-flash-high",
             "claude": "claude-opus-4-7",
             "codex": "gpt-5.5",
             "deepseek": "deepseek-v4-pro",
