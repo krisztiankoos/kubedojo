@@ -8,6 +8,8 @@ sidebar:
 
 ## May 2026
 
+- **2026-05-19** feat(content): module 3.1 LLM-Native Stack on Kubernetes — first module of synthesis-apps mini-arc (T2-7).
+
 - **Platform Toolkits / IaC Tools**: Module 7.11 HCP Terraform Workflow Operations (#1304 Wave 2, T2-23, ~2091 lines).
 
 - **Platform Toolkits / GitOps & Deployments**: Module 2.5 Dapr + Buildpacks application definition beyond Helm (#1304 Wave 2, T2-20, ~2189 lines).
