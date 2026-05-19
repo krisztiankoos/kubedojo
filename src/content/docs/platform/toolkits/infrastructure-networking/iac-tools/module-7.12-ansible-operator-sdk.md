@@ -441,8 +441,11 @@ status fields directly.
 Add the Ansible collections required by the role. The Kubernetes collection
 provides `kubernetes.core.k8s` and `kubernetes.core.k8s_info`; the Operator SDK
 utility collection provides `operator_sdk.util.k8s_status`. In a scaffolded
-project, check both `requirements.yml` and the role metadata so local runs and
-container builds resolve the same collection names.
+project, check both `requirements.yml` and the role metadata. The
+`requirements.yml` file drives collection installation during `make docker-build` (the SDK
+Dockerfile runs `ansible-galaxy collection install -r requirements.yml`). The
+`meta/main.yml` `collections:` entry is a Galaxy dependency declaration — useful
+only if the role is later published to Galaxy as a standalone artifact.
 
 ```yaml
 # requirements.yml
@@ -547,6 +550,7 @@ return structured results.
     state: present
     wait: true
     wait_timeout: 120
+    # This blocks the reconcile loop for up to 120 s; production operators should use `k8s_info` with `retries`/`until` (see the Common Patterns section below) rather than blocking the worker on slow or flapping pods.
     definition:
       apiVersion: apps/v1
       kind: Deployment
@@ -576,6 +580,10 @@ return structured results.
                 ports:
                   - name: http
                     containerPort: 80
+                # The `containerPort` stays at 80 because nginx serves on 80
+                # regardless of which port the Service exposes; the CR `port` field
+                # controls only the Service-facing port (its `targetPort` continues
+                # to route to container port 80).
                 readinessProbe:
                   httpGet:
                     path: /
@@ -630,11 +638,11 @@ return structured results.
       phase: >-
         {{
           'Ready'
-          if (demoapp_deployment.resources[0].status.readyReplicas | default(0) | int) == demoapp_replicas
+          if ((demoapp_deployment.resources | first | default({}, true)).status.readyReplicas | default(0) | int) == demoapp_replicas
           else 'Progressing'
         }}
       replicas: "{{ demoapp_replicas }}"
-      readyReplicas: "{{ demoapp_deployment.resources[0].status.readyReplicas | default(0) }}"
+      readyReplicas: "{{ (demoapp_deployment.resources | first | default({}, true)).status.readyReplicas | default(0) }}"
       serviceName: "{{ demoapp_name }}"
       endpoint: "http://{{ demoapp_name }}.{{ demoapp_namespace }}.svc.cluster.local:{{ demoapp_port }}"
 ```
@@ -859,7 +867,7 @@ to become ready.
   delay: 6
   until: >
     (deployment_read.resources | length) == 1 and
-    (deployment_read.resources[0].status.readyReplicas | default(0) | int) >=
+    ((deployment_read.resources | first | default({}, true)).status.readyReplicas | default(0) | int) >=
     (replicas | default(1) | int)
 ```
 
@@ -1079,6 +1087,11 @@ field names into snake_case variables. The role should look for
 variable names consistent with the operator's conversion behavior rather than
 guessing at both forms.
 
+Note: the CRD declares `spec.serviceAccountName` (camelCase), but inside the Ansible
+role you receive it as `service_account_name` (snake_case) because watches.yaml
+has `snakeCaseParameters: true`. This is the most common point of confusion when
+porting between SDK and Ansible Operator.
+
 </details>
 
 <details>
@@ -1136,6 +1149,8 @@ kind create cluster --name ansible-operator-lab --image kindest/node:v1.35.0
 kubectl cluster-info --context kind-ansible-operator-lab
 ```
 
+If your local kind version doesn't have the v1.35.0 node image cached, drop the `--image` flag entirely — `kind create cluster` will default to whatever node image your installed kind ships with, which is typically a recent stable release.
+
 Expected output should show the control plane endpoint for the kind cluster and
 confirm that `kubectl` is using the correct context. If `kubectl` points at a
 different cluster, stop and fix the context before deploying the operator.
@@ -1174,7 +1189,7 @@ name is not what you expected.
 
 ```bash
 find . -maxdepth 3 -type f | sort | sed -n '1,120p'
-sed -n '1,120p' watches.yaml
+cat watches.yaml
 ```
 
 <details>
@@ -1331,11 +1346,11 @@ workload image if you later experiment with custom images.
       phase: >-
         {{
           'Ready'
-          if (demoapp_deployment.resources[0].status.readyReplicas | default(0) | int) == demoapp_replicas
+          if ((demoapp_deployment.resources | first | default({}, true)).status.readyReplicas | default(0) | int) == demoapp_replicas
           else 'Progressing'
         }}
       replicas: "{{ demoapp_replicas }}"
-      readyReplicas: "{{ demoapp_deployment.resources[0].status.readyReplicas | default(0) }}"
+      readyReplicas: "{{ (demoapp_deployment.resources | first | default({}, true)).status.readyReplicas | default(0) }}"
       serviceName: "{{ demoapp_name }}"
       endpoint: "http://{{ demoapp_name }}.{{ demoapp_namespace }}.svc.cluster.local:{{ demoapp_port }}"
 ```
