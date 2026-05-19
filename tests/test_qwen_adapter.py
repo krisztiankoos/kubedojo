@@ -1,14 +1,14 @@
-"""Unit tests for the ``GrokAdapter`` Hermes integration."""
+"""Unit tests for the ``QwenAdapter`` Hermes integration (openrouter provider)."""
 from __future__ import annotations
 
 from pathlib import Path
 
-from agent_runtime.adapters.grok import GrokAdapter
+from agent_runtime.adapters.qwen import QwenAdapter
 
 
 def test_build_invocation_read_only(monkeypatch) -> None:
-    monkeypatch.setattr("agent_runtime.adapters.grok.shutil.which", lambda _: "hermes")
-    adapter = GrokAdapter()
+    monkeypatch.setattr("agent_runtime.adapters.qwen.shutil.which", lambda _: "hermes")
+    adapter = QwenAdapter()
     plan = adapter.build_invocation(
         prompt="p",
         mode="read-only",
@@ -25,9 +25,9 @@ def test_build_invocation_read_only(monkeypatch) -> None:
         "-z",
         "p",
         "-m",
-        "grok-4",
+        "qwen/qwen3.6-plus",
         "--provider",
-        "xai-oauth",
+        "openrouter",
         "-t",
         "web",
     ]
@@ -35,8 +35,8 @@ def test_build_invocation_read_only(monkeypatch) -> None:
 
 
 def test_build_invocation_workspace_write(monkeypatch) -> None:
-    monkeypatch.setattr("agent_runtime.adapters.grok.shutil.which", lambda _: "hermes")
-    adapter = GrokAdapter()
+    monkeypatch.setattr("agent_runtime.adapters.qwen.shutil.which", lambda _: "hermes")
+    adapter = QwenAdapter()
     plan = adapter.build_invocation(
         prompt="p",
         mode="workspace-write",
@@ -54,8 +54,8 @@ def test_build_invocation_workspace_write(monkeypatch) -> None:
 
 
 def test_build_invocation_danger(monkeypatch) -> None:
-    monkeypatch.setattr("agent_runtime.adapters.grok.shutil.which", lambda _: "hermes")
-    adapter = GrokAdapter()
+    monkeypatch.setattr("agent_runtime.adapters.qwen.shutil.which", lambda _: "hermes")
+    adapter = QwenAdapter()
     plan = adapter.build_invocation(
         prompt="p",
         mode="danger",
@@ -72,23 +72,23 @@ def test_build_invocation_danger(monkeypatch) -> None:
 
 
 def test_model_override(monkeypatch) -> None:
-    monkeypatch.setattr("agent_runtime.adapters.grok.shutil.which", lambda _: "hermes")
-    adapter = GrokAdapter()
+    monkeypatch.setattr("agent_runtime.adapters.qwen.shutil.which", lambda _: "hermes")
+    adapter = QwenAdapter()
     plan = adapter.build_invocation(
         prompt="p",
         mode="read-only",
         cwd=Path("/tmp"),
-        model="grok-4-fast",
+        model="qwen/qwen3.6-flash",
         task_id=None,
         session_id=None,
         tool_config=None,
     )
 
-    assert plan.cmd[plan.cmd.index("-m") + 1] == "grok-4-fast"
+    assert plan.cmd[plan.cmd.index("-m") + 1] == "qwen/qwen3.6-flash"
 
 
 def test_parse_response_strips_hermes_banner() -> None:
-    adapter = GrokAdapter()
+    adapter = QwenAdapter()
     result = adapter.parse_response(
         stdout="💡 Python project detected. Run with hermes -z.\n\nAnswer",
         stderr="",
@@ -103,7 +103,7 @@ def test_parse_response_strips_hermes_banner() -> None:
 
 
 def test_parse_response_detects_rate_limit() -> None:
-    adapter = GrokAdapter()
+    adapter = QwenAdapter()
     result = adapter.parse_response(
         stdout="",
         stderr="rate limit exceeded",
