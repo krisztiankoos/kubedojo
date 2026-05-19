@@ -68,9 +68,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-LOG_PATH = REPO / "logs" / "smart_dispatch.jsonl"
-RESPONSE_DIR = REPO / "logs" / "dispatch_responses"
-PRIMARY_REPO = REPO
 
 
 def _primary_checkout_root(repo_root: Path) -> Path:
@@ -81,6 +78,10 @@ def _primary_checkout_root(repo_root: Path) -> Path:
 
 
 PRIMARY_REPO = _primary_checkout_root(REPO)
+# Anchor logs to the primary checkout so worktree dispatches do not
+# fragment the audit trail across .worktrees/*/logs/.
+LOG_PATH = PRIMARY_REPO / "logs" / "smart_dispatch.jsonl"
+RESPONSE_DIR = PRIMARY_REPO / "logs" / "dispatch_responses"
 
 
 SUPPORTED_AGENTS = ("claude", "codex", "deepseek", "gemini", "qwen")
@@ -206,10 +207,10 @@ def persist_response(task_id: str, response: str, stderr_excerpt: str) -> Path:
     """
     RESPONSE_DIR.mkdir(parents=True, exist_ok=True)
     response_path = RESPONSE_DIR / f"{task_id}.txt"
-    response_path.write_text(response or "")
+    response_path.write_text(response or "", encoding="utf-8")
     if stderr_excerpt:
         stderr_path = RESPONSE_DIR / f"{task_id}.stderr.txt"
-        stderr_path.write_text(stderr_excerpt)
+        stderr_path.write_text(stderr_excerpt, encoding="utf-8")
     return response_path
 
 
@@ -268,7 +269,7 @@ def fire(*, agent: str, task_class: str, prompt: str, mode: str, model: str,
 
     elapsed = time.time() - started
     response_path = persist_response(task_id, response, stderr_excerpt)
-    rel_response_path = str(response_path.relative_to(REPO))
+    rel_response_path = str(response_path.relative_to(PRIMARY_REPO))
     append_log({
         "ts": int(started),
         "elapsed_s": round(elapsed, 1),
