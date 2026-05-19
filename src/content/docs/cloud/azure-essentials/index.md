@@ -28,8 +28,9 @@ Microsoft built Azure to extend Windows Server, Active Directory, and enterprise
 | 12 | [ARM & Bicep](module-3.12-bicep/) | 1.5h | Templates, modules, What-If deployments |
 | 13 | [Azure Application Gateway — Operator Path](module-3.13-application-gateway/) | 1.5h | WAF policies, TLS, AKS ingress, diagnostics |
 | 14 | [Azure App Service — Operator Path](module-3.14-app-service/) | 2h | App Service Plans, slots, private networking, autoscale |
+| 16 | [Azure SQL Database — Operator Path](module-3.16-azure-sql/) | 2h | SQL flavors, vCore tiers, HA/DR, security, cost, day-2 ops |
 
-**Total time**: ~27.5 hours
+**Total time**: ~29.5 hours
 
 ---
 
