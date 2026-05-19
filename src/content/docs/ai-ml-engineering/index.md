@@ -5,7 +5,7 @@ sidebar:
   order: 0
   label: "AI/ML Engineering"
 ---
-> **AI/ML Engineering Track** | 60+ Modules | 13 Phases | ~230-310 hours
+> **AI/ML Engineering Track** | 60+ Modules | 14 Phases | ~230-310 hours
 
 ## Overview
 
@@ -59,6 +59,7 @@ If you are unsure where to begin, use one of these entry routes:
 | Build AI apps with strong engineering habits | [Prerequisites](prerequisites/) | [AI-Native Development](ai-native-development/) -> [Generative AI](generative-ai/) -> [Vector Search & RAG](vector-rag/) |
 | Learn local-first AI from a laptop or workstation | [Prerequisites](prerequisites/) | [AI-Native Development](ai-native-development/) -> [AI Infrastructure](ai-infrastructure/) -> [Advanced GenAI & Safety](advanced-genai/) |
 | Move into MLOps / AI platform work | [Prerequisites](prerequisites/) | [MLOps & LLMOps](mlops/) -> [AI Infrastructure](ai-infrastructure/) -> [Platform Engineering: Data & AI](../platform/disciplines/data-ai/) |
+| Build LLM-native apps on Kubernetes | [Vector Search & RAG](vector-rag/) + [AI Infrastructure](ai-infrastructure/) | [Synthesis Apps](synthesis-apps/) -> [Advanced GenAI & Safety](advanced-genai/) |
 | Understand model training and tuning deeply | [Generative AI](generative-ai/) | [Deep Learning Foundations](deep-learning/) -> [Advanced GenAI & Safety](advanced-genai/) |
 
 ## What Makes This Track Different
@@ -81,11 +82,12 @@ The track is organized as one main spine with several valid learner routes.
 | 4 | [Frameworks & Agents](frameworks-agents/) | LangChain, LangGraph, LlamaIndex, agentic AI, MCP |
 | 5 | [MLOps & LLMOps](mlops/) | Kubernetes for ML, experiment tracking, pipelines, deployment |
 | 6 | [AI Infrastructure](ai-infrastructure/) | Cloud management, AIOps, vLLM, GPU scheduling |
-| 7 | [Advanced GenAI & Safety](advanced-genai/) | Fine-tuning, RLHF, diffusion, alignment, red teaming, evaluation |
-| 8 | [Multimodal AI](multimodal-ai/) | Speech, vision, video, native multimodal models |
-| 9 | [Deep Learning Foundations](deep-learning/) | PyTorch, neural networks, CNNs, transformers, backprop |
-| 10 | [Machine Learning](machine-learning/) | Tabular ML practitioner essentials: sklearn API, regression, evaluation, feature engineering, trees, boosting, clustering, anomaly detection, dimensionality reduction, HPO, time series — plus Tier-2 imbalance, interpretability, recommenders, conformal prediction, fairness, causal inference |
-| 11 | [Reinforcement Learning](reinforcement-learning/) | RL practitioner foundations (PPO/DQN/SAC, SB3, Gymnasium) and offline RL / imitation learning |
+| 7 | [Synthesis Apps](synthesis-apps/) | Building LLM-native applications from inference, vector memory, orchestration, failure handling, and production gates |
+| 8 | [Advanced GenAI & Safety](advanced-genai/) | Fine-tuning, RLHF, diffusion, alignment, red teaming, evaluation |
+| 9 | [Multimodal AI](multimodal-ai/) | Speech, vision, video, native multimodal models |
+| 10 | [Deep Learning Foundations](deep-learning/) | PyTorch, neural networks, CNNs, transformers, backprop |
+| 11 | [Machine Learning](machine-learning/) | Tabular ML practitioner essentials: sklearn API, regression, evaluation, feature engineering, trees, boosting, clustering, anomaly detection, dimensionality reduction, HPO, time series — plus Tier-2 imbalance, interpretability, recommenders, conformal prediction, fairness, causal inference |
+| 12 | [Reinforcement Learning](reinforcement-learning/) | RL practitioner foundations (PPO/DQN/SAC, SB3, Gymnasium) and offline RL / imitation learning |
 | A | [History of AI/ML](history/) | Historical context (appendix) |
 
 ## Recommended Default Route
@@ -106,6 +108,8 @@ Frameworks & Agents
 MLOps & LLMOps
    |
 AI Infrastructure
+   |
+Synthesis Apps
 ```
 
 After that, branch based on interest:

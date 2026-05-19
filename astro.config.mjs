@@ -386,6 +386,7 @@ export default defineConfig({
             { label: 'Frameworks & Agents', autogenerate: { directory: 'ai-ml-engineering/frameworks-agents' }, collapsed: true },
             { label: 'MLOps & LLMOps', autogenerate: { directory: 'ai-ml-engineering/mlops' }, collapsed: true },
             { label: 'AI Infrastructure', autogenerate: { directory: 'ai-ml-engineering/ai-infrastructure' }, collapsed: true },
+            { label: 'Synthesis Apps', autogenerate: { directory: 'ai-ml-engineering/synthesis-apps' }, collapsed: true },
             { label: 'Advanced GenAI & Safety', autogenerate: { directory: 'ai-ml-engineering/advanced-genai' }, collapsed: true },
             { label: 'Multimodal AI', autogenerate: { directory: 'ai-ml-engineering/multimodal-ai' }, collapsed: true },
             { label: 'Deep Learning Foundations', autogenerate: { directory: 'ai-ml-engineering/deep-learning' }, collapsed: true },
