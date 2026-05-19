@@ -84,7 +84,7 @@ LOG_PATH = PRIMARY_REPO / "logs" / "smart_dispatch.jsonl"
 RESPONSE_DIR = PRIMARY_REPO / "logs" / "dispatch_responses"
 
 
-SUPPORTED_AGENTS = ("claude", "codex", "deepseek", "gemini", "qwen")
+SUPPORTED_AGENTS = ("agy", "claude", "codex", "deepseek", "gemini", "qwen")
 
 
 @dataclass(frozen=True)
@@ -96,9 +96,18 @@ class TaskClassConfig:
     codex_search: bool = False  # opt-in per class
 
 
+# Note on the "agy" model entries below: Antigravity CLI's model is selected
+# interactively in its TUI panel and cannot be overridden per-invocation
+# (no -m / --model flag as of agy 1.0.0). The string `tui-controlled`
+# is an informational placeholder — the actual model in flight is whatever
+# the operator last picked in `agy`'s panel and is reported in the model
+# self-identify probe (`agy -p 'what model are you?'`). The per-class
+# distinction is therefore meaningless for agy until Google adds a model
+# flag or config-file path.
 TASK_CLASSES: dict[str, TaskClassConfig] = {
     "search": TaskClassConfig(
         models={
+            "agy": "tui-controlled",
             "claude": "claude-haiku-4-5-20251001",
             "codex": "gpt-5.4-mini",
             "deepseek": "deepseek-v4-flash",
@@ -112,6 +121,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "edit": TaskClassConfig(
         models={
+            "agy": "tui-controlled",
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.3-codex-spark",
             "deepseek": "deepseek-v4-pro",
@@ -125,6 +135,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "draft": TaskClassConfig(
         models={
+            "agy": "tui-controlled",
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.3-codex-spark",
             "deepseek": "deepseek-v4-pro",
@@ -138,6 +149,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "review": TaskClassConfig(
         models={
+            "agy": "tui-controlled",
             "claude": "claude-sonnet-4-6",
             "codex": "gpt-5.5",
             "deepseek": "deepseek-v4-pro",
@@ -151,6 +163,7 @@ TASK_CLASSES: dict[str, TaskClassConfig] = {
     ),
     "architect": TaskClassConfig(
         models={
+            "agy": "tui-controlled",
             "claude": "claude-opus-4-7",
             "codex": "gpt-5.5",
             "deepseek": "deepseek-v4-pro",
@@ -351,6 +364,21 @@ def main() -> int:
                 f"--mode {args.mode!r}). Codex needs network + filesystem "
                 f"to fact-check; read-only/workspace-write break it. "
                 f"Drop --mode to use the default."
+            )
+        mode = "danger"
+
+    # Agy always runs in danger mode for the same reason — read-only would
+    # cause its tool-permission prompts to hang waiting for human input in
+    # a headless dispatch, since the runtime cannot answer the prompt.
+    # `--dangerously-skip-permissions` is the equivalent of codex's danger
+    # sandbox: auto-approve all tool calls. User direction 2026-05-19.
+    if args.agent == "agy" and mode != "danger":
+        if args.mode is not None and args.mode != "danger":
+            p.error(
+                f"--agent agy always runs in danger mode (you passed "
+                f"--mode {args.mode!r}). agy in headless dispatch needs "
+                f"--dangerously-skip-permissions to avoid hanging on "
+                f"interactive permission prompts. Drop --mode to use the default."
             )
         mode = "danger"
 
