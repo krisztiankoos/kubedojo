@@ -192,10 +192,12 @@ spec:
     requests.memory: 32Gi
     limits.cpu: "12"
     limits.memory: 96Gi
-    requests.storage: 300Gi
+    requests.storage: 400Gi
     persistentvolumeclaims: "4"
     pods: "8"
 ```
+
+Keep the quota aligned with workload storage demands: verify that `sum(PVC requests) <= requests.storage` so namespace storage admission is predictable and not stuck by a manifest mismatch.
 
 This quota is intentionally conservative. It gives one inference pod enough
 room to load a modest instruction model and leaves space for Qdrant, monitoring
@@ -377,7 +379,16 @@ spec:
   resources:
     requests:
       storage: 120Gi
----
+```
+
+Llama-3.1-8B-Instruct is a gated model on HuggingFace; you must accept the licence on huggingface.co/meta-llama/Llama-3.1-8B-Instruct and create a Secret with your access token before the pod will start.
+
+```bash
+kubectl -n llm-system create secret generic huggingface-token \
+  --from-literal=token=$HF_TOKEN
+```
+
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -424,6 +435,11 @@ spec:
           env:
             - name: HF_HOME
               value: /models/huggingface
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: huggingface-token
+                  key: token
           ports:
             - name: http
               containerPort: 8000
@@ -895,6 +911,8 @@ from `llm-apps` should succeed. The call from the outside namespace should time
 out or be rejected, depending on your CNI's enforcement behavior. A fast success
 from the outside namespace means the policy is not enforced or the namespace
 selector is too broad.
+
+Exit 28 (timeout) means packets are being silently dropped; exit 7 (connection refused) means the CNI is sending TCP RST. Both confirm the policy is enforced — the difference is purely a CNI implementation detail (Cilium and weave-net default to drop; Calico and eBPF data planes often default to RST). A 4xx/5xx HTTP response means the traffic reached the server and the NetworkPolicy is NOT blocking it.
 
 ```bash
 kubectl create namespace outside-llm-test
