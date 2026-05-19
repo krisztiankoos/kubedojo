@@ -175,6 +175,73 @@ Two production-grade DQs: <strong>gemini-3-flash-preview</strong> (0/2 on the la
 </tbody>
 </table>
 
+<h2>Agy (Antigravity CLI) calibration — Gemini 3.5 Flash (High), 2026-05-19 session 32</h2>
+
+<p>Added 2026-05-19 after the agy adapter shipped in PR #1351. Tested Gemini 3.5 Flash (High) on the same 6 lanes the existing models were calibrated on, using the same prompts and ground-truth corpus. Methodology: Antigravity CLI's model is selected via interactive TUI panel; the operator pre-selected Gemini 3.5 Flash (High) before each dispatch. Five dispatches fired in parallel (`agy-cal-1` through `agy-cal-6`, skipping cell 2 which has a separate codex-run smoke test). All elapsed times 19-56s — Antigravity is fast.</p>
+
+<table>
+<thead><tr><th>Cell</th><th>Lane</th><th>Result</th><th>Comparison vs baselines</th></tr></thead>
+<tbody>
+<tr>
+  <td>1</td>
+  <td>Code review (PR #1333 security YAML)</td>
+  <td class="model"><strong>2 of 4 ground-truth findings, 0 hallucinations</strong> (52s, 2798 chars). Caught the novel pip-pin issue. <strong>Missed F1 (--strict-collection), F2 (scan-scope gap), F3 (cooldown)</strong> — same miss pattern as DS tiers, but unlike DS did NOT hallucinate. Surfaced 3 additional plausible findings (broader permission scoping, token-exposure-to-unpinned-pip-install, deploy.yml job-level permissions-replace-not-merge).</td>
+  <td><strong>3rd tier on code review.</strong> Worse than claude-sonnet/opus (5/5). Better than DS-pro/flash (each hallucinated). Comparable to qwen-plus (1 finding + 0 halluc) in the surface-volume bucket but with stronger novel-finding pattern.</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>Content review on PR #1349 (vLLM probe-path)</td>
+  <td class="model"><strong>Test invalid — bug already fixed at smoke-test time</strong>. 3.5 Flash returned APPROVE_WITH_NITS on the POST-fix version (the smoke test ran after the session-32 orchestrator-inline correction landed /health). Two reasonable nits surfaced (Qdrant readiness path explicit-set, table column alignment) — no false positives, no false negatives. Inconclusive on whether 3.5 Flash would catch the original factual error.</td>
+  <td><strong>Test gap.</strong> Re-run on the pre-fix diff is the only way to score this lane. Defer to follow-up calibration.</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>Architect (KUBEDOJO_REVIEW_OVERRIDE design)</td>
+  <td class="model"><strong>Strong + unique risk-flag ⭐</strong> (20s, 3754 chars). 7 sections covering env-var format, validation, hermes invocation, failure modes, telemetry, flow integration. <strong>Surfaced novel "Prompt-Model Mismatch" risk</strong> — that prompts optimized for first-class agents may yield malformed responses when routed to arbitrary OpenRouter models, crashing downstream parsers. Not surfaced by any baseline.</td>
+  <td><strong>Top tier on architect.</strong> Matches the unique-risk-catch pattern of claude-opus, DS-pro, DS-flash, gemini-3.1-pro. Best architect lane result outside the premium models.</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td>Draft (Dependabot cooldown 250w docs)</td>
+  <td class="model rank-dq"><strong>HALLUCINATED YAML schema</strong> (19s, 1501 chars). Wrote <code>cooldown: 7</code> (scalar integer) instead of the correct Dependabot v2 schema <code>cooldown: { default-days: 7 }</code> (mapping). Otherwise prose is structurally clean, hits every required bullet, has the actions-cool reference.</td>
+  <td><strong>DQ on factual draft — same hallucination class as DS-pro and DS-flash.</strong> The exact schema element they hallucinated, 3.5 Flash hallucinated too. Pattern: Google + DeepSeek both unreliable on GitHub-specific YAML schemas.</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>Edit (write Python: parse_dependabot_cooldown)</td>
+  <td class="model"><strong>Clean ✅</strong> (39s, 1387 chars). Function signature matches spec exactly. <code>yaml.safe_load</code> + dict-walk + integer coercion all idiomatic. Mild deviation: adds <code>raise ValueError("malformed dependabot yaml")</code> semantics not specified in the brief (defensive but not asked for). No bugs.</td>
+  <td><strong>Top tier on edit.</strong> Comparable to claude-sonnet, claude-opus, codex (all clean). Better than kimi-k2.5 (broad except) and DS-flash (minor nit). The minor spec deviation is a nit, not a blocker.</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>Content review of buggy module-5.9 (T3, mwpp=9.1)</td>
+  <td class="model"><strong>Partial catch, correct overall verdict</strong> (56s, 3164 chars). Correctly identified: density failures (single-sentence-paragraph staccato style), listicle structure, missing "Did You Know?" facts, no inline citations. <strong>Missed</strong>: hands-on-checkboxes=0, structure_sections_present=false, order_correct=false. <strong>Correct conclusion</strong>: "requires a full rewrite."</td>
+  <td><strong>2nd tier on content review.</strong> Catches ~3-4 of 6 verifier failures, no hallucinations, correct overall verdict. Weaker than claude-sonnet (no >1k content production track record yet but session 31-32 production catches were 3/3 real). Better than DS-pro production reality (DS approved 2 modules now T3 with this exact problem).</td>
+</tr>
+</tbody>
+</table>
+
+<p><strong>Headline:</strong> Gemini 3.5 Flash (High) is <strong>strong on architect + code-writing + content review-as-supplement</strong>, <strong>unreliable on factual schema knowledge</strong> (same hallucination class as DeepSeek for GitHub Actions / Dependabot specifics), <strong>weaker than claude-sonnet on adversary code review</strong> but with the redeeming property of <strong>zero hallucinations on the security-YAML lane</strong> — the failure mode is silent-miss, not confident-fabrication.</p>
+
+<p><strong>Speed bonus:</strong> agy/Gemini 3.5 Flash (High) is 3-10x faster than the existing review reviewers (19-56s vs claude-sonnet's 25-90s, gemini-pro's 60-180s). Useful when latency matters and the lane is one of the strong ones (architect / edit / content review supplement).</p>
+
+<h3>Agy in the production-recommended stack</h3>
+
+<table>
+<thead><tr><th>Lane</th><th>Use agy / Gemini 3.5 Flash (High)?</th><th>Rationale</th></tr></thead>
+<tbody>
+<tr><td>Code writing</td><td>2nd-opinion / fallback acceptable</td><td>Clean on cell 5. No code-writing hallucinations observed in this calibration.</td></tr>
+<tr><td>Code review</td><td>Supplemental 2nd voice only, NOT sole gate</td><td>Catches some real findings but misses ground-truth (2/4 on PR #1333). Zero hallucinations is a redeeming property — useful as a cheap parallel reviewer surface area.</td></tr>
+<tr><td>Architecting</td><td>YES — strong 2nd opinion</td><td>Cell 3 surfaced a genuine unique risk-flag matching the top-tier pattern. Use alongside claude-opus / DS-pro for risk-catching breadth.</td></tr>
+<tr><td>Planning</td><td>Unknown — not tested in this calibration</td><td>Cell-missing. Defer.</td></tr>
+<tr><td>Content writing</td><td>NO</td><td>Untested at >1k scale. Cell 4's factual-schema hallucination on a 250w draft is a strong red flag for 5000w modules.</td></tr>
+<tr><td>Content review</td><td>Supplemental only, NOT sole gate</td><td>Cell 6 caught the loudest failures but missed the more subtle structural ones. Cell 2 inconclusive. Use alongside claude-sonnet, not instead of.</td></tr>
+<tr><td>Factual schema (GH Actions / Dependabot YAML)</td><td>NO</td><td>Cell 4 hallucinated. Same DQ class as DS tiers. Verify any schema claim against vendor docs before merging.</td></tr>
+</tbody>
+</table>
+
+<p>The agy + Gemini 3.5 Flash (High) lane runs on an <em>independent rate-limit counter</em> from gemini-cli (per the 2026-06-18 migration setup). Worth keeping both routes live: gemini-cli for the gemini-3.1-pro-preview lane (existing); agy for parallel 3.5-Flash-(High) capacity on the architect / edit / content-review-supplement lanes where it scores well.</p>
+
 <h2>Production track record (the test calibration can't substitute for)</h2>
 
 <p>Calibration is a controlled probe. Production is the real measure. The table below counts what each reviewer actually approved that has since aged well or poorly.</p>
@@ -196,12 +263,12 @@ Two production-grade DQs: <strong>gemini-3-flash-preview</strong> (0/2 on the la
 <table>
 <thead><tr><th>Lane</th><th>Primary</th><th>Cross-family second opinion / fallback</th><th>Tertiary</th></tr></thead>
 <tbody>
-<tr><td>Code writing</td><td><strong>codex gpt-5.5 high</strong></td><td>claude-sonnet-4-6</td><td>deepseek-v4-pro hermes</td></tr>
-<tr><td>Code review</td><td><strong>claude-sonnet-4-6</strong></td><td>qwen/qwen3.6-plus (Python diff lane specifically)</td><td>claude-opus-4-7 (when sonnet rate-limits)</td></tr>
-<tr><td>Architecting</td><td><strong>claude-opus-4-7</strong></td><td>deepseek-v4-pro (for risk-catching; double-check any schema claim)</td><td>gemini-3.1-pro-preview</td></tr>
+<tr><td>Code writing</td><td><strong>codex gpt-5.5 high</strong></td><td>claude-sonnet-4-6</td><td>agy / Gemini 3.5 Flash (High) <em>or</em> deepseek-v4-pro hermes</td></tr>
+<tr><td>Code review</td><td><strong>claude-sonnet-4-6</strong></td><td>qwen/qwen3.6-plus (Python diff lane specifically)</td><td>claude-opus-4-7 (when sonnet rate-limits); agy as cheap parallel 2nd voice (catches some, hallucinates 0)</td></tr>
+<tr><td>Architecting</td><td><strong>claude-opus-4-7</strong></td><td>deepseek-v4-pro (for risk-catching; double-check any schema claim) <em>or</em> agy / Gemini 3.5 Flash (High) (top-tier unique-risk-catch, 20s)</td><td>gemini-3.1-pro-preview</td></tr>
 <tr><td>Planning</td><td><strong>claude-opus-4-7 OR codex gpt-5.5</strong> (tied)</td><td>gemini-3.1-pro-preview</td><td>deepseek-v4-flash (unexpectedly strong on plan lane)</td></tr>
 <tr><td>Content writing</td><td><strong>codex gpt-5.5 high + <code>--search</code></strong> (danger mode + per-issue worktree)</td><td>claude-opus-4-7 (senior-track framing where opus differentiates)</td><td>—</td></tr>
-<tr><td>Content reviewing</td><td><strong>claude-sonnet-4-6</strong></td><td>claude-opus-4-7 OR gemini-3.1-pro-preview</td><td>deepseek-v4-pro <em>only</em> for second-opinion cross-family triangulation — never as sole gate</td></tr>
+<tr><td>Content reviewing</td><td><strong>claude-sonnet-4-6</strong></td><td>claude-opus-4-7 OR gemini-3.1-pro-preview</td><td>agy as supplemental 2nd voice; deepseek-v4-pro <em>only</em> for second-opinion cross-family triangulation — never as sole gate</td></tr>
 </tbody>
 </table>
 
