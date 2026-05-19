@@ -30,8 +30,9 @@ Microsoft built Azure to extend Windows Server, Active Directory, and enterprise
 | 14 | [Azure App Service — Operator Path](module-3.14-app-service/) | 2h | App Service Plans, slots, private networking, autoscale |
 | 15 | [Azure Event Hub + Event Grid — Operator Path](module-3.15-event-hub-event-grid/) | 2h | Streaming, event routing, Capture, CloudEvents |
 | 16 | [Azure SQL Database — Operator Path](module-3.16-azure-sql/) | 2h | SQL flavors, vCore tiers, HA/DR, security, cost, day-2 ops |
+| 17 | [Azure Backup + Site Recovery — Operator Path](module-3.17-backup-site-recovery/) | 2h | Backup policies, ASR failover, vault security, DR cost |
 
-**Total time**: ~31.5 hours
+**Total time**: ~33.5 hours
 
 ---
 
