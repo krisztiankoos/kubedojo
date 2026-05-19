@@ -54,10 +54,23 @@ Issue: #1184
 from __future__ import annotations
 
 import shutil
+import re
 from pathlib import Path
 
 from ..result import ParseResult
 from .base import InvocationPlan
+
+_RATE_LIMIT_PATTERNS = (
+    r"rate limit",
+    r"rate_limit",
+    r"usage limit",
+    r"quota exceeded",
+    r"too many requests",
+    r"\bHTTP 429\b",
+    r"\bstatus 429\b",
+    r"\b429\b",
+)
+_RATE_LIMIT_RE = re.compile("|".join(_RATE_LIMIT_PATTERNS), re.IGNORECASE)
 
 
 class TemplateAdapter:
@@ -141,15 +154,15 @@ class TemplateAdapter:
 
         Template: replace with real output parsing.
         """
-        # 1. Detect rate-limiting. Use word-boundary patterns to avoid
-        #    URL false positives (e.g. "\\b429\\b" not bare "429").
-        rate_limited = any(
-            pattern in (stderr or "").lower()
-            for pattern in ("rate limit", "quota exceeded", "usage limit")
-        )
+        # 1. Detect rate-limiting only when output indicates an actual
+        #    CLI failure; pattern matches alone are not sufficient.
+        combined = f"{stdout}\n{stderr}"
+        pattern_hit = bool(_RATE_LIMIT_RE.search(combined))
+        call_failed = returncode != 0 or not stdout.strip()
+        rate_limited = pattern_hit and call_failed
 
         # 2. Classify success. Adjust the criteria to match your CLI.
-        ok = returncode == 0 and not rate_limited
+        ok = returncode == 0 and bool(stdout.strip()) and not rate_limited
 
         # 3. Build the response. Read from output_file if you used one,
         #    otherwise use stdout.

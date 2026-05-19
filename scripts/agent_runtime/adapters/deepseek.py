@@ -236,7 +236,9 @@ class DeepSeekAdapter:
             )
 
         combined = f"{clean_stdout}\n{stderr or ''}"
-        rate_limited = bool(_RATE_LIMIT_RE.search(combined))
+        pattern_hit = bool(_RATE_LIMIT_RE.search(combined))
+        call_failed = returncode != 0 or not bool(clean_stdout)
+        rate_limited = pattern_hit and call_failed
 
         ok = returncode == 0 and bool(clean_stdout) and not rate_limited
         response = clean_stdout if ok else ""
