@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Session 30 — 5-way agent calibration: claude wins review, deepseek hallucinates, parser bug found</title>
+<link rel="stylesheet" href="../design-system.css">
+<style>
+  body { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+  h1 { margin-bottom: 0.25rem; }
+  p.meta { color: #555; font-size: 0.9rem; margin-top: 0.1rem; }
+  .pill { display:inline-block; padding:0.1rem 0.55rem; border-radius:0.35rem; font-size:0.78rem; font-weight:600; }
+  .pill-shipped { background:#d4edda; color:#155724; }
+  .pill-deferred { background:#fff3cd; color:#856404; }
+  .pill-decision { background:#cce5ff; color:#004085; }
+  .pill-flag { background:#f5c2c7; color:#842029; }
+  table { width:100%; border-collapse: collapse; margin: 0.75rem 0 1.25rem; }
+  th, td { border:1px solid #ddd; padding:0.35rem 0.55rem; font-size:0.92rem; vertical-align: top; }
+  th { background:#f3f5f7; text-align:left; }
+  code { background:#f3f5f7; padding:0 0.25rem; border-radius:0.2rem; font-size:0.88em; }
+  pre { background:#f6f8fa; padding:0.75rem; border-radius:0.4rem; overflow-x:auto; font-size:0.85em; }
+  details { margin: 0.5rem 0; }
+  summary { font-weight:600; cursor:pointer; padding:0.3rem 0; }
+  .tl { background:#fff8e1; padding:0.75rem 1rem; border-left:4px solid #ffb300; margin:0.75rem 0 1.25rem; border-radius:0.3rem; }
+  .halluc { color: #842029; font-weight: 600; }
+  .win { color: #155724; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Session 30 — 5-way agent calibration: claude wins review, deepseek hallucinates, dispatch_smart parser bug found</h1>
+<p class="meta">2026-05-19 ~12:30 → ~14:00 local · driver: claude opus 4.7 inline · user asked twice "did you test deepseek?" / "use opus too" — both valid catches forcing a proper 5-way calibration. 0 PRs merged this session. **Major directional re-think**: prior session's qwen-as-default reviewer decision is overturned by new data.</p>
+
+<div class="tl">
+<strong>TL;DR.</strong> User pushed back on the session-29 wire-up: "deepseek is super economic and good quality — did we test it?" Answer: no, calibration was qwen-vs-kimi only. Ran proper <strong>5-way calibration</strong> (claude-sonnet, claude-opus, codex/gpt-5.5, deepseek-v4-pro, deepseek-v4-flash) across the 5 same lanes used in R1-R4. <strong>25 dispatches</strong>, ~$0.05 cost. Plus 4 architect re-runs via raw hermes after dispatch_smart's parser misclassified responses as "rate limited" because the architect prompt mentions "rate limit (HTTP 429)" as a failure mode and the regex `_RATE_LIMIT_RE` matched on response text. <strong>Headline result</strong>: claude-sonnet AND claude-opus dominated security review (5/5 valid findings each, the ONLY models to catch all 3 codex ground-truth findings + the novel pip-pin issue). <strong>Both deepseek tiers hallucinated</strong> on review (pages-write claim, uk-quality permissions claim) AND on draft (wrong Dependabot YAML schema). <strong>0 PRs this session</strong> — pure calibration + analysis. Cascade restructure + parser-bug fix = next-session work.</p>
+</div>
+
+<h2>The 5-way matrix (apples-to-apples with prior R1-R4 data)</h2>
+
+<table>
+<thead><tr><th>Lane</th><th>claude-sonnet</th><th>claude-opus</th><th>codex/gpt-5.5</th><th>ds-pro</th><th>ds-flash</th><th>qwen3.6-plus (R1+R3+R4)</th><th>kimi-k2.5 (R2-R4)</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>Review (security YAML)</strong></td>
+  <td class="win">5/5 valid ⭐</td>
+  <td class="win">5/5 valid ⭐</td>
+  <td>1 finding</td>
+  <td>1 + <span class="halluc">halluc</span></td>
+  <td>1 + <span class="halluc">halluc</span></td>
+  <td>1 finding</td>
+  <td>2 findings</td>
+</tr>
+<tr>
+  <td><strong>Code-Review (Python)</strong></td>
+  <td>strong (5+)</td>
+  <td>strong + alt design</td>
+  <td>strong (4+)</td>
+  <td>soft verdict (APPROVE despite real issues)</td>
+  <td>strong + test-bug catch</td>
+  <td class="win">8 findings ⭐</td>
+  <td>5 surface</td>
+</tr>
+<tr>
+  <td><strong>Draft (prose, factual)</strong></td>
+  <td class="win">clean ✅</td>
+  <td class="win">clean ✅</td>
+  <td>clean (verbose)</td>
+  <td class="halluc">wrong YAML schema ❌</td>
+  <td class="halluc">wrong YAML schema ❌</td>
+  <td class="halluc">factual error ❌</td>
+  <td class="win">clean ✅</td>
+</tr>
+<tr>
+  <td><strong>Edit (write Python)</strong></td>
+  <td>clean ✅</td>
+  <td>clean ✅</td>
+  <td>clean ✅</td>
+  <td>clean ✅</td>
+  <td>minor nit</td>
+  <td>clean ✅</td>
+  <td>broad except</td>
+</tr>
+<tr>
+  <td><strong>Architect (system design)</strong></td>
+  <td>strong + parity-risk</td>
+  <td>strong + ack-var idea</td>
+  <td>strong</td>
+  <td class="win">strong + aliasing-risk ⭐</td>
+  <td class="win">strong + usage-record-risk ⭐</td>
+  <td>strong + variance-risk</td>
+  <td>OK</td>
+</tr>
+</tbody>
+</table>
+
+<h2>Key findings</h2>
+
+<h3>1. Claude (sonnet AND opus) dominated security review</h3>
+<p>Both Claude variants caught all 3 codex ground-truth findings (F1 <code>--strict-collection</code>, F2 scan-scope gap, F3 missing cooldown) PLUS the novel <code>pip install zizmor</code> issue codex missed in PR #1333. <strong>This reverses the qwen-as-default-reviewer decision from session 29</strong>. claude-sonnet specifically reached 5/5 valid findings — better than codex's own R6 re-run of the same prompt (1/4 valid; high variance suspected).</p>
+
+<h3 class="halluc">2. Both deepseek tiers hallucinated on critical lanes</h3>
+<ul>
+  <li><strong>ds-pro (review)</strong>: claimed <code>actions/upload-pages-artifact</code> requires <code>pages: write</code> on the build job. <strong>False</strong> — only the <code>deploy</code> job needs it (which is exactly the scoping that PR #1333 implemented).</li>
+  <li><strong>ds-flash (review)</strong>: claimed <code>uk-quality-checks.yml</code> lacks a <code>permissions:</code> block. <strong>False</strong> — it has <code>contents: read</code> at workflow level.</li>
+  <li><strong>ds-pro (draft)</strong>: produced YAML snippet with <code>cooldown: default: 7</code>. <strong>Wrong schema</strong> — Dependabot v2 uses <code>default-days</code>, not <code>default</code>.</li>
+  <li><strong>ds-flash (draft)</strong>: produced YAML snippet with <code>cooldown-policy: period: "7d"</code>. <strong>Fabricated schema</strong> — that's not in Dependabot's v2 reference.</li>
+</ul>
+<p>Pattern: <strong>DeepSeek is unreliable on factual claims about GitHub-specific schemas/behavior</strong>. It synthesizes plausible-sounding YAML and security claims without verifying. Don't trust DS for review-class work on GH Actions / Dependabot / similar tooling.</p>
+
+<h3>3. DeepSeek shines on architecture (when fact-checking isn't required)</h3>
+<p>Both DS tiers produced the sharpest risk catches in the architect lane:</p>
+<ul>
+  <li><strong>ds-pro</strong>: surfaced OpenRouter silent model-id aliasing — typo in env var routes to default model with no error signal. Mitigation: post-hoc audit logging.</li>
+  <li><strong>ds-flash</strong>: surfaced that override path bypasses <code>runner.invoke</code> usage-record system — cost-tracking and quota dashboards become blind to override usage.</li>
+</ul>
+<p>These were genuine architectural insights nobody else caught. DS is fine for design reasoning; just don't trust its factual claims about external systems.</p>
+
+<h3>4. dispatch_smart parser bug — false-positive rate-limit detection</h3>
+<p>4 of 5 architect dispatches were marked <code>OK=False, resp_chars=0, RateLimitedError</code>. Actually the models succeeded — dispatch_smart's <code>_RATE_LIMIT_RE</code> regex matched the phrase "rate limit" inside the model's actual response (because the architect prompt asks to discuss rate-limit failure modes). Bug applies to claude, deepseek (and possibly others). Only codex didn't trip it (different stderr handling). Real responses recovered via raw <code>hermes</code> calls bypassing the parser. <strong>Real bug</strong> — fix in <code>scripts/agent_runtime/adapters/{deepseek,claude,grok,qwen}.py</code> to require the "rate limit" pattern to appear in stderr/error contexts, not just any combined stdout+stderr.</p>
+
+<h3>5. codex (gpt-5.5) is inconsistent</h3>
+<p>Codex's R1 ground-truth run on PR #1333 caught all 3 findings (F1/F2/F3). Codex's R6 re-run of the same prompt caught only pip-pin (1 of 4). Possible reasons: model output variance, retry-on-empty differences, prompt-cache state. <strong>Implication</strong>: single-shot codex verdicts shouldn't be treated as definitive ground truth. Multi-agent consensus is more reliable.</p>
+
+<h2>Per-lane recommended primary (overturns session 29)</h2>
+
+<table>
+<thead><tr><th>Lane</th><th>New recommended primary</th><th>Was (session 29)</th><th>Reasoning</th></tr></thead>
+<tbody>
+<tr><td>review</td><td><strong>claude-sonnet-4-6</strong></td><td>qwen3.6-plus</td><td>5/5 valid vs qwen's 1/4. Subscription = $0 marginal.</td></tr>
+<tr><td>code-review</td><td>claude-sonnet-4-6 OR qwen3.6-plus</td><td>qwen3.6-plus</td><td>Tied; qwen actually edged in R4 with 8 findings; claude clean too.</td></tr>
+<tr><td>draft (factual prose)</td><td><strong>claude-sonnet-4-6</strong></td><td>qwen3.6-plus</td><td>Avoid DS (YAML schema hallucinations) and qwen (timing error). claude clean.</td></tr>
+<tr><td>edit (write Python)</td><td>codex (gpt-5.3-codex-spark) OR claude-sonnet</td><td>qwen3.6-plus</td><td>All models acceptable here; minor stylistic differences.</td></tr>
+<tr><td>architect</td><td>claude-opus-4-7 OR deepseek-v4-pro</td><td>qwen3.6-plus</td><td>Both produced sharper risk-flag findings than qwen.</td></tr>
+</tbody>
+</table>
+
+<h2>Recommended cascade restructure (NOT YET SHIPPED)</h2>
+
+<p>Current <code>dispatch_388_pilot.py</code> cascade only supports <code>qwen | claude | gemini</code>. Add <code>deepseek</code> and (optionally) <code>codex</code> as supported primaries; flip default from <code>qwen</code> to <code>claude</code>:</p>
+
+<pre>CASCADES = {
+  "claude":   ["claude", "gemini", "deepseek", "qwen"],
+  "qwen":     ["qwen",   "claude", "gemini",   "deepseek"],
+  "gemini":   ["gemini", "claude", "qwen",     "deepseek"],
+  "deepseek": ["deepseek", "claude", "gemini", "qwen"],   # new
+}
+primary = os.environ.get("KUBEDOJO_388_PRIMARY_REVIEWER", "claude").lower()  # was "qwen"</pre>
+
+<p>This is next-session work (1 small PR). No code written yet; only the analysis.</p>
+
+<h2>Open items / deferred for next session</h2>
+
+<ol>
+  <li><strong>PR: cascade restructure</strong> — flip default from qwen to claude, add deepseek to cascade. ~10-line change in <code>dispatch_388_pilot.py</code>.</li>
+  <li><strong>PR: dispatch_smart parser bug fix</strong> — narrow <code>_RATE_LIMIT_RE</code> to require error-context (e.g., "HTTP 429", or only in stderr, or paired with non-zero returncode). Affects all 5 adapters that share the pattern.</li>
+  <li><strong>Memory updates</strong>:
+    <ul>
+      <li>Update <code>feedback_deepseek_pro_for_module_reviews</code>: qwen-preferred claim now DEFINITELY off; claude is the actual review-lane winner. Add deepseek hallucination caveat (do NOT use for review-class fact-heavy work).</li>
+      <li>New memory: <code>feedback_deepseek_hallucinates_on_gh_schemas</code> — DS Pro/Flash hallucinate on Dependabot/Actions YAML schemas and on workflow permission claims.</li>
+      <li>Update <code>project_role_allocation_2026-05-16</code>: reviewer = claude-sonnet (was grok, then qwen, now claude).</li>
+    </ul>
+  </li>
+  <li><strong>&gt;1k-line content module review calibration</strong> — still untested. The "deepseek-v4-pro tied 5/5 with claude on content review" memory (2026-05-17 calibration) hasn't been re-verified with the new data showing DS hallucinates on factual claims. Worth re-running on a real content module.</li>
+  <li><strong>Session-29 carryover items</strong> still open: T2-13 Ansible decision, Wave 3/4/5 modules.</li>
+  <li><strong>Restart Claude Code</strong> at session start (current shell still has stale <code>GH_TOKEN</code>).</li>
+  <li><strong>qwen 3.7 watch</strong> — re-run calibration when it lands.</li>
+</ol>
+
+<h2>Cost incurred this session</h2>
+<p>~$0.05 USD across 25 dispatches + 4 architect re-runs. Subscription models (claude, codex) marginal $0; deepseek + qwen variants very cheap.</p>
+
+<h2>Cold-start (next session)</h2>
+
+<pre>1. curl -s --max-time 2 "http://127.0.0.1:8768/api/briefing/session?compact=1"
+2. git status --short
+3. ls docs/decisions/pending/
+4. Read this file: docs/session-state/2026-05-19-session-30-five-way-calibration.html
+5. Read docs/agent-matrix/{openrouter-snapshot-2026-05-19.md, calibration-2026-05-19-review-lane.md}
+   — NOTE: those docs reflect session 29's qwen-wins verdict, which is now SUPERSEDED
+   by this session's claude-wins-review finding. A new dated calibration doc covering
+   the 5-way data should be the first artifact next session (before any code changes).</pre>
+
+</body>
+</html>
