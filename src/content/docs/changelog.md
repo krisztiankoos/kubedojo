@@ -8,6 +8,8 @@ sidebar:
 
 ## May 2026
 
+- **Platform Toolkits / GitOps & Deployments**: Module 2.5 Dapr + Buildpacks application definition beyond Helm (#1304 Wave 2, T2-20, ~2189 lines).
+
 - **MLOps**: Module 5.12 CML for ML CI — closes MLOps Discipline track (#1304 Wave 2, T2-19, ~2069 lines).
 
 - **MLOps**: Module 5.11 Drift-Triggered Auto-Retraining Loop (#1304 Wave 2, T2-18, ~2001 lines).
